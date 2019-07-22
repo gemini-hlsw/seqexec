@@ -116,6 +116,9 @@ object SeqexecCircuit
   val queueFocusRW: ModelRW[SeqexecAppRootModel, QueueRequestsFocus] =
     this.zoomRWL(QueueRequestsFocus.unsafeQueueRequestsFocusL)
 
+  val acProgressRW: ModelRW[SeqexecAppRootModel, AlignAndCalibStep] =
+    this.zoomRWL(SeqexecAppRootModel.alignAndCalib)
+
   def sequenceTab(
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =

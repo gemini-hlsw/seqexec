@@ -246,6 +246,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
   implicit val observationProgressPickler = generatePickler[ObservationProgress]
   implicit val obsProgressPickler         = generatePickler[ObservationProgressEvent]
+  implicit val acProgressPickler          = generatePickler[AlignAndCalibEvent]
   implicit val singleActionEventPickler   = generatePickler[SingleActionEvent]
   implicit val nullEventPickler           = generatePickler[NullEvent.type]
 
@@ -280,6 +281,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[QueueUpdated]
     .addConcreteType[ObservationProgressEvent]
     .addConcreteType[SingleActionEvent]
+    .addConcreteType[AlignAndCalibEvent]
     .addConcreteType[NullEvent.type]
 
   implicit val userLoginPickler = generatePickler[UserLoginRequest]

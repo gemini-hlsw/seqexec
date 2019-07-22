@@ -3,8 +3,9 @@
 
 package giapi.client
 
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.Concurrent
+import fs2.Stream
+import fs2.concurrent.SignallingRef
 import cats.implicits._
 import cats.Applicative
 
@@ -42,11 +43,13 @@ trait GiapiDb[F[_]] {
   def value(i: String): F[Option[StatusValue]]
 
   def update[A: ItemGetter](i: String, s: A): F[Unit]
+
+  def discrete: Stream[F, Map[String, StatusValue]]
 }
 
 object GiapiDb {
-  def newDb[F[_]: Sync]: F[GiapiDb[F]] =
-    Ref.of[F, Map[String, StatusValue]](Map.empty).map { ref =>
+  def newDb[F[_]: Concurrent]: F[GiapiDb[F]] =
+    SignallingRef[F, Map[String, StatusValue]](Map.empty).map { ref =>
       new GiapiDb[F] {
         def value(i: String): F[Option[StatusValue]] =
           ref.get.map(_.get(i))
@@ -64,6 +67,8 @@ object GiapiDb {
             case _ =>
               Applicative[F].unit
           }
+
+        override def discrete: Stream[F, Map[String, StatusValue]] = ref.discrete
       }
     }
 }

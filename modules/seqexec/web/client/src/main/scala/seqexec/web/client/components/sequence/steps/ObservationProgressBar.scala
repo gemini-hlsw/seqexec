@@ -70,7 +70,7 @@ object SmoothProgressBar {
   }
 
   private val component = ScalaComponent
-    .builder[Props]("ObservationProgressBar")
+    .builder[Props]("SmoothProgressBar")
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>

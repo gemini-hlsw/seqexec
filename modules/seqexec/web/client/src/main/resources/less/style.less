@@ -429,6 +429,18 @@ body {
   margin-bottom: 1em;
 }
 
+.SeqexecStyles-acProgressRow {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: @table_row_left_padding;
+  z-index: 100;
+  position: relative;
+  margin-left: 20px;
+}
+
 .SeqexecStyles-observationProgressBar {
   margin: 0 !important;
   width: 100%;
@@ -729,6 +741,7 @@ body {
   min-width: 21px;
   .borderRight();
   position: relative;
+  z-index: 0;
 }
 
 .SeqexecStyles-controlCell {
@@ -736,10 +749,12 @@ body {
   justify-content: space-around;
   align-items: center;
   min-width: 42.3px;
+  align-self: flex-start;
 }
 
 .breakPointHandle() {
   position: relative;
+  z-index: 200;
   left: 3.82px;
   top: -4px;
   height: 13px;
@@ -784,6 +799,7 @@ body {
   min-width: 24px;
   height: 100%;
   align-items: center;
+  align-self: flex-start;
   width: 100%;
   display: flex;
 }
@@ -793,6 +809,7 @@ body {
   min-width: 24px;
   height: 100%;
   align-items: center;
+  align-self: flex-start;
   width: 100%;
   display: flex;
 }
@@ -802,6 +819,7 @@ body {
   min-width: 24px;
   height: 100%;
   align-items: center;
+  align-self: flex-start;
   width: 100%;
   display: flex;
   padding-bottom: 8px;
@@ -812,6 +830,7 @@ body {
   min-width: 24px;
   height: 100%;
   align-items: center;
+  align-self: flex-start;
   width: 100%;
   display: flex;
   padding-right: 10px;
@@ -1119,6 +1138,20 @@ body {
   padding: 0px;
 }
 
+.SeqexecStyles-expandedRunningRow {
+  display: flex;
+  flex-direction: column;
+}
+.SeqexecStyles-expandedTopRow {
+  height: 50%;
+}
+.SeqexecStyles-expandedBottomRow {
+  height: 50%;
+  background: @secondaryBackground;
+  position: relative;
+  z-index: 100;
+  border-top: @border;
+}
 .SeqexecStyles-errorIcon {
   .queueText;
   margin-bottom: 6px !important;

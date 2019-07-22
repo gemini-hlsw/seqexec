@@ -31,6 +31,8 @@ trait GiapiStatusDb[F[_]] {
   // Tries to read a value from the db and throws an exception in not found
   def value(i: String): F[StatusValue]
 
+  def discrete: Stream[F, Map[String, StatusValue]]
+
   private[giapi] def close: F[Unit]
 }
 
@@ -126,6 +128,9 @@ object GiapiStatusDb {
             new GiapiException("No values available in a simulated db")
           )
 
+      def discrete: Stream[F, Map[String, StatusValue]] =
+        Stream.empty
+
       def close: F[Unit] = Applicative[F].unit
     }
 
@@ -156,6 +161,9 @@ object GiapiStatusDb {
               _.isDefined
             )
             .map { _.orNull } // orNull lets us typecheck but it will never be used due to the `ensure` call above
+
+        def discrete: Stream[F, Map[String, StatusValue]] =
+          db.discrete
 
         def close: F[Unit] =
           for {

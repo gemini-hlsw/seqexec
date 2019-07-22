@@ -53,7 +53,7 @@ object StepBreakStopCell {
       SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step)))
 
   private val component = ScalaComponent
-    .builder[Props]("StepIconCell")
+    .builder[Props]("StepBreakStopCell")
     .stateless
     .render_P { p =>
       val canSetBreakpoint = p.clientStatus.canOperate && p.step

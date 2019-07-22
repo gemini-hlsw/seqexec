@@ -43,7 +43,8 @@ final case class SeqexecAppRootModel(
   clientId:      Option[ClientId],
   uiModel:       SeqexecUIModel,
   serverVersion: Option[String],
-  guideConfig:   TelescopeGuideConfig
+  guideConfig:   TelescopeGuideConfig,
+  alignAndCalib: AlignAndCalibStep
 )
 
 object SeqexecAppRootModel {
@@ -61,7 +62,8 @@ object SeqexecAppRootModel {
     none,
     SeqexecUIModel.Initial,
     none,
-    TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
+    TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff),
+    AlignAndCalibStep.NoAction
   )
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =

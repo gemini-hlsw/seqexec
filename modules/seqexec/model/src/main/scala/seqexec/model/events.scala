@@ -322,6 +322,14 @@ object events {
       Eq.by(_.telescope)
   }
 
+  final case class AlignAndCalibEvent(step: Int)
+      extends SeqexecEvent
+
+  object AlignAndCalibEvent {
+    implicit lazy val equal: Eq[AlignAndCalibEvent] =
+      Eq.by(_.step)
+  }
+
   implicit val equal: Eq[SeqexecEvent] =
     Eq.instance {
       case (a: ConnectionOpenEvent,      b: ConnectionOpenEvent)      => a === b
@@ -332,6 +340,7 @@ object events {
       case (a: GuideConfigUpdate,        b: GuideConfigUpdate)        => a === b
       case (a: ObservationProgressEvent, b: ObservationProgressEvent) => a === b
       case (a: SingleActionEvent,        b: SingleActionEvent)        => a === b
+      case (a: AlignAndCalibEvent,       b: AlignAndCalibEvent)       => a === b
       case (_: NullEvent.type,           _: NullEvent.type)           => true
       case _                                                          => false
     }
