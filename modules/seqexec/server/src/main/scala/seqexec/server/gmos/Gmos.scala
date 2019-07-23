@@ -3,7 +3,8 @@
 
 package seqexec.server.gmos
 
-import cats.data.Reader
+import cats.data.Kleisli
+import cats.data.EitherT
 import cats.implicits._
 import cats.effect.Sync
 import gem.enum.LightSinkName
@@ -46,12 +47,12 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
   override val keywordsClient: KeywordsClient[F] = this
 
   override val observeControl: InstrumentSystem.ObserveControl[F] = CompleteControl(
-    StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
-    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)),
-    PauseObserveCmd(SeqActionF.embedF(controller.pauseObserve)),
-    ContinuePausedCmd{t: Time => SeqActionF.embedF(controller.resumePaused(t))},
-    StopPausedCmd(SeqActionF.embedF(controller.stopPaused)),
-    AbortPausedCmd(SeqActionF.embedF(controller.abortPaused))
+    StopObserveCmd(controller.stopObserve),
+    AbortObserveCmd(controller.abortObserve),
+    PauseObserveCmd(controller.pauseObserve),
+    ContinuePausedCmd{t: Time => controller.resumePaused(t)},
+    StopPausedCmd(controller.stopPaused),
+    AbortPausedCmd(controller.abortPaused)
   )
 
   val Log: Logger = getLogger
@@ -136,12 +137,12 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def fromSequenceConfig(config: Config): SeqActionF[F, GmosController.GmosConfig[T]] = SeqActionF.either( for {
+  private def fromSequenceConfig(config: Config): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
+    for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
       ns <- nsConfigFromSequenceConfig(config)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
-  )
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
     if (Gmos.isNodAndShuffle(config)) {
@@ -150,19 +151,23 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       SequenceConfiguration.calcStepType(config)
     }
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
-        SeqActionF.embedF(controller.observe(fileId, x))
+  override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      calcObserveTime(config).flatMap { x =>
+        controller.observe(fileId, x)
       }
     }
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    fromSequenceConfig(config).flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(controller.applyConfig)
+      .as(ConfigResult(this))
 
   override def calcObserveTime(config: Config): F[Time] =
     Sync[F].delay(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)

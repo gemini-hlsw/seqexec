@@ -53,7 +53,7 @@ object Step {
       // Find an error in the Step
       step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
         case ActionState.Failed(Result.Error(msg)) => msg.some
-        case _                                => None
+        case _                                     => None
         // Return error or continue with the rest of the checks
       }}.map[StepState](StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.

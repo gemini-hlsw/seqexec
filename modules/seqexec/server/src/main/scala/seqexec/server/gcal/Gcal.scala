@@ -19,7 +19,6 @@ import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
 import seqexec.server.{ConfigResult, ConfigUtilOps, SeqexecFailure, System, TrySeq}
-import seqexec.server.SeqActionF
 import seqexec.server._
 
 /**
@@ -35,18 +34,21 @@ final case class Gcal[F[_]](controller: GcalController[F], isCP: Boolean)(implic
   /**
     * Called to configure a system, returns a F[ConfigResult]
     */
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] = SeqActionF.embedF(for{
-    _       <- F.delay(Log.info("Start GCAL configuration"))
-    reqCfg  <- fromSequenceConfig[F](config, isCP)
-    _       <- F.delay(Log.debug(s"GCAL configuration: ${reqCfg.show}"))
-    currCfg <- controller.getConfig
-    ret     <- controller.applyConfig(diffConfiguration(currCfg, reqCfg)).map(const(ConfigResult(this)))
-    _       <- F.delay(Log.info("Completed GCAL configuration"))
-  } yield ret)
+  override def configure(config: Config): F[ConfigResult[F]] =
+    for{
+      _       <- F.delay(Log.info("Start GCAL configuration"))
+      reqCfg  <- fromSequenceConfig[F](config, isCP)
+      _       <- F.delay(Log.debug(s"GCAL configuration: ${reqCfg.show}"))
+      currCfg <- controller.getConfig
+      ret     <- controller.applyConfig(diffConfiguration(currCfg, reqCfg)).map(const(ConfigResult(this)))
+      _       <- F.delay(Log.info("Completed GCAL configuration"))
+    } yield ret
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveEnd: F[Unit] =
+    Sync[F].unit
+
 }
 
 object Gcal {

@@ -12,11 +12,11 @@ trait System[F[_]] {
   /**
     * Called to configure a system
     */
-  def configure(config: Config): SeqActionF[F, ConfigResult[F]]
+  def configure(config: Config): F[ConfigResult[F]]
 
-  def notifyObserveStart: SeqActionF[F, Unit]
+  def notifyObserveStart: F[Unit]
 
-  def notifyObserveEnd: SeqActionF[F, Unit]
+  def notifyObserveEnd: F[Unit]
 }
 
 //Placeholder for config response

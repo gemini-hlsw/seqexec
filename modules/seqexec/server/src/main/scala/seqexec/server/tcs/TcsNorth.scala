@@ -18,7 +18,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import monocle.macros.Lenses
 import org.log4s.getLogger
 import seqexec.model.enum.Resource
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqActionF, SeqexecFailure, System}
+import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure, System}
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.TcsController._
@@ -54,16 +54,15 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private (tcsController: 
     }
   }
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] = SeqActionF.embedF(
+  override def configure(config: Config): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
       Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
-  )
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.embedF(tcsController.notifyObserveStart)
+  override def notifyObserveStart: F[Unit] = tcsController.notifyObserveStart
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(tcsController.notifyObserveEnd)
+  override def notifyObserveEnd: F[Unit] = tcsController.notifyObserveEnd
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =

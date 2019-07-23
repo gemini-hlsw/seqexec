@@ -5,14 +5,10 @@ package seqexec
 
 import cats.data._
 import cats.effect.IO
-import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
-import cats.Applicative
-import cats.ApplicativeError
 import cats.Eq
 import cats.Endo
-import cats.Functor
 import cats.MonadError
 import cats.~>
 import edu.gemini.spModel.`type`.SequenceableSpType
@@ -151,7 +147,7 @@ package server {
     val progress: Time = total - remaining.self
   }
 
-  final case class ObserveContext[F[_]](t: ObserveCommandResult => EitherT[F, SeqexecFailure, Result[F]], expTime: Time) extends PauseContext[F]
+  final case class ObserveContext[F[_]](t: ObserveCommandResult => F[Result[F]], expTime: Time) extends PauseContext[F]
 
 }
 
@@ -169,65 +165,12 @@ package object server {
     def fail[A](p:  SeqexecFailure): TrySeq[A] = Either.left(p)
   }
 
-  type SeqAction[A]        = EitherT[IO, SeqexecFailure, A]
-  type SeqActionF[F[_], A] = EitherT[F, SeqexecFailure, A]
-
-  type SeqObserve[A, B]        = Reader[A, SeqAction[B]]
-  type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
-
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
   // TODO move this out of being a global. This act as an anchor to the rest of the code
   val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState)
 
   type EventQueue[F[_]] = Queue[F, executeEngine.EventType]
-
-  object SeqAction {
-    def apply[A](a:  => A): SeqAction[A] = EitherT(IO.apply(TrySeq(a)))
-    def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(IO.apply(a))
-    def fail[A](p:   SeqexecFailure): SeqAction[A] =
-      EitherT(IO.apply(TrySeq.fail[A](p)))
-    def void: SeqAction[Unit] = SeqAction.apply(())
-    def lift[A](a: => IO[A]): SeqAction[A] = EitherT.liftF(a)
-
-  }
-
-  object SeqActionF {
-    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
-      EitherT(Sync[F].delay(TrySeq(a)))
-    def delay[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
-      apply(a)
-    def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-
-    // embed ill take an IO and convert it to SeqActionF
-    // The semantics of error handling are:
-    // * if the IO has failed with a known exception type put it on the left of the EitherT
-    // * For non fatal exceptions, they are wrapped in a SeqexecException
-    // * Fatal exceptions are propagated
-    def embed[F[_]: LiftIO, A](a: => IO[A]): SeqActionF[F, A] =
-      EitherT(LiftIO[F].liftIO(a.attempt.map(_.leftMap {
-        case e: SeqexecFailure => e
-        case r                 => SeqexecFailure.SeqexecException(r)
-      })))
-
-    // embedF will take an F attempt it and convert it to SeqActionF
-    // The semantics of error handling are:
-    // * if the F has failed with a known exception type put it on the left of the EitherT
-    // * For non fatal exceptions, they are wrapped in a SeqexecException
-    // * Fatal exceptions are propagated
-    def embedF[F[_]: ApplicativeError[?[_], Throwable], A](a: F[A]): SeqActionF[F, A] =
-      EitherT(a.attempt.map(_.leftMap {
-        case e: SeqexecFailure => e
-        case r                 => SeqexecFailure.SeqexecException(r)
-      }))
-
-    def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] =
-      EitherT(Sync[F].delay(a))
-    def void[F[_]: Applicative]: SeqActionF[F, Unit] =
-      EitherT.liftF(Applicative[F].unit)
-    def raiseException[F[_]: Applicative, A](f: SeqexecFailure): SeqActionF[F, A] =
-      EitherT.left(Applicative[F].pure(f))
-  }
 
   implicit class StreamIOOps[A](s: Stream[IO, A]) {
     def streamLiftIO[F[_]: LiftIO]: fs2.Stream[F, A] =
@@ -239,22 +182,12 @@ package object server {
       s.value.flatMap(_.liftTo[F])
   }
 
-  implicit class IOOps[F[_]: LiftIO, A](ioa: IO[A]) {
-    def embed: SeqActionF[F, A] =
-      SeqActionF.embed(ioa)
-  }
-
   implicit class EitherTOps[F[_],  A, B](fa: EitherT[F, A, B]) {
     def widenRethrowT[T](
       implicit me: MonadError[F, T],
                at: A <:< T
     ): F[B] =
       fa.leftMap(at).rethrowT
-  }
-
-  implicit class SeqActionOps[A, B](sa: EitherT[IO, A, B]) {
-    def toF[F[_]: LiftIO]: EitherT[F, A, B] =
-      sa.mapK(λ[IO ~> F](_.to))
   }
 
   // This assumes that there is only one instance of e in l

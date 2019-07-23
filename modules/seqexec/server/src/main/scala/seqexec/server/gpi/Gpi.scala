@@ -4,10 +4,10 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
+import cats.data.Kleisli
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
-import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -64,29 +64,29 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF.embedF(calcObserveTime(config).flatMap { ot =>
+  ): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      calcObserveTime(config).flatMap { ot =>
         controller
           .observe(fileId, timeoutTolerance + ot)
           .as(ObserveCommandResult.Success: ObserveCommandResult)
-      })
+      }
     }
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+  override def configure(config: Config): F[ConfigResult[F]] =
     if (Gpi.isAlignAndCalib(config)) {
-      SeqActionF.embedF(controller.alignAndCalib.as(ConfigResult(this)))
+      controller.alignAndCalib.as(ConfigResult(this))
     } else {
       Gpi
         .fromSequenceConfig[F](config)
-        .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
+        .flatMap(controller.applyConfig)
         .as(ConfigResult(this))
     }
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
   override def calcObserveTime(config: Config): F[Time] = Sync[F].delay {
     val obsTime =
@@ -163,7 +163,7 @@ object Gpi {
     }.getOrElse(false)
   }
 
-  private def regularSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
+  private def regularSequenceConfig[F[_]: Sync](config: Config): F[GpiConfig] =
     EitherT(Sync[F].delay(
       (for {
         adc      <- config.extractAs[Adc](INSTRUMENT_KEY / ADC_PROP)
@@ -181,12 +181,12 @@ object Gpi {
         ao       <- gpiAoFlags(config)
       } yield RegularGpiConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-    ))
+    )).widenRethrowT.widen[GpiConfig]
 
-  private def alignAndCalibConfig[F[_]: Sync]: SeqActionF[F, GpiConfig] =
-    SeqActionF(AlignAndCalibConfig)
+  private def alignAndCalibConfig[F[_]: Sync]: F[GpiConfig] =
+    AlignAndCalibConfig.pure[F].widen[GpiConfig]
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
-    SeqActionF.embedF(Sync[F].delay(isAlignAndCalib(config))).ifM(alignAndCalibConfig, regularSequenceConfig(config))
+  def fromSequenceConfig[F[_]: Sync](config: Config): F[GpiConfig] =
+    Sync[F].delay(isAlignAndCalib(config)).ifM(alignAndCalibConfig, regularSequenceConfig(config))
 
 }

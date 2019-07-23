@@ -3,6 +3,7 @@
 
 package seqexec.server
 
+import cats.data.Kleisli
 import edu.gemini.spModel.config2.Config
 import fs2.Stream
 import gem.enum.LightSinkName
@@ -20,7 +21,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   val observeControl: InstrumentSystem.ObserveControl[F]
 
   def observe(
-      config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult]
+      config: Config): Kleisli[F, ImageFileId, ObserveCommandResult]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
@@ -29,17 +30,18 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
     SequenceConfiguration.calcStepType(config)
   override val oiOffsetGuideThreshold: Option[Length] = None
   override def instrument: Instrument = resource
+
 }
 
 object InstrumentSystem {
 
-  final case class StopObserveCmd[F[_]](self: SeqActionF[F, Unit])
-  final case class AbortObserveCmd[F[_]](self: SeqActionF[F, Unit])
-  final case class PauseObserveCmd[F[_]](self: SeqActionF[F, Unit])
+  final case class StopObserveCmd[F[_]](self: F[Unit])
+  final case class AbortObserveCmd[F[_]](self: F[Unit])
+  final case class PauseObserveCmd[F[_]](self: F[Unit])
   final case class ContinuePausedCmd[F[_]](
-      self: Time => SeqActionF[F, ObserveCommandResult])
-  final case class StopPausedCmd[F[_]](self: SeqActionF[F, ObserveCommandResult])
-  final case class AbortPausedCmd[F[_]](self: SeqActionF[F, ObserveCommandResult])
+      self: Time => F[ObserveCommandResult])
+  final case class StopPausedCmd[F[_]](self: F[ObserveCommandResult])
+  final case class AbortPausedCmd[F[_]](self: F[ObserveCommandResult])
 
   sealed trait ObserveControl[+F[_]] extends Product with Serializable
   case object Uncontrollable extends ObserveControl[Nothing]

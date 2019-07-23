@@ -4,7 +4,6 @@
 package seqexec.server
 
 import cats._
-import cats.data.EitherT
 import cats.data.Nested
 import cats.effect.Sync
 import cats.effect.Async
@@ -164,10 +163,6 @@ object EpicsCodex {
 }
 
 object EpicsUtil {
-  def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.value.attempt.map {
-    case Left(e)  => SeqexecException(e).asLeft
-    case Right(r) => r
-  })
 
   //`locked` gets a piece of code and runs it protected by `lock`
   private def locked[A](lock: ReentrantLock)(f: => A): A = {

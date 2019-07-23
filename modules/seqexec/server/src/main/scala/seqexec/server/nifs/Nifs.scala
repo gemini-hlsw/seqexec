@@ -3,7 +3,8 @@
 
 package seqexec.server.nifs
 
-import cats.data.Reader
+import cats.data.Kleisli
+import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
@@ -26,8 +27,6 @@ import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigResult
 import seqexec.server.InstrumentSystem
 import seqexec.server.Progress
-import seqexec.server.SeqActionF
-import seqexec.server.SeqObserveF
 import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
@@ -54,16 +53,16 @@ final case class Nifs[F[_]: Sync](
   override val contributorName: String = "NIFS"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
-                    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
+    UnpausableControl(StopObserveCmd(controller.stopObserve),
+                    AbortObserveCmd(controller.abortObserve))
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF
-        .either(getDCConfig(config).asTrySeq)
-        .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
+  ): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      EitherT.fromEither[F](getDCConfig(config).asTrySeq)
+        .widenRethrowT
+        .flatMap(controller.observe(fileId, _))
     }
 
   override def calcObserveTime(config: Config): F[Time] =
@@ -88,16 +87,16 @@ final case class Nifs[F[_]: Sync](
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    SeqActionF
-      .either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 }
 
 object Nifs {
