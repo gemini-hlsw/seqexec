@@ -25,7 +25,7 @@ import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.gsaoi.GsaoiControllerSim
-import seqexec.server.tcs.{GuideConfigDb, GuideConfig, TcsControllerSim}
+import seqexec.server.tcs.{GuideConfigDb, GuideConfig, TcsNorthControllerSim, TcsSouthControllerSim}
 import seqexec.server.gpi.GpiController
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GhostController
@@ -99,7 +99,8 @@ class SeqTranslateSpec extends FlatSpec {
   private val systems = Systems[IO](
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
-    TcsControllerSim[IO],
+    TcsSouthControllerSim[IO],
+    TcsNorthControllerSim[IO],
     GcalControllerSim[IO],
     Flamingos2ControllerSim[IO],
     GmosControllerSim.south[IO],

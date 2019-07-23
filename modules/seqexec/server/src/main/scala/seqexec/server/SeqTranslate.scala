@@ -35,7 +35,7 @@ import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosEpics, GmosObsKeywordsReader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
-import seqexec.server.tcs.TcsController.LightPath
+import seqexec.server.tcs.TcsController.{LightPath, LightSource}
 import seqexec.server.gnirs._
 import seqexec.server.niri._
 import seqexec.server.nifs._
@@ -45,7 +45,6 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.SeqexecFailure._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -321,45 +320,46 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem] =
     NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
+  private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[IO],
+                     lsource: LightSource, config: Config): TrySeq[System[IO]] = site match {
+    case Site.GS => TcsSouth.fromConfig[IO](systems.tcsSouth, subs, None, inst, systems.guideDb)(
+      config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+    ).asRight
+    case Site.GN => if(useGaos)
+        Altair.fromConfig(config, systems.altair).map(a =>
+          TcsNorth.fromConfig[IO](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
+            config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+          )
+        )
+      else
+        TcsNorth.fromConfig[IO](systems.tcsNorth, subs, none, inst, systems.guideDb)(
+          config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+        ).asRight
+  }
+
   private def calcSystems(
     config: Config,
     stepType: StepType,
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
-    def celestialObjectSys(inst: Instrument) =
-      List(
-        Tcs.fromConfig(systems.tcs, inst.hasOI.fold(allButGaos, allButGaosNorOi), None, sys, systems.guideDb)(
-          config,
-          LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
-          extractWavelength(config)),
-        Gcal(systems.gcal, site == Site.GS))
-
     stepType match {
       case StepType.CelestialObject(inst) =>
-        (sys :: celestialObjectSys(inst)).asRight
+        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
 
       case StepType.NodAndShuffle(inst) =>
-        (sys :: celestialObjectSys(inst)).asRight
+        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
 
-      case StepType.FlatOrArc(inst) =>  (sys :: List(
-          Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, sys, systems.guideDb)(
-            config,
-            LightPath(TcsController.LightSource.GCAL, sys.sfName(config)),
-            extractWavelength(config)),
-          Gcal(systems.gcal, site == Site.GS)
-      )).asRight
+      case StepType.FlatOrArc(inst)       =>
+        getTcs(flatOrArcTcsSubsystems(inst), false, sys, TcsController.LightSource.GCAL, config)
+          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
 
       case StepType.DarkOrBias(_)      =>  List(sys).asRight
 
       case StepType.AltairObs(inst)          =>
-        Altair.fromConfig(config, systems.altair).map {altair =>
-          sys :: List(
-            Tcs.fromConfig(systems.tcs, inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
-              altair.asLeft.some, sys, systems.guideDb)(config,
-              LightPath(TcsController.LightSource.AO, sys.sfName(config)),
-              extractWavelength(config)),
-            Gcal(systems.gcal, site == Site.GS)
-        )}
+        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
 
       case StepType.AlignAndCalib         => List(sys).asRight
 
@@ -367,21 +367,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
-  // so either I use an unchecked notation, or add a default case that throws an exception.
-  private def resourceFromSystem[F[_]](s: System[F]): Resource = (s: @unchecked) match {
-    case Tcs(_, _, _, _)  => Resource.TCS
-    case Gcal(_, _)       => Resource.Gcal
-    case GmosNorth(_, _)  => Instrument.GmosN
-    case GmosSouth(_, _)  => Instrument.GmosS
-    case Flamingos2(_, _) => Instrument.F2
-    case Gnirs(_, _)      => Instrument.Gnirs
-    case Gpi(_)           => Instrument.Gpi
-    case Gsaoi(_, _)      => Instrument.Gsaoi
-    case Ghost(_)         => Instrument.Ghost
-    case Niri(_, _)       => Instrument.Niri
-    case Nifs(_, _)       => Instrument.Nifs
-  }
+  private def resourceFromSystem[F[_]](s: System[F]): Resource = s.resource
 
   private def calcInstHeader(
     config: Config,

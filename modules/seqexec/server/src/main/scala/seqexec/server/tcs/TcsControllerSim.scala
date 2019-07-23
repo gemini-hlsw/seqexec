@@ -5,33 +5,29 @@ package seqexec.server.tcs
 
 import cats.data.NonEmptySet
 import cats.effect.Sync
-import org.log4s.getLogger
 import seqexec.server.tcs.TcsController._
 import cats.implicits._
-import seqexec.server.altair.Altair
-import seqexec.server.gems.Gems
+import org.log4s.getLogger
 
 
-class TcsControllerSim[F[_]: Sync] private extends TcsController[F] {
+class TcsControllerSim[F[_]: Sync] {
 
-  private val Log = getLogger
+  import TcsControllerSim.Log
 
-  override def applyConfig(subsystems: NonEmptySet[Subsystem],
-                           gaos: Option[Either[Altair[F], Gems[F]]],
-                           tc: TcsConfig): F[Unit] = {
+  def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] = {
     def configSubsystem(subsystem: Subsystem): F[Unit] =
       Sync[F].delay(Log.info(s"Applying ${subsystem.show} configuration."))
 
     subsystems.toList.map(configSubsystem).sequence.void
   }
 
-  override def notifyObserveStart: F[Unit] = Sync[F].delay(Log.info("Simulate TCS observe"))
+  def notifyObserveStart: F[Unit] = Sync[F].delay(Log.info("Simulate TCS observe"))
 
-  override def notifyObserveEnd: F[Unit] = Sync[F].delay(Log.info("Simulate TCS endObserve"))
+  def notifyObserveEnd: F[Unit] = Sync[F].delay(Log.info("Simulate TCS endObserve"))
 }
 
 object TcsControllerSim {
 
-  def apply[F[_]: Sync]: TcsController[F] = new TcsControllerSim[F]
+  val Log = getLogger
 
 }

@@ -9,34 +9,17 @@ import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum._
 import monocle.macros.Lenses
-import squants.{Angle, Length}
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.InstrumentGuide
-import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.AltairConfig
-import seqexec.server.gems.Gems
-import seqexec.server.gems.GemsController.GemsConfig
+import squants.{Angle, Length}
 import shapeless.tag
 import shapeless.tag.@@
 
 /**
  * Created by jluhrs on 7/30/15.
  *
- * Interface to change the TCS state.
  * Most of the code deals with representing the state of the TCS subsystems.
  */
-
-trait TcsController[F[_]] {
-  import TcsController._
-
-  def applyConfig(subsystems: NonEmptySet[Subsystem],
-                  gaos: Option[Either[Altair[F], Gems[F]]],
-                  tc: TcsConfig): F[Unit]
-
-  def notifyObserveStart: F[Unit]
-
-  def notifyObserveEnd: F[Unit]
-}
 
 object TcsController {
 
@@ -278,30 +261,7 @@ object TcsController {
     implicit val eq: Eq[GuiderConfig] = Eq.by(x => (x.tracking, x.detector))
   }
 
-  @Lenses
-  final case class GuidersConfig(
-    pwfs1: GuiderConfig@@P1Config,
-    pwfs2OrAowfs: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide],
-    oiwfs: GuiderConfig@@OIConfig
-  )
-
-  object GuidersConfig {
-    implicit val pwfs1Eq: Eq[GuiderConfig@@P1Config] = Eq[GuiderConfig].contramap(identity)
-  }
-
   final case class AGConfig(sfPos: LightPath, hrwfs: Option[HrwfsConfig])
-
-  @Lenses
-  final case class TcsConfig(
-    gc:  TelescopeGuideConfig,
-    tc:  TelescopeConfig,
-    gds: GuidersConfig,
-    agc: AGConfig,
-    gaos: Option[Either[AltairConfig, GemsConfig]],
-    inst: InstrumentGuide
-  )
-
-  object TcsConfig
 
   sealed trait Subsystem extends Product with Serializable
   object Subsystem {
@@ -330,5 +290,55 @@ object TcsController {
     implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
     implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
   }
+
+  sealed trait GuidersConfig[+C] {
+    val pwfs1: GuiderConfig@@P1Config
+    val pwfs2: GuiderConfig@@P2Config
+    val oiwfs: GuiderConfig@@OIConfig
+  }
+
+  @Lenses
+  final case class BasicGuidersConfig(
+    pwfs1: GuiderConfig@@P1Config,
+    pwfs2: GuiderConfig@@P2Config,
+    oiwfs: GuiderConfig@@OIConfig
+  ) extends GuidersConfig[Nothing]
+
+  @Lenses
+  final case class AoGuidersConfig[C](
+    pwfs1: GuiderConfig@@P1Config,
+    aoguide: C,
+    oiwfs: GuiderConfig@@OIConfig
+  ) extends GuidersConfig[C] {
+    override val pwfs2: GuiderConfig@@P2Config =
+      tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
+  }
+
+  sealed trait TcsConfig[+C, +G] {
+    val gc:  TelescopeGuideConfig
+    val tc:  TelescopeConfig
+    val gds: GuidersConfig[C]
+    val agc: AGConfig
+    val inst: InstrumentGuide
+  }
+
+  @Lenses
+  final case class BasicTcsConfig(
+    gc:  TelescopeGuideConfig,
+    tc:  TelescopeConfig,
+    gds: BasicGuidersConfig,
+    agc: AGConfig,
+    inst: InstrumentGuide
+  ) extends TcsConfig[Nothing, Nothing]
+
+  @Lenses
+  final case class AoTcsConfig[C, G](
+    gc:  TelescopeGuideConfig,
+    tc:  TelescopeConfig,
+    gds: AoGuidersConfig[C],
+    agc: AGConfig,
+    gaos: G,
+    inst: InstrumentGuide
+  ) extends TcsConfig[C, G]
 
 }

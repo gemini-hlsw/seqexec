@@ -21,7 +21,7 @@ import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts, InvalidPort, ScienceFold}
+import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, InstrumentPorts, InvalidPort, ScienceFold}
 import shapeless.tag
 import squants.{Angle, Length}
 import squants.space.{Angstroms, Degrees, Millimeters}
@@ -133,19 +133,23 @@ object TcsConfigRetriever {
     wfs <- getStatusVal(Nested(TcsEpics.instance.pwfs1On).map(decode[BinaryYesNo, GuiderSensorOption]).value, "PWFS1 detector")
   } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-  // P2 probe guide configuration is partially shared with Altair guide configuration. useAo tells which one is.
-  // TODO: Make sure it works for GS.
-  private def getPwfs2OrAowfs(getAoFollow: IO[Option[Boolean]]): IO[Either[GuiderConfig, ProbeTrackingConfig]] = for {
-    useAo <- getStatusVal(TcsEpics.instance.useAo, "use AO flag")
-    aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
+  private def getPwfs2: IO[GuiderConfig] = for {
     prk   <- getStatusVal(TcsEpics.instance.p2Parked, "PWFS2 parked state")
     trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
     fol   <- getStatusVal(Nested(TcsEpics.instance.p2FollowS).map(decode[String, FollowOption]).value, "PWFS2 follow state")
     wfs   <- getStatusVal(Nested(TcsEpics.instance.pwfs2On).map(decode[BinaryYesNo, GuiderSensorOption]).value, "PWFS2 detector")
-  } yield (useAo === BinaryYesNo.Yes).either(
-    GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs),
-    calcProbeTrackingConfig(aoFol, trk)
-  )
+    useAo <- getUseAo
+  } yield if(useAo) GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, NodChopTrackingConfig.AllOff)), wfs)
+          else GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+
+  private def getUseAo: IO[Boolean] = getStatusVal(TcsEpics.instance.useAo, "use AO flag").map(_ === BinaryYesNo.Yes)
+
+  private def getAowfs(getAoFollow: IO[Option[Boolean]]): IO[ProbeTrackingConfig] = for {
+    aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
+    trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "AOWFS tracking configuration")
+    useAo <- getUseAo
+  } yield if(useAo) calcProbeTrackingConfig(aoFol, trk)
+          else calcProbeTrackingConfig(aoFol, NodChopTrackingConfig.AllOff)
 
   private def getOiwfs: IO[GuiderConfig] = for {
     prk <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
@@ -208,29 +212,37 @@ object TcsConfigRetriever {
     niri
   )
 
-  def retrieveConfiguration(getAoFollow: IO[Option[Boolean]]): IO[EpicsTcsConfig] =
+  def retrieveConfigurationNorth(getAoFollow: IO[Option[Boolean]]): IO[TcsNorthControllerEpicsAo.EpicsTcsAoConfig] =
     for {
-      iaa    <- getIAA
-      offX   <- getOffsetX
-      offY   <- getOffsetY
-      wl     <- getWavelength
-      p1     <- getPwfs1
-      p2OrAo <- getPwfs2OrAowfs(getAoFollow)
-      oi     <- getOiwfs
-      tgc    <- getGuideConfig
-      aof    <- getAoFold
-      sf     <- getScienceFoldPosition
-      hr     <- getHrwfsPickupPosition
-      ports  <- getInstrumentPorts
-    } yield EpicsTcsConfig(
+      base <- retrieveBaseConfiguration
+      ao   <- getAowfs(getAoFollow)
+    } yield TcsNorthControllerEpicsAo.EpicsTcsAoConfig(base, ao)
+
+  def retrieveBaseConfiguration: IO[TcsControllerEpicsCommon.BaseEpicsTcsConfig] =
+    for {
+      iaa   <- getIAA
+      offX  <- getOffsetX
+      offY  <- getOffsetY
+      wl    <- getWavelength
+      p1    <- getPwfs1
+      p2    <- getPwfs2
+      oi    <- getOiwfs
+      tgc   <- getGuideConfig
+      aof   <- getAoFold
+      useAo <- getUseAo
+      sf    <- getScienceFoldPosition
+      hr    <- getHrwfsPickupPosition
+      ports <- getInstrumentPorts
+    } yield TcsControllerEpicsCommon.BaseEpicsTcsConfig(
       iaa,
       FocalPlaneOffset(tag[OffsetX](offX), tag[OffsetY](offY)),
       wl,
       p1,
-      p2OrAo,
+      p2,
       oi,
       tgc,
       aof,
+      useAo,
       sf,
       hr,
       ports

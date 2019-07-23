@@ -8,8 +8,8 @@ import atto._, Atto._
 import gem.enum.LightSinkName
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}
 import seqexec.server.tcs.TcsController.LightSource
-import seqexec.server.tcs.TcsControllerEpics.ScienceFold.{Parked, Position}
-import seqexec.server.tcs.TcsControllerEpics.ScienceFold
+import seqexec.server.tcs.TcsControllerEpicsCommon.ScienceFold.{Parked, Position}
+import seqexec.server.tcs.TcsControllerEpicsCommon.ScienceFold
 
 // Decoding and encoding the science fold position require some common definitions, therefore I
 // put them inside an object
