@@ -4,6 +4,7 @@
 package giapi.client
 
 import cats.Applicative
+import cats.ApplicativeError
 import cats.implicits._
 import cats.effect.Sync
 import cats.effect.Resource
@@ -23,14 +24,22 @@ import scala.collection.JavaConverters._
 // Links status streaming with the giapi db
 /////////////////////////////////////////////////////////////////
 trait GiapiStatusDb[F[_]] {
-  def value(i: String): F[Option[StatusValue]]
+
+  // Tries to read a value from the db and returns non if not found
+  def optional(i: String): F[Option[StatusValue]]
+
+  // Tries to read a value from the db and throws an exception in not found
+  def value(i: String): F[StatusValue]
+
   private[giapi] def close: F[Unit]
 }
 
 object GiapiStatusDb {
-  private def dbUpdate[F[_]: Applicative](db:   GiapiDb[F],
-                                          name: String,
-                                          a:    Any): F[Unit] =
+  private def dbUpdate[F[_]: Applicative](
+    db:   GiapiDb[F],
+    name: String,
+    a:    Any
+  ): F[Unit] =
     a match {
       case a: Int =>
         db.update(name, a)
@@ -47,7 +56,8 @@ object GiapiStatusDb {
   private def streamItemsToDb[F[_]: ConcurrentEffect](
     agg:   StatusHandlerAggregate,
     db:    GiapiDb[F],
-    items: List[String]): F[Unit] = {
+    items: List[String]
+  ): F[Unit] = {
     def statusHandler(q: Queue[F, (String, Any)]) = new StatusHandler {
 
       override def update[B](item: StatusItem[B]): Unit =
@@ -105,12 +115,18 @@ object GiapiStatusDb {
   /**
     * Creates a new status db in simulation
     */
-  def simulatedDb[F[_]: Applicative]: GiapiStatusDb[F] =
+  def simulatedDb[F[_]: ApplicativeError[?[_], Throwable]]: GiapiStatusDb[F] =
     new GiapiStatusDb[F] {
-      def value(i: String): F[Option[StatusValue]] =
-        Applicative[F].pure(none)
+      def optional(i: String): F[Option[StatusValue]] =
+        none.pure[F]
 
-      def close: F[Unit] = Applicative[F].pure(())
+      def value(i: String): F[StatusValue] =
+        ApplicativeError[F, Throwable]
+          .raiseError(
+            new GiapiException("No values available in a simulated db")
+          )
+
+      def close: F[Unit] = Applicative[F].unit
     }
 
   /**
@@ -131,8 +147,15 @@ object GiapiStatusDb {
       f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
     } yield
       new GiapiStatusDb[F] {
-        def value(i: String): F[Option[StatusValue]] =
+        def optional(i: String): F[Option[StatusValue]] =
           db.value(i)
+
+        def value(i: String): F[StatusValue] =
+          optional(i)
+            .ensure(new GiapiException(s"Giapi channel $i not found"))(
+              _.isDefined
+            )
+            .map { _.orNull } // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
         def close: F[Unit] =
           for {

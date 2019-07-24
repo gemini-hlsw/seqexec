@@ -7,6 +7,7 @@ import cats.implicits._
 import cats.effect.Sync
 import gem.enum.GiapiStatusApply
 import gem.enum.GiapiStatusApply._
+import gem.enum.GiapiStatus
 import gem.enum.GiapiType
 import gem.enum.Instrument
 import gem.ocs2.Parsers
@@ -16,22 +17,31 @@ import giapi.client.StatusValue
 import giapi.client.syntax.status._
 
 object GpiStatusApply extends GpiLookupTables {
-  val allGpi: List[GiapiStatusApply] = GiapiStatusApply.all.filter {
+  val allGpiApply: List[GiapiStatusApply] = GiapiStatusApply.all.filter {
     _.instrument === Instrument.Gpi
   }
 
-  val statusesToMonitor = allGpi.map(_.statusItem)
+  val allGpiStatus: List[GiapiStatus] = GiapiStatus.all.filter {
+    _.instrument === Instrument.Gpi
+  }
 
-  def foldConfigM[F[_]: Sync](items:  List[GiapiStatusApply],
-                              db:     GiapiStatusDb[F],
-                              config: Configuration): F[Configuration] =
+  val statusesToMonitor = allGpiApply.map(_.statusItem) ++
+    allGpiStatus.map(_.statusItem)
+
+  def foldConfigM[F[_]: Sync](
+    items:  List[GiapiStatusApply],
+    db:     GiapiStatusDb[F],
+    config: Configuration
+  ): F[Configuration] =
     items.foldLeftM(config) { (c, i) =>
       i.removeConfigItem(db, c)
     }
 
-  def foldConfig[F[_]: Sync](db:     GiapiStatusDb[F],
-                             config: Configuration): F[Configuration] =
-    foldConfigM(allGpi, db, config)
+  def foldConfig[F[_]: Sync](
+    db:     GiapiStatusDb[F],
+    config: Configuration
+  ): F[Configuration] =
+    foldConfigM(allGpiApply, db, config)
 
   /**
     * ObsMode needs a special treatment. It is a meta model thus it sets
@@ -39,9 +49,11 @@ object GpiStatusApply extends GpiLookupTables {
     * We need to check that each subsystem matches or we will
     * falsely not set the obs mode
     */
-  def overrideObsMode[F[_]: Sync](db:        GiapiStatusDb[F],
-                                  gpiConfig: RegularGpiConfig,
-                                  config:    Configuration): F[Configuration] =
+  def overrideObsMode[F[_]: Sync](
+    db:        GiapiStatusDb[F],
+    gpiConfig: RegularGpiConfig,
+    config:    Configuration
+  ): F[Configuration] =
     gpiConfig.mode match {
       case Right(_) => config.pure[F]
       case Left(o) =>
@@ -50,23 +62,24 @@ object GpiStatusApply extends GpiLookupTables {
           .map { ob =>
             // Compare the subsystem values and the ones for the obs mode
             val filterCmp = db
-              .value(GpiIFSFilter.statusItem)
+              .optional(GpiIFSFilter.statusItem)
               .map(x => x.stringCfg =!= ob.filter.map(_.shortName))
 
             val ppmCmp = db
-              .value(GpiPPM.statusItem)
+              .optional(GpiPPM.statusItem)
               .map(
                 x =>
                   x.stringCfg =!= ob.apodizer
                     .map(_.tag)
-                    .flatMap(apodizerLUTNames.get))
+                    .flatMap(apodizerLUTNames.get)
+              )
 
             val fpmCmp = db
-              .value(GpiFPM.statusItem)
+              .optional(GpiFPM.statusItem)
               .map(x => x.stringCfg =!= ob.fpm.map(_.shortName))
 
             val lyotCmp = db
-              .value(GpiLyot.statusItem)
+              .optional(GpiLyot.statusItem)
               .map(x => x.stringCfg =!= ob.lyot.map(_.shortName))
 
             // If any doesn't match
@@ -93,12 +106,14 @@ object GpiStatusApply extends GpiLookupTables {
       compare:  Option[StatusValue] => Option[String]
     ): F[Configuration] =
       statusDb
-        .value(s.statusItem)
+        .optional(s.statusItem)
         .map(v => compare(v) === config.value(s.applyItem))
-        .ifM(Sync[F].delay(config.remove(s.applyItem)), Sync[F].pure(config))
+        .ifM(Sync[F].delay(config.remove(s.applyItem)), config.pure[F])
 
-    def removeConfigItem[F[_]: Sync](statusDb: GiapiStatusDb[F],
-                                     config:   Configuration): F[Configuration] =
+    def removeConfigItem[F[_]: Sync](
+      statusDb: GiapiStatusDb[F],
+      config:   Configuration
+    ): F[Configuration] =
       s.statusType match {
         case GiapiType.Int =>
           removeConfigIfPossible(statusDb, config, _.intCfg)

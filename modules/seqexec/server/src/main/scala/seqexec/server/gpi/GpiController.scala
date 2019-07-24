@@ -19,9 +19,13 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import gem.enum.GiapiStatusApply._
+import gem.enum.GiapiStatus
 import giapi.client.commands.Configuration
 import giapi.client.commands.CommandResultException
 import giapi.client.gpi.GpiClient
+import giapi.client.gpi.GpiGuiding
+import giapi.client.StatusValue
+import giapi.client.GiapiException
 import mouse.boolean._
 import org.log4s._
 import scala.concurrent.duration._
@@ -252,18 +256,39 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
     new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
     with GpiController[F] {
       private implicit val eqResponse: Eq[Response] = Eq.fromUniversalEquals
-      override val gdsClient: GdsClient[F] = gds
+      override val gdsClient: GdsClient[F]          = gds
 
       override val name = "GPI"
 
-      override def alignAndCalib: F[Unit] =
-        client.alignAndCalib
-          .ensure(SeqexecFailure.Execution("Failure executing Align And Calib"))(_.response =!= Response.ERROR)
+      private val GuidingChannel = GiapiStatus.GpiGuiding.statusItem
+
+      // Check if we are guiding reading from the local status db
+      private def guiding: F[GpiGuiding] =
+        client.statusDb
+          .value(GuidingChannel)
+          .map(StatusValue.intValue(_).map(x => GpiGuiding.fromInt(x.toInt)))
+          .ensure(new SeqexecFailure.Execution(s"Channel $GuidingChannel should be an int"))(
+            _.isDefined)
+          .map { _.orNull } // orNull lets us typecheck but it will never be used due to the `ensure` call above
           .adaptError {
-            case CommandResultException(_, message) =>
-              SeqexecFailure.Execution(message)
-          }
-          .void
+            case GiapiException(message) => SeqexecFailure.Execution(message) }
+
+      override def alignAndCalib: F[Unit] =
+        guiding
+          .map(_ === GpiGuiding.NotGuiding)
+          .ifM(
+            client.alignAndCalib
+              .ensure(SeqexecFailure.Execution("Failure executing Align And Calib"))(
+                _.response =!= Response.ERROR)
+              .adaptError {
+                case CommandResultException(_, message) =>
+                  SeqexecFailure.Execution(message)
+              }
+              .void,
+            Sync[F].raiseError(
+              SeqexecFailure.Execution("Cannot run align & calib while guiding")
+            )
+          )
 
       override def configuration(config: GpiConfig): F[Configuration] =
         config match {
