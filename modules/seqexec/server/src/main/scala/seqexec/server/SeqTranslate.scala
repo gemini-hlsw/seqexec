@@ -69,10 +69,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         }.orEmpty
 
       val configs: Map[Resource, Action[IO]] = sys.map { x =>
-        val res = resourceFromSystem(x)
+        val res = x.resource
         val kind = ActionType.Configure(res)
 
-        res -> x.configure(config).as(Response.Configured(x.resource)).toAction(kind)
+        res -> x.configure(config).as(Response.Configured(res)).toAction(kind)
       }.toMap
 
       def rest(ctx: HeaderExtraData): List[List[Action[IO]]] =
@@ -313,7 +313,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def calcResources[F[_]](sys: List[System[F]]): Set[Resource] =
-    sys.map(resourceFromSystem[F]).toSet
+    sys.map(_.resource).toSet
 
   import TcsController.Subsystem._
 
@@ -366,8 +366,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
-
-  private def resourceFromSystem[F[_]](s: System[F]): Resource = s.resource
 
   private def calcInstHeader(
     config: Config,

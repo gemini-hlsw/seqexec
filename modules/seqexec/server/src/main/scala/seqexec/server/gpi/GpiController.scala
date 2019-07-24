@@ -17,13 +17,16 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
+import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import gem.enum.GiapiStatusApply._
 import giapi.client.commands.Configuration
+import giapi.client.commands.CommandResultException
 import giapi.client.gpi.GpiClient
 import mouse.boolean._
 import org.log4s._
 import scala.concurrent.duration._
 import seqexec.server.keywords.GdsClient
+import seqexec.server.SeqexecFailure
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.AbstractGiapiInstrumentController
 
@@ -115,6 +118,8 @@ case object AlignAndCalibConfig extends GpiConfig {
 
 trait GpiController[F[_]] extends GiapiInstrumentController[F, GpiConfig] {
   def gdsClient: GdsClient[F]
+
+  def alignAndCalib: F[Unit]
 }
 
 trait GpiConfigEq {
@@ -246,9 +251,19 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
   ): GpiController[F] =
     new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
     with GpiController[F] {
+      private implicit val eqResponse: Eq[Response] = Eq.fromUniversalEquals
       override val gdsClient: GdsClient[F] = gds
 
       override val name = "GPI"
+
+      override def alignAndCalib: F[Unit] =
+        client.alignAndCalib
+          .ensure(SeqexecFailure.Execution("Failure executing Align And Calib"))(_.response =!= Response.ERROR)
+          .adaptError {
+            case CommandResultException(_, message) =>
+              SeqexecFailure.Execution(message)
+          }
+          .void
 
       override def configuration(config: GpiConfig): F[Configuration] =
         config match {
