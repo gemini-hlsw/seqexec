@@ -8,7 +8,6 @@ import edu.gemini.aspen.giapi.commands.SequenceCommand
 import giapi.client.commands.Command
 import giapi.client.commands.CommandResult
 import giapi.client.commands.Configuration
-
 import scala.concurrent.duration._
 
 /////////////////////////////////////////////////////////////////

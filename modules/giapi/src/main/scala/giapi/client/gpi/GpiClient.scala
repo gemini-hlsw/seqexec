@@ -18,6 +18,7 @@ import giapi.client.Giapi
 import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
 import mouse.boolean._
+import scala.concurrent.duration._
 
 sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 
@@ -53,6 +54,11 @@ object GpiClient {
                                           val statusDb:       GiapiStatusDb[F])
       extends GpiClient[F] {
     import GiapiClient.DefaultCommandTimeout
+    // Align and Calib is fairly variable in duration. it can take a long time and still succeed
+    // The 6 minutes timeout is based on current practice but if the system is very miss aligned
+    // It could take longer and succeed but on the other hand we don't want to wait too long
+    // in case of error
+    val ACCommandTimeout: FiniteDuration = 6.minutes
 
     ///////////////
     // Status items
@@ -108,7 +114,7 @@ object GpiClient {
           SequenceCommand.APPLY,
           Activity.PRESET_START,
           Configuration.single("gpi:alignAndCalib.part1", ALIGN_AND_CALIB_DEFAULT_MODE)
-        ), DefaultCommandTimeout)
+        ), ACCommandTimeout)
 
     // TODO Use OCS constants
     def observingMode(mode: String): F[CommandResult] =

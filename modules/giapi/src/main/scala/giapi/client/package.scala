@@ -175,24 +175,6 @@ package client {
         } yield i
       }
 
-    private def runAsync[F[_]: Effect: LiftIO, A](f: F[A]): F[A] =
-      LiftIO[F].liftIO(IO.async { cb =>
-        Effect[F].runAsync(f)(r => IO(cb(r))).unsafeRunSync()
-      })
-
-    // Implementations of timeout suggested from cats-effect documentation
-    private def timeoutTo[F[_]: Timer: ConcurrentEffect, A](fa: F[A], after: FiniteDuration, fallback: F[A]): F[A] = {
-
-      // Race the task against a sleep timer
-      ConcurrentEffect[F].race(runAsync(fa), Timer[F].sleep(after)).flatMap {
-        case Left(a)  => a.pure[F]
-        case Right(_) => fallback
-      }
-    }
-
-    private def timeout[F[_]: Timer: ConcurrentEffect, A](fa: F[A], after: FiniteDuration, error: Exception) : F[A] =
-      timeoutTo(fa, after, ConcurrentEffect[F].raiseError(error))
-
     /**
       * Interpreter on F
       *
@@ -226,7 +208,8 @@ package client {
 
             override def command(command: Command, timeOut: FiniteDuration): F[CommandResult] = {
               val error = CommandResultException.timedOut(timeOut)
-              timeout(commands.sendCommand(cc, command, commandsAckTimeout), timeOut, error)
+              val e = ApplicativeError[F, Throwable].raiseError[CommandResult](error)
+              commands.sendCommand(cc, command, commandsAckTimeout).timeoutTo(timeOut, e)
             }
 
             override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =

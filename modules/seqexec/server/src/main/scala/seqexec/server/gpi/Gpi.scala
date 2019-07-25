@@ -74,10 +74,14 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    Gpi
-      .fromSequenceConfig[F](config)
-      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
-      .as(ConfigResult(this))
+    if (Gpi.isAlignAndCalib(config)) {
+      SeqActionF.embedF(controller.alignAndCalib.as(ConfigResult(this)))
+    } else {
+      Gpi
+        .fromSequenceConfig[F](config)
+        .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
+        .as(ConfigResult(this))
+    }
 
   override def notifyObserveEnd: SeqActionF[F, Unit] =
     SeqActionF.embedF(controller.endObserve)
