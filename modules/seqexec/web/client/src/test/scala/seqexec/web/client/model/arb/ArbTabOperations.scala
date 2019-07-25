@@ -12,6 +12,25 @@ import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
 
 trait ArbTabOperations {
+  implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] = {
+    Arbitrary {
+      for {
+        i <- arbitrary[Int]
+        s <- Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
+                       ResourceRunOperation.ResourceRunInFlight(i),
+                       ResourceRunOperation.ResourceRunCompleted(i))
+      } yield s
+    }
+  }
+
+  implicit val rroCogen: Cogen[ResourceRunOperation] =
+    Cogen[Option[Either[Int, Either[Int, Int]]]].contramap {
+      case ResourceRunOperation.ResourceRunIdle         => None
+      case ResourceRunOperation.ResourceRunInFlight(i)  => Some(Left(i))
+      case ResourceRunOperation.ResourceRunCompleted(i) => Some(Right(Right(i)))
+      case ResourceRunOperation.ResourceRunFailed(i)    => Some(Right(Left(i)))
+    }
+
   implicit val arbTabOperations: Arbitrary[TabOperations] = {
     implicit val ordering: Ordering[Resource] =
       cats.Order[Resource].toOrdering
@@ -50,7 +69,8 @@ trait ArbTabOperations {
          x.stopRequested,
          x.abortRequested,
          x.startFromRequested,
-         x.resourceRunRequested.toList))
+         x.resourceRunRequested.toList)
+    )
   }
 
 }
