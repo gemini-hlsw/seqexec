@@ -24,6 +24,7 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.icon.Icon
@@ -36,7 +37,8 @@ object SubsystemControlCell {
     id:             Observation.Id,
     stepId:         Int,
     resources:      List[Resource],
-    resourcesCalls: SortedMap[Resource, ResourceRunOperation])
+    resourcesCalls: SortedMap[Resource, ResourceRunOperation]
+  )
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -50,28 +52,42 @@ object SubsystemControlCell {
 
   private val CompletedIcon = IconCheckmark.copyIcon(
     fitted      = true,
-    extraStyles = List(SeqexecStyles.completedIcon))
+    extraStyles = List(SeqexecStyles.completedIcon)
+  )
 
   private val RunningIcon = IconCircleNotched.copyIcon(
     fitted      = true,
     loading     = true,
-    extraStyles = List(SeqexecStyles.runningIcon))
+    extraStyles = List(SeqexecStyles.runningIcon)
+  )
+
+  private val FailureIcon = IconAttention.copyIcon(
+    fitted      = true,
+    inverted    = true,
+    extraStyles = List(SeqexecStyles.errorIcon)
+  )
 
   // We want blue if the resource operation is idle or does not exist: these are equivalent cases.
-  private def buttonColor(op: Option[ResourceRunOperation]): Option[String] = op.map {
-    case ResourceRunOperation.ResourceRunIdle      => "blue"
-    case ResourceRunOperation.ResourceRunInFlight  => "yellow"
-    case ResourceRunOperation.ResourceRunCompleted => "green"
-  }.orElse(Some("blue"))
+  private def buttonColor(op: Option[ResourceRunOperation]): Option[String] =
+    op.map {
+        case ResourceRunOperation.ResourceRunIdle         => "blue"
+        case ResourceRunOperation.ResourceRunInFlight(_)  => "yellow"
+        case ResourceRunOperation.ResourceRunCompleted(_) => "green"
+        case ResourceRunOperation.ResourceRunFailed(_)    => "red"
+      }
+      .orElse("blue".some)
 
   // If we are running, we want a circular spinning icon.
   // If we are completed, we want a checkmark.
   // Otherwise, no icon.
-  private def determineIcon(op: Option[ResourceRunOperation]): Option[Icon] = op match {
-    case Some(ResourceRunOperation.ResourceRunInFlight)  => Some(RunningIcon)
-    case Some(ResourceRunOperation.ResourceRunCompleted) => Some(CompletedIcon)
-    case _                                               => None
-  }
+  private def determineIcon(op: Option[ResourceRunOperation]): Option[Icon] =
+    op match {
+      case Some(ResourceRunOperation.ResourceRunInFlight(_)) => RunningIcon.some
+      case Some(ResourceRunOperation.ResourceRunCompleted(_)) =>
+        CompletedIcon.some
+      case Some(ResourceRunOperation.ResourceRunFailed(_)) => FailureIcon.some
+      case _                                               => none
+    }
 
   private val component = ScalaComponent
     .builder[Props]("SubsystemControl")
@@ -84,11 +100,16 @@ object SubsystemControlCell {
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
-                size     = Size.Small,
-                color    = buttonColor(p.resourcesCalls.get(r)),
-                disabled = p.resourcesCalls.get(r).exists(_ === ResourceRunOperation.ResourceRunInFlight),
-                labeled = buttonIcon.as(Button.LeftLabeled).getOrElse(Button.NotLabeled),
-                icon = buttonIcon,
+                size  = Size.Small,
+                color = buttonColor(p.resourcesCalls.get(r)),
+                disabled = p.resourcesCalls.get(r).exists {
+                  case ResourceRunOperation.ResourceRunInFlight(_) => true
+                  case _                                           => false
+                },
+                labeled = buttonIcon
+                  .as(Button.LeftLabeled)
+                  .getOrElse(Button.NotLabeled),
+                icon     = buttonIcon,
                 onClickE = requestResourceCall(p.id, p.stepId, r) _
               ),
               r.show

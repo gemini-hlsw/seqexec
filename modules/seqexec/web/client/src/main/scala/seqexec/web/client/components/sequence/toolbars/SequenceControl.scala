@@ -46,9 +46,6 @@ object SequenceControl {
     private val cancelPauseRequested: CancelPauseOperation =
       p.control.tabOperations.cancelPauseRequested
 
-    private val resourceInFlight: Boolean =
-      p.control.tabOperations.resourceInFlight
-
     private val syncIdle: Boolean =
       syncRequested === SyncOperation.SyncIdle
     private val runIdle: Boolean =
@@ -61,8 +58,8 @@ object SequenceControl {
     val canSync: Boolean =
       p.canOperate && syncIdle && runIdle
     val canRun: Boolean =
-      p.canOperate && runIdle && syncIdle && !resourceInFlight
-    val canPause: Boolean = p.canOperate && pauseIdle
+      p.canOperate && runIdle && syncIdle && !p.control.tabOperations.anyResourceInFlight
+    val canPause: Boolean       = p.canOperate && pauseIdle
     val canCancelPause: Boolean = p.canOperate && cancelPauseIdle
   }
 

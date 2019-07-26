@@ -50,6 +50,9 @@ object StepProgressCell {
 
     def isStopping: Boolean =
       tabOperations.stopRequested === StopOperation.StopInFlight
+
+    def anyError: Boolean =
+      tabOperations.resourceInError(step.id) || state.isError
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -161,13 +164,19 @@ object StepProgressCell {
       RunFromStep(
         RunFromStep.Props(props.obsId,
                           props.step.id,
-                          props.tabOperations.resourceInFlight,
+                          props.tabOperations.resourceInFlight(props.step.id),
                           props.tabOperations.startFromRequested))
         .when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.step.show
-      ),
+        props.step.alignAndCalib(props.instrument) match {
+          case Some(_) if props.tabOperations.resourceInFlight(props.step.id) =>
+            props.step.alignAndCalib(props.instrument).as("Running Align & Calib...")
+          case Some(_) if !props.anyError =>
+            props.step.alignAndCalib(props.instrument).as("Align & Calib")
+          case _ =>
+            props.step.show
+        }),
       props.step match {
         case step: StandardStep =>
           SubsystemControlCell(

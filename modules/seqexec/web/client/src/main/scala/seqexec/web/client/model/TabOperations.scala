@@ -11,6 +11,7 @@ import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import seqexec.model.enum.Resource
+import seqexec.model.StepId
 import scala.collection.immutable.SortedMap
 
 sealed trait RunOperation extends Product with Serializable
@@ -91,15 +92,20 @@ object SyncOperation {
 }
 
 sealed trait ResourceRunOperation extends Product with Serializable
+
 object ResourceRunOperation {
   case object ResourceRunIdle extends ResourceRunOperation
-  case object ResourceRunInFlight extends ResourceRunOperation
-  case object ResourceRunCompleted extends ResourceRunOperation
+  final case class ResourceRunInFlight(stepId: StepId) extends ResourceRunOperation
+  final case class ResourceRunCompleted(stepId: StepId) extends ResourceRunOperation
+  final case class ResourceRunFailed(stepId: StepId) extends ResourceRunOperation
 
-  /** @group Typeclass Instances */
-  implicit val ResourceRunOperationEnumerated: Enumerated[ResourceRunOperation] =
-    Enumerated.of(ResourceRunIdle, ResourceRunInFlight, ResourceRunCompleted)
-
+  implicit val eqResourceRunOperation: Eq[ResourceRunOperation] = Eq.instance {
+    case (ResourceRunIdle, ResourceRunIdle)                 => true
+    case (ResourceRunInFlight(a), ResourceRunInFlight(b))   => a === b
+    case (ResourceRunCompleted(a), ResourceRunCompleted(b)) => a === b
+    case (ResourceRunFailed(a), ResourceRunFailed(b))       => a === b
+    case _                                                  => false
+  }
 }
 
 sealed trait StartFromOperation extends Product with Serializable
@@ -126,11 +132,30 @@ final case class TabOperations(
   stopRequested:        StopOperation,
   abortRequested:       AbortOperation,
   startFromRequested:   StartFromOperation,
-  resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
+  resourceRunRequested: SortedMap[Resource, ResourceRunOperation]
+) {
   // Indicate if any resource is being executed
-  def resourceInFlight: Boolean =
-    resourceRunRequested.exists(
-      _._2 === ResourceRunOperation.ResourceRunInFlight)
+  def resourceInFlight(id: StepId): Boolean =
+    resourceRunRequested.exists(_._2 match {
+      case ResourceRunOperation.ResourceRunInFlight(sid) if sid === id =>
+        true
+      case _ => false
+    })
+
+  // Indicate if any resource is being executed
+  def resourceInError(id: StepId): Boolean =
+    resourceRunRequested.exists(_._2 match {
+      case ResourceRunOperation.ResourceRunFailed(sid) if sid === id =>
+        true
+      case _ => false
+    })
+
+  def anyResourceInFlight: Boolean =
+    resourceRunRequested.exists(_._2 match {
+      case ResourceRunOperation.ResourceRunInFlight(_) =>
+        true
+      case _ => false
+    })
 
   val stepRequestInFlight: Boolean =
     pauseRequested === PauseOperation.PauseInFlight ||
@@ -153,10 +178,12 @@ object TabOperations {
          x.stopRequested,
          x.abortRequested,
          x.startFromRequested,
-         x.resourceRunRequested))
+         x.resourceRunRequested)
+    )
 
   def resourceRun(
-    r: Resource): Lens[TabOperations, Option[ResourceRunOperation]] =
+    r: Resource
+  ): Lens[TabOperations, Option[ResourceRunOperation]] =
     TabOperations.resourceRunRequested ^|-> at(r)
 
   // Set the resource operations in the map to idle.
@@ -173,10 +200,13 @@ object TabOperations {
     })
 
   // Set the resource operations in the map to idle.
-  def clearCommonResourceCompleted(re: Resource): TabOperations => TabOperations =
+  def clearCommonResourceCompleted(
+    re: Resource
+  ): TabOperations => TabOperations =
     TabOperations.resourceRunRequested.modify(_.map {
-      case (r, s) if re === r && s === ResourceRunOperation.ResourceRunCompleted => r -> ResourceRunOperation.ResourceRunIdle
-      case r                                                                     => r
+      case (r, ResourceRunOperation.ResourceRunCompleted(_)) if re === r =>
+        r -> ResourceRunOperation.ResourceRunIdle
+      case r => r
     })
 
   val Default: TabOperations =

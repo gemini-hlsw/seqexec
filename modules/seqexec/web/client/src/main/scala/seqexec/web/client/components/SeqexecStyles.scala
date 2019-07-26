@@ -271,6 +271,8 @@ object SeqexecStyles {
 
   val runningIcon: Css = Css("SeqexecStyles-runningIcon")
 
+  val errorIcon: Css = Css("SeqexecStyles-errorIcon")
+
   val completedIcon: Css = Css("SeqexecStyles-completedIcon")
 
   val breakPointOnIcon: Css =
