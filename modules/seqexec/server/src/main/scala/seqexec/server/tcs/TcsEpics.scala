@@ -3,11 +3,12 @@
 
 package seqexec.server.tcs
 
+import cats.data.Nested
 import cats.effect.{Async, IO, LiftIO, Sync}
 import cats.implicits._
 import squants.Angle
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
 import org.log4s.{Logger, getLogger}
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand._
@@ -163,6 +164,14 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   val pwfs2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("pwfs2Guide", epicsService)
 
   val oiwfsProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("oiwfsGuide", epicsService)
+
+  val g1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g1Guide", epicsService)
+
+  val g2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g2Guide", epicsService)
+
+  val g3ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g3Guide", epicsService)
+
+  val g4ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g4Guide", epicsService)
 
   val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("p1Follow", epicsService)
 
@@ -522,19 +531,11 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
         safeAttributeSDouble(tcsState.getDoubleAttribute(base + "apmdec"))
     }
 
-  def pwfs1Target: Target[F] = target("p1")
+  val pwfs1Target: Target[F] = target("p1")
 
-  def pwfs2Target: Target[F] = target("p2")
+  val pwfs2Target: Target[F] = target("p2")
 
-  def oiwfsTarget: Target[F] = target("oi")
-
-  def gwfs1Target: Target[F] = target("g1")
-
-  def gwfs2Target: Target[F] = target("g2")
-
-  def gwfs3Target: Target[F] = target("g3")
-
-  def gwfs4Target: Target[F] = target("g4")
+  val oiwfsTarget: Target[F] = target("oi")
 
   def parallacticAngle: F[Option[Angle]] =
     safeAttributeSDouble(tcsState.getDoubleAttribute("parangle")).map(_.map(Degrees(_)))
@@ -576,6 +577,145 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   def aoPreparedCMY: F[Option[Double]] = safeAttribute(tcsState.getStringAttribute("cmprepy"))
     .map(_.flatMap(v => Try(v.toDouble).toOption))
+
+  // GeMS Commands
+  object wavelG1 extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG1"))
+
+    private val wavel = cs.map(_.getDouble("wavel"))
+
+    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  }
+
+  object wavelG2 extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG2"))
+
+    private val wavel = cs.map(_.getDouble("wavel"))
+
+    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  }
+
+  object wavelG3 extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG3"))
+
+    private val wavel = cs.map(_.getDouble("wavel"))
+
+    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  }
+
+  object wavelG4 extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG4"))
+
+    private val wavel = cs.map(_.getDouble("wavel"))
+
+    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  }
+
+  def gwfs1Target: Target[F] = target("g1")
+
+  def gwfs2Target: Target[F] = target("g2")
+
+  def gwfs3Target: Target[F] = target("g3")
+
+  def gwfs4Target: Target[F] = target("g4")
+
+  val ngs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr1Follow", epicsService)
+
+  val ngs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr2Follow", epicsService)
+
+  val ngs3ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr3Follow", epicsService)
+
+  val odgw1FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw1Follow", epicsService)
+
+  val odgw2FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw2Follow", epicsService)
+
+  val odgw3FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw3Follow", epicsService)
+
+  val odgw4FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw4Follow", epicsService)
+
+  // GeMS statuses
+
+  val ngs1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs1Follow",
+    s"${TcsTop}ngsPr1FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def ngs1Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(ngs1FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val ngs2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs2Follow",
+    s"${TcsTop}ngsPr2FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def ngs2Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(ngs2FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val ngs3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs3Follow",
+    s"${TcsTop}ngsPr3FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def ngs3Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(ngs3FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val odgw1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw1Follow",
+    s"${TcsTop}odgw1FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def odgw1Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(odgw1FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val odgw2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw2Follow",
+    s"${TcsTop}odgw2FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def odgw2Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(odgw2FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val odgw3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw3Follow",
+    s"${TcsTop}odgw3FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def odgw3Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(odgw3FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val odgw4FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw4Follow",
+    s"${TcsTop}odgw4FollowStat.VAL", classOf[BinaryEnabledDisabled])
+  def odgw4Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(odgw4FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+
+  val OdgwParkedState: String = "Parked"
+
+  def odgw1Parked: F[Option[Boolean]] =
+    Nested(safeAttribute(tcsState.getStringAttribute("odgw1Parked"))).map(_ === OdgwParkedState).value
+
+  def odgw2Parked: F[Option[Boolean]] =
+    Nested(safeAttribute(tcsState.getStringAttribute("odgw2Parked"))).map(_ === OdgwParkedState).value
+
+  def odgw3Parked: F[Option[Boolean]] =
+    Nested(safeAttribute(tcsState.getStringAttribute("odgw3Parked"))).map(_ === OdgwParkedState).value
+
+  def odgw4Parked: F[Option[Boolean]] =
+    Nested(safeAttribute(tcsState.getStringAttribute("odgw4Parked"))).map(_ === OdgwParkedState).value
+
+  def g1MapName: F[Option[GemsSource]] =
+    safeAttribute(tcsState.getStringAttribute("g1MapName"))
+      .map(_.flatMap{x:String => GemsSource.all.find(_.epicsVal === x)})
+
+  def g2MapName: F[Option[GemsSource]] =
+    safeAttribute(tcsState.getStringAttribute("g2MapName"))
+      .map(_.flatMap{x:String => GemsSource.all.find(_.epicsVal === x)})
+
+  def g3MapName: F[Option[GemsSource]] =
+    safeAttribute(tcsState.getStringAttribute("g3MapName"))
+      .map(_.flatMap{x:String => GemsSource.all.find(_.epicsVal === x)})
+
+  def g4MapName: F[Option[GemsSource]] =
+    safeAttribute(tcsState.getStringAttribute("g4MapName"))
+      .map(_.flatMap{x:String => GemsSource.all.find(_.epicsVal === x)})
+
+  def g1Wavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("g1Wavelength"))
+
+  def g2Wavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("g2Wavelength"))
+
+  def g3Wavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("g3Wavelength"))
+
+  def g4Wavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("g4Wavelength"))
+
+  val g1GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g1", tcsState)
+
+  val g2GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g2", tcsState)
+
+  val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g3", tcsState)
+
+  val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g4", tcsState)
+
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
