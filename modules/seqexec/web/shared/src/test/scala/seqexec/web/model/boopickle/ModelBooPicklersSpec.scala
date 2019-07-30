@@ -87,6 +87,7 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
   checkAll("Pickler[ObservationProgress]",
            PicklerTests[ObservationProgress].pickler)
   checkAll("Pickler[SingleActionEvent]", PicklerTests[SingleActionEvent].pickler)
+  checkAll("Pickler[AlignAndCalibEvent]", PicklerTests[AlignAndCalibEvent].pickler)
   checkAll("Pickler[ComaOption]", PicklerTests[ComaOption].pickler)
   checkAll("Pickler[TipTiltSource]", PicklerTests[TipTiltSource].pickler)
   checkAll("Pickler[M1Source]", PicklerTests[M1Source].pickler)

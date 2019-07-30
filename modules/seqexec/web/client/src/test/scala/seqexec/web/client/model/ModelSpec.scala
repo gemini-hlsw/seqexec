@@ -52,9 +52,12 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[SoundSelection]", EqTests[SoundSelection].eqv)
   checkAll("Eq[StepsTableTypeSelection]", EqTests[StepsTableTypeSelection].eqv)
   checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
+  checkAll("Eq[SeqexecAppRootModel]", EqTests[SeqexecAppRootModel].eqv)
   checkAll("Eq[RunOperation]", EqTests[RunOperation].eqv)
   checkAll("Eq[SyncOperation]", EqTests[SyncOperation].eqv)
   checkAll("Eq[TabOperations]", EqTests[TabOperations].eqv)
+  checkAll("Eq[AlignAndCalibStep]", EqTests[AlignAndCalibStep].eqv)
+  checkAll("Eq[AppTableStates]", EqTests[AppTableStates].eqv)
 
   // lenses
   checkAll("Lens[SequenceTab, Option[Int]]", LensTests(SequenceTab.stepConfigL))

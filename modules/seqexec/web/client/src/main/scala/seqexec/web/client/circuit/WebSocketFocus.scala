@@ -12,6 +12,7 @@ import seqexec.model._
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SoundSelection
+import seqexec.web.client.model.AlignAndCalibStep
 
 @Lenses
 final case class WebSocketsFocus(location:        Pages.SeqexecPages,
@@ -22,7 +23,8 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  site:            Option[Site],
                                  sound:           SoundSelection,
                                  serverVersion:   Option[String],
-                                 guideConfig:     TelescopeGuideConfig)
+                                 guideConfig:     TelescopeGuideConfig,
+                                 alignAndCalib:   AlignAndCalibStep)
 
 object WebSocketsFocus {
   implicit val eq: Eq[WebSocketsFocus] =
@@ -35,7 +37,8 @@ object WebSocketsFocus {
          x.clientId,
          x.site,
          x.serverVersion,
-         x.guideConfig))
+         x.guideConfig,
+         x.alignAndCalib))
 
   val webSocketFocusL: Lens[SeqexecAppRootModel, WebSocketsFocus] =
     Lens[SeqexecAppRootModel, WebSocketsFocus](
@@ -48,7 +51,8 @@ object WebSocketsFocus {
                         m.site,
                         m.uiModel.sound,
                         m.serverVersion,
-                        m.guideConfig))(
+                        m.guideConfig,
+                        m.alignAndCalib))(
       v =>
         m =>
           m.copy(
@@ -59,6 +63,7 @@ object WebSocketsFocus {
             clientId      = v.clientId,
             site          = v.site,
             serverVersion = v.serverVersion,
-            guideConfig   = v.guideConfig
+            guideConfig   = v.guideConfig,
+            alignAndCalib = v.alignAndCalib
       ))
 }

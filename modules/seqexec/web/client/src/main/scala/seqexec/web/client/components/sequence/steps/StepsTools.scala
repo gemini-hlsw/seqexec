@@ -27,6 +27,7 @@ object StepToolsCell {
   final case class Props(clientStatus:       ClientStatus,
                          step:               Step,
                          rowHeight:          Int,
+                         secondRowHeight:    Int,
                          isPreview:          Boolean,
                          nextStepToRun:      Option[Int],
                          obsId:              Observation.Id,
@@ -60,7 +61,9 @@ object StepToolsCell {
         StepIconCell(
           StepIconCell.Props(p.step.status,
                              p.step.skip,
-                             p.nextStepToRun.forall(_ === p.step.id)))
+                             p.nextStepToRun.forall(_ === p.step.id),
+                             p.rowHeight - p.secondRowHeight
+                           ))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -73,7 +76,7 @@ object StepToolsCell {
   * Component to display an icon for the state
   */
 object StepIconCell {
-  final case class Props(status: StepState, skip: Boolean, nextToRun: Boolean)
+  final case class Props(status: StepState, skip: Boolean, nextToRun: Boolean, height: Int)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -108,6 +111,7 @@ object StepIconCell {
     .render_P(
       p =>
         <.div(
+          ^.height := p.height.px,
           stepStyle(p),
           stepIcon(p)
       ))

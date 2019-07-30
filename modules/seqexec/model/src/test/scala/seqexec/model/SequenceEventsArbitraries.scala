@@ -211,6 +211,13 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
       arbitrary[SequenceError]
     )
   }
+
+  implicit val acpArb = Arbitrary[AlignAndCalibEvent] {
+    for {
+      p <- Gen.posNum[Int]
+    } yield AlignAndCalibEvent(p)
+  }
+
   implicit val seArb = Arbitrary[SeqexecEvent] {
     Gen.oneOf[SeqexecEvent](
       arbitrary[SeqexecModelUpdate],
@@ -219,6 +226,7 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
       arbitrary[ServerLogMessage],
       arbitrary[UserNotification],
       arbitrary[ObservationProgressEvent],
+      arbitrary[AlignAndCalibEvent],
       arbitrary[NullEvent.type]
     )
   }
@@ -311,6 +319,9 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
   implicit val oprCogen: Cogen[ObservationProgressEvent] =
     Cogen[ObservationProgress].contramap(_.progress)
+
+  implicit val acpCogen: Cogen[AlignAndCalibEvent] =
+    Cogen[Int].contramap(_.step)
 
 }
 

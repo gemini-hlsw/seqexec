@@ -5,16 +5,17 @@ package seqexec.web.server.http4s
 
 import cats.effect.{ ContextShift, IO, Timer }
 import cats.implicits._
-import seqexec.model.events._
-import seqexec.server.tcs.GuideConfig
-import seqexec.server.tcs.GuideConfigDb
-import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import fs2.concurrent.Topic
 import fs2.Stream
+import giapi.client.GiapiStatusDb
 import org.http4s._
 import org.http4s.syntax.StringSyntax
 import org.http4s.Uri.uri
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
+import seqexec.model.events._
+import seqexec.server.tcs.GuideConfig
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import squants.time._
 import scala.concurrent.ExecutionContext
 
@@ -34,6 +35,8 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax wi
     override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
   }
 
+  val statusDb = GiapiStatusDb.simulatedDb[IO]
+
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val authService = AuthenticationService(config)
   val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(Topic[IO, SeqexecEvent](NullEvent))
@@ -41,7 +44,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax wi
   private val service =
     for {
       o <- out
-    } yield new SeqexecUIApiRoutes("GS", true, authService, guideDb, o).service
+    } yield new SeqexecUIApiRoutes("GS", true, authService, guideDb, statusDb, o).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {

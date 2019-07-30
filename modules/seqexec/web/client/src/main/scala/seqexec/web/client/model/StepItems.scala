@@ -13,6 +13,7 @@ import seqexec.model.enum.Guiding
 import seqexec.model.enum.StepType
 import seqexec.model.Step
 import seqexec.model.StepState
+import seqexec.model.SequenceState
 import seqexec.model.enumerations
 import seqexec.model.OffsetAxis
 import seqexec.model.TelescopeOffset
@@ -218,6 +219,23 @@ object StepItems {
       val (p, q) = steps.sequenceOffsetWidths
       OffsetsDisplay.DisplayOffsets(scala.math.max(p, q))
     }
+  }
+
+  final case class StepStateSnapshot(step: Step, i: Instrument, t: TabOperations, state: SequenceState) {
+    val isAC: Boolean =
+      step.alignAndCalib(i).isDefined
+
+    val isACRunning: Boolean =
+      isAC && (t.resourceInFlight(step.id) || step.isRunning)
+
+    val anyError: Boolean =
+      t.resourceInError(step.id) || step.hasError
+
+    val isACInError: Boolean =
+      isAC && anyError
+
+    val displayDetails: Boolean =
+      isACRunning || isACInError
   }
 
 }

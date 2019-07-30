@@ -8,6 +8,23 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.effect.{ Concurrent, IO, Timer }
 import cats.implicits._
+import fs2.concurrent.Topic
+import fs2.Pipe
+import fs2.Stream
+import giapi.client.GiapiStatusDb
+import giapi.client.StatusValue
+import gem.enum.GiapiStatus
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.server.middleware.GZip
+import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
+import org.http4s.headers.`WWW-Authenticate`
+import org.log4s._
+import scala.concurrent.duration._
+import scala.math._
+import scodec.bits.ByteVector
 import seqexec.model.ClientId
 import seqexec.model._
 import seqexec.model.events._
@@ -20,20 +37,6 @@ import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.common.LogMessage
-import fs2.concurrent.Topic
-import fs2.Pipe
-import fs2.Stream
-import org.http4s._
-import org.http4s.dsl.io._
-import org.http4s.server.middleware.GZip
-import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
-import org.http4s.headers.`WWW-Authenticate`
-import org.log4s._
-import scala.concurrent.duration._
-import scala.math._
-import scodec.bits.ByteVector
 
 /**
   * Rest Endpoints under the /api route
@@ -42,6 +45,7 @@ class SeqexecUIApiRoutes(site: String,
                          devMode: Boolean,
                          auth: AuthenticationService,
                          guideConfigS: GuideConfigDb[IO],
+                         giapiDB: GiapiStatusDb[IO],
                          engineOutput: Topic[IO, SeqexecEvent])(
   implicit cio: Concurrent[IO],
            tio: Timer[IO]
@@ -61,6 +65,19 @@ class SeqexecUIApiRoutes(site: String,
   val guideConfigEvents =
     guideConfigS.discrete
       .map(g => GuideConfigUpdate(g.tcsGuide))
+      .map(toFrame)
+
+  // Stream of updates to gpi align an calib process
+  // This is fairly custom for one use case and we'd rather have a more
+  // generalized mechanism.
+  // Also we may want to send this through another websocket but it would
+  // complicate the client
+  val giapiDBEvents =
+    giapiDB.discrete
+      .map(_.get(GiapiStatus.GpiAlignAndCalibState.statusItem).flatMap(StatusValue.intValue))
+      .collect {
+        case Some(x) => AlignAndCalibEvent(x)
+      }
       .map(toFrame)
 
   /**
@@ -142,7 +159,7 @@ class SeqexecUIApiRoutes(site: String,
         for {
           clientId <- IO.apply(ClientId(UUID.randomUUID()))
           initial  = initialEvent(clientId)
-          streams  = Stream(pingStream, guideConfigEvents, engineEvents(clientId)).parJoinUnbounded
+          streams  = Stream(pingStream, guideConfigEvents, giapiDBEvents, engineEvents(clientId)).parJoinUnbounded
           ws       <- WebSocketBuilder[IO].build(initial ++ streams, clientEventsSink)
         } yield ws
 

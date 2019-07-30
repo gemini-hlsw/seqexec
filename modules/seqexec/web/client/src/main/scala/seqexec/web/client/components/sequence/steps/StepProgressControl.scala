@@ -51,8 +51,8 @@ object StepProgressCell {
     def isStopping: Boolean =
       tabOperations.stopRequested === StopOperation.StopInFlight
 
-    def anyError: Boolean =
-      tabOperations.resourceInError(step.id) || state.isError
+    val stateSnapshot: StepStateSnapshot =
+      StepStateSnapshot(step, instrument, tabOperations, state)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -169,12 +169,15 @@ object StepProgressCell {
         .when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.step.alignAndCalib(props.instrument) match {
-          case Some(_) if props.tabOperations.resourceInFlight(props.step.id) =>
-            props.step.alignAndCalib(props.instrument).as("Running Align & Calib...")
-          case Some(_) if !props.anyError =>
-            props.step.alignAndCalib(props.instrument).as("Align & Calib")
-          case _ =>
+        if (props.stateSnapshot.isAC) {//} && !props.stateSnapshot.anyError) {
+          if (props.stateSnapshot.isACRunning) {
+            "Running Align & Calib..."
+          } else if (props.stateSnapshot.anyError) {
+            props.step.show
+          } else {
+            "Align & Calib"
+          }
+        } else {
             props.step.show
         }),
       props.step match {
@@ -221,13 +224,8 @@ object StepProgressCell {
           _,
           StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _)) =>
         <.p(SeqexecStyles.componentLabel, fileId)
-      case (_, StandardStep(i, _, StepState.Pending, _, _, _, _, _))
+      case (_, StandardStep(i, _, StepState.Pending | StepState.Paused | StepState.Failed(_), _, _, _, _, _))
           if props.stepSelected(i) =>
-        stepSubsystemControl(props)
-      case (_, StandardStep(i, _, StepState.Paused, _, _, _, _, _))
-          if props.stepSelected(i) =>
-        stepSubsystemControl(props)
-      case (_, StandardStep(_, _, StepState.Failed(_), _, _, _, _, _)) =>
         stepSubsystemControl(props)
       case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)

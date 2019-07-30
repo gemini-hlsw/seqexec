@@ -21,6 +21,7 @@ import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model.SoundSelection
+import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
@@ -263,6 +264,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updatedL(WebSocketsFocus.guideConfig.set(r.telescope))
   }
 
+  val acMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(AlignAndCalibEvent(i)) =>
+      updatedL(WebSocketsFocus.alignAndCalib.set(AlignAndCalibStep.fromInt(i)))
+  }
+
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
@@ -290,6 +296,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       modelUpdateMessage,
       singleRunCompleteMessage,
       guideConfigMessage,
+      acMessage,
       defaultMessage
     ).combineAll
 }

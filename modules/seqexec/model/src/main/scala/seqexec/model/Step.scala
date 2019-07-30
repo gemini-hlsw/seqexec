@@ -64,6 +64,11 @@ object Step {
       case _                  => false
     }
 
+    def isRunning: Boolean = s.status match {
+      case StepState.Running => true
+      case _                 => false
+    }
+
     def isObserving: Boolean = s match {
       case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Running
       case _                                    => false

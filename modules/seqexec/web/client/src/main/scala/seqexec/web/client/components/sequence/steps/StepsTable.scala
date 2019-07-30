@@ -332,7 +332,7 @@ object StepsTable extends Columns {
     val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
     val rowCount: Int                = stepsList.length
     val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).getOrElse(0)
-    val tabOperations: TabOperations =
+    def tabOperations: TabOperations =
       steps.map(_.tabOperations).getOrElse(TabOperations.Default)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
     val showExposure: Boolean  = showProp(InstrumentProperties.Exposure)
@@ -352,6 +352,16 @@ object StepsTable extends Columns {
     val showReadMode: Boolean = showProp(InstrumentProperties.ReadMode)
 
     val sequenceState: Option[SequenceState] = steps.map(_.state)
+
+    def stepSnapshot(step: Step): Option[StepStateSnapshot] =
+      (instrument, sequenceState).mapN(StepStateSnapshot(step, _, tabOperations, _))
+
+    def showSecondRow(step: Step): Boolean = stepSnapshot(step).forall(_.displayDetails)
+
+    def secondRowHeight(step: Step): Int = stepSnapshot(step) match {
+      case Some(s) if s.displayDetails => SeqexecStyles.runningBottomRowHeight
+      case _                           => 0
+    }
 
     def stepSelectionAllowed(sid: StepId): Boolean =
       canControlSubsystems(sid) && !tabOperations.resourceInFlight(sid) && !sequenceState
@@ -504,6 +514,7 @@ object StepsTable extends Columns {
           b.props.status,
           row.step,
           rowHeight(b)(row.step.id),
+          b.props.secondRowHeight(row.step),
           f.isPreview,
           f.nextStepToRun,
           f.id,
@@ -638,18 +649,22 @@ object StepsTable extends Columns {
   /**
     * Calculates the row height depending on conditions
     */
-  def rowHeight(b: Backend)(i: Int): Int =
-    b.props.rowGetter(i) match {
+  def rowHeight(b: Backend)(i: Int): Int = {
+    val row = b.props.rowGetter(i)
+    row match {
+      case StepRow(StandardStep(_, _, _, _, _, _, _, _)) if b.props.showSecondRow(row.step) =>
+        // Selected
+        SeqexecStyles.runningRowHeight + b.props.secondRowHeight(row.step)
       case StepRow(StandardStep(_, _, s, true, _, _, _, _))
           if s === StepState.Running =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
+      case StepRow(s: Step) if s.status === StepState.Running =>
+        // Row running
+        SeqexecStyles.runningRowHeight
       case StepRow(StandardStep(i, _, _, _, _, _, _, _))
           if b.state.selected.exists(_ === i) && b.props.canControlSubsystems(i) =>
         // Selected
-        SeqexecStyles.runningRowHeight
-      case StepRow(s: Step) if s.status === StepState.Running =>
-        // Row running
         SeqexecStyles.runningRowHeight
       case StepRow(StandardStep(_, _, _, true, _, _, _, _)) =>
         // Row with a breakpoint set
@@ -658,6 +673,7 @@ object StepsTable extends Columns {
         // default row
         baseHeight(b.props)
     }
+  }
 
   val columnClassName: TableColumn => Option[Css] = {
     case ControlColumn                => SeqexecStyles.controlCellRow.some
@@ -856,7 +872,7 @@ object StepsTable extends Columns {
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,
-      rowRenderer       = stopsRowRenderer(b.props)
+      rowRenderer       = stepsRowRenderer(b.props)
     )
 
   // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
@@ -883,7 +899,7 @@ object StepsTable extends Columns {
         .getOrEmpty
     }
 
-  private def stopsRowRenderer(p: Props) =
+  private def stepsRowRenderer(p: Props) =
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
@@ -896,15 +912,41 @@ object StepsTable extends Columns {
      _:                Option[OnRowClick],
      _:                Option[OnRowClick],
      style:            Style) => {
-      <.div(
-        ^.cls := className,
-        ^.key := key,
-        ^.role := "row",
-        ^.style := Style.toJsObject(style),
-        ^.onClick ==> allowedClick(p, index, onRowClick),
-        ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
-        columns.toTagMod
-      ): VdomElement
+      p.rowGetter(index) match {
+        case StepRow(s @ StandardStep(i, _, _, _, _, _, _, _)) if p.showSecondRow(s) && index === i =>
+          <.div(
+            ^.key := key,
+            ^.style := Style.toJsObject(style),
+            SeqexecStyles.expandedRunningRow,
+            <.div(
+              ^.cls := className,
+              ^.key := s"$key-top",
+              SeqexecStyles.expandedTopRow,
+              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+              columns.toTagMod
+            ),
+            p.stepSnapshot(s).map {s =>
+              <.div(
+                SeqexecStyles.expandedBottomRow,
+                SeqexecStyles.acProgressRow,
+              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+                AlignAndCalibProgress(AlignAndCalibProgress.Props(s)),
+                ^.key := s"$key-base"
+              )}
+          )
+        case _ =>
+            <.div(
+              ^.cls := className,
+              ^.key := key,
+              ^.role := "row",
+              ^.style := Style.toJsObject(style),
+              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+              columns.toTagMod
+            )
+      }
     }
 
   // Create a ref

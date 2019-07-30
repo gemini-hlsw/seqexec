@@ -732,6 +732,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         sound       <- arbitrary[SoundSelection]
         serverVer   <- arbitrary[Option[String]]
         guideConf   <- arbitrary[TelescopeGuideConfig]
+        acStep      <- arbitrary[AlignAndCalibStep]
       } yield
         WebSocketsFocus(navLocation,
                         sequences,
@@ -741,7 +742,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
                         site,
                         sound,
                         serverVer,
-                        guideConf)
+                        guideConf,
+                        acStep)
     }
 
   implicit val wsfCogen: Cogen[WebSocketsFocus] =
@@ -753,7 +755,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            Option[Site],
            SoundSelection,
            Option[String],
-           TelescopeGuideConfig)]
+           TelescopeGuideConfig,
+           AlignAndCalibStep)]
       .contramap(
         x =>
           (x.location,
@@ -764,7 +767,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            x.site,
            x.sound,
            x.serverVersion,
-           x.guideConfig))
+           x.guideConfig,
+           x.alignAndCalib))
 
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {
@@ -789,7 +793,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         uiModel   <- arbitrary[SeqexecUIModel]
         version   <- arbitrary[Option[String]]
         guideConf <- arbitrary[TelescopeGuideConfig]
-      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf)
+        acStep    <- arbitrary[AlignAndCalibStep]
+      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf, acStep)
+    }
+
+  implicit val seqexecAppRootModelCogen: Cogen[SeqexecAppRootModel] =
+    Cogen[(SequencesQueue[SequenceView], WebSocketConnection, Option[Site], Option[ClientId], SeqexecUIModel, Option[String], TelescopeGuideConfig, AlignAndCalibStep)].contramap { x =>
+      (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion, x.guideConfig, x.alignAndCalib)
     }
 
   implicit val arbAppTableStates: Arbitrary[AppTableStates] =
