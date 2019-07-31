@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.Eq
 import cats.implicits._
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
 import squants.{Angle, Length, Ratio}
 import squants.space.{Arcseconds, Millimeters}
 
@@ -47,5 +47,7 @@ package object tcs {
   implicit val ooEq: Eq[BinaryOnOff] =
     Eq[Int].contramap(_.ordinal())
   implicit val ynEq: Eq[BinaryYesNo] =
+    Eq[Int].contramap(_.ordinal())
+  implicit val endisEq: Eq[BinaryEnabledDisabled] =
     Eq[Int].contramap(_.ordinal())
 }
