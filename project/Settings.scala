@@ -83,7 +83,7 @@ object Settings {
     val reactSemanticUI         = "0.1.4"
 
     // Scala libraries
-    val catsEffectVersion       = "1.3.1"
+    val catsEffectVersion       = "1.4.0"
     val catsVersion             = "1.6.1"
     val mouseVersion            = "0.22"
     val fs2Version              = "1.0.5"
