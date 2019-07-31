@@ -7,7 +7,7 @@ import cats.data.Nested
 import cats.effect.{Async, IO}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
-import edu.gemini.seqexec.server.gems.{ApdState, BinaryOnOff, LoopState, ReadyState}
+import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.{EpicsCommand, EpicsSystem}
 import seqexec.server.EpicsCommand.setParameter
@@ -17,7 +17,6 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val MystTop = tops.getOrElse("myst", "myst:")
   private val RtcTop = tops.getOrElse("rtc", "rtc:")
-  private val AomTop = tops.getOrElse("aom", "aom:")
 
   object LoopControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::seqLoopCtrl"))
@@ -148,15 +147,6 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def scienceAdcState: F[Option[String]] = safeAttribute(aomStatus.getStringAttribute("adcScState"))
 
   def beamSplitterState: F[Option[String]] = safeAttribute(aomStatus.getStringAttribute("beamSplitterState"))
-
-  private val ngs1FollowAttr = aomStatus.addEnum("ngs1Follow", s"${AomTop}ngsPr1followS.VAL", classOf[BinaryOnOff])
-  def ngs1FollowActive: F[Option[Boolean]] = Nested(safeAttribute(ngs1FollowAttr)).map(_ === BinaryOnOff.On).value
-
-  private val ngs2FollowAttr = aomStatus.addEnum("ngs2Follow", s"${AomTop}ngsPr2followS.VAL", classOf[BinaryOnOff])
-  def ngs2FollowActive: F[Option[Boolean]] = Nested(safeAttribute(ngs2FollowAttr)).map(_ === BinaryOnOff.On).value
-
-  private val ngs3FollowAttr = aomStatus.addEnum("ngs3Follow", s"${AomTop}ngsPr3followS.VAL", classOf[BinaryOnOff])
-  def ngs3FollowActive: F[Option[Boolean]] = Nested(safeAttribute(ngs3FollowAttr)).map(_ === BinaryOnOff.On).value
 
 }
 
