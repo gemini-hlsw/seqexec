@@ -95,13 +95,14 @@ class Engine[D, U](stateL: Engine.State[D]) {
     x.map(p =>
       modifyS(c.sid)(_.startSingle(c.actCoords)) *>
       Handle.fromStream[D, EventType](
-        p.attempt.collect {
-          case Right(r@Result.OK(_))    => singleRunCompleted(c, r)
-          case Right(e@Result.Error(_)) => singleRunFailed(c, e)
-          case Right(r)                 =>
-            singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
-          case Left(r: Exception)       =>
-            singleRunFailed(c, Result.Error(s"Unhandled error for single run action: ${r.getMessage}"))
+        p.attempt.flatMap {
+          case Right(r @ Result.OK(_))    =>
+            Stream.eval(IO(singleRunCompleted(c, r)))
+          case Right(e @ Result.Error(_)) =>
+            Stream.eval(IO(singleRunFailed(c, e)))
+          case Right(r)                   =>
+            Stream.eval(IO(singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))))
+          case Left(t: Throwable)         => Stream.raiseError[IO](t)
         }
       ).as[Outcome](Outcome.Ok)
     ).getOrElse(pure[Outcome](Outcome.Failure))
@@ -177,13 +178,13 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def act(id: Observation.Id, stepId: StepId, t: (Stream[IO, Result[IO]], Int))
   : Stream[IO, EventType] = t match {
     case (gen, i) =>
-      gen.attempt.collect {
-        case Right(r@Result.OK(_))        => completed(id, stepId, i, r)
-        case Right(r@Result.OKStopped(_)) => stopCompleted(id, stepId, i, r)
-        case Right(r@Result.Partial(_))   => partial(id, stepId, i, r)
-        case Right(e@Result.Error(_))     => failed(id, i, e)
-        case Right(r@Result.Paused(_))    => paused[IO](id, i, r)
-        case Left(t: Exception)           => failed(id, i, Result.Error(t.getMessage))
+      gen.attempt.flatMap {
+        case Right(r@Result.OK(_))        => Stream.eval(IO(completed(id, stepId, i, r)))
+        case Right(r@Result.OKStopped(_)) => Stream.eval(IO(stopCompleted(id, stepId, i, r)))
+        case Right(r@Result.Partial(_))   => Stream.eval(IO(partial(id, stepId, i, r)))
+        case Right(e@Result.Error(_))     => Stream.eval(IO(failed(id, i, e)))
+        case Right(r@Result.Paused(_))    => Stream.eval(IO(paused[IO](id, i, r)))
+        case Left(t: Throwable)           => Stream.raiseError[IO](t)
       }
   }
 

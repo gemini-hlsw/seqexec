@@ -204,6 +204,30 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(result.isDefined)
   }
 
+  "engine" should "not capture runtime exceptions." in {
+    def s0(e: Throwable): TestState = TestState(
+      Map((seqId, Sequence.State.init(Sequence(
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-4"),
+        steps = List(
+          Step.init(
+            id = 1,
+            executions = List(
+              List(fromF[IO](ActionType.Undefined,
+                IO.apply {
+                  throw e
+                }
+              ) )
+            )
+          )
+        )
+      ) ) ) )
+    )
+
+    assertThrows[java.lang.RuntimeException](
+      runToCompletion(s0(new java.lang.RuntimeException))
+    )
+  }
+
   it should "skip steps marked to be skipped at the beginning of the sequence." in {
     val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
