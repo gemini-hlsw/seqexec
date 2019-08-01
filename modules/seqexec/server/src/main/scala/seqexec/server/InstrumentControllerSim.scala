@@ -10,16 +10,15 @@ import cats.implicits._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import mouse.all._
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.InstrumentSystem.ElapsedTime
-import squants.time.{Seconds, Time}
-
-import scala.annotation.tailrec
+import squants.time.Time
+import scala.concurrent.duration._
 
 sealed trait InstrumentControllerSim[F[_]] {
   def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
@@ -45,96 +44,128 @@ sealed trait InstrumentControllerSim[F[_]] {
 }
 
 object InstrumentControllerSim {
-  private final class InstrumentControllerSimImpl[F[_]](name: String, useTimeout: Boolean)(implicit val F: Sync[F], T: Timer[F]) extends InstrumentControllerSim[F] {
+  private[server] final class InstrumentControllerSimImpl[F[_]](
+    name:               String,
+    useTimeout:         Boolean,
+    readOutDelay:       FiniteDuration,
+    stopObserveDelay:   FiniteDuration,
+    configurationDelay: FiniteDuration
+  )(implicit val F:     Sync[F], T: Timer[F])
+      extends InstrumentControllerSim[F] {
     private val Log = getLogger
 
-    private val stopFlag = new AtomicBoolean(false)
-    private val abortFlag = new AtomicBoolean(false)
-    private val pauseFlag = new AtomicBoolean(false)
-    private val remainingTime = new AtomicInteger(0)
+    private val stopFlag      = new AtomicBoolean(false)
+    private val abortFlag     = new AtomicBoolean(false)
+    private val pauseFlag     = new AtomicBoolean(false)
+    private val remainingTime = new AtomicLong(0)
 
-    private val tic = 200
+    private val tic = 200L
 
-    private val ReadoutDelay = Seconds(5)
-    private val ConfigurationDelay = Seconds(5)
-    private val StopObserveDelay = Seconds(1.5)
+    def log(msg: => String): F[Unit] =
+      F.delay(Log.info(msg))
 
-    @tailrec
-    private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommandResult] =
-      if(remain < tic) {
-        Log.info(s"Simulate $name observation completed")
-        ObserveCommandResult.Success.pure[F].widen
-      } else if(stop) ObserveCommandResult.Stopped.pure[F].widen
-        else if(abort) ObserveCommandResult.Aborted.pure[F].widen
-        else if(pause) {
-          remainingTime.set(remain)
+    private[server] def observeTic(
+      stop:    Boolean,
+      abort:   Boolean,
+      pause:   Boolean,
+      remain:  Long,
+      timeout: Option[Long]
+    ): F[ObserveCommandResult] =
+      if (stop) {
+        ObserveCommandResult.Stopped.pure[F].widen
+      } else if (abort) {
+        ObserveCommandResult.Aborted.pure[F].widen
+      } else if (pause) {
+        F.delay(remainingTime.set(remain)) *>
           ObserveCommandResult.Paused.pure[F].widen
+      } else if (timeout.exists(_ <= 0)) {
+        F.raiseError(SeqexecException(new TimeoutException()))
+      } else if (remain < tic) {
+        log(s"Simulate $name observation completed") *>
+          ObserveCommandResult.Success.pure[F].widen
+      } else {
+        // Use flatMap to ensure we don't stack overflow
+        T.sleep(FiniteDuration(tic.toLong, MILLISECONDS)).flatMap( _ =>
+          observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic)))
+      }
+
+    def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
+      log(s"Simulate taking $name observation with label $fileId") *>
+      F.delay {
+          pauseFlag.set(false)
+          stopFlag.set(false)
+          abortFlag.set(false)
+          val totalTime = (expTime.millis + readOutDelay.toMillis)
+          remainingTime.set(totalTime)
+          totalTime
+        }.flatMap { totalTime =>
+          observeTic(stop  = false,
+                     abort = false,
+                     pause = false,
+                     totalTime,
+                     useTimeout.option(totalTime + 2 * tic))
         }
-        else if(timeout.exists(_<= 0)) F.raiseError(SeqexecException(new TimeoutException()))
-        else {
-          Thread.sleep(tic.toLong)
-          observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
-        }
 
-    def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = Sync[F].delay {
-      Log.info(s"Simulate taking $name observation with label $fileId")
-      pauseFlag.set(false)
-      stopFlag.set(false)
-      abortFlag.set(false)
-      val totalTime = (expTime + ReadoutDelay).toMilliseconds.toInt
-      remainingTime.set(totalTime)
-      totalTime
-    }.flatMap {totalTime =>
-      observeTic(stop = false, abort = false, pause = false, totalTime, useTimeout.option(totalTime + 2 * tic))
-    }
+    def applyConfig[C: Show](config: C): F[Unit] =
+      log(s"Simulate applying $name configuration ${config.show}") *>
+        T.sleep(configurationDelay)
 
-    def applyConfig[C: Show](config: C): F[Unit] = F.delay {
-      Log.info(s"Simulate applying $name configuration ${config.show}")
-      Thread.sleep(ConfigurationDelay.toMilliseconds.toLong)
-    }
+    def stopObserve: F[Unit] =
+      log(s"Simulate stopping $name exposure") *>
+        T.sleep(stopObserveDelay) *>
+        F.delay(stopFlag.set(true))
 
-    def stopObserve: F[Unit] = F.delay {
-      Log.info(s"Simulate stopping $name exposure")
-      Thread.sleep(StopObserveDelay.toMilliseconds.toLong)
-      stopFlag.set(true)
-    }
+    def abortObserve: F[Unit] =
+      log(s"Simulate aborting $name exposure") *>
+        F.delay(abortFlag.set(true))
 
-    def abortObserve: F[Unit] = F.delay {
-      Log.info(s"Simulate aborting $name exposure")
-      abortFlag.set(true)
-    }
+    def endObserve: F[Unit] =
+      log(s"Simulate sending endObserve to $name")
 
-    def endObserve: F[Unit] = F.delay {
-      Log.info(s"Simulate sending endObserve to $name")
-    }
+    def pauseObserve: F[Unit] =
+      log(s"Simulate pausing $name exposure") *>
+        F.delay(pauseFlag.set(true))
 
-    def pauseObserve: F[Unit] = F.delay {
-      Log.info(s"Simulate pausing $name exposure")
-      pauseFlag.set(true)
-    }
+    def resumePaused: F[ObserveCommandResult] =
+      log(s"Simulate resuming $name observation") *>
+        F.delay(pauseFlag.set(false)) *>
+        observeTic(stop  = false, abort = false, pause = false, remainingTime.get, useTimeout.option(remainingTime.get + 2 * tic))
 
-    def resumePaused: F[ObserveCommandResult] = Sync[F].delay {
-      Log.info(s"Simulate resuming $name observation")
-      pauseFlag.set(false) } *>
-      observeTic(stop = false, abort = false, pause = false, remainingTime.get,
-        useTimeout.option(remainingTime.get + 2 * tic))
+    def stopPaused: F[ObserveCommandResult] =
+      log(s"Simulate stopping $name paused observation") *>
+        F.delay(pauseFlag.set(false)) *>
+        observeTic(stop = true, abort = false, pause = false, 1000, None)
 
-    def stopPaused: F[ObserveCommandResult] = Sync[F].delay {
-      Log.info(s"Simulate stopping $name paused observation")
-      pauseFlag.set(false) } *>
-      observeTic(stop = true, abort = false, pause = false, 1000, None)
+    def abortPaused: F[ObserveCommandResult] =
+      log(s"Simulate aborting $name paused observation") *>
+        F.delay(pauseFlag.set(false)) *>
+        observeTic(stop = false, abort = true, pause = false, 1000, None)
 
-    def abortPaused: F[ObserveCommandResult] = Sync[F].delay {
-      Log.info(s"Simulate aborting $name paused observation")
-      pauseFlag.set(false) } *>
-      observeTic(stop = false, abort = true, pause = false, 1000, None)
-
-    def observeCountdown(total: Time, elapsed: ElapsedTime): Stream[F, Progress] =
+    def observeCountdown(
+      total:   Time,
+      elapsed: ElapsedTime
+    ): Stream[F, Progress] =
       ProgressUtil.countdown[F](total, elapsed.self)
 
   }
 
-  def apply[F[_]: Sync: Timer](name: String): InstrumentControllerSim[F] = new InstrumentControllerSimImpl[F](name, false)
-  def withTimeout[F[_]: Sync: Timer](name: String): InstrumentControllerSim[F] = new InstrumentControllerSimImpl[F](name, true)
+  def apply[F[_]: Sync: Timer](name: String): InstrumentControllerSim[F] =
+    new InstrumentControllerSimImpl[F](name,
+                                       false,
+                                       FiniteDuration(5, SECONDS),
+                                       FiniteDuration(1500, MILLISECONDS),
+                                       FiniteDuration(5, SECONDS))
+
+  def withTimes[F[_]: Sync: Timer](
+    name:               String,
+    readOutDelay:       FiniteDuration,
+    stopObserveDelay:   FiniteDuration,
+    configurationDelay: FiniteDuration
+  ): InstrumentControllerSim[F] =
+    new InstrumentControllerSimImpl[F](name,
+                                       true,
+                                       readOutDelay,
+                                       stopObserveDelay,
+                                       configurationDelay)
 
 }
