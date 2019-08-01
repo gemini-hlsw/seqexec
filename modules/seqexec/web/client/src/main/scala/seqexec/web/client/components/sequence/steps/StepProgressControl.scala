@@ -15,7 +15,6 @@ import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
 import seqexec.model.StepState
-import seqexec.model.StandardStep
 import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.SequenceState
@@ -79,7 +78,7 @@ object StepProgressCell {
                   color = labelColor(status).some,
                   icon  = labelIcon(status)))
 
-  def stepSystemsStatus(step: StandardStep): VdomElement =
+  def stepSystemsStatus(step: Step): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
       <.div(
@@ -88,7 +87,7 @@ object StepProgressCell {
       ),
       <.div(
         SeqexecStyles.subsystems,
-        step.configStatus
+        Step.configStatus.get(step)
           .sortBy(_._1)
           .map(Function.tupled(statusLabel))
           .toTagMod
@@ -180,17 +179,12 @@ object StepProgressCell {
         } else {
             props.step.show
         }),
-      props.step match {
-        case step: StandardStep =>
-          SubsystemControlCell(
-            SubsystemControlCell
-              .Props(props.obsId,
-                     step.id,
-                     step.configStatus.map(_._1),
-                     props.resourceRunRequested))
-        case _ =>
-          <.div()
-      }
+        SubsystemControlCell(
+          SubsystemControlCell
+            .Props(props.obsId,
+                   props.step.id,
+                   Step.configStatus.get(props.step).map(_._1),
+                   props.resourceRunRequested))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -201,31 +195,26 @@ object StepProgressCell {
 
   def stepDisplay(props: Props): VdomElement =
     (props.state, props.step) match {
-      case (f, StandardStep(_, _, StepState.Running, _, _, _, _, _))
-          if f.userStopRequested =>
+      case (f, s) if s.status === StepState.Running && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _)) =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s @ StandardStep(i, _, _, _, _, Some(fileId), _, _))
-          if s.isObservePaused =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined =>
         // Case for exposure paused, label and control buttons
-        stepObservationPaused(props, i, fileId)
-      case (_,
-            StandardStep(i, _, StepState.Running, _, _, Some(fileId), _, _)) =>
+        stepObservationPaused(props, s.id, s.fileId.orEmpty)
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined =>
         // Case for a exposure onging, progress bar and control buttons
-        stepObservationStatusAndFile(props, i, fileId)
+        stepObservationStatusAndFile(props, s.id, s.fileId.orEmpty)
       case (_, s) if s.wasSkipped =>
         <.p("Skipped")
       case (_, _) if props.step.skip =>
         <.p("Skip")
-      case (
-          _,
-          StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _)) =>
-        <.p(SeqexecStyles.componentLabel, fileId)
-      case (_, StandardStep(i, _, StepState.Pending | StepState.Paused | StepState.Failed(_), _, _, _, _, _))
-          if props.stepSelected(i) =>
+      case (_, s)
+          if s.status === StepState.Completed && s.fileId.isDefined =>
+        <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure =>
         stepSubsystemControl(props)
       case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)

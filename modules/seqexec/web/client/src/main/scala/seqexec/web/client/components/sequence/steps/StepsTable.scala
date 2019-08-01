@@ -28,6 +28,8 @@ import seqexec.model.StepState
 import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.StandardStep
+import seqexec.model.NodAndShuffleStep
+import seqexec.model.NodAndShuffleStatus
 import seqexec.model.SequenceState
 import seqexec.model.RunningStep
 import seqexec.web.client.model.lenses._
@@ -331,7 +333,7 @@ object StepsTable extends Columns {
     val stepsList: List[Step]        = steps.foldMap(_.steps)
     val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
     val rowCount: Int                = stepsList.length
-    val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).getOrElse(0)
+    val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).orEmpty
     def tabOperations: TabOperations =
       steps.map(_.tabOperations).getOrElse(TabOperations.Default)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
@@ -487,10 +489,16 @@ object StepsTable extends Columns {
 
   val stdStepReuse: Reusability[StandardStep] =
     Reusability.caseClassExcept('config)
+  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
+    Reusability.derive[NodAndShuffleStatus]
+  val nsStepReuse: Reusability[NodAndShuffleStep] =
+    Reusability.caseClassExcept('config)
+
   implicit val stepReuse: Reusability[Step] =
     Reusability {
-      case (a: StandardStep, b: StandardStep) => stdStepReuse.test(a, b)
-      case _                                  => false
+      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
+      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
+      case _                                            => false
     }
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
@@ -622,13 +630,13 @@ object StepsTable extends Columns {
       case (-1, _, _, _) =>
         // Header
         SeqexecStyles.headerRowStyle
-      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _) =>
+      case (_, StepRow(s), true, _) if s.breakpoint =>
         // row with control elements and breakpoint
         breakpointAndControlRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
-      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _) =>
+      case (_, StepRow(s), false, _) if s.breakpoint =>
         // row with breakpoint
         breakpointRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
-      case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
+      case (j, StepRow(s), _, Some(k)) if !s.breakpoint && j === k =>
         // row with breakpoint and hover
         SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
       case (_, StepRow(s), _, _) =>
@@ -652,21 +660,21 @@ object StepsTable extends Columns {
   def rowHeight(b: Backend)(i: Int): Int = {
     val row = b.props.rowGetter(i)
     row match {
-      case StepRow(StandardStep(_, _, _, _, _, _, _, _)) if b.props.showSecondRow(row.step) =>
+      case StepRow(_) if b.props.showSecondRow(row.step) =>
         // Selected
         SeqexecStyles.runningRowHeight + b.props.secondRowHeight(row.step)
-      case StepRow(StandardStep(_, _, s, true, _, _, _, _))
-          if s === StepState.Running =>
+      case StepRow(s)
+          if s.status === StepState.Running && s.breakpoint =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
-      case StepRow(s: Step) if s.status === StepState.Running =>
+      case StepRow(s) if s.status === StepState.Running =>
         // Row running
         SeqexecStyles.runningRowHeight
-      case StepRow(StandardStep(i, _, _, _, _, _, _, _))
-          if b.state.selected.exists(_ === i) && b.props.canControlSubsystems(i) =>
+      case StepRow(s)
+          if b.state.selected.exists(_ === s.id) && !s.skip && b.props.canControlSubsystems(s.id) =>
         // Selected
         SeqexecStyles.runningRowHeight
-      case StepRow(StandardStep(_, _, _, true, _, _, _, _)) =>
+      case StepRow(s) if s.breakpoint =>
         // Row with a breakpoint set
         baseHeight(b.props) + BreakpointLineHeight
       case _ =>
@@ -913,7 +921,7 @@ object StepsTable extends Columns {
      _:                Option[OnRowClick],
      style:            Style) => {
       p.rowGetter(index) match {
-        case StepRow(s @ StandardStep(i, _, _, _, _, _, _, _)) if p.showSecondRow(s) && index === i =>
+        case StepRow(s) if p.showSecondRow(s) && index === s.id =>
           <.div(
             ^.key := key,
             ^.style := Style.toJsObject(style),

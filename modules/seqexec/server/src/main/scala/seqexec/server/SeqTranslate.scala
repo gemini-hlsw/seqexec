@@ -16,6 +16,7 @@ import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import mouse.all._
 import seqexec.engine._
 import seqexec.engine.Action.ActionState
@@ -53,6 +54,10 @@ import squants.time.TimeConversions._
 class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings) extends ObserveActions {
   import SeqTranslate._
 
+  // We establish this as the limit of where logger start
+  // TODO Push it up the stack
+  private implicit def unsafeLogger[F[_]: Sync] = Slf4jLogger.unsafeCreate[F]
+
   private def step(obsId: Observation.Id, i: StepId, config: Config, nextToRun: StepId,
                    datasets: Map[Int, ExecutedDataset])(
                      implicit cio: Concurrent[IO],
@@ -64,11 +69,13 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       headers: Reader[HeaderExtraData, List[Header[IO]]],
       stepType: StepType
     ): SequenceGen.StepGen[IO] = {
+      val ia = inst.instrumentActions(config)
       val initialStepExecutions: List[ParallelActions[IO]] =
-        (i === 0 && stepType.includesObserve).option {
-          List(NonEmptyList.one(systems.odb.sequenceStart(obsId, "")
-            .as(Response.Ignored).toAction(ActionType.Undefined)))
-        }.orEmpty
+        // Ask the instrument if we need an initial action
+        (i === 0 && ia.runInitialAction(stepType)).option {
+          NonEmptyList.one(systems.odb.sequenceStart(obsId, "")
+            .as(Response.Ignored).toAction(ActionType.Undefined))
+        }.toList
 
       val configs: Map[Resource, Action[IO]] = sys.map { x =>
         val res = x.resource
@@ -77,13 +84,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         res -> x.configure(config).as(Response.Configured(res)).toAction(kind)
       }.toMap
 
-      def rest(ctx: HeaderExtraData): List[ParallelActions[IO]] =
-        (stepType.includesObserve).option {
-          List(
-            NonEmptyList.one(Action(ActionType.Observe, observe(systems, config, obsId, inst, sys.filterNot(inst.equals),
-              headers)(ctx), Action.State(ActionState.Idle, Nil)))
-          )
-        }.orEmpty
+      def rest(ctx: HeaderExtraData): List[ParallelActions[IO]] = {
+        val env = ObserveEnvironment(systems, config, stepType, obsId, inst, sys.filterNot(inst.equals), headers, ctx)
+        // Request the instrument to build the observe actions and merge them with the progress
+        ia.observeActions(env, (s, env) => ia.observationProgressStream(env).mergeHaltR(s))
+      }
 
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
@@ -121,7 +126,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
     val configs = sequence.config.getAllSteps.toList
 
-    val nextToRun = configs.map(extractStatus).lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
+    val nextToRun = configs
+      .map(extractStatus)
+      .lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
 
     val steps = configs.zipWithIndex.map {
       case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
@@ -217,7 +224,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
 
-    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Result[IO]] =
+    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Stream[IO, Result[IO]]] =
       for {
         r <- resumeCmd
         ret <- c.t(r)
@@ -248,11 +255,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                 Stream.eval(IO(Event.actionResume(seqId, i,
                   ins.observeProgress(c.expTime, ElapsedTime(to.getOrElse(0.0.seconds)))
                     .map(Result.Partial(_))
-                    .mergeHaltR(Stream.eval(resumeIO(c, cmd(c.expTime))))
+                    .mergeHaltR(Stream.eval(resumeIO(c, cmd(c.expTime))).flatten)
                 )))
               else
                 Stream.eval(IO(Event.actionResume(seqId, i,
-                  Stream.eval(resumeIO(c, cmd(c.expTime))))))
+                  Stream.eval(resumeIO(c, cmd(c.expTime))).flatten)))
           }
       }
     }
@@ -300,7 +307,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     pausedCommand(seqId, f, useCountdown = false)
   }
 
-  private def toInstrumentSys(inst: Instrument)(
+  def toInstrumentSys(inst: Instrument)(
     implicit ev: Timer[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))

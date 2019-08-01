@@ -3,8 +3,10 @@
 
 package seqexec.server
 
+import cats.Id
 import cats.effect.IO
 import cats.implicits._
+import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
@@ -15,9 +17,114 @@ import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
 
-class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
+class StepsViewSpec extends FlatSpec with Matchers with NonImplicitAssertions {
 
-  "SeqexecEngine setOperator" should "set operator's name" in {
+  "StepsView configStatus" should
+    "build empty without tasks" in {
+      StepsView.configStatus(Nil) shouldBe List.empty
+    }
+    it should "be all running if none has a result" in {
+      val status = List(Resource.TCS -> ActionStatus.Running)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(running(Resource.TCS)))
+      StepsView.configStatus(executions) shouldBe status
+    }
+    it should "be all running if none has a result 2" in {
+      val status = List(Resource.TCS -> ActionStatus.Running, Instrument.GmosN -> ActionStatus.Running)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(running(Resource.TCS), running(Instrument.GmosN)))
+      StepsView.configStatus(executions) shouldBe status
+    }
+    it should "be some complete and some running if none has a result even when the previous execution is complete" in {
+      val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(done(Resource.TCS)),
+        NonEmptyList.of(done(Resource.TCS), running(Instrument.GmosN)))
+      StepsView.configStatus(executions) shouldBe status
+    }
+    it should "be some complete and some pending if one will be done in the future" in {
+      val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(running(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), done(Instrument.GmosN))
+      )
+      StepsView.configStatus(executions) shouldBe status
+    }
+    it should "stop at the first with running steps" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(running(Instrument.GmosN)),
+        NonEmptyList.of(running(Instrument.GmosN), running(Resource.TCS))
+      )
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      StepsView.configStatus(executions) shouldBe status
+    }
+    it should "stop evaluating where at least one is running even while some are done" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), done(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), running(Instrument.GmosN)),
+        NonEmptyList.of(pendingAction(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
+      val status = List(Resource.TCS -> ActionStatus.Completed, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
+      StepsView.configStatus(executions) shouldBe status
+    }
+
+  "StepsView pending configStatus" should
+    "build empty without tasks" in {
+      StepsView.configStatus(Nil) shouldBe List.empty
+    }
+    it should "be all pending while one is running" in {
+      val status = List(Resource.TCS -> ActionStatus.Pending)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(pendingAction(Resource.TCS)))
+      StepsView.pendingConfigStatus(executions) shouldBe status
+    }
+    it should "be all pending with mixed" in {
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(pendingAction(Resource.TCS), done(Instrument.GmosN)))
+      StepsView.pendingConfigStatus(executions) shouldBe status
+    }
+    it should "be all pending on mixed combinations" in {
+      val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.one(done(Resource.TCS)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)))
+      StepsView.pendingConfigStatus(executions) shouldBe status
+    }
+    it should "be all pending with multiple resources" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
+      val status = List(Resource.TCS -> ActionStatus.Pending, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
+      StepsView.pendingConfigStatus(executions) shouldBe status
+    }
+
+  "StepsView observeStatus" should
+    "be pending on empty" in {
+      StepsView.observeStatus(Nil) shouldBe ActionStatus.Pending
+    }
+    it should "be running if there is an action observe" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), observing))
+      StepsView.observeStatus(executions) shouldBe ActionStatus.Running
+    }
+    it should "be done if there is a result observe" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), observed))
+      StepsView.observeStatus(executions) shouldBe ActionStatus.Completed
+    }
+    it should "be running if there is a partial result with the file id" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), fileIdReady))
+      StepsView.observeStatus(executions) shouldBe ActionStatus.Running
+    }
+    it should "be paused if there is a paused observe" in {
+      val executions: List[ParallelActions[Id]] = List(
+        NonEmptyList.of(done(Resource.TCS), paused))
+      StepsView.observeStatus(executions) shouldBe ActionStatus.Paused
+    }
+
+  "StepsView setOperator" should "set operator's name" in {
     val operator = Operator("Joe")
     val s0 = EngineState.default
     (for {
@@ -30,7 +137,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine setImageQuality" should "set Image Quality condition" in {
+  "StepsView setImageQuality" should "set Image Quality condition" in {
     val iq = ImageQuality.Percent20
     val s0 = EngineState.default
 
@@ -45,7 +152,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   }
 
-  "SeqexecEngine setWaterVapor" should "set Water Vapor condition" in {
+  "StepsView setWaterVapor" should "set Water Vapor condition" in {
     val wv = WaterVapor.Percent80
     val s0 = EngineState.default
     (for {
@@ -58,7 +165,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine setCloudCover" should "set Cloud Cover condition" in {
+  "StepsView setCloudCover" should "set Cloud Cover condition" in {
     val cc = CloudCover.Percent70
     val s0 = EngineState.default
     (for {
@@ -71,7 +178,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine setSkyBackground" should "set Sky Background condition" in {
+  "StepsView setSkyBackground" should "set Sky Background condition" in {
     val sb = SkyBackground.Percent50
     val s0 = EngineState.default
     (for {
@@ -84,7 +191,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine setObserver" should "set observer's name" in {
+  "StepsView setObserver" should "set observer's name" in {
     val observer = Observer("Joe")
     val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
     (for {
@@ -97,7 +204,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine" should "not run 2nd sequence because it's using the same resource" in {
+  "StepsView" should "not run 2nd sequence because it's using the same resource" in {
     val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
       ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
@@ -134,7 +241,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine configSystem" should "run a system configuration" in {
+  "StepsView configSystem" should "run a system configuration" in {
     val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
       Instrument.F2, Set(Instrument.F2, TCS)))(EngineState.default)
 
@@ -208,7 +315,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine startFrom" should "start a sequence from an arbitrary step" in {
+  "StepsView startFrom" should "start a sequence from an arbitrary step" in {
     val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceNSteps(seqObsId1, 5))(EngineState.default)
     val runStepId = 3
 
@@ -227,7 +334,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  "SeqexecEngine startFrom" should "not start the sequence if there is a resource conflict" in {
+  "StepsView startFrom" should "not start the sequence if there is a resource conflict" in {
     val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
       Instrument.F2, Set(Instrument.F2, TCS))) >>>
       ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,

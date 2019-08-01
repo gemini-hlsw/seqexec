@@ -16,6 +16,7 @@ import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.model.StepState
+import seqexec.model.Step
 import seqexec.model.events._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
@@ -84,11 +85,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       effectOnly(soundEffect)
   }
 
-  val logMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(l: ServerLogMessage) =>
-      effectOnly(Effect(Future(AppendToLog(l))))
-  }
-
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, c, v)) =>
       // After connected to the Websocket request a refresh
@@ -121,8 +117,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           obs     <- sequenceViewT.find(_.id === obsId)(e)
           curSIdx <- obs.runningStep.map(_.last)
           curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
-          if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
-          if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
+          observeStatus = Step.observeStatus.get(curStep)
+          configStatus = Step.configStatus.get(curStep)
+          if observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
+          if configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep
 
       val doneStep =
@@ -278,7 +276,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(
       soundCheck,
-      logMessage,
       stepCompletedMessage,
       connectionOpenMessage,
       sequenceCompletedMessage,

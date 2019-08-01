@@ -7,6 +7,7 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
+import seqexec.model.Step
 import seqexec.model.enum.ActionStatus
 import seqexec.model.events.ObservationProgressEvent
 import seqexec.model.events.StepExecuted
@@ -38,7 +39,7 @@ class ObservationsProgressStateHandler[M](
           curSIdx <- obs.runningStep.map(_.last)
           curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
         } yield
-          if (curStep.observeStatus === ActionStatus.Completed && !curStep.isObservePaused) {
+          if (Step.observeStatus.get(curStep) === ActionStatus.Completed && !curStep.isObservePaused) {
             updatedL(
               AllObservationsProgressState
                 .progressByIdL(e.obsId, curSIdx)

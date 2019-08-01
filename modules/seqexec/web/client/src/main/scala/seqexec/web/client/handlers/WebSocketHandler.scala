@@ -60,7 +60,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
           val byteBuffer = TypedArrayBuffer.wrap(buffer)
           Either.catchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
             case Right(event: ServerLogMessage) =>
-              SeqexecCircuit.dispatch(ServerMessage(event))
+              SeqexecCircuit.dispatch(AppendToLog(event))
             case Right(event: ObservationProgressEvent) =>
               SeqexecCircuit.dispatch(ServerMessage(event))
             case Right(event)                   =>

@@ -15,6 +15,7 @@ import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
 import gem.enum.LightSinkName
+import io.chrisdavenport.log4cats.Logger
 import scala.concurrent.duration.{Duration, SECONDS}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import seqexec.model.enum.Instrument
@@ -30,7 +31,7 @@ import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
-final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controller[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
+final case class Flamingos2[F[_]: Sync: Timer: Logger](f2Controller: Flamingos2Controller[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Flamingos2._
 
@@ -72,6 +73,9 @@ final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controlle
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] =
     f2Controller.observeProgress(total)
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    InstrumentActions.defaultInstrumentActions[F]
 
   // TODO Use different value if using electronic offsets
   override val oiOffsetGuideThreshold: Option[Length] =
@@ -146,7 +150,6 @@ object Flamingos2 {
       obsType <- config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
       // WINDOW_COVER_PROP is optional. It can be a WindowCover, an Option[WindowCover], or not be present. If no
       // value is given, then window cover position is inferred from observe type.
-      pItem = config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP)
       p <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP),
              windowCoverFromObserveType(obsType)
            )

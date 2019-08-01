@@ -229,7 +229,8 @@ class Engine[D, U](stateL: Engine.State[D]) {
       _.current.execution.forall(Action.completed).option(Handle.fromStream[D, EventType](Stream(executed(id))))
     ).getOrElse(unit))
 
-  private def partialResult[R <: PartialVal](id: Observation.Id, i: Int, p: Result.Partial[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(p))
+  private def partialResult[R <: PartialVal](id: Observation.Id, i: Int, p: Result.Partial[R]): HandleType[Unit] =
+    modifyS(id)(_.mark(i)(p))
 
   def actionPause(id: Observation.Id, i: Int, p: Result.Paused[IO]): HandleType[Unit] = modifyS(id)(s => Sequence.State.internalStopSet(false)(s).mark(i)(p))
 

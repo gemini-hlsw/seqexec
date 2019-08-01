@@ -9,7 +9,6 @@ import seqexec.model.enum.Instrument
 
 sealed trait StepType {
   def instrument: Instrument
-  def includesObserve: Boolean = true
 }
 
 object StepType {
@@ -22,7 +21,6 @@ object StepType {
   final case class DarkOrBias(override val instrument: Instrument) extends StepType
   case object AlignAndCalib extends StepType {
     override val instrument: Instrument = Instrument.Gpi
-    override val includesObserve: Boolean = false
   }
 
   implicit val eqStepType: Eq[StepType] = Eq.instance {
