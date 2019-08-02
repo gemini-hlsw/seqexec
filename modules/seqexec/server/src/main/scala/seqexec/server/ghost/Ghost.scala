@@ -3,7 +3,7 @@
 
 package seqexec.server.ghost
 
-import cats.data.Reader
+import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
@@ -46,25 +46,25 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF.embedF(calcObserveTime(config).flatMap { x =>
+  ): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      calcObserveTime(config).flatMap { x =>
         controller
           .observe(fileId, x)
           .as(ObserveCommandResult.Success: ObserveCommandResult)
-      })
+      }
     }
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+  override def configure(config: Config): F[ConfigResult[F]] =
     Ghost
       .fromSequenceConfig[F](config)
-      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
+      .flatMap(controller.applyConfig)
       .as(ConfigResult[F](this))
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
   override def calcObserveTime(config: Config): F[Time] = Seconds(360).pure[F]
 
@@ -79,7 +79,7 @@ object Ghost {
 
   val sfName: String = "GHOST"
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GhostConfig] = {
+  def fromSequenceConfig[F[_]: Sync](config: Config): F[GhostConfig] = {
     def extractor[A : ClassTag](propName: String): Option[A] =
       config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 
@@ -128,6 +128,6 @@ object Ghost {
           config
         }).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
-    }
+    }.widenRethrowT
   }
 }

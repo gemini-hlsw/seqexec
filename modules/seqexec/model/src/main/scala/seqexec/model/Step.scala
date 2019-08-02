@@ -61,7 +61,7 @@ object Step {
 
     def hasError: Boolean = s.status match {
       case StepState.Failed(_) => true
-      case _                  => false
+      case _                   => false
     }
 
     def isRunning: Boolean = s.status match {

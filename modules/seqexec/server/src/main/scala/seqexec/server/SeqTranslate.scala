@@ -146,7 +146,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       })
   }
 
-  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => Option[SeqAction[Unit]])(st: EngineState)(
+  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
     implicit tio: Timer[IO]
   ):  Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
@@ -155,8 +155,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     })
 
     def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
-      toInstrumentSys(instrument).toOption.flatMap(x => f(x.observeControl)).flatMap {
-        v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.value.map(handleError)))
+      toInstrumentSys(instrument).toOption.map(x => f(x.observeControl)).flatMap {
+        v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.attempt.map(handleError)))
       }
 
     for {
@@ -167,8 +167,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   }
 
-  private def handleError(t: TrySeq[Unit]): executeEngine.EventType = t match {
-    case Left(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
+  private def handleError: Either[Throwable, Unit] => executeEngine.EventType = {
+    case Left(e: SeqexecFailure) => Event.logErrorMsg(SeqexecFailure.explain(e))
+    case Left(e: Throwable) => Event.logErrorMsg(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
     case _       => Event.nullEvent
   }
 
@@ -176,10 +177,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
-    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
-      case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop.some
-      case UnpausableControl(StopObserveCmd(stop), _)           => stop.some
-      case _                                                    => none
+    def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
+      case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop
+      case UnpausableControl(StopObserveCmd(stop), _)           => stop
+      case _                                                    => IO.unit
     }
     deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
   }
@@ -188,10 +189,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
-    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
-      case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort.some
-      case UnpausableControl(_, AbortObserveCmd(abort))           => abort.some
-      case _                                                      => none
+    def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
+      case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
+      case UnpausableControl(_, AbortObserveCmd(abort))           => abort
+      case _                                                      => IO.unit
     }
 
     deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
@@ -200,25 +201,25 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   def pauseObserve(seqId: Observation.Id)(
     implicit tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
-      case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause.some
-      case _                                                      => none
+    def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
+      case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause
+      case _                                                      => IO.unit
     }
     deliverObserveCmd(seqId, f)
   }
 
   private def pausedCommand(seqId: Observation.Id,
-                            f: ObserveControl[IO] => Option[Time => SeqAction[ObserveCommandResult]],
+                            f: ObserveControl[IO] => Option[Time => IO[ObserveCommandResult]],
                             useCountdown: Boolean)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO,executeEngine.EventType]] = st => {
 
-    def resumeIO(c: ObserveContext[IO], resumeCmd: SeqAction[ObserveCommandResult]): IO[Result[IO]] =
-      (for {
+    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Result[IO]] =
+      for {
         r <- resumeCmd
         ret <- c.t(r)
-      } yield ret).value.map(_.toResult)
+      } yield ret
 
     def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO,
       executeEngine.EventType]] = {
@@ -234,7 +235,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           }
         }
 
-      val u: Option[Time => SeqAction[ObserveCommandResult]] =
+      val u: Option[Time => IO[ObserveCommandResult]] =
         inst.flatMap(x => f(x.observeControl))
 
       (u, observeIndex, inst).mapN {
@@ -265,7 +266,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommandResult]] = o match {
+    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
       case CompleteControl(_, _, _, ContinuePausedCmd(a), _, _) => a.some
       case _                                                    => none
     }
@@ -277,7 +278,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommandResult]] = o match {
+    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
       case CompleteControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                                => none
     }
@@ -289,7 +290,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommandResult]] = o match {
+    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
       case CompleteControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                                 => none
     }
@@ -471,25 +472,23 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
     new SeqTranslate(site, systems, settings)
 
-  implicit class ResponseToResult(val r: Either[SeqexecFailure, Response]) extends AnyVal {
-    def toResult[F[_]]: Result[F] = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(r))
+  implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {
+    def toResult[F[_]]: Result[F] = r.fold(e => e match {
+      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    }, r => Result.OK(r))
   }
 
   implicit class ResultToResult[F[_]](val r: Either[SeqexecFailure, Result[F]]) extends AnyVal {
     def toResult: Result[F] = r.fold(e => Result.Error(SeqexecFailure.explain(e)), identity)
   }
 
-  implicit class ConfigResultToResult[F[_], A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult[F]]) extends AnyVal {
-    def toResult: Result[F] = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(
-      Response.Configured(r.sys.resource)))
+  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
   }
 
-  implicit class ActionResponseToAction[F[_]: Functor, A <: Response](val x: SeqActionF[F, A]) {
-    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.value.map(_.toResult))
-  }
-
-  implicit class ConfigResultToAction[F[_]: Functor](val x: SeqActionF[F, ConfigResult[F]]) {
-    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.value.map(_.toResult))
+  implicit class ConfigResultToAction[F[_]: Functor: ApplicativeError[?[_], Throwable]](val x: F[ConfigResult[F]]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
 
 }

@@ -45,7 +45,7 @@ sealed trait InstrumentControllerSim[F[_]] {
 }
 
 object InstrumentControllerSim {
-  private final class InstrumentControllerSimImpl[F[_]: Sync: Timer](name: String, useTimeout: Boolean) extends InstrumentControllerSim[F] {
+  private final class InstrumentControllerSimImpl[F[_]](name: String, useTimeout: Boolean)(implicit val F: Sync[F], T: Timer[F]) extends InstrumentControllerSim[F] {
     private val Log = getLogger
 
     private val stopFlag = new AtomicBoolean(false)
@@ -57,6 +57,7 @@ object InstrumentControllerSim {
 
     private val ReadoutDelay = Seconds(5)
     private val ConfigurationDelay = Seconds(5)
+    private val StopObserveDelay = Seconds(1.5)
 
     @tailrec
     private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommandResult] =
@@ -69,7 +70,7 @@ object InstrumentControllerSim {
           remainingTime.set(remain)
           ObserveCommandResult.Paused.pure[F].widen
         }
-        else if(timeout.exists(_<= 0)) Sync[F].raiseError(SeqexecException(new TimeoutException()))
+        else if(timeout.exists(_<= 0)) F.raiseError(SeqexecException(new TimeoutException()))
         else {
           Thread.sleep(tic.toLong)
           observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
@@ -87,27 +88,27 @@ object InstrumentControllerSim {
       observeTic(stop = false, abort = false, pause = false, totalTime, useTimeout.option(totalTime + 2 * tic))
     }
 
-    def applyConfig[C: Show](config: C): F[Unit] = Sync[F].delay {
+    def applyConfig[C: Show](config: C): F[Unit] = F.delay {
       Log.info(s"Simulate applying $name configuration ${config.show}")
       Thread.sleep(ConfigurationDelay.toMilliseconds.toLong)
     }
 
-    def stopObserve: F[Unit] = Sync[F].delay {
+    def stopObserve: F[Unit] = F.delay {
       Log.info(s"Simulate stopping $name exposure")
-      Thread.sleep(1500)
+      Thread.sleep(StopObserveDelay.toMilliseconds.toLong)
       stopFlag.set(true)
     }
 
-    def abortObserve: F[Unit] = Sync[F].delay {
+    def abortObserve: F[Unit] = F.delay {
       Log.info(s"Simulate aborting $name exposure")
       abortFlag.set(true)
     }
 
-    def endObserve: F[Unit] = Sync[F].delay {
+    def endObserve: F[Unit] = F.delay {
       Log.info(s"Simulate sending endObserve to $name")
     }
 
-    def pauseObserve: F[Unit] = Sync[F].delay {
+    def pauseObserve: F[Unit] = F.delay {
       Log.info(s"Simulate pausing $name exposure")
       pauseFlag.set(true)
     }

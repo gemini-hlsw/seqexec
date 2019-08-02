@@ -3,7 +3,8 @@
 
 package seqexec.server.gnirs
 
-import cats.data.Reader
+import cats.data.Kleisli
+import cats.data.EitherT
 import cats.implicits._
 import cats.effect.Sync
 import edu.gemini.spModel.config2.Config
@@ -35,13 +36,13 @@ final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: Dh
 
   import Gnirs._
   import InstrumentSystem._
-  override val observeControl: ObserveControl[F] = UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
-                                                                AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
+  override val observeControl: ObserveControl[F] = UnpausableControl(StopObserveCmd(controller.stopObserve),
+                                                                AbortObserveCmd(controller.abortObserve))
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
-        SeqActionF.embedF(controller.observe(fileId, x))
+  override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      calcObserveTime(config).flatMap { x =>
+        controller.observe(fileId, x)
       }
     }
 
@@ -52,12 +53,16 @@ final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: Dh
 
   override val resource: Instrument = Instrument.Gnirs
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    SeqActionF.either(fromSequenceConfig(config)).flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(controller.applyConfig)
+      .as(ConfigResult(this))
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)

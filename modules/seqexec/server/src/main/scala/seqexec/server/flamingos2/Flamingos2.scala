@@ -3,7 +3,8 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.Reader
+import cats.data.Kleisli
+import cats.data.EitherT
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
@@ -46,19 +47,23 @@ final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controlle
   override val observeControl: InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable
 
   // FLAMINGOS-2 does not support abort or stop.
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
-        SeqActionF.embedF(f2Controller.observe(fileId, x))
+  override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      calcObserveTime(config).flatMap { x =>
+        f2Controller.observe(fileId, x)
       }
   }
 
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    fromSequenceConfig(config).flatMap(x => SeqActionF.embedF(f2Controller.applyConfig(x))).as(ConfigResult(this))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(f2Controller.applyConfig)
+      .as(ConfigResult(this))
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(f2Controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    f2Controller.endObserve
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
   override def calcObserveTime(config: Config): F[Time] =
     Sync[F].delay(
@@ -166,7 +171,7 @@ object Flamingos2 {
       s <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, Flamingos2Config] = SeqActionF.either( for {
+  def fromSequenceConfig[F[_]: Sync](config: Config): Either[SeqexecFailure, Flamingos2Config] = ( for {
       p <- ccConfigFromSequenceConfig(config)
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)

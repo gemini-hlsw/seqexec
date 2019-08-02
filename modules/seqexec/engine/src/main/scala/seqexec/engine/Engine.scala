@@ -7,6 +7,11 @@ import cats._
 import cats.data.StateT
 import cats.effect.{Concurrent, IO}
 import cats.implicits._
+import fs2.Stream
+import gem.Observation
+import monocle.Optional
+import mouse.boolean._
+import org.log4s.getLogger
 import seqexec.engine.Event._
 import seqexec.engine.EventResult.UserCommandResponse
 import seqexec.engine.EventResult.SystemUpdate
@@ -15,11 +20,6 @@ import seqexec.engine.Result.{PartialVal, RetVal}
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
 import seqexec.model.{ClientId, SequenceState, StepId}
-import fs2.Stream
-import gem.Observation
-import monocle.Optional
-import mouse.boolean._
-import org.log4s.getLogger
 
 class Engine[D, U](stateL: Engine.State[D]) {
 
@@ -54,7 +54,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
       case None      => unit
     }
 
-  /*
+  /**
    * startFrom starts a sequence from an arbitrary step. It does it by marking all previous steps to be skipped and then
    * modifying the state sequence as if it was run.
    * If the requested step is already run or marked to be skipped, the sequence will start from the next runnable step
@@ -95,11 +95,14 @@ class Engine[D, U](stateL: Engine.State[D]) {
     x.map(p =>
       modifyS(c.sid)(_.startSingle(c.actCoords)) *>
       Handle.fromStream[D, EventType](
-        p.map{
-          case r@Result.OK(_)    => singleRunCompleted(c, r)
-          case e@Result.Error(_) => singleRunFailed(c, e)
-          case r                 =>
-            singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
+        p.attempt.flatMap {
+          case Right(r @ Result.OK(_))    =>
+            Stream.eval(IO(singleRunCompleted(c, r)))
+          case Right(e @ Result.Error(_)) =>
+            Stream.eval(IO(singleRunFailed(c, e)))
+          case Right(r)                   =>
+            Stream.eval(IO(singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))))
+          case Left(t: Throwable)         => Stream.raiseError[IO](t)
         }
       ).as[Outcome](Outcome.Ok)
     ).getOrElse(pure[Outcome](Outcome.Failure))
@@ -175,12 +178,13 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def act(id: Observation.Id, stepId: StepId, t: (Stream[IO, Result[IO]], Int))
   : Stream[IO, EventType] = t match {
     case (gen, i) =>
-      gen.map {
-        case r@Result.OK(_)        => completed(id, stepId, i, r)
-        case r@Result.OKStopped(_) => stopCompleted(id, stepId, i, r)
-        case r@Result.Partial(_)   => partial(id, stepId, i, r)
-        case e@Result.Error(_)     => failed(id, i, e)
-        case r@Result.Paused(_)    => paused[IO](id, i, r)
+      gen.attempt.flatMap {
+        case Right(r@Result.OK(_))        => Stream.eval(IO(completed(id, stepId, i, r)))
+        case Right(r@Result.OKStopped(_)) => Stream.eval(IO(stopCompleted(id, stepId, i, r)))
+        case Right(r@Result.Partial(_))   => Stream.eval(IO(partial(id, stepId, i, r)))
+        case Right(e@Result.Error(_))     => Stream.eval(IO(failed(id, i, e)))
+        case Right(r@Result.Paused(_))    => Stream.eval(IO(paused[IO](id, i, r)))
+        case Left(t: Throwable)           => Stream.raiseError[IO](t)
       }
   }
 

@@ -3,7 +3,8 @@
 
 package seqexec.server.niri
 
-import cats.data.Reader
+import cats.data.EitherT
+import cats.data.Kleisli
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
@@ -19,7 +20,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, Progress, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
+import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, Progress, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
@@ -45,12 +46,14 @@ final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClien
 
   override val contributorName: String = "mko-dc-data-niri"
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
-                    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
+    UnpausableControl(StopObserveCmd(controller.stopObserve),
+                    AbortObserveCmd(controller.abortObserve))
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId => SeqActionF.either(getDCConfig(config))
-      .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
+  override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      EitherT.fromEither[F](getDCConfig(config))
+        .widenRethrowT
+        .flatMap(controller.observe(fileId, _))
     }
 
   override def calcObserveTime(config: Config): F[Time] =
@@ -72,14 +75,16 @@ final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClien
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    SeqActionF.either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(controller.applyConfig)
+      .as(ConfigResult(this))
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 }
 
 object Niri {
@@ -128,7 +133,6 @@ object Niri {
 
     (filter, getCCCommonConfig(config)).mapN(Illuminated(_, _))
   }
-
 
   def getCCDarkConfig(config: Config): TrySeq[Dark] = getCCCommonConfig(config).map(Dark(_))
 

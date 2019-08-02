@@ -3,9 +3,9 @@
 
 package seqexec.server.gsaoi
 
-import cats.data.Reader
+import cats.data.Kleisli
+import cats.data.EitherT
 import cats.effect.Sync
-import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
@@ -24,8 +24,8 @@ import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigResult
 import seqexec.server.InstrumentSystem
 import seqexec.server.Progress
-import seqexec.server.SeqActionF
-import seqexec.server.SeqObserveF
+import seqexec.server.SeqexecFailure
+import seqexec.server.ConfigUtilOps
 import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
@@ -37,7 +37,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: LiftIO: Sync](
+final case class Gsaoi[F[_]: Sync](
   controller: GsaoiController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
@@ -50,16 +50,19 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
   override val contributorName: String = "GSAOI"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl[F](StopObserveCmd[F](SeqActionF.embedF(controller.stopObserve)),
-                 AbortObserveCmd[F](SeqActionF.embedF(controller.abortObserve)))
+    UnpausableControl[F](StopObserveCmd[F](controller.stopObserve),
+                 AbortObserveCmd[F](controller.abortObserve))
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
-    Reader { fileId =>
-      SeqActionF
-        .either(readDCConfig(config).asTrySeq)
-        .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
+  ): Kleisli[F, ImageFileId, ObserveCommandResult] =
+    Kleisli { fileId =>
+      EitherT.fromEither[F]{
+        readDCConfig(config)
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      }
+        .widenRethrowT
+        .flatMap(x => controller.observe(fileId, x))
     }
 
   override def calcObserveTime(config: Config): F[Time] =
@@ -84,16 +87,16 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    SeqActionF
-      .either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
+  override def configure(config: Config): F[ConfigResult[F]] =
+    EitherT.fromEither[F](fromSequenceConfig(config))
+      .widenRethrowT
+      .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+  override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embedF(controller.endObserve)
+  override def notifyObserveEnd: F[Unit] =
+    controller.endObserve
 }
 
 object Gsaoi {

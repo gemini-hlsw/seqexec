@@ -496,13 +496,14 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
     (i match {
-      case (SystemUpdate(SystemEvent.Failed(id, _, e), _), _) => systems.odb.obsAbort(id, e.msg)
+      case (SystemUpdate(SystemEvent.Failed(id, _, e), _), _) =>
+        systems.odb.obsAbort(id, e.msg)
       case (SystemUpdate(SystemEvent.Executed(id), _), st) if EngineState.sequenceStateIndex(id).getOption(st)
         .exists(_.status === SequenceState.Idle) =>
         systems.odb.obsPause(id, "Sequence paused by user")
       case (SystemUpdate(SystemEvent.Finished(id), _), _)     => systems.odb.sequenceEnd(id)
-      case _                                  => SeqAction(())
-    }).value.as(i)
+      case _                                  => IO.unit
+    }).as(i)
   }
 
   /**
@@ -548,7 +549,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   private[server] def separateActions[F[_]](ls: List[Action[F]]): (List[Action[F]], List[Action[F]]) =  ls.partition{ _.state.runState match {
     case ActionState.Completed(_) => false
     case ActionState.Failed(_)    => false
-    case _                        => true
+    case _                          => true
   } }
 
   private[server] def configStatus[F[_]](executions: List[List[engine.Action[F]]]): List[(Resource, ActionStatus)] = {
