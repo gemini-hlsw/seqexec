@@ -94,7 +94,9 @@ object GuideConfigDb {
             odgw2 <- c.downField("odgw2On").as[Boolean]
             odgw3 <- c.downField("odgw3On").as[Boolean]
             odgw4 <- c.downField("odgw4On").as[Boolean]
-          } yield GemsOn(ttgs1, ttgs2, ttgs3, odgw1, odgw2, odgw3, odgw4)
+            useOI <- c.downField("useOI").as[Boolean].recover{case _ => false}
+            useP1 <- c.downField("useP1").as[Boolean].recover{case _ => false}
+          } yield GemsOn(ttgs1, ttgs2, ttgs3, odgw1, odgw2, odgw3, odgw4, useOI, useP1)
         }
         else Right(GemsOff)
       }

@@ -3,16 +3,19 @@
 
 package seqexec.server.gems
 
-import seqexec.server.tcs.Gaos.{PauseCondition, ResumeCondition}
+import seqexec.server.gems.Gems.GemsGuiderStatus
+import seqexec.server.tcs.Gaos.{PauseCondition, PauseResume, ResumeCondition}
 import squants.Time
 
 trait GemsController[F[_]] {
   import GemsController._
 
-  def pause(reasons: Set[PauseCondition]): F[Unit]
-  def resume(reasons: Set[ResumeCondition], config: GemsConfig): F[Unit]
+  def pauseResume(config: GemsConfig, pauseReasons: Set[PauseCondition],
+                  resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
   def observe(expTime: Time): F[Unit]
   def endObserve: F[Unit]
+
+  val stateGetter: GemsGuiderStatus[F]
 
 }
 
@@ -29,8 +32,9 @@ object GemsController {
     odgw1: Boolean,
     odgw2: Boolean,
     odgw3: Boolean,
-    odgw4: Boolean
+    odgw4: Boolean,
+    useOI: Boolean,
+    useP1: Boolean
   ) extends GemsConfig
 
 }
-

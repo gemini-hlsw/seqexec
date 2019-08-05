@@ -127,29 +127,11 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
     def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
   }
 
-  object wavelSourceA extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceA"))
+  val wavelSourceA: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceA", epicsService)
 
-    private val wavel = cs.map(_.getDouble("wavel"))
+  val wavelSourceB: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceB", epicsService)
 
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
-  }
-
-  object wavelSourceB extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceB"))
-
-    private val wavel = cs.map(_.getDouble("wavel"))
-
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
-  }
-
-  object wavelSourceC extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelSourceC"))
-
-    private val wavel = cs.map(_.getDouble("wavel"))
-
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
-  }
+  val wavelSourceC: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceC", epicsService)
 
   object m2Beam extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2Beam"))
@@ -164,14 +146,6 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   val pwfs2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("pwfs2Guide", epicsService)
 
   val oiwfsProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("oiwfsGuide", epicsService)
-
-  val g1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g1Guide", epicsService)
-
-  val g2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g2Guide", epicsService)
-
-  val g3ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g3Guide", epicsService)
-
-  val g4ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g4Guide", epicsService)
 
   val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("p1Follow", epicsService)
 
@@ -579,36 +553,36 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
     .map(_.flatMap(v => Try(v.toDouble).toOption))
 
   // GeMS Commands
-  object wavelG1 extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG1"))
+  import VirtualGemsTelescope._
 
-    private val wavel = cs.map(_.getDouble("wavel"))
+  val g1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g1Guide", epicsService)
 
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  val g2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g2Guide", epicsService)
+
+  val g3ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g3Guide", epicsService)
+
+  val g4ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g4Guide", epicsService)
+
+  def gemsProbeGuideCmd(g: VirtualGemsTelescope): ProbeGuideCmd[F] = g match {
+    case G1 => g1ProbeGuideCmd
+    case G2 => g2ProbeGuideCmd
+    case G3 => g3ProbeGuideCmd
+    case G4 => g4ProbeGuideCmd
   }
 
-  object wavelG2 extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG2"))
+  val wavelG1: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG1", epicsService)
 
-    private val wavel = cs.map(_.getDouble("wavel"))
+  val wavelG2: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG2", epicsService)
 
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
-  }
+  val wavelG3: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG3", epicsService)
 
-  object wavelG3 extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG3"))
+  val wavelG4: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG4", epicsService)
 
-    private val wavel = cs.map(_.getDouble("wavel"))
-
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
-  }
-
-  object wavelG4 extends EpicsCommand {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("wavelG4"))
-
-    private val wavel = cs.map(_.getDouble("wavel"))
-
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  def gemsWavelengthCmd(g: VirtualGemsTelescope): TargetWavelengthCmd[F] = g match {
+    case G1 => wavelG1
+    case G2 => wavelG2
+    case G3 => wavelG3
+    case G4 => wavelG4
   }
 
   def gwfs1Target: Target[F] = target("g1")
@@ -618,6 +592,13 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   def gwfs3Target: Target[F] = target("g3")
 
   def gwfs4Target: Target[F] = target("g4")
+
+  def gemsTarget(g: VirtualGemsTelescope): Target[F] = g match {
+    case G1 => gwfs1Target
+    case G2 => gwfs2Target
+    case G3 => gwfs3Target
+    case G4 => gwfs4Target
+  }
 
   val ngs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr1Follow", epicsService)
 
@@ -632,6 +613,22 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   val odgw3FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw3Follow", epicsService)
 
   val odgw4FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw4Follow", epicsService)
+
+  object odgw1ParkCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw1Parked"))
+  }
+
+  object odgw2ParkCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw2Parked"))
+  }
+
+  object odgw3ParkCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw3Parked"))
+  }
+
+  object odgw4ParkCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw4Parked"))
+  }
 
   // GeMS statuses
 
@@ -708,6 +705,13 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   def g4Wavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("g4Wavelength"))
 
+  def gemsWavelength(g: VirtualGemsTelescope): F[Option[Double]] = g match {
+    case G1 => g1Wavelength
+    case G2 => g2Wavelength
+    case G3 => g3Wavelength
+    case G4 => g4Wavelength
+  }
+
   val g1GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g1", tcsState)
 
   val g2GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g2", tcsState)
@@ -715,6 +719,13 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g3", tcsState)
 
   val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g4", tcsState)
+
+  def gemsGuideConfig(g: VirtualGemsTelescope): ProbeGuideConfig[F] = g match {
+    case G1 => g1GuideConfig
+    case G2 => g2GuideConfig
+    case G3 => g3GuideConfig
+    case G4 => g4GuideConfig
+  }
 
 }
 
@@ -789,6 +800,14 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     def setFollowState(v: String): F[Unit] = setParameter(follow, v)
   }
 
+  final class TargetWavelengthCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
+
+    private val wavel = cs.map(_.getDouble("wavel"))
+
+    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+  }
+
   class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
     def nodachopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodachopa"))
     def nodachopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodachopb"))
@@ -830,6 +849,14 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
       def parallax: F[Option[Double]] = tio.parallax.to[F]
       def radialVelocity: F[Option[Double]] = tio.radialVelocity.to[F]
     }
+  }
+
+  sealed trait VirtualGemsTelescope
+  object VirtualGemsTelescope {
+    case object G1 extends VirtualGemsTelescope
+    case object G2 extends VirtualGemsTelescope
+    case object G3 extends VirtualGemsTelescope
+    case object G4 extends VirtualGemsTelescope
   }
 
 }

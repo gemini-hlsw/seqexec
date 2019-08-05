@@ -16,8 +16,9 @@ class TcsSouthControllerEpics private extends TcsSouthController[IO] {
                            gaos: Option[Gems[IO]],
                            tcs: TcsSouthConfig): IO[Unit] = {
     tcs match {
-      case c: BasicTcsConfig => TcsControllerEpicsCommon.applyBasicConfig(subsystems, c)
-      case _ => SeqexecFailure.Execution("GeMS steps not yet supported").raiseError[IO, Unit]
+      case c: BasicTcsConfig   => TcsControllerEpicsCommon.applyBasicConfig(subsystems, c)
+      case d: TcsSouthAoConfig => gaos.map(TcsSouthControllerEpicsAo.applyAoConfig(subsystems, _, d))
+        .getOrElse(SeqexecFailure.Execution("No GeMS object defined for GeMS step").raiseError[IO, Unit])
     }
   }
 

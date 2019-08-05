@@ -92,7 +92,7 @@ object TcsNorthControllerEpicsAo {
       )),
       setScienceFold(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc.sfPos),
       setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
-    ).collect{ case Some(x) => x }
+    ).mapFilter(identity)
 
     def sysConfig(current: EpicsTcsAoConfig): IO[EpicsTcsAoConfig] = {
       val params = configParams(current)
@@ -132,7 +132,7 @@ object TcsNorthControllerEpicsAo {
     setM2Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
     setPwfs1(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.detector, demand.gds.pwfs1.detector),
     setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
-  ).collect{ case Some(x) => x }
+  ).mapFilter(identity)
 
   def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
 
@@ -161,17 +161,17 @@ object TcsNorthControllerEpicsAo {
 
   def calcAoPauseConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): Set[PauseCondition] = Set(
     demand.tc.offsetA.flatMap(v => (v =!= current.base.instrumentOffset)
-      .option(OffsetMove(current.base.offset, v.toFocalPlaneOffset(current.base.iaa)))),
-    (current.base.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(OiOff),
-    (current.base.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(P1Off),
-    (demand.gds.aoguide.detector === GuiderSensorOff).option(GaosGuideOff)
+      .option(PauseCondition.OffsetMove(current.base.offset, v.toFocalPlaneOffset(current.base.iaa)))),
+    (current.base.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(PauseCondition.OiOff),
+    (current.base.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(PauseCondition.P1Off),
+    (demand.gds.aoguide.detector === GuiderSensorOff).option(PauseCondition.GaosGuideOff)
   ).collect{ case Some(x) => x }
 
   def calcAoResumeConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): Set[ResumeCondition] = Set(
-    demand.tc.offsetA.map(v => OffsetReached(v.toFocalPlaneOffset(current.base.iaa))),
-    (demand.gds.oiwfs.detector === GuiderSensorOn).option(OiOn),
-    (demand.gds.pwfs1.detector === GuiderSensorOn).option(P1On),
-    (demand.gds.aoguide.detector === GuiderSensorOn).option(GaosGuideOn)
+    demand.tc.offsetA.map(v => ResumeCondition.OffsetReached(v.toFocalPlaneOffset(current.base.iaa))),
+    (demand.gds.oiwfs.detector === GuiderSensorOn).option(ResumeCondition.OiOn),
+    (demand.gds.pwfs1.detector === GuiderSensorOn).option(ResumeCondition.P1On),
+    (demand.gds.aoguide.detector === GuiderSensorOn).option(ResumeCondition.GaosGuideOn)
   ).collect{ case Some(x) => x }
 
   def pauseResumeGaos[F[_]: Sync ](gaos: Altair[F], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig)

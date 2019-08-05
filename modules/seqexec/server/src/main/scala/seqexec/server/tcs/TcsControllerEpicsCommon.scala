@@ -218,10 +218,10 @@ object TcsControllerEpicsCommon {
       s.setNodcchopb(encode(c.get(NodChop(Beam.C, Beam.B)))) *>
       s.setNodcchopc(encode(c.get(NodChop(Beam.C, Beam.C))))
 
-  private def setGuideProbe[F[_] : Async, C](guideControl: GuideControl[F],
-                                          trkSet: ProbeTrackingConfig => C => C)(
-                                           subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig
-                                         ): Option[C => F[C]] =
+  def setGuideProbe[F[_] : Async, C](guideControl: GuideControl[F],
+                                     trkSet: ProbeTrackingConfig => C => C)(
+                                      subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig
+                                    ): Option[C => F[C]] =
     if (subsystems.contains(guideControl.subs)) {
       val actions = List(
         (c.getNodChop =!= d.getNodChop)

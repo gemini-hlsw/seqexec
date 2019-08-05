@@ -117,7 +117,7 @@ final class GuideConfigDbSpec extends FlatSpec {
       M1GuideConfig.M1GuideOn(M1Source.GAOS),
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
     ),
-    Some(Right(GemsOn(true, false, false, true, false, true, true)))
+    Some(Right(GemsOn(true, false, false, true, false, true, true, false, false)))
   )
 
   "GuideConfigDb" should "provide decoders" in {
