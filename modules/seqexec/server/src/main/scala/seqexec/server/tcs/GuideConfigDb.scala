@@ -20,7 +20,7 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.M2GuideConfig._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController._
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn}
+import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn, OIUsage, Odgw1Active, Odgw2Active, Odgw3Active, Odgw4Active, P1Usage, Ttgs1Active, Ttgs2Active, Ttgs3Active}
 import io.circe.{Decoder, DecodingFailure}
 import squants.space.Millimeters
 
@@ -94,9 +94,19 @@ object GuideConfigDb {
             odgw2 <- c.downField("odgw2On").as[Boolean]
             odgw3 <- c.downField("odgw3On").as[Boolean]
             odgw4 <- c.downField("odgw4On").as[Boolean]
-            useOI <- c.downField("useOI").as[Boolean].recover{case _ => false}
             useP1 <- c.downField("useP1").as[Boolean].recover{case _ => false}
-          } yield GemsOn(ttgs1, ttgs2, ttgs3, odgw1, odgw2, odgw3, odgw4, useOI, useP1)
+            useOI <- c.downField("useOI").as[Boolean].recover{case _ => false}
+          } yield GemsOn(
+            if(ttgs1) Ttgs1Active.Ttgs1On else Ttgs1Active.Ttgs1Off,
+            if(ttgs2) Ttgs2Active.Ttgs2On else Ttgs2Active.Ttgs2Off,
+            if(ttgs3) Ttgs3Active.Ttgs3On else Ttgs3Active.Ttgs3Off,
+            if(odgw1) Odgw1Active.Odgw1On else Odgw1Active.Odgw1Off,
+            if(odgw2) Odgw2Active.Odgw2On else Odgw2Active.Odgw2Off,
+            if(odgw3) Odgw3Active.Odgw3On else Odgw3Active.Odgw3Off,
+            if(odgw4) Odgw4Active.Odgw4On else Odgw4Active.Odgw4Off,
+            if(useP1) P1Usage.UsesP1 else P1Usage.DoesNotUseP1,
+            if(useOI) OIUsage.UsesOI else OIUsage.DoesNotUseOI
+          )
         }
         else Right(GemsOff)
       }

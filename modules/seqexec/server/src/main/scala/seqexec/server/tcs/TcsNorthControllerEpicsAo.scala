@@ -92,7 +92,7 @@ object TcsNorthControllerEpicsAo {
       )),
       setScienceFold(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc.sfPos),
       setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
-    ).mapFilter(identity)
+    ).flattenOption
 
     def sysConfig(current: EpicsTcsAoConfig): IO[EpicsTcsAoConfig] = {
       val params = configParams(current)
@@ -132,7 +132,7 @@ object TcsNorthControllerEpicsAo {
     setM2Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
     setPwfs1(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.detector, demand.gds.pwfs1.detector),
     setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
-  ).mapFilter(identity)
+  ).flattenOption
 
   def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
 

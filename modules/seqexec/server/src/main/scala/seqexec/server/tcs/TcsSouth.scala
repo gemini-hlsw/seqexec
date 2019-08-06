@@ -92,14 +92,14 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
       config.instrument
     ):TcsSouthConfig).pure[F]
 
-  private def buildTcsAoConfig(gc: GuideConfig, ao: Gems[F]): F[TcsSouthConfig] =
+  private def buildTcsAoConfig(gc: GuideConfig): F[TcsSouthConfig] =
     gc.gaosGuide.flatMap(_.toOption).map{ aog =>
       AoTcsConfig[GemsGuiders, GemsConfig](
         gc.tcsGuide,
         TelescopeConfig(config.offsetA, config.wavelA),
         AoGuidersConfig[GemsGuiders](
           tag[P1Config](calcGuiderConfig(
-            calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | ao.usesP1(aog),
+            calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aog.usesP1,
             config.guideWithP1)
           ),
           GemsGuiders(
@@ -112,7 +112,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
             tag[ODGW4Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW4))
           ),
           tag[OIConfig](calcGuiderConfig(
-            calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | ao.usesOI(aog),
+            calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aog.usesOI,
             config.guideWithOI)
           )
         ),
@@ -126,9 +126,8 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
 
   def buildTcsConfig: F[TcsSouthConfig] =
     guideDb.value.flatMap{ c =>
-      gaos.map(buildTcsAoConfig(c, _))
-        .getOrElse(buildBasicTcsConfig(c)
-        )
+      if(gaos.isDefined) buildTcsAoConfig(c)
+      else buildBasicTcsConfig(c)
     }
 
 }

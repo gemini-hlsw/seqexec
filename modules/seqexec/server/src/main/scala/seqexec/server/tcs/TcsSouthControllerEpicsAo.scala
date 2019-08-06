@@ -6,6 +6,7 @@ package seqexec.server.tcs
 import cats.implicits._
 import cats.data.NonEmptySet
 import cats.effect.IO
+import monocle.Lens
 import mouse.boolean._
 import monocle.macros.Lenses
 import org.log4s.{Logger, getLogger}
@@ -15,69 +16,44 @@ import seqexec.server.gems.Gems
 import seqexec.server.tcs.GemsSource._
 import seqexec.server.tcs.TcsController.{GuiderConfig, ProbeTrackingConfig, Subsystem, wavelengthEq}
 import seqexec.server.tcs.TcsControllerEpicsCommon.{BaseEpicsTcsConfig, GuideControl, agTimeout, applyParam, encodeFollowOption, setGuideProbe, setHrPickup, setNodChopProbeTrackingConfig, setOiwfsProbe, setPwfs1Probe, setScienceFold, setTelescopeOffset, setWavelength, tcsTimeout}
-import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
+import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, VirtualGemsTelescope}
 import seqexec.server.tcs.TcsSouthController.{GemsGuiders, TcsSouthAoConfig}
 
 object TcsSouthControllerEpicsAo {
 
   val Log: Logger = getLogger
 
-  def setNgs1Guide(g: VirtualGemsTelescope,
-                   subsystems: NonEmptySet[Subsystem],
-                   current: ProbeTrackingConfig,
-                   demand: ProbeTrackingConfig
-                  ): Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
+  def setNgsGuide(followCmd: ProbeFollowCmd[IO], l: Lens[EpicsTcsAoConfig, GuiderConfig])(
+    g: VirtualGemsTelescope,
+    subsystems: NonEmptySet[Subsystem],
+    current: ProbeTrackingConfig,
+    demand: ProbeTrackingConfig
+  ): Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
     if (subsystems.contains(Subsystem.Gaos)) {
       val actions = List(
         (current.getNodChop =!= demand.getNodChop)
           .option(setNodChopProbeTrackingConfig(TcsEpics.instance.gemsProbeGuideCmd(g))(demand.getNodChop)),
-        (current.follow =!= demand.follow).option(TcsEpics.instance.ngs1ProbeFollowCmd.setFollowState(encode(demand.follow)))
-      ).mapFilter(identity)
+        (current.follow =!= demand.follow).option(followCmd.setFollowState(encode(demand.follow)))
+      ).flattenOption
 
       actions.nonEmpty.option { x =>
         actions.sequence *>
-          IO((EpicsTcsAoConfig.cwfs1 ^|-> GuiderConfig.tracking).set(demand)(x))
+          IO((l ^|-> GuiderConfig.tracking).set(demand)(x))
       }
     }
     else none
 
-  def setNgs2Guide(g: VirtualGemsTelescope,
-                   subsystems: NonEmptySet[Subsystem],
-                   current: ProbeTrackingConfig,
-                   demand: ProbeTrackingConfig
-                  ): Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
-    if (subsystems.contains(Subsystem.Gaos)) {
-      val actions = List(
-        (current.getNodChop =!= demand.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.gemsProbeGuideCmd(g))(demand.getNodChop)),
-        (current.follow =!= demand.follow).option(TcsEpics.instance.ngs2ProbeFollowCmd.setFollowState(encode(demand.follow)))
-      ).mapFilter(identity)
+  val setNgs1Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
+    setNgsGuide(TcsEpics.instance.ngs1ProbeFollowCmd, EpicsTcsAoConfig.cwfs1)
 
-      actions.nonEmpty.option { x =>
-        actions.sequence *>
-          IO((EpicsTcsAoConfig.cwfs2 ^|-> GuiderConfig.tracking).set(demand)(x))
-      }
-    }
-    else none
+  val setNgs2Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
+    setNgsGuide(TcsEpics.instance.ngs2ProbeFollowCmd, EpicsTcsAoConfig.cwfs2)
 
-  def setNgs3Guide(g: VirtualGemsTelescope,
-                   subsystems: NonEmptySet[Subsystem],
-                   current: ProbeTrackingConfig,
-                   demand: ProbeTrackingConfig
-                  ): Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
-    if (subsystems.contains(Subsystem.Gaos)) {
-      val actions = List(
-        (current.getNodChop =!= demand.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.gemsProbeGuideCmd(g))(demand.getNodChop)),
-        (current.follow =!= demand.follow).option(TcsEpics.instance.ngs3ProbeFollowCmd.setFollowState(encode(demand.follow)))
-      ).mapFilter(identity)
-
-      actions.nonEmpty.option { x =>
-        actions.sequence *>
-          IO((EpicsTcsAoConfig.cwfs3 ^|-> GuiderConfig.tracking).set(demand)(x))
-      }
-    }
-    else none
+  val setNgs3Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
+    setNgsGuide(TcsEpics.instance.ngs3ProbeFollowCmd, EpicsTcsAoConfig.cwfs3)
 
   private def odgw1GuiderControl(g: VirtualGemsTelescope): GuideControl[IO] = GuideControl(Subsystem.Gaos, TcsEpics.instance.odgw1ParkCmd,
     TcsEpics.instance.gemsProbeGuideCmd(g), TcsEpics.instance.odgw1FollowCmd)
@@ -120,7 +96,7 @@ object TcsSouthControllerEpicsAo {
       current.mapping.get(Odgw2).flatMap(setOdgw1Probe(_)(subsystems, current.odgw2.tracking, demand.odgw2.tracking)),
       current.mapping.get(Odgw3).flatMap(setOdgw1Probe(_)(subsystems, current.odgw3.tracking, demand.odgw3.tracking)),
       current.mapping.get(Odgw4).flatMap(setOdgw1Probe(_)(subsystems, current.odgw4.tracking, demand.odgw4.tracking))
-    ).mapFilter(identity)
+    ).flattenOption
 
   def applyAoConfig(subsystems: NonEmptySet[Subsystem],
                   gaos: Gems[IO],
@@ -137,7 +113,7 @@ object TcsSouthControllerEpicsAo {
         )),
         setScienceFold(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc.sfPos),
         setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
-      ).mapFilter(identity) ++ setGemsProbes(subsystems, current, tcs.gds.aoguide)
+      ).flattenOption ++ setGemsProbes(subsystems, current, tcs.gds.aoguide)
 
     def sysConfig(current: EpicsTcsAoConfig): IO[EpicsTcsAoConfig] = {
       val params = configParams(current)

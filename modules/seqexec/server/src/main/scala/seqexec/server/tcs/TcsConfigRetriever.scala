@@ -207,62 +207,43 @@ object TcsConfigRetriever {
     v4 -> VirtualGemsTelescope.G4
   )).value.map(_.getOrElse(Map.empty))
 
-  private def getNgs1(g: VirtualGemsTelescope, active: IO[Option[Boolean]]): IO[GuiderConfig] = for {
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "NGS1 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.ngs1Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "NGS1 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "NGS1 Active status")
+  private def getNgs(getFollow: IO[Option[Boolean]], name: String)(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
+  : IO[GuiderConfig] = for {
+    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), s"$name tracking configuration")
+    fol <- getStatusVal(Nested(getFollow).map{if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value,
+      s"$name follow state")
+    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
   } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
 
-  private def getNgs2(g: VirtualGemsTelescope, active: IO[Option[Boolean]]): IO[GuiderConfig] = for {
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "NGS2 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.ngs2Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "NGS2 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "NGS2 Active status")
-  } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+  private val getNgs1: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getNgs(TcsEpics.instance.ngs1Follow, "NGS1")
 
-  private def getNgs3(g: VirtualGemsTelescope, active: IO[Option[Boolean]]): IO[GuiderConfig] = for {
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "NGS3 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.ngs3Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "NGS3 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "NGS3 Active status")
-  } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+  private val getNgs2: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getNgs(TcsEpics.instance.ngs1Follow, "NGS2")
 
-  private def getOdgw1(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
+  private val getNgs3: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getNgs(TcsEpics.instance.ngs1Follow, "NGS3")
+
+  private def getOdgw(getParked: IO[Option[Boolean]], getFollow: IO[Option[Boolean]], name: String)(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
   : IO[GuiderConfig] = for {
-    prk <- getStatusVal(TcsEpics.instance.odgw1Parked, "ODGW1 parked state")
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "ODGW1 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.odgw1Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "ODGW1 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "ODGW1 Active status")
+    prk <- getStatusVal(getParked, s"$name parked state")
+    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), s"$name tracking configuration")
+    fol <- getStatusVal(Nested(getFollow)
+      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, s"$name follow state")
+    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
   } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-  private def getOdgw2(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
-  : IO[GuiderConfig] = for {
-    prk <- getStatusVal(TcsEpics.instance.odgw2Parked, "ODGW2 parked state")
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "ODGW2 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.odgw2Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "ODGW2 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "ODGW2 Active status")
-  } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+  private val getOdgw1: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getOdgw(TcsEpics.instance.odgw1Parked, TcsEpics.instance.odgw1Follow, "ODGW1")
 
-  private def getOdgw3(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
-  : IO[GuiderConfig] = for {
-    prk <- getStatusVal(TcsEpics.instance.odgw3Parked, "ODGW3 parked state")
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "ODGW3 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.odgw3Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "ODGW3 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "ODGW3 Active status")
-  } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+  private val getOdgw2: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getOdgw(TcsEpics.instance.odgw2Parked, TcsEpics.instance.odgw2Follow, "ODGW2")
 
-  private def getOdgw4(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
-  : IO[GuiderConfig] = for {
-    prk <- getStatusVal(TcsEpics.instance.odgw4Parked, "ODGW4 parked state")
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), "ODGW4 tracking configuration")
-    fol <- getStatusVal(Nested(TcsEpics.instance.odgw4Follow)
-      .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, "ODGW4 follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, "ODGW4 Active status")
-  } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+  private val getOdgw3: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getOdgw(TcsEpics.instance.odgw3Parked, TcsEpics.instance.odgw3Follow, "ODGW3")
+
+  private val getOdgw4: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+    getOdgw(TcsEpics.instance.odgw4Parked, TcsEpics.instance.odgw4Follow, "ODGW4")
 
   private def getInstrumentPorts: IO[InstrumentPorts] = for {
     f2    <- TcsEpics.instance.f2Port.map(_.getOrElse(InvalidPort))
@@ -290,24 +271,22 @@ object TcsConfigRetriever {
       ao   <- getAowfs(getAoFollow)
     } yield TcsNorthControllerEpicsAo.EpicsTcsAoConfig(base, ao)
 
+  private def retrieveGemsGuider(mapping: Map[GemsSource, VirtualGemsTelescope],
+                                 gemsSource: GemsSource,
+                                 getGuide: VirtualGemsTelescope => IO[GuiderConfig]): IO[GuiderConfig] =
+    mapping.get(gemsSource).map(getGuide).getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
+
   def retrieveConfigurationSouth(gemsSt: GemsGuiderStatus[IO]): IO[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
     for {
       base    <- retrieveBaseConfiguration
       mapping <- getGemsMap
-      ngs1    <- mapping.get(Ttgs1).map(getNgs1(_, gemsSt.ngs1))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      ngs2    <- mapping.get(Ttgs2).map(getNgs2(_, gemsSt.ngs2))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      ngs3    <- mapping.get(Ttgs3).map(getNgs3(_, gemsSt.ngs3))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      odgw1   <- mapping.get(Odgw1).map(getOdgw1(_, gemsSt.odgw1))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      odgw2   <- mapping.get(Odgw2).map(getOdgw2(_, gemsSt.odgw2))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      odgw3   <- mapping.get(Odgw3).map(getOdgw3(_, gemsSt.odgw3))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
-      odgw4   <- mapping.get(Odgw4).map(getOdgw4(_, gemsSt.odgw4))
-        .getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
+      ngs1    <- retrieveGemsGuider(mapping, Ttgs1, getNgs1(_, gemsSt.ngs1))
+      ngs2    <- retrieveGemsGuider(mapping, Ttgs2, getNgs2(_, gemsSt.ngs2))
+      ngs3    <- retrieveGemsGuider(mapping, Ttgs3, getNgs3(_, gemsSt.ngs3))
+      odgw1   <- retrieveGemsGuider(mapping, Odgw1, getOdgw1(_, gemsSt.odgw1))
+      odgw2   <- retrieveGemsGuider(mapping, Odgw2, getOdgw2(_, gemsSt.odgw2))
+      odgw3   <- retrieveGemsGuider(mapping, Odgw3, getOdgw3(_, gemsSt.odgw3))
+      odgw4   <- retrieveGemsGuider(mapping, Odgw4, getOdgw4(_, gemsSt.odgw4))
     } yield TcsSouthControllerEpicsAo.EpicsTcsAoConfig(
       base,
       mapping,

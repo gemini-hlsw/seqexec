@@ -6,7 +6,7 @@ package seqexec.server.gems
 import cats.Applicative
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems.GemsGuiderStatus
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn}
+import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import seqexec.server.tcs.Gaos
 import seqexec.server.tcs.Gaos.{PauseResume, ResumeCondition}
 import squants.Time
@@ -16,10 +16,6 @@ trait Gems[F[_]] extends Gaos[F] {
 
   def pauseResume(config: GemsConfig, pauseReasons: Set[Gaos.PauseCondition],
                   resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
-
-  def usesP1(guide: GemsConfig): Boolean
-
-  def usesOI(guide: GemsConfig): Boolean
 
   val stateGetter: GemsGuiderStatus[F]
 
@@ -39,16 +35,6 @@ object Gems {
                              pauseReasons: Set[Gaos.PauseCondition],
                              resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] = {
       controller.pauseResume(cfg, pauseReasons, resumeReasons)
-    }
-
-    override def usesP1(guide: GemsConfig): Boolean = guide match {
-      case GemsOn(_, _, _, _, _, _, _, _, useP1) => useP1
-      case _                                     => false
-    }
-
-    override def usesOI(guide: GemsConfig): Boolean = guide match {
-      case GemsOn(_, _, _, _, _, _, _, useOI, _) => useOI
-      case _                                     => false
     }
 
     override val stateGetter: GemsGuiderStatus[F] = controller.stateGetter

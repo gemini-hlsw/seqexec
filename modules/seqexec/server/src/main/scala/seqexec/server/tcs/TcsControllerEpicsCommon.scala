@@ -233,7 +233,7 @@ object TcsControllerEpicsCommon {
                ProbeTrackingConfig.Frozen => (c.follow =!= d.follow)
             .option(guideControl.followCmd.setFollowState(encode(d.follow)))
         }
-      ).mapFilter(identity)
+      ).flattenOption
 
       actions.nonEmpty.option { x =>
         actions.sequence *>
@@ -458,7 +458,7 @@ object TcsControllerEpicsCommon {
     )),
     setScienceFold(Lens.id)(subsystems, current, tcs.agc.sfPos),
     setHrPickup(Lens.id)(subsystems, current, tcs.agc)
-  ).mapFilter(identity)
+  ).flattenOption
 
   def applyParam[F[_] : Applicative, T: Eq, C](used: Boolean,
                                             current: T,
@@ -476,7 +476,7 @@ object TcsControllerEpicsCommon {
     setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, demand.gds.pwfs1.detector),
     setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, demand.gds.pwfs2.detector),
     setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, demand.gds.oiwfs.detector)
-  ).mapFilter(identity)
+  ).flattenOption
 
   // Disable M1 guiding if source is off
   private def normalizeM1Guiding(gaosEnabled: Boolean): Endo[BasicTcsConfig] = cfg =>

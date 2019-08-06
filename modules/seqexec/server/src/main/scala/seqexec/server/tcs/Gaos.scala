@@ -28,7 +28,7 @@ trait Gaos[F[_]] {
 }
 
 object Gaos {
-  sealed trait PauseCondition
+  sealed trait PauseCondition extends Product with Serializable
 
   object PauseCondition {
     // Telescope offset will be changed
@@ -42,7 +42,7 @@ object Gaos {
     // Instrument config (affects ODGW)
     case object InstConfigMove extends PauseCondition
 
-    implicit val becauseOffsetMoveEq: Eq[OffsetMove] = Eq.by(x => (x.previousOffset, x.newOffset))
+    implicit val offsetMoveEq: Eq[OffsetMove] = Eq.by(x => (x.previousOffset, x.newOffset))
 
     implicit val pauseReasonEq: Eq[PauseCondition] = Eq.instance {
       case (a: OffsetMove, b: OffsetMove) => a === b
@@ -53,7 +53,8 @@ object Gaos {
       case _ => false
     }
   }
-  sealed trait ResumeCondition
+
+  sealed trait ResumeCondition extends Product with Serializable
 
   object ResumeCondition {
     // Telescope offset will be changed
@@ -67,7 +68,7 @@ object Gaos {
     // Instrument config (affects ODGW)
     case object InstConfigCompleted extends ResumeCondition
 
-    implicit val becauseOffsetReachedEq: Eq[OffsetReached] = Eq.by(_.newOffset)
+    implicit val offsetReachedEq: Eq[OffsetReached] = Eq.by(_.newOffset)
 
     implicit val resumeReasonEq: Eq[ResumeCondition] = Eq.instance {
       case (a: OffsetReached, b: OffsetReached) => a === b
