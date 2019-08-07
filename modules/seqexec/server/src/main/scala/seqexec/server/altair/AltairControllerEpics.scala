@@ -73,10 +73,10 @@ object AltairControllerEpics extends AltairController[IO] {
   implicit val fieldLensEq: Eq[FieldLens] = Eq.by(_.ordinal)
 
   private def pauseNgsOrLgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(
-    reasons: Set[PauseCondition])
+    reasons: PauseConditionSet)
   : Option[(EpicsAltairConfig, IO[Unit])] = {
-    val offsets = reasons.collectFirst { case PauseCondition.OffsetMove(p, n) => (p, n) }
-    val newPos = offsets.map(u => newPosition(starPos)(u._2))
+    val newOffset = reasons.offsetO.map(_.newOffset)
+    val newPos = newOffset.map(newPosition(starPos))
     val newPosOk = newPos.forall(newPosInRange)
     val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
     val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
@@ -103,7 +103,7 @@ object AltairControllerEpics extends AltairController[IO] {
   }
 
   private def pauseResumeNgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(
-    pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition])
+    pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)
   : PauseResume[IO] = {
     val pause = pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(pauseReasons)
     val resume = resumeNgsOrLgsMode(starPos, pause.map(_._1).getOrElse(currCfg))(resumeReasons)
@@ -115,8 +115,8 @@ object AltairControllerEpics extends AltairController[IO] {
   val matrixPrepTimeout: Time = 10.seconds
 
   private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
-    reasons: Set[ResumeCondition]): Option[IO[Unit]] = {
-    val offsets = reasons.collectFirst { case ResumeCondition.OffsetReached(o) => o }
+    reasons: ResumeConditionSet): Option[IO[Unit]] = {
+    val offsets = reasons.offsetO.map(_.newOffset)
     val newPosOk = offsets.forall(v => newPosInRange(newPosition(starPos)(v)))
     val guideOk = reasons.contains(ResumeCondition.GaosGuideOn)
 
@@ -196,7 +196,7 @@ object AltairControllerEpics extends AltairController[IO] {
 
   private def pauseResumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
                            currCfg: EpicsAltairConfig)(
-    pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition]): PauseResume[IO] = {
+    pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet): PauseResume[IO] = {
     val pause = pauseLgsMode(strap, sfo, starPos, fieldLens, currCfg)(pauseReasons)
     val resume = resumeLgsMode(strap, sfo, starPos)(pause.map(_._1).getOrElse(currCfg))(resumeReasons)
 
@@ -204,20 +204,20 @@ object AltairControllerEpics extends AltairController[IO] {
   }
 
   private def pauseLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
-                           currCfg: EpicsAltairConfig)(reasons: Set[PauseCondition])
+                           currCfg: EpicsAltairConfig)(reasons: PauseConditionSet)
   : Option[(EpicsAltairConfig, IO[Unit])] =
     pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(reasons).filter(_ => strap || sfo)
       .map(_.bimap(ttgsOffEndo, ttgsOff(currCfg) *> _))
 
   private def resumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length))(currCfg: EpicsAltairConfig)(
-    reasons: Set[ResumeCondition]): Option[IO[Unit]] =
+    reasons: ResumeConditionSet): Option[IO[Unit]] =
     resumeNgsOrLgsMode(starPos, currCfg)(reasons).filter(_ => strap || sfo).map(_ *> ttgsOn(strap, sfo, currCfg))
 
   /**
    * Modes LgsWithP1 and LgsWithOi don't use an Altair target. The only action required is to start or stop corrections
    */
   private def pauseResumeLgsWithXX(currCfg: EpicsAltairConfig)(
-      pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition])
+      pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)
   : PauseResume[IO] = {
     val pause: Option[IO[Unit]] = (pauseReasons.contains(PauseCondition.GaosGuideOff) && currCfg.aoLoop).option{
       epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
@@ -247,7 +247,7 @@ object AltairControllerEpics extends AltairController[IO] {
     None
   )
 
-  override def pauseResume(pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition],
+  override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet,
                            fieldLens: FieldLens)(cfg: AltairConfig): IO[PauseResume[IO]] =
     retrieveConfig.map{ currCfg =>
       cfg match {

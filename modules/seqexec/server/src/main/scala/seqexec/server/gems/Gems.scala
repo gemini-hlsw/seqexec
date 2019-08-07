@@ -8,14 +8,14 @@ import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems.GemsGuiderStatus
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.{PauseResume, ResumeCondition}
+import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 
 trait Gems[F[_]] extends Gaos[F] {
   val cfg: GemsConfig
 
-  def pauseResume(config: GemsConfig, pauseReasons: Set[Gaos.PauseCondition],
-                  resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
+  def pauseResume(config: GemsConfig, pauseReasons: PauseConditionSet,
+                  resumeReasons: ResumeConditionSet): F[PauseResume[F]]
 
   val stateGetter: GemsGuiderStatus[F]
 
@@ -32,8 +32,8 @@ object Gems {
     override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = controller.endObserve
 
     override def pauseResume(config: GemsConfig,
-                             pauseReasons: Set[Gaos.PauseCondition],
-                             resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] = {
+                             pauseReasons: PauseConditionSet,
+                             resumeReasons: ResumeConditionSet): F[PauseResume[F]] = {
       controller.pauseResume(cfg, pauseReasons, resumeReasons)
     }
 

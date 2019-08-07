@@ -6,14 +6,14 @@ package seqexec.server.gems
 import cats.Eq
 import cats.implicits._
 import seqexec.server.gems.Gems.GemsGuiderStatus
-import seqexec.server.tcs.Gaos.{PauseCondition, PauseResume, ResumeCondition}
+import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 
 trait GemsController[F[_]] {
   import GemsController._
 
-  def pauseResume(config: GemsConfig, pauseReasons: Set[PauseCondition],
-                  resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
+  def pauseResume(config: GemsConfig, pauseReasons: PauseConditionSet,
+                  resumeReasons: ResumeConditionSet): F[PauseResume[F]]
   def observe(expTime: Time): F[Unit]
   def endObserve: F[Unit]
 
