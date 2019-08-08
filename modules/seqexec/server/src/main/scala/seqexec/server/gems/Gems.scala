@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.Applicative
 import seqexec.server.altair.AltairController.AltairConfig
-import seqexec.server.gems.Gems.GemsGuiderStatus
+import seqexec.server.gems.Gems.GemsWfsStatus
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import seqexec.server.tcs.Gaos
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
@@ -17,7 +17,7 @@ trait Gems[F[_]] extends Gaos[F] {
   def pauseResume(config: GemsConfig, pauseReasons: PauseConditionSet,
                   resumeReasons: ResumeConditionSet): F[PauseResume[F]]
 
-  val stateGetter: GemsGuiderStatus[F]
+  val stateGetter: GemsWfsStatus[F]
 
 }
 
@@ -37,13 +37,13 @@ object Gems {
       controller.pauseResume(cfg, pauseReasons, resumeReasons)
     }
 
-    override val stateGetter: GemsGuiderStatus[F] = controller.stateGetter
+    override val stateGetter: GemsWfsStatus[F] = controller.stateGetter
   }
 
   def fromConfig[F[_]: Applicative](controller: GemsController[F])/*(config: Config)*/: F[Gems[F]] =
     Applicative[F].pure(new GemsImpl[F](controller, GemsOff))
 
-  final case class GemsGuiderStatus[F[_]](
+  final case class GemsWfsStatus[F[_]](
     ngs1: F[Option[Boolean]],
     ngs2: F[Option[Boolean]],
     ngs3: F[Option[Boolean]],

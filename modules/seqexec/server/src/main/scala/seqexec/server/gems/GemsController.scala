@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.Eq
 import cats.implicits._
-import seqexec.server.gems.Gems.GemsGuiderStatus
+import seqexec.server.gems.Gems.GemsWfsStatus
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 
@@ -17,104 +17,129 @@ trait GemsController[F[_]] {
   def observe(expTime: Time): F[Unit]
   def endObserve: F[Unit]
 
-  val stateGetter: GemsGuiderStatus[F]
+  val stateGetter: GemsWfsStatus[F]
 
 }
 
 object GemsController {
 
-  sealed trait P1Usage
+  sealed trait P1Usage extends Product with Serializable
   object P1Usage {
-    case object UsesP1 extends P1Usage
-    case object DoesNotUseP1 extends P1Usage
+    case object UseP1 extends P1Usage
+    case object DontUseP1 extends P1Usage
 
-    implicit val p1UsageEq: Eq[P1Usage] = Eq.instance{
-      case (UsesP1, UsesP1)             => true
-      case (DoesNotUseP1, DoesNotUseP1) => true
-      case _                            => false
-    }
+    implicit val p1UsageEq: Eq[P1Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): P1Usage = if(b) UseP1 else DontUseP1
   }
 
-  sealed trait OIUsage
+  sealed trait OIUsage extends Product with Serializable
   object OIUsage {
-    case object UsesOI extends OIUsage
-    case object DoesNotUseOI extends OIUsage
+    case object UseOI extends OIUsage
+    case object DontUseOI extends OIUsage
 
-    implicit val oiUsageEq: Eq[OIUsage] = Eq.instance{
-      case (UsesOI, UsesOI)             => true
-      case (DoesNotUseOI, DoesNotUseOI) => true
-      case _                            => false
-    }
+    implicit val oiUsageEq: Eq[OIUsage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): OIUsage = if(b) UseOI else DontUseOI
   }
 
-  sealed trait GemsConfig {
-    val usesP1: Boolean
-    val usesOI: Boolean
+  sealed trait GemsConfig extends Product with Serializable {
+    val isP1Used: Boolean
+    val isOIUsed: Boolean
   }
 
   case object GemsOff extends GemsConfig {
-    override val usesP1: Boolean = false
-    override val usesOI: Boolean = false
+    override val isP1Used: Boolean = false
+    override val isOIUsed: Boolean = false
   }
 
-  sealed trait Ttgs1Active
-  object Ttgs1Active {
-    case object Ttgs1On extends Ttgs1Active
-    case object Ttgs1Off extends Ttgs1Active
+  sealed trait Ttgs1Usage extends Product with Serializable
+  object Ttgs1Usage {
+    case object UseTtgs1 extends Ttgs1Usage
+    case object DontUseTtgs1 extends Ttgs1Usage
+
+    implicit val ttgs1UsageEq: Eq[Ttgs1Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Ttgs1Usage = if(b) UseTtgs1 else DontUseTtgs1
   }
 
-  sealed trait Ttgs2Active
-  object Ttgs2Active {
-    case object Ttgs2On extends Ttgs2Active
-    case object Ttgs2Off extends Ttgs2Active
+  sealed trait Ttgs2Usage extends Product with Serializable
+  object Ttgs2Usage {
+    case object UseTtgs2 extends Ttgs2Usage
+    case object DontUseTtgs2 extends Ttgs2Usage
+
+    implicit val ttgs2UsageEq: Eq[Ttgs2Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Ttgs2Usage = if(b) UseTtgs2 else DontUseTtgs2
   }
 
-  sealed trait Ttgs3Active
-  object Ttgs3Active {
-    case object Ttgs3On extends Ttgs3Active
-    case object Ttgs3Off extends Ttgs3Active
+  sealed trait Ttgs3Usage extends Product with Serializable
+  object Ttgs3Usage {
+    case object UseTtgs3 extends Ttgs3Usage
+    case object DontUseTtgs3 extends Ttgs3Usage
+
+    implicit val ttgs3UsageEq: Eq[Ttgs3Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Ttgs3Usage = if(b) UseTtgs3 else DontUseTtgs3
   }
 
-  sealed trait Odgw1Active
-  object Odgw1Active {
-    case object Odgw1On extends Odgw1Active
-    case object Odgw1Off extends Odgw1Active
+  sealed trait Odgw1Usage extends Product with Serializable
+  object Odgw1Usage {
+    case object UseOdgw1 extends Odgw1Usage
+    case object DontUseOdgw1 extends Odgw1Usage
+
+    implicit val odgw1UsageEq: Eq[Odgw1Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Odgw1Usage = if(b) UseOdgw1 else DontUseOdgw1
   }
 
-  sealed trait Odgw2Active
-  object Odgw2Active {
-    case object Odgw2On extends Odgw2Active
-    case object Odgw2Off extends Odgw2Active
+  sealed trait Odgw2Usage extends Product with Serializable
+  object Odgw2Usage {
+    case object UseOdgw2 extends Odgw2Usage
+    case object DontUseOdgw2 extends Odgw2Usage
+
+    implicit val odgw2UsageEq: Eq[Odgw2Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Odgw2Usage = if(b) UseOdgw2 else DontUseOdgw2
   }
 
-  sealed trait Odgw3Active
-  object Odgw3Active {
-    case object Odgw3On extends Odgw3Active
-    case object Odgw3Off extends Odgw3Active
+  sealed trait Odgw3Usage extends Product with Serializable
+  object Odgw3Usage {
+    case object UseOdgw3 extends Odgw3Usage
+    case object DontUseOdgw3 extends Odgw3Usage
+
+    implicit val odgw3UsageEq: Eq[Odgw3Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Odgw3Usage = if(b) UseOdgw3 else DontUseOdgw3
   }
 
-  sealed trait Odgw4Active
-  object Odgw4Active {
-    case object Odgw4On extends Odgw4Active
-    case object Odgw4Off extends Odgw4Active
-  }
+  sealed trait Odgw4Usage extends Product with Serializable
+  object Odgw4Usage {
+    case object UseOdgw4 extends Odgw4Usage
+    case object DontUseOdgw4 extends Odgw4Usage
 
-  import P1Usage._
-  import OIUsage._
+    implicit val odgw4UsageEq: Eq[Odgw4Usage] = Eq.fromUniversalEquals
+
+    def fromBoolean(b: Boolean): Odgw4Usage = if(b) UseOdgw4 else DontUseOdgw4
+  }
 
   final case class GemsOn(
-    ttgs1: Ttgs1Active,
-    ttgs2: Ttgs2Active,
-    ttgs3: Ttgs3Active,
-    odgw1: Odgw1Active,
-    odgw2: Odgw2Active,
-    odgw3: Odgw3Active,
-    odgw4: Odgw4Active,
-    useP1: P1Usage,
-    useOI: OIUsage
+                           ttgs1: Ttgs1Usage,
+                           ttgs2: Ttgs2Usage,
+                           ttgs3: Ttgs3Usage,
+                           odgw1: Odgw1Usage,
+                           odgw2: Odgw2Usage,
+                           odgw3: Odgw3Usage,
+                           odgw4: Odgw4Usage,
+                           useP1: P1Usage,
+                           useOI: OIUsage
   ) extends GemsConfig {
-    override val usesP1: Boolean = useP1 === UsesP1
-    override val usesOI: Boolean = useOI === UsesOI
+
+    import P1Usage._
+    override val isP1Used: Boolean = useP1 === UseP1
+
+    import OIUsage._
+    override val isOIUsed: Boolean = useOI === UseOI
   }
 
 }

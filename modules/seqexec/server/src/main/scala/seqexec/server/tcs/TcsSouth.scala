@@ -99,7 +99,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
         TelescopeConfig(config.offsetA, config.wavelA),
         AoGuidersConfig[GemsGuiders](
           tag[P1Config](calcGuiderConfig(
-            calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aog.usesP1,
+            calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aog.isP1Used,
             config.guideWithP1)
           ),
           GemsGuiders(
@@ -112,7 +112,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
             tag[ODGW4Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW4))
           ),
           tag[OIConfig](calcGuiderConfig(
-            calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aog.usesOI,
+            calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aog.isOIUsed,
             config.guideWithOI)
           )
         ),

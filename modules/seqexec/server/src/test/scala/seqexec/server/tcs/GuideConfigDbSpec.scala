@@ -15,15 +15,15 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController.Lgs
 import seqexec.server.gems.GemsController.GemsOn
-import seqexec.server.gems.GemsController.OIUsage.DoesNotUseOI
-import seqexec.server.gems.GemsController.Odgw1Active.Odgw1On
-import seqexec.server.gems.GemsController.Odgw2Active.Odgw2Off
-import seqexec.server.gems.GemsController.Odgw3Active.Odgw3On
-import seqexec.server.gems.GemsController.Odgw4Active.Odgw4On
-import seqexec.server.gems.GemsController.P1Usage.DoesNotUseP1
-import seqexec.server.gems.GemsController.Ttgs1Active.Ttgs1On
-import seqexec.server.gems.GemsController.Ttgs2Active.Ttgs2Off
-import seqexec.server.gems.GemsController.Ttgs3Active.Ttgs3Off
+import seqexec.server.gems.GemsController.OIUsage.DontUseOI
+import seqexec.server.gems.GemsController.Odgw1Usage.UseOdgw1
+import seqexec.server.gems.GemsController.Odgw2Usage.DontUseOdgw2
+import seqexec.server.gems.GemsController.Odgw3Usage.UseOdgw3
+import seqexec.server.gems.GemsController.Odgw4Usage.UseOdgw4
+import seqexec.server.gems.GemsController.P1Usage.DontUseP1
+import seqexec.server.gems.GemsController.Ttgs1Usage.UseTtgs1
+import seqexec.server.gems.GemsController.Ttgs2Usage.DontUseTtgs2
+import seqexec.server.gems.GemsController.Ttgs3Usage.DontUseTtgs3
 import squants.space.Millimeters
 
 final class GuideConfigDbSpec extends FlatSpec {
@@ -127,15 +127,15 @@ final class GuideConfigDbSpec extends FlatSpec {
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
     ),
     Some(Right(GemsOn(
-      Ttgs1On,
-      Ttgs2Off,
-      Ttgs3Off,
-      Odgw1On,
-      Odgw2Off,
-      Odgw3On,
-      Odgw4On,
-      DoesNotUseP1,
-      DoesNotUseOI
+      UseTtgs1,
+      DontUseTtgs2,
+      DontUseTtgs3,
+      UseOdgw1,
+      DontUseOdgw2,
+      UseOdgw3,
+      UseOdgw4,
+      DontUseP1,
+      DontUseOI
     )))
   )
 

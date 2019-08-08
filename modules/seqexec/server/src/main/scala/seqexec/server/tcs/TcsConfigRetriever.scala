@@ -20,7 +20,7 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.SeqexecFailure
-import seqexec.server.gems.Gems.GemsGuiderStatus
+import seqexec.server.gems.Gems.GemsWfsStatus
 import seqexec.server.tcs.GemsSource.{Odgw1, Odgw2, Odgw3, Odgw4, Ttgs1, Ttgs2, Ttgs3}
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, InstrumentPorts, InvalidPort, ScienceFold}
@@ -276,7 +276,7 @@ object TcsConfigRetriever {
                                  getGuide: VirtualGemsTelescope => IO[GuiderConfig]): IO[GuiderConfig] =
     mapping.get(gemsSource).map(getGuide).getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
 
-  def retrieveConfigurationSouth(gemsSt: GemsGuiderStatus[IO]): IO[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
+  def retrieveConfigurationSouth(gemsSt: GemsWfsStatus[IO]): IO[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
     for {
       base    <- retrieveBaseConfiguration
       mapping <- getGemsMap
