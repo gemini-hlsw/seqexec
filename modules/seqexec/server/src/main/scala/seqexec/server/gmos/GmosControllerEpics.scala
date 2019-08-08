@@ -220,6 +220,9 @@ object GmosControllerEpics extends GmosEncoders {
   def setOrder(state: GmosCCEpicsState, o: DisperserOrder): Option[IO[Unit]] =
     applyParam(state.disperserOrder, disperserOrderEncoderInt.encode(o), (_: Int) => CC.setDisperserOrder(disperserOrderEncoder.encode(o)))
 
+  def setWavelength(state: GmosCCEpicsState, w: Length): Option[IO[Unit]] =
+    applyParam(state.disperserWavel, encode(w), CC.setDisperserLambda)
+
   def setDisperserParams[T <: GmosController.SiteDependentTypes: Encoders](state: GmosCCEpicsState, cfg: GmosController.Config[T], d: GmosController.Config[T]#GmosDisperser): List[Option[IO[Unit]]] = {
     val set: List[Option[IO[Unit]]] = d match {
       case cfg.GmosDisperser.Mirror =>
@@ -234,15 +237,20 @@ object GmosControllerEpics extends GmosEncoders {
         //If disperser or order are set, force mode configuration
         s.foldMap(_ => s ++ List(CC.setDisperserMode(disperserMode0).some))
       case cfg.GmosDisperser.OrderN(d, o, w) =>
-        val s0: Option[IO[Unit]] = setDisperser(state, d)
+        val s0: Option[IO[Unit]] = setDisperser(state, d) // None means disperser is already in the right position
         val s: List[Option[IO[Unit]]] =
+          // If disperser is set, the order has to be set regardless of current value.
           if (s0.isEmpty) {
-            List(setOrder(state, o))
+            List(
+              setOrder(state, o),
+              setWavelength(state, w)
+            )
           } else {
             List(
               CC.setDisperserOrder(disperserOrderEncoder.encode(o)).some,
               s0,
-              applyParam(state.disperserWavel, encode(w), CC.setDisperserLambda))
+              setWavelength(state, w)
+            )
           }
 
         //If disperser, order or wavelength are set, force mode configuration
