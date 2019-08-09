@@ -30,6 +30,7 @@ trait Gaos[F[_]] {
 }
 
 object Gaos {
+
   sealed trait PauseCondition extends Product with Serializable
 
   object PauseCondition {
@@ -49,13 +50,7 @@ object Gaos {
 
     implicit val offsetMoveEq: Eq[OffsetMove] = Eq.by(_.newOffset)
 
-    implicit val fixedPauseReasonEq: Eq[FixedPauseCondition] = Eq.instance {
-      case (OiOff, OiOff)                   => true
-      case (P1Off, P1Off)                   => true
-      case (GaosGuideOff, GaosGuideOff)     => true
-      case (InstConfigMove, InstConfigMove) => true
-      case _                                => false
-    }
+    implicit val fixedPauseReasonEq: Eq[FixedPauseCondition] = Eq.fromUniversalEquals
 
     implicit val pauseReasonEq: Eq[PauseCondition] = Eq.instance{
       case (a: OffsetMove, b: OffsetMove)                   => a === b
@@ -69,7 +64,7 @@ object Gaos {
   final case class PauseConditionSet private (offsetO: Option[OffsetMove], fixed: Set[FixedPauseCondition]){
 
     def +(v: PauseCondition): PauseConditionSet = v match {
-      case a:OffsetMove           => PauseConditionSet(a.some, fixed)
+      case a: OffsetMove          => PauseConditionSet(a.some, fixed)
       case b: FixedPauseCondition => PauseConditionSet(offsetO, fixed + b)
     }
 

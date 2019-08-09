@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.Eq
 import cats.implicits._
-import seqexec.server.gems.Gems.GemsWfsStatus
+import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 
@@ -17,7 +17,7 @@ trait GemsController[F[_]] {
   def observe(expTime: Time): F[Unit]
   def endObserve: F[Unit]
 
-  val stateGetter: GemsWfsStatus[F]
+  val stateGetter: GemsWfsState[F]
 
 }
 

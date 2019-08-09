@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.MonadError
+import cats.{Eq, MonadError}
 import cats.data.{Nested, OneAnd, OptionT}
 import cats.effect.IO
 import cats.implicits._
@@ -20,7 +20,14 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.SeqexecFailure
-import seqexec.server.gems.Gems.GemsWfsStatus
+import seqexec.server.gems.Gems.{DetectorStateOps, GemsWfsState, Ngs1DetectorState, Ngs2DetectorState, Ngs3DetectorState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}
+import seqexec.server.gems.Gems.Ngs1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Ngs2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Ngs3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw4DetectorState.{Off => _, On => _, _}
 import seqexec.server.tcs.GemsSource.{Odgw1, Odgw2, Odgw3, Odgw4, Ttgs1, Ttgs2, Ttgs3}
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, InstrumentPorts, InvalidPort, ScienceFold}
@@ -207,42 +214,46 @@ object TcsConfigRetriever {
     v4 -> VirtualGemsTelescope.G4
   )).value.map(_.getOrElse(Map.empty))
 
-  private def getNgs(getFollow: IO[Option[Boolean]], name: String)(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
+  private def getNgs[T: DetectorStateOps: Eq](getFollow: IO[Option[Boolean]], name: String)
+                                             (g: VirtualGemsTelescope, active: IO[Option[T]])
   : IO[GuiderConfig] = for {
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), s"$name tracking configuration")
     fol <- getStatusVal(Nested(getFollow).map{if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value,
       s"$name follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
+    wfs <- getStatusVal(Nested(active)
+      .map{x => if(DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
   } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
 
-  private val getNgs1: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getNgs1: (VirtualGemsTelescope, IO[Option[Ngs1DetectorState]]) => IO[GuiderConfig] =
     getNgs(TcsEpics.instance.ngs1Follow, "NGS1")
 
-  private val getNgs2: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getNgs2: (VirtualGemsTelescope, IO[Option[Ngs2DetectorState]]) => IO[GuiderConfig] =
     getNgs(TcsEpics.instance.ngs1Follow, "NGS2")
 
-  private val getNgs3: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getNgs3: (VirtualGemsTelescope, IO[Option[Ngs3DetectorState]]) => IO[GuiderConfig] =
     getNgs(TcsEpics.instance.ngs1Follow, "NGS3")
 
-  private def getOdgw(getParked: IO[Option[Boolean]], getFollow: IO[Option[Boolean]], name: String)(g: VirtualGemsTelescope, active: IO[Option[Boolean]])
+  private def getOdgw[T: DetectorStateOps: Eq](getParked: IO[Option[Boolean]], getFollow: IO[Option[Boolean]], name: String)
+                                          (g: VirtualGemsTelescope, active: IO[Option[T]])
   : IO[GuiderConfig] = for {
     prk <- getStatusVal(getParked, s"$name parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), s"$name tracking configuration")
     fol <- getStatusVal(Nested(getFollow)
       .map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}.value, s"$name follow state")
-    wfs <- getStatusVal(Nested(active).map{if(_) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
+    wfs <- getStatusVal(Nested(active)
+      .map{x => if(DetectorStateOps.isActive[T](x)) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
   } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-  private val getOdgw1: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getOdgw1: (VirtualGemsTelescope, IO[Option[Odgw1DetectorState]]) => IO[GuiderConfig] =
     getOdgw(TcsEpics.instance.odgw1Parked, TcsEpics.instance.odgw1Follow, "ODGW1")
 
-  private val getOdgw2: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getOdgw2: (VirtualGemsTelescope, IO[Option[Odgw2DetectorState]]) => IO[GuiderConfig] =
     getOdgw(TcsEpics.instance.odgw2Parked, TcsEpics.instance.odgw2Follow, "ODGW2")
 
-  private val getOdgw3: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getOdgw3: (VirtualGemsTelescope, IO[Option[Odgw3DetectorState]]) => IO[GuiderConfig] =
     getOdgw(TcsEpics.instance.odgw3Parked, TcsEpics.instance.odgw3Follow, "ODGW3")
 
-  private val getOdgw4: (VirtualGemsTelescope, IO[Option[Boolean]]) => IO[GuiderConfig] =
+  private val getOdgw4: (VirtualGemsTelescope, IO[Option[Odgw4DetectorState]]) => IO[GuiderConfig] =
     getOdgw(TcsEpics.instance.odgw4Parked, TcsEpics.instance.odgw4Follow, "ODGW4")
 
   private def getInstrumentPorts: IO[InstrumentPorts] = for {
@@ -276,7 +287,7 @@ object TcsConfigRetriever {
                                  getGuide: VirtualGemsTelescope => IO[GuiderConfig]): IO[GuiderConfig] =
     mapping.get(gemsSource).map(getGuide).getOrElse(IO(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)))
 
-  def retrieveConfigurationSouth(gemsSt: GemsWfsStatus[IO]): IO[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
+  def retrieveConfigurationSouth(gemsSt: GemsWfsState[IO]): IO[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
     for {
       base    <- retrieveBaseConfiguration
       mapping <- getGemsMap
