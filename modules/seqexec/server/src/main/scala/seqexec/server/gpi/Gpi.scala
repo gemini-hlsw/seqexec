@@ -17,6 +17,8 @@ import fs2.Stream
 import java.lang.{ Boolean => JBoolean }
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
+import gem.enum.GpiReadMode
+import gem.enum.GpiReadModeOps
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -163,6 +165,14 @@ object Gpi {
     }.getOrElse(false)
   }
 
+  def gpiReadMode(config: Config): Either[ExtractFailure, GpiReadMode] =
+    config.extractAs[JInt](OBSERVE_KEY / DETECTOR_SAMPLING_MODE_PROP)
+      .map(_.toInt)
+      .flatMap(GpiReadMode.fromValue(_)
+        .toRight(
+          ConversionError(OBSERVE_KEY / DETECTOR_SAMPLING_MODE_PROP,
+          "Cannot read gpi Read mode")))
+
   private def regularSequenceConfig[F[_]: Sync](config: Config): F[GpiConfig] =
     EitherT(Sync[F].delay(
       (for {
@@ -171,6 +181,7 @@ object Gpi {
                       .map(x => Duration(x, SECONDS))
         coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP)
                       .map(_.toInt)
+        readMode <- gpiReadMode(config)
         mode     <- gpiMode(config)
         pol      <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
         polA     <- config.extractAs[JDouble](INSTRUMENT_KEY / HALF_WAVE_PLATE_ANGLE_VALUE_PROP)
@@ -179,7 +190,7 @@ object Gpi {
         asu      <- gpiASU(config)
         pc       <- config.extractAs[PupilCamera](INSTRUMENT_KEY / PUPUL_CAMERA_PROP)
         ao       <- gpiAoFlags(config)
-      } yield RegularGpiConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
+      } yield RegularGpiConfig(adc, exp, coa, readMode, mode, pol, polA, shutters, asu, pc, ao))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
     )).widenRethrowT.widen[GpiConfig]
 

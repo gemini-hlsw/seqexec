@@ -19,6 +19,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import gem.enum.GiapiStatusApply._
+import gem.enum.GpiReadMode
 import giapi.client.commands.Configuration
 import giapi.client.commands.CommandResultException
 import giapi.client.gpi.GpiClient
@@ -85,6 +86,7 @@ final case class RegularGpiConfig(
   adc:            LegacyAdc,
   expTime:        Duration,
   coAdds:         Int,
+  readMode:       GpiReadMode,
   mode:           Either[LegacyObservingMode, NonStandardModeParams],
   disperser:      LegacyDisperser,
   disperserAngle: Double,
@@ -98,6 +100,7 @@ object RegularGpiConfig extends GpiConfigEq {
     x =>
       (x.adc,
        x.expTime,
+       x.readMode,
        x.coAdds,
        x.mode,
        x.disperser,
@@ -192,6 +195,7 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
       Configuration.single(GpiIntegrationTime.applyItem,
         config.expTime.toMillis / 1000.0) |+|
       Configuration.single(GpiNumCoadds.applyItem, config.coAdds) |+|
+      Configuration.single(GpiIFSReadMode.applyItem, config.readMode.value) |+|
       Configuration.single(GpiMagI.applyItem, config.aoFlags.magI) |+|
       Configuration.single(GpiMagH.applyItem, config.aoFlags.magH) |+|
       Configuration.single(
