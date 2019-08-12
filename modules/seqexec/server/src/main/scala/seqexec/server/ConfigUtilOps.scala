@@ -98,7 +98,17 @@ object ConfigUtilOps {
       new Extracted(c, INSTRUMENT_KEY / key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
+    def extractInstAs[A](key: String)(
+      implicit clazz:         ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, INSTRUMENT_KEY / key).as[A]
+
+    // config syntax: cfg.extractInstAs[Type](key)
     def extractObsAs[A](key: PropertyDescriptor)(
+      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, OBSERVE_KEY / key).as[A]
+
+    // config syntax: cfg.extractInstAs[Type](key)
+    def extractObsAs[A](key: String)(
       implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, OBSERVE_KEY / key).as[A]
 

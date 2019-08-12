@@ -80,6 +80,32 @@ object NonStandardModeParams extends GpiConfigEq {
   implicit val show: Show[NonStandardModeParams] = Show.fromToString
 }
 
+sealed abstract class ReadoutArea(val startX: Int,
+                                  val startY: Int,
+                                  val endX: Int,
+                                  val endY: Int)
+
+object ReadoutArea {
+  val MinValue: Int = 0
+  val MaxValue: Int = 2047
+
+  private def inRange(x: Int): Boolean = x >= MinValue && x <= MaxValue
+
+  val DefaultArea: ReadoutArea =
+    new ReadoutArea(MinValue, MinValue, MaxValue, MaxValue) {}
+
+  def fromValues(startX: Int, startY: Int, endX: Int, endY: Int): Option[ReadoutArea] =
+    if (inRange(startX) && inRange(startY) && inRange(endX) && inRange(endY)) {
+      (new ReadoutArea(startX, startY, endX, endY) {}).some
+    } else {
+      none
+    }
+
+  implicit val eqRa: Eq[ReadoutArea] = Eq.by(x =>
+    (x.startX, x.startY, x.endX, x.endY))
+}
+
+
 sealed trait GpiConfig extends Product with Serializable
 
 final case class RegularGpiConfig(
@@ -87,6 +113,7 @@ final case class RegularGpiConfig(
   expTime:        Duration,
   coAdds:         Int,
   readMode:       GpiReadMode,
+  area:           ReadoutArea,
   mode:           Either[LegacyObservingMode, NonStandardModeParams],
   disperser:      LegacyDisperser,
   disperserAngle: Double,
@@ -100,8 +127,9 @@ object RegularGpiConfig extends GpiConfigEq {
     x =>
       (x.adc,
        x.expTime,
-       x.readMode,
        x.coAdds,
+       x.readMode,
+       x.area,
        x.mode,
        x.disperser,
        x.disperserAngle,
@@ -194,10 +222,14 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
           .fold(1, 0)) |+|
       Configuration.single(GpiIntegrationTime.applyItem,
         config.expTime.toMillis / 1000.0) |+|
-      Configuration.single(GpiNumCoadds.applyItem, config.coAdds) |+|
+      Configuration.single(GpiNumCoadds.applyItem,   config.coAdds) |+|
       Configuration.single(GpiIFSReadMode.applyItem, config.readMode.value) |+|
-      Configuration.single(GpiMagI.applyItem, config.aoFlags.magI) |+|
-      Configuration.single(GpiMagH.applyItem, config.aoFlags.magH) |+|
+      Configuration.single(GpiIFSStartX.applyItem,   config.area.startX) |+|
+      Configuration.single(GpiIFSStartY.applyItem,   config.area.startY) |+|
+      Configuration.single(GpiIFSEndX.applyItem,     config.area.endX) |+|
+      Configuration.single(GpiIFSEndY.applyItem,     config.area.endY) |+|
+      Configuration.single(GpiMagI.applyItem,        config.aoFlags.magI) |+|
+      Configuration.single(GpiMagH.applyItem,        config.aoFlags.magH) |+|
       Configuration.single(
         GpiCalEntranceShutter.applyItem,
         (config.shutters.calEntranceShutter === LegacyShutter.OPEN)

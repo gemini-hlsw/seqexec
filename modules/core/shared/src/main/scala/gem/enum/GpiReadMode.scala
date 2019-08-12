@@ -14,15 +14,15 @@ import gem.util.Enumerated
  */
 sealed abstract class GpiReadMode(
   val tag: String,
-  val shortName: String,
+  val longName: String,
   val value: Int
 ) extends Product with Serializable
 
 object GpiReadMode {
 
-  /** @group Constructors */ case object Single extends GpiReadMode("Single", "Single", 1)
-  /** @group Constructors */ case object CDS extends GpiReadMode("CDS", "CDS", 2)
-  /** @group Constructors */ case object MCDS extends GpiReadMode("MCDS", "MCDS", 3)
+  /** @group Constructors */ case object Single extends GpiReadMode("Single", "Fast", 1)
+  /** @group Constructors */ case object CDS extends GpiReadMode("CDS", "Single CDS", 2)
+  /** @group Constructors */ case object MCDS extends GpiReadMode("MCDS", "Multiple CDS", 3)
   /** @group Constructors */ case object UTR extends GpiReadMode("UTR", "UTR", 4)
 
   /** All members of GpiReadMode, in canonical order. */

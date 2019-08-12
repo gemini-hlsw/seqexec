@@ -194,8 +194,8 @@ package object enum extends ToPrismOps {
    */
   implicit class GpiReadModeOps(val value: GpiReadMode.type) extends AnyVal {
     /** Select the member of GpiReadMode with the given value, if any. */
-    def fromValue(v: Int): Option[GpiReadMode] =
-      GpiReadMode.all.find(_.value === v)
+    def fromLongName(v: String): Option[GpiReadMode] =
+      GpiReadMode.all.find(_.longName === v)
 
   }
 

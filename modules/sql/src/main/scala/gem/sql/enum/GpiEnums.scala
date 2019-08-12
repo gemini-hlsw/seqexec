@@ -100,8 +100,8 @@ object GpiEnums {
       },
 
       EnumDef.fromQuery("GpiReadMode", "GPI ReadMode") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'value -> Int`.T
-        sql"""SELECT id, id tag, short_name, value FROM e_gpi_read_mode""".query[(String, E)]
+        type E = Record.`'tag -> String, 'longName -> String, 'value -> Int`.T
+        sql"""SELECT id, id tag, long_name, value FROM e_gpi_read_mode""".query[(String, E)]
       }
 
     )
