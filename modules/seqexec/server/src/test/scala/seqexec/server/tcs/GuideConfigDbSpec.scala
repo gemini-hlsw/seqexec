@@ -15,6 +15,15 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController.Lgs
 import seqexec.server.gems.GemsController.GemsOn
+import seqexec.server.gems.GemsController.OIUsage.DontUseOI
+import seqexec.server.gems.GemsController.Odgw1Usage.UseOdgw1
+import seqexec.server.gems.GemsController.Odgw2Usage.DontUseOdgw2
+import seqexec.server.gems.GemsController.Odgw3Usage.UseOdgw3
+import seqexec.server.gems.GemsController.Odgw4Usage.UseOdgw4
+import seqexec.server.gems.GemsController.P1Usage.DontUseP1
+import seqexec.server.gems.GemsController.Ttgs1Usage.UseTtgs1
+import seqexec.server.gems.GemsController.Ttgs2Usage.DontUseTtgs2
+import seqexec.server.gems.GemsController.Ttgs3Usage.DontUseTtgs3
 import squants.space.Millimeters
 
 final class GuideConfigDbSpec extends FlatSpec {
@@ -117,7 +126,17 @@ final class GuideConfigDbSpec extends FlatSpec {
       M1GuideConfig.M1GuideOn(M1Source.GAOS),
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
     ),
-    Some(Right(GemsOn(true, false, false, true, false, true, true)))
+    Some(Right(GemsOn(
+      UseTtgs1,
+      DontUseTtgs2,
+      DontUseTtgs3,
+      UseOdgw1,
+      DontUseOdgw2,
+      UseOdgw3,
+      UseOdgw4,
+      DontUseP1,
+      DontUseOI
+    )))
   )
 
   "GuideConfigDb" should "provide decoders" in {

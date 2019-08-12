@@ -209,11 +209,6 @@
         </command>
         <command name="odgw3Park">
             <description>ODGW 3 park</description>
-            <parameter name="command">
-                <channel>odgw3Park.A</channel>
-                <type>STRING</type>
-                <description>Park command</description>
-            </parameter>
         </command>
         <command name="ngsPr1Park">
             <record>ngsPr1Park</record>
@@ -328,11 +323,6 @@
         </command>
         <command name="odgw1Park">
             <description>ODGW 1 park</description>
-            <parameter name="command">
-                <channel>odgw1Park.A</channel>
-                <type>STRING</type>
-                <description>Park command</description>
-            </parameter>
         </command>
         <command name="pwfs2Park">
             <record>pwfs2Park</record>
@@ -465,11 +455,6 @@
         </command>
         <command name="odgw4Park">
             <description>ODGW 4 park</description>
-            <parameter name="command">
-                <channel>odgw4Park.A</channel>
-                <type>STRING</type>
-                <description>Park command</description>
-            </parameter>
         </command>
         <command name="pwfs1StopObserve">
             <record>pwfs1StopObserve</record>
@@ -947,11 +932,6 @@
         </command>
         <command name="odgw2Park">
             <description>ODGW 2 park</description>
-            <parameter name="command">
-                <channel>odgw2Park.A</channel>
-                <type>STRING</type>
-                <description>Park command</description>
-            </parameter>
         </command>
         <command name="hrwfsPark">
             <record>hrwfsPark</record>

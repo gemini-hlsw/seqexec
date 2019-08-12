@@ -218,10 +218,10 @@ object TcsControllerEpicsCommon {
       s.setNodcchopb(encode(c.get(NodChop(Beam.C, Beam.B)))) *>
       s.setNodcchopc(encode(c.get(NodChop(Beam.C, Beam.C))))
 
-  private def setGuideProbe[F[_] : Async, C](guideControl: GuideControl[F],
-                                          trkSet: ProbeTrackingConfig => C => C)(
-                                           subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig
-                                         ): Option[C => F[C]] =
+  def setGuideProbe[F[_] : Async, C](guideControl: GuideControl[F],
+                                     trkSet: ProbeTrackingConfig => C => C)(
+                                      subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig
+                                    ): Option[C => F[C]] =
     if (subsystems.contains(guideControl.subs)) {
       val actions = List(
         (c.getNodChop =!= d.getNodChop)
@@ -233,7 +233,7 @@ object TcsControllerEpicsCommon {
                ProbeTrackingConfig.Frozen => (c.follow =!= d.follow)
             .option(guideControl.followCmd.setFollowState(encode(d.follow)))
         }
-      ).mapFilter(identity)
+      ).flattenOption
 
       actions.nonEmpty.option { x =>
         actions.sequence *>
@@ -458,7 +458,7 @@ object TcsControllerEpicsCommon {
     )),
     setScienceFold(Lens.id)(subsystems, current, tcs.agc.sfPos),
     setHrPickup(Lens.id)(subsystems, current, tcs.agc)
-  ).mapFilter(identity)
+  ).flattenOption
 
   def applyParam[F[_] : Applicative, T: Eq, C](used: Boolean,
                                             current: T,
@@ -476,7 +476,7 @@ object TcsControllerEpicsCommon {
     setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, demand.gds.pwfs1.detector),
     setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, demand.gds.pwfs2.detector),
     setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, demand.gds.oiwfs.detector)
-  ).mapFilter(identity)
+  ).flattenOption
 
   // Disable M1 guiding if source is off
   private def normalizeM1Guiding(gaosEnabled: Boolean): Endo[BasicTcsConfig] = cfg =>

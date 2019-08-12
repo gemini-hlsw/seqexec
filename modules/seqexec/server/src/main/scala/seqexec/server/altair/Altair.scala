@@ -14,13 +14,13 @@ import seqexec.model.enum.Resource
 import seqexec.server.TrySeq
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.Gaos.{PauseResume, ResumeCondition}
+import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import seqexec.server.tcs.Gaos
 import squants.Time
 
 trait Altair[F[_]] extends Gaos[F] {
-  def pauseResume(config: AltairConfig, pauseReasons: Set[Gaos.PauseCondition],
-                  resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
+  def pauseResume(config: AltairConfig, pauseReasons: PauseConditionSet,
+                  resumeReasons: ResumeConditionSet): F[PauseResume[F]]
 
   val resource: Resource
 
@@ -39,8 +39,8 @@ object Altair {
   private class AltairImpl[F[_]: Sync] (controller: AltairController[F],
                                         fieldLens: FieldLens
                                        ) extends Altair[F] {
-    override def pauseResume(config: AltairConfig, pauseReasons: Set[Gaos.PauseCondition],
-                             resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] =
+    override def pauseResume(config: AltairConfig, pauseReasons: PauseConditionSet,
+                             resumeReasons: ResumeConditionSet): F[PauseResume[F]] =
       controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(config)
 
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
