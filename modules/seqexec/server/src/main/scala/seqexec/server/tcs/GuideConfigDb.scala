@@ -20,7 +20,7 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.M2GuideConfig._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController._
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn}
+import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn, OIUsage, Odgw1Usage, Odgw2Usage, Odgw3Usage, Odgw4Usage, P1Usage, Ttgs1Usage, Ttgs2Usage, Ttgs3Usage}
 import io.circe.{Decoder, DecodingFailure}
 import squants.space.Millimeters
 
@@ -94,7 +94,19 @@ object GuideConfigDb {
             odgw2 <- c.downField("odgw2On").as[Boolean]
             odgw3 <- c.downField("odgw3On").as[Boolean]
             odgw4 <- c.downField("odgw4On").as[Boolean]
-          } yield GemsOn(ttgs1, ttgs2, ttgs3, odgw1, odgw2, odgw3, odgw4)
+            useP1 <- c.downField("useP1").as[Boolean].recover{case _ => false}
+            useOI <- c.downField("useOI").as[Boolean].recover{case _ => false}
+          } yield GemsOn(
+            Ttgs1Usage.fromBoolean(ttgs1),
+            Ttgs2Usage.fromBoolean(ttgs2),
+            Ttgs3Usage.fromBoolean(ttgs3),
+            Odgw1Usage.fromBoolean(odgw1),
+            Odgw2Usage.fromBoolean(odgw2),
+            Odgw3Usage.fromBoolean(odgw3),
+            Odgw4Usage.fromBoolean(odgw4),
+            P1Usage.fromBoolean(useP1),
+            OIUsage.fromBoolean(useOI)
+          )
         }
         else Right(GemsOff)
       }
