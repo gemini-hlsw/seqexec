@@ -188,4 +188,15 @@ package object enum extends ToPrismOps {
 
   }
 
+  /**
+   * Enrichment methods for [[GpiReadMode]].
+   * @group Enrichment
+   */
+  implicit class GpiReadModeOps(val value: GpiReadMode.type) extends AnyVal {
+    /** Select the member of GpiReadMode with the given value, if any. */
+    def fromLongName(v: String): Option[GpiReadMode] =
+      GpiReadMode.all.find(_.longName === v)
+
+  }
+
 }

@@ -4,6 +4,7 @@
 package seqexec.server.gpi
 
 import cats.Applicative
+import cats.data.Nested
 import cats.effect.Sync
 import cats.implicits._
 import gem.Observation
@@ -24,16 +25,19 @@ object GpiHeader {
                               id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords(
           List(
-            buildDouble(tcsKeywordsReader.parallacticAngle
-                          .map(_.map(_.toDegrees))
+            buildDouble(Nested(tcsKeywordsReader.parallacticAngle)
+                          .map(_.toDegrees)
+                          .value
                           .orDefault,
                         KeywordName.PAR_ANG),
             buildInt32(tcsKeywordsReader.gpiInstPort,
                        KeywordName.INPORT),
             buildBoolean(obsKeywordsReader.astrometicField,
                          KeywordName.ASTROMTC, DefaultHeaderValue.FalseDefaultValue),
-            buildString(tcsKeywordsReader.crFollow.map(
-                          _.map(CRFollow.keywordValue).getOrElse("INDEF")),
+            buildString(Nested(tcsKeywordsReader.crFollow)
+                          .map(CRFollow.keywordValue)
+                          .value
+                          .orDefault,
                         KeywordName.CRFOLLOW)
           )
         )

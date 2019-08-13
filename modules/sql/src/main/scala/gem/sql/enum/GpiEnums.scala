@@ -97,6 +97,11 @@ object GpiEnums {
         type F = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef[A]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef[B]], 'fpm -> Option[EnumRef[C]], 'lyot -> Option[EnumRef[D]], 'brightLimitPrism -> Option[MagnitudeValue], 'brightLimitWollaston -> Option[MagnitudeValue], 'correspondingHMode -> LazyEnumRef[E], 'obsolete  -> Boolean`.T
         val ret = sql"""SELECT id, id tag, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, corresponding_h_mode, obsolete FROM e_gpi_observing_mode""".query[(String, F)]
         (ret, a.value: A, b.value: B, c.value: C, d.value: D, e.value: E)._1 // suppress unused warnigs
+      },
+
+      EnumDef.fromQuery("GpiReadMode", "GPI ReadMode") {
+        type E = Record.`'tag -> String, 'longName -> String, 'value -> Int`.T
+        sql"""SELECT id, id tag, long_name, value FROM e_gpi_read_mode""".query[(String, E)]
       }
 
     )

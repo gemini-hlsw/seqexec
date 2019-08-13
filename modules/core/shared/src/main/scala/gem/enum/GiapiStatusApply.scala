@@ -49,10 +49,15 @@ object GiapiStatusApply {
   /** @group Constructors */ case object GpiFPM extends GiapiStatusApply("GpiFPM", Instrument.Gpi, GiapiType.String, "gpi:fpmMask", "gpi:selectFocalPlaneMask.maskStr")
   /** @group Constructors */ case object GpiLyot extends GiapiStatusApply("GpiLyot", Instrument.Gpi, GiapiType.String, "gpi:lyotMask", "gpi:selectLyotMask.maskStr")
   /** @group Constructors */ case object GpiAlignAndCalib extends GiapiStatusApply("GpiAlignAndCalib", Instrument.Gpi, GiapiType.Int, "gpi:alignAndCalib.part1", "gpi:alignAndCalib.part1")
+  /** @group Constructors */ case object GpiIFSReadMode extends GiapiStatusApply("GpiIFSReadMode", Instrument.Gpi, GiapiType.Int, "gpi:currentReadMode", "gpi:configIfs.readoutMode")
+  /** @group Constructors */ case object GpiIFSStartX extends GiapiStatusApply("GpiIFSStartX", Instrument.Gpi, GiapiType.Int, "gpi:currentStartX", "gpi:gpi:configIfs.startx")
+  /** @group Constructors */ case object GpiIFSStartY extends GiapiStatusApply("GpiIFSStartY", Instrument.Gpi, GiapiType.Int, "gpi:currentStartY", "gpi:gpi:configIfs.starty")
+  /** @group Constructors */ case object GpiIFSEndX extends GiapiStatusApply("GpiIFSEndX", Instrument.Gpi, GiapiType.Int, "gpi:currentEndX", "gpi:gpi:configIfs.endx")
+  /** @group Constructors */ case object GpiIFSEndY extends GiapiStatusApply("GpiIFSEndY", Instrument.Gpi, GiapiType.Int, "gpi:currentEndY", "gpi:gpi:configIfs.endy")
 
   /** All members of GiapiStatusApply, in canonical order. */
   val all: List[GiapiStatusApply] =
-    List(GpiAdc, GpiUseAo, GpiAoOptimize, GpiUseCal, GpiFpmPinholeBias, GpiIntegrationTime, GpiNumCoadds, GpiMagI, GpiMagH, GpiCalEntranceShutter, GpiCalReferenceShutter, GpiCalScienceShutter, GpiEntranceShutter, GpiCalExitShutter, GpiPupilCamera, GpiSCPower, GpiSCAttenuation, GpiSrcVis, GpiSrcIR, GpiPolarizerDeplay, GpiPolarizerAngle, GpiObservationMode, GpiIFSFilter, GpiPPM, GpiFPM, GpiLyot, GpiAlignAndCalib)
+    List(GpiAdc, GpiUseAo, GpiAoOptimize, GpiUseCal, GpiFpmPinholeBias, GpiIntegrationTime, GpiNumCoadds, GpiMagI, GpiMagH, GpiCalEntranceShutter, GpiCalReferenceShutter, GpiCalScienceShutter, GpiEntranceShutter, GpiCalExitShutter, GpiPupilCamera, GpiSCPower, GpiSCAttenuation, GpiSrcVis, GpiSrcIR, GpiPolarizerDeplay, GpiPolarizerAngle, GpiObservationMode, GpiIFSFilter, GpiPPM, GpiFPM, GpiLyot, GpiAlignAndCalib, GpiIFSReadMode, GpiIFSStartX, GpiIFSStartY, GpiIFSEndX, GpiIFSEndY)
 
   /** Select the member of GiapiStatusApply with the given tag, if any. */
   def fromTag(s: String): Option[GiapiStatusApply] =
