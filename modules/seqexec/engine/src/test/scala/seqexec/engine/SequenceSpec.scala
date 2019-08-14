@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import cats.effect.{ContextShift, IO}
+import cats.data.NonEmptyList
 import fs2.Stream
 import gem.Observation
 import java.util.UUID
@@ -11,10 +12,9 @@ import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
-import scala.Function.const
 import seqexec.engine.TestUtil.TestState
-
 import scala.concurrent.ExecutionContext
+import scala.Function.const
 
 class SequenceSpec extends FlatSpec {
 
@@ -63,8 +63,8 @@ class SequenceSpec extends FlatSpec {
     Step.init(
       id = id,
       executions = List(
-        List(action, action), // Execution
-        List(action) // Execution
+        NonEmptyList.of(action, action), // Execution
+        NonEmptyList.one(action) // Execution
       )
     ).copy(breakpoint = Step.BreakpointMark(breakpoint))
 
@@ -146,25 +146,36 @@ class SequenceSpec extends FlatSpec {
   private val result: Result[Nothing] = Result.OK(DummyResult)
   private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
   private val completedAction: Action[IO] = action.copy(state = Action.State(Action.ActionState.Completed(DummyResult), Nil))
-  def simpleStep2(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results[IO]]): Step.Zipper[IO] = {
-    val rollback: (Execution[IO], List[Actions[IO]]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
-      case Nil => (Execution.empty, Nil)
-      case x::xs => (Execution(x), xs)
+  def simpleStep2(pending: List[ParallelActions[IO]], focus: Execution[IO], done: List[NonEmptyList[Result[IO]]]): Step.Zipper[IO] = {
+    val rollback: (Execution[IO], List[ParallelActions[IO]]) =  {
+      val doneParallelActions: List[ParallelActions[IO]] = done.map(_.map(const(action)))
+      val focusParallelActions: List[ParallelActions[IO]] = focus.toParallelActionsList
+      doneParallelActions ++ focusParallelActions ++ pending match {
+        case Nil => (Execution.empty, Nil)
+        case x::xs => (Execution(x.toList), xs)
+      }
     }
 
-    Step.Zipper(1, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
-      val x = fromF[IO](ActionType.Observe, IO(r))
-      x.copy(state = Execution.actionStateFromResult(r)(x.state))
-    }), rollback)
+    Step.Zipper(
+      id = 1,
+      breakpoint = Step.BreakpointMark(false),
+      Step.SkipMark(false),
+      pending = pending,
+      focus = focus,
+      done = done.map(_.map{r =>
+        val x = fromF[IO](ActionType.Observe, IO(r))
+        x.copy(state = Execution.actionStateFromResult(r)(x.state))
+      }),
+      rollback)
   }
   val stepz0: Step.Zipper[IO]   = simpleStep2(Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper[IO]  = simpleStep2(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper[IO]  = simpleStep2(List(List(action)), Execution(List(completedAction)), Nil)
-  val stepzr0: Step.Zipper[IO]  = simpleStep2(Nil, Execution.empty, List(List(result)))
+  val stepza0: Step.Zipper[IO]  = simpleStep2(List(NonEmptyList.one(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper[IO]  = simpleStep2(List(NonEmptyList.one(action)), Execution(List(completedAction)), Nil)
+  val stepzr0: Step.Zipper[IO]  = simpleStep2(Nil, Execution.empty, List(NonEmptyList.one(result)))
   val stepzr1: Step.Zipper[IO]  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), Nil)
-  val stepzr2: Step.Zipper[IO]  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), List(List(result)))
+  val stepzr2: Step.Zipper[IO]  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), List(NonEmptyList.one(result)))
   val stepzar0: Step.Zipper[IO] = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
-  val stepzar1: Step.Zipper[IO] = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
+  val stepzar1: Step.Zipper[IO] = simpleStep2(List(NonEmptyList.one(action)), Execution(List(completedAction, completedAction)), List(NonEmptyList.one(result)))
 
   def simpleSequenceZipper(focus: Step.Zipper[IO]): Sequence.Zipper[IO] = Sequence.Zipper(seqId, Nil, focus, Nil)
   val seqz0: Sequence.Zipper[IO]   = simpleSequenceZipper(stepz0)
@@ -209,15 +220,15 @@ class SequenceSpec extends FlatSpec {
           Step.init(
             id = 1,
             executions = List(
-              List(completedAction, completedAction), // Execution
-              List(completedAction) // Execution
+              NonEmptyList.of(completedAction, completedAction), // Execution
+              NonEmptyList.one(completedAction) // Execution
             )
           ),
           Step.init(
             id = 2,
             executions = List(
-              List(action, action), // Execution
-              List(action) // Execution
+              NonEmptyList.of(action, action), // Execution
+              NonEmptyList.one(action) // Execution
             )
           )
         )
@@ -230,8 +241,8 @@ class SequenceSpec extends FlatSpec {
           Step.init(
             id = 1,
             executions = List(
-              List(completedAction, completedAction), // Execution
-              List(completedAction) // Execution
+              NonEmptyList.of(completedAction, completedAction), // Execution
+              NonEmptyList.one(completedAction) // Execution
             )
           )
         )
@@ -254,8 +265,8 @@ class SequenceSpec extends FlatSpec {
           Step.init(
             id = 1,
             executions = List(
-              List(action, action), // Execution
-              List(action) // Execution
+              NonEmptyList.of(action, action), // Execution
+              NonEmptyList.one(action) // Execution
             )
           )
         )
@@ -276,8 +287,8 @@ class SequenceSpec extends FlatSpec {
           Step.init(
             id = 1,
             executions = List(
-              List(action, action), // Execution
-              List(action) // Execution
+              NonEmptyList.of(action, action), // Execution
+              NonEmptyList.one(action) // Execution
             )
           )
         )

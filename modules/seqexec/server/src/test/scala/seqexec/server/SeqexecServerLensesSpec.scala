@@ -11,7 +11,7 @@ import SequenceGen._
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
-import seqexec.engine.{Action, Actions}
+import seqexec.engine.{Action, ParallelActions}
 
 /**
   * Tests SeqexecServer Lenses
@@ -21,7 +21,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
   implicit def actStateEq[F[_]]: Eq[Action.State[F]] = Eq.fromUniversalEquals
   implicit def actionEq[F[_]]: Eq[Action[F]] = Eq.by(x => (x.kind, x.state))
-  implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[Actions[F]]] = Eq.fromUniversalEquals
+  implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[ParallelActions[F]]] = Eq.fromUniversalEquals
   implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.pre, x.configs, x.post))
   implicit def pndstepgEq[F[_]]: Eq[PendingStepGen[F]] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))

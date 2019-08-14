@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats._
 import cats.data.{Kleisli, StateT}
+import cats.data.NonEmptyList
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
@@ -546,13 +547,15 @@ object SeqexecEngine extends SeqexecConfiguration {
     case _                       => Nil
   }
 
-  private[server] def separateActions[F[_]](ls: List[Action[F]]): (List[Action[F]], List[Action[F]]) =  ls.partition{ _.state.runState match {
-    case ActionState.Completed(_) => false
-    case ActionState.Failed(_)    => false
-    case _                          => true
-  } }
+  private[server] def separateActions[F[_]](ls: NonEmptyList[Action[F]]): (List[Action[F]], List[Action[F]]) =
+    ls.toList.partition(_.state.runState match {
+        case ActionState.Completed(_) => false
+        case ActionState.Failed(_)    => false
+        case _                        => true
+      }
+    )
 
-  private[server] def configStatus[F[_]](executions: List[List[engine.Action[F]]]): List[(Resource, ActionStatus)] = {
+  private[server] def configStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] = {
     // Remove undefined actions
     val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
     // Split where at least one is running
@@ -584,7 +587,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   /**
    * Calculates the config status for pending steps
    */
-  private[server] def pendingConfigStatus[F[_]](executions: List[List[engine.Action[F]]]): List[(Resource, ActionStatus)] =
+  private[server] def pendingConfigStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] =
     executions.map {
       s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
@@ -600,14 +603,14 @@ object SeqexecEngine extends SeqexecConfiguration {
       case _                 => configStatus(step.executions)
     }
 
-  private def observeAction[F[_]](executions: List[List[engine.Action[F]]]): Option[Action[F]] =
-    executions.flatten.find(_.kind === ActionType.Observe)
+  private def observeAction[F[_]](executions: List[ParallelActions[F]]): Option[Action[F]] =
+    executions.flatMap(_.toList).find(_.kind === ActionType.Observe)
 
-  private[server] def observeStatus[F[_]](executions: List[List[engine.Action[F]]]): ActionStatus =
+  private[server] def observeStatus[F[_]](executions: List[ParallelActions[F]]): ActionStatus =
     observeAction(executions).map(a => a.state.runState.actionStatus).getOrElse(
       ActionStatus.Pending)
 
-  private def fileId[F[_]](executions: List[List[engine.Action[F]]]): Option[ImageFileId] =
+  private def fileId[F[_]](executions: List[engine.ParallelActions[F]]): Option[ImageFileId] =
     observeAction(executions).flatMap(_.state.partials.collectFirst{
       case FileIdAllocated(fid) => fid
     })

@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.implicits._
 import cats.effect._
+import cats.data.NonEmptyList
 import edu.gemini.spModel.core.Peer
 import fs2.Stream
 import giapi.client.gpi.GpiClient
@@ -42,10 +43,12 @@ class SeqTranslateSpec extends FlatSpec {
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
-  private def observeActions(state: Action.ActionState[IO]): List[Action[IO]] = List(
-    Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
-      Action.State(state, Nil))
-  )
+  private def observeActions(state: Action.ActionState[IO]): NonEmptyList[Action[IO]] =
+    NonEmptyList.one(
+      Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
+        Action.State(state, Nil))
+    )
+
   private val seqg = SequenceGen(
     seqId,
     "",

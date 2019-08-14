@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import cats.effect.{ ContextShift, IO }
+import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import fs2.Stream
 import java.util.UUID
@@ -41,30 +42,41 @@ class StepSpec extends FlatSpec {
   private def always[D]: D => Boolean = _ => true
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
-  def simpleStep(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results[IO]]): Step.Zipper[IO] = {
-    val rollback: (Execution[IO], List[Actions[IO]]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
-      case Nil => (Execution.empty, Nil)
-      case x::xs => (Execution(x), xs)
+  def simpleStep(pending: List[ParallelActions[IO]], focus: Execution[IO], done: List[NonEmptyList[Result[IO]]]): Step.Zipper[IO] = {
+    val rollback: (Execution[IO], List[ParallelActions[IO]]) = {
+        val doneParallelActions: List[ParallelActions[IO]] = done.map(_.map(const(action)))
+        val focusParallelActions: List[ParallelActions[IO]] = focus.toParallelActionsList
+        doneParallelActions ++ focusParallelActions ++ pending match {
+        case Nil => (Execution.empty, Nil)
+        case x::xs => (Execution(x.toList), xs)
+      }
     }
 
-    Step.Zipper(1, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
-      val x = fromF[IO](ActionType.Observe, IO(r))
-      x.copy(state = Execution.actionStateFromResult(r)(x.state))
-    }), rollback)
+    Step.Zipper(
+      id = 1,
+      breakpoint = Step.BreakpointMark(false),
+      skipMark = Step.SkipMark(false),
+      pending = pending,
+      focus = focus,
+      done = done.map(_.map{ r =>
+        val x = fromF[IO](ActionType.Observe, IO(r))
+        x.copy(state = Execution.actionStateFromResult(r)(x.state))
+      }),
+      rolledback = rollback)
   }
 
   val stepz0: Step.Zipper[IO]   = simpleStep(Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper[IO]  = simpleStep(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper[IO]  = simpleStep(List(List(action)), Execution(List(actionCompleted))
+  val stepza0: Step.Zipper[IO]  = simpleStep(List(NonEmptyList.one(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper[IO]  = simpleStep(List(NonEmptyList.one(action)), Execution(List(actionCompleted))
     , Nil)
-  val stepzr0: Step.Zipper[IO]  = simpleStep(Nil, Execution.empty, List(List(result)))
+  val stepzr0: Step.Zipper[IO]  = simpleStep(Nil, Execution.empty, List(NonEmptyList.one(result)))
   val stepzr1: Step.Zipper[IO]  = simpleStep(Nil, Execution(List(actionCompleted,
     actionCompleted)), Nil)
   val stepzr2: Step.Zipper[IO]  = simpleStep(Nil, Execution(List(actionCompleted,
-    actionCompleted)), List(List(result)))
+    actionCompleted)), List(NonEmptyList.one(result)))
   val stepzar0: Step.Zipper[IO] = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
-  val stepzar1: Step.Zipper[IO] = simpleStep(List(List(action)), Execution(List(actionCompleted,
-    actionCompleted)), List(List(result)))
+  val stepzar1: Step.Zipper[IO] = simpleStep(List(NonEmptyList.one(action)), Execution(List(actionCompleted,
+    actionCompleted)), List(NonEmptyList.one(result)))
   private val startEvent = Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)
   //scalastyle:off console.io
   /**
@@ -161,8 +173,8 @@ class StepSpec extends FlatSpec {
                   Step.init(
                     id = 1,
                     executions = List(
-                      List(configureTcs, configureInst, triggerPause(q)), // Execution
-                      List(observe) // Execution
+                      NonEmptyList.of(configureTcs, configureInst, triggerPause(q)), // Execution
+                      NonEmptyList.one(observe) // Execution
                     )
                   )
                 )
@@ -185,8 +197,8 @@ class StepSpec extends FlatSpec {
     inside (m.compile.last.unsafeRunSync()) {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, ex1::ex2::Nil) =>
-            assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
+          case Step(_, _, _, _, List(ex1, ex2)) =>
+            assert( Execution(ex1.toList).results.length == 3 && Execution(ex2.toList).actions.length == 1)
         }
         status should be (SequenceState.Idle)
     }
@@ -209,8 +221,8 @@ class StepSpec extends FlatSpec {
                   skipMark = Step.SkipMark(false),
                   pending = Nil,
                   focus = Execution(List(observe)),
-                  done = List(List(actionCompleted, actionCompleted)),
-                  rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
+                  done = List(NonEmptyList.of(actionCompleted, actionCompleted)),
+                  rolledback = (Execution(List(configureTcs, configureInst)), List(NonEmptyList.one(observe)))),
                 done = Nil
               ),
               SequenceState.Idle,
@@ -228,8 +240,8 @@ class StepSpec extends FlatSpec {
     inside (qs1.compile.last.unsafeRunSync()) {
       case Some(Some(Sequence.State.Zipper(zipper, status, _))) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, ex1::ex2::Nil) =>
-            assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
+          case Step(_, _, _, _, List(ex1, ex2)) =>
+            assert(Execution(ex1.toList).actions.length == 2 && Execution(ex2.toList).actions.length == 1)
         }
         assert(status.isRunning)
     }
@@ -251,8 +263,8 @@ class StepSpec extends FlatSpec {
                   skipMark = Step.SkipMark(false),
                   pending = Nil,
                   focus = Execution(List(observe)),
-                  done = List(List(actionCompleted, actionCompleted)),
-                  rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
+                  done = List(NonEmptyList.of(actionCompleted, actionCompleted)),
+                  rolledback = (Execution(List(configureTcs, configureInst)), List(NonEmptyList.one(observe)))),
                 done = Nil
               ),
               SequenceState.Running(userStop = true, internalStop = false),
@@ -283,8 +295,8 @@ class StepSpec extends FlatSpec {
                   Step.init(
                     id = 1,
                     executions = List(
-                      List(configureTcs, configureInst), // Execution
-                      List(observe) // Execution
+                      NonEmptyList.of(configureTcs, configureInst), // Execution
+                      NonEmptyList.one(observe) // Execution
                     )
                   )
                 )
@@ -298,8 +310,8 @@ class StepSpec extends FlatSpec {
     inside (qss.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, ex1::ex2::Nil) =>
-            assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
+          case Step(_, _, _, _, List(ex1, ex2)) =>
+            assert( Execution(ex1.toList).actions.length == 2 && Execution(ex2.toList).actions.length == 1)
         }
         status should be (SequenceState.Idle)
     }
@@ -319,9 +331,9 @@ class StepSpec extends FlatSpec {
                   Step.init(
                     id = 1,
                     executions = List(
-                      List(configureTcs, configureInst), // Execution
-                      List(triggerStart(q)), // Execution
-                      List(observe) // Execution
+                      NonEmptyList.of(configureTcs, configureInst), // Execution
+                      NonEmptyList.one(triggerStart(q)), // Execution
+                      NonEmptyList.one(observe) // Execution
                     )
                   )
                 )
@@ -364,9 +376,9 @@ class StepSpec extends FlatSpec {
                   Step.init(
                     id = 1,
                     executions = List(
-                      List(configureTcs, configureInst), // Execution
-                      List(error(errMsg)),
-                      List(observe)
+                      NonEmptyList.of(configureTcs, configureInst), // Execution
+                      NonEmptyList.one(error(errMsg)),
+                      NonEmptyList.one(observe)
                     )
                   )
                 )
@@ -382,8 +394,8 @@ class StepSpec extends FlatSpec {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
           // Check that the sequence stopped midway
-          case Step(_, _, _, _, ex1::ex2::ex3::Nil) =>
-            assert( Execution(ex1).results.length == 2 && Execution(ex2).results.length == 1 && Execution(ex3).actions.length == 1)
+          case Step(_, _, _, _, ex1 :: ex2 :: ex3 :: Nil) =>
+            assert( Execution(ex1.toList).results.length == 2 && Execution(ex2.toList).results.length == 1 && Execution(ex3.toList).actions.length == 1)
         }
         // And that it ended in error
         status should be (SequenceState.Failed(errMsg))
@@ -407,7 +419,7 @@ class StepSpec extends FlatSpec {
                   Step.init(
                     id = 1,
                     executions = List(
-                      List(
+                      NonEmptyList.one(
                         Action(
                           ActionType.Undefined,
                           Stream.emits(List(
@@ -437,7 +449,7 @@ class StepSpec extends FlatSpec {
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>
-        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)).map(_.state.runState) shouldEqual Some(Action.ActionState.Completed(RetValDouble(1.0)))
+        seq.steps.headOption.flatMap(_.executions.headOption.map(_.head)).map(_.state.runState) shouldEqual Some(Action.ActionState.Completed(RetValDouble(1.0)))
         status shouldBe SequenceState.Completed
     }
 
@@ -465,9 +477,9 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step[IO] = Step.init(1, List(Nil))
-  val step1: Step[IO] = Step.init(1, List(List(action)))
-  val step2: Step[IO] = Step.init(2, List(List(action, action), List(action)))
+  val step0: Step[IO] = Step.init(1, Nil)
+  val step1: Step[IO] = Step.init(1, List(NonEmptyList.one(action)))
+  val step2: Step[IO] = Step.init(2, List(NonEmptyList.of(action, action), NonEmptyList.one(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
     assert(Step.Zipper.currentify(Step.init(0, Nil)).isEmpty)

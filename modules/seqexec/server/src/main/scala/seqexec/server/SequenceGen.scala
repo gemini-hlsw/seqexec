@@ -4,9 +4,10 @@
 package seqexec.server
 
 import cats.implicits._
+import cats.data.NonEmptyList
 import mouse.all._
 import gem.Observation
-import seqexec.engine.{Action, ActionCoordsInSeq, Actions, Step => EngineStep}
+import seqexec.engine.{Action, ActionCoordsInSeq, ParallelActions, Step => EngineStep}
 import seqexec.engine.ExecutionIndex
 import seqexec.engine.ActionIndex
 import seqexec.model.{StepConfig, StepId}
@@ -52,12 +53,12 @@ object SequenceGen {
     }
   }
 
-  final case class StepActionsGen[F[_]](pre: List[Actions[F]],
+  final case class StepActionsGen[F[_]](pre: List[ParallelActions[F]],
                                   configs: Map[Resource, Action[F]],
-                                  post: HeaderExtraData => List[Actions[F]]) {
-    def generate(ctx: HeaderExtraData): List[Actions[F]] =
+                                  post: HeaderExtraData => List[ParallelActions[F]]) {
+    def generate(ctx: HeaderExtraData): List[ParallelActions[F]] =
       pre ++
-        (if(configs.isEmpty) List() else List(configs.values.toList)) ++
+        NonEmptyList.fromList(configs.values.toList).foldMap(List(_)) ++
         post(ctx)
 
     def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {

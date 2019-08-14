@@ -3,6 +3,7 @@
 
 package seqexec
 
+import cats.data.NonEmptyList
 import fs2.Stream
 import seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
 import seqexec.model.ActionType
@@ -104,12 +105,19 @@ package object engine {
     Action(kind, Stream.eval(t), Action.State(Action.ActionState.Idle, Nil))
 
   /**
-    * An `Execution` is a group of `Action`s that need to be run in parallel
+    * `ParallelActions` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
     * an `Execution` with a single `Action`.
     */
-  type Actions[F[_]] = List[Action[F]]
+  type ParallelActions[F[_]] = NonEmptyList[Action[F]]
 
-  type Results[F[_]] = List[Result[F]]
+  implicit class ListParallelActionsOps[F[_]](val v: List[Action[F]]) extends AnyVal {
+    def prepend(ac: List[ParallelActions[F]]): List[ParallelActions[F]] =
+      if (v.isEmpty) {
+        ac
+      } else {
+        NonEmptyList.fromListUnsafe(v) :: ac
+      }
+  }
 
 }

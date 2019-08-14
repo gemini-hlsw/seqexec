@@ -14,12 +14,11 @@ import seqexec.engine.Action.ActionState
   * A list of `Executions` grouped by observation.
   */
 @Lenses
-final case class Step[F[_]](
-                             id: StepId,
-                             breakpoint: Step.BreakpointMark,
-                             skipped: Step.Skipped,
-                             skipMark: Step.SkipMark,
-                             executions: List[List[Action[F]]]
+final case class Step[F[_]](id: StepId,
+                            breakpoint: Step.BreakpointMark,
+                            skipped: Step.Skipped,
+                            skipMark: Step.SkipMark,
+                            executions: List[ParallelActions[F]]
 )
 
 object Step {
@@ -40,8 +39,12 @@ object Step {
   def skippedL[F[_]]: Lens[Step[F], Boolean] = Step.skipped ^|-> Skipped.self
 
   def init[F[_]](id: StepId,
-                 executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),
-    Skipped(false), SkipMark(false), executions)
+                 executions: List[ParallelActions[F]]): Step[F] =
+      Step(id = id,
+           breakpoint = BreakpointMark(false),
+           skipped = Skipped(false),
+           skipMark = SkipMark(false),
+           executions = executions)
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
@@ -51,14 +54,14 @@ object Step {
     if(step.skipped.self) StepState.Skipped
     else
       // Find an error in the Step
-      step.executions.flatten.find(Action.errored).flatMap { x => x.state.runState match {
+      step.executions.flatMap(_.toList).find(Action.errored).flatMap { x => x.state.runState match {
         case ActionState.Failed(Result.Error(msg)) => msg.some
         case _                                     => None
         // Return error or continue with the rest of the checks
       }}.map[StepState](StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.
-        if (step.executions.flatten.forall(Action.completed)) StepState.Completed
-        else if (step.executions.flatten.forall(_.state.runState.isIdle)) StepState.Pending
+        if (step.executions.flatMap(_.toList).forall(Action.completed)) StepState.Completed
+        else if (step.executions.flatMap(_.toList).forall(_.state.runState.isIdle)) StepState.Pending
         // Not all actions are completed or pending.
         else StepState.Running
       )
@@ -73,10 +76,10 @@ object Step {
     id: Int,
     breakpoint: BreakpointMark,
     skipMark: SkipMark,
-    pending: List[Actions[F]],
+    pending: List[ParallelActions[F]],
     focus: Execution[F],
-    done: List[Actions[F]],
-    rolledback: (Execution[F], List[Actions[F]])
+    done: List[ParallelActions[F]],
+    rolledback: (Execution[F], List[ParallelActions[F]])
   ) { self =>
 
     /**
@@ -91,7 +94,7 @@ object Step {
         case Nil           => None
         case exep :: exeps =>
           (Execution.currentify(exep), focus.uncurrentify).mapN (
-            (curr, exed) => self.copy(pending = exeps, focus = curr, done = exed :: done)
+            (curr, exed) => self.copy(pending = exeps, focus = curr, done = exed.prepend(done))
           )
       }
 
@@ -101,11 +104,10 @@ object Step {
     /**
       * Obtain the resulting `Step` only if all `Execution`s have been completed.
       * This is a special way of *unzipping* a `Zipper`.
-      *
       */
     val uncurrentify: Option[Step[F]] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, breakpoint, Skipped(false), skipMark, x :: done)
+        x => Step(id, breakpoint, Skipped(false), skipMark, x.prepend(done))
       )
       else None
 
@@ -115,16 +117,16 @@ object Step {
       */
     val toStep: Step[F] =
       Step(
-        id,
-        breakpoint,
-        Skipped(false),
-        skipMark,
-        done ++ List(focus.execution) ++ pending
+        id = id,
+        breakpoint = breakpoint,
+        skipped = Skipped(false),
+        skipMark = skipMark,
+        executions = done ++ focus.toParallelActionsList ++ pending
       )
 
     val skip: Step[F] = toStep.copy(skipped = Skipped(true))
 
-    def update(executions: List[Actions[F]]): Zipper[F] =
+    def update(executions: List[ParallelActions[F]]): Zipper[F] =
       Zipper.calcRolledback(executions).map{ case r@(_, exes) =>
         // Changing `pending` allows to propagate changes to non executed `executions`, even if the step is running
         // Don't do it if the number of executions changes. In that case the update will only have an effect if
@@ -137,7 +139,7 @@ object Step {
 
   object Zipper {
 
-    private def calcRolledback[F[_]](executions: List[Actions[F]]): Option[(Execution[F], List[Actions[F]])
+    private def calcRolledback[F[_]](executions: List[ParallelActions[F]]): Option[(Execution[F], List[ParallelActions[F]])
       ] = executions match {
       case Nil => None
       case exe :: exes =>

@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats._
 import cats.data.{NonEmptySet, Reader}
+import cats.data.NonEmptyList
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
 import cats.effect.LiftIO
@@ -62,9 +63,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       headers: Reader[HeaderExtraData, List[Header[IO]]],
       stepType: StepType
     ): SequenceGen.StepGen[IO] = {
-      val initialStepExecutions: List[List[Action[IO]]] =
+      val initialStepExecutions: List[ParallelActions[IO]] =
         (i === 0 && stepType.includesObserve).option {
-          List(List(systems.odb.sequenceStart(obsId, "")
+          List(NonEmptyList.one(systems.odb.sequenceStart(obsId, "")
             .as(Response.Ignored).toAction(ActionType.Undefined)))
         }.orEmpty
 
@@ -75,10 +76,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         res -> x.configure(config).as(Response.Configured(res)).toAction(kind)
       }.toMap
 
-      def rest(ctx: HeaderExtraData): List[List[Action[IO]]] =
+      def rest(ctx: HeaderExtraData): List[ParallelActions[IO]] =
         (stepType.includesObserve).option {
           List(
-            List(Action(ActionType.Observe, observe(systems, config, obsId, inst, sys.filterNot(inst.equals),
+            NonEmptyList.one(Action(ActionType.Observe, observe(systems, config, obsId, inst, sys.filterNot(inst.equals),
               headers)(ctx), Action.State(ActionState.Idle, Nil)))
           )
         }.orEmpty
@@ -487,7 +488,7 @@ object SeqTranslate {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
   }
 
-  implicit class ConfigResultToAction[F[_]: Functor: ApplicativeError[?[_], Throwable]](val x: F[ConfigResult[F]]) {
+  implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
 

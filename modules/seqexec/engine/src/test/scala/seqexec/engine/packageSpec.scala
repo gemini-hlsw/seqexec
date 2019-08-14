@@ -3,23 +3,22 @@
 
 package seqexec.engine
 
+import cats.effect.concurrent.Semaphore
+import cats.data.NonEmptyList
+import cats.implicits._
+import cats.effect._
+import fs2.Stream
+import gem.Observation
+import org.scalatest.Inside.inside
+import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-
 import seqexec.engine.Sequence.State.Final
 import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ActionType, UserDetails}
-import cats.effect.concurrent.Semaphore
-import fs2.Stream
-import gem.Observation
-import cats.implicits._
-import cats.effect._
-import org.scalatest.Inside.inside
-import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import seqexec.engine.TestUtil.TestState
-
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -66,7 +65,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
-  val executions: List[List[Action[IO] ]] = List(List(configureTcs, configureInst), List(observe))
+  val executions: List[ParallelActions[IO]] =
+    List(
+      NonEmptyList.of(configureTcs, configureInst),
+      NonEmptyList.one(observe))
+
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
   val qs1: TestState =
     TestState(
@@ -79,8 +82,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 Step.init(
                   id = 1,
                   executions = List(
-                    List(configureTcs, configureInst), // Execution
-                    List(observe) // Execution
+                    NonEmptyList.of(configureTcs, configureInst), // Execution
+                    NonEmptyList.one(observe) // Execution
                   )
                 ),
                 Step.init(
@@ -134,7 +137,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
           Step.init(
             id = 1,
             executions = List(
-              List(fromF[IO](ActionType.Undefined,
+              NonEmptyList.one(fromF[IO](ActionType.Undefined,
                 IO(Result.Paused(new Result.PauseContext[IO] {}))))
             )
           )
@@ -168,7 +171,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   }
 
-  "engine" should "keep processing input messages regardless of how long Actions take" in {
+  "engine" should "keep processing input messages regardless of how long ParallelActions take" in {
     val result = (for {
       q           <- Stream.eval(fs2.concurrent.Queue.bounded[IO, executionEngine.EventType](1))
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
@@ -181,7 +184,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               Step.init(
                 id = 1,
                 executions = List(
-                  List(fromF[IO](ActionType.Configure(TCS),
+                  NonEmptyList.one(fromF[IO](ActionType.Configure(TCS),
                     startedFlag.release *> finishFlag.acquire *> IO.pure(Result.OK(DummyResult))
                   ))
                 )
@@ -212,7 +215,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
           Step.init(
             id = 1,
             executions = List(
-              List(fromF[IO](ActionType.Undefined,
+              NonEmptyList.one(fromF[IO](ActionType.Undefined,
                 IO.apply {
                   throw e
                 }
@@ -395,8 +398,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = seqId,
         steps = List(
-          Step.init(id = stepId, executions = List(List(
-            fromF[IO](ActionType.Undefined, IO{
+          Step.init(id = stepId, executions = List(
+            NonEmptyList.one(fromF[IO](ActionType.Undefined, IO{
               dummy.set(markVal)
               Result.OK(DummyResult)
             }))
@@ -438,7 +441,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 Step.init(
                   id = 1,
                   executions = List(
-                    List(
+                    NonEmptyList.one(
                       Action[IO](ActionType.Undefined, Stream(Result.OK(DummyResult)).covary[IO],
                         Action.State(Action.ActionState.Completed(DummyResult), List.empty)
                       )
