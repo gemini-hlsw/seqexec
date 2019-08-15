@@ -166,7 +166,7 @@ class SequenceSpec extends FlatSpec {
         val x = fromF[IO](ActionType.Observe, IO(r))
         x.copy(state = Execution.actionStateFromResult(r)(x.state))
       }),
-      rollback)
+      rolledback = rollback)
   }
   val stepz0: Step.Zipper[IO]   = simpleStep2(Nil, Execution.empty, Nil)
   val stepza0: Step.Zipper[IO]  = simpleStep2(List(NonEmptyList.one(action)), Execution.empty, Nil)

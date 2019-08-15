@@ -113,11 +113,7 @@ package object engine {
 
   implicit class ListParallelActionsOps[F[_]](val v: List[Action[F]]) extends AnyVal {
     def prepend(ac: List[ParallelActions[F]]): List[ParallelActions[F]] =
-      if (v.isEmpty) {
-        ac
-      } else {
-        NonEmptyList.fromListUnsafe(v) :: ac
-      }
+      NonEmptyList.fromList(v).foldRight(ac)(_ :: _)
   }
 
 }

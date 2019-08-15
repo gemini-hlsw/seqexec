@@ -394,7 +394,7 @@ class StepSpec extends FlatSpec {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
           // Check that the sequence stopped midway
-          case Step(_, _, _, _, ex1 :: ex2 :: ex3 :: Nil) =>
+          case Step(_, _, _, _, List(ex1, ex2, ex3)) =>
             assert( Execution(ex1.toList).results.length == 2 && Execution(ex2.toList).results.length == 1 && Execution(ex3.toList).actions.length == 1)
         }
         // And that it ended in error

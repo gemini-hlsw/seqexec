@@ -58,7 +58,7 @@ object SequenceGen {
                                   post: HeaderExtraData => List[ParallelActions[F]]) {
     def generate(ctx: HeaderExtraData): List[ParallelActions[F]] =
       pre ++
-        NonEmptyList.fromList(configs.values.toList).foldMap(List(_)) ++
+        NonEmptyList.fromList(configs.values.toList).toList ++
         post(ctx)
 
     def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {

@@ -27,11 +27,7 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
   val results: List[Action[F]] = execution.filter(Action.finished)
 
   def toParallelActionsList: List[ParallelActions[F]] =
-    if (execution.isEmpty) {
-      Nil
-    } else {
-      List(NonEmptyList.fromListUnsafe(execution))
-    }
+    NonEmptyList.fromList(execution).toList
 
   /**
     * Calculate `Execution` `Status` based on the underlying `Action`s.
