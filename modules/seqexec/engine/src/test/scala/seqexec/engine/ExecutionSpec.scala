@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import cats.Id
+import cats.data.NonEmptyList
 import org.scalatest._
 import seqexec.model.ActionType
 
@@ -17,11 +18,7 @@ class ExecutionSpec extends FlatSpec with Matchers {
   private val curr: Execution[Id] = Execution(List(completedAction, action))
 
   "currentify" should "be None only when an Execution is empty" in {
-    assert(Execution.currentify(List(action, action)).nonEmpty)
-  }
-
-  "currentify2" should "be None only when an Execution is empty" in {
-    assert(Execution.currentify(Nil).isEmpty)
+    assert(Execution.currentify(NonEmptyList.of(action, action)).nonEmpty)
   }
 
   "uncurrentify" should "be None when not all actions are completed" in {

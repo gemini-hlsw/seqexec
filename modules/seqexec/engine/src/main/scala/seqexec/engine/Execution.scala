@@ -5,6 +5,7 @@ package seqexec.engine
 
 import cats.Eq
 import cats.implicits._
+import cats.data.NonEmptyList
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._
@@ -25,6 +26,9 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
 
   val results: List[Action[F]] = execution.filter(Action.finished)
 
+  def toParallelActionsList: List[ParallelActions[F]] =
+    NonEmptyList.fromList(execution).toList
+
   /**
     * Calculate `Execution` `Status` based on the underlying `Action`s.
     *
@@ -40,7 +44,7 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
     * Obtain the resulting `Execution` only if all actions have been completed.
     *
     */
-  val uncurrentify: Option[Actions[F]] =
+  val uncurrentify: Option[List[Action[F]]] =
     (execution.nonEmpty && finished(this)).option(results)
 
   /**
@@ -63,8 +67,8 @@ object Execution {
     * Make an `Execution` `Current` only if all the `Action`s in the execution
     * are pending.
     */
-  def currentify[F[_]](as: Actions[F]): Option[Execution[F]] =
-    (as.nonEmpty && as.forall(_.state.runState.isIdle)).option(Execution(as))
+  def currentify[F[_]](as: ParallelActions[F]): Option[Execution[F]] =
+    as.forall(_.state.runState.isIdle).option(Execution(as.toList))
 
   def errored[F[_]](ex: Execution[F]): Boolean = ex.execution.exists(_.state.runState match {
     case ActionState.Failed(_) => true

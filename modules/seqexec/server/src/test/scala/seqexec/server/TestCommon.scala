@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
+import cats.data.NonEmptyList
 import fs2.Stream
 import io.prometheus.client.CollectorRegistry
 import java.time.LocalDate
@@ -109,31 +110,51 @@ object TestCommon {
   val clientId = ClientId(UUID.randomUUID)
 
   def sequence(id: Observation.Id): SequenceGen[IO] = SequenceGen[IO](
-    id,
-    "",
-    Instrument.F2,
-    List(SequenceGen.PendingStepGen(1, Map(), Set.empty, SequenceGen.StepActionsGen(List(),
-      Map(), _ => List(List(pendingAction(Instrument.F2)))
+    id = id,
+    title = "",
+    instrument = Instrument.F2,
+    steps = List(SequenceGen.PendingStepGen(
+      id = 1,
+      config = Map(),
+      resources = Set.empty,
+      generator = SequenceGen.StepActionsGen(
+        pre = Nil,
+        configs = Map(),
+        post = _ => List(NonEmptyList.one(pendingAction(Instrument.F2)))
     )))
   )
 
   def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen[IO] = SequenceGen[IO](
-    id,
-    "",
-    Instrument.F2,
-    List.range(1, n).map(SequenceGen.PendingStepGen(_, Map(), Set.empty, SequenceGen.StepActionsGen(List(),
-      Map(), _ => List(List(pendingAction(Instrument.F2)))
+    id = id,
+    title = "",
+    instrument = Instrument.F2,
+    steps =
+      List
+        .range(1, n)
+        .map(SequenceGen.PendingStepGen(
+          _,
+          config = Map(),
+          resources = Set.empty,
+          generator = SequenceGen.StepActionsGen(
+            pre = Nil,
+            configs = Map(),
+            post = _ => List(NonEmptyList.one(pendingAction(Instrument.F2)))
     )))
   )
 
   def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen[IO] = SequenceGen[IO](
-    id,
-    "",
-    ins,
-    List(
+    id = id,
+    title = "",
+    instrument = ins,
+    steps = List(
       SequenceGen.PendingStepGen(
-        1, Map(), resources, SequenceGen.StepActionsGen(List(), resources.map(r => r ->pendingAction(r)).toMap,
-          _ =>List()
+        id = 1,
+        config = Map(),
+        resources = resources,
+        generator = SequenceGen.StepActionsGen(
+          pre = Nil,
+          configs = resources.map(r => r ->pendingAction(r)).toMap,
+          post = _ => Nil
         )
       ),
       SequenceGen.PendingStepGen(

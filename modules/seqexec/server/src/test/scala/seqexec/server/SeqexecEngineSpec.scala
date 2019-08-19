@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.effect.IO
 import cats.implicits._
+import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
@@ -23,44 +24,44 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
     it should "be all running if none has a result" in {
       val status = List(Resource.TCS -> ActionStatus.Running)
-      val executions: List[List[Action[IO]]] = List(
-        List(running(Resource.TCS)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(running(Resource.TCS)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be all running if none has a result 2" in {
       val status = List(Resource.TCS -> ActionStatus.Running, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action[IO]]] = List(
-        List(running(Resource.TCS), running(Instrument.GmosN)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(running(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some running if none has a result even when the previous execution is complete" in {
       val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS)),
-        List(done(Resource.TCS), running(Instrument.GmosN)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(done(Resource.TCS)),
+        NonEmptyList.of(done(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some pending if one will be done in the future" in {
       val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action[IO]]] = List(
-        List(running(Instrument.GmosN)),
-        List(done(Resource.TCS), done(Instrument.GmosN))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(running(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), done(Instrument.GmosN))
       )
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop at the first with running steps" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(running(Instrument.GmosN)),
-        List(running(Instrument.GmosN), running(Resource.TCS))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(running(Instrument.GmosN)),
+        NonEmptyList.of(running(Instrument.GmosN), running(Resource.TCS))
       )
       val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop evaluating where at least one is running even while some are done" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), done(Instrument.GmosN)),
-        List(done(Resource.TCS), running(Instrument.GmosN)),
-        List(pendingAction(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), done(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), running(Instrument.GmosN)),
+        NonEmptyList.of(pendingAction(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
       val status = List(Resource.TCS -> ActionStatus.Completed, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Running)
       SeqexecEngine.configStatus(executions) shouldBe status
     }
@@ -71,28 +72,28 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
     it should "be all pending while one is running" in {
       val status = List(Resource.TCS -> ActionStatus.Pending)
-      val executions: List[List[Action[IO]]] = List(
-        List(pendingAction(Resource.TCS)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(pendingAction(Resource.TCS)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending with mixed" in {
       val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
-      val executions: List[List[Action[IO]]] = List(
-        List(pendingAction(Resource.TCS), done(Instrument.GmosN)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(pendingAction(Resource.TCS), done(Instrument.GmosN)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending on mixed combinations" in {
       val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS)),
-        List(done(Resource.TCS), pendingAction(Instrument.GmosN)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.one(done(Resource.TCS)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending with multiple resources" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), pendingAction(Instrument.GmosN)),
-        List(done(Resource.TCS), pendingAction(Instrument.GmosN)),
-        List(done(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN)),
+        NonEmptyList.of(done(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
       val status = List(Resource.TCS -> ActionStatus.Pending, Resource.Gcal -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
@@ -102,23 +103,23 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       SeqexecEngine.observeStatus(Nil) shouldBe ActionStatus.Pending
     }
     it should "be running if there is an action observe" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), observing))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), observing))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
     }
     it should "be done if there is a result observe" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), observed))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), observed))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Completed
     }
     it should "be running if there is a partial result with the file id" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), fileIdReady))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), fileIdReady))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
     }
     it should "be paused if there is a paused observe" in {
-      val executions: List[List[Action[IO]]] = List(
-        List(done(Resource.TCS), paused))
+      val executions: List[ParallelActions[IO]] = List(
+        NonEmptyList.of(done(Resource.TCS), paused))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 

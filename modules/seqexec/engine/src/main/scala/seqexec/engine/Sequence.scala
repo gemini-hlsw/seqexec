@@ -200,7 +200,7 @@ object Sequence {
       * @param stepDefs New executions.
       * @return Updated state
       */
-    def update(stepDefs: List[List[Actions[F]]]): State[F]
+    def update(stepDefs: List[List[ParallelActions[F]]]): State[F]
 
     /**
       * Unzip `State`. This creates a single `Sequence` with either completed `Step`s
@@ -347,7 +347,7 @@ object Sequence {
       // 1. Done steps cannot change.
       // 2. Running step cannot change `done` or `focus` executions
       // 3. Must preserve breakpoints and skip marks
-      override def update(stepDefs: List[List[Actions[F]]]): State[F] =
+      override def update(stepDefs: List[List[ParallelActions[F]]]): State[F] =
         stepDefs.drop(zipper.done.length) match {
           case t :: ts => zipperL.modify(zp =>
             zp.copy(
@@ -420,7 +420,7 @@ object Sequence {
 
       override def start(i: Int): State[F] = self
 
-      override def update(stepDefs: List[List[Actions[F]]]): State[F] = self
+      override def update(stepDefs: List[List[ParallelActions[F]]]): State[F] = self
 
       override val toSequence: Sequence[F] = seq
 
