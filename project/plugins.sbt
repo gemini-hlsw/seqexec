@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % "0.8"
 )
 
-addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.6")
+addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.9")
 
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % scalaJSVersion)
 
