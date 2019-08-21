@@ -34,12 +34,12 @@ object Settings {
     val reactSemanticUI         = "0.1.4"
 
     // Scala libraries
-    val catsEffectVersion       = "1.4.0"
-    val catsVersion             = "1.6.1"
+    val catsEffectVersion       = "2.0.0"
+    val catsVersion             = "2.0.0"
     val mouseVersion            = "0.23"
     val fs2Version              = "1.0.5"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.6.5"
+    val attoVersion             = "0.7.0-RC1"
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
@@ -56,7 +56,7 @@ object Settings {
     val janino                  = "3.1.0"
     val logstash                = "6.2"
     val knobs                   = "7.0.24"
-    val monocleVersion          = "1.5.1-cats"
+    val monocleVersion          = "2.0.0-RC1"
     val circeVersion            = "0.11.1"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"
@@ -94,7 +94,7 @@ object Settings {
     val geminiLocales           = "0.1.0-2019a"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.2"
+    val gspMath                 = "0.1.3"
   }
 
   /**
@@ -103,7 +103,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs               = Def.setting(Seq(
-      "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test"
+      "edu.gemini"              %%% "gsp-math-testkit"              % LibraryVersions.gspMath         % "test",
     ))
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"

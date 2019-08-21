@@ -14,7 +14,6 @@ import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import scala.collection.immutable.SortedMap
-import scala.concurrent.duration.Duration
 import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
@@ -46,8 +45,6 @@ trait SeqexecModelArbitraries {
       // Let's reduce the test space by only testing the list of items
     } yield SequencesQueue(Map.empty, c, o, SortedMap.empty, b)
   }
-
-  implicit val arbitraryUUID: Arbitrary[UUID] = Arbitrary(Gen.uuid)
 
   implicit val cogenUUID: Cogen[UUID] =
     Cogen[(Long, Long)].contramap(u =>
@@ -248,7 +245,7 @@ trait SeqexecModelArbitraries {
 
   implicit val arbTime: Arbitrary[Time] =
     Arbitrary {
-      arbitrary[Duration].map(Time.apply)
+      arbSDuration.arbitrary.map(Time.apply)
     }
 
   implicit val timeCogen: Cogen[Time] =

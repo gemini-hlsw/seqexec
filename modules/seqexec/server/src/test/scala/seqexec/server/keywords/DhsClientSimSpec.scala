@@ -7,10 +7,11 @@ import cats.effect.IO
 import gem.enum.KeywordName
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
 import seqexec.server.keywords.DhsClient.Permanent
+import org.scalatest.flatspec.AnyFlatSpec
 
-class DhsClientSimSpec extends FlatSpec with Matchers {
+class DhsClientSimSpec extends AnyFlatSpec with Matchers {
   private implicit def unsafeLogger = Slf4jLogger.unsafeCreate[IO]
 
   "DhsClientSim" should "produce data labels for today" in {

@@ -8,9 +8,8 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames
 import seqexec.model.enum.SystemName
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{EitherValues, FlatSpec, Matchers}
-import cats.implicits._
+import cats.tests.CatsSuite
+import org.scalatest.EitherValues
 
 trait ConfigArbitraries {
 
@@ -39,39 +38,38 @@ trait ConfigArbitraries {
     }
 }
 
-class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks with ConfigArbitraries {
+class ConfigUtilSpec extends CatsSuite with EitherValues with ConfigArbitraries {
   import ConfigUtilOps._
 
-  "ConfigUtil" should
-    "extract keys with the correct type" in {
-      forAll { (c: Config, k: ItemKey) =>
-        // Make sure the key is present
-        c.putItem(k, "value")
-        c.extract(k).as[String] shouldBe Right("value")
+  test("ConfigUtil: extract keys with the correct type") {
+    forAll { (c: Config, k: ItemKey) =>
+      // Make sure the key is present
+      c.putItem(k, "value")
+      c.extract(k).as[String] shouldBe Right("value")
+    }
+  }
+  test("ConfigUtil: fail to extract keys with the wrong type") {
+    forAll { (c: Config, k: ItemKey) =>
+      c.putItem(k, "value")
+      c.extract(k).as[Int].left.value should matchPattern {
+        case ConversionError(_, _) =>
       }
     }
-    it should "fail to extract keys with the wrong type" in {
-      forAll { (c: Config, k: ItemKey) =>
-        c.putItem(k, "value")
-        c.extract(k).as[Int].left.value should matchPattern {
-          case ConversionError(_, _) =>
-        }
+  }
+  test("ConfigUtil: fail to extract unknown keys") {
+    forAll { (c: Config, k: ItemKey) =>
+      // Make sure the key is removed
+      c.remove(k)
+      c.extract(k).as[String].left.value should matchPattern {
+        case KeyNotFound(_) =>
       }
     }
-    it should "fail to extract unknown keys" in {
-      forAll { (c: Config, k: ItemKey) =>
-        // Make sure the key is removed
-        c.remove(k)
-        c.extract(k).as[String].left.value should matchPattern {
-          case KeyNotFound(_) =>
-        }
-      }
+  }
+  test("ConfigUtil: convert to StepConfig") {
+    forAll { (c: Config) =>
+      // Not much to check but at least verify the amount of subsystems
+      val subsystems = c.getKeys.map(_.getRoot.getName).map(SystemName.unsafeFromString).distinct
+      c.toStepConfig.keys should contain theSameElementsAs subsystems
     }
-    it should "convert to StepConfig" in {
-      forAll { (c: Config) =>
-        // Not much to check but at least verify the amount of subsystems
-        val subsystems = c.getKeys.map(_.getRoot.getName).map(SystemName.unsafeFromString).distinct
-        c.toStepConfig.keys should contain theSameElementsAs subsystems
-      }
-    }
+  }
 }

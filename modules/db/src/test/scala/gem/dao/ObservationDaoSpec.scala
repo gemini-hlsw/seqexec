@@ -3,23 +3,20 @@
 
 package gem.dao
 
-import cats.implicits._
+import cats.tests.CatsSuite
 import doobie.util.invariant.UnexpectedEnd
 import doobie.implicits._
 import gem.Observation
 import gem.enum._
 import gsp.math.Index
-import org.scalatest._
-import org.scalatest.prop._
-import org.scalatest.Matchers._
 
-class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
+class ObservationDaoSpec extends CatsSuite with DaoTest {
 
   import gem.arb.ArbObservation._
 
   val Obs1: Observation.Id = Observation.Id(pid, Index.One)
 
-  property("ObservationDao should select all observation ids for a program") {
+  test("ObservationDao should select all observation ids for a program") {
     forAll(genObservationMap(limit = 50)) { obsMap =>
       val oids = withProgram {
         for {
@@ -32,7 +29,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should fetchFlat") {
+  test("ObservationDao should fetchFlat") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -49,13 +46,13 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should fail fetchFlat if missing") {
+  test("ObservationDao should fail fetchFlat if missing") {
     assertThrows[UnexpectedEnd.type] {
       withProgram(ObservationDao.fetchFlat(Obs1))
     }
   }
 
-  property("ObservationDao should queryFlat") {
+  test("ObservationDao should queryFlat") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -72,11 +69,11 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should queryFlat missing observations") {
+  test("ObservationDao should queryFlat missing observations") {
     withProgram(ObservationDao.queryFlat(Obs1)) shouldEqual None
   }
 
-  property("ObservationDao should fetchStatic") {
+  test("ObservationDao should fetchStatic") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -92,13 +89,13 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should fail fetchStatic if missing") {
+  test("ObservationDao should fail fetchStatic if missing") {
     assertThrows[UnexpectedEnd.type] {
       withProgram(ObservationDao.fetchStatic(Obs1))
     }
   }
 
-  property("ObservationDao should queryStatic") {
+  test("ObservationDao should queryStatic") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -114,12 +111,12 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should queryStatic missing observations") {
+  test("ObservationDao should queryStatic missing observations") {
     withProgram(ObservationDao.queryStatic(Obs1)) shouldEqual None
   }
 
 
-  property("ObservationDao should fetchTargets") {
+  test("ObservationDao should fetchTargets") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -136,13 +133,13 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should fail fetchTargets if missing") {
+  test("ObservationDao should fail fetchTargets if missing") {
     assertThrows[UnexpectedEnd.type] {
       withProgram(ObservationDao.fetchTargets(Obs1))
     }
   }
 
-  property("ObservationDao should queryTargets") {
+  test("ObservationDao should queryTargets") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -159,22 +156,22 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should queryTargets missing observations") {
+  test("ObservationDao should queryTargets missing observations") {
     withProgram(ObservationDao.queryTargets(Obs1)) shouldEqual None
   }
 
-  property("ObservationDao should fail fetch if missing") {
+  test("ObservationDao should fail fetch if missing") {
     assertThrows[UnexpectedEnd.type] {
       withProgram(ObservationDao.fetch(Obs1))
     }
   }
 
-  property("ObservationDao should query missing observations") {
+  test("ObservationDao should query missing observations") {
     withProgram(ObservationDao.query(Obs1)) shouldEqual None
   }
 
 
-  property("ObservationDao should roundtrip complete observations with fetch") {
+  test("ObservationDao should roundtrip complete observations with fetch") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -187,7 +184,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should roundtrip complete observations with query") {
+  test("ObservationDao should roundtrip complete observations with query") {
     forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
@@ -200,7 +197,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("ObservationDao should roundtrip complete observation lists") {
+  test("ObservationDao should roundtrip complete observation lists") {
     forAll(genObservationMap(limit = 50)) { obsMapIn =>
       val obsMapOut = withProgram {
         for {

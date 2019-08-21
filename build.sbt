@@ -144,8 +144,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       Shapeless.value,
       Atto.value,
       GspMath.value,
-      GspMathTestkit.value
-    ) ++ Monocle.value
+    ) ++ Monocle.value ++ TestLibs.value
   ).jsSettings(
     libraryDependencies ++=
       Seq(JavaTimeJS.value, GeminiLocales.value)
@@ -355,7 +354,7 @@ lazy val web_client_common = project
       ScalaJSReactCats.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
-      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value
+      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value ++ TestLibs.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure

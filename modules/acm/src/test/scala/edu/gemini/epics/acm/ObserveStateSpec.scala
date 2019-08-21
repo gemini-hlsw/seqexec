@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Integer => JInteger}
 import java.lang.{Short => JShort}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
   * Tests of the observe state machine
@@ -23,7 +23,7 @@ import org.scalatest._
   * care about the state of the channels. Instead we want to only observe
   * the state transitions
   */
-final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks with GnirsMocks {
+final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks with GnirsMocks {
 
   test("NIFS normal observation") {
     val (epicsReader, epicsWriter) = nifsMocks
