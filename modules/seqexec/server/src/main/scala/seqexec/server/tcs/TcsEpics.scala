@@ -600,11 +600,11 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
     case G4 => gwfs4Target
   }
 
-  val ngs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr1Follow", epicsService)
+  val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr1Follow", epicsService)
 
-  val ngs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr2Follow", epicsService)
+  val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr2Follow", epicsService)
 
-  val ngs3ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr3Follow", epicsService)
+  val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr3Follow", epicsService)
 
   val odgw1FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw1Follow", epicsService)
 
@@ -632,20 +632,20 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   // GeMS statuses
 
-  val ngs1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs1Follow",
+  val cwfs1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs1Follow",
     s"${TcsTop}ngsPr1FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def ngs1Follow: F[Option[Boolean]] =
-    Nested(safeAttribute(ngs1FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+  def cwfs1Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(cwfs1FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
 
-  val ngs2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs2Follow",
+  val cwfs2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs2Follow",
     s"${TcsTop}ngsPr2FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def ngs2Follow: F[Option[Boolean]] =
-    Nested(safeAttribute(ngs2FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+  def cwfs2Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(cwfs2FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
 
-  val ngs3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs3Follow",
+  val cwfs3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs3Follow",
     s"${TcsTop}ngsPr3FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def ngs3Follow: F[Option[Boolean]] =
-    Nested(safeAttribute(ngs3FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
+  def cwfs3Follow: F[Option[Boolean]] =
+    Nested(safeAttribute(cwfs3FollowAttr)).map(_ === BinaryEnabledDisabled.Enabled).value
 
   val odgw1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw1Follow",
     s"${TcsTop}odgw1FollowStat.VAL", classOf[BinaryEnabledDisabled])

@@ -22,16 +22,16 @@ import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.{AGConfig, AoGuidersConfig, AoTcsConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsSouthController.{GemsGuiders, NGS1Config, NGS2Config, NGS3Config, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
+import seqexec.server.tcs.TcsSouthController.{GemsGuiders, CWFS1Config, CWFS2Config, CWFS3Config, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
 
 case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
-                                     subsystems: NonEmptySet[Subsystem],
-                                     gaos: Option[Gems[F]],
-                                     guideDb: GuideConfigDb[F]
-                                    )(config: TcsSouth.TcsSeqConfig[F]) extends System[F] {
+                                          subsystems: NonEmptySet[Subsystem],
+                                          gaos: Option[Gems[F]],
+                                          guideDb: GuideConfigDb[F]
+                                         )(config: TcsSouth.TcsSeqConfig[F]) extends System[F] {
   import TcsSouth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
 
@@ -103,9 +103,9 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
             config.guideWithP1)
           ),
           GemsGuiders(
-            tag[NGS1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS1)),
-            tag[NGS2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS2)),
-            tag[NGS3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS3)),
+            tag[CWFS1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS1)),
+            tag[CWFS2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS2)),
+            tag[CWFS3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS3)),
             tag[ODGW1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW1)),
             tag[ODGW2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW2)),
             tag[ODGW3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW3)),

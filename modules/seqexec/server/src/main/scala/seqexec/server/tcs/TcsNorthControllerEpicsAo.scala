@@ -9,7 +9,6 @@ import cats.effect.{IO, Sync}
 import cats.implicits._
 import org.log4s.{Logger, getLogger}
 import mouse.boolean._
-import monocle.Iso
 import monocle.macros.Lenses
 import squants.Length
 import seqexec.model.enum.Instrument
@@ -28,7 +27,6 @@ import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsControllerEpicsCommon._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
-import shapeless.tag
 import shapeless.tag.@@
 import squants.space.Arcseconds
 
@@ -134,8 +132,6 @@ object TcsNorthControllerEpicsAo {
     setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
   ).flattenOption
 
-  def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
-
   def calcGuideOff(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig, gaosEnabled: Boolean): TcsNorthAoConfig = {
     val mustOff = mustPauseWhileOffsetting(current, demand)
     // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
@@ -222,17 +218,12 @@ object TcsNorthControllerEpicsAo {
       IO(Log.info("Skipping guide on")) *> IO(current)
   }
 
-  def guiderActive(c: GuiderConfig): Boolean = c.tracking match {
-    case ProbeTrackingConfig.On(_) => c.detector === GuiderSensorOn
-    case _                         => false
-  }
-
   // Disable M1 guiding if source is off
   def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsNorthAoConfig] = cfg =>
     (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
       case g @ M1GuideConfig.M1GuideOn(src) => src match {
-        case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideConfig.M1GuideOff
-        case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideConfig.M1GuideOff
+        case M1Source.PWFS1 => if(cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
+        case M1Source.OIWFS => if(cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
         case M1Source.GAOS  => if(cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled) g
                                else M1GuideConfig.M1GuideOff
         case _              => g
@@ -245,8 +236,8 @@ object TcsNorthControllerEpicsAo {
     (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
       case M2GuideConfig.M2GuideOn(coma, srcs) =>
         val ss = srcs.filter{
-          case TipTiltSource.PWFS1 => guiderActive(cfg.gds.pwfs1)
-          case TipTiltSource.OIWFS => guiderActive(cfg.gds.oiwfs)
+          case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
+          case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
           case TipTiltSource.GAOS  => cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled
           case _                   => true
         }

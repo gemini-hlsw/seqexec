@@ -21,9 +21,9 @@ import seqexec.server.gems.GemsController.Odgw2Usage.DontUseOdgw2
 import seqexec.server.gems.GemsController.Odgw3Usage.UseOdgw3
 import seqexec.server.gems.GemsController.Odgw4Usage.UseOdgw4
 import seqexec.server.gems.GemsController.P1Usage.DontUseP1
-import seqexec.server.gems.GemsController.Ttgs1Usage.UseTtgs1
-import seqexec.server.gems.GemsController.Ttgs2Usage.DontUseTtgs2
-import seqexec.server.gems.GemsController.Ttgs3Usage.DontUseTtgs3
+import seqexec.server.gems.GemsController.Cwfs1Usage.UseCwfs1
+import seqexec.server.gems.GemsController.Cwfs2Usage.DontUseCwfs2
+import seqexec.server.gems.GemsController.Cwfs3Usage.DontUseCwfs3
 import squants.space.Millimeters
 
 final class GuideConfigDbSpec extends FlatSpec {
@@ -127,9 +127,9 @@ final class GuideConfigDbSpec extends FlatSpec {
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
     ),
     Some(Right(GemsOn(
-      UseTtgs1,
-      DontUseTtgs2,
-      DontUseTtgs3,
+      UseCwfs1,
+      DontUseCwfs2,
+      DontUseCwfs3,
       UseOdgw1,
       DontUseOdgw2,
       UseOdgw3,

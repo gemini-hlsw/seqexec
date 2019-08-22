@@ -233,7 +233,6 @@ object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {
   override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gsaoi.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new GsaoiEpics[IO](service, tops)
+  override def build(service: CaService, tops: Map[String, String]) = new GsaoiEpics[IO](service, tops)
 
 }

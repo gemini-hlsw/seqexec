@@ -20,15 +20,15 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.SeqexecFailure
-import seqexec.server.gems.Gems.{DetectorStateOps, GemsWfsState, Ngs1DetectorState, Ngs2DetectorState, Ngs3DetectorState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}
-import seqexec.server.gems.Gems.Ngs1DetectorState.{Off => _, On => _, _}
-import seqexec.server.gems.Gems.Ngs2DetectorState.{Off => _, On => _, _}
-import seqexec.server.gems.Gems.Ngs3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.{DetectorStateOps, GemsWfsState, Cwfs1DetectorState, Cwfs2DetectorState, Cwfs3DetectorState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}
+import seqexec.server.gems.Gems.Cwfs1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs3DetectorState.{Off => _, On => _, _}
 import seqexec.server.gems.Gems.Odgw1DetectorState.{Off => _, On => _, _}
 import seqexec.server.gems.Gems.Odgw2DetectorState.{Off => _, On => _, _}
 import seqexec.server.gems.Gems.Odgw3DetectorState.{Off => _, On => _, _}
 import seqexec.server.gems.Gems.Odgw4DetectorState.{Off => _, On => _, _}
-import seqexec.server.tcs.GemsSource.{Odgw1, Odgw2, Odgw3, Odgw4, Ttgs1, Ttgs2, Ttgs3}
+import seqexec.server.tcs.GemsSource.{Odgw1, Odgw2, Odgw3, Odgw4, Cwfs1, Cwfs2, Cwfs3}
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, InstrumentPorts, InvalidPort, ScienceFold}
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
@@ -214,7 +214,7 @@ object TcsConfigRetriever {
     v4 -> VirtualGemsTelescope.G4
   )).value.map(_.getOrElse(Map.empty))
 
-  private def getNgs[T: DetectorStateOps: Eq](getFollow: IO[Option[Boolean]], name: String)
+  private def getCwfs[T: DetectorStateOps: Eq](getFollow: IO[Option[Boolean]], name: String)
                                              (g: VirtualGemsTelescope, active: IO[Option[T]])
   : IO[GuiderConfig] = for {
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.gemsGuideConfig(g)), s"$name tracking configuration")
@@ -224,14 +224,14 @@ object TcsConfigRetriever {
       .map{x => if(DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff}.value, s"$name Active status")
   } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
 
-  private val getNgs1: (VirtualGemsTelescope, IO[Option[Ngs1DetectorState]]) => IO[GuiderConfig] =
-    getNgs(TcsEpics.instance.ngs1Follow, "NGS1")
+  private val getCwfs1: (VirtualGemsTelescope, IO[Option[Cwfs1DetectorState]]) => IO[GuiderConfig] =
+    getCwfs(TcsEpics.instance.cwfs1Follow, "NGS1")
 
-  private val getNgs2: (VirtualGemsTelescope, IO[Option[Ngs2DetectorState]]) => IO[GuiderConfig] =
-    getNgs(TcsEpics.instance.ngs1Follow, "NGS2")
+  private val getCwfs2: (VirtualGemsTelescope, IO[Option[Cwfs2DetectorState]]) => IO[GuiderConfig] =
+    getCwfs(TcsEpics.instance.cwfs1Follow, "NGS2")
 
-  private val getNgs3: (VirtualGemsTelescope, IO[Option[Ngs3DetectorState]]) => IO[GuiderConfig] =
-    getNgs(TcsEpics.instance.ngs1Follow, "NGS3")
+  private val getCwfs3: (VirtualGemsTelescope, IO[Option[Cwfs3DetectorState]]) => IO[GuiderConfig] =
+    getCwfs(TcsEpics.instance.cwfs1Follow, "NGS3")
 
   private def getOdgw[T: DetectorStateOps: Eq](getParked: IO[Option[Boolean]], getFollow: IO[Option[Boolean]], name: String)
                                           (g: VirtualGemsTelescope, active: IO[Option[T]])
@@ -291,9 +291,9 @@ object TcsConfigRetriever {
     for {
       base    <- retrieveBaseConfiguration
       mapping <- getGemsMap
-      ngs1    <- retrieveGemsGuider(mapping, Ttgs1, getNgs1(_, gemsSt.ngs1))
-      ngs2    <- retrieveGemsGuider(mapping, Ttgs2, getNgs2(_, gemsSt.ngs2))
-      ngs3    <- retrieveGemsGuider(mapping, Ttgs3, getNgs3(_, gemsSt.ngs3))
+      cwfs1    <- retrieveGemsGuider(mapping, Cwfs1, getCwfs1(_, gemsSt.cwfs1))
+      cwfs2    <- retrieveGemsGuider(mapping, Cwfs2, getCwfs2(_, gemsSt.cwfs2))
+      cwfs3    <- retrieveGemsGuider(mapping, Cwfs3, getCwfs3(_, gemsSt.cwfs3))
       odgw1   <- retrieveGemsGuider(mapping, Odgw1, getOdgw1(_, gemsSt.odgw1))
       odgw2   <- retrieveGemsGuider(mapping, Odgw2, getOdgw2(_, gemsSt.odgw2))
       odgw3   <- retrieveGemsGuider(mapping, Odgw3, getOdgw3(_, gemsSt.odgw3))
@@ -301,9 +301,9 @@ object TcsConfigRetriever {
     } yield TcsSouthControllerEpicsAo.EpicsTcsAoConfig(
       base,
       mapping,
-      ngs1,
-      ngs2,
-      ngs3,
+      cwfs1,
+      cwfs2,
+      cwfs3,
       odgw1,
       odgw2,
       odgw3,

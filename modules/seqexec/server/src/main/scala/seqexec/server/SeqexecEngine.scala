@@ -18,6 +18,7 @@ import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+
 import knobs.Config
 import mouse.all._
 import monocle.Monocle._
@@ -48,11 +49,12 @@ import seqexec.server.gsaoi.{GsaoiControllerEpics, GsaoiControllerSim, GsaoiEpic
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
-import seqexec.server.gems.GemsEpics
+import seqexec.server.gems.{GemsControllerEpics, GemsControllerSim, GemsEpics}
 import seqexec.server.tcs.{GuideConfigDb, TcsEpics, TcsNorthControllerEpics, TcsNorthControllerSim, TcsSouthControllerEpics, TcsSouthControllerSim}
 import seqexec.server.SeqEvent._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import shapeless.tag
@@ -77,7 +79,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
       DhsClientSim(settings.date)),
-    (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(), TcsSouthControllerSim[IO]),
+    (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
     (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
     settings.gcalControl.command.fold(GcalControllerEpics(), GcalControllerSim[IO]),
     settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
@@ -92,6 +94,10 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim[IO]),
     settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim[IO]),
     (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
+    (settings.gemsControl.command && settings.gemsControl.command).fold(
+      GemsControllerEpics(GemsEpics.instance, GsaoiEpics.instance),
+      GemsControllerSim[IO]
+    ),
     guideConfigDb
   )
 

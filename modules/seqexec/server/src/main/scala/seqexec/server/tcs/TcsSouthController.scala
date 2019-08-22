@@ -23,22 +23,22 @@ trait TcsSouthController[F[_]] {
 
 object TcsSouthController {
 
-  trait NGS1Config
-  trait NGS2Config
-  trait NGS3Config
+  trait CWFS1Config
+  trait CWFS2Config
+  trait CWFS3Config
   trait ODGW1Config
   trait ODGW2Config
   trait ODGW3Config
   trait ODGW4Config
 
   final case class GemsGuiders(
-    ngs1: GuiderConfig@@NGS1Config,
-    ngs2: GuiderConfig@@NGS2Config,
-    ngs3: GuiderConfig@@NGS3Config,
-    odgw1: GuiderConfig@@ODGW1Config,
-    odgw2: GuiderConfig@@ODGW2Config,
-    odgw3: GuiderConfig@@ODGW3Config,
-    odgw4: GuiderConfig@@ODGW4Config
+                                cwfs1: GuiderConfig@@CWFS1Config,
+                                cwfs2: GuiderConfig@@CWFS2Config,
+                                cwfs3: GuiderConfig@@CWFS3Config,
+                                odgw1: GuiderConfig@@ODGW1Config,
+                                odgw2: GuiderConfig@@ODGW2Config,
+                                odgw3: GuiderConfig@@ODGW3Config,
+                                odgw4: GuiderConfig@@ODGW4Config
   )
 
   type TcsSouthConfig = TcsConfig[GemsGuiders, GemsConfig]

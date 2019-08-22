@@ -46,6 +46,7 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
+import seqexec.server.gems.Gems
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -324,9 +325,16 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[IO],
                      lsource: LightSource, config: Config): TrySeq[System[IO]] = site match {
-    case Site.GS => TcsSouth.fromConfig[IO](systems.tcsSouth, subs, None, inst, systems.guideDb)(
-      config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
-    ).asRight
+    case Site.GS => if(useGaos)
+      Gems.fromConfig[IO](systems.gems, systems.guideDb)(config).map(a =>
+        TcsSouth.fromConfig[IO](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
+          config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+        )
+      )
+      else
+        TcsSouth.fromConfig[IO](systems.tcsSouth, subs, None, inst, systems.guideDb)(
+          config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+        ).asRight
     case Site.GN => if(useGaos)
         Altair.fromConfig(config, systems.altair).map(a =>
           TcsNorth.fromConfig[IO](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
@@ -364,6 +372,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
 
       case StepType.AlignAndCalib         => List(sys).asRight
+
+      case StepType.Gems(inst) =>
+        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+
 
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
@@ -443,7 +456,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           calcInstHeader(config, sys).map(h => Reader(ctx =>
             List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
-      case StepType.AltairObs(_) =>
+      case StepType.AltairObs(_)    =>
         val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         for {
           gst  <- Altair.guideStarType(config)
@@ -456,14 +469,20 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                       gwsHeaders(GwsEpics.instance, sys), h)))
         } yield read
 
-      case StepType.FlatOrArc(inst)       =>
+      case StepType.FlatOrArc(inst) =>
           calcInstHeader(config, sys).map(h => Reader(ctx =>
             List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h)))
 
-      case StepType.DarkOrBias(_)      =>
+      case StepType.DarkOrBias(_)   =>
           calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
-      case StepType.AlignAndCalib         => TrySeq(Reader(_ => Nil)) // No headers for A&C
-      case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
+
+      case StepType.AlignAndCalib   => TrySeq(Reader(_ => Nil)) // No headers for A&C
+
+      case StepType.Gems(_)         =>
+        calcInstHeader(config, sys).map(h => Reader(ctx =>
+          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+
+      case st                       => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
     }
   }
 

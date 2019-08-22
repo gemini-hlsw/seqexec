@@ -7,15 +7,12 @@ import cats.Eq
 import cats.implicits._
 import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
-import squants.Time
 
 trait GemsController[F[_]] {
   import GemsController._
 
-  def pauseResume(config: GemsConfig, pauseReasons: PauseConditionSet,
-                  resumeReasons: ResumeConditionSet): F[PauseResume[F]]
-  def observe(expTime: Time): F[Unit]
-  def endObserve: F[Unit]
+  def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(cfg: GemsConfig)
+  : F[PauseResume[F]]
 
   val stateGetter: GemsWfsState[F]
 
@@ -44,43 +41,57 @@ object GemsController {
   }
 
   sealed trait GemsConfig extends Product with Serializable {
+    val isCwfs1Used: Boolean
+    val isCwfs2Used: Boolean
+    val isCwfs3Used: Boolean
+    val isOdgw1Used: Boolean
+    val isOdgw2Used: Boolean
+    val isOdgw3Used: Boolean
+    val isOdgw4Used: Boolean
     val isP1Used: Boolean
     val isOIUsed: Boolean
   }
 
   case object GemsOff extends GemsConfig {
+    override val isCwfs1Used: Boolean = false
+    override val isCwfs2Used: Boolean = false
+    override val isCwfs3Used: Boolean = false
+    override val isOdgw1Used: Boolean = false
+    override val isOdgw2Used: Boolean = false
+    override val isOdgw3Used: Boolean = false
+    override val isOdgw4Used: Boolean = false
     override val isP1Used: Boolean = false
     override val isOIUsed: Boolean = false
   }
 
-  sealed trait Ttgs1Usage extends Product with Serializable
-  object Ttgs1Usage {
-    case object UseTtgs1 extends Ttgs1Usage
-    case object DontUseTtgs1 extends Ttgs1Usage
+  sealed trait Cwfs1Usage extends Product with Serializable
+  object Cwfs1Usage {
+    case object UseCwfs1 extends Cwfs1Usage
+    case object DontUseCwfs1 extends Cwfs1Usage
 
-    implicit val ttgs1UsageEq: Eq[Ttgs1Usage] = Eq.fromUniversalEquals
+    implicit val cwfs1UsageEq: Eq[Cwfs1Usage] = Eq.fromUniversalEquals
 
-    def fromBoolean(b: Boolean): Ttgs1Usage = if(b) UseTtgs1 else DontUseTtgs1
+    def fromBoolean(b: Boolean): Cwfs1Usage = if(b) UseCwfs1 else DontUseCwfs1
   }
 
-  sealed trait Ttgs2Usage extends Product with Serializable
-  object Ttgs2Usage {
-    case object UseTtgs2 extends Ttgs2Usage
-    case object DontUseTtgs2 extends Ttgs2Usage
+  sealed trait Cwfs2Usage extends Product with Serializable
+  object Cwfs2Usage {
+    case object UseCwfs2 extends Cwfs2Usage
+    case object DontUseCwfs2 extends Cwfs2Usage
 
-    implicit val ttgs2UsageEq: Eq[Ttgs2Usage] = Eq.fromUniversalEquals
+    implicit val cwfs2UsageEq: Eq[Cwfs2Usage] = Eq.fromUniversalEquals
 
-    def fromBoolean(b: Boolean): Ttgs2Usage = if(b) UseTtgs2 else DontUseTtgs2
+    def fromBoolean(b: Boolean): Cwfs2Usage = if(b) UseCwfs2 else DontUseCwfs2
   }
 
-  sealed trait Ttgs3Usage extends Product with Serializable
-  object Ttgs3Usage {
-    case object UseTtgs3 extends Ttgs3Usage
-    case object DontUseTtgs3 extends Ttgs3Usage
+  sealed trait Cwfs3Usage extends Product with Serializable
+  object Cwfs3Usage {
+    case object UseCwfs3 extends Cwfs3Usage
+    case object DontUseCwfs3 extends Cwfs3Usage
 
-    implicit val ttgs3UsageEq: Eq[Ttgs3Usage] = Eq.fromUniversalEquals
+    implicit val cwfs3UsageEq: Eq[Cwfs3Usage] = Eq.fromUniversalEquals
 
-    def fromBoolean(b: Boolean): Ttgs3Usage = if(b) UseTtgs3 else DontUseTtgs3
+    def fromBoolean(b: Boolean): Cwfs3Usage = if(b) UseCwfs3 else DontUseCwfs3
   }
 
   sealed trait Odgw1Usage extends Product with Serializable
@@ -124,9 +135,9 @@ object GemsController {
   }
 
   final case class GemsOn(
-                           ttgs1: Ttgs1Usage,
-                           ttgs2: Ttgs2Usage,
-                           ttgs3: Ttgs3Usage,
+                           cwfs1: Cwfs1Usage,
+                           cwfs2: Cwfs2Usage,
+                           cwfs3: Cwfs3Usage,
                            odgw1: Odgw1Usage,
                            odgw2: Odgw2Usage,
                            odgw3: Odgw3Usage,
@@ -134,6 +145,27 @@ object GemsController {
                            useP1: P1Usage,
                            useOI: OIUsage
   ) extends GemsConfig {
+
+    import Cwfs1Usage._
+    override val isCwfs1Used: Boolean = cwfs1 === UseCwfs1
+
+    import Cwfs2Usage._
+    override val isCwfs2Used: Boolean = cwfs2 === UseCwfs2
+
+    import Cwfs3Usage._
+    override val isCwfs3Used: Boolean = cwfs3 === UseCwfs3
+
+    import Odgw1Usage._
+    override val isOdgw1Used: Boolean = odgw1 === UseOdgw1
+
+    import Odgw2Usage._
+    override val isOdgw2Used: Boolean = odgw2 === UseOdgw2
+
+    import Odgw3Usage._
+    override val isOdgw3Used: Boolean = odgw3 === UseOdgw3
+
+    import Odgw4Usage._
+    override val isOdgw4Used: Boolean = odgw4 === UseOdgw4
 
     import P1Usage._
     override val isP1Used: Boolean = useP1 === UseP1
