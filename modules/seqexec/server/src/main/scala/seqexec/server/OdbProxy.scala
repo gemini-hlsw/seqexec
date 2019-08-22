@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.Applicative
 import cats.effect.Sync
+import cats.data.EitherT
 import cats.implicits._
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Peer
@@ -15,40 +16,47 @@ import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import org.log4s.getLogger
 
-class OdbProxy[F[_]: Sync](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
+sealed trait OdbCommands[F[_]] {
+  def queuedSequences(): F[List[Observation.Id]]
+  def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
+  def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
+  def obsAbort(obsId: Observation.Id, reason: String): F[Boolean]
+  def sequenceEnd(obsId: Observation.Id): F[Boolean]
+  def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean]
+  def obsContinue(obsId: Observation.Id): F[Boolean]
+  def obsPause(obsId: Observation.Id, reason: String): F[Boolean]
+  def obsStop(obsId: Observation.Id, reason: String): F[Boolean]
+}
 
-  def host(): Peer = loc
-  def read(oid: Observation.Id): F[Either[SeqexecFailure, SeqexecSequence]] =
-    Sync[F].delay {
-      SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.OdbSeqError)
-    }
-
-  val queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences()
-  val datasetStart: (Observation.Id, String, ImageFileId) => F[Boolean] = cmds.datasetStart
-  val datasetComplete: (Observation.Id, String, ImageFileId) => F[Boolean] = cmds.datasetComplete
-  val obsAbort: (Observation.Id, String) => F[Boolean] = cmds.obsAbort
-  val sequenceEnd: Observation.Id => F[Boolean] = cmds.sequenceEnd
-  val sequenceStart: (Observation.Id, ImageFileId) => F[Boolean] = cmds.sequenceStart
-  val obsContinue: Observation.Id => F[Boolean] = cmds.obsContinue
-  val obsPause: (Observation.Id, String) => F[Boolean] = cmds.obsPause
-  val obsStop: (Observation.Id, String) => F[Boolean] = cmds.obsStop
-
+sealed trait OdbProxy[F[_]] extends OdbCommands[F] {
+  def read(oid: Observation.Id): F[SeqexecSequence]
+  def queuedSequences: F[List[Observation.Id]]
 }
 
 object OdbProxy {
   private val Log = getLogger
 
-  trait OdbCommands[F[_]] {
-    def queuedSequences(): F[List[Observation.Id]]
-    def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
-    def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
-    def obsAbort(obsId: Observation.Id, reason: String): F[Boolean]
-    def sequenceEnd(obsId: Observation.Id): F[Boolean]
-    def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean]
-    def obsContinue(obsId: Observation.Id): F[Boolean]
-    def obsPause(obsId: Observation.Id, reason: String): F[Boolean]
-    def obsStop(obsId: Observation.Id, reason: String): F[Boolean]
-  }
+  def apply[F[_]: Sync](loc: Peer, cmds: OdbCommands[F]): OdbProxy[F] =
+    new OdbProxy[F] {
+      def read(oid: Observation.Id): F[SeqexecSequence] =
+        EitherT(
+          Sync[F].delay {
+            SeqExecService
+              .client(loc)
+              .sequence(new SPObservationID(oid.format))
+              .leftMap(SeqexecFailure.OdbSeqError)
+          }).widenRethrowT
+
+      def queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences()
+      def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = cmds.datasetStart(obsId, dataId, fileId)
+      def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = cmds.datasetComplete(obsId, dataId, fileId)
+      def obsAbort(obsId: Observation.Id, reason: String): F[Boolean] = cmds.obsAbort(obsId, reason)
+      def sequenceEnd(obsId: Observation.Id): F[Boolean] = cmds.sequenceEnd(obsId)
+      def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean] = cmds.sequenceStart(obsId, fileId)
+      def obsContinue(obsId: Observation.Id): F[Boolean] = cmds.obsContinue(obsId)
+      def obsPause(obsId: Observation.Id, reason: String): F[Boolean] = cmds.obsPause(obsId, reason)
+      def obsStop(obsId: Observation.Id, reason: String): F[Boolean] = cmds.obsStop(obsId, reason)
+    }
 
   final class DummyOdbCommands[F[_]: Applicative] extends OdbCommands[F] {
     override def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = false.pure[F]
@@ -71,10 +79,6 @@ object OdbProxy {
   final case class OdbCommandsImpl[F[_]](host: Peer)(implicit val F: Sync[F]) extends OdbCommands[F] {
     private val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
     private val sessionName = "sessionQueue"
-
-    implicit class FRecover[A](t: F[A]) {
-      def recover: F[Either[SeqexecFailure, A]] = t.attempt.map(_.leftMap(SeqexecFailure.SeqexecException))
-    }
 
     override def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] =
       F.delay(

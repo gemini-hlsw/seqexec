@@ -3,10 +3,10 @@
 
 package seqexec.server
 
+import cats.Applicative
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import cats.data.NonEmptyList
-import fs2.Stream
 import io.prometheus.client.CollectorRegistry
 import java.time.LocalDate
 import java.util.UUID
@@ -22,7 +22,6 @@ import seqexec.engine.Result.PauseContext
 import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.keywords.GdsClient
-import seqexec.server.tcs.GuideConfig
 import seqexec.server.tcs.GuideConfigDb
 import shapeless.tag
 import scala.concurrent.duration._
@@ -63,38 +62,55 @@ object TestCommon {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
 
-  def configureIO(resource: Resource): IO[Result[IO]] = IO.apply(Result.OK(Response.Configured(resource)))
-  def pendingAction(resource: Resource): Action[IO] =
-    engine.fromF[IO](ActionType.Configure(resource), configureIO(resource))
-  def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
-    Action.ActionState.Started, Nil))
-  def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
-    Action.ActionState.Completed(Response.Configured(resource)), Nil))
+  def configure[F[_]: Applicative](resource: Resource): F[Result[F]] =
+    Result.OK(Response.Configured(resource)).pure[F].widen
+
+  def pendingAction[F[_]: Applicative](resource: Resource): Action[F] =
+    engine.fromF[F](ActionType.Configure(resource), configure(resource))
+
+  def running[F[_]: Applicative](resource: Resource): Action[F] =
+    Action.state.set(Action.State(Action.ActionState.Started, Nil))(pendingAction(resource))
+
+  def done[F[_]: Applicative](resource: Resource): Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Completed(Response.Configured(resource)), Nil))(
+        pendingAction(resource))
+
   val fileId = "fileId"
-  def observing: Action[IO] = engine.fromF[IO](ActionType.Observe,
-    IO.apply(Result.OK(Response.Observed(fileId)))).copy(state = Action.State(Action.ActionState.Started, Nil))
-  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Started,
-    List(FileIdAllocated(fileId))))
-  def observed: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Completed(Response.Observed(fileId)),
-    List(FileIdAllocated(fileId))))
-  def paused: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Paused(new PauseContext[IO]{}),
-    List(FileIdAllocated(fileId))))
+
+  def observing[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Started, Nil))(
+        engine.fromF[F](
+        ActionType.Observe,
+            Result.OK(Response.Observed(fileId)).pure[F].widen))
+
+  def fileIdReady[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Started, List(FileIdAllocated(fileId))))(
+        observing)
+
+  def observed[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Completed(Response.Observed(fileId)), List(FileIdAllocated(fileId))))(
+        observing)
+
+  def paused[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Paused(new PauseContext[F]{}), List(FileIdAllocated(fileId))))(
+        observing)
+
   def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.sequences.get(oid)
     .exists(_.seq.status.isCompleted)
+
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
-  private val guideDb = new GuideConfigDb[IO] {
-    override def value: IO[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
-
-    override def set(v: GuideConfig): IO[Unit] = IO.unit
-
-    override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
-  }
 
   val gpiSim: GpiClient[IO] = GpiClient.simulatedGpiClient[IO].use(IO(_)).unsafeRunSync
 
   val ghostSim: GhostClient[IO] = GhostClient.simulatedGhostClient[IO].use(IO(_)).unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, guideDb, defaultSettings, sm)
+  val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, GuideConfigDb.constant[IO], defaultSettings, sm)
+
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
@@ -120,7 +136,7 @@ object TestCommon {
       generator = SequenceGen.StepActionsGen(
         pre = Nil,
         configs = Map(),
-        post = _ => List(NonEmptyList.one(pendingAction(Instrument.F2)))
+        post = _ => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
     )))
   )
 
@@ -138,7 +154,7 @@ object TestCommon {
           generator = SequenceGen.StepActionsGen(
             pre = Nil,
             configs = Map(),
-            post = _ => List(NonEmptyList.one(pendingAction(Instrument.F2)))
+            post = _ => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
     )))
   )
 
@@ -153,13 +169,18 @@ object TestCommon {
         resources = resources,
         generator = SequenceGen.StepActionsGen(
           pre = Nil,
-          configs = resources.map(r => r ->pendingAction(r)).toMap,
+          configs = resources.map(r => r -> pendingAction[IO](r)).toMap,
           post = _ => Nil
         )
       ),
       SequenceGen.PendingStepGen(
-        2, Map(), resources, SequenceGen.StepActionsGen(List(), resources.map(r => r ->pendingAction(r)).toMap,
-          _ =>List()
+        id = 2,
+        config = Map(),
+        resources = resources,
+        generator = SequenceGen.StepActionsGen(
+          pre = Nil,
+          configs = resources.map(r => r -> pendingAction[IO](r)).toMap,
+          post = _ =>Nil
         )
       )
     )

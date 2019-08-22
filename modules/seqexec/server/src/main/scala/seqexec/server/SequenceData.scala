@@ -11,5 +11,3 @@ import seqexec.model.Observer
 final case class SequenceData[F[_]](observer: Option[Observer],
                               seqGen: SequenceGen[F],
                               seq: Sequence.State[F])
-
-object SequenceData

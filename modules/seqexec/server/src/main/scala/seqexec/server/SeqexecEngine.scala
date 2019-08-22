@@ -63,7 +63,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 ) {
   import SeqexecEngine._
 
-  val odbProxy: OdbProxy[IO] = new OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
+  val odbProxy: OdbProxy[IO] = OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
     else new OdbProxy.DummyOdbCommands[IO])
 
@@ -493,8 +493,6 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       Event.modifyState[executeEngine.ConcreteTypes](configSystemHandle(sid, stepId, sys, clientID))
     ).map(_.asRight)
 
-
-
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
     (i match {
       case (SystemUpdate(SystemEvent.Failed(id, _, e), _), _) =>
@@ -618,10 +616,12 @@ object SeqexecEngine extends SeqexecConfiguration {
   def viewStep[F[_]](stepg: SequenceGen.StepGen[F], step: engine.Step[F],
                altCfgStatus: List[(Resource, ActionStatus)]): StandardStep = {
     val status = engine.Step.status(step)
-    val configStatus = if(status === StepState.Completed || status === StepState.Running)
-      stepConfigStatus(step)
-    else
-      altCfgStatus
+    val configStatus =
+      if (status === StepState.Completed || status === StepState.Running) {
+        stepConfigStatus(step)
+      } else {
+        altCfgStatus
+      }
 
     StandardStep(
       id = step.id,
