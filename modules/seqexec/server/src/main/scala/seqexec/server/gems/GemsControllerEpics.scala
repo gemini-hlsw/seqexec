@@ -39,22 +39,18 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     )
   }
 
+  private def odgwActivityState[T: DetectorStateOps](multiplier: F[Option[Int]]): F[Option[T]] =
+    Nested((gsaoiSys.guiding, multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}})
+      .map(DetectorStateOps.fromBoolean[T]).value
+
   override val stateGetter: GemsWfsState[F] = GemsWfsState(
     Nested(epicsSys.apd1Active).map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]).value,
     Nested(epicsSys.apd2Active).map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]).value,
     Nested(epicsSys.apd3Active).map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]).value,
-    Nested(
-      (gsaoiSys.guiding, gsaoiSys.odgw1Multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}}
-    ).map(DetectorStateOps.fromBoolean[Odgw1DetectorState]).value,
-    Nested(
-      (gsaoiSys.guiding, gsaoiSys.odgw2Multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}}
-    ).map(DetectorStateOps.fromBoolean[Odgw2DetectorState]).value,
-    Nested(
-      (gsaoiSys.guiding, gsaoiSys.odgw3Multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}}
-    ).map(DetectorStateOps.fromBoolean[Odgw3DetectorState]).value,
-    Nested(
-      (gsaoiSys.guiding, gsaoiSys.odgw4Multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}}
-    ).map(DetectorStateOps.fromBoolean[Odgw4DetectorState]).value
+    odgwActivityState[Odgw1DetectorState](gsaoiSys.odgw1Multiplier),
+    odgwActivityState[Odgw2DetectorState](gsaoiSys.odgw2Multiplier),
+    odgwActivityState[Odgw3DetectorState](gsaoiSys.odgw3Multiplier),
+    odgwActivityState[Odgw4DetectorState](gsaoiSys.odgw4Multiplier)
   )
 
   private def getStatusVal[A](get: F[Option[A]], name: String, system: String): F[A] = get.flatMap(
