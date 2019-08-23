@@ -14,7 +14,6 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import monocle.macros.Lenses
 import org.log4s.getLogger
 import seqexec.model.enum.Resource
@@ -160,13 +159,13 @@ object TcsNorth {
     config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsNorth[F] = {
 
-    val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
-    val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
-    val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
-    val gwao = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).toOption
-    val offsetp = config.extractAs[String](TELESCOPE_KEY / P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
+    val gwp2 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS2_PROP).toOption
+    val gwoi = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
+    val gwao = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_AOWFS_PROP).toOption
+    val offsetp = config.extractTelescopeAs[String](P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
-    val offsetq = config.extractAs[String](TELESCOPE_KEY / Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val offsetq = config.extractTelescopeAs[String](Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
     val tcsSeqCfg = TcsSeqConfig(

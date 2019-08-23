@@ -190,7 +190,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def pwfs1Guide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
-        config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP))
+        config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
           .leftMap(explainExtractError))
       ).widenRethrowT
 
@@ -200,7 +200,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def pwfs2Guide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
-        config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP))
+        config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS2_PROP)
           .leftMap(explainExtractError))
       ).widenRethrowT
 
@@ -210,7 +210,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def oiwfsGuide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
-        config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP))
+        config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP)
         .recoverWith {
           case ConfigUtilOps.KeyNotFound(_) => StandardGuideOptions.Value.park.asRight
         }
@@ -223,7 +223,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def aowfsGuide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
-        config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP))
+        config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_AOWFS_PROP)
         .recoverWith {
           case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.asRight
         }

@@ -12,7 +12,6 @@ import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import monocle.macros.Lenses
 import org.log4s.getLogger
@@ -162,19 +161,19 @@ object TcsSouth {
     config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsSouth[F] = {
 
-    val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
-    val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
-    val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
-    val gwc1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs1.getSequenceProp).toOption
-    val gwc2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs2.getSequenceProp).toOption
-    val gwc3 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs3.getSequenceProp).toOption
-    val gwod1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw1.getSequenceProp).toOption
-    val gwod2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw2.getSequenceProp).toOption
-    val gwod3 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw3.getSequenceProp).toOption
-    val gwod4 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw4.getSequenceProp).toOption
-    val offsetp = config.extractAs[String](TELESCOPE_KEY / P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
+    val gwp2 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS2_PROP).toOption
+    val gwoi = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
+    val gwc1 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs1.getSequenceProp).toOption
+    val gwc2 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs2.getSequenceProp).toOption
+    val gwc3 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs3.getSequenceProp).toOption
+    val gwod1 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp).toOption
+    val gwod2 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp).toOption
+    val gwod3 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp).toOption
+    val gwod4 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp).toOption
+    val offsetp = config.extractTelescopeAs[String](P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
-    val offsetq = config.extractAs[String](TELESCOPE_KEY / Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val offsetq = config.extractTelescopeAs[String](Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
     val tcsSeqCfg = TcsSeqConfig(
