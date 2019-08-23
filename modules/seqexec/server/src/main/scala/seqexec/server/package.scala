@@ -23,11 +23,8 @@ import monocle.macros.GenLens
 import monocle.function.Index._
 import monocle.function.At._
 import seqexec.engine.Engine
-import seqexec.engine.Result.PartialVal
-import seqexec.engine.Result.RetVal
 import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result
-import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
 import seqexec.model.QueueId
@@ -37,10 +34,6 @@ import seqexec.model.Operator
 import seqexec.model.SequenceState
 import seqexec.model.BatchCommandState
 import seqexec.model.enum._
-import seqexec.model.Notification
-import seqexec.model.UserDetails
-import seqexec.model.dhs.ImageFileId
-import seqexec.model.StepId
 import seqexec.engine.Event
 import seqexec.engine.Handle
 import seqexec.engine.Sequence
@@ -78,73 +71,9 @@ package server {
     }
   }
 
-  sealed trait SeqEvent extends Product with Serializable
-
-  object SeqEvent {
-    final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
-    final case class SetObserver(id: Observation.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
-    final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
-    final case class LoadSequence(sid: Observation.Id) extends SeqEvent
-    final case class UnloadSequence(id: Observation.Id) extends SeqEvent
-    final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientId) extends SeqEvent
-    final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
-    final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
-    final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
-    final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
-    final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
-    final case class NotifyUser(memo: Notification, clientID: ClientId) extends SeqEvent
-    final case class StartQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
-    final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
-    final case class UpdateQueueAdd(qid: QueueId, seqs: List[Observation.Id]) extends SeqEvent
-    final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
-    final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
-    final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
-    final case class StartSysConfig(sid: Observation.Id, stepId: StepId, res: Resource) extends SeqEvent
-    final case class Busy(sid: Observation.Id, cid: ClientId) extends SeqEvent
-    final case class SequenceStart(sid: Observation.Id, stepId: StepId) extends SeqEvent
-    final case class ResourceBusy(sid: Observation.Id, stepId: StepId, res: Resource, clientID: ClientId) extends SeqEvent
-    case object NullSeqEvent extends SeqEvent
-  }
-
-  sealed trait ControlStrategy extends Product with Serializable
-  object ControlStrategy {
-    // System will be fully controlled by Seqexec
-    case object FullControl extends ControlStrategy
-    // Seqexec connects to system, but only to read values
-    case object ReadOnly extends ControlStrategy
-    // All system interactions are internally simulated
-    case object Simulated extends ControlStrategy
-
-    def fromString(v: String): Option[ControlStrategy] = v match {
-      case "full"      => Some(FullControl)
-      case "readOnly"  => Some(ReadOnly)
-      case "simulated" => Some(Simulated)
-      case _           => None
-    }
-
-    implicit val eq: Eq[ControlStrategy] = Eq.fromUniversalEquals
-  }
-
   final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
   object HeaderExtraData {
     val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
-  }
-
-  sealed trait Response extends RetVal
-  object Response {
-
-    final case class Configured(resource: Resource) extends Response
-
-    final case class Observed(fileId: ImageFileId) extends Response
-
-    object Ignored extends Response
-
-  }
-
-  final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
-  final case class RemainingTime(self: Time) extends AnyVal
-  final case class Progress(total: Time, remaining: RemainingTime) extends PartialVal {
-    val progress: Time = total - remaining.self
   }
 
   final case class ObserveContext[F[_]](t: ObserveCommandResult => F[Result[F]], expTime: Time) extends PauseContext[F]

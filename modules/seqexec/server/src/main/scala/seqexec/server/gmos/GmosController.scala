@@ -9,10 +9,12 @@ import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
 import gsp.math.Offset
+import gem.util.Enumerated
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.SeqexecFailure.Unexpected
@@ -97,6 +99,10 @@ object GmosController {
       case object BiasTimeSet extends BiasTime
       case object BiasTimeEmpty extends BiasTime
       case object BiasTimeUnset extends BiasTime
+
+      /** @group Typeclass Instances */
+      implicit val BiasTimeEnumerated: Enumerated[BiasTime] =
+        Enumerated.of(BiasTimeSet, BiasTimeEmpty, BiasTimeUnset)
     }
 
     // Used for the shutterState
@@ -106,6 +112,10 @@ object GmosController {
       case object UnsetShutter extends ShutterState
       case object OpenShutter extends ShutterState
       case object CloseShutter extends ShutterState
+
+      /** @group Typeclass Instances */
+      implicit val ShutterStateEnumerated: Enumerated[ShutterState] =
+        Enumerated.of(UnsetShutter, OpenShutter, CloseShutter)
     }
 
     sealed trait Beam extends Product with Serializable
@@ -113,6 +123,10 @@ object GmosController {
     object Beam {
       case object InBeam extends Beam
       case object OutOfBeam extends Beam
+
+      /** @group Typeclass Instances */
+      implicit val BeamEnumerated: Enumerated[Beam] =
+        Enumerated.of(InBeam, OutOfBeam)
     }
 
     sealed trait GmosFPU
@@ -128,7 +142,10 @@ object GmosController {
     sealed abstract class RegionsOfInterest(val rois: Either[BuiltinROI, List[ROI]])
 
     // Node and shuffle positions
-    final case class NSPosition(id: Symbol, offset: Offset, guide: Guiding)
+    final case class NSPosition(
+      stage: NodAndShuffleStage,
+      offset: Offset,
+      guide: Guiding)
 
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
@@ -139,7 +156,11 @@ object GmosController {
       case object NoNodAndShuffle extends NSConfig {
         val nsPairs = 0
       }
-      final case class NodAndShuffle(cycles: Int, rows: Int, positions: Vector[NSPosition]) extends NSConfig {
+
+      final case class NodAndShuffle(
+        cycles: Int,
+        rows: Int,
+        positions: Vector[NSPosition]) extends NSConfig {
         val nsPairs = cycles
       }
     }

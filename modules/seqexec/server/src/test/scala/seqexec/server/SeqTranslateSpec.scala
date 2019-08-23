@@ -26,7 +26,7 @@ import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.gsaoi.GsaoiControllerSim
-import seqexec.server.tcs.{GuideConfigDb, GuideConfig, TcsNorthControllerSim, TcsSouthControllerSim}
+import seqexec.server.tcs.{GuideConfigDb, TcsNorthControllerSim, TcsSouthControllerSim}
 import seqexec.server.gpi.GpiController
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GhostController
@@ -91,16 +91,8 @@ class SeqTranslateSpec extends FlatSpec {
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
-  val guideDb = new GuideConfigDb[IO] {
-    override def value: IO[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
-
-    override def set(v: GuideConfig): IO[Unit] = IO.unit
-
-    override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
-  }
-
   private val systems = Systems[IO](
-    new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
+    OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsSouthControllerSim[IO],
     TcsNorthControllerSim[IO],
@@ -115,7 +107,7 @@ class SeqTranslateSpec extends FlatSpec {
     NiriControllerSim[IO],
     NifsControllerSim[IO],
     AltairControllerSim,
-    guideDb
+    GuideConfigDb.constant[IO]
   )
 
   private val translatorSettings =

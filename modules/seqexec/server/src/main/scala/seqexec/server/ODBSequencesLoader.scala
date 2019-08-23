@@ -3,8 +3,7 @@
 
 package seqexec.server
 
-import cats.Applicative
-import cats.Monad
+import cats.ApplicativeError
 import cats.Endo
 import cats.data.Nested
 import cats.implicits._
@@ -18,7 +17,7 @@ import seqexec.engine.Sequence
 import seqexec.server.SeqEvent._
 import seqexec.server.ConfigUtilOps._
 
-final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: SeqTranslate) {
+final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]](odbProxy: OdbProxy[F], translator: SeqTranslate) {
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
     Event.modifyState[executeEngine.ConcreteTypes](
       { st: EngineState =>
@@ -37,19 +36,20 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): F[List[executeEngine.EventType]] = {
-    val t: F[Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen[IO]])]] =
-      odbProxy.read(seqId).map {o =>
-        for {
-          odbSeq <- o
-          progIdString <- odbSeq
-                            .config
-                            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP)
-                            .leftMap(ConfigUtilOps.explainExtractError)
-          _            <- Either.catchNonFatal(
-                            Applicative[F].pure(SPProgramID.toProgramID(progIdString)))
-                          .leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
-        } yield translator.sequence(seqId, odbSeq)
-      }
+    val t: F[Either[Throwable, (List[SeqexecFailure], Option[SequenceGen[IO]])]] =
+      odbProxy.read(seqId).map {odbSeq =>
+        val configObsId: Either[SeqexecFailure, String] =
+          odbSeq
+            .config
+            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP)
+            .leftMap(ConfigUtilOps.explainExtractError)
+        // Verify that the program id is valid
+        configObsId
+          .ensure(SeqexecFailure.Unexpected(s"Invalid $configObsId"))(
+            s => Either.catchNonFatal(SPProgramID.toProgramID(s)).isRight).as {
+          translator.sequence(seqId, odbSeq)
+        }
+      }.attempt.map(_.flatten)
 
     def loadSequenceEvent(seqg: SequenceGen[IO]): executeEngine.EventType =
       Event.modifyState[executeEngine.ConcreteTypes]({ st: EngineState =>
@@ -67,7 +67,10 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
         loadSequenceEvent(seq) :: errs.map(e =>
           Event.logDebugMsg(SeqexecFailure.explain(e)))
       case _ => Nil
-    }.value.map(_.valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e)))))
+    }.value.map(_.valueOr {
+      case e: SeqexecFailure => List(Event.logDebugMsg(SeqexecFailure.explain(e)))
+      case e: Throwable => List(Event.logDebugMsg(e.getMessage))
+    })
   }
 
   def refreshSequenceList(odbList: List[Observation.Id], st: EngineState)(

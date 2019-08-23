@@ -3,6 +3,7 @@
 
 package seqexec.server.tcs
 
+import cats.Applicative
 import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
@@ -27,7 +28,7 @@ import squants.space.Millimeters
 final case class GuideConfig(tcsGuide: TelescopeGuideConfig,
                              gaosGuide: Option[Either[AltairConfig, GemsConfig]])
 
-trait GuideConfigDb[F[_]] {
+sealed trait GuideConfigDb[F[_]] {
   def value: F[GuideConfig]
 
   def set(v: GuideConfig): F[Unit]
@@ -49,6 +50,14 @@ object GuideConfigDb {
         override def discrete: Stream[F, GuideConfig] = ref.discrete
       }
     }
+
+  def constant[F[_]: Applicative]: GuideConfigDb[F] = new GuideConfigDb[F] {
+    override def value: F[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[F]
+
+    override def set(v: GuideConfig): F[Unit] = Applicative[F].unit
+
+    override def discrete: Stream[F, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
+  }
 
   implicit val altairDecoder: Decoder[AltairConfig] = Decoder.instance[AltairConfig]{
     c =>

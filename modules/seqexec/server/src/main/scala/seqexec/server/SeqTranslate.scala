@@ -214,7 +214,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                             useCountdown: Boolean)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
-  ): EngineState => Option[Stream[IO,executeEngine.EventType]] = st => {
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
 
     def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Result[IO]] =
       for {

@@ -41,6 +41,9 @@ object GmosControllerSim {
 
     }
 
-  def south[F[_]: Sync: Timer]: GmosController[F, SouthTypes] = GmosControllerSim[F, SouthTypes]("South")
-  def north[F[_]: Sync: Timer]: GmosController[F, NorthTypes] = GmosControllerSim[F, NorthTypes]("North")
+  def south[F[_]: Sync: Timer]: GmosController[F, SouthTypes] =
+    GmosControllerSim[F, SouthTypes]("South")
+
+  def north[F[_]: Sync: Timer]: GmosController[F, NorthTypes] =
+    GmosControllerSim[F, NorthTypes]("North")
 }

@@ -78,4 +78,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[BatchCommandState]", EqTests[BatchCommandState].eqv)
   checkAll("Eq[ApplyCommandResult]", EqTests[ApplyCommandResult].eqv)
   checkAll("Eq[ObserveCommandResult]", EqTests[ObserveCommandResult].eqv)
+  checkAll("Eq[NodAndShuffleStage]", EqTests[NodAndShuffleStage].eqv)
 }

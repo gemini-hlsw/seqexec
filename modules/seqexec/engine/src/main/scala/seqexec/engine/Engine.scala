@@ -42,15 +42,15 @@ class Engine[D, U](stateL: Engine.State[D]) {
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences
-        if (seq.status.isIdle || seq.status.isError)
-          get.flatMap { st =>
-            if (userCheck(st))
-              putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
-                send(Event.executing(id))
-            // cannot run sequence
-            else send(busy(id, clientId))
+        (get.flatMap { st =>
+          if (userCheck(st)) {
+            putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
+              send(Event.executing(id))
+          // cannot run sequence
+          } else {
+            send(busy(id, clientId))
           }
-        else unit
+        }).whenA(seq.status.isIdle || seq.status.isError)
       case None      => unit
     }
 
@@ -70,9 +70,11 @@ class Engine[D, U](stateL: Engine.State[D]) {
       case _ => unit
     }
 
-  def pause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
+  def pause(id: Observation.Id): HandleType[Unit] =
+    modifyS(id)(Sequence.State.userStopSet(true))
 
-  private def cancelPause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(false))
+  private def cancelPause(id: Observation.Id): HandleType[Unit] =
+    modifyS(id)(Sequence.State.userStopSet(false))
 
   /**
     * Builds the initial state of a sequence
@@ -112,9 +114,8 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def completeSingleRun[V <: RetVal](c: ActionCoords, r: V): HandleType[Unit] =
     modifyS(c.sid)(_.completeSingle(c.actCoords, r))
 
-  private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] = modifyS(c.sid)(
-    _.failSingle(c.actCoords, e)
-  )
+  private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] =
+    modifyS(c.sid)(_.failSingle(c.actCoords, e))
 
   /**
     * Tells if a sequence can be safely removed
@@ -207,7 +208,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
     get.flatMap(s => Handle[D, EventType, Unit](f(s).pure[StateT[IO, D, ?]].map(((), _))))
 
   private def actionStop(id: Observation.Id, f: D => Option[Stream[IO, EventType]]): HandleType[Unit] =
-    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) Handle(StateT[IO, D, (Unit, Option[Stream[IO, EventType]])](st => IO((st, ((), f(st)))))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
+    getS(id).flatMap(_.map{s =>
+      (Handle(StateT[IO, D, (Unit, Option[Stream[IO, EventType]])](st => IO((st, ((), f(st)))))) *>
+        modifyS(id)(Sequence.State.internalStopSet(true))).whenA(Sequence.State.isRunning(s))
+    }.getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -378,7 +382,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
 
   // Functions for type bureaucracy
 
-  def pure[A](a: A): HandleType[A] = Applicative[HandleType].pure(a)
+  def pure[A](a: A): HandleType[A] = a.pure[HandleType]
 
   val unit: HandleType[Unit] =
     Handle.unit

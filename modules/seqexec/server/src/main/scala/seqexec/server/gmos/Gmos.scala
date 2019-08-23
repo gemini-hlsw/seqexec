@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import cats.Applicative
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
@@ -25,6 +26,7 @@ import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
@@ -46,11 +48,14 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
 
   override val keywordsClient: KeywordsClient[F] = this
 
+  val continueCommand: Time => F[ObserveCommandResult] =
+    controller.resumePaused(_)
+
   override val observeControl: InstrumentSystem.ObserveControl[F] = CompleteControl(
     StopObserveCmd(controller.stopObserve),
     AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(controller.pauseObserve),
-    ContinuePausedCmd{t: Time => controller.resumePaused(t)},
+    ContinuePausedCmd(continueCommand),
     StopPausedCmd(controller.stopPaused),
     AbortPausedCmd(controller.abortPaused)
   )
@@ -65,47 +70,11 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     }
   }
 
-  // The OT lets beams up to G but in practice it is always A/B
-  private val BeamLabels = List('A, 'B, 'C, 'D, 'E, 'F, 'G)
-
-  def configToAngle(s: String): Either[ExtractFailure, Angle] =
-    s.parseDoubleOption.toRight(ContentError("Invalid offset value")).map(Angle.fromDoubleArcseconds(_))
-
-  def extractGuiding(config: Config, k: ItemKey): Either[ExtractFailure, Guiding] =
-    config
-      .extractAs[StandardGuideOptions.Value](k)
-      .flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
-      .orElse {
-        config.extractAs[String](k).flatMap(Guiding.fromString(_).toRight(KeyNotFound(k)))
-      }
-
-  private def nsPosition(config: Config, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
-    (for {
-      i <- 0 to scala.math.min(BeamLabels.length, sc) - 1
-    } yield {
-      for {
-        s <- BeamLabels.lift(i).toRight(ContentError(s"Unknown label at position $i"))
-        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").flatMap(configToAngle).map(Offset.P.apply)
-        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
-        k = INSTRUMENT_KEY / s"nsBeam${s.name}-guideWithOIWFS"
-        g <- extractGuiding(config, k)
-      } yield NSPosition(s, Offset(p, q), g)
-    }).toVector.sequence
-  }
-
-  private def nodAndShuffle(config: Config): Either[ExtractFailure, NSConfig] =
-    for {
-      cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
-      rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
-      sc     <- config.extractAs[JInt](INSTRUMENT_KEY / NS_STEP_COUNT_PROP_NAME)
-      pos    <- nsPosition(config, sc)
-    } yield NSConfig.NodAndShuffle(cycles, rows, pos)
-
   private def calcDisperser(disp: T#Disperser, order: Option[DisperserOrder], wl: Option[Length])
   : Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
-    if(configTypes.isMirror(disp))
+    if (configTypes.isMirror(disp)) {
       configTypes.GmosDisperser.Mirror.asRight[ConfigUtilOps.ExtractFailure]
-    else order.map{o =>
+    } else order.map { o =>
       if(o === GmosCommonType.Order.ZERO)
         configTypes.GmosDisperser.Order0(disp).asRight[ConfigUtilOps.ExtractFailure]
       else wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w)
@@ -129,19 +98,14 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
       electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-
-  private def nsConfigFromSequenceConfig(config: Config): TrySeq[NSConfig] =
-    (for {
-      useNS            <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
-      ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
-    } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption))
+      .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: Config): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
     for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
-      ns <- nsConfigFromSequenceConfig(config)
+      ns <- Gmos.nsConfig(config)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
@@ -161,7 +125,7 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit] = Applicative[F].unit
 
   override def configure(config: Config): F[ConfigResult[F]] =
     EitherT.fromEither[F](fromSequenceConfig(config))
@@ -197,6 +161,45 @@ object Gmos {
     config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
       .map(_.booleanValue())
       .getOrElse(false)
+
+  private def configToAngle(s: String): Either[ExtractFailure, Angle] =
+    s.parseDoubleOption
+      .toRight(ContentError("Invalid offset value"))
+      .map(Angle.fromDoubleArcseconds(_))
+
+  private def extractGuiding(config: Config, k: ItemKey): Either[ExtractFailure, Guiding] =
+    config
+      .extractAs[StandardGuideOptions.Value](k)
+      .flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
+      .orElse {
+        config.extractAs[String](k).flatMap(Guiding.fromString(_).toRight(KeyNotFound(k)))
+      }
+
+  private def nsPosition(config: Config, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
+    NodAndShuffleStage.NSStageEnumerated.all.slice(0, sc).map { s =>
+      for {
+        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-p").flatMap(configToAngle).map(Offset.P.apply)
+        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
+        k = INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-guideWithOIWFS"
+        g <- extractGuiding(config, k)
+      } yield NSPosition(s, Offset(p, q), g)
+    }.toVector.sequence
+  }
+
+  private def nodAndShuffle(config: Config): Either[ExtractFailure, NSConfig] =
+    for {
+      cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
+      rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
+      sc     <- config.extractAs[JInt](INSTRUMENT_KEY / NS_STEP_COUNT_PROP_NAME)
+      pos    <- nsPosition(config, sc)
+    } yield NSConfig.NodAndShuffle(cycles, rows, pos)
+
+  def nsConfig(config: Config): TrySeq[NSConfig] =
+    (for {
+      useNS            <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
+    } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {
