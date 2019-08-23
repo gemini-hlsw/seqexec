@@ -11,7 +11,8 @@ import seqexec.server.gmos.GmosController._
 import seqexec.server.gsaoi.GsaoiController
 import seqexec.server.ghost.GhostController
 import seqexec.server.gcal.GcalController
-import seqexec.server.tcs.{GuideConfigDb, TcsSouthController, TcsNorthController}
+import seqexec.server.gems.GemsController
+import seqexec.server.tcs.{GuideConfigDb, TcsNorthController, TcsSouthController}
 import seqexec.server.gnirs.GnirsController
 import seqexec.server.niri.NiriController
 import seqexec.server.nifs.NifsController
@@ -32,5 +33,6 @@ final case class Systems[F[_]](
   niri:       NiriController[F],
   nifs:       NifsController[F],
   altair:     AltairController[F],
+  gems:       GemsController[F],
   guideDb:    GuideConfigDb[F]
 )

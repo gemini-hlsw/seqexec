@@ -33,6 +33,7 @@ import seqexec.server.ghost.GhostController
 import seqexec.server.niri.NiriControllerSim
 import seqexec.server.nifs.NifsControllerSim
 import seqexec.server.altair.AltairControllerSim
+import seqexec.server.gems.GemsControllerSim
 import squants.time.Seconds
 
 class SeqTranslateSpec extends FlatSpec {
@@ -107,6 +108,7 @@ class SeqTranslateSpec extends FlatSpec {
     NiriControllerSim[IO],
     NifsControllerSim[IO],
     AltairControllerSim,
+    GemsControllerSim[IO],
     GuideConfigDb.constant[IO]
   )
 

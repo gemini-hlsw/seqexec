@@ -287,7 +287,7 @@ object EpicsUtil {
    * @param relTolerance Max relative tolerance allowed between the current and destination value
    * @param c Current value on the system
    * @param d Value to be set
-   * @param f Action to set the parameter
+   * @param set Action to set the parameter
    */
   def applyParamT[F[_]: Functor](
     relTolerance: Double

@@ -9,6 +9,7 @@ import edu.gemini.spModel.config2.ConfigSequence
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.ao.AOConstants.AO_SYSTEM_KEY
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
@@ -111,6 +112,16 @@ object ConfigUtilOps {
     def extractObsAs[A](key: String)(
       implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, OBSERVE_KEY / key).as[A]
+
+    // config syntax: cfg.extractInstAs[Type](key)
+    def extractTelescopeAs[A](key: PropertyDescriptor)(
+      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, TELESCOPE_KEY / key).as[A]
+
+    // config syntax: cfg.extractInstAs[Type](key)
+    def extractTelescopeAs[A](key: String)(
+      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, TELESCOPE_KEY / key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractAOAs[A](key: PropertyDescriptor)(

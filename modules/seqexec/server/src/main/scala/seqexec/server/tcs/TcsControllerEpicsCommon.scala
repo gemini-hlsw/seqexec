@@ -106,11 +106,6 @@ object TcsControllerEpicsCommon {
 
   def notifyObserveEnd: IO[Unit] = TcsEpics.instance.endObserve.mark[IO] *> TcsEpics.instance.post.void
 
-  def guiderActive(c: GuiderConfig): Boolean = c.tracking match {
-    case ProbeTrackingConfig.On(_) => c.detector === GuiderSensorOn
-    case _                         => false
-  }
-
   /* AO fold position */
   sealed trait AoFold {
     val active: Boolean
@@ -482,9 +477,9 @@ object TcsControllerEpicsCommon {
   private def normalizeM1Guiding(gaosEnabled: Boolean): Endo[BasicTcsConfig] = cfg =>
     (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
       case g @ M1GuideConfig.M1GuideOn(src) => src match {
-        case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideConfig.M1GuideOff
-        case M1Source.PWFS2 => if(guiderActive(cfg.gds.pwfs2)) g else M1GuideConfig.M1GuideOff
-        case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideConfig.M1GuideOff
+        case M1Source.PWFS1 => if(cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
+        case M1Source.PWFS2 => if(cfg.gds.pwfs2.isActive) g else M1GuideConfig.M1GuideOff
+        case M1Source.OIWFS => if(cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
         case M1Source.GAOS  => if(gaosEnabled) g else M1GuideConfig.M1GuideOff
         case _              => g
       }
@@ -496,9 +491,9 @@ object TcsControllerEpicsCommon {
     (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
       case M2GuideConfig.M2GuideOn(coma, srcs) =>
         val ss = srcs.filter{
-          case TipTiltSource.PWFS1 => guiderActive(cfg.gds.pwfs1)
-          case TipTiltSource.PWFS2 => guiderActive(cfg.gds.pwfs2)
-          case TipTiltSource.OIWFS => guiderActive(cfg.gds.oiwfs)
+          case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
+          case TipTiltSource.PWFS2 => cfg.gds.pwfs2.isActive
+          case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
           case TipTiltSource.GAOS  => gaosEnabled
           case _                   => true
         }

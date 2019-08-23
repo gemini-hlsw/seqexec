@@ -12,7 +12,6 @@ import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import monocle.macros.Lenses
 import org.log4s.getLogger
@@ -22,16 +21,16 @@ import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.{AGConfig, AoGuidersConfig, AoTcsConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsSouthController.{GemsGuiders, NGS1Config, NGS2Config, NGS3Config, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
+import seqexec.server.tcs.TcsSouthController.{GemsGuiders, CWFS1Config, CWFS2Config, CWFS3Config, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
 
 case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
-                                     subsystems: NonEmptySet[Subsystem],
-                                     gaos: Option[Gems[F]],
-                                     guideDb: GuideConfigDb[F]
-                                    )(config: TcsSouth.TcsSeqConfig[F]) extends System[F] {
+                                          subsystems: NonEmptySet[Subsystem],
+                                          gaos: Option[Gems[F]],
+                                          guideDb: GuideConfigDb[F]
+                                         )(config: TcsSouth.TcsSeqConfig[F]) extends System[F] {
   import TcsSouth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
 
@@ -103,9 +102,9 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
             config.guideWithP1)
           ),
           GemsGuiders(
-            tag[NGS1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS1)),
-            tag[NGS2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS2)),
-            tag[NGS3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS3)),
+            tag[CWFS1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS1)),
+            tag[CWFS2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS2)),
+            tag[CWFS3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithCWFS3)),
             tag[ODGW1Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW1)),
             tag[ODGW2Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW2)),
             tag[ODGW3Config](calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithODGW3)),
@@ -162,19 +161,19 @@ object TcsSouth {
     config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsSouth[F] = {
 
-    val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
-    val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
-    val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
-    val gwc1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs1.getSequenceProp).toOption
-    val gwc2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs2.getSequenceProp).toOption
-    val gwc3 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / Canopus.Wfs.cwfs3.getSequenceProp).toOption
-    val gwod1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw1.getSequenceProp).toOption
-    val gwod2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw2.getSequenceProp).toOption
-    val gwod3 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw3.getSequenceProp).toOption
-    val gwod4 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GsaoiOdgw.odgw4.getSequenceProp).toOption
-    val offsetp = config.extractAs[String](TELESCOPE_KEY / P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
+    val gwp2 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS2_PROP).toOption
+    val gwoi = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
+    val gwc1 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs1.getSequenceProp).toOption
+    val gwc2 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs2.getSequenceProp).toOption
+    val gwc3 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs3.getSequenceProp).toOption
+    val gwod1 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp).toOption
+    val gwod2 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp).toOption
+    val gwod3 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp).toOption
+    val gwod4 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp).toOption
+    val offsetp = config.extractTelescopeAs[String](P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
-    val offsetq = config.extractAs[String](TELESCOPE_KEY / Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
+    val offsetq = config.extractTelescopeAs[String](Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
     val tcsSeqCfg = TcsSeqConfig(

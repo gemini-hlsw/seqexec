@@ -4,14 +4,15 @@
 package seqexec.server.gems
 
 import cats.data.Nested
-import cats.effect.{Async, IO}
+import cats.effect.{IO, Async}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import org.log4s.{Logger, getLogger}
-import seqexec.server.{EpicsCommand, EpicsSystem}
+import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSFloat, safeAttributeSInt}
+import squants.Time
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -64,22 +65,22 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def lgsMatrixReady: F[Option[Boolean]] = Nested(safeAttribute(lgsMatrixAttr)).map(_ === ReadyState.Ready).value
 
   val usedStr: String = "Used"
-  def ngs1Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1")))
+  def cwfs1Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1")))
     .map(_ === usedStr).value
 
-  def ngs2Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2")))
+  def cwfs2Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2")))
     .map(_ === usedStr).value
 
-  def ngs3Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3")))
+  def cwfs3Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3")))
     .map(_ === usedStr).value
 
-  def ngs1Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1Mag")))
+  def cwfs1Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1Mag")))
     .map(_.toDouble).value
 
-  def ngs2Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2Mag")))
+  def cwfs2Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2Mag")))
     .map(_.toDouble).value
 
-  def ngs3Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3Mag")))
+  def cwfs3Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3Mag")))
     .map(_.toDouble).value
 
   def ngsFlux: F[Option[Int]] = safeAttributeSInt(mystStatus.getIntegerAttribute("ngsFlux"))
@@ -116,6 +117,10 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val scienceStateAttr = mystStatus.addEnum("sciReady", s"${MystTop}sciReady.VAL", classOf[ReadyState])
   def scienceReady: F[Option[Boolean]] = Nested(safeAttribute(scienceStateAttr)).map(_ === ReadyState.Ready).value
+
+  def waitForStableLoops(timeout: Time): F[Unit] =
+    EpicsUtil.waitForValueF(scienceStateAttr, ReadyState.Ready, timeout, "GeMS science ready flag")
+
 
   private val ttLoopAttr = mystStatus.addEnum("ttLoop", s"${MystTop}ttLoopStatus.VAL", classOf[LoopState],
     "TT loop status")

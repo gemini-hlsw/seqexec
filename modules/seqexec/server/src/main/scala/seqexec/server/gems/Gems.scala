@@ -3,19 +3,27 @@
 
 package seqexec.server.gems
 
-import cats.{Applicative, Eq}
+import cats.{Eq, MonadError}
 import cats.implicits._
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.gemini.gems.Canopus
+import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
+import edu.gemini.spModel.guide.StandardGuideOptions
+import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.{SeqexecFailure, TrySeq}
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems.GemsWfsState
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
-import seqexec.server.tcs.Gaos
+import seqexec.server.gems.GemsController.{GemsConfig, OIUsage, Odgw1Usage, Odgw2Usage, Odgw3Usage, Odgw4Usage, P1Usage}
+import seqexec.server.gems.GemsController.{Cwfs1Usage, Cwfs2Usage, Cwfs3Usage}
+import seqexec.server.tcs.{Gaos, GuideConfigDb, Tcs}
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 
 trait Gems[F[_]] extends Gaos[F] {
   val cfg: GemsConfig
 
-  def pauseResume(config: GemsConfig, pauseReasons: PauseConditionSet,
+  def pauseResume(pauseReasons: PauseConditionSet,
                   resumeReasons: ResumeConditionSet): F[PauseResume[F]]
 
   val stateGetter: GemsWfsState[F]
@@ -24,25 +32,71 @@ trait Gems[F[_]] extends Gaos[F] {
 
 object Gems {
 
-  private class GemsImpl[F[_]: Applicative] (controller: GemsController[F], config: GemsConfig) extends Gems[F] {
+  private class GemsImpl[F[_]: MonadError[?[_], Throwable]] (controller: GemsController[F],
+                                                             config: GemsConfig,
+                                                             guideConfigDb: GuideConfigDb[F]
+                                                            ) extends Gems[F] {
 
     override val cfg: GemsConfig = config
 
-    override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] = controller.observe(expTime)
+    override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] = ().pure[F]
 
-    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = controller.endObserve
+    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = ().pure[F]
 
-    override def pauseResume(config: GemsConfig,
-                             pauseReasons: PauseConditionSet,
-                             resumeReasons: ResumeConditionSet): F[PauseResume[F]] = {
-      controller.pauseResume(cfg, pauseReasons, resumeReasons)
-    }
+    override def pauseResume(pauseReasons: PauseConditionSet,
+                             resumeReasons: ResumeConditionSet): F[PauseResume[F]] =
+      guideConfigDb.value.map(_.gaosGuide).flatMap{
+        case Some(Right(gemsCfg)) => controller.pauseResume(pauseReasons, resumeReasons)(combine(gemsCfg, cfg))
+        case _                    =>
+          SeqexecFailure.Execution("Attempting to run GeMS sequence before GeMS has being configured.")
+            .raiseError[F, PauseResume[F]]
+      }
 
     override val stateGetter: GemsWfsState[F] = controller.stateGetter
   }
 
-  def fromConfig[F[_]: Applicative](controller: GemsController[F])/*(config: Config)*/: F[Gems[F]] =
-    Applicative[F].pure(new GemsImpl[F](controller, GemsOff))
+  // `combine` calculates the final configuration between the configuration coming from the step and the configuration
+  // set by the operator.
+  private def combine(opConfig: GemsConfig, stepConfig: GemsConfig): GemsConfig = GemsController.GemsOn(
+    Cwfs1Usage.fromBoolean(opConfig.isCwfs1Used && stepConfig.isCwfs1Used),
+    Cwfs2Usage.fromBoolean(opConfig.isCwfs2Used && stepConfig.isCwfs2Used),
+    Cwfs3Usage.fromBoolean(opConfig.isCwfs3Used && stepConfig.isCwfs3Used),
+    Odgw1Usage.fromBoolean(opConfig.isOdgw1Used && stepConfig.isOdgw1Used),
+    Odgw2Usage.fromBoolean(opConfig.isOdgw2Used && stepConfig.isOdgw2Used),
+    Odgw3Usage.fromBoolean(opConfig.isOdgw3Used && stepConfig.isOdgw3Used),
+    Odgw4Usage.fromBoolean(opConfig.isOdgw4Used && stepConfig.isOdgw4Used),
+    P1Usage.fromBoolean(opConfig.isP1Used && stepConfig.isP1Used),
+    OIUsage.fromBoolean(opConfig.isOIUsed && stepConfig.isOIUsed)
+  )
+
+  def fromConfig[F[_]: MonadError[?[_], Throwable]](controller: GemsController[F], guideConfigDb: GuideConfigDb[F])
+                                                         (config: Config)
+  : TrySeq[Gems[F]] = {
+    for {
+      p1    <- config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
+      oi    =  config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
+      cwfs1 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs1.getSequenceProp)
+      cwfs2 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs2.getSequenceProp)
+      cwfs3 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs3.getSequenceProp)
+      odgw1 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
+      odgw2 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
+      odgw3 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
+      odgw4 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
+    } yield new GemsImpl[F](controller,
+      GemsController.GemsOn(
+        Cwfs1Usage.fromBoolean(cwfs1.isActive),
+        Cwfs2Usage.fromBoolean(cwfs2.isActive),
+        Cwfs3Usage.fromBoolean(cwfs3.isActive),
+        Odgw1Usage.fromBoolean(odgw1.isActive),
+        Odgw2Usage.fromBoolean(odgw2.isActive),
+        Odgw3Usage.fromBoolean(odgw3.isActive),
+        Odgw4Usage.fromBoolean(odgw4.isActive),
+        P1Usage.fromBoolean(p1.isActive),
+        OIUsage.fromBoolean(oi.exists(_.isActive))
+      ),
+      guideConfigDb
+    )
+  }.asTrySeq
 
   trait DetectorStateOps[T] {
     val trueVal: T
@@ -63,33 +117,33 @@ object Gems {
     def isActive[T: DetectorStateOps: Eq](v: T): Boolean = v === DetectorStateOps[T].trueVal
   }
 
-  sealed trait Ngs1DetectorState extends Product with Serializable
-  object Ngs1DetectorState {
-    case object On extends Ngs1DetectorState
-    case object Off extends Ngs1DetectorState
+  sealed trait Cwfs1DetectorState extends Product with Serializable
+  object Cwfs1DetectorState {
+    case object On extends Cwfs1DetectorState
+    case object Off extends Cwfs1DetectorState
 
-    implicit val ngs1DetectorStateEq: Eq[Ngs1DetectorState] = Eq.fromUniversalEquals
-    implicit val ngs1DetectorStateDetectorStateOps: DetectorStateOps[Ngs1DetectorState] =
+    implicit val cwfs1DetectorStateEq: Eq[Cwfs1DetectorState] = Eq.fromUniversalEquals
+    implicit val cwfs1DetectorStateDetectorStateOps: DetectorStateOps[Cwfs1DetectorState] =
       DetectorStateOps.build(On, Off)
   }
 
-  sealed trait Ngs2DetectorState extends Product with Serializable
-  object Ngs2DetectorState {
-    case object On extends Ngs2DetectorState
-    case object Off extends Ngs2DetectorState
+  sealed trait Cwfs2DetectorState extends Product with Serializable
+  object Cwfs2DetectorState {
+    case object On extends Cwfs2DetectorState
+    case object Off extends Cwfs2DetectorState
 
-    implicit val ngs2DetectorStateEq: Eq[Ngs2DetectorState] = Eq.fromUniversalEquals
-    implicit val ngs2DetectorStateDetectorStateOps: DetectorStateOps[Ngs2DetectorState] =
+    implicit val cwfs2DetectorStateEq: Eq[Cwfs2DetectorState] = Eq.fromUniversalEquals
+    implicit val cwfs2DetectorStateDetectorStateOps: DetectorStateOps[Cwfs2DetectorState] =
       DetectorStateOps.build(On, Off)
   }
 
-  sealed trait Ngs3DetectorState extends Product with Serializable
-  object Ngs3DetectorState {
-    case object On extends Ngs3DetectorState
-    case object Off extends Ngs3DetectorState
+  sealed trait Cwfs3DetectorState extends Product with Serializable
+  object Cwfs3DetectorState {
+    case object On extends Cwfs3DetectorState
+    case object Off extends Cwfs3DetectorState
 
-    implicit val ngs3DetectorStateEq: Eq[Ngs3DetectorState] = Eq.fromUniversalEquals
-    implicit val ngs3DetectorStateDetectorStateOps: DetectorStateOps[Ngs3DetectorState] =
+    implicit val cwfs3DetectorStateEq: Eq[Cwfs3DetectorState] = Eq.fromUniversalEquals
+    implicit val cwfs3DetectorStateDetectorStateOps: DetectorStateOps[Cwfs3DetectorState] =
       DetectorStateOps.build(On, Off)
   }
 
@@ -134,13 +188,13 @@ object Gems {
   }
 
   final case class GemsWfsState[F[_]](
-    ngs1: F[Option[Ngs1DetectorState]],
-    ngs2: F[Option[Ngs2DetectorState]],
-    ngs3: F[Option[Ngs3DetectorState]],
-    odgw1: F[Option[Odgw1DetectorState]],
-    odgw2: F[Option[Odgw2DetectorState]],
-    odgw3: F[Option[Odgw3DetectorState]],
-    odgw4: F[Option[Odgw4DetectorState]]
+                                       cwfs1: F[Option[Cwfs1DetectorState]],
+                                       cwfs2: F[Option[Cwfs2DetectorState]],
+                                       cwfs3: F[Option[Cwfs3DetectorState]],
+                                       odgw1: F[Option[Odgw1DetectorState]],
+                                       odgw2: F[Option[Odgw2DetectorState]],
+                                       odgw3: F[Option[Odgw3DetectorState]],
+                                       odgw4: F[Option[Odgw4DetectorState]]
   )
 
 }

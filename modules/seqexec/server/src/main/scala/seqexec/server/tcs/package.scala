@@ -6,6 +6,9 @@ package seqexec.server
 import cats.Eq
 import cats.implicits._
 import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
+import monocle.Iso
+import shapeless.tag
+import shapeless.tag.@@
 import squants.{Angle, Length, Ratio}
 import squants.space.{Arcseconds, Millimeters}
 
@@ -50,4 +53,7 @@ package object tcs {
     Eq[Int].contramap(_.ordinal())
   implicit val endisEq: Eq[BinaryEnabledDisabled] =
     Eq[Int].contramap(_.ordinal())
+
+  def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
+
 }
