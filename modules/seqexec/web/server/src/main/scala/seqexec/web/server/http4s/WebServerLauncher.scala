@@ -206,11 +206,6 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   }
 
   def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
-    val msg = s"Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode"
-    IO.apply { logger.info(msg) }
-  }
-
-  def logEngineStart: IO[Unit] = IO {
     val banner = """
    _____
   / ___/___  ____ ____  _  _____  _____
@@ -219,8 +214,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 /____/\___/\__, /\___/_/|_|\___/\___/
              /_/
 """
-    val msg = s"Start Seqexec version ${OcsBuildInfo.version}"
-    logger.info(banner + msg)
+    val msg = s"""Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode, version ${OcsBuildInfo.version}"""
+    IO(logger.info(banner + msg))
   }
 
   // We need to manually update the configuration of the logging subsystem
