@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-sealed trait GemsSource {
+sealed trait GemsSource extends Product with Serializable {
   val epicsVal: String
 }
 

@@ -202,17 +202,17 @@ object TcsConfigRetriever {
     getStatusVal(Nested(TcsEpics.instance.sourceAWavelength).map(v => Wavelength(Angstroms(v))).value,
       "central wavelength")
 
-  private def getGemsMap: IO[Map[GemsSource, VirtualGemsTelescope]] = (for {
-    v1 <- OptionT(TcsEpics.instance.g1MapName)
-    v2 <- OptionT(TcsEpics.instance.g2MapName)
-    v3 <- OptionT(TcsEpics.instance.g3MapName)
-    v4 <- OptionT(TcsEpics.instance.g4MapName)
-  } yield Map(
+  private def getGemsMap: IO[Map[GemsSource, VirtualGemsTelescope]] = for {
+    v1 <- TcsEpics.instance.g1MapName
+    v2 <- TcsEpics.instance.g2MapName
+    v3 <- TcsEpics.instance.g3MapName
+    v4 <- TcsEpics.instance.g4MapName
+  } yield List(
     v1 -> VirtualGemsTelescope.G1,
     v2 -> VirtualGemsTelescope.G2,
     v3 -> VirtualGemsTelescope.G3,
     v4 -> VirtualGemsTelescope.G4
-  )).value.map(_.getOrElse(Map.empty))
+  ).mapFilter{ case (s, v) => s.map((_, v))}.toMap
 
   private def getCwfs[T: DetectorStateOps: Eq](getFollow: IO[Option[Boolean]], name: String)
                                              (g: VirtualGemsTelescope, active: IO[Option[T]])
@@ -291,9 +291,9 @@ object TcsConfigRetriever {
     for {
       base    <- retrieveBaseConfiguration
       mapping <- getGemsMap
-      cwfs1    <- retrieveGemsGuider(mapping, Cwfs1, getCwfs1(_, gemsSt.cwfs1))
-      cwfs2    <- retrieveGemsGuider(mapping, Cwfs2, getCwfs2(_, gemsSt.cwfs2))
-      cwfs3    <- retrieveGemsGuider(mapping, Cwfs3, getCwfs3(_, gemsSt.cwfs3))
+      cwfs1   <- retrieveGemsGuider(mapping, Cwfs1, getCwfs1(_, gemsSt.cwfs1))
+      cwfs2   <- retrieveGemsGuider(mapping, Cwfs2, getCwfs2(_, gemsSt.cwfs2))
+      cwfs3   <- retrieveGemsGuider(mapping, Cwfs3, getCwfs3(_, gemsSt.cwfs3))
       odgw1   <- retrieveGemsGuider(mapping, Odgw1, getOdgw1(_, gemsSt.odgw1))
       odgw2   <- retrieveGemsGuider(mapping, Odgw2, getOdgw2(_, gemsSt.odgw2))
       odgw3   <- retrieveGemsGuider(mapping, Odgw3, getOdgw3(_, gemsSt.odgw3))

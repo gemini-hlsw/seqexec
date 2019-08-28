@@ -851,7 +851,7 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     }
   }
 
-  sealed trait VirtualGemsTelescope
+  sealed trait VirtualGemsTelescope extends Product with Serializable
   object VirtualGemsTelescope {
     case object G1 extends VirtualGemsTelescope
     case object G2 extends VirtualGemsTelescope

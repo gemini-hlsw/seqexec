@@ -33,7 +33,7 @@ import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosHeader, GmosEpics, GmosObsKeywordsReader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosSouth}
+import seqexec.server.gmos.{GmosEpics, GmosHeader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosObsKeywordsReader, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.{LightPath, LightSource}
@@ -46,7 +46,7 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.gems.Gems
+import seqexec.server.gems.{Gems, GemsHeader, GemsKeywordReaderDummy}
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -446,6 +446,17 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       dummyHeader[F]
     }
 
+  private def gemsHeaders[F[_]: Sync](/*epics: => GemsEpics[F],*/
+                                      instrument: InstrumentSystem[F],
+                                      obsKReader: ObsKeywordsReader[F],
+                                      tcsKReader: TcsKeywordsReader[F])
+  : Header[F] = GemsHeader.header[F](
+    instrument,
+    if(settings.gemsKeywords) GemsKeywordReaderDummy[F] else GemsKeywordReaderDummy[F],
+    obsKReader,
+    tcsKReader
+  )
+
   private def calcHeaders(
     config: Config,
     stepType: StepType,
@@ -479,8 +490,12 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case StepType.AlignAndCalib   => TrySeq(Reader(_ => Nil)) // No headers for A&C
 
       case StepType.Gems(_)         =>
+        val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
+        val obsKReader = ObsKeywordReader[IO](config, site)
         calcInstHeader(config, sys).map(h => Reader(ctx =>
-          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
+            gwsHeaders(GwsEpics.instance, sys), gemsHeaders(/*GemsEpics.instance,*/ sys, obsKReader, tcsKReader),h)
+        ))
 
       case st                       => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
     }

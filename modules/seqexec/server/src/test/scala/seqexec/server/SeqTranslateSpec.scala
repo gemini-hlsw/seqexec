@@ -122,7 +122,8 @@ class SeqTranslateSpec extends FlatSpec {
                 niriKeywords      = false,
                 nifsKeywords      = false,
                 altairKeywords    = false,
-                gsaoiKeywords     = false)
+                gsaoiKeywords     = false,
+                gemsKeywords      = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 
