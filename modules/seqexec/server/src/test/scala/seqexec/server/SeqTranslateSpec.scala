@@ -85,10 +85,10 @@ class SeqTranslateSpec extends FlatSpec {
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
-  val gpiSim = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
+  private val gpiSim: GpiController[IO] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
-  val ghostSim = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
+  private val ghostSim : GhostController[IO] = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
@@ -122,7 +122,8 @@ class SeqTranslateSpec extends FlatSpec {
                 niriKeywords      = false,
                 nifsKeywords      = false,
                 altairKeywords    = false,
-                gsaoiKeywords     = false)
+                gsaoiKeywords     = false,
+                gemsKeywords      = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 

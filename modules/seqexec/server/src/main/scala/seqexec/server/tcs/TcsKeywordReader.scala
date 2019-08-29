@@ -11,8 +11,10 @@ import cats.implicits._
 import gsp.math.syntax.string._
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
 import monocle.Prism
 import seqexec.server.keywords._
+import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import squants.space._
 
 sealed trait CRFollow extends Product with Serializable
@@ -141,6 +143,10 @@ trait TcsKeywordsReader[F[_]] {
   def gwfs3Target: TargetKeywordsReader[F]
 
   def gwfs4Target: TargetKeywordsReader[F]
+
+  def gwfsTarget(v: VirtualGemsTelescope): TargetKeywordsReader[F]
+
+  def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]]
 
   def airMass: F[Double]
 
@@ -289,6 +295,10 @@ object DummyTcsKeywordsReader {
     override def gwfs3Target: TargetKeywordsReader[F] = DummyTargetKeywordsReader[F]
 
     override def gwfs4Target: TargetKeywordsReader[F] = DummyTargetKeywordsReader[F]
+
+    override def gwfsTarget(v: VirtualGemsTelescope): TargetKeywordsReader[F] = DummyTargetKeywordsReader[F]
+
+    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]] = Map.empty[VirtualGemsTelescope, GemsSource].pure[F]
 
     override def m2UserFocusOffset: F[Double] = 0.0.pure[F]
 
@@ -474,6 +484,20 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def gwfs3Target: TargetKeywordsReader[F] = target(sys.gwfs3Target)
 
     override def gwfs4Target: TargetKeywordsReader[F] = target(sys.gwfs4Target)
+
+    override def gwfsTarget(v: VirtualGemsTelescope): TargetKeywordsReader[F] = target(sys.gemsTarget(v))
+
+    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]] = for{
+      s1 <- sys.g1MapName
+      s2 <- sys.g2MapName
+      s3 <- sys.g3MapName
+      s4 <- sys.g4MapName
+    } yield Map(
+      VirtualGemsTelescope.G1 -> s1,
+      VirtualGemsTelescope.G2 -> s2,
+      VirtualGemsTelescope.G3 -> s3,
+      VirtualGemsTelescope.G4 -> s4
+    ).flattenOption
 
     override def m2UserFocusOffset: F[Double] = sys.m2UserFocusOffset.safeValOrDefault
 

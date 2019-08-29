@@ -13,7 +13,7 @@ import gem.enum.KeywordName
 import seqexec.model.Conditions
 import seqexec.model.{Observer, Operator}
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{InstrumentSystem, OcsBuildInfo, sgoEq}
+import seqexec.server.{InstrumentSystem, OcsBuildInfo}
 import seqexec.server.tcs.{TargetKeywordsReader, TcsController, TcsKeywordsReader}
 
 final case class StateKeywordsReader[F[_]: Applicative](
@@ -37,12 +37,12 @@ class StandardHeader[F[_]: Sync](
   stateReader: StateKeywordsReader[F],
   tcsSubsystems: List[TcsController.Subsystem]) extends Header[F] with ObsKeywordsReaderConstants {
 
-  val obsObject: F[String] = (for {
+  val obsObject: F[String] = for {
     obsType   <- obsReader.obsType
     obsObject <- obsReader.obsObject
     tcsObject <- tcsReader.sourceATarget.objectName
   } yield if (obsType === "OBJECT" && obsObject =!= "Twilight" && obsObject =!= "Domeflat") tcsObject
-          else obsObject)
+          else obsObject
 
   private def optTcsKeyword[B](s: TcsController.Subsystem)(v: F[B])(implicit d: DefaultHeaderValue[B]) : F[B] =
     if (tcsSubsystems.contains(s)) v else d.default.pure[F]
@@ -121,7 +121,7 @@ class StandardHeader[F[_]: Sync](
     buildInt32(obsReader.sciBand, KeywordName.SCIBAND)
   )
 
-  def timinigWindows(id: ImageFileId): F[Unit] = {
+  def timingWindows(id: ImageFileId): F[Unit] = {
     val timingWindows = obsReader.timingWindows
     val windows = Nested(timingWindows).map {
       case (i, tw) =>
@@ -171,52 +171,54 @@ class StandardHeader[F[_]: Sync](
     }
   }
 
+
+  def guiderKeywords(id: ImageFileId, guideWith: F[StandardGuideOptions.Value], baseName: String,
+                     target: TargetKeywordsReader[F], extras: List[KeywordBag => F[KeywordBag]])
+  : F[Unit] = guideWith.flatMap { g =>
+    val keywords: List[KeywordBag => F[KeywordBag]] = List(
+      KeywordName.fromTag(s"${baseName}ARA").map(buildDouble(target.ra, _)),
+      KeywordName.fromTag(s"${baseName}ADEC").map(buildDouble(target.dec, _)),
+      KeywordName.fromTag(s"${baseName}ARV").map(buildDouble(target.radialVelocity, _)),
+      KeywordName.fromTag(s"${baseName}AWAVEL").map(buildDouble(target.wavelength, _)),
+      KeywordName.fromTag(s"${baseName}AEPOCH").map(buildDouble(target.epoch, _)),
+      KeywordName.fromTag(s"${baseName}AEQUIN").map(buildDouble(target.equinox, _)),
+      KeywordName.fromTag(s"${baseName}AFRAME").map(buildString(target.frame, _)),
+      KeywordName.fromTag(s"${baseName}AOBJEC").map(buildString(target.objectName, _)),
+      KeywordName.fromTag(s"${baseName}APMDEC").map(buildDouble(target.properMotionDec, _)),
+      KeywordName.fromTag(s"${baseName}APMRA").map(buildDouble(target.properMotionRA, _)),
+      KeywordName.fromTag(s"${baseName}APARAL").map(buildDouble(target.parallax, _))
+    ).mapFilter(identity)
+
+    sendKeywords[F](id, inst, keywords ++ extras).whenA(g.isActive)
+  }
+  .handleError(_ => ()) // Errors on guideWith are caught here
+
+  def standardGuiderKeywords(id: ImageFileId, guideWith: F[StandardGuideOptions.Value], baseName: String,
+                             target: TargetKeywordsReader[F], extras: List[KeywordBag => F[KeywordBag]]): F[Unit] = {
+    val ext = KeywordName.fromTag(s"${baseName}FOCUS").map(buildDouble(tcsReader.m2UserFocusOffset, _)).toList ++ extras
+    guiderKeywords(id, guideWith, baseName, target, ext)
+  }
+
   override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
-    def guiderKeywords(guideWith: F[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader[F],
-                       extras: List[KeywordBag => F[KeywordBag]]): F[Unit] = guideWith.flatMap { g =>
-      val keywords: List[KeywordBag => F[KeywordBag]] = List(
-        KeywordName.fromTag(s"${baseName}ARA").map(buildDouble(target.ra, _)),
-        KeywordName.fromTag(s"${baseName}ADEC").map(buildDouble(target.dec, _)),
-        KeywordName.fromTag(s"${baseName}ARV").map(buildDouble(target.radialVelocity, _)),
-        KeywordName.fromTag(s"${baseName}AWAVEL").map(buildDouble(target.wavelength, _)),
-        KeywordName.fromTag(s"${baseName}AEPOCH").map(buildDouble(target.epoch, _)),
-        KeywordName.fromTag(s"${baseName}AEQUIN").map(buildDouble(target.equinox, _)),
-        KeywordName.fromTag(s"${baseName}AFRAME").map(buildString(target.frame, _)),
-        KeywordName.fromTag(s"${baseName}AOBJEC").map(buildString(target.objectName, _)),
-        KeywordName.fromTag(s"${baseName}APMDEC").map(buildDouble(target.properMotionDec, _)),
-        KeywordName.fromTag(s"${baseName}APMRA").map(buildDouble(target.properMotionRA, _)),
-        KeywordName.fromTag(s"${baseName}APARAL").map(buildDouble(target.parallax, _))
-      ).mapFilter(identity)
-
-      sendKeywords[F](id, inst, keywords ++ extras).whenA(g === StandardGuideOptions.Value.guide)
-    }
-    .handleError(_ => ()) // Errors on guideWith are caught here
-
-    def standardGuiderKeywords(guideWith: F[StandardGuideOptions.Value], baseName: String,
-                               target: TargetKeywordsReader[F], extras: List[KeywordBag => F[KeywordBag]]): F[Unit] = {
-      val ext = KeywordName.fromTag(s"${baseName}FOCUS").map(buildDouble(tcsReader.m2UserFocusOffset, _)).toList ++ extras
-      guiderKeywords(guideWith, baseName, target, ext)
-    }
-
-    val oiwfsKeywords = guiderKeywords(obsReader.oiwfsGuide, "OI", tcsReader.oiwfsTarget,
+    val oiwfsKeywords = guiderKeywords(id, obsReader.oiwfsGuide, "OI", tcsReader.oiwfsTarget,
       List(buildDouble(tcsReader.oiwfsFreq, KeywordName.OIFREQ)))
 
-    val pwfs1Keywords = standardGuiderKeywords(obsReader.pwfs1Guide, "P1", tcsReader.pwfs1Target,
+    val pwfs1Keywords = standardGuiderKeywords(id, obsReader.pwfs1Guide, "P1", tcsReader.pwfs1Target,
       List(buildDouble(tcsReader.pwfs1Freq, KeywordName.P1FREQ)))
 
-    val pwfs2Keywords = standardGuiderKeywords(obsReader.pwfs2Guide, "P2", tcsReader.pwfs2Target,
+    val pwfs2Keywords = standardGuiderKeywords(id, obsReader.pwfs2Guide, "P2", tcsReader.pwfs2Target,
       List(buildDouble(tcsReader.pwfs2Freq, KeywordName.P2FREQ)))
 
-    val aowfsKeywords = standardGuiderKeywords(obsReader.aowfsGuide, "AO", tcsReader.aowfsTarget, Nil)
+    val aowfsKeywords = standardGuiderKeywords(id, obsReader.aowfsGuide, "AO", tcsReader.aowfsTarget, Nil)
 
     sendKeywords(id, inst, baseKeywords) *>
-    requestedConditions(id) *>
-    requestedAirMassAngle(id) *>
-    timinigWindows(id) *>
-    pwfs1Keywords *>
-    pwfs2Keywords *>
-    oiwfsKeywords *>
-    aowfsKeywords
+      requestedConditions(id) *>
+      requestedAirMassAngle(id) *>
+      timingWindows(id) *>
+      pwfs1Keywords *>
+      pwfs2Keywords *>
+      oiwfsKeywords *>
+      aowfsKeywords
   }
 
   override def sendAfter(id: ImageFileId): F[Unit] = sendKeywords[F](id, inst,

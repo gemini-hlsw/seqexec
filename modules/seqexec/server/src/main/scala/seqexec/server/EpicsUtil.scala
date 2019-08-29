@@ -262,6 +262,9 @@ object EpicsUtil {
   def safeAttributeSListSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[List[Double]]] =
     Nested(safeAttributeList(get)).map(_.map(_.toDouble)).value
 
+  def safeAttributeSListSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[List[Float]]] =
+    Nested(safeAttributeList(get)).map(_.map(_.toFloat)).value
+
   /**
    * Decides to set a param comparing the current value and the value to be set
    * @param c Current value on the system

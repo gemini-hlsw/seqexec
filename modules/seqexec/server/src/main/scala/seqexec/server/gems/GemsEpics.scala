@@ -11,7 +11,8 @@ import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSFloat, safeAttributeSInt}
+import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSListSInt, safeAttributeSListSFloat}
+import seqexec.server.EpicsUtil.{safeAttributeSListSDouble, safeAttributeSInt}
 import squants.Time
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -54,8 +55,15 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     "Focus loop status")
   def focusLoop: F[Option[LoopState]] = safeAttribute(focusLoopAttr)
 
-  def lgsFlux: F[Option[Double]] = Nested(safeAttributeSFloat(mystStatus.getFloatAttribute("lgsFlux")))
-    .map(_.toDouble).value
+  def lgsFlux: F[Option[List[Float]]] = safeAttributeSListSFloat(mystStatus.getFloatAttribute("lgsFlux"))
+
+  def lgsStrehl: F[Option[Double]] =  safeAttributeSDouble(mystStatus.getDoubleAttribute("lgsStrehl"))
+
+  def rZero: F[Option[Double]] = safeAttributeSDouble(mystStatus.getDoubleAttribute("rZero"))
+
+  def cnSquare: F[Option[List[Double]]] = safeAttributeSListSDouble(mystStatus.getDoubleAttribute("cnSquare"))
+
+  def astroMode: F[Option[String]] = safeAttribute(mystStatus.getStringAttribute("astroMode"))
 
   private val lgsLoopAttr = mystStatus.addEnum("lgsLoop", s"${MystTop}lgsLoopStatus.VAL", classOf[LoopState],
     "LGS loop status")
@@ -83,7 +91,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def cwfs3Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3Mag")))
     .map(_.toDouble).value
 
-  def ngsFlux: F[Option[Int]] = safeAttributeSInt(mystStatus.getIntegerAttribute("ngsFlux"))
+  def ngsFlux: F[Option[List[Int]]] = safeAttributeSListSInt(mystStatus.getIntegerAttribute("ngsFlux"))
 
   def odgs1Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs1")))
     .map(_ === usedStr).value
@@ -147,6 +155,9 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val closedStr = "CLOSED"
   def scienceAdcLoopActive: F[Option[Boolean]] = Nested(safeAttribute(aomStatus.getStringAttribute("adcScLoop")))
+    .map(_ === closedStr).value
+
+  def ngsAdcLoopActive: F[Option[Boolean]] = Nested(safeAttribute(aomStatus.getStringAttribute("adcNgsLoop")))
     .map(_ === closedStr).value
 
   def scienceAdcState: F[Option[String]] = safeAttribute(aomStatus.getStringAttribute("adcScState"))

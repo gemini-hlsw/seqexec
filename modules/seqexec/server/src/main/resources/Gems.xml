@@ -100,6 +100,10 @@
             <type>FLOAT</type>
             <description>Average flux/LGS frame </description>
         </attribute>
+        <attribute name="astroMode">
+            <channel>slewReset.VALA</channel>
+            <type>STRING</type>
+        </attribute>
 <!--        <attribute name="lgsLoop">-->
 <!--            <channel>lgsLoopStatus.VAL</channel>-->
 <!--            <type>STRING</type>-->
@@ -110,6 +114,18 @@
 <!--            <type>STRING</type>-->
 <!--            <description>LGS matrix calculation status (Not Ready|Ready)</description>-->
 <!--        </attribute>-->
+        <attribute name="lgsStrehl">
+            <channel></channel>
+            <type>DOUBLE</type>
+        </attribute>
+        <attribute name="rZero">
+            <channel>r0.VAL</channel>
+            <type>DOUBLE</type>
+        </attribute>
+        <attribute name="cnSquare">
+            <channel>cn2.VAL</channel>
+            <type>DOUBLE</type>
+        </attribute>
         <attribute name="ngs1">
             <channel>ngsConfig.VALA</channel>
             <type>STRING</type>
@@ -212,6 +228,10 @@
             <channel>adcScLoop.VAL</channel>
             <type>STRING</type>
             <description>Science ADC loop status (OPEN|CLOSED)</description>
+        </attribute>
+        <attribute name="adcNgsLoop">
+            <channel>adcNgsLoop.VAL</channel>
+            <type>STRING</type>
         </attribute>
         <attribute name="adcScState">
             <channel>adcScState.VAL</channel>
