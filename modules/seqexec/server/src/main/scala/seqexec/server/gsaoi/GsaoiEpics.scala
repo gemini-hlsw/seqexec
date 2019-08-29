@@ -225,6 +225,22 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   def odgw4Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult4"))
 
   def odgwSize: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgwSize"))
+
+  def odgw1X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw1x"))
+
+  def odgw1Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw1y"))
+
+  def odgw2X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw2x"))
+
+  def odgw2Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw2y"))
+
+  def odgw3X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw3x"))
+
+  def odgw3Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw3y"))
+
+  def odgw4X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw4x"))
+
+  def odgw4Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw4y"))
 }
 
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {

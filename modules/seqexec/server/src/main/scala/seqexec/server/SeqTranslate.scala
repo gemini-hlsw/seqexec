@@ -46,7 +46,7 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.gems.{Gems, GemsHeader, GemsKeywordReaderDummy}
+import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -446,13 +446,15 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       dummyHeader[F]
     }
 
-  private def gemsHeaders[F[_]: Sync](/*epics: => GemsEpics[F],*/
+  private def gemsHeaders[F[_]: Sync](epics: => GemsEpics[F],
+                                      gsaoiEpics: => GsaoiEpics[F],
                                       instrument: InstrumentSystem[F],
                                       obsKReader: ObsKeywordsReader[F],
                                       tcsKReader: TcsKeywordsReader[F])
   : Header[F] = GemsHeader.header[F](
     instrument,
-    if(settings.gemsKeywords) GemsKeywordReaderDummy[F] else GemsKeywordReaderDummy[F],
+    if(settings.gemsKeywords && settings.gsaoiKeywords) GemsKeywordReaderEpics[F](epics, gsaoiEpics)
+    else GemsKeywordReaderDummy[F],
     obsKReader,
     tcsKReader
   )
@@ -494,7 +496,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         val obsKReader = ObsKeywordReader[IO](config, site)
         calcInstHeader(config, sys).map(h => Reader(ctx =>
           List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
-            gwsHeaders(GwsEpics.instance, sys), gemsHeaders(/*GemsEpics.instance,*/ sys, obsKReader, tcsKReader),h)
+            gwsHeaders(GwsEpics.instance, sys),
+            gemsHeaders(GemsEpics.instance, GsaoiEpics.instance, sys, obsKReader, tcsKReader),h
+          )
         ))
 
       case st                       => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
