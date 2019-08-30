@@ -30,9 +30,9 @@ final class GwsEpics[F[_]: Sync] private (epicsService: CaService) {
   private val state = epicsService.getStatusAcceptor("gws::state")
 
   private def readD(name: String): F[Double] =
-    safeAttributeSDoubleF[F](name, state.getDoubleAttribute(name))
+    safeAttributeSDoubleF[F](state.getDoubleAttribute(name))
   private def readI(name: String): F[Int] =
-    safeAttributeSIntF[F](name, state.getIntegerAttribute(name))
+    safeAttributeSIntF[F](state.getIntegerAttribute(name))
 
   def humidity: F[Double] = readD("humidity").map(_.doubleValue)
   def windVelocity: F[Velocity] =

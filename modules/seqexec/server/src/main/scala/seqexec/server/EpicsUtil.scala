@@ -232,26 +232,41 @@ object EpicsUtil {
   /** Tries to read a value of type A from a channel
    *  Null results are raised as error and other errors are captured
    */
-  def safeAttributeF[F[_]: Sync, A >: Null](name: String, get: => CaAttribute[A]): F[A] =
-    Sync[F].delay(Option(get.value)) // Wrap the read on Option to do null check
+  def safeAttributeWrapF[F[_]: Sync, A >: Null](name: String, get: => A): F[A] =
+    Sync[F].delay(Option(get)) // Wrap the read on Option to do null check
       .adaptError{ case e => SeqexecException(e)} // if we have e.g CAException wrap it
       .ensure(NullEpicsError(name))(_.isDefined) // equivalent to a null check
       .map{_.orNull} // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
+  def safeAttributeF[F[_]: Sync, A >: Null](get: => CaAttribute[A]): F[A] =
+    safeAttributeWrapF(get.name, get.value)
+
+  def safeAttributeSListF[F[_]: Sync, A >: Null](get: => CaAttribute[A]): F[List[A]] =
+    safeAttributeWrapF(get.name, get.values.asScala.toList)
+
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
 
-  def safeAttributeSDoubleF[F[_]: Sync](name: String, get: => CaAttribute[JDouble]): F[Double] =
-    safeAttributeF(name, get).map(_.toDouble)
+  def safeAttributeSDoubleF[F[_]: Sync](get: => CaAttribute[JDouble]): F[Double] =
+    safeAttributeF(get).map(_.toDouble)
+
+  def safeAttributeSListSDoubleF[F[_]: Sync](get: => CaAttribute[JDouble]): F[List[Double]] =
+    Nested(safeAttributeSListF(get)).map(_.toDouble).value
 
   def safeAttributeSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[Float]] =
     Nested(safeAttribute(get)).map(_.toFloat).value
 
+  def safeAttributeSListSFloatF[F[_]: Sync](get: => CaAttribute[JFloat]): F[List[Float]] =
+    Nested(safeAttributeSListF(get)).map(_.toFloat).value
+
   def safeAttributeSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[Int]] =
     Nested(safeAttribute(get)).map(_.toInt).value
 
-  def safeAttributeSIntF[F[_]: Sync](name: String, get: => CaAttribute[JInt]): F[Int] =
-    safeAttributeF(name, get).map(_.toInt)
+  def safeAttributeSIntF[F[_]: Sync](get: => CaAttribute[JInt]): F[Int] =
+    safeAttributeF(get).map(_.toInt)
+
+  def safeAttributeSListSIntF[F[_]: Sync](get: => CaAttribute[JInt]): F[List[Int]] =
+    Nested(safeAttributeSListF(get)).map(_.toInt).value
 
   def safeAttributeList[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[List[A]]] =
     Sync[F].delay(Option(get.values.asScala.toList))
@@ -282,7 +297,7 @@ object EpicsUtil {
    * @param d Value to be set
    */
   private def areValuesDifferentEnough(t: Double, c: Double, d: Double): Boolean =
-    (!(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d)/d) > t))
+    !(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d)/d) > t)
 
   /**
    * Decides to set a param comparing the current value and the value to be set with
@@ -325,7 +340,7 @@ object EpicsUtil {
     get.map(_ =!= v.some).map(_.option(set))
 
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
-    get.map(g => (g.forall(areValuesDifferentEnough(relTolerance, _, v))).option(set))
+    get.map(g => g.forall(areValuesDifferentEnough(relTolerance, _, v)).option(set))
 
   def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
