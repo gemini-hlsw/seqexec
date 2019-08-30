@@ -4,7 +4,6 @@
 package seqexec.server.gsaoi
 
 import cats.Applicative
-import cats.data.Nested
 import cats.effect.Sync
 import cats.implicits._
 import java.time.LocalDate
@@ -141,23 +140,22 @@ object GsaoiKeywordReaderEpics extends GsaoiLUT {
     new GsaoiKeywordReader[F] {
       override def obsElapsedTime: F[Double] = sys.obsElapsedTime.safeValOrDefault
       override def readInterval: F[Double] = sys.readInterval.safeValOrDefault
-      override def upperFilter: F[String] = Nested(sys.upperFilter).map(upperFilterLUT).value.safeValOrDefault
+      override def upperFilter: F[String] = sys.upperFilter.map(upperFilterLUT).safeValOrDefault
       override def upperFilterEngPos: F[Int] = sys.upperFilterEngPos.safeValOrDefault
       override def upperFilterHealth: F[String] = sys.upperFilterHealth.safeValOrDefault
-      override def lowerFilter: F[String] = Nested(sys.lowerFilter).map(lowerFilterLUT).value.safeValOrDefault
+      override def lowerFilter: F[String] = sys.lowerFilter.map(lowerFilterLUT).safeValOrDefault
       override def lowerFilterEngPos: F[Int] = sys.lowerFilterEngPos.safeValOrDefault
       override def lowerFilterHealth: F[String] = sys.lowerFilterHealth.safeValOrDefault
-      override def utilityWheel: F[String] = Nested(sys.utilWheel).map(utilityWheelLUT).value.safeValOrDefault
+      override def utilityWheel: F[String] = sys.utilWheel.map(utilityWheelLUT).safeValOrDefault
       override def utilityWheelEngPos: F[Int] = sys.utilityWheelEngPos.safeValOrDefault
       override def utilityWheelHealth: F[String] = sys.utilityWheelHealth.safeValOrDefault
-      override def windowCover: F[String] = Nested(sys.windowCover).map(windowCoverLUT).value.safeValOrDefault
+      override def windowCover: F[String] = sys.windowCover.map(windowCoverLUT).safeValOrDefault
       override def windowCoverEngPos: F[Int] = sys.windowCoverEngPos.safeValOrDefault
       override def windowCoverHealth: F[String] = sys.windowCoverHealth.safeValOrDefault
       override def coldworkSurfaceTemperature: F[Double] = sys.coldworkSurfaceTemperature.safeValOrDefault
       override def detectorTemperature: F[Double] = sys.detectorTemperature.safeValOrDefault
       override def detectorHousingTemperature: F[Double] = sys.detectorHousingTemperature.safeValOrDefault
-      override def dewarPressure: F[Double] = Nested(sys.dewarPressure).map(p => Math.rint(p*100.0)/100.0).value
-        .safeValOrDefault
+      override def dewarPressure: F[Double] = sys.dewarPressure.map(p => Math.rint(p*100.0)/100.0).safeValOrDefault
       override def dateObs: F[String] = F.delay(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE))
       override def mjdobs: F[Double] = sys.mjdobs.safeValOrDefault
       override def readMode: F[String] = sys.readMode.safeValOrDefault

@@ -188,13 +188,13 @@ object Gems {
   }
 
   final case class GemsWfsState[F[_]](
-                                       cwfs1: F[Option[Cwfs1DetectorState]],
-                                       cwfs2: F[Option[Cwfs2DetectorState]],
-                                       cwfs3: F[Option[Cwfs3DetectorState]],
-                                       odgw1: F[Option[Odgw1DetectorState]],
-                                       odgw2: F[Option[Odgw2DetectorState]],
-                                       odgw3: F[Option[Odgw3DetectorState]],
-                                       odgw4: F[Option[Odgw4DetectorState]]
+                                       cwfs1: F[Cwfs1DetectorState],
+                                       cwfs2: F[Cwfs2DetectorState],
+                                       cwfs3: F[Cwfs3DetectorState],
+                                       odgw1: F[Odgw1DetectorState],
+                                       odgw2: F[Odgw2DetectorState],
+                                       odgw3: F[Odgw3DetectorState],
+                                       odgw4: F[Odgw4DetectorState]
   )
 
 }

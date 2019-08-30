@@ -9,11 +9,10 @@ import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaPara
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil, ObserveCommand}
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSInt}
+import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
 import java.lang.{Double => JDouble}
 
 import squants.time.TimeConversions._
-import cats.data.Nested
 import org.log4s.{Logger, getLogger}
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -102,97 +101,97 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   val status: CaStatusAcceptor = epicsService.getStatusAcceptor("gsaoi::status")
 
-  def windowCover: F[Option[String]] = safeAttribute(status.getStringAttribute("windowCover"))
+  def windowCover: F[String] = safeAttributeF(status.getStringAttribute("windowCover"))
 
-  def lowerFilter: F[Option[String]] = safeAttribute(status.getStringAttribute("lowerFilter"))
+  def lowerFilter: F[String] = safeAttributeF(status.getStringAttribute("lowerFilter"))
 
-  def filter: F[Option[String]] = safeAttribute(status.getStringAttribute("filter"))
+  def filter: F[String] = safeAttributeF(status.getStringAttribute("filter"))
 
-  def upperFilter: F[Option[String]] = safeAttribute(status.getStringAttribute("upperFilter"))
+  def upperFilter: F[String] = safeAttributeF(status.getStringAttribute("upperFilter"))
 
-  def utilWheel: F[Option[String]] = safeAttribute(status.getStringAttribute("utilWheel"))
+  def utilWheel: F[String] = safeAttributeF(status.getStringAttribute("utilWheel"))
 
-  def dspCodeVersion: F[Option[String]] =  safeAttribute(status.getStringAttribute("DSPTIMBV"))
+  def dspCodeVersion: F[String] =  safeAttributeF(status.getStringAttribute("DSPTIMBV"))
 
-  def coldworkSurfaceTemperature: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("CWSTEMP"))
+  def coldworkSurfaceTemperature: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("CWSTEMP"))
 
-  def bUnits: F[Option[String]] = safeAttribute(status.getStringAttribute("BUNITS"))
+  def bUnits: F[String] = safeAttributeF(status.getStringAttribute("BUNITS"))
 
-  def windowCoverEngPos: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("CVERPOS"))
+  def windowCoverEngPos: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("CVERPOS"))
 
-  def dcHealth: F[Option[String]] = safeAttribute(status.getStringAttribute("DCHLTH"))
+  def dcHealth: F[String] = safeAttributeF(status.getStringAttribute("DCHLTH"))
 
-  def lowerFilterHealth: F[Option[String]] = safeAttribute(status.getStringAttribute("FILT2CAR"))
+  def lowerFilterHealth: F[String] = safeAttributeF(status.getStringAttribute("FILT2CAR"))
 
-  def simulationMode: F[Option[String]] = safeAttribute(status.getStringAttribute("DCSIM"))
+  def simulationMode: F[String] = safeAttributeF(status.getStringAttribute("DCSIM"))
 
-  def timingBoardCodeName: F[Option[String]] = safeAttribute(status.getStringAttribute("DSPTIMBN"))
+  def timingBoardCodeName: F[String] = safeAttributeF(status.getStringAttribute("DSPTIMBN"))
 
-  def readInterval: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("READDLAY"))
+  def readInterval: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("READDLAY"))
 
-  def detectorTemperature: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("DETTEMP"))
+  def detectorTemperature: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("DETTEMP"))
 
-  def upperFilterHealth: F[Option[String]] = safeAttribute(status.getStringAttribute("FILT1CAR"))
+  def upperFilterHealth: F[String] = safeAttributeF(status.getStringAttribute("FILT1CAR"))
 
-  def dewarPressure: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("DEWPRES"))
+  def dewarPressure: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("DEWPRES"))
 
-  def obsElapsedTime: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("ELAPSED"))
+  def obsElapsedTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("ELAPSED"))
 
-  def lowerFilterEngPos: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("FILT2POS"))
+  def lowerFilterEngPos: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("FILT2POS"))
 
-  def resetDelay: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("RSTDLAY"))
+  def resetDelay: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("RSTDLAY"))
 
-  def detectorHousingTemperature: F[Option[Double]] =
-    safeAttributeSDouble(status.getDoubleAttribute("DETHTEMP"))
+  def detectorHousingTemperature: F[Double] =
+    safeAttributeSDoubleF(status.getDoubleAttribute("DETHTEMP"))
 
-  def utilityWheelEngPos: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("UTLWPOS"))
+  def utilityWheelEngPos: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("UTLWPOS"))
 
-  def utilityWheelHealth: F[Option[String]] = safeAttribute(status.getStringAttribute("UTLWCAR"))
+  def utilityWheelHealth: F[String] = safeAttributeF(status.getStringAttribute("UTLWCAR"))
 
-  def windowCoverHealth: F[Option[String]] = safeAttribute(status.getStringAttribute("CVERCAR"))
+  def windowCoverHealth: F[String] = safeAttributeF(status.getStringAttribute("CVERCAR"))
 
-  def upperFilterEngPos: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("FILT1POS"))
+  def upperFilterEngPos: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("FILT1POS"))
 
-  def expositionMode: F[Option[String]] = safeAttribute(status.getStringAttribute("EXPMODE"))
+  def expositionMode: F[String] = safeAttributeF(status.getStringAttribute("EXPMODE"))
 
-  def dcName: F[Option[String]] = safeAttribute(status.getStringAttribute("DCNAME"))
+  def dcName: F[String] = safeAttributeF(status.getStringAttribute("DCNAME"))
 
-  def pciBoardCodeName: F[Option[String]] = safeAttribute(status.getStringAttribute("DSPPCIN"))
+  def pciBoardCodeName: F[String] = safeAttributeF(status.getStringAttribute("DSPPCIN"))
 
-  def readTime: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("READTIME"))
+  def readTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("READTIME"))
 
-  def requestedExposureTime: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("exposureTime"))
+  def requestedExposureTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("exposureTime"))
 
-  def numberOfResets: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("numberOfResets"))
+  def numberOfResets: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("numberOfResets"))
 
-  def readMode: F[Option[String]] = safeAttribute(status.getStringAttribute("readMode"))
+  def readMode: F[String] = safeAttributeF(status.getStringAttribute("readMode"))
 
-  def numberOfFowlerSamples: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("numberOfFowSamples"))
+  def numberOfFowlerSamples: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("numberOfFowSamples"))
 
-  def coadds: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("coadds"))
+  def coadds: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("coadds"))
 
-  def exposedTime: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("exposedTime"))
+  def exposedTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("exposedTime"))
 
-  def timeMode: F[Option[String]] = safeAttribute(status.getStringAttribute("timeMode"))
+  def timeMode: F[String] = safeAttributeF(status.getStringAttribute("timeMode"))
 
-  def roi: F[Option[String]] = safeAttribute(status.getStringAttribute("roi"))
+  def roi: F[String] = safeAttributeF(status.getStringAttribute("roi"))
 
-  def countdown: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("countdown"))
+  def countdown: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("countdown"))
 
-  def coaddsDone: F[Option[Int]] =  safeAttributeSInt(status.getIntegerAttribute("coaddsDone"))
+  def coaddsDone: F[Int] =  safeAttributeSIntF(status.getIntegerAttribute("coaddsDone"))
 
-  def mjdobs: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("mjdobs"))
+  def mjdobs: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("mjdobs"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
     status.addEnum[DhsConnected]("dhsConnected", s"${GsaoiTop}sad:dc:dhsConnO", classOf[DhsConnected])
-  def dhsConnected: F[Option[DhsConnected]] = safeAttribute(dhsConnectedAttr)
+  def dhsConnected: F[DhsConnected] = safeAttributeF(dhsConnectedAttr)
 
   private val observeCAttr: CaAttribute[CarState] = status.addEnum("observeC",
     s"${GsaoiTop}dc:observeC.VAL", classOf[CarState])
-  def observeState: F[Option[CarState]] = safeAttribute(observeCAttr)
+  def observeState: F[CarState] = safeAttributeF(observeCAttr)
 
   private val notGuidingAttr = status.getIntegerAttribute("notGuiding")
-  def guiding: F[Option[Boolean]] = Nested(safeAttributeSInt(notGuidingAttr)).map(_ === 0).value
+  def guiding: F[Boolean] = safeAttributeSIntF(notGuidingAttr).map(_ === 0)
 
   private val guideStabilizeTime = 1.seconds
   private val filteredNotGuidingAttr: CaWindowStabilizer[Integer] =
@@ -206,41 +205,41 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     Async[F].delay(filteredNotGuidingAttr.reset)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 1, guideTimeout, "ODGW guide flag"))
 
-  def odgwBaseExpTime: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("baseExpTime"))
+  def odgwBaseExpTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("baseExpTime"))
 
-  def odgw1Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts1"))
+  def odgw1Counts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("counts1"))
 
-  def odgw2Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts2"))
+  def odgw2Counts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("counts2"))
 
-  def odgw3Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts3"))
+  def odgw3Counts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("counts3"))
 
-  def odgw4Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts4"))
+  def odgw4Counts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("counts4"))
 
-  def odgw1Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult1"))
+  def odgw1Multiplier: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("expMult1"))
 
-  def odgw2Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult2"))
+  def odgw2Multiplier: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("expMult2"))
 
-  def odgw3Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult3"))
+  def odgw3Multiplier: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("expMult3"))
 
-  def odgw4Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult4"))
+  def odgw4Multiplier: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("expMult4"))
 
-  def odgwSize: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgwSize"))
+  def odgwSize: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgwSize"))
 
-  def odgw1X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw1x"))
+  def odgw1X: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw1x"))
 
-  def odgw1Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw1y"))
+  def odgw1Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw1y"))
 
-  def odgw2X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw2x"))
+  def odgw2X: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw2x"))
 
-  def odgw2Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw2y"))
+  def odgw2Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw2y"))
 
-  def odgw3X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw3x"))
+  def odgw3X: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw3x"))
 
-  def odgw3Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw3y"))
+  def odgw3Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw3y"))
 
-  def odgw4X: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw4x"))
+  def odgw4X: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw4x"))
 
-  def odgw4Y: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgw4y"))
+  def odgw4Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw4y"))
 }
 
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {
