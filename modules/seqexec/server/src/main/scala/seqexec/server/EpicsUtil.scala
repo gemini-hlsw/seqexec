@@ -336,11 +336,11 @@ object EpicsUtil {
   // The return signature indicates this programs calculates if we maybe need an action
   // e.g. it checks that a value in epics compares to a reference and if so returns an optional
   // action
-  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: F[Option[A]], set: F[Unit]): F[Option[F[Unit]]] =
-    get.map(_ =!= v.some).map(_.option(set))
+  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: F[A], set: F[Unit]): F[Option[F[Unit]]] =
+    get.map(_ =!= v).map(_.option(set))
 
-  def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
-    get.map(g => g.forall(areValuesDifferentEnough(relTolerance, _, v)).option(set))
+  def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
+    get.map(areValuesDifferentEnough(relTolerance, _, v).option(set))
 
   def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
