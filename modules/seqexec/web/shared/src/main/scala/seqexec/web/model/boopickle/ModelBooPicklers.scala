@@ -14,6 +14,8 @@ import java.time.Instant
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
+import seqexec.model.dhs._
+import shapeless.tag
 import squants.time.TimeConversions._
 
 /**
@@ -115,6 +117,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[StepState.Running.type]
     .addConcreteType[StepState.Paused.type]
 
+  implicit val imageIdPickler = transformPickler((s: String) => tag[ImageFileIdT](s))(identity)
   implicit val standardStepPickler = generatePickler[StandardStep]
   implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
   implicit val nsStepPickler = generatePickler[NodAndShuffleStep]

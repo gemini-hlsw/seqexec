@@ -6,6 +6,7 @@ package seqexec.server.nifs
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
@@ -17,9 +18,8 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NifsControllerSim {
-  def apply[F[_]: Sync: Timer]: NifsController[F] =
+  def apply[F[_]: Sync: Logger: Timer]: NifsController[F] =
     new NifsController[F] {
-
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
 
       override def observe(fileId: ImageFileId,
@@ -45,4 +45,5 @@ object NifsControllerSim {
         NifsController.calcTotalExposureTime[F](cfg)
 
     }
+
 }

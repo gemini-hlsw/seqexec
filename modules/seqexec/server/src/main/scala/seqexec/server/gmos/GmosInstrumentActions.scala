@@ -10,7 +10,7 @@ import edu.gemini.spModel.config2.Config
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
-import seqexec.model.dhs.ImageFileId
+import seqexec.model.dhs._
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum.{Guiding, ObserveCommandResult}
 import seqexec.engine.Action
@@ -25,7 +25,6 @@ import seqexec.server.InstrumentActions
 import seqexec.server.ObserveEnvironment
 import seqexec.server.ObserveActions
 import seqexec.server.ObserveContext
-import seqexec.server.SeqexecFailure
 import seqexec.server.ObserveActions._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.tcs.TcsController.{InstrumentOffset, OffsetP, OffsetQ}
@@ -49,10 +48,10 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
   // And can eventually return more than one result
   private def observeTail(
     fileId: ImageFileId,
-    dataId: String,
+    dataId: DataId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult): F[Stream[F, Result[F]]] =
-    r match {
+  )(r:      ObserveCommandResult): Stream[F, Result[F]] =
+    Stream.eval(r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, dataId, stopped = false, env).map(Stream.emit)
       case ObserveCommandResult.Stopped =>
@@ -75,40 +74,37 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
             List(Result.Partial(NSStep), Result.OK(Response.Ignored))
           )
           .pure[F]
-    }
+    }).flatten
 
   private def startObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): F[Stream[F, Result[F]]] =
+  ): Stream[F, Result[F]] =
     // Essentially the same as default observation but with a custom tail
     for {
-      (fileId, result) <- observePreamble(fileId, env)
-      ret              <- observeTail(fileId, fileId, env)(result)
+      (dataId, result) <- Stream.eval(observePreamble(fileId, env))
+      ret              <- observeTail(fileId, dataId, env)(result)
     } yield ret
 
   private def completeObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): F[Stream[F, Result[F]]] =
-    for {
+  ): Stream[F, Result[F]] =
+    Stream.eval(for {
       dataId  <- dataId(env)
       timeout <- inst.calcObserveTime(env.config)
       ret     <- inst.continueCommand(timeout)
-      r       <- observeTail(fileId, dataId, env)(ret)
-    } yield r
+    } yield observeTail(fileId, dataId, env)(ret)).flatten
 
   private def observe(i: Int, env: ObserveEnvironment[F])(fileId: ImageFileId): Stream[F, Result[F]] =
     if (i === 0) {
       // The first steps allocates a file and runs the firt observe
-      Stream.emit[F, Result[F]](Result.Partial(FileIdAllocated(fileId))) ++ Stream
-        .eval(startObserve(fileId, env))
-        .flatten
+      Stream.emit[F, Result[F]](Result.Partial(FileIdAllocated(fileId))) ++
+        startObserve(fileId, env)
     } else if (i === Gmos.NsSequence.length - 1) {
       // the last step completes the observations with a complete and a tail
-      Stream.eval(completeObserve(fileId, env).map(_ ++
-        Stream.emit[F, Result[F]](Result.Partial(NSComplete))))
-        .flatten
+      completeObserve(fileId, env) ++
+        Stream.emit[F, Result[F]](Result.Partial(NSComplete))
     } else {
       // Steps in betweet do a continue
       Stream
@@ -125,14 +121,10 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
   private def safeObserve(
     i: Int,
     env: ObserveEnvironment[F]
-  ): Stream[F, Result[F]] = {
-    Stream.eval(FileIdProvider.fileId(env).attempt).flatMap {
-      case Right(fileId) =>
-        observe(i, env)(fileId)
-      case Left(e: SeqexecFailure) => Stream.emit(Result.Error(SeqexecFailure.explain(e)))
-      case Left(e: Throwable) => Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
+  ): Stream[F, Result[F]] =
+    Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
+      observe(i, env)(fileId)
     }
-  }
 
   /**
    * Calculate the actions for a N&S cycle

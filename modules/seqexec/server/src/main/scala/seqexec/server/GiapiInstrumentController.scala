@@ -59,7 +59,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] =
     client
-      .observe(fileId, expTime.toMilliseconds.milliseconds)
+      .observe(fileId: String, expTime.toMilliseconds.milliseconds)
       .as(fileId)
       .adaptError(adaptGiapiError)
 

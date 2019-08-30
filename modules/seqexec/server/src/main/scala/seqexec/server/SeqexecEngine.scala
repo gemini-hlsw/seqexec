@@ -15,9 +15,10 @@ import gem.Observation
 import gem.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
-
 import knobs.Config
 import mouse.all._
 import monocle.Monocle._
@@ -66,6 +67,10 @@ class SeqexecEngine(
 ) {
   import SeqexecEngine._
 
+  // We establist here as the limit of where logger start
+  // TODO Push it up the stack
+  private implicit def unsafeLogger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec")
+
   val odbProxy: OdbProxy[IO] = OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
     else new OdbProxy.DummyOdbCommands[IO])
@@ -86,8 +91,8 @@ class SeqexecEngine(
     settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
       settings.instForceError.fold(Flamingos2ControllerSimBad[IO](settings.failAt),
         Flamingos2ControllerSim[IO])),
-    settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.south),
-    settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.north),
+    settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.south[IO]),
+    settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.north[IO]),
     settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim[IO]),
     settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim[IO]),
     GpiController(gpi, gpiGDS),

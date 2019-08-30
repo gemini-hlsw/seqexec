@@ -12,12 +12,14 @@ import giapi.client.gpi.GpiClient
 import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
+import seqexec.model.dhs._
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GdsClient
@@ -37,6 +39,7 @@ import seqexec.server.gems.GemsControllerSim
 import squants.time.Seconds
 
 class SeqTranslateSpec extends FlatSpec {
+  private implicit def unsafeLogger = Slf4jLogger.unsafeCreate[IO]
 
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -46,7 +49,7 @@ class SeqTranslateSpec extends FlatSpec {
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState[IO]): NonEmptyList[Action[IO]] =
     NonEmptyList.one(
-      Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
+      Action(ActionType.Observe, Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
         Action.State(state, Nil))
     )
 
@@ -73,14 +76,17 @@ class SeqTranslateSpec extends FlatSpec {
   private val s1: EngineState = baseState
   // Observe completed
   private val s2: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.mark(0)(Result.OK(Observed(fileId))))(baseState)
+    .modify(_.mark(0)(Result.OK(Observed(toImageFileId(fileId)))))(baseState)
   // Observe started, but with file Id already allocated
   private val s3: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
+    .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(toImageFileId(fileId)))))(baseState)
   // Observe paused
   private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ => IO.pure(Stream.emit(Result.OK(Observed
-    (fileId))).covary[IO]), Seconds(1)))))(baseState)
+    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ =>
+      Stream.emit(
+        Result.OK(
+          Observed(toImageFileId(fileId))
+        )).covary[IO], Seconds(1)))))(baseState)
   // Observe failed
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)

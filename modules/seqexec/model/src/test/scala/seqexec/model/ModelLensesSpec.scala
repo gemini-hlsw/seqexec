@@ -12,6 +12,7 @@ import monocle.law.discipline.TraversalTests
 import org.scalacheck.Arbitrary._
 import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
 import seqexec.model.arb.ArbStep._

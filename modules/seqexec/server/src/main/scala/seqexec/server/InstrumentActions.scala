@@ -5,7 +5,6 @@ package seqexec.server
 
 import cats.MonadError
 import cats.data.NonEmptyList
-import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
@@ -70,18 +69,10 @@ object InstrumentActions {
 
   def safeObserve[F[_]: MonadError[?[_], Throwable]: Logger](
     env: ObserveEnvironment[F], doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
-  ): Stream[F, Result[F]] = {
-    // We need to be careful about handling this particular error
-    Stream.eval(FileIdProvider.fileId(env).attempt).flatMap {
-      case Right(fileId) =>
-        val observationCommand =
-          doObserve(fileId, env)
-
-        Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ observationCommand
-      case Left(e: SeqexecFailure) => Stream.emit(Result.Error(SeqexecFailure.explain(e)))
-      case Left(e: Throwable) => Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
+  ): Stream[F, Result[F]] =
+    Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
+      Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env)
     }
-  }
 
   /**
     * Default Actions for most instruments it basically delegates to ObserveActions

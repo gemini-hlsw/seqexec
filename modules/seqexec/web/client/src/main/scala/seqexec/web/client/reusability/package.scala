@@ -12,6 +12,7 @@ import japgolly.scalajs.react.Reusability
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Resource
 import seqexec.model.enum.ServerLogLevel
+import seqexec.model.dhs._
 import seqexec.model.Observer
 import seqexec.model.QueueId
 import seqexec.model.Step
@@ -42,6 +43,7 @@ import seqexec.web.client.circuit._
 package object reusability {
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A] =
     Reusability.byRef
+  implicit val imageIdReuse: Reusability[ImageFileId]       = Reusability.byEq
   implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq

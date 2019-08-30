@@ -76,7 +76,7 @@ package server {
     val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
   }
 
-  final case class ObserveContext[F[_]](t: ObserveCommandResult => F[Stream[F, Result[F]]], expTime: Time) extends PauseContext[F]
+  final case class ObserveContext[F[_]](t: ObserveCommandResult => Stream[F, Result[F]], expTime: Time) extends PauseContext[F]
 
 }
 
