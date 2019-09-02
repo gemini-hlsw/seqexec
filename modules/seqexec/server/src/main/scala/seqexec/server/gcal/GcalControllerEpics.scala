@@ -6,7 +6,6 @@ package seqexec.server.gcal
 import cats.Monad
 import cats.effect.IO
 import cats.effect.Sync
-import cats.data.OptionT
 import cats.implicits._
 import squants.Time
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
@@ -20,142 +19,91 @@ object GcalControllerEpics {
   private val SetupTimeout: Time = Seconds(60)
 
   implicit private val decodeLampState: DecodeEpicsValue[BinaryOnOff, LampState] = DecodeEpicsValue {
-    (v: BinaryOnOff) =>
-      v match {
-        case BinaryOnOff.OFF => LampState.Off
-        case BinaryOnOff.ON  => LampState.On
-        case _               => sys.error("Cannot happen")
-      }
+    case BinaryOnOff.OFF => LampState.Off
+    case BinaryOnOff.ON  => LampState.On
+    case _               => sys.error("Cannot happen")
   }
 
   implicit private val encodeLampState: EncodeEpicsValue[LampState, BinaryOnOff] = EncodeEpicsValue {
-    (v: LampState) =>
-      v match {
-        case LampState.Off => BinaryOnOff.OFF
-        case LampState.On  => BinaryOnOff.ON
-        case _             => sys.error("Cannot happen")
-      }
+    case LampState.Off => BinaryOnOff.OFF
+    case LampState.On  => BinaryOnOff.ON
+    case _             => sys.error("Cannot happen")
   }
 
   implicit private val decodeShutter: DecodeEpicsValue[String, Option[Shutter]] = DecodeEpicsValue {
-    (v: String) =>
-      v match {
-        case "OPEN"  => Some(Shutter.OPEN)
-        case "CLOSE" => Some(Shutter.CLOSED)
-        case _       => None
-      }
+    case "OPEN"  => Some(Shutter.OPEN)
+    case "CLOSE" => Some(Shutter.CLOSED)
+    case _       => None
   }
 
   implicit private val encodeShutter: EncodeEpicsValue[Shutter, String] = EncodeEpicsValue {
-    (v: Shutter) =>
-      v match {
-        case Shutter.OPEN   => "OPEN"
-        case Shutter.CLOSED => "CLOSE"
-      }
+    case Shutter.OPEN   => "OPEN"
+    case Shutter.CLOSED => "CLOSE"
   }
 
   implicit private val decodeFilter: DecodeEpicsValue[String, Option[Filter]] = DecodeEpicsValue {
-    (v: String) =>
-      v match {
-        case "CLEAR" => Some(Filter.NONE)
-        case "GMOS"  => Some(Filter.GMOS)
-        case "HROS"  => Some(Filter.HROS)
-        case "NIR"   => Some(Filter.NIR)
-        case "ND1.0" => Some(Filter.ND_10)
-        case "ND2.0" => Some(Filter.ND_20)
-        case "ND3.0" => Some(Filter.ND_30)
-        case "ND4.0" => Some(Filter.ND_40)
-        case "ND4-5" => Some(Filter.ND_45)
-        case _       => None
-      }
+    case "CLEAR" => Some(Filter.NONE)
+    case "GMOS"  => Some(Filter.GMOS)
+    case "HROS"  => Some(Filter.HROS)
+    case "NIR"   => Some(Filter.NIR)
+    case "ND1.0" => Some(Filter.ND_10)
+    case "ND2.0" => Some(Filter.ND_20)
+    case "ND3.0" => Some(Filter.ND_30)
+    case "ND4.0" => Some(Filter.ND_40)
+    case "ND4-5" => Some(Filter.ND_45)
+    case _       => None
   }
 
   implicit private val encodeFilter: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
-    (v: Filter) =>
-      v match {
-        case Filter.NONE => "CLEAR"
-        case Filter.GMOS => "GMOS"
-        case Filter.HROS => "HROS"
-        case Filter.NIR => "NIR"
-        case Filter.ND_10 => "ND1.0"
-        case Filter.ND_20 => "ND2.0"
-        case Filter.ND_30 => "ND3.0"
-        case Filter.ND_40 => "ND4.0"
-        case Filter.ND_45 => "ND4-5"
-        case _ => "CLEAR"
-      }
+    case Filter.NONE => "CLEAR"
+    case Filter.GMOS => "GMOS"
+    case Filter.HROS => "HROS"
+    case Filter.NIR => "NIR"
+    case Filter.ND_10 => "ND1.0"
+    case Filter.ND_20 => "ND2.0"
+    case Filter.ND_30 => "ND3.0"
+    case Filter.ND_40 => "ND4.0"
+    case Filter.ND_45 => "ND4-5"
+    case _ => "CLEAR"
   }
 
   implicit private val decodeDiffuser: DecodeEpicsValue[String, Option[Diffuser]] = DecodeEpicsValue {
-    (v: String) =>
-      v match {
-        case "IR"      => Some(Diffuser.IR)
-        case "VISIBLE" => Some(Diffuser.VISIBLE)
-        case _         => None
-      }
+    case "IR"      => Some(Diffuser.IR)
+    case "VISIBLE" => Some(Diffuser.VISIBLE)
+    case _         => None
   }
 
   implicit private val encodeDiffuser: EncodeEpicsValue[Diffuser, String] = EncodeEpicsValue {
-    (v: Diffuser) =>
-      v match {
-        case Diffuser.IR => "IR"
-        case Diffuser.VISIBLE => "VISIBLE"
-      }
+    case Diffuser.IR => "IR"
+    case Diffuser.VISIBLE => "VISIBLE"
   }
 
   private def getDiffuser[F[_]: Monad](sys: GcalEpics[F]): F[Option[Diffuser]] =
-    (for {
-      x <- OptionT(sys.diffuser)
-      y <- OptionT.fromOption[F](decode[String, Option[Diffuser]](x))
-    } yield y).value
+    sys.diffuser.map(decode[String, Option[Diffuser]])
 
   private def getFilter[F[_]: Monad](sys: GcalEpics[F]): F[Option[Filter]] =
-    (for {
-      x <- OptionT(sys.filter)
-      y <- OptionT.fromOption[F](decode[String, Option[Filter]](x))
-    } yield y).value
+    sys.filter.map(decode[String, Option[Filter]])
 
   private def getShutter[F[_]: Monad](sys: GcalEpics[F]): F[Option[Shutter]] =
-    (for {
-      x <- OptionT(sys.filter)
-      y <- OptionT.fromOption[F](decode[String, Option[Shutter]](x))
-    } yield y).value
+    sys.shutter.map(decode[String, Option[Shutter]])
 
   private def getArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[ArLampState]] =
-    (for {
-      x <- OptionT(sys.lampAr.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield ArLampState(y)).value
+    sys.lampAr.map(v => ArLampState(decode(v)).some)
 
   private def getCuArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[CuArLampState]] =
-    (for {
-      x <- OptionT(sys.lampCuAr.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield CuArLampState(y)).value
+    sys.lampCuAr.map(v => CuArLampState(decode(v)).some)
 
   private def getQHLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[QHLampState]] =
-    (for {
-      x <- OptionT(sys.lampQH.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield QHLampState(y)).value
+    sys.lampQH.map(v => QHLampState(decode(v)).some)
 
   private def getThArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[ThArLampState]] =
-    (for {
-      x <- OptionT(sys.lampThAr.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield ThArLampState(y)).value
+    sys.lampThAr.map(v => ThArLampState(decode(v)).some)
 
   private def getXeLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[XeLampState]] =
-    (for {
-      x <- OptionT(sys.lampXe.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield XeLampState(y)).value
+    sys.lampXe.map(v => XeLampState(decode(v)).some)
 
   private def getIrLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[IrLampState]] =
-    (for {
-      x <- OptionT(sys.lampIr.delay[F])
-      y <- OptionT.some[F](decode[BinaryOnOff, LampState](x))
-    } yield IrLampState(y)).value
+    sys.lampIr.map(v => IrLampState(decode(v)).some)
 
   private def setArLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
     GcalEpics.instance.lampsCmd.setArLampName("Ar"),
