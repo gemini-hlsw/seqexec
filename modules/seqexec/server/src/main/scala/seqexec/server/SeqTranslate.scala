@@ -353,32 +353,36 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case StepType.CelestialObject(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.CelestialObject(inst) => for {
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
-      case StepType.NodAndShuffle(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.NodAndShuffle(inst)   => for {
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
-      case StepType.FlatOrArc(inst)       =>
-        getTcs(flatOrArcTcsSubsystems(inst), false, sys, TcsController.LightSource.GCAL, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.FlatOrArc(inst)       => for {
+        tcs  <- getTcs(flatOrArcTcsSubsystems(inst), false, sys, TcsController.LightSource.GCAL, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
-      case StepType.DarkOrBias(_)      =>  List(sys).asRight
+      case StepType.DarkOrBias(_)         =>  List(sys).asRight
 
-      case StepType.AltairObs(inst)          =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.AltairObs(inst)       => for {
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
       case StepType.AlignAndCalib         => List(sys).asRight
 
-      case StepType.Gems(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.Gems(inst)            => for {
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
-
-      case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
+      case _                              => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
 

@@ -4,7 +4,6 @@
 package seqexec.server.gcal
 
 import cats.Applicative
-import cats.Eq
 import cats.effect.Sync
 import cats.implicits._
 import mouse.boolean._
@@ -34,7 +33,6 @@ object DummyGcalKeywordsReader {
 object GcalKeywordsReaderEpics {
 
   def apply[F[_]: Sync](sys: GcalEpics[F]): GcalKeywordReader[F] = new GcalKeywordReader[F] {
-    implicit val eq: Eq[BinaryOnOff] = Eq.by(_.ordinal())
 
     def diffuser: F[String] = sys.diffuser.safeValOrDefault
 
@@ -44,15 +42,15 @@ object GcalKeywordsReaderEpics {
       def onCheck(v: BinaryOnOff): Boolean = v === BinaryOnOff.ON
 
       for {
-        ar <- sys.lampAr.map(onCheck(_).option("Ar"))
+        ar   <- sys.lampAr.map(onCheck(_).option("Ar"))
+        xe   <- sys.lampXe.map(onCheck(_).option("Xe"))
         cuAr <- sys.lampCuAr.map(onCheck(_).option("CuAr"))
-        ir <- sys.lampIr.map {
+        thAr <- sys.lampThAr.map(onCheck(_).option("ThAr"))
+        qh   <- sys.lampQH.map(onCheck(_).option("QH"))
+        ir   <- sys.lampIr.map {
           case BinaryOnOff.ON => "IRhigh".some
           case _ => "IRlow".some
         }
-        qh <- sys.lampQH.map(onCheck(_).option("QH"))
-        thAr <- sys.lampThAr.map(onCheck(_).option("ThAr"))
-        xe <- sys.lampXe.map(onCheck(_).option("Xe"))
       } yield ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
     }.safeValOrDefault
 
