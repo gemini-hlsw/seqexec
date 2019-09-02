@@ -6,16 +6,14 @@ package seqexec.server.gnirs
 import cats.implicits._
 import cats.effect.IO
 import cats.effect.Sync
-import cats.data.Nested
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
 import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.safeAttribute
-import seqexec.server.EpicsUtil.safeAttributeSDouble
-import seqexec.server.EpicsUtil.safeAttributeSInt
+import seqexec.server.EpicsUtil.safeAttributeF
+import seqexec.server.EpicsUtil.safeAttributeSDoubleF
+import seqexec.server.EpicsUtil.safeAttributeSIntF
 import seqexec.server.{EpicsSystem, ObserveCommand}
 import seqexec.server.EpicsCommand
 
@@ -136,88 +134,84 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
   private val state: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::status")
   private val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::dcstatus")
 
-  def arrayId: F[Option[String]] = safeAttribute(dcState.getStringAttribute("arrayid"))
+  def arrayId: F[String] = safeAttributeF(dcState.getStringAttribute("arrayid"))
 
-  def arrayType: F[Option[String]] = safeAttribute(dcState.getStringAttribute("arraytyp"))
+  def arrayType: F[String] = safeAttributeF(dcState.getStringAttribute("arraytyp"))
 
-  def obsEpoch: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("OBSEPOCH"))).map(_.toDouble).value
+  def obsEpoch: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("OBSEPOCH")).map(_.toDouble)
 
-  def detBias: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("detBias"))).map(_.toDouble).value
+  def detBias: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("detBias")).map(_.toDouble)
 
-  def countDown: F[Option[String]] = safeAttribute(dcState.getStringAttribute("countdown"))
+  def countDown: F[String] = safeAttributeF(dcState.getStringAttribute("countdown"))
 
-  def numCoadds: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("numCoAdds"))).map(_.toInt).value
+  def numCoadds: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("numCoAdds")).map(_.toInt)
 
-  def wcs: F[Option[String]] = safeAttribute(dcState.getStringAttribute("wcs"))
+  def wcs: F[String] = safeAttributeF(dcState.getStringAttribute("wcs"))
 
-  def exposureTime: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("exposureTime"))).map(_.toDouble).value
+  def exposureTime: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("exposureTime")).map(_.toDouble)
 
-  def digitalAvgs: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("digitalAvgs"))).map(_.toInt).value
+  def digitalAvgs: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("digitalAvgs")).map(_.toInt)
 
-  def lowNoise: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("lowNoise"))).map(_.toInt).value
+  def lowNoise: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("lowNoise")).map(_.toInt)
 
-  def dhsConnected: F[Option[Boolean]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("dhsConnected")))
-    .map(_.toInt =!= 0).value
+  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("dhsConnected"))
+    .map(_.toInt =!= 0)
 
-  val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcState.addEnum(
+  val arrayActiveAttr: CaAttribute[JDetectorState] = dcState.addEnum(
     "arrayState", s"${GnirsTop}dc:activate", classOf[JDetectorState]
-  ))
+  )
 
-  def arrayActive: F[Option[Boolean]] =
-    arrayActiveAttr
-      .map(safeAttribute(_))
-      .traverse(r => Nested(r).map(_.getActive).value)
-      .map(_.flatten)
+  def arrayActive: F[Boolean] = safeAttributeF(arrayActiveAttr).map(_.getActive)
 
-  def minInt: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("minInt"))).map(_.toDouble).value
+  def minInt: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("minInt")).map(_.toDouble)
 
-  def dettemp: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("dettemp"))).map(_.toDouble).value
+  def dettemp: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("dettemp")).map(_.toDouble)
 
-  def prism: F[Option[String]] = safeAttribute(state.getStringAttribute("prism"))
+  def prism: F[String] = safeAttributeF(state.getStringAttribute("prism"))
 
-  def focus: F[Option[String]] = safeAttribute(state.getStringAttribute("focus"))
+  def focus: F[String] = safeAttributeF(state.getStringAttribute("focus"))
 
-  def slitWidth: F[Option[String]] = safeAttribute(state.getStringAttribute("slitWidth"))
+  def slitWidth: F[String] = safeAttributeF(state.getStringAttribute("slitWidth"))
 
-  def acqMirror: F[Option[String]] = safeAttribute(state.getStringAttribute("acqMirror"))
+  def acqMirror: F[String] = safeAttributeF(state.getStringAttribute("acqMirror"))
 
-  def cover: F[Option[String]] = safeAttribute(state.getStringAttribute("cover"))
+  def cover: F[String] = safeAttributeF(state.getStringAttribute("cover"))
 
-  def grating: F[Option[String]] = safeAttribute(state.getStringAttribute("grating"))
+  def grating: F[String] = safeAttributeF(state.getStringAttribute("grating"))
 
-  def gratingMode: F[Option[String]] = safeAttribute(state.getStringAttribute("gratingMode"))
+  def gratingMode: F[String] = safeAttributeF(state.getStringAttribute("gratingMode"))
 
-  def filter1: F[Option[String]] = safeAttribute(state.getStringAttribute("filter1"))
+  def filter1: F[String] = safeAttributeF(state.getStringAttribute("filter1"))
 
-  def filter2: F[Option[String]] = safeAttribute(state.getStringAttribute("filter2"))
+  def filter2: F[String] = safeAttributeF(state.getStringAttribute("filter2"))
 
-  def camera: F[Option[String]] = safeAttribute(state.getStringAttribute("camera"))
+  def camera: F[String] = safeAttributeF(state.getStringAttribute("camera"))
 
-  def decker: F[Option[String]] = safeAttribute(state.getStringAttribute("decker"))
+  def decker: F[String] = safeAttributeF(state.getStringAttribute("decker"))
 
-  def centralWavelength: F[Option[Double]] = Nested(safeAttributeSDouble(state.getDoubleAttribute("centralWavelength"))).map(_.toDouble).value
+  def centralWavelength: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("centralWavelength")).map(_.toDouble)
 
-  def gratingTilt: F[Option[Double]] = Nested(safeAttributeSDouble(state.getDoubleAttribute("grattilt"))).map(_.toDouble).value
+  def gratingTilt: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("grattilt")).map(_.toDouble)
 
-  def nirscc: F[Option[String]] = safeAttribute(state.getStringAttribute("nirscc"))
+  def nirscc: F[String] = safeAttributeF(state.getStringAttribute("nirscc"))
 
-  def gratingOrder: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("gratord"))).map(_.toInt).value
+  def gratingOrder: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gratord")).map(_.toInt)
 
-  def filter1Eng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fw1_eng"))).map(_.toInt).value
+  def filter1Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw1_eng")).map(_.toInt)
 
-  def filter2Eng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fw2_eng"))).map(_.toInt).value
+  def filter2Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw2_eng")).map(_.toInt)
 
-  def deckerEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("dkr_eng"))).map(_.toInt).value
+  def deckerEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("dkr_eng")).map(_.toInt)
 
-  def gratingEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("gr_eng"))).map(_.toInt).value
+  def gratingEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gr_eng")).map(_.toInt)
 
-  def prismEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("prsm_eng"))).map(_.toInt).value
+  def prismEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("prsm_eng")).map(_.toInt)
 
-  def cameraEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("cam_eng"))).map(_.toInt).value
+  def cameraEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("cam_eng")).map(_.toInt)
 
-  def slitEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("slit_eng"))).map(_.toInt).value
+  def slitEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("slit_eng")).map(_.toInt)
 
-  def focusEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fcs_eng"))).map(_.toInt).value
+  def focusEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fcs_eng")).map(_.toInt)
 
 }
 

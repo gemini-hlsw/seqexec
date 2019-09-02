@@ -17,10 +17,10 @@ import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
 import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand}
+import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
 import org.log4s.{Logger, getLogger}
 
 class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
-  private val F: Sync[F] = Sync[F]
 
   val NiriTop = tops.getOrElse("niri", "niri:")
   val NisTop = tops.getOrElse("nis", "NIS:")
@@ -127,213 +127,78 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val status: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::status")
 
-  def beamSplitter: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("BEAMSPLT"))
-        .flatMap(x => Option(x.value))
-    )
+  def beamSplitter: F[String] = safeAttributeF(status.getStringAttribute("BEAMSPLT"))
 
-  def focus: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("FOCUSNAM"))
-        .flatMap(x => Option(x.value))
-    )
+  def focus: F[String] = safeAttributeF(status.getStringAttribute("FOCUSNAM"))
 
-  def focusPosition: F[Option[Double]] =
-    F.delay(
-      Option(status.getDoubleAttribute("FOCUSPOS"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def focusPosition: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("FOCUSPOS"))
 
-  def mask: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("FPMASK"))
-        .flatMap(x => Option(x.value))
-    )
+  def mask: F[String] = safeAttributeF(status.getStringAttribute("FPMASK"))
 
-  def pupilViewer: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("PVIEW"))
-        .flatMap(x => Option(x.value))
-    )
+  def pupilViewer: F[String] = safeAttributeF(status.getStringAttribute("PVIEW"))
 
-  def camera: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("CAMERA"))
-        .flatMap(x => Option(x.value))
-    )
+  def camera: F[String] = safeAttributeF(status.getStringAttribute("CAMERA"))
 
-  def windowCover: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("WINDCOVR"))
-        .flatMap(x => Option(x.value))
-    )
+  def windowCover: F[String] = safeAttributeF(status.getStringAttribute("WINDCOVR"))
 
-  def filter1: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("FILTER1"))
-        .flatMap(x => Option(x.value))
-    )
+  def filter1: F[String] = safeAttributeF(status.getStringAttribute("FILTER1"))
 
-  def filter2: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("FILTER2"))
-        .flatMap(x => Option(x.value))
-    )
+  def filter2: F[String] = safeAttributeF(status.getStringAttribute("FILTER2"))
 
-  def filter3: F[Option[String]] =
-    F.delay(
-      Option(status.getStringAttribute("FILTER3"))
-        .flatMap(x => Option(x.value))
-    )
+  def filter3: F[String] = safeAttributeF(status.getStringAttribute("FILTER3"))
 
   private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::dcstatus")
 
-  def dhsConnected: F[Option[Boolean]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("dhcConnected"))
-        .flatMap(x => Option(x.value).map(_.toInt === 1))
-    )
+  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("dhcConnected")).map(_ === 1)
 
-  private val arrayActiveAttr: Option[CaAttribute[JDetectorState]] =
-    Option(dcStatus.addEnum("arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState]))
+  private val arrayActiveAttr: CaAttribute[JDetectorState] =
+    dcStatus.addEnum("arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState])
 
-  def arrayActive: F[Option[Boolean]] =
-    F.delay(
-      arrayActiveAttr.flatMap(at => Option(at.value).map(_.getActive))
-    )
+  def arrayActive: F[Boolean] = safeAttributeF(arrayActiveAttr).map(_.getActive)
 
-  def minIntegration: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("minInt"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def minIntegration: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("minInt"))
 
-  def integrationTime: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("intTime"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def integrationTime: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("intTime"))
 
-  def coadds: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("numCoAdds"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def coadds: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("numCoAdds"))
 
-  def detectorTemp: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("TDETABS"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def detectorTemp: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("TDETABS"))
 
-  def µcodeName: F[Option[String]] =
-    F.delay(
-      Option(dcStatus.getStringAttribute("UCODENAM"))
-        .flatMap(x => Option(x.value))
-    )
+  def µcodeName: F[String] = safeAttributeF(dcStatus.getStringAttribute("UCODENAM"))
 
-  def µcodeType: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("UCODETYP"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def µcodeType: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("UCODETYP"))
 
-  def framesPerCycle: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("FRMSPCYCL"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def framesPerCycle: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("FRMSPCYCL"))
 
-  def detectorVDetBias: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VDET"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def detectorVDetBias: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VDET"))
 
-  def detectorVSetBias: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VSET"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def detectorVSetBias: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VSET"))
 
-  def obsEpoch: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("OBSEPOCH"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def obsEpoch: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("OBSEPOCH"))
 
-  def mountTemp: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("TMOUNT"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def mountTemp: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("TMOUNT"))
 
-  def digitalAverageCount: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("NDAVGS"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def digitalAverageCount: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("NDAVGS"))
 
-  def vggCl1: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VGGCL1"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def vggCl1: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VGGCL1"))
 
-  def vddCl1: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VDDCL1"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def vddCl1: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VDDCL1"))
 
-  def vggCl2: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VGGCL2"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def vggCl2: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VGGCL2"))
 
-  def vddCl2: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VDDCL2"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def vddCl2: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VDDCL2"))
 
-  def vddUc: F[Option[Double]] =
-    F.delay(
-      Option(dcStatus.getDoubleAttribute("VDDUC"))
-        .flatMap(x => Option(x.value).map(_.toDouble))
-    )
+  def vddUc: F[Double] = safeAttributeSDoubleF(dcStatus.getDoubleAttribute("VDDUC"))
 
-  def lnrs: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("LNRS"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def lnrs: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("LNRS"))
 
-  def hdrTiming: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("hdrtiming"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def hdrTiming: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("hdrtiming"))
 
-  def arrayType: F[Option[String]] =
-    F.delay(
-      Option(dcStatus.getStringAttribute("ARRAYTYP"))
-        .flatMap(x => Option(x.value))
-    )
+  def arrayType: F[String] = safeAttributeF(dcStatus.getStringAttribute("ARRAYTYP"))
 
-  def arrayId: F[Option[String]] =
-    F.delay(
-      Option(dcStatus.getStringAttribute("ARRAYID"))
-        .flatMap(x => Option(x.value))
-    )
+  def arrayId: F[String] = safeAttributeF(dcStatus.getStringAttribute("ARRAYID"))
 
-  def mode: F[Option[Int]] =
-    F.delay(
-      Option(dcStatus.getIntegerAttribute("MODE"))
-        .flatMap(x => Option(x.value).map(_.toInt))
-    )
+  def mode: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("MODE"))
 
 }
 

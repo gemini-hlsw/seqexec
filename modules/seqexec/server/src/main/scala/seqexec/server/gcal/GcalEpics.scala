@@ -4,15 +4,14 @@
 package seqexec.server.gcal
 
 import cats.effect.IO
-import cats.effect.Sync
 import cats.effect.Async
-import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService, CaStatusAcceptor}
+import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.safeAttribute
+import seqexec.server.EpicsUtil.safeAttributeF
 import org.log4s.{Logger, getLogger}
 
 /**
@@ -20,9 +19,7 @@ import org.log4s.{Logger, getLogger}
   */
 class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
-  import GcalEpics._
-
-  val GcalTop: String = tops.get("gc").getOrElse("")
+  val GcalTop: String = tops.getOrElse("gc", "")
 
   def post: F[ApplyCommandResult] = lampsCmd.post
 
@@ -91,30 +88,36 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val state = epicsService.getStatusAcceptor("gcal::status")
 
-  def createLampAttribute(name: String, longName: String): EnumAttribute[BinaryOnOff] =
-    new EnumAttribute[BinaryOnOff](state, name + "LampState", s"${GcalTop}${name}_LampState",
-      s"${longName} lamp state")(classOf[BinaryOnOff])
+  def createLampAttribute(name: String, longName: String): CaAttribute[BinaryOnOff] = state.addEnum[BinaryOnOff](
+    name + "LampState", s"${GcalTop}${name}_LampState", classOf[BinaryOnOff], s"${longName} lamp state"
+  )
 
-  val lampAr: EnumAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
+  val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
+  def lampAr: F[BinaryOnOff] = safeAttributeF(lampArAttr)
 
-  val lampQH: EnumAttribute[BinaryOnOff] = createLampAttribute("QH", "Quartz Halogen")
+  val lampQHAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH", "Quartz Halogen")
+  def lampQH: F[BinaryOnOff] = safeAttributeF(lampQHAttr)
 
-  val lampCuAr: EnumAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
+  val lampCuArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
+  def lampCuAr: F[BinaryOnOff] = safeAttributeF(lampCuArAttr)
 
-  val lampXe: EnumAttribute[BinaryOnOff] = createLampAttribute("Xe", "Xenon")
+  val lampXeAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Xe", "Xenon")
+  def lampXe: F[BinaryOnOff] = safeAttributeF(lampXeAttr)
 
-  val lampThAr: EnumAttribute[BinaryOnOff] = createLampAttribute("ThAr", "Thorium Argon")
+  val lampThArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("ThAr", "Thorium Argon")
+  def lampThAr: F[BinaryOnOff] = safeAttributeF(lampThArAttr)
 
-  val lampIr: EnumAttribute[BinaryOnOff] = createLampAttribute("IR", "Infrared")
+  val lampIrAttr: CaAttribute[BinaryOnOff] = createLampAttribute("IR", "Infrared")
+  def lampIr: F[BinaryOnOff] = safeAttributeF(lampIrAttr)
 
-  def shutter: F[Option[String]] =
-    safeAttribute(state.getStringAttribute("shutter"))
+  def shutter: F[String] =
+    safeAttributeF(state.getStringAttribute("shutter"))
 
-  def filter: F[Option[String]] =
-    safeAttribute(state.getStringAttribute("filter"))
+  def filter: F[String] =
+    safeAttributeF(state.getStringAttribute("filter"))
 
-  def diffuser: F[Option[String]] =
-    safeAttribute(state.getStringAttribute("diffuser"))
+  def diffuser: F[String] =
+    safeAttributeF(state.getStringAttribute("diffuser"))
 }
 
 object GcalEpics extends EpicsSystem[GcalEpics[IO]] {
@@ -124,10 +127,5 @@ object GcalEpics extends EpicsSystem[GcalEpics[IO]] {
   override val CA_CONFIG_FILE: String = "/Gcal.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GcalEpics[IO](service, tops)
-
-  class EnumAttribute[T <: Enum[T]](sa: CaStatusAcceptor, attrName: String, attrChannel: String, desc: String)(c: Class[T]) {
-    private val attribute: Option[CaAttribute[T]] = Option(sa.addEnum(attrName, attrChannel, c, desc))
-    def delay[F[_]: Sync]: F[Option[T]] = Sync[F].delay(attribute.flatMap(v => Option(v.value)))
-  }
 
 }

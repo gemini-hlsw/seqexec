@@ -49,7 +49,7 @@ object NifsKeywordReaderDummy {
 }
 
 trait NifsKeywordReaderLUT {
-  val Invalid: Option[String] = "INVALID".some
+  val Invalid: String = "INVALID"
 
   val DisperserKeywordLUT: Map[String, String] =
     Map(
@@ -94,7 +94,7 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
       sys.mask
         .map(_ === Invalid)
         .ifM(sys.lastSelectedMask, sys.mask)
-        .map(_.flatMap(MaskKeywordLUT.get))
+        .map(MaskKeywordLUT.get)
         .safeValOrDefault
 
     override def biasPwr: F[Double] = sys.biasPwr.safeValOrDefault
@@ -111,13 +111,13 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
     override def exposureMode: F[String] = sys.exposureMode.safeValOrDefault
 
     override def filter: F[String] =
-      sys.filter.map(_.flatMap(FilterKeywordLUT.get)).safeValOrDefault
+      sys.filter.map(FilterKeywordLUT.get).safeValOrDefault
 
     override def grating: F[String] =
       sys.disperser
         .map(_ === Invalid)
         .ifM(sys.lastSelectedDisperser, sys.disperser)
-        .map(_.flatMap(DisperserKeywordLUT.get))
+        .map(DisperserKeywordLUT.get)
         .safeValOrDefault
 
     override def imagingMirror: F[String] = sys.imagingMirror.safeValOrDefault
