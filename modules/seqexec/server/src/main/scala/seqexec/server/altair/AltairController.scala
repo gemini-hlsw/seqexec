@@ -19,7 +19,7 @@ trait AltairController[F[_]] {
 
   def endObserve(cfg: AltairConfig): F[Unit]
 
-  def isFollowing: F[Option[Boolean]]
+  def isFollowing: F[Boolean]
 }
 
 object AltairController {

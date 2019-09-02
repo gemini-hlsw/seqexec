@@ -25,10 +25,7 @@ object GpiHeader {
                               id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords(
           List(
-            buildDouble(Nested(tcsKeywordsReader.parallacticAngle)
-                          .map(_.toDegrees)
-                          .value
-                          .orDefault,
+            buildDouble(tcsKeywordsReader.parallacticAngle.map(_.toDegrees),
                         KeywordName.PAR_ANG),
             buildInt32(tcsKeywordsReader.gpiInstPort,
                        KeywordName.INPORT),

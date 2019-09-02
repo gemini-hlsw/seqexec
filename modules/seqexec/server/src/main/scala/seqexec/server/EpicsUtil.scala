@@ -232,17 +232,17 @@ object EpicsUtil {
   /** Tries to read a value of type A from a channel
    *  Null results are raised as error and other errors are captured
    */
-  def safeAttributeWrapF[F[_]: Sync, A >: Null](name: String, get: => A): F[A] =
+  def safeAttributeWrapF[F[_]: Sync, A >: Null](channel: String, get: => A): F[A] =
     Sync[F].delay(Option(get)) // Wrap the read on Option to do null check
       .adaptError{ case e => SeqexecException(e)} // if we have e.g CAException wrap it
-      .ensure(NullEpicsError(name))(_.isDefined) // equivalent to a null check
+      .ensure(NullEpicsError(channel))(_.isDefined) // equivalent to a null check
       .map{_.orNull} // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
   def safeAttributeF[F[_]: Sync, A >: Null](get: => CaAttribute[A]): F[A] =
-    safeAttributeWrapF(get.name, get.value)
+    safeAttributeWrapF(get.channel, get.value)
 
   def safeAttributeSListF[F[_]: Sync, A >: Null](get: => CaAttribute[A]): F[List[A]] =
-    safeAttributeWrapF(get.name, get.values.asScala.toList)
+    safeAttributeWrapF(get.channel, get.values.asScala.toList)
 
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
@@ -255,6 +255,9 @@ object EpicsUtil {
 
   def safeAttributeSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[Float]] =
     Nested(safeAttribute(get)).map(_.toFloat).value
+
+  def safeAttributeSFloatF[F[_]: Sync](get: => CaAttribute[JFloat]): F[Float] =
+    safeAttributeF(get).map(_.toFloat)
 
   def safeAttributeSListSFloatF[F[_]: Sync](get: => CaAttribute[JFloat]): F[List[Float]] =
     Nested(safeAttributeSListF(get)).map(_.toFloat).value
