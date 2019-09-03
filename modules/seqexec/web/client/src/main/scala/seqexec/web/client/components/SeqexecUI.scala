@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import diode.ModelRO
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.Sync
 import monocle.Prism
 import monocle.Iso
 import japgolly.scalajs.react.vdom.html_<^._
@@ -77,7 +77,7 @@ object SeqexecUI {
       p => (p.instrument.show, p.obsId.format, p.step)
     }
 
-  def router(site: Site): IO[Router[SeqexecPages]] = {
+  def router[F[_]](site: Site)(implicit F: Sync[F]): F[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
 
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
@@ -116,12 +116,12 @@ object SeqexecUI {
     }
 
     for {
-      r                     <- IO(Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig))
+      r                     <- F.delay(Router.componentAndLogic(BaseUrl.fromWindowOrigin, routerConfig))
       (router, routerLogic) = r
       // subscribe to navigation changes
-      _                     <- IO(SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(routerLogic, x);()}))
+      _                     <- F.delay(SeqexecCircuit.subscribe(SeqexecCircuit.zoom(_.uiModel.navLocation))(x => {navigated(routerLogic, x);()}))
         // Initiate the WebSocket connection
-      _                     <- IO(SeqexecCircuit.dispatch(WSConnect(0)))
+      _                     <- F.delay(SeqexecCircuit.dispatch(WSConnect(0)))
     } yield router
   }
 
