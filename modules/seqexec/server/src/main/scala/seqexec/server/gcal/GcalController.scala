@@ -120,6 +120,19 @@ object GcalController {
       override val diffuserO: Option[Diffuser] = none
     }
 
+    // This configuration is for observations that do not use GCAL. It is preferable to not turn off the IR lamp.
+    case object GcalOffIgnoringIr extends GcalConfig {
+      override val lampAr: ArLampState = ArLampState(LampState.Off)
+      override val lampCuAr: CuArLampState = CuArLampState(LampState.Off)
+      override val lampQh: QHLampState = QHLampState(LampState.Off)
+      override val lampThAr: ThArLampState = ThArLampState(LampState.Off)
+      override val lampXe: XeLampState = XeLampState(LampState.Off)
+      override val lampIrO: Option[IrLampState] = none
+      override val shutter: Shutter = Shutter.CLOSED
+      override val filterO: Option[Filter] = none
+      override val diffuserO: Option[Diffuser] = none
+    }
+
   }
 
   implicit val gcalConfigShow: Show[GcalConfig] = Show.show( config =>
