@@ -354,31 +354,35 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[List[System[IO]]] = {
     stepType match {
       case StepType.CelestialObject(inst) => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), useGaos = false, sys,
+          TcsController.LightSource.Sky, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
       case StepType.NodAndShuffle(inst)   => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), useGaos = false, sys,
+          TcsController.LightSource.Sky, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
       case StepType.FlatOrArc(inst)       => for {
-        tcs  <- getTcs(flatOrArcTcsSubsystems(inst), false, sys, TcsController.LightSource.GCAL, config)
+        tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, sys, TcsController.LightSource.GCAL, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
       case StepType.DarkOrBias(_)         =>  List(sys).asRight
 
       case StepType.AltairObs(inst)       => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), useGaos = true, sys,
+          TcsController.LightSource.AO, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
       case StepType.AlignAndCalib         => List(sys).asRight
 
       case StepType.Gems(inst)            => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
+        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), useGaos = true, sys,
+          TcsController.LightSource.AO, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 

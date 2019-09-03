@@ -9,7 +9,6 @@ import cats.effect.Sync
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Lamp, Shutter}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
 import java.util.{Set => JSet}
 
 import org.log4s.{Logger, getLogger}
@@ -54,7 +53,7 @@ object Gcal {
   implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
 
   def fromConfig[F[_]: Sync](controller: GcalController[F], isCP: Boolean)(config: Config): TrySeq[Gcal[F]] = {
-      val lamps: Either[ConfigUtilOps.ExtractFailure, List[Lamp]] = config.extractAs[JSet[Lamp]](CALIBRATION_KEY / LAMP_PROP)
+      val lamps: Either[ConfigUtilOps.ExtractFailure, List[Lamp]] = config.extractCalibrationAs[JSet[Lamp]](LAMP_PROP)
         .map(_.asScala.toList)
         .recover{ case ConfigUtilOps.KeyNotFound(_) => List.empty[Lamp] }
 
@@ -66,9 +65,9 @@ object Gcal {
       val irLampCP = lamps.map(v => if (v.contains(Lamp.IR_GREY_BODY_HIGH) || v.contains(Lamp.IR_GREY_BODY_LOW)) Some(LampState.On) else None)
       val irLampMK = lamps.map(v => if (v.contains(Lamp.IR_GREY_BODY_HIGH)) Some(LampState.On)
                                     else if (v.contains(Lamp.IR_GREY_BODY_LOW)) Some(LampState.Off) else None)
-      val shutter = config.extractAs[Shutter](CALIBRATION_KEY / SHUTTER_PROP)
-      val filter = config.extractAs[Filter](CALIBRATION_KEY / FILTER_PROP)
-      val diffuser = config.extractAs[Diffuser](CALIBRATION_KEY / DIFFUSER_PROP)
+      val shutter = config.extractCalibrationAs[Shutter](SHUTTER_PROP)
+      val filter = config.extractCalibrationAs[Filter](FILTER_PROP)
+      val diffuser = config.extractCalibrationAs[Diffuser](DIFFUSER_PROP)
 
       for {
         _    <- lamps
