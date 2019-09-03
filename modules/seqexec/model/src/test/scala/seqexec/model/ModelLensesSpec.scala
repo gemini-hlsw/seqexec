@@ -95,7 +95,7 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("Step.breakpoint",
            LensTests(Step.breakpoint))
   checkAll("Step.observeStatus",
-           LensTests(Step.observeStatus))
+           OptionalTests(Step.observeStatus))
   checkAll("Step.configStatus",
-           LensTests(Step.configStatus))
+           OptionalTests(Step.configStatus))
 }

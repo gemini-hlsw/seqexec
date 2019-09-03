@@ -124,7 +124,7 @@ trait ObserveActions {
 
   /**
     * Preamble for observations. It tells the odb, the subsystems
-    * send the start headers and finall ysends an observe
+    * send the start headers and finally sends an observe
     */
   def observePreamble[F[_]: MonadError[?[_], Throwable]: Logger](
     fileId: ImageFileId,
@@ -193,11 +193,12 @@ trait ObserveActions {
   def stdObserve[F[_]: MonadError[?[_], Throwable]: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): F[Stream[F, Result[F]]] =
+  ): Stream[F, Result[F]] =
+    Stream.eval(
     for {
       (fileId, result) <- observePreamble(fileId, env)
       ret              <- observeTail(fileId, fileId, env)(result)
-    } yield ret
+    } yield ret).flatten
 
 }
 

@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{NonEmptySet, Reader}
+import cats.data.NonEmptySet
 import cats.data.NonEmptyList
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
@@ -66,7 +66,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     def buildStep(
       inst: InstrumentSystem[IO],
       sys: List[System[IO]],
-      headers: Reader[HeaderExtraData, List[Header[IO]]],
+      headers: HeaderExtraData => List[Header[IO]],
       stepType: StepType
     ): SequenceGen.StepGen[IO] = {
       val ia = inst.instrumentActions(config)
@@ -224,11 +224,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
 
-    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Stream[IO, Result[IO]]] =
-      for {
+    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): Stream[IO, Result[IO]] =
+      Stream.eval(for {
         r <- resumeCmd
         ret <- c.t(r)
-      } yield ret
+      } yield ret).flatten
 
     def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO,
       executeEngine.EventType]] = {
@@ -255,11 +255,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                 Stream.eval(IO(Event.actionResume(seqId, i,
                   ins.observeProgress(c.expTime, ElapsedTime(to.getOrElse(0.0.seconds)))
                     .map(Result.Partial(_))
-                    .mergeHaltR(Stream.eval(resumeIO(c, cmd(c.expTime))).flatten)
+                    .mergeHaltR(resumeIO(c, cmd(c.expTime)))
                 )))
               else
                 Stream.eval(IO(Event.actionResume(seqId, i,
-                  Stream.eval(resumeIO(c, cmd(c.expTime))).flatten)))
+                  resumeIO(c, cmd(c.expTime)))))
           }
       }
     }
@@ -486,43 +486,43 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     config: Config,
     stepType: StepType,
     sys: InstrumentSystem[IO]
-  ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = {
+  ): TrySeq[HeaderExtraData => List[Header[IO]]] = {
     stepType match {
       case StepType.CelestialObject(_) | StepType.NodAndShuffle(_) =>
-          calcInstHeader(config, sys).map(h => Reader(ctx =>
-            List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => ctx =>
+            List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h))
 
       case StepType.AltairObs(_)    =>
         val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         for {
           gst  <- Altair.guideStarType(config)
-          read <- calcInstHeader(config, sys).map(h => Reader((ctx: HeaderExtraData) =>
+          read <- calcInstHeader(config, sys).map(h => (ctx: HeaderExtraData) =>
                     // Order is important
                     List(
                       commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
                       altairHeader(AltairEpics.instance, sys, tcsKReader),
                       altairLgsHeader(AltairEpics.instance, gst, sys),
-                      gwsHeaders(GwsEpics.instance, sys), h)))
+                      gwsHeaders(GwsEpics.instance, sys), h))
         } yield read
 
       case StepType.FlatOrArc(inst) =>
-          calcInstHeader(config, sys).map(h => Reader(ctx =>
-            List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => ctx =>
+            List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h))
 
       case StepType.DarkOrBias(_)   =>
-          calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
-      case StepType.AlignAndCalib   => TrySeq(Reader(_ => Nil)) // No headers for A&C
+      case StepType.AlignAndCalib   => TrySeq(_ => Nil) // No headers for A&C
 
       case StepType.Gems(_)         =>
         val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         val obsKReader = ObsKeywordReader[IO](config, site)
-        calcInstHeader(config, sys).map(h => Reader(ctx =>
+        calcInstHeader(config, sys).map(h => ctx =>
           List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
             gwsHeaders(GwsEpics.instance, sys),
             gemsHeaders(GemsEpics.instance, GsaoiEpics.instance, sys, obsKReader, tcsKReader),h
           )
-        ))
+        )
 
       case st                       => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
     }

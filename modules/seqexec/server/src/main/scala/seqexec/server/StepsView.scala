@@ -52,6 +52,9 @@ object StepsView {
       }
     )
 
+  private def actionsToResources[F[_]](s: NonEmptyList[Action[F]]) =
+    separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
+
   private[server] def configStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] = {
     // Remove undefined actions
     val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
@@ -70,13 +73,12 @@ object StepsView {
     // Find out systems in the future
     val presentSystems = configStatus.keys.toList
     // Calculate status of pending items
-    val systemsPending = pending.map {
-      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
-    }.flatMap {
-      x => x._1.tupleRight(ActionStatus.Pending) ::: x._2.tupleRight(ActionStatus.Completed)
-    }.filter {
-      case (a, _) => !presentSystems.contains(a)
-    }.distinct
+    val systemsPending = pending
+      .map(actionsToResources)
+      .flatMap { case(a, b) => a.tupleRight(ActionStatus.Pending) ::: b.tupleRight(ActionStatus.Completed) }
+      .filter {
+        case (a, _) => !presentSystems.contains(a)
+      }.distinct
 
     (configStatus ++ systemsPending).toList.sortBy(_._1)
   }
@@ -85,11 +87,11 @@ object StepsView {
    * Calculates the config status for pending steps
    */
   private[server] def pendingConfigStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] =
-    executions.map {
-      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
-    }.flatMap {
-      x => x._1 ::: x._2
-    }.distinct.tupleRight(ActionStatus.Pending).sortBy(_._1)
+    executions
+      .map(actionsToResources)
+      .flatMap { case (a, b) => a ::: b }
+      .distinct
+      .tupleRight(ActionStatus.Pending).sortBy(_._1)
 
   /**
    * Overall pending status for a step
@@ -114,6 +116,12 @@ object StepsView {
       case FileIdAllocated(fid) => fid
     })
 
+  private def runningOrComplete[F[_]](status: StepState): Boolean =
+    status match {
+      case StepState.Completed | StepState.Running => true
+      case _                                       => false
+    }
+
   private def defaultStepsView[F[_]]: StepsView[F] = new StepsView[F] {
     def stepView(
       stepg: SequenceGen.StepGen[F],
@@ -122,7 +130,7 @@ object StepsView {
     ): Step = {
       val status = engine.Step.status(step)
       val configStatus =
-        if (status === StepState.Completed || status === StepState.Running) {
+        if (runningOrComplete(status)) {
           stepConfigStatus(step)
         } else {
           altCfgStatus
@@ -153,7 +161,7 @@ object StepsView {
       if (stepg.config.get(SystemName.Instrument).exists(_.get(Gmos.NSKey.getPath).exists(_ === "true"))) {
         val status = engine.Step.status(step)
         val configStatus =
-          if (status === StepState.Completed || status === StepState.Running) {
+          if (runningOrComplete(status)) {
             stepConfigStatus(step)
           } else {
             altCfgStatus

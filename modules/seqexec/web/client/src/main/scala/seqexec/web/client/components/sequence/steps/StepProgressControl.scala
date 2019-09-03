@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
+import cats.data.Nested
 import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -87,7 +88,8 @@ object StepProgressCell {
       ),
       <.div(
         SeqexecStyles.subsystems,
-        Step.configStatus.get(step)
+        Step.configStatus.getOption(step)
+          .orEmpty
           .sortBy(_._1)
           .map(Function.tupled(statusLabel))
           .toTagMod
@@ -183,7 +185,7 @@ object StepProgressCell {
           SubsystemControlCell
             .Props(props.obsId,
                    props.step.id,
-                   Step.configStatus.get(props.step).map(_._1),
+                   Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
                    props.resourceRunRequested))
     )
 

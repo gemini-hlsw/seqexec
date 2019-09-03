@@ -69,13 +69,13 @@ object InstrumentActions {
     )
 
   def safeObserve[F[_]: MonadError[?[_], Throwable]: Logger](
-    env: ObserveEnvironment[F], doObserve: (ImageFileId, ObserveEnvironment[F]) => F[Stream[F, Result[F]]]
+    env: ObserveEnvironment[F], doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] = {
     // We need to be careful about handling this particular error
     Stream.eval(FileIdProvider.fileId(env).attempt).flatMap {
       case Right(fileId) =>
         val observationCommand =
-          Stream.eval(doObserve(fileId, env)).flatten
+          doObserve(fileId, env)
 
         Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ observationCommand
       case Left(e: SeqexecFailure) => Stream.emit(Result.Error(SeqexecFailure.explain(e)))

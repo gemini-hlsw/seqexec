@@ -3,7 +3,6 @@
 
 package seqexec.server
 
-import cats.data.Reader
 import gem.Observation
 import edu.gemini.spModel.config2.Config
 import seqexec.server.keywords._
@@ -18,6 +17,6 @@ final case class ObserveEnvironment[F[_]](
   obsId:    Observation.Id,
   inst:     InstrumentSystem[F],
   otherSys: List[System[F]],
-  headers:  Reader[HeaderExtraData, List[Header[F]]],
+  headers:  HeaderExtraData => List[Header[F]],
   ctx:      HeaderExtraData
 )

@@ -8,6 +8,7 @@ import cats.implicits._
 import seqexec.model.enum._
 import monocle.Prism
 import monocle.Lens
+import monocle.Optional
 import monocle.macros.Lenses
 import monocle.macros.GenPrism
 
@@ -21,15 +22,9 @@ sealed trait Step extends Product with Serializable {
 }
 
 object Step {
-  val Zero: Step = StandardStep(id = -1,
-                                config        = Map.empty,
-                                status        = StepState.Pending,
-                                breakpoint    = false,
-                                skip          = false,
-                                fileId        = None,
-                                configStatus  = Nil,
-                                observeStatus = ActionStatus.Pending)
-
+  implicit class LensBooleanOps[A](l: Lens[A, Boolean]) {
+    def negate: A => A = l.modify(!_)
+  }
   val standardStepP: Prism[Step, StandardStep] =
     GenPrism[Step, StandardStep]
 
@@ -86,10 +81,10 @@ object Step {
       }
     }
 
-  val observeStatus: Lens[Step, ActionStatus] =
-    Lens[Step, ActionStatus] {
-      case s: StandardStep      => s.observeStatus
-      case s: NodAndShuffleStep => s.nsStatus.observing
+  val observeStatus: Optional[Step, ActionStatus] =
+    Optional[Step, ActionStatus] {
+      case s: StandardStep      => s.observeStatus.some
+      case s: NodAndShuffleStep => s.nsStatus.observing.some
     } { n => a =>
       a match {
         case s: StandardStep => StandardStep.observeStatus.set(n)(s)
@@ -98,10 +93,10 @@ object Step {
       }
     }
 
-  val configStatus: Lens[Step, List[(Resource, ActionStatus)]] =
-    Lens[Step, List[(Resource, ActionStatus)]] {
-      case s: StandardStep      => s.configStatus
-      case s: NodAndShuffleStep => s.configStatus
+  val configStatus: Optional[Step, List[(Resource, ActionStatus)]] =
+    Optional[Step, List[(Resource, ActionStatus)]] {
+      case s: StandardStep      => s.configStatus.some
+      case s: NodAndShuffleStep => s.configStatus.some
     } { n => a =>
       a match {
         case s: StandardStep      => StandardStep.configStatus.set(n)(s)
@@ -121,14 +116,14 @@ object Step {
 
   implicit class StepOps(val s: Step) extends AnyVal {
     def flipBreakpoint: Step = s match {
-      case st: StandardStep      => StandardStep.breakpoint.modify(!_)(st)
-      case st: NodAndShuffleStep => NodAndShuffleStep.breakpoint.modify(!_)(st)
+      case st: StandardStep      => StandardStep.breakpoint.negate(st)
+      case st: NodAndShuffleStep => NodAndShuffleStep.breakpoint.negate(st)
       case st                    => st
     }
 
     def flipSkip: Step = s match {
-      case st: StandardStep      => StandardStep.skip.modify(!_)(st)
-      case st: NodAndShuffleStep => NodAndShuffleStep.skip.modify(!_)(st)
+      case st: StandardStep      => StandardStep.skip.negate(st)
+      case st: NodAndShuffleStep => NodAndShuffleStep.skip.negate(st)
       case st                    => st
     }
 
@@ -154,6 +149,11 @@ object Step {
     def isRunning: Boolean = s.status match {
       case StepState.Running => true
       case _                 => false
+    }
+
+    def runningOrComplete: Boolean = s.status match {
+      case StepState.Running | StepState.Completed => true
+      case _                                       => false
     }
 
     def isObserving: Boolean = s match {

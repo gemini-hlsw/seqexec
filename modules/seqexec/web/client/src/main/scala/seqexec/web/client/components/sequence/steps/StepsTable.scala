@@ -315,7 +315,8 @@ object StepsTable extends Columns {
     def unapply(l: StepRow): Option[(Step)] =
       Some((l.step))
 
-    val Zero: StepRow = apply(Step.Zero)
+    val Zero: StepRow =
+      (new js.Object).asInstanceOf[StepRow]
   }
 
   final case class Props(

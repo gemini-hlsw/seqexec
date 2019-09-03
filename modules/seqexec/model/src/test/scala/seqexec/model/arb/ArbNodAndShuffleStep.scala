@@ -33,14 +33,14 @@ trait ArbNodAndShuffleStep {
       cs <- arbitrary[List[(Resource, ActionStatus)]]
       os <- arbitrary[NodAndShuffleStatus]
     } yield
-      new NodAndShuffleStep(id      = id,
-                       config       = c,
-                       status       = s,
-                       breakpoint   = b,
-                       skip         = k,
-                       fileId       = f,
-                       configStatus = cs,
-                       nsStatus     = os)
+      new NodAndShuffleStep(id           = id,
+                            config       = c,
+                            status       = s,
+                            breakpoint   = b,
+                            skip         = k,
+                            fileId       = f,
+                            configStatus = cs,
+                            nsStatus     = os)
   }
 
   implicit val nodShuffleStepCogen: Cogen[NodAndShuffleStep] =
