@@ -14,15 +14,18 @@ import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
+import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbStepState._
+import seqexec.model.arb.ArbStandardStep._
+import seqexec.model.arb.ArbNodAndShuffleStep._
+import seqexec.model.arb.ArbStepConfig._
 
 final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("event observer name lens", LensTests(obsNameL))
-  checkAll("standard step prism", PrismTests(standardStepP))
   checkAll("each step traversal", TraversalTests(eachStepT))
   checkAll("observation steps lens", LensTests(obsStepsL))
   checkAll("each view traversal", TraversalTests(eachViewT))
   checkAll("sequence queue lens", LensTests(sessionQueueL))
-  checkAll("standard step config lens", LensTests(stepConfigL))
   checkAll("events prism", PrismTests(sequenceEventsP))
   checkAll("param value lens", LensTests(paramValueL("object")))
   checkAll("system parameters lens",
@@ -77,4 +80,22 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
            OptionalTests(instrumentReadModeO))
   checkAll("step class",
            OptionalTests(stepClassO))
+  checkAll("StandardStep",
+           PrismTests(Step.standardStepP))
+  checkAll("NodAndShuffleStep",
+           PrismTests(Step.nsStepP))
+  checkAll("Step.status",
+           LensTests(Step.status))
+  checkAll("Step.config",
+           LensTests(Step.config))
+  checkAll("Step.id",
+           LensTests(Step.id))
+  checkAll("Step.skip",
+           LensTests(Step.skip))
+  checkAll("Step.breakpoint",
+           LensTests(Step.breakpoint))
+  checkAll("Step.observeStatus",
+           OptionalTests(Step.observeStatus))
+  checkAll("Step.configStatus",
+           OptionalTests(Step.configStatus))
 }

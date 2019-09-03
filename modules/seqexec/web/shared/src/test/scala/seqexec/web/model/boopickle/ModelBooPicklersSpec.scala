@@ -17,6 +17,10 @@ import seqexec.model.SequenceEventsArbitraries._
 import seqexec.model.arb.ArbM1GuideConfig._
 import seqexec.model.arb.ArbM2GuideConfig._
 import seqexec.model.arb.ArbTelescopeGuideConfig._
+import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbStepState._
+import seqexec.model.arb.ArbStandardStep._
+import seqexec.model.arb.ArbNodAndShuffleStep._
 import squants.time.Time
 
 /**
@@ -82,6 +86,9 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
   checkAll("Pickler[StepState]", PicklerTests[StepState].pickler)
   checkAll("Pickler[ActionStatus]", PicklerTests[ActionStatus].pickler)
   checkAll("Pickler[StandardStep]", PicklerTests[StandardStep].pickler)
+  checkAll("Pickler[NodAndShuffleStatus]", PicklerTests[NodAndShuffleStatus].pickler)
+  checkAll("Pickler[NodAndShuffleStep]", PicklerTests[NodAndShuffleStep].pickler)
+  checkAll("Pickler[Step]", PicklerTests[Step].pickler)
   checkAll("Pickler[QueueId]", PicklerTests[QueueId].pickler)
   checkAll("Pickler[Time]", PicklerTests[Time].pickler)
   checkAll("Pickler[ObservationProgress]",

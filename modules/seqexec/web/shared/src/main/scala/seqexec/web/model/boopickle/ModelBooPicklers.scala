@@ -116,9 +116,12 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[StepState.Paused.type]
 
   implicit val standardStepPickler = generatePickler[StandardStep]
+  implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
+  implicit val nsStepPickler = generatePickler[NodAndShuffleStep]
 
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
+    .addConcreteType[NodAndShuffleStep]
 
   implicit val sequenceMetadataPickler = generatePickler[SequenceMetadata]
 

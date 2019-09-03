@@ -5,6 +5,7 @@ package seqexec.model
 
 import cats.tests.CatsSuite
 import gem.arb.ArbEnumerated._
+import gem.arb.ArbObservation._
 import monocle.law.discipline.LensTests
 import seqexec.model.SeqexecModelArbitraries._
 

@@ -515,6 +515,7 @@ lazy val seqexec_server = project
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
     addCompilerPlugin(Plugins.kindProjectorPlugin),
+    addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
       Seq(Http4sCirce,
           Squants.value,
@@ -526,7 +527,8 @@ lazy val seqexec_server = project
           Log4s.value,
           Http4sXml,
           Http4sBoopickle,
-          PrometheusClient
+          PrometheusClient,
+          Log4Cats.value
       ) ++ Http4s ++ Http4sClient ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value ++
         Circe.value
   )

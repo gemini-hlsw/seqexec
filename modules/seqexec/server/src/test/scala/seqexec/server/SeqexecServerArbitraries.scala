@@ -5,6 +5,7 @@ package seqexec.server
 
 import gem.arb.ArbEnumerated._
 import gem.Observation
+import gem.arb.ArbObservation._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen}
 import seqexec.model.BatchCommandState

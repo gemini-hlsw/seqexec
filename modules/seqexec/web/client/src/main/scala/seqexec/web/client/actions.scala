@@ -194,8 +194,9 @@ object actions {
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
 
-  private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
+  private val stepInfo: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
     case i: StandardStep => (i.id, i.status, i.configStatus)
+    case i: NodAndShuffleStep => (i.id, i.status, i.configStatus)
   }
 
   implicit val show: Show[Action] = Show.show {
@@ -210,9 +211,9 @@ object actions {
            s"steps: ${s.steps.length}",
            s"state: ${s.status}",
            s.steps
-             .filter(_.status === StepState.Running)
+             .filter(_.status === StepState.Pending)
              .slice(0, scala.math.min(s.steps.length, 20))
-             .collect(standardStep)))
+             .collect(stepInfo)))
       val dayCalQueue = view.queues.values.map(x => s"${x.execState} ${x.queue}").mkString(",")
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, dayCal: '${dayCalQueue}', loaded: '${view.loaded.mkString(",")}', $someSteps)"
     case a                                              =>
