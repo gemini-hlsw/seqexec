@@ -3,26 +3,19 @@
 
 package seqexec.server.gcal
 
-import cats.Monad
-import cats.effect.IO
-import cats.effect.Sync
+import cats.effect.Async
 import cats.implicits._
 import squants.Time
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.server.EpicsCodex._
-import seqexec.server.gcal.GcalController._
+import seqexec.server.gcal.GcalController.{Diffuser, Filter, Shutter, _}
+import seqexec.server.EpicsUtil.applyParam
 import squants.time.Seconds
 
 object GcalControllerEpics {
   // Default value from Tcl Seqexec
   private val SetupTimeout: Time = Seconds(60)
-
-  implicit private val decodeLampState: DecodeEpicsValue[BinaryOnOff, LampState] = DecodeEpicsValue {
-    case BinaryOnOff.OFF => LampState.Off
-    case BinaryOnOff.ON  => LampState.On
-    case _               => sys.error("Cannot happen")
-  }
 
   implicit private val encodeLampState: EncodeEpicsValue[LampState, BinaryOnOff] = EncodeEpicsValue {
     case LampState.Off => BinaryOnOff.OFF
@@ -30,28 +23,9 @@ object GcalControllerEpics {
     case _             => sys.error("Cannot happen")
   }
 
-  implicit private val decodeShutter: DecodeEpicsValue[String, Option[Shutter]] = DecodeEpicsValue {
-    case "OPEN"  => Some(Shutter.OPEN)
-    case "CLOSE" => Some(Shutter.CLOSED)
-    case _       => None
-  }
-
   implicit private val encodeShutter: EncodeEpicsValue[Shutter, String] = EncodeEpicsValue {
     case Shutter.OPEN   => "OPEN"
     case Shutter.CLOSED => "CLOSE"
-  }
-
-  implicit private val decodeFilter: DecodeEpicsValue[String, Option[Filter]] = DecodeEpicsValue {
-    case "CLEAR" => Some(Filter.NONE)
-    case "GMOS"  => Some(Filter.GMOS)
-    case "HROS"  => Some(Filter.HROS)
-    case "NIR"   => Some(Filter.NIR)
-    case "ND1.0" => Some(Filter.ND_10)
-    case "ND2.0" => Some(Filter.ND_20)
-    case "ND3.0" => Some(Filter.ND_30)
-    case "ND4.0" => Some(Filter.ND_40)
-    case "ND4-5" => Some(Filter.ND_45)
-    case _       => None
   }
 
   implicit private val encodeFilter: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
@@ -67,104 +41,93 @@ object GcalControllerEpics {
     case _ => "CLEAR"
   }
 
-  implicit private val decodeDiffuser: DecodeEpicsValue[String, Option[Diffuser]] = DecodeEpicsValue {
-    case "IR"      => Some(Diffuser.IR)
-    case "VISIBLE" => Some(Diffuser.VISIBLE)
-    case _         => None
-  }
-
   implicit private val encodeDiffuser: EncodeEpicsValue[Diffuser, String] = EncodeEpicsValue {
     case Diffuser.IR => "IR"
     case Diffuser.VISIBLE => "VISIBLE"
   }
 
-  private def getDiffuser[F[_]: Monad](sys: GcalEpics[F]): F[Option[Diffuser]] =
-    sys.diffuser.map(decode[String, Option[Diffuser]])
+  private def setArLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setArLampName("Ar") *>
+      sys.lampsCmd.setArLampOn(v)
 
-  private def getFilter[F[_]: Monad](sys: GcalEpics[F]): F[Option[Filter]] =
-    sys.filter.map(decode[String, Option[Filter]])
+  private def setCuArLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setCuArLampName("CuAr") *>
+      sys.lampsCmd.setCuArLampOn(v)
 
-  private def getShutter[F[_]: Monad](sys: GcalEpics[F]): F[Option[Shutter]] =
-    sys.shutter.map(decode[String, Option[Shutter]])
+  private def setThArLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setThArLampName("ThAr") *>
+      sys.lampsCmd.setThArLampOn(v)
 
-  private def getArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[ArLampState]] =
-    sys.lampAr.map(v => ArLampState(decode(v)).some)
+  private def setQHLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setQHLampName("QH") *>
+      sys.lampsCmd.setQHLampOn(v)
 
-  private def getCuArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[CuArLampState]] =
-    sys.lampCuAr.map(v => CuArLampState(decode(v)).some)
+  private def setXeLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setXeLampName("Xe") *>
+      sys.lampsCmd.setXeLampOn(v)
 
-  private def getQHLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[QHLampState]] =
-    sys.lampQH.map(v => QHLampState(decode(v)).some)
+  private def setIrLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setIRLampName("IR") *>
+      sys.lampsCmd.setIRLampOn(v)
 
-  private def getThArLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[ThArLampState]] =
-    sys.lampThAr.map(v => ThArLampState(decode(v)).some)
-
-  private def getXeLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[XeLampState]] =
-    sys.lampXe.map(v => XeLampState(decode(v)).some)
-
-  private def getIrLamp[F[_]: Sync](sys: GcalEpics[F]): F[Option[IrLampState]] =
-    sys.lampIr.map(v => IrLampState(decode(v)).some)
-
-  private def setArLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setArLampName("Ar"),
-    GcalEpics.instance.lampsCmd.setArLampOn(v)
-  )
-
-  private def setCuArLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setCuArLampName("CuAr"),
-    GcalEpics.instance.lampsCmd.setCuArLampOn(v)
-  )
-
-  private def setThArLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setThArLampName("ThAr"),
-    GcalEpics.instance.lampsCmd.setThArLampOn(v)
-  )
-
-  private def setQHLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setQHLampName("QH"),
-    GcalEpics.instance.lampsCmd.setQHLampOn(v)
-  )
-
-  private def setXeLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setXeLampName("Xe"),
-    GcalEpics.instance.lampsCmd.setXeLampOn(v)
-  )
-
-  private def setIrLampParams(v: BinaryOnOff): List[IO[Unit]] = List(
-    GcalEpics.instance.lampsCmd.setIRLampName("IR"),
-    GcalEpics.instance.lampsCmd.setIRLampOn(v)
-  )
-
-  def apply(): GcalController[IO] = new GcalController[IO] {
-    override def getConfig: IO[GcalConfig] =
-      (getArLamp(GcalEpics.instance),
-       getCuArLamp(GcalEpics.instance),
-       getQHLamp(GcalEpics.instance),
-       getThArLamp(GcalEpics.instance),
-       getXeLamp(GcalEpics.instance),
-       getIrLamp(GcalEpics.instance),
-       getShutter(GcalEpics.instance),
-       getFilter(GcalEpics.instance),
-       getDiffuser(GcalEpics.instance)).mapN(GcalConfig.apply)
-
-    override def applyConfig(config: GcalConfig): IO[Unit] = {
-      val params: List[IO[Unit]] = List(
-        config.lampAr.map(v => setArLampParams(encode(v.self))),
-        config.lampCuAr.map(v => setCuArLampParams(encode(v.self))),
-        config.lampThAr.map(v => setThArLampParams(encode(v.self))),
-        config.lampQh.map(v => setQHLampParams(encode(v.self))),
-        config.lampXe.map(v => setXeLampParams(encode(v.self))),
-        config.lampIr.map(v => setIrLampParams(encode(v.self)))
-      ).collect { case Some(x) => x }.flatten ++
-        List(
-          config.shutter.map(v => GcalEpics.instance.shutterCmd.setPosition(encode(v))),
-          config.filter.map(v => GcalEpics.instance.filterCmd.setName(encode(v))),
-          config.diffuser.map(v => GcalEpics.instance.diffuserCmd.setName(encode(v)))
-        ).collect { case Some(x) => x }
-
-      (params.sequence *>
-        GcalEpics.instance.lampsCmd.setTimeout[IO](SetupTimeout) *>
-        GcalEpics.instance.post).whenA(params.nonEmpty)
-    }
+  def apply[F[_]: Async](epics: => GcalEpics[F]): GcalController[F] = new GcalController[F] {
+    override def applyConfig(config: GcalConfig): F[Unit] =
+      retrieveConfig(epics).flatMap(configure(epics, _, config))
   }
+
+  final case class EpicsGcalConfig(
+                                    lampAr: BinaryOnOff,
+                                    lampCuAr: BinaryOnOff,
+                                    lampQh: BinaryOnOff,
+                                    lampThAr: BinaryOnOff,
+                                    lampXe: BinaryOnOff,
+                                    lampIr: BinaryOnOff,
+                                    shutter: String,
+                                    filter: String,
+                                    diffuser: String
+                                  )
+
+  def retrieveConfig[F[_]: Async](epics: GcalEpics[F]): F[EpicsGcalConfig] = for {
+    ar   <- epics.lampAr
+    cuAr <- epics.lampCuAr
+    qh   <- epics.lampQH
+    thAr <- epics.lampThAr
+    xe   <- epics.lampXe
+    ir   <- epics.lampIr
+    shut <- epics.shutter
+    filt <- epics.filter
+    diff <- epics.diffuser
+  } yield EpicsGcalConfig(
+    ar,
+    cuAr,
+    qh,
+    thAr,
+    xe,
+    ir,
+    shut,
+    filt,
+    diff
+  )
+
+  def configure[F[_]: Async](epics: GcalEpics[F], current: EpicsGcalConfig, demand: GcalConfig): F[Unit] = {
+    val params: List[F[Unit]] = List(
+      applyParam(current.lampAr, encode(demand.lampAr.self), setArLampParams(epics)),
+      applyParam(current.lampCuAr, encode(demand.lampCuAr.self), setCuArLampParams(epics)),
+      applyParam(current.lampQh, encode(demand.lampQh.self), setQHLampParams(epics)),
+      applyParam(current.lampThAr, encode(demand.lampThAr.self), setThArLampParams(epics)),
+      applyParam(current.lampXe, encode(demand.lampXe.self), setXeLampParams(epics)),
+      demand.lampIrO.flatMap(d => applyParam(current.lampIr, encode(d.self), setIrLampParams(epics))),
+      applyParam(current.shutter, encode(demand.shutter), epics.shutterCmd.setPosition),
+      demand.filterO.flatMap(d => applyParam(current.filter, encode(d), epics.filterCmd.setName)),
+      demand.diffuserO.flatMap(d => applyParam(current.diffuser, encode(d), epics.diffuserCmd.setName))
+    ).flattenOption
+
+    (
+      params.sequence *>
+        epics.lampsCmd.setTimeout[F](SetupTimeout) *>
+        epics.post
+    ).whenA(params.nonEmpty)
+
+  }
+
 }
