@@ -353,17 +353,21 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case StepType.CelestialObject(inst) => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), useGaos = false, sys,
-          TcsController.LightSource.Sky, config)
-        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-      } yield List(sys, tcs, gcal)
+      case StepType.CelestialObject(inst) => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi),
+        useGaos = false,
+        sys,
+        TcsController.LightSource.Sky,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.NodAndShuffle(inst)   => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), useGaos = false, sys,
-          TcsController.LightSource.Sky, config)
-        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-      } yield List(sys, tcs, gcal)
+      case StepType.NodAndShuffle(inst)   => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi),
+        useGaos = false,
+        sys,
+        TcsController.LightSource.Sky,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
       case StepType.FlatOrArc(inst)       => for {
         tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, sys, TcsController.LightSource.GCAL, config)
@@ -372,19 +376,23 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
       case StepType.DarkOrBias(_)         =>  List(sys).asRight
 
-      case StepType.AltairObs(inst)       => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), useGaos = true, sys,
-          TcsController.LightSource.AO, config)
-        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-      } yield List(sys, tcs, gcal)
+      case StepType.AltairObs(inst)       => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+        useGaos = true,
+        sys,
+        TcsController.LightSource.AO,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
       case StepType.AlignAndCalib         => List(sys).asRight
 
-      case StepType.Gems(inst)            => for {
-        tcs  <- getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), useGaos = true, sys,
-          TcsController.LightSource.AO, config)
-        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-      } yield List(sys, tcs, gcal)
+      case StepType.Gems(inst)            => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+        useGaos = true,
+        sys,
+        TcsController.LightSource.AO,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
       case _                              => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }

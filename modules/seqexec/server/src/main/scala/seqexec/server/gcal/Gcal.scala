@@ -23,7 +23,7 @@ import seqexec.server.{ConfigResult, ConfigUtilOps, SeqexecFailure, System, TryS
 /**
   * Created by jluhrs on 3/21/17.
   */
-final case class Gcal[F[_]](controller: GcalController[F], cfg: GcalConfig)(implicit val F: Sync[F]) extends System[F] {
+final case class Gcal[F[_]] private (controller: GcalController[F], cfg: GcalConfig)(implicit val F: Sync[F]) extends System[F] {
 
   private val Log: Logger = getLogger
 
@@ -85,4 +85,9 @@ object Gcal {
         else GcalConfig.GcalOn(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
       )
     }.asTrySeq
+
+  // GCAL that always turn off its lamps except for the IR lamp. Used to assure GCAL light does not interfere in a non
+  // calibration step
+  def defaultGcal[F[_]: Sync](controller: GcalController[F]): Gcal[F] =
+    new Gcal[F](controller, GcalConfig.GcalOffIgnoringIr)
 }
