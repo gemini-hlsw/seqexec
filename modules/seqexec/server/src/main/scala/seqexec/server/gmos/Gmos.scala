@@ -22,6 +22,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding

@@ -19,6 +19,7 @@ import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble}
 import java.lang.{Integer => JInt}
+
 import shapeless.tag
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId

@@ -12,7 +12,7 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.NodAndShuffleStage._
-import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.enum.{Guiding, ObserveCommandResult}
 import seqexec.engine.Action
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
@@ -28,6 +28,9 @@ import seqexec.server.ObserveContext
 import seqexec.server.SeqexecFailure
 import seqexec.server.ObserveActions._
 import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.tcs.TcsController.{InstrumentOffset, OffsetP, OffsetQ}
+import shapeless.tag
+import squants.space.AngleConversions._
 
 /**
   * Gmos needs different actions for N&S
@@ -135,22 +138,31 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
    * Calculate the actions for a N&S cycle
    */
   private def actionPositions(
-    env:       ObserveEnvironment[F],
-    rows:      Int,
-    post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+    env:   ObserveEnvironment[F],
+    rows:  Int,
+    positions: Vector[NSPosition],
+    post:  (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): List[ParallelActions[F]] =
     Gmos.NsSequence.zipWithIndex
       .map {
         case (stage, i) =>
           val rowsToShuffle = if (stage === StageA) 0 else rows
+          val nsPositionO = positions.find(_.stage === stage)
           List(
             // Configure rows to shuffle
-            NonEmptyList.one(
+            NonEmptyList(
               inst
                 .configureShuffle(rowsToShuffle)
                 .as(Response.Configured(inst.resource))
-                .toAction(ActionType.Configure(inst.resource))
-              // TODO confgure the TCS
+                .toAction(ActionType.Configure(inst.resource)),
+              (env.getTcs, nsPositionO).mapN{ case (tcs, nsPos) =>
+                tcs.nod(
+                  stage,
+                  InstrumentOffset(
+                    tag[OffsetP](nsPos.offset.p.toRadians.radians), tag[OffsetQ](nsPos.offset.q.toRadians.radians)),
+                  nsPos.guide === Guiding.Guide
+                ).toAction(ActionType.Configure(tcs.resource))
+              }.toList
             ),
             // Do an obs observe/continue
             NonEmptyList.one(
@@ -180,7 +192,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
             case NSConfig.NoNodAndShuffle =>
               // This shouldn't happen but we need to code it anyway
               Nil
-            case NSConfig.NodAndShuffle(cycles, rows, _) =>
+            case NSConfig.NodAndShuffle(cycles, rows, positions) =>
               // Initial notification of N&S Starting
               NonEmptyList.one(
                 Action(ActionType.Undefined,
@@ -190,7 +202,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
                        ),
                        Action.State(Action.ActionState.Idle, Nil))
               ) ::
-                actionPositions(env, rows, post) // Add steps for each cycle
+                actionPositions(env, rows, positions, post) // Add steps for each cycle
                   .replicateA(cycles)
                   .toList
                   .flatten

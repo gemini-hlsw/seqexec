@@ -25,6 +25,7 @@ import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, Progress, 
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
+
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd

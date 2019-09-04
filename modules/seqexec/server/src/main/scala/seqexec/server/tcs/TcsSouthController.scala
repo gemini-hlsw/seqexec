@@ -4,9 +4,10 @@
 package seqexec.server.tcs
 
 import cats.data.NonEmptySet
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsController.{AoTcsConfig, GuiderConfig, Subsystem, TcsConfig}
+import seqexec.server.tcs.TcsController.{AoTcsConfig, GuiderConfig, InstrumentOffset, Subsystem, TcsConfig}
 import shapeless.tag.@@
 
 trait TcsSouthController[F[_]] {
@@ -19,6 +20,10 @@ trait TcsSouthController[F[_]] {
   def notifyObserveStart: F[Unit]
 
   def notifyObserveEnd: F[Unit]
+
+  def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsSouthConfig)
+         (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
+
 }
 
 object TcsSouthController {

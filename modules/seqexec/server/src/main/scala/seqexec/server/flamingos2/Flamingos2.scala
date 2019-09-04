@@ -14,8 +14,10 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
+
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
+
 import scala.concurrent.duration.{Duration, SECONDS}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import seqexec.model.enum.Instrument

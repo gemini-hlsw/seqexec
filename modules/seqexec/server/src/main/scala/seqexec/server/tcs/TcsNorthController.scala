@@ -4,8 +4,9 @@
 package seqexec.server.tcs
 
 import cats.data.NonEmptySet
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.{Altair, AltairController}
-import seqexec.server.tcs.TcsController.{AoGuide, AoTcsConfig, GuiderConfig, TcsConfig}
+import seqexec.server.tcs.TcsController.{AoGuide, AoTcsConfig, GuiderConfig, InstrumentOffset, Subsystem, TcsConfig}
 import shapeless.tag.@@
 
 trait TcsNorthController[F[_]] {
@@ -18,6 +19,10 @@ trait TcsNorthController[F[_]] {
   def notifyObserveStart: F[Unit]
 
   def notifyObserveEnd: F[Unit]
+
+  def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsNorthConfig)
+         (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
+
 }
 
 object TcsNorthController {
