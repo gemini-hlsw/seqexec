@@ -26,14 +26,6 @@ object events {
     def clientId: ClientId
   }
 
-  // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
-  // has to be embedded in a `Task`
-  final case class NewLogMessage(msg: String) extends SeqexecEvent
-
-  object NewLogMessage {
-    implicit lazy val equal: Eq[NewLogMessage] = Eq.fromUniversalEquals
-  }
-
   final case class ObservationProgressEvent(progress: ObservationProgress)
       extends SeqexecEvent
 
@@ -334,7 +326,6 @@ object events {
     Eq.instance {
       case (a: ConnectionOpenEvent,      b: ConnectionOpenEvent)      => a === b
       case (a: SeqexecModelUpdate,       b: SeqexecModelUpdate)       => a === b
-      case (a: NewLogMessage,            b: NewLogMessage)            => a === b
       case (a: ServerLogMessage,         b: ServerLogMessage)         => a === b
       case (a: UserNotification,         b: UserNotification)         => a === b
       case (a: GuideConfigUpdate,        b: GuideConfigUpdate)        => a === b

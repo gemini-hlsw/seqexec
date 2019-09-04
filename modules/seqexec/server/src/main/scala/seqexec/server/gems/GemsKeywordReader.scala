@@ -4,7 +4,6 @@
 package seqexec.server.gems
 
 import cats.Applicative
-import cats.data.Nested
 import cats.effect.Sync
 import cats.implicits._
 import seqexec.server.gsaoi.GsaoiEpics
@@ -95,25 +94,25 @@ object GemsKeywordReaderDummy {
 object GemsKeywordReaderEpics {
   def apply[F[_]: Sync](epics: => GemsEpics[F], gsaoiEpics: => GsaoiEpics[F]): GemsKeywordReader[F] = new GemsKeywordReader[F] {
 
-    override def sadc: F[String] = Nested(epics.scienceAdcLoopActive).map(if(_) "ON" else "OFF").value.safeValOrDefault
+    override def sadc: F[String] = epics.scienceAdcLoopActive.map(if(_) "ON" else "OFF").safeValOrDefault
 
-    override def dichroic: F[Double] = Nested(epics.beamSplitterState).map{
+    override def dichroic: F[Double] = epics.beamSplitterState.map{
       case "1" => 0.85
       case "2" => 1.0
       case _   => DoubleDefault
-    }.value.safeValOrDefault
+    }.safeValOrDefault
 
-    override def astrometricMode: F[String] = Nested(epics.astroMode).map{
+    override def astrometricMode: F[String] = epics.astroMode.map{
       case "None"    => "off"
       case "Regular" => "regular"
       case "Good"    => "good"
       case "Best"    => "best"
       case a         => a
-    }.value.safeValOrDefault
+    }.safeValOrDefault
 
-    override def nadc: F[String] = Nested(epics.ngsAdcLoopActive).map(if(_) "ON" else "OFF").value.safeValOrDefault
+    override def nadc: F[String] = epics.ngsAdcLoopActive.map(if(_) "ON" else "OFF").safeValOrDefault
 
-    private def lgswfsFlux(idx: Long): F[Double] = epics.lgsFlux.map(_.flatMap(_.get(idx).map(_.toDouble)))
+    private def lgswfsFlux(idx: Long): F[Double] = epics.lgsFlux.map(_.get(idx).map(_.toDouble))
       .safeValOrDefault
 
     override def lgswfs1Counts: F[Double] = lgswfsFlux(1)
@@ -126,19 +125,19 @@ object GemsKeywordReaderEpics {
 
     override def lgswfs5Counts: F[Double] = lgswfsFlux(5)
 
-    override def lgsLoop: F[String] = Nested(epics.lgsLoop).map(_.name).value.safeValOrDefault
+    override def lgsLoop: F[String] = epics.lgsLoop.map(_.name).safeValOrDefault
 
-    override def ttLoop: F[String] = Nested(epics.ttLoop).map(_.name).value.safeValOrDefault
+    override def ttLoop: F[String] = epics.ttLoop.map(_.name).safeValOrDefault
 
-    override def focLoop: F[String] = Nested(epics.focusLoop).map(_.name).value.safeValOrDefault
+    override def focLoop: F[String] = epics.focusLoop.map(_.name).safeValOrDefault
 
-    override def flexLoop: F[String] = Nested(epics.flexureLoop).map(_.name).value.safeValOrDefault
+    override def flexLoop: F[String] = epics.flexureLoop.map(_.name).safeValOrDefault
 
     override def lgsStrhl: F[Double] = epics.lgsStrehl.safeValOrDefault
 
     override def rZeroVal: F[Double] = epics.rZero.safeValOrDefault
 
-    private def cnSum(idxs: List[Long]): F[Double] = epics.cnSquare.map(_.flatMap{vs => idxs.map(vs.get).combineAll })
+    private def cnSum(idxs: List[Long]): F[Double] = epics.cnSquare.map{vs => idxs.map(vs.get).combineAll}
       .safeValOrDefault
 
     override def cnSquare1: F[Double] = cnSum(List(16))
@@ -179,7 +178,7 @@ object GemsKeywordReaderEpics {
 
     override def odgw4Counts: F[Double] = gsaoiEpics.odgw4Counts.safeValOrDefault
 
-    private def cwfsFlux(idx: Long): F[Double] = epics.ngsFlux.map(_.flatMap(_.get(idx).map(_.toDouble))).safeValOrDefault
+    private def cwfsFlux(idx: Long): F[Double] = epics.ngsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
 
     override def cwfs1Counts: F[Double] = cwfsFlux(1)
 

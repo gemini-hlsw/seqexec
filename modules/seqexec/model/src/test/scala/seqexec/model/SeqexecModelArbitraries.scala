@@ -7,7 +7,7 @@ import cats.implicits._
 import java.util.UUID
 import gem.Observation
 import gem.arb.ArbEnumerated._
-import gem.arb.ArbObservation
+import gem.arb.ArbObservation._
 import gsp.math.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
@@ -18,9 +18,9 @@ import scala.concurrent.duration.Duration
 import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
-import seqexec.model.arb.ArbStepState
+import seqexec.model.arb.ArbStep._
 
-trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
+trait SeqexecModelArbitraries {
 
   private val maxListSize = 2
 
@@ -105,67 +105,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
     } yield s
   }
 
-  def asciiStr: Gen[String] =
-    Gen.listOf(Gen.alphaChar).map(_.mkString)
-
-  val stepItemG: Gen[(String, String)] =
-    for {
-      a <- asciiStr
-      b <- asciiStr
-    } yield (a, b)
-
-  val parametersGen: Gen[Parameters] =
-    Gen.chooseNum(0, 10).flatMap(s => Gen.mapOfN[String, String](s, stepItemG))
-
-  val stepConfigG: Gen[(SystemName, Parameters)] =
-    for {
-      a <- arbitrary[SystemName]
-      b <- parametersGen
-    } yield (a, b)
-
-  val stepConfigGen: Gen[StepConfig] = Gen
-    .chooseNum(0, 3)
-    .flatMap(s => Gen.mapOfN[SystemName, Parameters](s, stepConfigG))
-  implicit val steArb = Arbitrary[Step] {
-    for {
-      id <- arbitrary[StepId]
-      c  <- stepConfigGen
-      s  <- arbitrary[StepState]
-      b  <- arbitrary[Boolean]
-      k  <- arbitrary[Boolean]
-      f  <- arbitrary[Option[dhs.ImageFileId]]
-    } yield
-      new StandardStep(id            = id,
-                       config        = c,
-                       status        = s,
-                       breakpoint    = b,
-                       skip          = k,
-                       fileId        = f,
-                       configStatus  = Nil,
-                       observeStatus = ActionStatus.Pending)
-  }
-
-  implicit val stsArb = Arbitrary[StandardStep] {
-    for {
-      id <- arbitrary[StepId]
-      c  <- stepConfigGen
-      s  <- arbitrary[StepState]
-      b  <- arbitrary[Boolean]
-      k  <- arbitrary[Boolean]
-      f  <- arbitrary[Option[dhs.ImageFileId]]
-      cs <- arbitrary[List[(Resource, ActionStatus)]]
-      os <- arbitrary[ActionStatus]
-    } yield
-      new StandardStep(id            = id,
-                       config        = c,
-                       status        = s,
-                       breakpoint    = b,
-                       skip          = k,
-                       fileId        = f,
-                       configStatus  = cs,
-                       observeStatus = os)
-  }
-
   implicit val telOffPArb = Arbitrary[TelescopeOffset.P] {
     for {
       d <- Gen.choose(-999.0, 999.0)
@@ -201,40 +140,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
 
   implicit val obCogen: Cogen[Observer] =
     Cogen[String].contramap(_.value)
-
-  implicit val stParams: Cogen[StepConfig] =
-    Cogen[String].contramap(_.mkString(","))
-
-  implicit val stepCogen: Cogen[Step] =
-    Cogen[(StepId,
-           Map[SystemName, Map[String, String]],
-           StepState,
-           Boolean,
-           Boolean,
-           Option[dhs.ImageFileId])].contramap(s =>
-      (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId))
-
-  implicit val standardStepCogen: Cogen[StandardStep] =
-    Cogen[(
-      StepId,
-      Map[SystemName, Map[String, String]],
-      StepState,
-      Boolean,
-      Boolean,
-      Option[dhs.ImageFileId],
-      List[(Resource, ActionStatus)],
-      ActionStatus
-    )].contramap(
-      s =>
-        (s.id,
-         s.config,
-         s.status,
-         s.breakpoint,
-         s.skip,
-         s.fileId,
-         s.configStatus,
-         s.observeStatus)
-    )
 
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)

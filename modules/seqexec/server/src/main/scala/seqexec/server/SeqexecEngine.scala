@@ -5,7 +5,6 @@ package seqexec.server
 
 import cats._
 import cats.data.{Kleisli, StateT}
-import cats.data.NonEmptyList
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
@@ -25,18 +24,16 @@ import monocle.Monocle._
 import monocle.Optional
 import org.http4s.client.Client
 import org.http4s.Uri
-import seqexec.engine
 import seqexec.engine.Result.Partial
 import seqexec.engine.EventResult._
 import seqexec.engine.{Step => _, _}
 import seqexec.engine.Handle
 import seqexec.engine.SystemEvent
 import seqexec.engine.UserEvent
-import seqexec.engine.Action.ActionState
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
-import seqexec.model.{ActionType, StepId, UserDetails}
+import seqexec.model.{StepId, UserDetails}
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
@@ -52,15 +49,19 @@ import seqexec.server.gws.GwsEpics
 import seqexec.server.gems.{GemsControllerEpics, GemsControllerSim, GemsEpics}
 import seqexec.server.tcs.{GuideConfigDb, TcsEpics, TcsNorthControllerEpics, TcsNorthControllerSim, TcsSouthControllerEpics, TcsSouthControllerSim}
 import seqexec.server.SeqEvent._
-import seqexec.model.dhs.ImageFileId
 import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], guideConfigDb: GuideConfigDb[IO],
-                    settings: Settings, sm: SeqexecMetrics)(
+class SeqexecEngine(
+  httpClient: Client[IO],
+  gpi: GpiClient[IO],
+  ghost: GhostClient[IO],
+  guideConfigDb: GuideConfigDb[IO],
+  settings: Settings,
+  sm: SeqexecMetrics)(
   implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
@@ -81,7 +82,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       DhsClientSim(settings.date)),
     (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
     (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
-    settings.gcalControl.command.fold(GcalControllerEpics(), GcalControllerSim[IO]),
+    settings.gcalControl.command.fold(GcalControllerEpics(GcalEpics.instance), GcalControllerSim[IO]),
     settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
       settings.instForceError.fold(Flamingos2ControllerSimBad[IO](settings.failAt),
         Flamingos2ControllerSim[IO])),
@@ -544,113 +545,13 @@ object SeqexecEngine extends SeqexecConfiguration {
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
 
-  def splitAfter[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
-    l.splitAt(l.indexWhere(p) + 1)
-
-  private def kindToResource(kind: ActionType): List[Resource] = kind match {
-    case ActionType.Configure(r) => List(r)
-    case _                       => Nil
-  }
-
-  private[server] def separateActions[F[_]](ls: NonEmptyList[Action[F]]): (List[Action[F]], List[Action[F]]) =
-    ls.toList.partition(_.state.runState match {
-        case ActionState.Completed(_) => false
-        case ActionState.Failed(_)    => false
-        case _                        => true
-      }
-    )
-
-  private[server] def configStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] = {
-    // Remove undefined actions
-    val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
-    // Split where at least one is running
-    val (current, pending) = splitAfter(ex)(separateActions(_)._1.nonEmpty)
-
-    // Calculate the state up to the current
-    val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
-      case (s, e) =>
-        val (a, r) = separateActions(e).bimap(
-            _.flatMap(a => kindToResource(a.kind).tupleRight(ActionStatus.Running)).toMap,
-            _.flatMap(r => kindToResource(r.kind).tupleRight(ActionStatus.Completed)).toMap)
-        s ++ a ++ r
-    }
-
-    // Find out systems in the future
-    val presentSystems = configStatus.keys.toList
-    // Calculate status of pending items
-    val systemsPending = pending.map {
-      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
-    }.flatMap {
-      x => x._1.tupleRight(ActionStatus.Pending) ::: x._2.tupleRight(ActionStatus.Completed)
-    }.filter {
-      case (a, _) => !presentSystems.contains(a)
-    }.distinct
-
-    (configStatus ++ systemsPending).toList.sortBy(_._1)
-  }
-
-  /**
-   * Calculates the config status for pending steps
-   */
-  private[server] def pendingConfigStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] =
-    executions.map {
-      s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
-    }.flatMap {
-      x => x._1 ::: x._2
-    }.distinct.tupleRight(ActionStatus.Pending).sortBy(_._1)
-
-  /**
-   * Overall pending status for a step
-   */
-  private def stepConfigStatus[F[_]](step: engine.Step[F]): List[(Resource, ActionStatus)] =
-    engine.Step.status(step) match {
-      case StepState.Pending => pendingConfigStatus(step.executions)
-      case _                 => configStatus(step.executions)
-    }
-
-  private def observeAction[F[_]](executions: List[ParallelActions[F]]): Option[Action[F]] =
-    executions.flatMap(_.toList).find(_.kind === ActionType.Observe)
-
-  private[server] def observeStatus[F[_]](executions: List[ParallelActions[F]]): ActionStatus =
-    observeAction(executions).map(a => a.state.runState.actionStatus).getOrElse(
-      ActionStatus.Pending)
-
-  private def fileId[F[_]](executions: List[engine.ParallelActions[F]]): Option[ImageFileId] =
-    observeAction(executions).flatMap(_.state.partials.collectFirst{
-      case FileIdAllocated(fid) => fid
-    })
-
-  def viewStep[F[_]](stepg: SequenceGen.StepGen[F], step: engine.Step[F],
-               altCfgStatus: List[(Resource, ActionStatus)]): StandardStep = {
-    val status = engine.Step.status(step)
-    val configStatus =
-      if (status === StepState.Completed || status === StepState.Running) {
-        stepConfigStatus(step)
-      } else {
-        altCfgStatus
-      }
-
-    StandardStep(
-      id = step.id,
-      config = stepg.config,
-      status = status,
-      breakpoint = step.breakpoint.self,
-      skip = step.skipMark.self,
-      configStatus = configStatus,
-      observeStatus = observeStatus(step.executions),
-      fileId = fileId(step.executions).orElse(stepg.some.collect{
-        case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
-      }.flatten)
-    )
-  }
-
   private def systemsBeingConfigured(st: EngineState): Set[Resource] =
     st.sequences.values.filter(d => d.seq.status.isError || d.seq.status.isIdle).toList
       .flatMap(s => s.seq.getSingleActionStates.filter(_._2.started).keys.toList
         .mapFilter(s.seqGen.resourceAtCoords)
       ).toSet
 
-  /*
+  /**
    * Resource in use = Resources used by running sequences, plus the systems that are being configured because a user
    * commanded a manual configuration apply.
    */
@@ -658,7 +559,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     st.sequences.values.toList.mapFilter(s => s.seq.status.isRunning.option(s.seqGen.resources)).foldK ++
       systemsBeingConfigured(st)
 
-  /*
+  /**
    * Resources reserved by running queues.
    */
   private def resourcesReserved(st: EngineState): Set[Resource] = {
@@ -897,7 +798,6 @@ object SeqexecEngine extends SeqexecConfiguration {
     case SequenceStart(sid, stepId)         => ClientSequenceStart(sid, stepId, svs)
     case Busy(id, cid)                      => UserNotification(ResourceConflict(id), cid)
     case ResourceBusy(id, sid, res, cid)    => UserNotification(SubsystemBusy(id, sid, res), cid)
-
   }
 
   private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
@@ -909,6 +809,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   private def viewSequence[F[_]](obsSeq: SequenceData[F]): SequenceView = {
     val st = obsSeq.seq
     val seq = st.toSequence
+    val instrument = obsSeq.seqGen.instrument
 
     def resources(s: SequenceGen.StepGen[F]): List[Resource] = s match {
       case s: SequenceGen.PendingStepGen[F] => s.resources.toList
@@ -917,7 +818,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     def engineSteps(seq: Sequence[F]): List[Step] = {
 
       obsSeq.seqGen.steps.zip(seq.steps).map{
-        case (a, b) => viewStep(a, b, resources(a).mapFilter(x =>
+        case (a, b) => StepsView.stepsView(instrument).stepView(a, b, resources(a).mapFilter(x =>
           obsSeq.seqGen.configActionCoord(a.id, x)
             .map(i => (x, obsSeq.seq.getSingleState(i).actionStatus))
         ))
@@ -928,16 +829,16 @@ object SeqexecEngine extends SeqexecConfiguration {
         // Find first Pending Step when no Step is Running and mark it as Running
         case steps if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
           val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Pending)
-          xs ++ (y.copy(status = StepState.Running) :: ys)
+          xs ++ (Step.status.set(StepState.Running)(y) :: ys)
         case steps if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
           val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Running)
-          xs ++ (y.copy(status = StepState.Paused) :: ys)
+          xs ++ (Step.status.set(StepState.Paused)(y) :: ys)
         case x => x
       }
     }
 
     // TODO: Implement willStopIn
-    SequenceView(seq.id, SequenceMetadata(obsSeq.seqGen.instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
+    SequenceView(seq.id, SequenceMetadata(instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState): SeqexecEvent = {
@@ -977,7 +878,8 @@ object SeqexecEngine extends SeqexecConfiguration {
           ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
         case SystemEvent.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>
           FileIdStepExecuted(fileId, svs)
-        case SystemEvent.PartialResult(_, _, _, _)                                => SequenceUpdated(svs)
+        case SystemEvent.PartialResult(_, _, _, _)                                =>
+          SequenceUpdated(svs)
         case SystemEvent.Failed(id, _, _)                                         => SequenceError(id, svs)
         case SystemEvent.Busy(id, clientId)                                       =>
           UserNotification(ResourceConflict(id), clientId)

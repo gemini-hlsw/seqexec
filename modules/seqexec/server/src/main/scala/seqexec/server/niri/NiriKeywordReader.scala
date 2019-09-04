@@ -4,7 +4,6 @@
 package seqexec.server.niri
 
 import cats.Applicative
-import cats.data.Nested
 import cats.effect.Sync
 import cats.implicits._
 import seqexec.server.keywords._
@@ -90,7 +89,7 @@ object NiriKeywordReaderEpics {
       (for {
         it <- sys.integrationTime
         mi <- sys.minIntegration
-      } yield (it, mi).mapN(_ + _)).safeValOrDefault
+      } yield it + mi).safeValOrDefault
     override def filter1: F[String] = sys.filter1.safeValOrDefault
     override def filter2: F[String] = sys.filter2.safeValOrDefault
     override def filter3: F[String] = sys.filter3.safeValOrDefault
@@ -100,33 +99,33 @@ object NiriKeywordReaderEpics {
     override def beamSplitter: F[String] = sys.beamSplitter.safeValOrDefault
     override def windowCover: F[String] = sys.windowCover.safeValOrDefault
     override def framesPerCycle: F[Int] = sys.framesPerCycle.safeValOrDefault
-    override def headerTiming: F[String] = Nested(sys.hdrTiming).map {
+    override def headerTiming: F[String] = sys.hdrTiming.map {
       case 1 => "BEFORE"
       case 2 => "AFTER"
       case 3 => "BOTH"
       case _ => "INDEF"
-    }.value.safeValOrDefault
+    }.safeValOrDefault
     override def lnrs: F[Int] = sys.lnrs.safeValOrDefault
-    override def mode: F[String] = Nested(sys.mode).map {
+    override def mode: F[String] = sys.mode.map {
       case 0 => "STARE"
       case 1 => "SEP"
       case 2 => "CHOP"
       case 3 => "CHOP2"
       case 4 => "TEST"
       case _ => "INDEF"
-    }.value.safeValOrDefault
+    }.safeValOrDefault
     override def numberDigitalAverage: F[Int] = sys.digitalAverageCount.safeValOrDefault
     override def pupilViewer: F[String] = sys.pupilViewer.safeValOrDefault
     override def detectorTemperature: F[Double] = sys.detectorTemp.safeValOrDefault
     override def mountTemperature: F[Double] = sys.mountTemp.safeValOrDefault
     override def µcodeName: F[String] = sys.µcodeName.safeValOrDefault
-    override def µcodeType: F[String] = Nested(sys.µcodeType).map {
+    override def µcodeType: F[String] = sys.µcodeType.map {
       case 1 => "RRD"
       case 2 => "RDD"
       case 3 => "RD"
       case 4 => "SRB"
       case _ => "INDEF"
-    }.value.safeValOrDefault
+    }.safeValOrDefault
     override def cl1VoltageDD: F[Double] = sys.vddCl1.safeValOrDefault
     override def cl2VoltageDD: F[Double] = sys.vddCl2.safeValOrDefault
     override def ucVoltage: F[Double] = sys.vddUc.safeValOrDefault

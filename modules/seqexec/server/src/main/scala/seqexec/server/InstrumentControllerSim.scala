@@ -21,6 +21,8 @@ import squants.time.Time
 import scala.concurrent.duration._
 
 sealed trait InstrumentControllerSim[F[_]] {
+  def log(msg: => String): F[Unit]
+
   def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   def applyConfig[C: Show](config: C): F[Unit]

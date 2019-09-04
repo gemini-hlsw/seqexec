@@ -152,12 +152,10 @@ object NiriControllerEpics extends NiriEncoders {
       iof2 <- filter2
       iof3 <- filter3
     } yield {
-      (iof1, iof2, iof3).mapN{ (f1, f2, f3) =>
-        val l = List(f1, f2, f3).filterNot(_ === Open)
-        if(l.length === 1) l.headOption
-        else none
-      }.flatten.map(removePartName)
-    }
+      val l = List(iof1, iof2, iof3).filterNot(_ === Open)
+      if(l.length === 1) l.headOption
+      else none
+    }.map(removePartName)
   }
 
   private def setFocus(f: Focus): IO[Option[IO[Unit]]] = {
@@ -179,13 +177,13 @@ object NiriControllerEpics extends NiriEncoders {
   private def setFilter(f: Filter): IO[Option[IO[Unit]]] = {
     val encoded = encode(f)
 
-    smartSetParamF(encoded, currentFilter, epicsSys.configCmd.setFilter(encoded))
+    smartSetParamF(encoded.some, currentFilter, epicsSys.configCmd.setFilter(encoded))
   }
 
   private def setBlankFilter: IO[Option[IO[Unit]]] = {
     val BlankFilter = "blank"
 
-    smartSetParamF(BlankFilter, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
+    smartSetParamF(BlankFilter.some, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
   }
 
   private def setMask(m: Mask): IO[Option[IO[Unit]]] = {
@@ -262,7 +260,7 @@ object NiriControllerEpics extends NiriEncoders {
 
   def calcObserveTimeout(cfg: DCConfig): IO[Time] = {
     epicsSys.minIntegration.map { t =>
-      val MinIntTime = t.map(Seconds(_)).getOrElse(0.seconds)
+      val MinIntTime = t.seconds
       val CoaddOverhead = 2.5
       val TotalOverhead = 30.seconds
 
@@ -275,10 +273,10 @@ object NiriControllerEpics extends NiriEncoders {
 
   def apply(): NiriController[IO] = new NiriController[IO] {
     private def actOnDHSNotConected(act: IO[Unit]): IO[Unit] =
-      epicsSys.dhsConnected.map(_.exists(identity)).ifM(IO.unit, act)
+      epicsSys.dhsConnected.ifM(IO.unit, act)
 
     private def actOnArrayNotActive(act: IO[Unit]): IO[Unit] =
-      epicsSys.arrayActive.map(_.exists(identity)).ifM(IO.unit, act)
+      epicsSys.arrayActive.ifM(IO.unit, act)
 
     private def failOnDHSNotConected: IO[Unit] =
       actOnDHSNotConected(IO.raiseError(SeqexecFailure.Execution("NIRI is not connected to DHS")))
@@ -346,7 +344,7 @@ object NiriControllerEpics extends NiriEncoders {
 
     override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
       epicsSys.minIntegration.map { f =>
-        val MinIntTime = f.map(Seconds(_)).getOrElse(0.seconds)
+        val MinIntTime = f.seconds
 
         (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
       }

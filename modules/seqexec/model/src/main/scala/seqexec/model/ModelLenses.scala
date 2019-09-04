@@ -26,8 +26,6 @@ trait ModelLenses {
   // Some useful Monocle lenses
   val obsNameL: Lens[SequenceView, String] =
     GenLens[SequenceView](_.metadata.name)
-  // From step to standard step
-  val standardStepP: Prism[Step, StandardStep] = GenPrism[Step, StandardStep]
   val eachStepT: Traversal[List[Step], Step] =
     Traversal.fromTraverse[List, Step]
   val obsStepsL: Lens[SequenceView, List[Step]] = GenLens[SequenceView](_.steps)
@@ -35,9 +33,6 @@ trait ModelLenses {
     Traversal.fromTraverse[List, SequenceView]
   val sessionQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] =
     GenLens[SequencesQueue[SequenceView]](_.sessionQueue)
-  // from standard step to config
-  val stepConfigL: Lens[StandardStep, StepConfig] =
-    GenLens[StandardStep](_.config)
   // Prism to focus on only the SeqexecEvents that have a queue
   val sequenceEventsP: Prism[SeqexecEvent, SeqexecModelUpdate] =
     GenPrism[SeqexecEvent, SeqexecModelUpdate]
@@ -46,6 +41,10 @@ trait ModelLenses {
     Iso.id[Map[SystemName, Parameters]]
   val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] =
     Iso.id[Map[ParamName, ParamValue]]
+
+  val sequenceStepT: Traversal[SequenceView, Step] =
+    obsStepsL ^|->> // sequence steps
+    eachStepT       // each step
 
   // Focus on a param value
   def paramValueL(param: ParamName): Lens[Parameters, Option[String]] =
@@ -105,11 +104,6 @@ trait ModelLenses {
     sessionQueueL      ^|->> // Find the queue
     eachViewT                // each sequence on the queue
 
-  val sequenceStepT: Traversal[SequenceView, StandardStep] =
-    obsStepsL          ^|->> // sequence steps
-    eachStepT          ^<-?  // each step
-    standardStepP            // which is a standard step
-
   // Composite lens to change the sequence name of an event
   val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
     sequenceEventsP    ^|->  // Events with model updates
@@ -125,9 +119,8 @@ trait ModelLenses {
     sessionQueueL      ^|->> // Find the queue
     eachViewT          ^|->  // each sequence on the queue
     obsStepsL          ^|->> // sequence steps
-    eachStepT          ^<-?  // each step
-    standardStepP      ^|->  // which is a standard step
-    stepConfigL             // configuration of the step
+    eachStepT          ^|->  // each step
+    Step.config             // configuration of the step
 
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
     new Traversal[Map[K, V], V] {
@@ -162,10 +155,9 @@ trait ModelLenses {
     Prism((x: String) => x.parseDoubleOption)(_.show)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
-    standardStepP                            ^|-> // which is a standard step
-    stepConfigL                              ^|-? // configuration of the step
-    configParamValueO(systemName, param)     ^<-?
-    prism                                         // step type
+    Step.config                          ^|-? // configuration of the step
+    configParamValueO(systemName, param) ^<-?
+    prism                                     // step type
 
   val stringToStepTypeP: Prism[String, StepType] =
     Prism(StepType.fromString)(_.label)
@@ -269,8 +261,7 @@ trait ModelLenses {
 
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =
-    standardStepP                                                       ^|->  // which is a standard step
-    stepConfigL                                                         ^|->  // configuration of the step
+    Step.config                                                         ^|->  // configuration of the step
     systemConfigL(SystemName.Telescope)                                 ^<-?  // Observe config
     some                                                                ^|->> // some
     paramValuesWithPrefixT(SystemName.Telescope.withParam("guideWith")) ^<-?  // find the guiding with params
@@ -285,9 +276,8 @@ trait ModelLenses {
   // Composite lens to find the sequence obs class
   val obsClassT: Traversal[SequenceView, String] =
     obsStepsL       ^|->> // observation steps
-      eachStepT     ^<-?  // each step
-      standardStepP ^|->  // only standard steps
-      stepConfigL   ^|-?  // get step config
+      eachStepT     ^|->  // each step
+      Step.config   ^|-?  // get step config
       configParamValueO(SystemName.Observe, "class")
 
   // Composite lens to find the sequence obs class
@@ -307,9 +297,8 @@ trait ModelLenses {
   // Composite lens to find the first science step and from there the target name
   val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =
     obsStepsL           ^|->> // observation steps
-    eachStepT           ^<-?  // each step
-    standardStepP       ^|->  // only standard steps
-    stepConfigL         ^|->> // get step config
+    eachStepT           ^|->  // each step
+    Step.config         ^|->> // only standard steps
     scienceStepT        ^|-?  // science steps
     scienceTargetNameO        // science target name
 

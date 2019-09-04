@@ -4,7 +4,6 @@
 package seqexec.server.gems
 
 import cats.ApplicativeError
-import cats.data.Nested
 import cats.effect.Async
 import cats.implicits._
 import monocle.macros.Lenses
@@ -12,7 +11,6 @@ import mouse.boolean._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gems.Gems._
 import org.log4s.getLogger
-import seqexec.server.SeqexecFailure
 import seqexec.server.gsaoi.GsaoiEpics
 import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, PauseResume, ResumeCondition, ResumeConditionSet}
 import squants.Time
@@ -39,32 +37,28 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     )
   }
 
-  private def odgwActivityState[T: DetectorStateOps](multiplier: F[Option[Int]]): F[Option[T]] =
-    Nested((gsaoiSys.guiding, multiplier).mapN{case (x, y) => (x, y).mapN{case (g, m) => g && m > 0}})
-      .map(DetectorStateOps.fromBoolean[T]).value
+  private def odgwActivityState[T: DetectorStateOps](multiplier: F[Int]): F[T] =
+    (gsaoiSys.guiding, multiplier).mapN{case (g, m) => g && m > 0}
+      .map(DetectorStateOps.fromBoolean[T])
 
   override val stateGetter: GemsWfsState[F] = GemsWfsState(
-    Nested(epicsSys.apd1Active).map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]).value,
-    Nested(epicsSys.apd2Active).map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]).value,
-    Nested(epicsSys.apd3Active).map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]).value,
+    epicsSys.apd1Active.map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]),
+    epicsSys.apd2Active.map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]),
+    epicsSys.apd3Active.map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]),
     odgwActivityState[Odgw1DetectorState](gsaoiSys.odgw1Multiplier),
     odgwActivityState[Odgw2DetectorState](gsaoiSys.odgw2Multiplier),
     odgwActivityState[Odgw3DetectorState](gsaoiSys.odgw3Multiplier),
     odgwActivityState[Odgw4DetectorState](gsaoiSys.odgw4Multiplier)
   )
 
-  private def getStatusVal[A](get: F[Option[A]], name: String, system: String): F[A] = get.flatMap(
-    _.map(_.pure[F]).getOrElse((SeqexecFailure.Unexpected(s"Unable to read $name from $system.").raiseError[F, A]))
-  )
-
   private val retrieveConfig: F[EpicsGems] = for{
-    cwfs1 <- getStatusVal(stateGetter.cwfs1, "CWFS1 active state", "GeMS RTC")
-    cwfs2 <- getStatusVal(stateGetter.cwfs2, "CWFS2 active state", "GeMS RTC")
-    cwfs3 <- getStatusVal(stateGetter.cwfs3, "CWFS3 active state", "GeMS RTC")
-    odgw1 <- getStatusVal(stateGetter.odgw1, "ODGW1 active state", "GSAOI")
-    odgw2 <- getStatusVal(stateGetter.odgw2, "ODGW2 active state", "GSAOI")
-    odgw3 <- getStatusVal(stateGetter.odgw3, "ODGW3 active state", "GSAOI")
-    odgw4 <- getStatusVal(stateGetter.odgw4, "ODGW4 active state", "GSAOI")
+    cwfs1 <- stateGetter.cwfs1
+    cwfs2 <- stateGetter.cwfs2
+    cwfs3 <- stateGetter.cwfs3
+    odgw1 <- stateGetter.odgw1
+    odgw2 <- stateGetter.odgw2
+    odgw3 <- stateGetter.odgw3
+    odgw4 <- stateGetter.odgw4
   } yield EpicsGems(
     cwfs1,
     cwfs2,

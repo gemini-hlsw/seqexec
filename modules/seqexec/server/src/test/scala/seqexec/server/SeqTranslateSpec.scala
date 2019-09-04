@@ -79,8 +79,8 @@ class SeqTranslateSpec extends FlatSpec {
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
   // Observe paused
   private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ => IO.pure(Result.OK(Observed
-    (fileId))), Seconds(1)))))(baseState)
+    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ => IO.pure(Stream.emit(Result.OK(Observed
+    (fileId))).covary[IO]), Seconds(1)))))(baseState)
   // Observe failed
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)

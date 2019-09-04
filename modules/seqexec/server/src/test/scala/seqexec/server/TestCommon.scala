@@ -19,6 +19,7 @@ import org.http4s.Uri.uri
 import seqexec.engine
 import seqexec.engine.{Action, Result}
 import seqexec.engine.Result.PauseContext
+import seqexec.engine.Result.PartialVal
 import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.keywords.GdsClient
@@ -85,6 +86,16 @@ object TestCommon {
         ActionType.Observe,
             Result.OK(Response.Observed(fileId)).pure[F].widen))
 
+  final case class PartialValue(s: String) extends PartialVal
+
+  def observingPartial[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Started, Nil))(
+        engine.fromF[F](
+        ActionType.Observe,
+            Result.Partial(PartialValue("Value")).pure[F].widen,
+            Result.OK(Response.Ignored).pure[F].widen))
+
   def fileIdReady[F[_]: Applicative]: Action[F] =
     Action.state.set(
       Action.State(Action.ActionState.Started, List(FileIdAllocated(fileId))))(
@@ -94,6 +105,11 @@ object TestCommon {
     Action.state.set(
       Action.State(Action.ActionState.Completed(Response.Observed(fileId)), List(FileIdAllocated(fileId))))(
         observing)
+
+  def observePartial[F[_]: Applicative]: Action[F] =
+    Action.state.set(
+      Action.State(Action.ActionState.Started, List(FileIdAllocated(fileId))))(
+        observingPartial)
 
   def paused[F[_]: Applicative]: Action[F] =
     Action.state.set(

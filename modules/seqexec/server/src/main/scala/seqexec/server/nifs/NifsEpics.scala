@@ -11,13 +11,12 @@ import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
 import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
-import seqexec.server.ObserveCommand
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommand
 import seqexec.server.ObserveCommand
-import seqexec.server.EpicsUtil.safeAttribute
-import seqexec.server.EpicsUtil.safeAttributeSDouble
-import seqexec.server.EpicsUtil.safeAttributeSInt
+import seqexec.server.EpicsUtil.safeAttributeF
+import seqexec.server.EpicsUtil.safeAttributeSDoubleF
+import seqexec.server.EpicsUtil.safeAttributeSIntF
 import seqexec.server.EpicsCommand.setParameter
 
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
@@ -128,82 +127,82 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::dcstatus")
 
-  def exposureTime: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("exposureTime"))
+  def exposureTime: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("exposureTime"))
 
-  def exposedTime: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("exposedTime"))
+  def exposedTime: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("exposedTime"))
 
-  def numberOfResets: F[Option[Int]] =
-    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfResets"))
+  def numberOfResets: F[Int] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("numberOfResets"))
 
-  def readMode: F[Option[String]] =
-    safeAttribute(dcStatus.getStringAttribute("readMode"))
+  def readMode: F[String] =
+    safeAttributeF(dcStatus.getStringAttribute("readMode"))
 
-  def numberOfFowSamples: F[Option[Int]] =
-    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfFowSamples"))
+  def numberOfFowSamples: F[Int] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("numberOfFowSamples"))
 
-  def coadds: F[Option[Int]] =
-    safeAttributeSInt(dcStatus.getIntegerAttribute("coadds"))
+  def coadds: F[Int] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("coadds"))
 
-  def period: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("period"))
+  def period: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("period"))
 
-  def countDown: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("countdown"))
+  def countDown: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("countdown"))
 
-  def numberOfPeriods: F[Option[Int]] =
-    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfPeriods"))
+  def numberOfPeriods: F[Int] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("numberOfPeriods"))
 
-  def timeMode: F[Option[String]] =
-    safeAttribute(dcStatus.getStringAttribute("timeMode"))
+  def timeMode: F[String] =
+    safeAttributeF(dcStatus.getStringAttribute("timeMode"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
     dcStatus.addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
 
-  def dhsConnected: F[Option[DhsConnected]] =
-    safeAttribute(dhsConnectedAttr)
+  def dhsConnected: F[DhsConnected] =
+    safeAttributeF(dhsConnectedAttr)
 
-  def dcName: F[Option[String]] =
-    safeAttribute(dcStatus.getStringAttribute("name"))
+  def dcName: F[String] =
+    safeAttributeF(dcStatus.getStringAttribute("name"))
 
-  def exposureMode: F[Option[String]] =
-    safeAttribute(dcStatus.getStringAttribute("expMode"))
+  def exposureMode: F[String] =
+    safeAttributeF(dcStatus.getStringAttribute("expMode"))
 
-  def readTime: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("readTime"))
+  def readTime: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("readTime"))
 
-  def biasPwr: F[Option[Double]] =
-    safeAttributeSDouble(dcStatus.getDoubleAttribute("biasPwr"))
+  def biasPwr: F[Double] =
+    safeAttributeSDoubleF(dcStatus.getDoubleAttribute("biasPwr"))
 
   private val ccStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::status")
 
-  def centralWavelength: F[Option[Double]] =
-    safeAttributeSDouble(ccStatus.getDoubleAttribute("centralWavelength"))
+  def centralWavelength: F[Double] =
+    safeAttributeSDoubleF(ccStatus.getDoubleAttribute("centralWavelength"))
 
-  def disperser: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("disperser"))
+  def disperser: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("disperser"))
 
-  def imagingMirror: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("imagingMirror"))
+  def imagingMirror: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("imagingMirror"))
 
-  def mask: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("mask"))
+  def mask: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("mask"))
 
-  def lastSelectedDisperser: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("lastSelDisp"))
+  def lastSelectedDisperser: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("lastSelDisp"))
 
-  def lastSelectedMask: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("lastSelMask"))
+  def lastSelectedMask: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("lastSelMask"))
 
-  def maskOffset: F[Option[Double]] =
-    safeAttributeSDouble(ccStatus.getDoubleAttribute("maskOffset"))
+  def maskOffset: F[Double] =
+    safeAttributeSDoubleF(ccStatus.getDoubleAttribute("maskOffset"))
 
-  def filter: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("filter"))
+  def filter: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("filter"))
 
-  def windowCover: F[Option[String]] =
-    safeAttribute(ccStatus.getStringAttribute("windowCover"))
+  def windowCover: F[String] =
+    safeAttributeF(ccStatus.getStringAttribute("windowCover"))
 
 }
 

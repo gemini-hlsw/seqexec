@@ -7,13 +7,11 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 import seqexec.model.StepState
 import seqexec.model.SequenceState
 import seqexec.model.Step
-import seqexec.model.StandardStep
 import seqexec.model.SequenceView
 
 /**
@@ -60,15 +58,14 @@ object ModelOps {
 
     def flipSkipMarkAtStep(step: Step): SequenceView =
       s.copy(steps = s.steps.collect {
-        case st: StandardStep if st.id === step.id => st.copy(skip = !st.skip)
-        case st                                    => st
+        case st if st.id === step.id => Step.skip.modify(!_)(st)
+        case st                      => st
       })
 
     def flipBreakpointAtStep(step: Step): SequenceView =
       s.copy(steps = s.steps.collect {
-        case st: StandardStep if st.id === step.id =>
-          st.copy(breakpoint = !st.breakpoint)
-        case st => st
+        case st if st.id === step.id => Step.breakpoint.modify(!_)(st)
+        case st                      => st
       })
 
     def nextStepToRun: Option[Int] =
@@ -88,17 +85,6 @@ object ModelOps {
 
     def isPartiallyExecuted: Boolean = s.steps.exists(_.isFinished)
 
-    def showAsRunning(i: Int): SequenceView =
-      s.copy(steps = s.steps.collect {
-        case s: StandardStep if s.id === i =>
-          s.copy(
-            status = StepState.Running,
-            configStatus = List((Resource.TCS, ActionStatus.Pending),
-                                (Resource.Gcal, ActionStatus.Running),
-                                (Instrument.Gpi, ActionStatus.Completed))
-          )
-        case s => s
-      })
   }
 
   implicit class SiteOps(val s: Site) extends AnyVal {

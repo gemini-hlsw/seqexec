@@ -241,9 +241,9 @@ object NifsControllerEpics extends NifsEncoders {
         // * The the current central wavelenght is not the same (to within tolerance) to what the default is
         // for this positoin (if it is, we should not be in a INVALID position). (NOT CHECKING FOR THIS YET).
         // So if any of those conditions is not true; need to move the disperser to the new position.
-        def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
+        def checkInvalid(current: String): IO[Option[IO[Unit]]] =
           epicsSys.lastSelectedDisperser.map { lsd =>
-            (!(current.exists(_ === "INVALID") && lsd.exists(_ === disperser)))
+            (!(current === "INVALID" && lsd === disperser))
               .option(setDisperserIO)
           }
 
@@ -252,7 +252,7 @@ object NifsControllerEpics extends NifsEncoders {
           instDisp     <- epicsSys.disperser
           setIfInvalid <- checkInvalid(instDisp)
         } yield
-          if (instDisp.exists(_ === disperser)) {
+          if (instDisp === disperser) {
             none
           } else {
             setIfInvalid
@@ -268,23 +268,23 @@ object NifsControllerEpics extends NifsEncoders {
       // * The last selected position (which was validated) is the same as where we are demanded to go
       // * The the current offset is not  0 (if it was then, the current position should not be INVALID.
       // So if any of those conditions is not true; need to move the mask to the new position.
-      def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
+      def checkInvalid(current: String): IO[Option[IO[Unit]]] =
         (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
-          (!(current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
-            .exists(_ =!= 0.0))).option(setMaskIO)
+          (!(current === "INVALID" && lsm === mask &&
+            mo =!= 0.0)).option(setMaskIO)
         }
 
       // We need an even smarter set param
       for {
         instMask     <- epicsSys.mask
         setIfInvalid <- checkInvalid(instMask)
-      } yield if (instMask.exists(_ =!= mask)) setMaskIO.some else setIfInvalid
+      } yield if (instMask =!= mask) setMaskIO.some else setIfInvalid
     }
 
     cfg match {
       case DarkCCConfig =>
         epicsSys.mask
-          .map(_.exists(_ =!= encode(LegacyMask.BLOCKED)))
+          .map(_ =!= encode(LegacyMask.BLOCKED))
           .ifM(setMaskEpics(LegacyMask.BLOCKED), none.pure[IO])
       case cfg: StdCCConfig =>
         setMaskEpics(cfg.mask)
@@ -312,8 +312,8 @@ object NifsControllerEpics extends NifsEncoders {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
         epicsSys.centralWavelength.map { curCw =>
-          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists{cw =>
-            abs(cw - cfg.wavelength) > CentralWavelengthTolerance}).option {
+          ((cfg.disperser =!= LegacyDisperser.MIRROR) &&
+            abs(curCw - cfg.wavelength) > CentralWavelengthTolerance).option {
             epicsSys.ccConfigCmd
               .setCentralWavelength(cfg.wavelength)
           }
@@ -325,8 +325,7 @@ object NifsControllerEpics extends NifsEncoders {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
         epicsSys.maskOffset.map { curMo =>
-          (curMo
-            .exists(mo => abs(mo - cfg.maskOffset) > MaskOffsetTolerance))
+          (abs(curMo - cfg.maskOffset) > MaskOffsetTolerance)
             .option {
               epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset)
             }
@@ -350,9 +349,9 @@ object NifsControllerEpics extends NifsEncoders {
     override def applyConfig(config: NifsController.NifsConfig): IO[Unit] =
       configCC(config.cc) *> configDC(config.dc)
 
-    val checkDhs =
+    private val checkDhs =
       failUnlessM(
-        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
+        epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
                   SeqexecFailure.Execution("NIFS is not connected to DHS"))
 
     override def observe(fileId: ImageFileId,

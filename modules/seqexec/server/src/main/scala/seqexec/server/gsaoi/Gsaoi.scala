@@ -13,6 +13,7 @@ import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
+import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble}
 import java.lang.{Integer => JInt}
 import shapeless.tag
@@ -31,13 +32,14 @@ import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
 import seqexec.server.InstrumentSystem._
+import seqexec.server.InstrumentActions
 import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: Sync](
+final case class Gsaoi[F[_]: Sync: Logger](
   controller: GsaoiController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
@@ -97,6 +99,9 @@ final case class Gsaoi[F[_]: Sync](
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    InstrumentActions.defaultInstrumentActions[F]
 }
 
 object Gsaoi {

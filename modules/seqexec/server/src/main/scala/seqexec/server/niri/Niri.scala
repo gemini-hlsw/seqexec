@@ -15,6 +15,7 @@ import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSRe
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.seqexec.server.niri.ReadMode
 import gem.enum.LightSinkName
+import io.chrisdavenport.log4cats.Logger
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -27,12 +28,13 @@ import java.lang.{Double => JDouble, Integer => JInt}
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
+import seqexec.server.InstrumentActions
 import seqexec.server.niri.NiriController._
 import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClient: DhsClient[F])
+final case class Niri[F[_]: Sync: Timer: Logger](controller: NiriController[F], dhsClient: DhsClient[F])
   extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Niri._
@@ -85,6 +87,9 @@ final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClien
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    InstrumentActions.defaultInstrumentActions[F]
 }
 
 object Niri {

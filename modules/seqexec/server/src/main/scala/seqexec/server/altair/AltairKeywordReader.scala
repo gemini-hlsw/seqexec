@@ -5,7 +5,6 @@ package seqexec.server.altair
 
 import cats.effect.Sync
 import cats.Applicative
-import cats.data.Nested
 import cats.implicits._
 import seqexec.server.keywords._
 
@@ -82,14 +81,12 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
   def apply[F[_]: Sync](sys: AltairEpics[F]): AltairKeywordReader[F] = new AltairKeywordReader[F] {
 
     override def aofreq: F[Double] =
-      Nested(sys.aoexpt)
-        .filter(_ =!= 0.0f)
-        .map(1 / _.toDouble)
-        .value
+      sys.aoexpt
+        .map(1.0 / _.toDouble)
         .safeValOrDefault
     override def aocounts: F[Double] = sys.aocounts.safeValOrDefault
     override def aoseeing: F[Double] =
-      Nested(sys.aoseeing).map(_.toDouble).value.safeValOrDefault
+      sys.aoseeing.map(_.toDouble).safeValOrDefault
     override def aowfsx: F[Double]   = sys.aowfsx.safeValOrDefault
     override def aowfsy: F[Double]   = sys.aowfsy.safeValOrDefault
     override def aowfsz: F[Double]   = sys.aowfsz.safeValOrDefault
@@ -111,9 +108,8 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         apd3 <- sys.apd3
         apd4 <- sys.apd4
       } yield
-        (apd1, apd2, apd3, apd4)
-          .mapN(_ + _ + _ + _)
-          .map(_.toDouble)).safeValOrDefault
+        (apd1 + apd2 + apd3 + apd4).toDouble
+    ).safeValOrDefault
     override def lgttexp: F[Int]     = sys.lgttexp.safeValOrDefault
     override def lgsfcnts: F[Double] = sys.lgsfcnts.safeValOrDefault
     override def lgsfexp: F[Double]  = sys.lgsfexp.safeValOrDefault
@@ -128,12 +124,10 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         roofO <- sys.lgzmpos
         zaO   <- sys.aoza
       } yield {
-        (roofO, zaO).mapN { (roof, za) =>
-          val d = (modela - roof) / modelb
-          val k = f + (d / 1000.0)
-          val r = f * k / (k - f)
-          r * math.cos(za.toRadians) / 1000.0
-        }
+        val d = (modela - roofO) / modelb
+        val k = f + (d / 1000.0)
+        val r = f * k / (k - f)
+        r * math.cos(zaO.toRadians) / 1000.0
       }
       r.safeValOrDefault
     }

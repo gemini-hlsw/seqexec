@@ -165,13 +165,13 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::dcstatus")
   private def dcRead(name: String): F[String] =
-    safeAttributeF(name, dcState.getStringAttribute(name))
+    safeAttributeF(dcState.getStringAttribute(name))
 
   private def dcReadI(name: String): F[Int] =
-    safeAttributeSIntF[F](name, dcState.getIntegerAttribute(name))
+    safeAttributeSIntF[F](dcState.getIntegerAttribute(name))
 
   private def dcReadD(name: String): F[Double] =
-    safeAttributeSDoubleF[F](name, dcState.getDoubleAttribute(name))
+    safeAttributeSDoubleF[F](dcState.getDoubleAttribute(name))
 
   // DC status values
 
@@ -225,13 +225,13 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   // CC status values
   val state: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::status")
   private def read(name: String): F[String] =
-    safeAttributeF(name, state.getStringAttribute(name))
+    safeAttributeF(state.getStringAttribute(name))
 
   private def readI(name: String): F[Int] =
-    safeAttributeSIntF[F](name, state.getIntegerAttribute(name))
+    safeAttributeSIntF[F](state.getIntegerAttribute(name))
 
   private def readD(name: String): F[Double] =
-    safeAttributeSDoubleF[F](name, state.getDoubleAttribute(name))
+    safeAttributeSDoubleF[F](state.getDoubleAttribute(name))
 
   def ccName: F[String] = read("gmoscc")
 
@@ -339,7 +339,7 @@ object GmosEpics extends EpicsSystem[GmosEpics[IO]] {
 
   final case class RoiStatus[F[_]: Sync](sa: CaStatusAcceptor, i: Int) {
     private def readI(name: String): F[Int] =
-      safeAttributeSIntF[F](name, sa.getIntegerAttribute(name))
+      safeAttributeSIntF[F](sa.getIntegerAttribute(name))
 
     def ccdXstart: F[Int] = readI(s"ccdXstart$i")
     def ccdYstart: F[Int] = readI(s"ccdYstart$i")

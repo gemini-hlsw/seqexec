@@ -11,8 +11,6 @@ trait GcalController[F[_]] {
 
   import GcalController._
 
-  def getConfig: F[GcalConfig]
-
   def applyConfig(config: GcalConfig): F[Unit]
 
 }
@@ -79,42 +77,61 @@ object GcalController {
 
   type Diffuser = edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
 
-  final case class GcalConfig(
-                         lampAr: Option[ArLampState],
-                         lampCuAr: Option[CuArLampState],
-                         lampQh: Option[QHLampState],
-                         lampThAr: Option[ThArLampState],
-                         lampXe: Option[XeLampState],
-                         lampIr: Option[IrLampState],
-                         shutter: Option[Shutter],
-                         filter: Option[Filter],
-                         diffuser: Option[Diffuser]
-                       )
+
+  sealed trait GcalConfig {
+    val lampAr: ArLampState
+    val lampCuAr: CuArLampState
+    val lampQh: QHLampState
+    val lampThAr: ThArLampState
+    val lampXe: XeLampState
+    val lampIrO: Option[IrLampState]
+    val shutter: Shutter
+    val filterO: Option[Filter]
+    val diffuserO: Option[Diffuser]
+  }
+
 
   object GcalConfig {
 
-    val allOff: GcalConfig = GcalConfig(Some(ArLampState(LampState.Off)),
-      Some(CuArLampState(LampState.Off)),
-      Some(QHLampState(LampState.Off)),
-      Some(ThArLampState(LampState.Off)),
-      Some(XeLampState(LampState.Off)),
-      Some(IrLampState(LampState.Off)),
-      Some(Shutter.CLOSED),
-      None,
-      None
-    )
+    final case class GcalOn(
+                             lampAr: ArLampState,
+                             lampCuAr: CuArLampState,
+                             lampQh: QHLampState,
+                             lampThAr: ThArLampState,
+                             lampXe: XeLampState,
+                             lampIrO: Option[IrLampState],
+                             shutter: Shutter,
+                             filter: Filter,
+                             diffuser: Diffuser
+                           ) extends GcalConfig {
+      override val filterO: Option[Filter] = filter.some
+      override val diffuserO: Option[Diffuser] = diffuser.some
+    }
 
-    def fullConfig(ar: ArLampState,
-                   cuAr: CuArLampState,
-                   qh: QHLampState,
-                   thAr: ThArLampState,
-                   xe: XeLampState,
-                   ir: IrLampState,
-                   sh: Shutter,
-                   flt: Filter,
-                   diff: Diffuser
-                  ): GcalConfig = GcalConfig(Some(ar), Some(cuAr), Some(qh), Some(thAr), Some(xe),
-      Some(ir), Some(sh), Some(flt), Some(diff))
+    case object GcalOff extends GcalConfig {
+      override val lampAr: ArLampState = ArLampState(LampState.Off)
+      override val lampCuAr: CuArLampState = CuArLampState(LampState.Off)
+      override val lampQh: QHLampState = QHLampState(LampState.Off)
+      override val lampThAr: ThArLampState = ThArLampState(LampState.Off)
+      override val lampXe: XeLampState = XeLampState(LampState.Off)
+      override val lampIrO: Option[IrLampState] = IrLampState(LampState.Off).some
+      override val shutter: Shutter = Shutter.CLOSED
+      override val filterO: Option[Filter] = none
+      override val diffuserO: Option[Diffuser] = none
+    }
+
+    // This configuration is for observations that do not use GCAL. It is preferable to not turn off the IR lamp.
+    case object GcalOffIgnoringIr extends GcalConfig {
+      override val lampAr: ArLampState = ArLampState(LampState.Off)
+      override val lampCuAr: CuArLampState = CuArLampState(LampState.Off)
+      override val lampQh: QHLampState = QHLampState(LampState.Off)
+      override val lampThAr: ThArLampState = ThArLampState(LampState.Off)
+      override val lampXe: XeLampState = XeLampState(LampState.Off)
+      override val lampIrO: Option[IrLampState] = none
+      override val shutter: Shutter = Shutter.CLOSED
+      override val filterO: Option[Filter] = none
+      override val diffuserO: Option[Diffuser] = none
+    }
 
   }
 
@@ -125,10 +142,10 @@ object GcalController {
       s"lampQH = ${config.lampQh}",
       s"lampThAr = ${config.lampThAr}",
       s"lampXe = ${config.lampXe}",
-      s"lampIr = ${config.lampIr}",
+      s"lampIr = ${config.lampIrO}",
       s"shutter = ${config.shutter}",
-      s"filter = ${config.filter}",
-      s"diffuser = ${config.diffuser}"
+      s"filter = ${config.filterO}",
+      s"diffuser = ${config.diffuserO}"
     ).mkString
   )
 

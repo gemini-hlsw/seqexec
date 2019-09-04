@@ -3,7 +3,6 @@
 
 package seqexec.server.gsaoi
 
-import cats.data.OptionT
 import cats.effect.{IO, Timer}
 import cats.implicits._
 import mouse.boolean._
@@ -148,7 +147,7 @@ object GsaoiControllerEpics {
 
     override def observe(fileId: ImageFileId, cfg: GsaoiController.DCConfig): IO[ObserveCommandResult] = {
       val checkDhs: IO[Unit] = failUnlessM[IO](
-        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
+        epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
         SeqexecFailure.Execution("GSAOI is not connected to DHS")
       )
 
@@ -177,16 +176,14 @@ object GsaoiControllerEpics {
 
     override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
       implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-      val rem = (
-        for {
-          remTime    <- OptionT(epicsSys.countdown).map(_.seconds)
-          coaddsDone <- OptionT(epicsSys.coaddsDone)
-          coadds     <- OptionT(epicsSys.coadds)
-          expTime    <- OptionT(epicsSys.requestedExposureTime).map(_.seconds)
-        } yield (coaddsDone<coadds).fold(coadds-coaddsDone-1, 0)*expTime + remTime
-      ).value
+      val rem = for {
+        remTime    <- epicsSys.countdown.map(_.seconds)
+        coaddsDone <- epicsSys.coaddsDone
+        coadds     <- epicsSys.coadds
+        expTime    <- epicsSys.requestedExposureTime.map(_.seconds)
+      } yield (coaddsDone<coadds).fold(coadds-coaddsDone-1, 0)*expTime + remTime
 
-      EpicsUtil.countdown[IO](total, rem, epicsSys.observeState)
+      EpicsUtil.countdown[IO](total, rem.map(_.some), epicsSys.observeState.map(_.some))
     }
 
     def calcObserveTimeout(cfg: DCConfig): Time = {
@@ -196,19 +193,16 @@ object GsaoiControllerEpics {
       cfg.exposureTime * cfg.coadds.toDouble * factor + overhead
     }
 
-    private def getStatusVal[A](get: IO[Option[A]], name: String): IO[A] =
-      get.flatMap(_.map(IO(_)).getOrElse(IO.raiseError(SeqexecFailure.Unexpected(s"Unable to read $name from TCS."))))
-
     private def retrieveConfig: IO[EpicsGsaoiConfig] = for{
-      fl <- getStatusVal(epicsSys.filter, "filter")
-      uw <- getStatusVal(epicsSys.utilWheel, "utility wheel")
-      wc <- getStatusVal(epicsSys.windowCover, "window cover")
-      rm <- getStatusVal(epicsSys.readMode, "read mode")
-      ro <- getStatusVal(epicsSys.roi, "ROI")
-      co <- getStatusVal(epicsSys.coadds, "coadds")
-      et <- getStatusVal(epicsSys.requestedExposureTime, "exposure time")
-      fo <- getStatusVal(epicsSys.numberOfFowlerSamples, "number of fowler samples")
-      gd <- getStatusVal(epicsSys.guiding, "guide state")
+      fl <- epicsSys.filter
+      uw <- epicsSys.utilWheel
+      wc <- epicsSys.windowCover
+      rm <- epicsSys.readMode
+      ro <- epicsSys.roi
+      co <- epicsSys.coadds
+      et <- epicsSys.requestedExposureTime
+      fo <- epicsSys.numberOfFowlerSamples
+      gd <- epicsSys.guiding
     } yield EpicsGsaoiConfig(fl, uw, wc, rm, ro, co, et, fo, gd)
 
   }

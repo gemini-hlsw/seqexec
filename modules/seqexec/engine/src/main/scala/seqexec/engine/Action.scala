@@ -4,21 +4,27 @@
 package seqexec.engine
 
 import fs2.Stream
-import seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
+import seqexec.engine.Result.Error
+import seqexec.engine.Result.PartialVal
+import seqexec.engine.Result.PauseContext
+import seqexec.engine.Result.RetVal
 import seqexec.model.ActionType
 import seqexec.model.enum.ActionStatus
 import monocle.macros.Lenses
 
 @Lenses
 final case class Action[F[_]](
-  kind: ActionType,
-  gen: Stream[F, Result[F]],
+  kind:  ActionType,
+  gen:   Stream[F, Result[F]],
   state: Action.State[F]
 )
 
 object Action {
 
-  final case class State[F[_]](runState: ActionState[F], partials: List[PartialVal])
+  final case class State[F[_]](
+    runState: ActionState[F],
+    partials: List[PartialVal]
+  )
 
   sealed trait ActionState[+F[_]] {
     def isIdle: Boolean = false
@@ -45,9 +51,8 @@ object Action {
     }
 
     def active: Boolean = this match {
-      case ActionState.Paused(_) |
-           ActionState.Started => true
-      case _                   => false
+      case ActionState.Paused(_) | ActionState.Started => true
+      case _                                           => false
     }
 
     def started: Boolean = this match {
@@ -65,9 +70,9 @@ object Action {
       override val isIdle: Boolean = true
     }
     case object Started extends ActionState[Nothing]
-    final case class Paused[F[_]](ctx: PauseContext[F]) extends ActionState[F]
+    final case class Paused[F[_]](ctx:         PauseContext[F]) extends ActionState[F]
     final case class Completed[V <: RetVal](r: V) extends ActionState[Nothing]
-    final case class Failed(e: Error) extends ActionState[Nothing]
+    final case class Failed(e:                 Error) extends ActionState[Nothing]
 
     private def actionStateToStatus[F[_]](s: ActionState[F]): ActionStatus =
       s match {

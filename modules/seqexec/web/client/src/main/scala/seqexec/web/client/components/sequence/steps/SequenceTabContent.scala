@@ -11,7 +11,6 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.common.implicits._
-import seqexec.model.Step
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
@@ -67,13 +66,13 @@ object SequenceTabContent {
         p.stepsConnect { x =>
           val focus = x()
 
-          val steps =
-            focus.stepsTable.foldMap(_.steps).lift(i).getOrElse(Step.Zero)
-          val hs = focus.configTableState
-          <.div(
-            ^.height := "100%",
-            StepConfigTable(StepConfigTable.Props(steps, hs))
-          )
+          focus.stepsTable.foldMap(_.steps).lift(i).map { steps =>
+            val hs = focus.configTableState
+            <.div(
+              ^.height := "100%",
+              StepConfigTable(StepConfigTable.Props(steps, hs))
+            )
+          }.getOrElse(<.div())
         }
     }
 

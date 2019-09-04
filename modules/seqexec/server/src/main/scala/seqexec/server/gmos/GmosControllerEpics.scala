@@ -364,6 +364,12 @@ object GmosControllerEpics extends GmosEncoders {
           IO(Log.info("Completed Gmos configuration"))
       }
 
+      override def setRowsToShuffle(rows: Int): IO[Unit] =
+        IO(Log.debug(s"Set rows to shuffle to $rows")) *>
+          DC.setNsRows(rows) *>
+          sys.configCmd.setTimeout[IO](ConfigTimeout) *>
+          sys.post.void
+
       override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommandResult] =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
