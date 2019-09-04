@@ -15,9 +15,10 @@ import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.obsclass.ObsClass
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import java.lang.{ Boolean => JBoolean }
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import java.lang.{Boolean => JBoolean}
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import gem.enum.GpiReadMode
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
@@ -28,6 +29,8 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import seqexec.server.tcs.Tcs
+
 import scala.concurrent.duration._
 import squants.Time
 import squants.time.Milliseconds
@@ -106,7 +109,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
   ): Stream[F, Progress] =
     ProgressUtil.countdown[F](total, elapsed.self)
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
     new GpiInstrumentActions[F]
 
 }

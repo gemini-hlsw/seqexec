@@ -6,12 +6,14 @@ package seqexec.server.tcs
 import cats.implicits._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import mouse.all._
-import seqexec.model.TelescopeGuideConfig
-import seqexec.model.enum.TipTiltSource
-import seqexec.model.enum.M1Source
-import seqexec.model.M1GuideConfig
-import seqexec.model.M2GuideConfig
+import seqexec.model.{M1GuideConfig, M2GuideConfig, TelescopeGuideConfig}
+import seqexec.model.enum.{M1Source, NodAndShuffleStage, TipTiltSource}
 import seqexec.server.tcs.TcsController._
+import seqexec.server.{ConfigResult, System}
+
+trait Tcs[F[_]] extends System[F] {
+  def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[ConfigResult[F]]
+}
 
 object Tcs {
 

@@ -8,16 +8,14 @@ import cats.data.NonEmptySet
 import cats.effect.Sync
 import cats.implicits._
 import mouse.all._
-import seqexec.model.enum.TipTiltSource
-import seqexec.model.enum.M1Source
+import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
 import monocle.macros.Lenses
 import org.log4s.getLogger
-import seqexec.model.enum.Resource
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure, System}
+import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure}
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.TcsController._
@@ -28,11 +26,11 @@ import shapeless.tag.@@
 import squants.Angle
 import squants.space.Arcseconds
 
-class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private (tcsController: TcsNorthController[F],
-                                    subsystems: NonEmptySet[Subsystem],
-                                    gaos: Option[Altair[F]],
-                                    guideDb: GuideConfigDb[F]
-                                   )(config: TcsNorth.TcsSeqConfig[F]) extends System[F] {
+class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private(tcsController: TcsNorthController[F],
+                                                                        subsystems: NonEmptySet[Subsystem],
+                                                                        gaos: Option[Altair[F]],
+                                                                        guideDb: GuideConfigDb[F]
+                                   )(config: TcsNorth.TcsSeqConfig[F]) extends Tcs[F] {
   import TcsNorth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
 
@@ -134,6 +132,11 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private (tcsController: 
       )
     }
 
+  override def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[ConfigResult[F]] =
+    buildTcsConfig.flatMap{ cfg =>
+      Log.debug(s"Moving to nod ${stage.symbol}")
+      tcsController.nod(subsystems, cfg)(stage, offset, guided)
+    }.as(ConfigResult(this))
 }
 
 object TcsNorth {
@@ -154,9 +157,14 @@ object TcsNorth {
                                        instrument: InstrumentSystem[F]
                                      )
 
-  def fromConfig[F[_]: Sync](controller: TcsNorthController[F], subsystems: NonEmptySet[Subsystem],
-                             gaos: Option[Altair[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
-    config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
+  def fromConfig[F[_]: Sync](controller: TcsNorthController[F],
+                             subsystems: NonEmptySet[Subsystem],
+                             gaos: Option[Altair[F]],
+                             instrument: InstrumentSystem[F],
+                             guideConfigDb: GuideConfigDb[F]
+                            )(config: Config,
+                              lightPath: LightPath,
+                              observingWavelength: Option[Wavelength]
   ): TcsNorth[F] = {
 
     val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption

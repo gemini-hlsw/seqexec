@@ -22,6 +22,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -35,6 +36,7 @@ import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
+import seqexec.server.tcs.Tcs
 import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
@@ -121,8 +123,8 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Logger, T <: GmosControll
       }
     }
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
-    new GmosInstrumentActions(this, config)
+  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+    new GmosInstrumentActions(this, tcsO, config)
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve

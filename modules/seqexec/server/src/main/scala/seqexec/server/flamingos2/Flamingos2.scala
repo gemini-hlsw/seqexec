@@ -14,10 +14,12 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
+
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
+
 import scala.concurrent.duration.{Duration, SECONDS}
-import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import seqexec.server.tcs.{FOCAL_PLANE_SCALE, Tcs}
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
@@ -74,7 +76,7 @@ final case class Flamingos2[F[_]: Sync: Timer: Logger](f2Controller: Flamingos2C
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] =
     f2Controller.observeProgress(total)
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
   // TODO Use different value if using electronic offsets

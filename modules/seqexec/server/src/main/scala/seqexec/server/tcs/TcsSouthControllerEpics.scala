@@ -6,6 +6,7 @@ package seqexec.server.tcs
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
@@ -32,6 +33,13 @@ class TcsSouthControllerEpics private (guideConfigDb: GuideConfigDb[IO]) extends
   override def notifyObserveStart: IO[Unit] = TcsControllerEpicsCommon.notifyObserveStart
 
   override def notifyObserveEnd: IO[Unit] = TcsControllerEpicsCommon.notifyObserveEnd
+
+  override def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsSouthConfig)
+                  (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean)
+  : IO[Unit] = tcsConfig match {
+    case c: BasicTcsConfig => TcsControllerEpicsCommon.nod(subsystems, offset, guided, c)
+    case _: TcsSouthAoConfig => SeqexecFailure.Execution("N&S not supported when using Altair").raiseError[IO, Unit]
+  }
 }
 
 object TcsSouthControllerEpics {
