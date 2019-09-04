@@ -38,7 +38,7 @@ class TcsSouthControllerEpics private (guideConfigDb: GuideConfigDb[IO]) extends
                   (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean)
   : IO[Unit] = tcsConfig match {
     case c: BasicTcsConfig => TcsControllerEpicsCommon.nod(subsystems, offset, guided, c)
-    case _: TcsSouthAoConfig => SeqexecFailure.Execution("N&S not supported when using Altair").raiseError[IO, Unit]
+    case _: TcsSouthAoConfig => SeqexecFailure.Execution("N&S not supported when using GeMS").raiseError[IO, Unit]
   }
 }
 

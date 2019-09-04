@@ -35,7 +35,7 @@ import seqexec.server.keywords.KeywordsClient
 import seqexec.server.InstrumentSystem._
 import seqexec.server.InstrumentActions
 import seqexec.server.gsaoi.GsaoiController._
-import seqexec.server.tcs.{FOCAL_PLANE_SCALE, Tcs}
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
@@ -101,7 +101,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+  override def instrumentActions(config: Config): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 }
 

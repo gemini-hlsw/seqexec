@@ -23,7 +23,7 @@ import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, Progress, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
-import seqexec.server.tcs.{FOCAL_PLANE_SCALE, Tcs}
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import seqexec.server.InstrumentSystem.UnpausableControl
@@ -89,7 +89,7 @@ final case class Niri[F[_]: Sync: Timer: Logger](controller: NiriController[F], 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+  override def instrumentActions(config: Config): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 }
 

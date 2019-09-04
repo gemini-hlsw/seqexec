@@ -25,7 +25,6 @@ import seqexec.server._
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.tcs.Tcs
 import squants.time.Seconds
 import squants.time.Time
 
@@ -76,7 +75,7 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 
-  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+  override def instrumentActions(config: Config): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
 }

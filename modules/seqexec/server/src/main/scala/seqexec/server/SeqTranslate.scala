@@ -69,7 +69,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       headers: HeaderExtraData => List[Header[IO]],
       stepType: StepType
     ): SequenceGen.StepGen[IO] = {
-      val ia = inst.instrumentActions(config, sys.collectFirst{case x: Tcs[IO] => x})
+      val ia = inst.instrumentActions(config)
       val initialStepExecutions: List[ParallelActions[IO]] =
         // Ask the instrument if we need an initial action
         (i === 0 && ia.runInitialAction(stepType)).option {

@@ -6,6 +6,7 @@ package seqexec.server
 import gem.Observation
 import edu.gemini.spModel.config2.Config
 import seqexec.server.keywords._
+import seqexec.server.tcs.Tcs
 
 /**
   * Describes the parameters for an observation
@@ -19,4 +20,6 @@ final case class ObserveEnvironment[F[_]](
   otherSys: List[System[F]],
   headers:  HeaderExtraData => List[Header[F]],
   ctx:      HeaderExtraData
-)
+) {
+  def getTcs: Option[Tcs[F]] = otherSys.collectFirst{ case x: Tcs[F] => x }
+}

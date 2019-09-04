@@ -11,7 +11,6 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.tcs.Tcs
 import squants.{Length, Time}
 
 trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
@@ -30,7 +29,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 
-  def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F]
+  def instrumentActions(config: Config): InstrumentActions[F]
 
   def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
     SequenceConfiguration.calcStepType(config)

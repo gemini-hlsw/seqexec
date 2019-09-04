@@ -25,7 +25,6 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Filter1, Other, ReadMode}
 import seqexec.server._
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
-import seqexec.server.tcs.Tcs
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
@@ -70,7 +69,7 @@ final case class Gnirs[F[_]: Sync: Logger](controller: GnirsController[F], dhsCl
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
 
-  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+  override def instrumentActions(config: Config): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
 }

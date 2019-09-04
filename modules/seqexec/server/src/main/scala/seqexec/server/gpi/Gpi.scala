@@ -29,7 +29,6 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.tcs.Tcs
 
 import scala.concurrent.duration._
 import squants.Time
@@ -109,7 +108,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
   ): Stream[F, Progress] =
     ProgressUtil.countdown[F](total, elapsed.self)
 
-  override def instrumentActions(config: Config, tcsO: Option[Tcs[F]]): InstrumentActions[F] =
+  override def instrumentActions(config: Config): InstrumentActions[F] =
     new GpiInstrumentActions[F]
 
 }

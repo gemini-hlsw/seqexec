@@ -28,7 +28,6 @@ import seqexec.server.ObserveContext
 import seqexec.server.SeqexecFailure
 import seqexec.server.ObserveActions._
 import seqexec.server.gmos.GmosController.Config._
-import seqexec.server.tcs.Tcs
 import seqexec.server.tcs.TcsController.{InstrumentOffset, OffsetP, OffsetQ}
 import shapeless.tag
 import squants.space.AngleConversions._
@@ -38,7 +37,6 @@ import squants.space.AngleConversions._
   */
 class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
-  tcsO:   Option[Tcs[F]],
   config: Config
 ) extends InstrumentActions[F] {
   override def observationProgressStream(
@@ -157,7 +155,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
                 .configureShuffle(rowsToShuffle)
                 .as(Response.Configured(inst.resource))
                 .toAction(ActionType.Configure(inst.resource)),
-              (tcsO, nsPositionO).mapN{ case (tcs, nsPos) =>
+              (env.getTcs, nsPositionO).mapN{ case (tcs, nsPos) =>
                 tcs.nod(
                   stage,
                   InstrumentOffset(
