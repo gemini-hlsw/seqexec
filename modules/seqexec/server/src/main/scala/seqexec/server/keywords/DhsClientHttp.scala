@@ -3,29 +3,31 @@
 
 package seqexec.server.keywords
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.atomic.AtomicInteger
-import org.log4s._
+import cats.FlatMap
+import cats.implicits._
+import cats.data.EitherT
 import cats.effect.Timer
 import cats.effect.Effect
 import cats.effect.Sync
-import cats.data.EitherT
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import gem.enum.DhsKeywordName
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.{SeqexecFailure, TrySeq}
-import seqexec.server.keywords.DhsClient.ImageParameters
-import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import io.circe.syntax._
-import cats.implicits._
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import io.chrisdavenport.log4cats.Logger
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.http4s.client.Client
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.circe._
 import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.http4s.client.dsl.Http4sClientDsl
+import org.log4s._
+import seqexec.model.dhs._
+import seqexec.server.{SeqexecFailure, TrySeq}
+import seqexec.server.keywords.DhsClient.ImageParameters
+import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import scala.concurrent.duration._
 
 /**
@@ -110,7 +112,7 @@ object DhsClientHttp {
       val s = r.downField("status").as[String]
       s.flatMap {
         case "success" =>
-          r.downField("result").as[String].map(TrySeq(_))
+          r.downField("result").as[String].map(i => TrySeq(toImageFileId(i)))
         case "error"   =>
           r.downField("errors").as[List[Error]].map(l =>
             TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", ")))
@@ -159,25 +161,22 @@ object DhsClientHttp {
 /**
   * Implementation of the Dhs client that simulates a dhs without external dependencies
   */
-class DhsClientSim[F[_]: Sync](date: LocalDate) extends DhsClient[F] {
-  import DhsClientSim.Log
-  private val counter = new AtomicInteger(0)
+private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[F, Int]) extends DhsClient[F] {
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): F[ImageFileId] =
-    Sync[F].delay (
-      f"S${date.format(format)}S${counter.incrementAndGet()}%04d"
-    )
+    counter.modify(x => (x  + 1, x + 1)).map {c =>
+      toImageFileId(f"S${date.format(format)}S${c}%04d")
+    }
 
   override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit] =
-    Sync[F].delay(
-      Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))
-    )
+    Logger[F].info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))
 
 }
 
 object DhsClientSim {
-  private val Log = getLogger
-  def apply[F[_]: Sync](date: LocalDate): DhsClient[F] = new DhsClientSim[F](date)
+  def unsafeApply[F[_]: Sync: Logger](date: LocalDate): DhsClient[F] = {
+    new DhsClientSim[F](date, Ref.unsafe(0))
+  }
 }

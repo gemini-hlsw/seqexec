@@ -5,6 +5,7 @@ package seqexec.server.gnirs
 
 import cats.effect.Sync
 import cats.effect.Timer
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
@@ -15,10 +16,10 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GnirsControllerSim {
-  def apply[F[_]: Sync: Timer]: GnirsController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: GnirsController[F] =
     new GnirsController[F] {
 
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GNIRS")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"GNIRS")
 
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         sim.observe(fileId, expTime)

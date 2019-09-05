@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbRunningStep._
@@ -19,6 +20,7 @@ import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
 import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbStepConfig._
+import seqexec.model.arb.ArbDhsTypes._
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -86,4 +88,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ApplyCommandResult]", EqTests[ApplyCommandResult].eqv)
   checkAll("Eq[ObserveCommandResult]", EqTests[ObserveCommandResult].eqv)
   checkAll("Eq[NodAndShuffleStage]", EqTests[NodAndShuffleStage].eqv)
+  checkAll("Eq[ImageFileId]", EqTests[ImageFileId].eqv)
+  checkAll("Eq[DataId]", EqTests[DataId].eqv)
 }

@@ -6,6 +6,7 @@ package seqexec.server.niri
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
@@ -15,9 +16,9 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NiriControllerSim {
-  def apply[F[_]: Sync: Timer]: NiriController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: NiriController[F] =
     new NiriController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"NIRI")
 
       override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
         calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))

@@ -6,6 +6,7 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import monocle.Prism
 import monocle.Lens
 import monocle.Optional
@@ -18,7 +19,7 @@ sealed trait Step extends Product with Serializable {
   def status: StepState
   def breakpoint: Boolean
   def skip: Boolean
-  def fileId: Option[dhs.ImageFileId]
+  def fileId: Option[ImageFileId]
 }
 
 object Step {
@@ -200,7 +201,7 @@ final case class StandardStep(
   override val status:     StepState,
   override val breakpoint: Boolean,
   override val skip:       Boolean,
-  override val fileId:     Option[dhs.ImageFileId],
+  override val fileId:     Option[ImageFileId],
   configStatus:            List[(Resource, ActionStatus)],
   observeStatus:           ActionStatus
 ) extends Step
@@ -236,7 +237,7 @@ final case class NodAndShuffleStep(
   override val status:     StepState,
   override val breakpoint: Boolean,
   override val skip:       Boolean,
-  override val fileId:     Option[dhs.ImageFileId],
+  override val fileId:     Option[ImageFileId],
   configStatus:            List[(Resource, ActionStatus)],
   nsStatus:                NodAndShuffleStatus
 ) extends Step

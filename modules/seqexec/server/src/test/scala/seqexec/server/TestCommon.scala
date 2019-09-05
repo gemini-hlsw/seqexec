@@ -22,6 +22,7 @@ import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result.PartialVal
 import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.dhs._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.tcs.GuideConfigDb
 import shapeless.tag
@@ -77,7 +78,7 @@ object TestCommon {
       Action.State(Action.ActionState.Completed(Response.Configured(resource)), Nil))(
         pendingAction(resource))
 
-  val fileId = "fileId"
+  val fileId = toImageFileId("fileId")
 
   def observing[F[_]: Applicative]: Action[F] =
     Action.state.set(

@@ -15,9 +15,10 @@ import gem.Observation
 import gem.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
-
 import knobs.Config
 import mouse.all._
 import monocle.Monocle._
@@ -66,6 +67,10 @@ class SeqexecEngine(
 ) {
   import SeqexecEngine._
 
+  // We establist here as the limit of where logger start
+  // TODO Push it up the stack
+  private implicit def unsafeLogger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec")
+
   val odbProxy: OdbProxy[IO] = OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
     else new OdbProxy.DummyOdbCommands[IO])
@@ -79,21 +84,21 @@ class SeqexecEngine(
   private val systems = Systems[IO](
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
-      DhsClientSim(settings.date)),
+      DhsClientSim.unsafeApply(settings.date)),
     (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
     (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
     settings.gcalControl.command.fold(GcalControllerEpics(GcalEpics.instance), GcalControllerSim[IO]),
     settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
-      settings.instForceError.fold(Flamingos2ControllerSimBad[IO](settings.failAt),
-        Flamingos2ControllerSim[IO])),
-    settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.south),
-    settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.north),
-    settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim[IO]),
-    settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim[IO]),
+      settings.instForceError.fold(Flamingos2ControllerSimBad.unsafeApply[IO](settings.failAt),
+        Flamingos2ControllerSim.unsafeApply[IO])),
+    settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.unsafeSouth[IO]),
+    settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.unsafeNorth[IO]),
+    settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim.unsafeApply[IO]),
+    settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim.unsafeApply[IO]),
     GpiController(gpi, gpiGDS),
     GhostController(ghost, ghostGDS),
-    settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim[IO]),
-    settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim[IO]),
+    settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim.unsafeApply[IO]),
+    settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim.unsafeApply[IO]),
     (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
     (settings.gemsControl.command && settings.gemsControl.command).fold(
       GemsControllerEpics(GemsEpics.instance, GsaoiEpics.instance),

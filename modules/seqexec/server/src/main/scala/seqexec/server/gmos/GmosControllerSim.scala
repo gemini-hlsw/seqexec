@@ -8,6 +8,7 @@ import cats.implicits._
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
+import io.chrisdavenport.log4cats.Logger
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some
@@ -130,15 +131,15 @@ object GmosControllerSim {
 
     }
 
-  def south[F[_]: Sync: Timer]: GmosController[F, SouthTypes] = {
+  def unsafeSouth[F[_]: Sync: Logger: Timer]: GmosController[F, SouthTypes] = {
     val nsConfig: Ref[F, NSObsState] = Ref.unsafe(NSObsState.Zero)
-    val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GMOS South")
+    val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"GMOS South")
     GmosControllerSim[F, SouthTypes](sim, nsConfig)
   }
 
-  def north[F[_]: Sync: Timer]: GmosController[F, NorthTypes] = {
+  def unsafeNorth[F[_]: Sync: Logger: Timer]: GmosController[F, NorthTypes] = {
     val nsConfig: Ref[F, NSObsState] = Ref.unsafe(NSObsState.Zero)
-    val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GMOS North")
+    val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"GMOS North")
     GmosControllerSim[F, NorthTypes](sim, nsConfig)
   }
 }

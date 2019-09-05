@@ -13,10 +13,12 @@ import gem.arb.ArbEnumerated._
 import gsp.math.arb.ArbTime
 import java.time.Instant
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.ArbNotification
 import seqexec.model.arb.ArbTelescopeGuideConfig._
+import seqexec.model.arb.ArbDhsTypes._
 
 trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
@@ -164,7 +166,7 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
   implicit val fidArb = Arbitrary[FileIdStepExecuted] {
     for {
-      i <- arbitrary[String]
+      i <- arbitrary[ImageFileId]
       s <- arbitrary[SequencesQueue[SequenceView]]
     } yield FileIdStepExecuted(i, s)
   }

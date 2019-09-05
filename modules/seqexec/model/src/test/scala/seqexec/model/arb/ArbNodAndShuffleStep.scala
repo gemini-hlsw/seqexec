@@ -11,6 +11,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.arb.ArbStepConfig._
 import seqexec.model.arb.ArbStepState._
+import seqexec.model.arb.ArbDhsTypes._
 
 trait ArbNodAndShuffleStep {
   implicit val nssArb = Arbitrary[NodAndShuffleStatus] {

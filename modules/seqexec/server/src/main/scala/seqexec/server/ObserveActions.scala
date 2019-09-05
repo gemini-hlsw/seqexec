@@ -7,12 +7,11 @@ import cats._
 import cats.data.EitherT
 import cats.implicits._
 import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
-import seqexec.model.dhs.ImageFileId
+import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentSystem.ElapsedTime
@@ -39,10 +38,7 @@ trait ObserveActions {
         SeqexecFailure
           .Unexpected("Unable to send ObservationAborted message to ODB.")
       )(identity) *>
-      MonadError[F, Throwable].raiseError(
-        SeqexecFailure
-          .Execution(s"Observation ${obsId.format} aborted by user.")
-      )
+      MonadError[F, Throwable].raiseError(SeqexecFailure.Aborted(obsId))
 
   /**
     * Send the datasetStart command to the odb
@@ -51,7 +47,7 @@ trait ObserveActions {
     systems:     Systems[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
-    dataId:      String
+    dataId:      DataId
   ): F[Unit] =
     systems.odb
       .datasetStart(obsId, dataId, imageFileId)
@@ -67,7 +63,7 @@ trait ObserveActions {
     systems:     Systems[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
-    dataId:      String
+    dataId:      DataId
   ): F[Unit] =
     systems.odb
       .datasetComplete(obsId, dataId, imageFileId)
@@ -113,11 +109,12 @@ trait ObserveActions {
     */
   def dataId[F[_]: MonadError[?[_], Throwable]](
     env: ObserveEnvironment[F]
-  ): F[String] =
+  ): F[DataId] =
     EitherT
       .fromEither[F](
         env.config
-          .extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP)
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .map(toDataId)
           .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       )
       .widenRethrowT
@@ -129,7 +126,7 @@ trait ObserveActions {
   def observePreamble[F[_]: MonadError[?[_], Throwable]: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): F[(String, ObserveCommandResult)] =
+  ): F[(DataId, ObserveCommandResult)] =
     for {
       d <- dataId(env)
       _ <- sendDataStart(env.systems, env.obsId, fileId, d)
@@ -147,7 +144,7 @@ trait ObserveActions {
     */
   def okTail[F[_]: MonadError[?[_], Throwable]](
     fileId:  ImageFileId,
-    dataId:  String,
+    dataId:  DataId,
     stopped: Boolean,
     env:     ObserveEnvironment[F]
   ): F[Result[F]] =
@@ -165,10 +162,10 @@ trait ObserveActions {
     */
   private def observeTail[F[_]: MonadError[?[_], Throwable]](
     fileId: ImageFileId,
-    dataId: String,
+    dataId: DataId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult): F[Stream[F, Result[F]]] = {
-    val result: F[Result[F]] = r match {
+  )(r:      ObserveCommandResult): Stream[F, Result[F]] = {
+    Stream.eval(r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, dataId, stopped = false, env)
       case ObserveCommandResult.Stopped =>
@@ -183,8 +180,7 @@ trait ObserveActions {
         // This shouldn't happen in normal observations. Raise an error
         MonadError[F, Throwable]
           .raiseError(SeqexecFailure.Execution("Unuspported Partial observation"))
-    }
-    result.map(Stream.emit[F, Result[F]])
+    })
   }
 
   /**
@@ -194,11 +190,10 @@ trait ObserveActions {
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
-    Stream.eval(
     for {
-      (fileId, result) <- observePreamble(fileId, env)
-      ret              <- observeTail(fileId, fileId, env)(result)
-    } yield ret).flatten
+      (dataId, result) <- Stream.eval(observePreamble(fileId, env))
+      ret              <- observeTail(fileId, dataId, env)(result)
+    } yield ret
 
 }
 
