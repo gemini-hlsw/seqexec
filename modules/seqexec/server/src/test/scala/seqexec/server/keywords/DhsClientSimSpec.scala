@@ -14,12 +14,12 @@ class DhsClientSimSpec extends FlatSpec with Matchers {
   private implicit def unsafeLogger = Slf4jLogger.unsafeCreate[IO]
 
   "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).unsafeRunSync() should matchPattern {
+      DhsClientSim.unsafeApply[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).unsafeRunSync() should matchPattern {
         case "S20160415S0001" =>
       }
     }
   it should "accept keywords" in {
-    val client = DhsClientSim[IO](LocalDate.of(2016, 4, 15))
+    val client = DhsClientSim.unsafeApply[IO](LocalDate.of(2016, 4, 15))
     client.createImage(DhsClient.ImageParameters(Permanent, Nil)).flatMap { id =>
       client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true)
     }.unsafeRunSync() shouldEqual (())

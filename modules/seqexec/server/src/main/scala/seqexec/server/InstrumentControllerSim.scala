@@ -60,6 +60,8 @@ object InstrumentControllerSim {
     val pauseFalse = (o: ObserveState) => (ObserveState.pauseFlag.set(false)(o), ObserveState.pauseFlag.set(false)(o))
 
     def unsafeRef[F[_]: Sync]: Ref[F, ObserveState] = Ref.unsafe(Zero)
+
+    def ref[F[_]: Sync]: F[Ref[F, ObserveState]] = Ref.of(Zero)
   }
 
   private[server] final class InstrumentControllerSimImpl[F[_]](
@@ -167,7 +169,7 @@ object InstrumentControllerSim {
 
   }
 
-  def apply[F[_]: Sync: Logger: Timer](name: String): InstrumentControllerSim[F] = {
+  def unsafeApply[F[_]: Sync: Logger: Timer](name: String): InstrumentControllerSim[F] = {
     val obsStateRef = InstrumentControllerSim.ObserveState.unsafeRef[F]
     new InstrumentControllerSimImpl[F](name,
                                        false,
@@ -177,7 +179,7 @@ object InstrumentControllerSim {
                                        obsStateRef)
   }
 
-  def withTimes[F[_]: Sync: Logger: Timer](
+  def unsafeWithTimes[F[_]: Sync: Logger: Timer](
     name:               String,
     readOutDelay:       FiniteDuration,
     stopObserveDelay:   FiniteDuration,

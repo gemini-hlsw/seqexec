@@ -28,7 +28,7 @@ class InstrumentControllerSimSpec extends FunSuite {
   val tick = FiniteDuration(250, MILLISECONDS)
 
   def simulator(implicit t: Timer[IO]) =
-     InstrumentControllerSim.withTimes[IO]("sim",
+     InstrumentControllerSim.unsafeWithTimes[IO]("sim",
                                             FiniteDuration(10, MILLISECONDS),
                                             FiniteDuration(5, MILLISECONDS),
                                             FiniteDuration(1, SECONDS))

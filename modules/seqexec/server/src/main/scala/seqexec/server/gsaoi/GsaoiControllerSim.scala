@@ -18,9 +18,9 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GsaoiControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: GsaoiController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: GsaoiController[F] =
     new GsaoiController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GSAOI")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"GSAOI")
 
       override def observe(fileId: ImageFileId,
                            cfg:    DCConfig): F[ObserveCommandResult] =

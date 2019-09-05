@@ -16,9 +16,9 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NiriControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: NiriController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: NiriController[F] =
     new NiriController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"NIRI")
 
       override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
         calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))

@@ -171,15 +171,23 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case _                   => false
     })
 
-    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Stream[IO, executeEngine.EventType] =
-      toInstrumentSys(instrument) match {
-        case Right(x) =>
-          if (seqState.current.execution.exists(isObserving)) Stream.eval(f(x.observeControl).attempt.map(handleError)) else Stream.empty[IO]
-        case Left(_) => Stream.empty[IO]
+    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
+      toInstrumentSys(instrument)
+        .toOption
+        .map(x => f(x.observeControl))
+        .flatMap { v =>
+          seqState
+            .current
+            .execution
+            .exists(isObserving)
+            .option(Stream.eval(v.attempt.map(handleError)))
       }
-    (st.sequences.seq.get(seqId), st.sequences.get(seqId)).mapN { (seqg, obsseq) =>
-      seqCmd(obsseq.seq, seqg.seqGen.instrument)
-    }
+
+    for {
+      seqg   <- st.sequences.seq.get(seqId)
+      obsseq <- st.sequences.get(seqId)
+      r      <- seqCmd(obsseq.seq, seqg.seqGen.instrument)
+    } yield r
 
   }
 

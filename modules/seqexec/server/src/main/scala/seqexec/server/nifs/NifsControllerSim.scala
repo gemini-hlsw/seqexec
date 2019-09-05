@@ -18,9 +18,9 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NifsControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: NifsController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: NifsController[F] =
     new NifsController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"NIRI")
 
       override def observe(fileId: ImageFileId,
                            cfg:    DCConfig): F[ObserveCommandResult] =

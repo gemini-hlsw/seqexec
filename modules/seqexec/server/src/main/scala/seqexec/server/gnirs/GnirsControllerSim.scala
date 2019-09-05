@@ -16,10 +16,10 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GnirsControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: GnirsController[F] =
+  def unsafeApply[F[_]: Sync: Logger: Timer]: GnirsController[F] =
     new GnirsController[F] {
 
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GNIRS")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"GNIRS")
 
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         sim.observe(fileId, expTime)
