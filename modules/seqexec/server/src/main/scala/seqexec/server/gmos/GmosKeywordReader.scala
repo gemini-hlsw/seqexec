@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import cats.data.EitherT
 import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
@@ -13,11 +14,16 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import seqexec.model.enum.NodAndShuffleStage.{StageA, StageB}
+import seqexec.server.{ConfigUtilOps, SeqexecFailure}
+import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
 final case class GmosObsKeywordsReader[F[_]: Sync](config: Config) {
-  private implicit val BooleanDefaultValue = DefaultHeaderValue.FalseDefaultValue
+  import GmosObsKeywordsReader._
+
+  private implicit val BooleanDefaultValue: DefaultHeaderValue[Boolean] = DefaultHeaderValue.FalseDefaultValue
 
   def preimage: F[Boolean] =
     Sync[F].delay(
@@ -26,18 +32,66 @@ final case class GmosObsKeywordsReader[F[_]: Sync](config: Config) {
           .getOrElse(YesNoType.NO))
       .map(_.toBoolean)
       .safeValOrDefault
+
+  def nodMode: F[String] = "STANDARD".pure[F]
+
+  def nodPix: F[Int] = Gmos.nodAndShuffle(config).map(_.rows).explainExtractError
+
+  def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles).explainExtractError
+
+  def nodAxOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
+    .flatMap(
+      _.positions.find(_.stage === StageA)
+        .map(x => (x.offset.p.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
+        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
+          .raiseError[F, Double]
+        )
+    )
+
+  def nodAyOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
+    .flatMap(
+      _.positions.find(_.stage === StageA)
+        .map(x => (x.offset.q.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
+        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
+          .raiseError[F, Double]
+        )
+    )
+
+  def nodBxOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
+    .flatMap(
+      _.positions.find(_.stage === StageB)
+        .map(x => (x.offset.p.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
+        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
+          .raiseError[F, Double]
+        )
+    )
+
+  def nodByOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
+    .flatMap(
+      _.positions.find(_.stage === StageB)
+        .map(x => (x.offset.q.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
+        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
+          .raiseError[F, Double]
+        )
+    )
+
+  def isNS: F[Boolean] = config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError
+
+}
+
+object GmosObsKeywordsReader {
+
+  private implicit class ExplainExtractError[F[_]: Sync, A](v: Either[ExtractFailure, A]) {
+    def explainExtractError: F[A] =
+      EitherT(v.pure[F])
+        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+        .widenRethrowT
+  }
+
 }
 
 trait GmosKeywordReader[F[_]] {
   def ccName:                    F[String]
-  // TODO Add NOD*
-  /*def nodMode:                 F[String]
-  def nodPix:                    F[Int]
-  def nodCount:                  F[Int]
-  def nodAxOff:                  F[Int]
-  def nodAyOff:                  F[Int]
-  def nodBxOff:                  F[Int]
-  def nodByOff:                  F[Int]*/
   def maskId:                    F[Int]
   def maskName:                  F[String]
   def maskType:                  F[Int]
@@ -121,8 +175,7 @@ object GmosKeywordReaderDummy {
     override def adcWavelength1: F[Double]            = doubleDefault[F]
     override def adcWavelength2: F[Double]            = doubleDefault[F]
     override def detNRoi: F[Int]                      = intDefault[F]
-    override def roiValues: F[List[(Int, RoiValues)]] =
-      listDefault[F, (Int, RoiValues)]
+    override def roiValues: F[List[(Int, RoiValues)]] = listDefault[F, (Int, RoiValues)]
     override def aExpCount: F[Int]                    = intDefault[F]
     override def bExpCount: F[Int]                    = intDefault[F]
     override def isADCInUse: F[Boolean]               = boolDefault[F]
@@ -161,7 +214,6 @@ object GmosKeywordReaderEpics {
     override def dcName: F[String] = sys.dcName
     override def detectorType: F[String] = sys.detectorType
     override def detectorId: F[String] = sys.detectorId
-    // TODO Exposure changes with N&S
     override def exposureTime: F[Double]   = sys.reqExposureTime.map(_.toDouble)
     override def adcUsed: F[Int]           = sys.adcUsed
     override def adcPrismEntSt: F[Double]  = sys.adcPrismEntryAngleStart
@@ -191,7 +243,7 @@ object GmosKeywordReaderEpics {
 
     override def roiValues: F[List[(Int, RoiValues)]] =
       (sys.roiNumUsed, sys.rois)
-        .mapN(readRois(_, _))
+        .mapN(readRois)
         .flatten
         .handleError(_ => List.empty[(Int, RoiValues)])
 
@@ -200,5 +252,6 @@ object GmosKeywordReaderEpics {
     override def isADCInUse: F[Boolean] =
       sys.adcUsed.map(_ === 1)
         .handleError(_ => false)
+
   }
 }

@@ -21,12 +21,13 @@ object GmosHeader {
   ): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-        sendKeywords(id, inst, List(
-          buildInt32(tcsKeywordsReader.gmosInstPort, KeywordName.INPORT),
-          buildString(gmosReader.ccName, KeywordName.GMOSCC),
-          buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
-          buildBoolean(gmosObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue))
-          // TODO NOD*
+        nsBeforeKeywords.flatMap(nsKs =>
+          sendKeywords(id, inst, List(
+            buildInt32(tcsKeywordsReader.gmosInstPort, KeywordName.INPORT),
+            buildString(gmosReader.ccName, KeywordName.GMOSCC),
+            buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
+            buildBoolean(gmosObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue)
+          ) ::: nsKs )
         )
 
       private def adcKeywords: F[List[KeywordBag => F[KeywordBag]]] =
@@ -44,15 +45,39 @@ object GmosHeader {
         , List.empty.pure[F])
 
       private def roiKeywords: F[List[KeywordBag => F[KeywordBag]]] =
-        gmosReader.roiValues.map { _.map {
+        gmosReader.roiValues.map { _.flatMap {
           case (i, rv) =>
             List(
               KeywordName.fromTag(s"DETRO${i}X").map(buildInt32(rv.xStart.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}XS").map(buildInt32(rv.xSize.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}Y").map(buildInt32(rv.yStart.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}YS").map(buildInt32(rv.ySize.pure[F], _))
-            ).mapFilter(identity)
-        }.flatten}
+            ).flattenOption
+        } }
+
+      private def nsBeforeKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+        gmosObsReader.isNS.ifM(
+          List(
+            buildString(gmosObsReader.nodMode, KeywordName.NODMODE),
+            buildInt32(gmosObsReader.nodPix, KeywordName.NODPIX),
+            buildInt32(gmosObsReader.nodCount, KeywordName.NODCOUNT),
+            buildDouble(gmosObsReader.nodAxOff, KeywordName.NODAXOFF),
+            buildDouble(gmosObsReader.nodAyOff, KeywordName.NODAYOFF),
+            buildDouble(gmosObsReader.nodBxOff, KeywordName.NODBXOFF),
+            buildDouble(gmosObsReader.nodByOff, KeywordName.NODBYOFF)
+          ).pure[F],
+          List.empty.pure[F]
+        )
+
+      private def nsAfterKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+        gmosObsReader.isNS.ifM(
+          List(
+            buildInt32(gmosReader.aExpCount, KeywordName.ANODCNT),
+            buildInt32(gmosReader.bExpCount, KeywordName.BNODCNT),
+            buildDouble(gmosReader.exposureTime, KeywordName.SUBINT)
+          ).pure[F],
+          List.empty.pure[F]
+        )
 
       private val InBeam: Int = 0
       private def readMaskName: F[String] =
@@ -63,7 +88,8 @@ object GmosHeader {
       def gmosKeywords(
         id:          ImageFileId,
         adcKeywords: List[KeywordBag => F[KeywordBag]],
-        roiKeywords: List[KeywordBag => F[KeywordBag]]
+        roiKeywords: List[KeywordBag => F[KeywordBag]],
+        nsKeywords: List[KeywordBag => F[KeywordBag]]
       ): F[Unit] =
         sendKeywords(
           id,
@@ -96,21 +122,23 @@ object GmosHeader {
             buildString(gmosReader.dcName, KeywordName.GMOSDC),
             buildString(gmosReader.detectorType, KeywordName.DETTYPE),
             buildString(gmosReader.detectorId, KeywordName.DETID),
-            buildDouble(gmosReader.exposureTime, KeywordName.EXPOSURE),
+            buildDouble(
+              gmosObsReader.isNS.ifM(
+                (gmosObsReader.nodCount, gmosReader.exposureTime).mapN{ case (c, t) => 2 * c * t },
+                gmosReader.exposureTime
+              ),
+              KeywordName.EXPOSURE),
             buildInt32(gmosReader.adcUsed, KeywordName.ADCUSED),
             buildInt32(gmosReader.detNRoi, KeywordName.DETNROI)
-            // TODO These are enabled on N&S only
-            /*buildInt32(gmosReader.aExpCount, "ANODCNT"),
-            buildInt32(gmosReader.bExpCount, "BNODCNT"),
-            buildInt32(gmosReader.exposureTime, "SUBINT")*/
-          ) ::: adcKeywords ::: roiKeywords
+          ) ::: adcKeywords ::: roiKeywords ::: nsKeywords
         )
 
       override def sendAfter(id: ImageFileId): F[Unit] =
         for {
           adc <- adcKeywords
           roi <- roiKeywords
-          _   <- gmosKeywords(id, adc, roi)
+          nsK <- nsAfterKeywords
+          _   <- gmosKeywords(id, adc, roi, nsK)
         } yield ()
 
     }
