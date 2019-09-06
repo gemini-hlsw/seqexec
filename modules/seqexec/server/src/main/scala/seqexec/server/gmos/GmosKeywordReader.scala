@@ -4,7 +4,7 @@
 package seqexec.server.gmos
 
 import cats.data.EitherT
-import cats.Applicative
+import cats.{Applicative, MonadError}
 import cats.effect.Sync
 import cats.implicits._
 import seqexec.server.ConfigUtilOps._
@@ -23,27 +23,26 @@ import seqexec.model.enum.NodAndShuffleStage
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-final case class GmosObsKeywordsReader[F[_]: Sync](config: Config) {
+final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config: Config) {
   import GmosObsKeywordsReader._
 
   private implicit val BooleanDefaultValue: DefaultHeaderValue[Boolean] = DefaultHeaderValue.FalseDefaultValue
 
-  def preimage: F[Boolean] =
-    Sync[F].delay(
-        config
-          .extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
-          .getOrElse(YesNoType.NO))
-      .map(_.toBoolean)
-      .safeValOrDefault
+  def preimage: F[Boolean] = MonadError[F, Throwable].catchNonFatal(
+    config
+      .extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+      .getOrElse(YesNoType.NO)
+      .toBoolean
+  ).safeValOrDefault
 
   def nodMode: F[String] = "STANDARD".pure[F]
 
-  def nodPix: F[Int] = Gmos.nodAndShuffle(config).map(_.rows).explainExtractError
+  def nodPix: F[Int] = Gmos.nodAndShuffle(config).map(_.rows).explainExtractError[F]
 
-  def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles).explainExtractError
+  def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles).explainExtractError[F]
 
   private def extractOffset(stage: NodAndShuffleStage, l: Getter[Offset, Angle]): F[Double] =
-    Gmos.nodAndShuffle(config).explainExtractError
+    Gmos.nodAndShuffle(config).explainExtractError[F]
       .flatMap(
         _.positions.find(_.stage === stage)
           .map{x => Angle.signedArcseconds.get(l.get(x.offset)).toDouble.pure[F]}
@@ -60,17 +59,17 @@ final case class GmosObsKeywordsReader[F[_]: Sync](config: Config) {
 
   def nodByOff: F[Double] = extractOffset(StageB, Offset.q.asGetter ^<-> Offset.Q.angle)
 
-  def isNS: F[Boolean] = config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError
+  def isNS: F[Boolean] = config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError[F]
 
 }
 
 object GmosObsKeywordsReader {
 
-  private implicit class ExplainExtractError[F[_]: Sync, A](v: Either[ExtractFailure, A]) {
-    def explainExtractError: F[A] =
+  private implicit class ExplainExtractError[A](v: Either[ExtractFailure, A]) {
+    def explainExtractError[F[_]: MonadError[?[_], Throwable]]: F[A] =
       EitherT(v.pure[F])
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-        .widenRethrowT
+        .widenRethrowT[Throwable]
   }
 
 }
