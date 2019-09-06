@@ -181,7 +181,7 @@ object Gmos {
   private def configToAngle(s: String): Either[ExtractFailure, Angle] =
     s.parseDoubleOption
       .toRight(ContentError("Invalid offset value"))
-      .map(Angle.fromDoubleArcseconds(_))
+      .map(Angle.fromDoubleArcseconds)
 
   private def extractGuiding(config: Config, k: ItemKey): Either[ExtractFailure, Guiding] =
     config
@@ -202,7 +202,7 @@ object Gmos {
     }.toVector.sequence
   }
 
-  private def nodAndShuffle(config: Config): Either[ExtractFailure, NSConfig] =
+  def nodAndShuffle(config: Config): Either[ExtractFailure, NSConfig.NodAndShuffle] =
     for {
       cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
       rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
@@ -212,8 +212,8 @@ object Gmos {
 
   def nsConfig(config: Config): TrySeq[NSConfig] =
     (for {
-      useNS            <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
-      ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
+      useNS <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      ns    <- if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def nsConfigF[F[_]: ApplicativeError[?[_], Throwable]](config: Config): F[NSConfig] =
