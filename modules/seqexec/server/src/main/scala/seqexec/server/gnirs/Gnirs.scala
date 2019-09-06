@@ -14,8 +14,10 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
+
 import gem.enum.LightSinkName
 import gsp.math.syntax.string._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -27,7 +29,7 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
+final case class Gnirs[F[_]: Sync: Logger](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
   override def sfName(config: Config): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
@@ -66,6 +68,10 @@ final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: Dh
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    InstrumentActions.defaultInstrumentActions[F]
+
 }
 
 object Gnirs {

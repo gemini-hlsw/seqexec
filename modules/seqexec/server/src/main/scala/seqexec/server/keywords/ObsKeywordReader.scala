@@ -21,6 +21,9 @@ import gem.enum.Site
 import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
+
+import edu.gemini.spModel.gemini.gems.Canopus
+import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
 import seqexec.server.ConfigUtilOps
 import seqexec.server.SeqexecFailure
@@ -43,6 +46,13 @@ sealed trait ObsKeywordsReader[F[_]] {
   def oiwfsGuideS: F[String]
   def aowfsGuide: F[StandardGuideOptions.Value]
   def aowfsGuideS: F[String]
+  def cwfs1Guide: F[StandardGuideOptions.Value]
+  def cwfs2Guide: F[StandardGuideOptions.Value]
+  def cwfs3Guide: F[StandardGuideOptions.Value]
+  def odgw1Guide: F[StandardGuideOptions.Value]
+  def odgw2Guide: F[StandardGuideOptions.Value]
+  def odgw3Guide: F[StandardGuideOptions.Value]
+  def odgw4Guide: F[StandardGuideOptions.Value]
   def headerPrivacy: F[Boolean]
   def proprietaryMonths: F[String]
   def obsObject: F[String]
@@ -208,31 +218,40 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       pwfs2Guide
         .map(decodeGuide)
 
-    override def oiwfsGuide: F[StandardGuideOptions.Value] =
+    private def extractOptionalGuide(prop: String): F[StandardGuideOptions.Value] =
       EitherT(F.delay(
-        config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP)
+        config.extractTelescopeAs[StandardGuideOptions.Value](prop)
         .recoverWith {
           case ConfigUtilOps.KeyNotFound(_) => StandardGuideOptions.Value.park.asRight
         }
         .leftMap(explainExtractError))
       ).widenRethrowT
 
+    override def oiwfsGuide: F[StandardGuideOptions.Value] = extractOptionalGuide(GUIDE_WITH_OIWFS_PROP)
+
     override def oiwfsGuideS: F[String] =
       oiwfsGuide
         .map(decodeGuide)
 
-    override def aowfsGuide: F[StandardGuideOptions.Value] =
-      EitherT(F.delay(
-        config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_AOWFS_PROP)
-        .recoverWith {
-          case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.asRight
-        }
-        .leftMap(explainExtractError))
-      ).widenRethrowT
+    override def aowfsGuide: F[StandardGuideOptions.Value] = extractOptionalGuide(Tcs.GUIDE_WITH_AOWFS_PROP)
 
     override def aowfsGuideS: F[String] =
       aowfsGuide
         .map(decodeGuide)
+
+    override def cwfs1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs1.getSequenceProp)
+
+    override def cwfs2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs2.getSequenceProp)
+
+    override def cwfs3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs3.getSequenceProp)
+
+    override def odgw1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw1.getSequenceProp)
+
+    override def odgw2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw2.getSequenceProp)
+
+    override def odgw3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw3.getSequenceProp)
+
+    override def odgw4Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw4.getSequenceProp)
 
     private implicit val eqVisibility: Eq[Visibility] = Eq.by(_.ordinal())
 

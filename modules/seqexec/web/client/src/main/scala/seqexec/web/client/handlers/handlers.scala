@@ -12,10 +12,7 @@ import diode.NoAction
 import gem.enum.Site
 import seqexec.model.Observer
 import seqexec.model.Operator
-import seqexec.model.SequencesQueue
-import seqexec.model.SequenceView
-import seqexec.web.client.model._
-import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -71,20 +68,5 @@ class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer])
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateDefaultObserver(o) =>
       updated(o)
-  }
-}
-
-/**
-  * Handle for UI debugging events
-  */
-class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]])
-    extends ActionHandler(modelRW)
-    with Handlers[M, SequencesQueue[SequenceView]] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case MarkStepAsRunning(obsId, step) =>
-      updated(value.copy(sessionQueue = value.sessionQueue.collect {
-        case v: SequenceView if v.id === obsId => v.showAsRunning(step)
-        case v                                 => v
-      }))
   }
 }

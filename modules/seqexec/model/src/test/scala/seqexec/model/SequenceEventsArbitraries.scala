@@ -13,10 +13,12 @@ import gem.arb.ArbEnumerated._
 import gsp.math.arb.ArbTime
 import java.time.Instant
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.ArbNotification
 import seqexec.model.arb.ArbTelescopeGuideConfig._
+import seqexec.model.arb.ArbDhsTypes._
 
 trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
@@ -91,9 +93,6 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
   implicit val asrArb = Arbitrary[ActionStopRequested] {
     arbitrary[SequencesQueue[SequenceView]].map(ActionStopRequested.apply)
   }
-  implicit val nlmArb = Arbitrary[NewLogMessage] {
-    arbitrary[String].map(NewLogMessage.apply)
-  }
   implicit val slmArb = Arbitrary[ServerLogMessage] {
     for {
       l <- arbitrary[ServerLogLevel]
@@ -167,7 +166,7 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
   implicit val fidArb = Arbitrary[FileIdStepExecuted] {
     for {
-      i <- arbitrary[String]
+      i <- arbitrary[ImageFileId]
       s <- arbitrary[SequencesQueue[SequenceView]]
     } yield FileIdStepExecuted(i, s)
   }
@@ -222,7 +221,6 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
     Gen.oneOf[SeqexecEvent](
       arbitrary[SeqexecModelUpdate],
       arbitrary[ConnectionOpenEvent],
-      arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
       arbitrary[UserNotification],
       arbitrary[ObservationProgressEvent],
@@ -310,9 +308,6 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
   implicit val slmCogen: Cogen[ServerLogMessage] =
     Cogen[(ServerLogLevel, Instant, String)]
       .contramap(x => (x.level, x.timestamp, x.msg))
-
-  implicit val nlmCogen: Cogen[NewLogMessage] =
-    Cogen[String].contramap(_.msg)
 
   implicit val unCogen: Cogen[UserNotification] =
     Cogen[(Notification, ClientId)].contramap(x => (x.memo, x.clientId))

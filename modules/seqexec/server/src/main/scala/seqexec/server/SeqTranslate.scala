@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{NonEmptySet, Reader}
+import cats.data.NonEmptySet
 import cats.data.NonEmptyList
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
@@ -16,12 +16,14 @@ import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
+import io.chrisdavenport.log4cats.Logger
 import mouse.all._
 import seqexec.engine._
 import seqexec.engine.Action.ActionState
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model._
+import seqexec.model.dhs._
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem._
@@ -33,7 +35,7 @@ import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosHeader, GmosEpics, GmosObsKeywordsReader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosSouth}
+import seqexec.server.gmos.{GmosEpics, GmosHeader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosObsKeywordsReader, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.{LightPath, LightSource}
@@ -46,11 +48,11 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.gems.Gems
+import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
 import squants.Time
 import squants.time.TimeConversions._
 
-class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings) extends ObserveActions {
+class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]) extends ObserveActions {
   import SeqTranslate._
 
   private def step(obsId: Observation.Id, i: StepId, config: Config, nextToRun: StepId,
@@ -61,14 +63,16 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     def buildStep(
       inst: InstrumentSystem[IO],
       sys: List[System[IO]],
-      headers: Reader[HeaderExtraData, List[Header[IO]]],
+      headers: HeaderExtraData => List[Header[IO]],
       stepType: StepType
     ): SequenceGen.StepGen[IO] = {
+      val ia = inst.instrumentActions(config)
       val initialStepExecutions: List[ParallelActions[IO]] =
-        (i === 0 && stepType.includesObserve).option {
-          List(NonEmptyList.one(systems.odb.sequenceStart(obsId, "")
-            .as(Response.Ignored).toAction(ActionType.Undefined)))
-        }.orEmpty
+        // Ask the instrument if we need an initial action
+        (i === 0 && ia.runInitialAction(stepType)).option {
+          NonEmptyList.one(systems.odb.sequenceStart(obsId, toImageFileId(""))
+            .as(Response.Ignored).toAction(ActionType.Undefined))
+        }.toList
 
       val configs: Map[Resource, Action[IO]] = sys.map { x =>
         val res = x.resource
@@ -77,13 +81,15 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         res -> x.configure(config).as(Response.Configured(res)).toAction(kind)
       }.toMap
 
-      def rest(ctx: HeaderExtraData): List[ParallelActions[IO]] =
-        (stepType.includesObserve).option {
-          List(
-            NonEmptyList.one(Action(ActionType.Observe, observe(systems, config, obsId, inst, sys.filterNot(inst.equals),
-              headers)(ctx), Action.State(ActionState.Idle, Nil)))
-          )
-        }.orEmpty
+      def rest(ctx: HeaderExtraData): List[ParallelActions[IO]] = {
+        val env = ObserveEnvironment(systems, config, stepType, obsId, inst, sys.filterNot(inst.equals), headers, ctx)
+        // Request the instrument to build the observe actions and merge them with the progress
+        // Also catches any errors in the process of runnig an observation
+        ia.observeActions(env, (s, env) =>
+          ia.observationProgressStream(env)
+            .mergeHaltR(s)
+            .handleErrorWith(catchObsErrors[IO]))
+      }
 
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
@@ -100,7 +106,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         case _                                   => SequenceGen.CompletedStepGen(
           i,
           config.toStepConfig,
-          datasets.get(i + 1).map(_.filename)
+          datasets.get(i + 1).map(_.filename).map(toImageFileId)
         )
       }
     }
@@ -114,6 +120,13 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     } yield buildStep(is, systems, headers, stepType)
   }
 
+  def catchObsErrors[F[_]](t: Throwable): Stream[F, Result[F]] = t match {
+    case e: SeqexecFailure =>
+      Stream.emit(Result.Error(SeqexecFailure.explain(e)))
+    case e: Throwable =>
+      Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
+  }
+
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
@@ -121,7 +134,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
     val configs = sequence.config.getAllSteps.toList
 
-    val nextToRun = configs.map(extractStatus).lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
+    val nextToRun = configs
+      .map(extractStatus)
+      .lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
 
     val steps = configs.zipWithIndex.map {
       case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
@@ -150,15 +165,22 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
     implicit tio: Timer[IO]
-  ):  Option[Stream[IO, executeEngine.EventType]] = {
+  ): Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case ActionState.Started => true
       case _                   => false
     })
 
     def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
-      toInstrumentSys(instrument).toOption.map(x => f(x.observeControl)).flatMap {
-        v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.attempt.map(handleError)))
+      toInstrumentSys(instrument)
+        .toOption
+        .map(x => f(x.observeControl))
+        .flatMap { v =>
+          seqState
+            .current
+            .execution
+            .exists(isObserving)
+            .option(Stream.eval(v.attempt.map(handleError)))
       }
 
     for {
@@ -217,9 +239,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
 
-    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): IO[Result[IO]] =
+    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): Stream[IO, Result[IO]] =
       for {
-        r <- resumeCmd
+        r <- Stream.eval(resumeCmd)
         ret <- c.t(r)
       } yield ret
 
@@ -248,11 +270,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                 Stream.eval(IO(Event.actionResume(seqId, i,
                   ins.observeProgress(c.expTime, ElapsedTime(to.getOrElse(0.0.seconds)))
                     .map(Result.Partial(_))
-                    .mergeHaltR(Stream.eval(resumeIO(c, cmd(c.expTime))))
+                    .mergeHaltR(resumeIO(c, cmd(c.expTime)))
                 )))
               else
                 Stream.eval(IO(Event.actionResume(seqId, i,
-                  Stream.eval(resumeIO(c, cmd(c.expTime))))))
+                  resumeIO(c, cmd(c.expTime)))))
           }
       }
     }
@@ -300,7 +322,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     pausedCommand(seqId, f, useCountdown = false)
   }
 
-  private def toInstrumentSys(inst: Instrument)(
+  def toInstrumentSys(inst: Instrument)(
     implicit ev: Timer[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
@@ -353,32 +375,48 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case StepType.CelestialObject(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.CelestialObject(inst) => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi),
+        useGaos = false,
+        sys,
+        TcsController.LightSource.Sky,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.NodAndShuffle(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi), false, sys, TcsController.LightSource.Sky, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.NodAndShuffle(inst)   => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi),
+        useGaos = false,
+        sys,
+        TcsController.LightSource.Sky,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.FlatOrArc(inst)       =>
-        getTcs(flatOrArcTcsSubsystems(inst), false, sys, TcsController.LightSource.GCAL, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.FlatOrArc(inst)       => for {
+        tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, sys, TcsController.LightSource.GCAL, config)
+        gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+      } yield List(sys, tcs, gcal)
 
-      case StepType.DarkOrBias(_)      =>  List(sys).asRight
+      case StepType.DarkOrBias(_)         =>  List(sys).asRight
 
-      case StepType.AltairObs(inst)          =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.AltairObs(inst)       => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+        useGaos = true,
+        sys,
+        TcsController.LightSource.AO,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
       case StepType.AlignAndCalib         => List(sys).asRight
 
-      case StepType.Gems(inst) =>
-        getTcs(inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos), true, sys, TcsController.LightSource.AO, config)
-          .map(tcs => sys :: List(tcs, Gcal(systems.gcal, site == Site.GS)))
+      case StepType.Gems(inst)            => getTcs(
+        inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+        useGaos = true,
+        sys,
+        TcsController.LightSource.AO,
+        config
+      ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-
-      case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
+      case _                              => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
 
@@ -446,41 +484,60 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       dummyHeader[F]
     }
 
+  private def gemsHeaders[F[_]: Sync](epics: => GemsEpics[F],
+                                      gsaoiEpics: => GsaoiEpics[F],
+                                      instrument: InstrumentSystem[F],
+                                      obsKReader: ObsKeywordsReader[F],
+                                      tcsKReader: TcsKeywordsReader[F])
+  : Header[F] = GemsHeader.header[F](
+    instrument,
+    if(settings.gemsKeywords && settings.gsaoiKeywords) GemsKeywordReaderEpics[F](epics, gsaoiEpics)
+    else GemsKeywordReaderDummy[F],
+    obsKReader,
+    tcsKReader
+  )
+
   private def calcHeaders(
     config: Config,
     stepType: StepType,
     sys: InstrumentSystem[IO]
-  ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = {
+  ): TrySeq[HeaderExtraData => List[Header[IO]]] = {
     stepType match {
       case StepType.CelestialObject(_) | StepType.NodAndShuffle(_) =>
-          calcInstHeader(config, sys).map(h => Reader(ctx =>
-            List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => ctx =>
+            List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h))
 
       case StepType.AltairObs(_)    =>
         val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         for {
           gst  <- Altair.guideStarType(config)
-          read <- calcInstHeader(config, sys).map(h => Reader((ctx: HeaderExtraData) =>
+          read <- calcInstHeader(config, sys).map(h => (ctx: HeaderExtraData) =>
                     // Order is important
                     List(
                       commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
                       altairHeader(AltairEpics.instance, sys, tcsKReader),
                       altairLgsHeader(AltairEpics.instance, gst, sys),
-                      gwsHeaders(GwsEpics.instance, sys), h)))
+                      gwsHeaders(GwsEpics.instance, sys), h))
         } yield read
 
       case StepType.FlatOrArc(inst) =>
-          calcInstHeader(config, sys).map(h => Reader(ctx =>
-            List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => ctx =>
+            List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h))
 
       case StepType.DarkOrBias(_)   =>
-          calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
-      case StepType.AlignAndCalib   => TrySeq(Reader(_ => Nil)) // No headers for A&C
+      case StepType.AlignAndCalib   => TrySeq(_ => Nil) // No headers for A&C
 
       case StepType.Gems(_)         =>
-        calcInstHeader(config, sys).map(h => Reader(ctx =>
-          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+        val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
+        val obsKReader = ObsKeywordReader[IO](config, site)
+        calcInstHeader(config, sys).map(h => ctx =>
+          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
+            gwsHeaders(GwsEpics.instance, sys),
+            gemsHeaders(GemsEpics.instance, GsaoiEpics.instance, sys, obsKReader, tcsKReader),h
+          )
+        )
 
       case st                       => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
     }
@@ -489,7 +546,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
+  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]): SeqTranslate =
     new SeqTranslate(site, systems, settings)
 
   implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {

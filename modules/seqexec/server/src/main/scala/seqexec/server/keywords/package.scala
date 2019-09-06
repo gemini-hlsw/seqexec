@@ -3,11 +3,8 @@
 
 package seqexec.server
 
-import cats.{Applicative, Eq, Monad, Monoid, Functor}
-import cats.MonadError
-import cats.ApplicativeError
+import cats._
 import cats.implicits._
-import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
@@ -31,7 +28,7 @@ package keywords {
     def keywordsBundler: KeywordsBundler[F]
   }
 
-  abstract class DhsInstrument[F[_]: Sync] extends KeywordsClient[F] {
+  abstract class DhsInstrument[F[_]: Monad] extends KeywordsClient[F] {
     val dhsClient: DhsClient[F]
 
     val dhsInstrumentName: String
@@ -69,7 +66,7 @@ package keywords {
     ): F[KeywordBag] =
       ks.foldLeft(Applicative[F].pure(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
 
-    def kb[F[_]: Sync]: KeywordsBundler[F] = new KeywordsBundler[F] {
+    def kb[F[_]: Monad]: KeywordsBundler[F] = new KeywordsBundler[F] {
       def bundleKeywords(
         ks: List[KeywordBag => F[KeywordBag]]
       ): F[KeywordBag] =
@@ -77,7 +74,7 @@ package keywords {
     }
   }
 
-  abstract class GdsInstrument[F[_]: Sync] extends KeywordsClient[F] {
+  abstract class GdsInstrument[F[_]: Monad] extends KeywordsClient[F] {
     val gdsClient: GdsClient[F]
 
     def setKeywords(id: ImageFileId,

@@ -271,22 +271,18 @@ object AltairControllerEpics extends AltairController[IO] {
 
   override def endObserve(cfg: AltairConfig): IO[Unit] = IO.unit
 
-  private def getStatusVal[A](get: IO[Option[A]], name: String, system: String): IO[A] = get.flatMap(
-    _.map(IO(_)).getOrElse(IO.raiseError(SeqexecFailure.Unexpected(s"Unable to read $name from $system.")))
-  )
-
   def retrieveConfig: IO[EpicsAltairConfig] = for {
-    cmtxx <- getStatusVal(epicsAltair.matrixStartX.map(_.map(Millimeters(_))), "current control matrix X", "Altair")
-    cmtxy <- getStatusVal(epicsAltair.matrixStartY.map(_.map(Millimeters(_))), "current control matrix Y", "Altair")
-    pmtxx <- getStatusVal(epicsTcs.aoPreparedCMX.map(_.map(Millimeters(_))), "Altair next control matrix X", "TCS")
-    pmtxy <- getStatusVal(epicsTcs.aoPreparedCMY.map(_.map(Millimeters(_))), "Altair next control matrix Y", "TCS")
-    strRT <- getStatusVal(epicsAltair.strapRTStatus, "strap RT control status", "Altair")
-    strTm <- getStatusVal(epicsAltair.strapTempStatus, "strap temperature control status", "Altair")
-    strHV <- getStatusVal(epicsAltair.strapHVStatus, "strap HVolt status", "Altair")
-    strap <- getStatusVal(epicsAltair.strapLoop, "strap loop state", "Altair")
-    sfo   <- getStatusVal(epicsAltair.sfoLoop, "SFO loop state", "Altair")
-    stGat <- getStatusVal(epicsAltair.strapGate, "strap gate state", "Altair")
-    aolp  <- getStatusVal(epicsAltair.aoLoop, "AO active", "Altair")
+    cmtxx <- epicsAltair.matrixStartX.map(Millimeters(_))
+    cmtxy <- epicsAltair.matrixStartY.map(Millimeters(_))
+    pmtxx <- epicsTcs.aoPreparedCMX.map(Millimeters(_))
+    pmtxy <- epicsTcs.aoPreparedCMY.map(Millimeters(_))
+    strRT <- epicsAltair.strapRTStatus
+    strTm <- epicsAltair.strapTempStatus
+    strHV <- epicsAltair.strapHVStatus
+    strap <- epicsAltair.strapLoop
+    sfo   <- epicsAltair.sfoLoop
+    stGat <- epicsAltair.strapGate
+    aolp  <- epicsAltair.aoLoop
   } yield EpicsAltairConfig(
     (cmtxx, cmtxy),
     (pmtxx, pmtxy),
@@ -313,5 +309,5 @@ object AltairControllerEpics extends AltairController[IO] {
   )
 
   // This is a bit convoluted. AO follow state is read from Altair, but set as part of TCS configuration
-  override def isFollowing: IO[Option[Boolean]] = AltairEpics.instance.aoFollow
+  override def isFollowing: IO[Boolean] = AltairEpics.instance.aoFollow
 }

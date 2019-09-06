@@ -15,13 +15,13 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import monocle.macros.Lenses
 import org.log4s.getLogger
-import seqexec.model.enum.{M1Source, Resource, TipTiltSource}
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure, System}
+import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
+import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure}
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.{AGConfig, AoGuidersConfig, AoTcsConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsSouthController.{GemsGuiders, CWFS1Config, CWFS2Config, CWFS3Config, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
+import seqexec.server.tcs.TcsSouthController.{CWFS1Config, CWFS2Config, CWFS3Config, GemsGuiders, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
@@ -30,7 +30,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
                                           subsystems: NonEmptySet[Subsystem],
                                           gaos: Option[Gems[F]],
                                           guideDb: GuideConfigDb[F]
-                                         )(config: TcsSouth.TcsSeqConfig[F]) extends System[F] {
+                                         )(config: TcsSouth.TcsSeqConfig[F]) extends Tcs[F] {
   import TcsSouth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
 
@@ -58,6 +58,12 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
   override def notifyObserveStart: F[Unit] = tcsController.notifyObserveStart
 
   override def notifyObserveEnd: F[Unit] = tcsController.notifyObserveEnd
+
+  override def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[ConfigResult[F]] =
+    buildTcsConfig.flatMap{ cfg =>
+      Log.debug(s"Moving to nod ${stage.symbol}")
+      tcsController.nod(subsystems, cfg)(stage, offset, guided)
+    }.as(ConfigResult(this))
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =

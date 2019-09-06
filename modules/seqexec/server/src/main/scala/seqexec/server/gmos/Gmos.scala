@@ -3,11 +3,11 @@
 
 package seqexec.server.gmos
 
-import cats.Applicative
+import cats._
 import cats.data.Kleisli
 import cats.data.EitherT
+import cats.data.NonEmptyList
 import cats.implicits._
-import cats.effect.Sync
 import gem.enum.LightSinkName
 import gsp.math.Angle
 import gsp.math.Offset
@@ -20,13 +20,15 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
-import org.log4s.{Logger, getLogger}
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage
+import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
@@ -38,7 +40,7 @@ import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 
-abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller: GmosController[F, T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
+abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Logger, T <: GmosController.SiteDependentTypes](controller: GmosController[F, T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
 
@@ -59,8 +61,6 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     StopPausedCmd(controller.stopPaused),
     AbortPausedCmd(controller.abortPaused)
   )
-
-  val Log: Logger = getLogger
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
     case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
@@ -122,6 +122,9 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       }
     }
 
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    new GmosInstrumentActions(this, config)
+
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
@@ -133,9 +136,14 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
+  def configureShuffle(rows: Int): F[ConfigResult[F]] =
+    controller.setRowsToShuffle(rows)
+      .as(ConfigResult(this))
+
   override def calcObserveTime(config: Config): F[Time] =
-    Sync[F].delay(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-      .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000)))
+    (Gmos.expTime[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
+      v / ns.exposureDivider.toDouble
+    }
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller
@@ -144,6 +152,12 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
 
 object Gmos {
   val name: String = INSTRUMENT_NAME_PROP
+
+  // The sequence of nod and shuffle is always BAAB,
+  // In principle we'd expect the OT to send the sequence but instead the
+  // sequence is hardcoded in the seqexec and we only read the positions from
+  // the OT
+  val NsSequence = NonEmptyList.of(StageB, StageA, StageA, StageB)
 
   trait SiteSpecifics[T<:SiteDependentTypes] {
     def extractFilter(config: Config): Either[ExtractFailure, T#Filter]
@@ -157,8 +171,10 @@ object Gmos {
     val fpuDefault: T#FPU
   }
 
+  val NSKey = INSTRUMENT_KEY / USE_NS_PROP
+
   def isNodAndShuffle(config: Config): Boolean =
-    config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+    config.extractAs[java.lang.Boolean](NSKey)
       .map(_.booleanValue())
       .getOrElse(false)
 
@@ -200,6 +216,19 @@ object Gmos {
       ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
+  def nsConfigF[F[_]: ApplicativeError[?[_], Throwable]](config: Config): F[NSConfig] =
+    ApplicativeError[F, Throwable]
+      .catchNonFatal(
+        nsConfig(config).getOrElse(NSConfig.NoNodAndShuffle)
+      )
+
+  def expTime[F[_]: ApplicativeError[?[_], Throwable]](config: Config): F[Time] =
+    ApplicativeError[F, Throwable]
+      .catchNonFatal(
+        config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+          .map(v => Seconds(v.toDouble))
+          .getOrElse(Seconds(10000))
+      )
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {

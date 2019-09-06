@@ -20,15 +20,22 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl[F]
 
-  def observe(
-      config: Config): Kleisli[F, ImageFileId, ObserveCommandResult]
+  def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult]
+
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): F[Time]
+
   def keywordsClient: KeywordsClient[F]
+
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
+
+  def instrumentActions(config: Config): InstrumentActions[F]
+
   def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
     SequenceConfiguration.calcStepType(config)
+
   override val oiOffsetGuideThreshold: Option[Length] = None
+
   override def instrument: Instrument = resource
 
 }

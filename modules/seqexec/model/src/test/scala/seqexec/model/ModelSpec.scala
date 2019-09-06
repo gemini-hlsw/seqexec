@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
+import seqexec.model.dhs._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbRunningStep._
@@ -14,6 +15,12 @@ import seqexec.model.arb.ArbNotification._
 import seqexec.model.arb.ArbM2GuideConfig._
 import seqexec.model.arb.ArbM1GuideConfig._
 import seqexec.model.arb.ArbTelescopeGuideConfig._
+import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbStandardStep._
+import seqexec.model.arb.ArbNodAndShuffleStep._
+import seqexec.model.arb.ArbStepState._
+import seqexec.model.arb.ArbStepConfig._
+import seqexec.model.arb.ArbDhsTypes._
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -34,6 +41,8 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ActionStatus]", EqTests[ActionStatus].eqv)
   checkAll("Eq[Step]", EqTests[Step].eqv)
   checkAll("Eq[StandardStep]", EqTests[StandardStep].eqv)
+  checkAll("Eq[NodAndShuffleStatus]", EqTests[NodAndShuffleStatus].eqv)
+  checkAll("Eq[NodAndShuffleStep]", EqTests[NodAndShuffleStep].eqv)
   checkAll("Eq[SequenceState]", EqTests[SequenceState].eqv)
   checkAll("Eq[ActionType]", EqTests[ActionType].eqv)
   checkAll("Eq[SequenceMetadata]", EqTests[SequenceMetadata].eqv)
@@ -79,4 +88,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ApplyCommandResult]", EqTests[ApplyCommandResult].eqv)
   checkAll("Eq[ObserveCommandResult]", EqTests[ObserveCommandResult].eqv)
   checkAll("Eq[NodAndShuffleStage]", EqTests[NodAndShuffleStage].eqv)
+  checkAll("Eq[ImageFileId]", EqTests[ImageFileId].eqv)
+  checkAll("Eq[DataId]", EqTests[DataId].eqv)
 }

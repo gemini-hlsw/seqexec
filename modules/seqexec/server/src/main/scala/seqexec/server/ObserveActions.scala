@@ -4,128 +4,196 @@
 package seqexec.server
 
 import cats._
-import cats.effect.Sync
-import cats.effect.Concurrent
-import cats.data.Reader
 import cats.data.EitherT
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import gem.Observation
-import org.log4s._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
-import seqexec.model.dhs.ImageFileId
+import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem.ElapsedTime
 import squants.time.TimeConversions._
 
 /**
- * Methods usedd to generate observation related actions
- */
+  * Methods usedd to generate observation related actions
+  */
 trait ObserveActions {
-  private val Log = getLogger
 
-  // All instruments ask the DHS for an ImageFileId
-  private def dhsFileId[F[_]: ApplicativeError[?[_], Throwable]](systems: Systems[F], inst: InstrumentSystem[F]): F[ImageFileId] =
-    systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
+  private def info[F[_]: Logger](msg: => String): F[Unit] = Logger[F].info(msg)
 
-  private def info[F[_]: Sync](msg: => String): F[Unit] = Sync[F].delay(Log.info(msg))
+  /**
+    * Actions to perform when an observe is aborted
+    */
+  def abortTail[F[_]: MonadError[?[_], Throwable]](
+    systems:     Systems[F],
+    obsId:       Observation.Id,
+    imageFileId: ImageFileId
+  ): F[Result[F]] =
+    systems.odb
+      .obsAbort(obsId, imageFileId)
+      .ensure(
+        SeqexecFailure
+          .Unexpected("Unable to send ObservationAborted message to ODB.")
+      )(identity) *>
+      MonadError[F, Throwable].raiseError(SeqexecFailure.Aborted(obsId))
 
-  private def abortTail[F[_]: MonadError[?[_], Throwable]](systems: Systems[F], obsId: Observation.Id, imageFileId: ImageFileId): F[Result[F]] =
-    systems.odb.obsAbort(obsId, imageFileId)
-      .ensure(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))(identity) *>
-    MonadError[F, Throwable].raiseError(SeqexecFailure.Execution(s"Observation ${obsId.format} aborted by user."))
-
-  private def sendDataStart[F[_]: MonadError[?[_], Throwable]](systems: Systems[F], obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): F[Unit] =
-    systems.odb.datasetStart(obsId, dataId, imageFileId)
-      .ensure(SeqexecFailure.Unexpected("Unable to send DataStart message to ODB."))(identity)
+  /**
+    * Send the datasetStart command to the odb
+    */
+  private def sendDataStart[F[_]: MonadError[?[_], Throwable]](
+    systems:     Systems[F],
+    obsId:       Observation.Id,
+    imageFileId: ImageFileId,
+    dataId:      DataId
+  ): F[Unit] =
+    systems.odb
+      .datasetStart(obsId, dataId, imageFileId)
+      .ensure(
+        SeqexecFailure.Unexpected("Unable to send DataStart message to ODB.")
+      )(identity)
       .void
 
-  private def sendDataEnd[F[_]: MonadError[?[_], Throwable]](systems: Systems[F], obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): F[Unit] =
-    systems.odb.datasetComplete(obsId, dataId, imageFileId)
-      .ensure(SeqexecFailure.Unexpected("Unable to send DataEnd message to ODB."))(identity)
+  /**
+    * Send the datasetEnd command to the odb
+    */
+  private def sendDataEnd[F[_]: MonadError[?[_], Throwable]](
+    systems:     Systems[F],
+    obsId:       Observation.Id,
+    imageFileId: ImageFileId,
+    dataId:      DataId
+  ): F[Unit] =
+    systems.odb
+      .datasetComplete(obsId, dataId, imageFileId)
+      .ensure(
+        SeqexecFailure.Unexpected("Unable to send DataEnd message to ODB.")
+      )(identity)
       .void
 
-  def observe[F[_]: Sync: Concurrent](
-    systems: Systems[F],
-    config: Config,
-    obsId: Observation.Id,
-    inst: InstrumentSystem[F],
-    otherSys: List[System[F]],
-    headers: Reader[HeaderExtraData, List[Header[F]]])(
-      ctx: HeaderExtraData): Stream[F, Result[F]]
-  = {
-    def dataId: F[String] =
-      EitherT.fromEither[F](
-        config.extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP)
+  /**
+    * Standard progress stream for an observation
+    */
+  def observationProgressStream[F[_]](
+    env: ObserveEnvironment[F]
+  ): Stream[F, Result[F]] =
+    for {
+      ot <- Stream.eval(env.inst.calcObserveTime(env.config))
+      pr <- env.inst.observeProgress(ot, ElapsedTime(0.0.seconds))
+    } yield Result.Partial(pr)
+
+  /**
+    * Tell each subsystem that an observe will start
+    */
+  def notifyObserveStart[F[_]: Applicative](
+    env: ObserveEnvironment[F]
+  ): F[Unit] =
+    env.otherSys.map(_.notifyObserveStart).sequence.void
+
+  /**
+    * Tell each subsystem that an observe will end
+    * Unlike observe start we also tell the instrumetn about it
+    */
+  def notifyObserveEnd[F[_]: Applicative](env: ObserveEnvironment[F]): F[Unit] =
+    (env.inst +: env.otherSys).map(_.notifyObserveEnd).sequence.void
+
+  /**
+    * Close the image, telling either DHS or GDS as it correspond
+    */
+  def closeImage[F[_]](id: ImageFileId, env: ObserveEnvironment[F]): F[Unit] =
+    env.inst.keywordsClient.closeImage(id)
+
+  /**
+    * Read the data id value from the sequence
+    */
+  def dataId[F[_]: MonadError[?[_], Throwable]](
+    env: ObserveEnvironment[F]
+  ): F[DataId] =
+    EitherT
+      .fromEither[F](
+        env.config
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .map(toDataId)
           .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-      ).widenRethrowT
+      )
+      .widenRethrowT
 
-    def notifyObserveStart: F[Unit] =
-      otherSys.map(_.notifyObserveStart).sequence.void
+  /**
+    * Preamble for observations. It tells the odb, the subsystems
+    * send the start headers and finally sends an observe
+    */
+  def observePreamble[F[_]: MonadError[?[_], Throwable]: Logger](
+    fileId: ImageFileId,
+    env:    ObserveEnvironment[F]
+  ): F[(DataId, ObserveCommandResult)] =
+    for {
+      d <- dataId(env)
+      _ <- sendDataStart(env.systems, env.obsId, fileId, d)
+      _ <- notifyObserveStart(env)
+      _ <- env.headers(env.ctx).map(_.sendBefore(env.obsId, fileId)).sequence
+      _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
+      r <- env.inst.observe(env.config)(fileId)
+      _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
+    } yield (d, r)
 
-    // endObserve must be sent to the instrument too.
-    def notifyObserveEnd: F[Unit] =
-      (inst +: otherSys).map(_.notifyObserveEnd).sequence.void
+  /**
+    * End of an observation for a typical instrument
+    * It tells the odb and each subsystem and also sends the end
+    * observation keywords
+    */
+  def okTail[F[_]: MonadError[?[_], Throwable]](
+    fileId:  ImageFileId,
+    dataId:  DataId,
+    stopped: Boolean,
+    env:     ObserveEnvironment[F]
+  ): F[Result[F]] =
+    for {
+      _ <- notifyObserveEnd(env)
+      _ <- env.headers(env.ctx).reverseMap(_.sendAfter(fileId)).sequence.void
+      _ <- closeImage(fileId, env)
+      _ <- sendDataEnd[F](env.systems, env.obsId, fileId, dataId)
+    } yield
+      if (stopped) Result.OKStopped(Response.Observed(fileId))
+      else Result.OK(Response.Observed(fileId))
 
-    def closeImage(id: ImageFileId): F[Unit] =
-      inst.keywordsClient.closeImage(id)
-
-    def doObserve(fileId: ImageFileId): F[Result[F]] =
-      for {
-        d   <- dataId
-        _   <- sendDataStart(systems, obsId, fileId, d)
-        _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).sequence
-        _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
-        r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
-        ret <- observeTail(fileId, d)(r)
-      } yield ret
-
-    def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommandResult): F[Result[F]] = {
-      def okTail(stopped: Boolean): F[Result[F]] = for {
-        _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence.void
-        _ <- closeImage(id)
-        _ <- sendDataEnd[F](systems, obsId, id, dataId)
-      } yield if (stopped) Result.OKStopped(Response.Observed(id)) else Result.OK(Response.Observed(id))
-
-      val successTail: F[Result[F]] = okTail(stopped = false)
-
-      val stopTail: F[Result[F]] = okTail(stopped = true)
-
-      r match {
-        case ObserveCommandResult.Success => successTail
-        case ObserveCommandResult.Stopped => stopTail
-        case ObserveCommandResult.Aborted => abortTail(systems, obsId, id)
-        case ObserveCommandResult.Paused  =>
-          inst.calcObserveTime(config)
-            .map(e => Result.Paused(ObserveContext(observeTail(id, dataId), e)))
-      }
-    }
-
-    Stream.eval(dhsFileId(systems, inst).attempt).flatMap {
-      case Right(id) =>
-        val observationProgressStream =
-          for {
-            ot <- Stream.eval(inst.calcObserveTime(config))
-            pr <- inst.observeProgress(ot, ElapsedTime(0.0.seconds))
-          } yield Result.Partial(pr)
-
-        val observationCommand =
-          Stream.eval[F, Result[F]](doObserve(id))
-
-        Stream.emit(Result.Partial(FileIdAllocated(id))) ++
-          observationProgressStream.mergeHaltR(observationCommand)
-      case Left(e: SeqexecFailure)   => Stream.emit(Result.Error(SeqexecFailure.explain(e)))
-      case Left(e: Throwable)   => Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
-    }
+  /**
+    * Method to process observe results and act accordingly to the response
+    */
+  private def observeTail[F[_]: MonadError[?[_], Throwable]](
+    fileId: ImageFileId,
+    dataId: DataId,
+    env:    ObserveEnvironment[F]
+  )(r:      ObserveCommandResult): Stream[F, Result[F]] = {
+    Stream.eval(r match {
+      case ObserveCommandResult.Success =>
+        okTail(fileId, dataId, stopped = false, env)
+      case ObserveCommandResult.Stopped =>
+        okTail(fileId, dataId, stopped = true, env)
+      case ObserveCommandResult.Aborted =>
+        abortTail(env.systems, env.obsId, fileId)
+      case ObserveCommandResult.Paused =>
+        env.inst
+          .calcObserveTime(env.config)
+          .map(e => Result.Paused(ObserveContext(observeTail(fileId, dataId, env), e)))
+      case ObserveCommandResult.Partial =>
+        // This shouldn't happen in normal observations. Raise an error
+        MonadError[F, Throwable]
+          .raiseError(SeqexecFailure.Execution("Unuspported Partial observation"))
+    })
   }
+
+  /**
+    * Observe for a typical instrument
+    */
+  def stdObserve[F[_]: MonadError[?[_], Throwable]: Logger](
+    fileId: ImageFileId,
+    env:    ObserveEnvironment[F]
+  ): Stream[F, Result[F]] =
+    for {
+      (dataId, result) <- Stream.eval(observePreamble(fileId, env))
+      ret              <- observeTail(fileId, dataId, env)(result)
+    } yield ret
 
 }
 

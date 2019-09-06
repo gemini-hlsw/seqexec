@@ -12,9 +12,6 @@ object GcalControllerSim {
   def apply[F[_]: Sync]: GcalController[F] = new GcalController[F] {
     private val Log = getLogger
 
-    override def getConfig: F[GcalConfig] =
-      GcalController.GcalConfig.allOff.pure[F]
-
     override def applyConfig(config: GcalConfig): F[Unit] =
       Sync[F].delay(Log.debug("Simulating GCAL configuration")).void
   }

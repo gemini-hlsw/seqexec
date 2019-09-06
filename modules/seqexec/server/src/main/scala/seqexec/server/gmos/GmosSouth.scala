@@ -3,8 +3,9 @@
 
 package seqexec.server.gmos
 
-import cats.effect.Sync
+import cats.MonadError
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
@@ -21,7 +22,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosSouth[F[_]: Sync](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
+final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: Config): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
@@ -43,5 +44,5 @@ final case class GmosSouth[F[_]: Sync](c: GmosSouthController[F], dhsClient: Dhs
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: Sync](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
+  def apply[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
 }

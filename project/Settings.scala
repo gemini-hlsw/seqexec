@@ -85,7 +85,7 @@ object Settings {
     // Scala libraries
     val catsEffectVersion       = "1.4.0"
     val catsVersion             = "1.6.1"
-    val mouseVersion            = "0.22"
+    val mouseVersion            = "0.23"
     val fs2Version              = "1.0.5"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.5"
@@ -100,6 +100,7 @@ object Settings {
     val jwt                     = "2.1.0"
     val slf4j                   = "1.7.26"
     val log4s                   = "1.8.2"
+    val log4cats                = "0.2.0"
     val logback                 = "1.2.3"
     val janino                  = "3.1.0"
     val logstash                = "6.1"
@@ -172,6 +173,7 @@ object Settings {
     val Slf4j                  = "org.slf4j"                 %   "slf4j-api"                         % LibraryVersions.slf4j
     val JuliSlf4j              = "org.slf4j"                 %   "jul-to-slf4j"                      % LibraryVersions.slf4j
     val NopSlf4j               = "org.slf4j"                 %   "slf4j-nop"                         % LibraryVersions.slf4j
+    val Log4Cats               = Def.setting("io.chrisdavenport" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Logback                = Seq(
       "ch.qos.logback"       % "logback-core"             % LibraryVersions.logback,
       "ch.qos.logback"       % "logback-classic"          % LibraryVersions.logback,
@@ -279,13 +281,15 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.10"
+    val paradiseVersion  = "2.1.1"
+    val kpVersion        = "0.9.10"
+    val betterMonadicFor = "0.3.1"
   }
 
   object Plugins {
-    val paradisePlugin = "org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion cross CrossVersion.patch
-    val kindProjectorPlugin = "org.spire-math" %% "kind-projector" % PluginVersions.kpVersion
+    val paradisePlugin = ("org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion) .cross(CrossVersion.patch)
+    val kindProjectorPlugin    = "org.spire-math" %% "kind-projector" % PluginVersions.kpVersion
+    val betterMonadicForPlugin = "com.olegpy" %% "better-monadic-for" % PluginVersions.betterMonadicFor
   }
 
 }

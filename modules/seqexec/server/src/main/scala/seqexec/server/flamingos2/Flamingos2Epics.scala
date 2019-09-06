@@ -87,10 +87,10 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
   private val f2State = epicsService.getStatusAcceptor("flamingos2::status")
 
   private def read(name: String): F[String] =
-    safeAttributeF(name, f2State.getStringAttribute(name))
+    safeAttributeF(f2State.getStringAttribute(name))
 
   private def readI(name: String): F[Int] =
-    safeAttributeSIntF[F](name, f2State.getIntegerAttribute(name))
+    safeAttributeSIntF[F](f2State.getIntegerAttribute(name))
 
   def exposureTime: F[String] =
     read("exposureTime")
@@ -123,7 +123,7 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
     f2State.addEnum("observeState", s"${F2Top}observeC.VAL", classOf[CarState])
 
   def observeState: F[CarState] =
-    safeAttributeF("observeState", observeCAttr)
+    safeAttributeF(observeCAttr)
 
   // For FITS keywords
   def health: F[String] =

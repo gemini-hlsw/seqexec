@@ -28,7 +28,7 @@ trait Altair[F[_]] extends Gaos[F] {
 
   def usesOI(guide: AltairConfig): Boolean
 
-  def isFollowing: F[Option[Boolean]]
+  def isFollowing: F[Boolean]
 
   def hasTarget(guide: AltairConfig): Boolean
 
@@ -62,7 +62,7 @@ object Altair {
       case _            => false
     }
 
-    override def isFollowing: F[Option[Boolean]] = controller.isFollowing
+    override def isFollowing: F[Boolean] = controller.isFollowing
 
     override def hasTarget(guide: AltairConfig): Boolean = guide match {
       case Lgs(st, sf, _) => st || sf

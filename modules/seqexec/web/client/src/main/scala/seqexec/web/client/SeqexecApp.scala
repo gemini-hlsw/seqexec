@@ -3,7 +3,11 @@
 
 package seqexec.web.client
 
+import cats.effect.Sync
 import cats.effect.IO
+import cats.effect.LiftIO
+import cats.effect.IOApp
+import cats.effect.ExitCode
 import gem.enum.Site
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
@@ -19,30 +23,30 @@ import org.log4s._
 /**
   * Seqexec WebApp entry point
   */
-@JSExportTopLevel("SeqexecApp")
-object SeqexecApp {
+final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
 
-  def setupLogger: IO[Unit] = IO {
+  def setupLogger: F[Unit] = F.delay {
     import Log4sConfig._
     setLoggerThreshold("seqexec", Info)
     setLoggerThreshold("", AllThreshold)
   }
 
-  def serverSite: IO[Site] = IO.fromFuture {
-    IO {
-      import scala.concurrent.ExecutionContext.Implicits.global
+  def serverSite: F[Site] =
+    L.liftIO(IO.fromFuture {
+      IO {
+        import scala.concurrent.ExecutionContext.Implicits.global
 
-      // Read the site from the webserver
-      SeqexecWebClient.site().map(Site.fromTag(_).getOrElse(Site.GS))
-    }
-  }
+        // Read the site from the webserver
+        SeqexecWebClient.site().map(Site.fromTag(_).getOrElse(Site.GS))
+      }
+    })
 
-  def initializeDataModel(seqexecSite: Site): IO[Unit] = IO {
+  def initializeDataModel(seqexecSite: Site): F[Unit] = F.delay {
     // Set the instruments before adding it to the dom
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
   }
 
-  def renderingNode: IO[Element] = IO {
+  def renderingNode: F[Element] = F.delay {
     // Find or create the node where we render
     Option(document.getElementById("root")).getOrElse {
       val elem = document.createElement("div")
@@ -50,6 +54,26 @@ object SeqexecApp {
       document.body.appendChild(elem)
       elem
     }
+  }
+}
+
+/**
+  * Seqexec WebApp entry point
+  * Exposed to the js world
+  */
+@JSExportTopLevel("SeqexecApp")
+object SeqexecApp extends IOApp {
+  override def run(args:  List[String]): IO[ExitCode] = {
+    val launcher = new SeqexecLauncher[IO]
+    // Render the UI using React
+    for {
+      _           <- launcher.setupLogger
+      seqexecSite <- launcher.serverSite
+      _           <- launcher.initializeDataModel(seqexecSite)
+      router      <- SeqexecUI.router[IO](seqexecSite)
+      node        <- launcher.renderingNode
+      _           <- IO(router().renderIntoDOM(node))
+    } yield ExitCode.Success
   }
 
   @JSExport
@@ -59,16 +83,6 @@ object SeqexecApp {
 
   @JSExport
   def start(): Unit =
-    // Render the UI using React
-    (for {
-      _           <- setupLogger
-      seqexecSite <- serverSite
-      _           <- initializeDataModel(seqexecSite)
-      router      <- SeqexecUI.router(seqexecSite)
-      node        <- renderingNode
-    } yield router().renderIntoDOM(node)).unsafeRunAsync {
-      case Left(e)  => e.printStackTrace
-      case Right(_) => // All allright
-    }
+    super.main(Array())
 
 }

@@ -10,10 +10,12 @@ import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
+import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
 import gem.enum.LightSinkName
-import gsp.math.{ Coordinates, Declination, RightAscension }
+import gsp.math.{Coordinates, Declination, RightAscension}
 import gsp.math.optics.Format
+import io.chrisdavenport.log4cats.Logger
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -25,9 +27,10 @@ import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordsClient
 import squants.time.Seconds
 import squants.time.Time
+
 import scala.reflect.ClassTag
 
-final case class Ghost[F[_]: Sync](controller: GhostController[F])
+final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -71,6 +74,10 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
   override def observeProgress(
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    InstrumentActions.defaultInstrumentActions[F]
+
 }
 
 object Ghost {

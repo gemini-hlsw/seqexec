@@ -183,7 +183,6 @@ object SeqexecCircuit
   private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val queueRequestsHandler     = new QueueRequestsHandler(queueFocusRW)
-  private val debuggingHandler         = new DebuggingHandler(zoomTo(_.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
   private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)
@@ -221,7 +220,6 @@ object SeqexecCircuit
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
       foldHandlers(queueOpsHandler, queueRequestsHandler),
       navigationHandler,
-      debuggingHandler,
       tableStateHandler,
       siteHandler,
       sessionFilterHandler,

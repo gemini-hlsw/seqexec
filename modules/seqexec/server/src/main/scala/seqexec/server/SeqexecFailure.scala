@@ -4,6 +4,7 @@
 package seqexec.server
 
 import edu.gemini.seqexec.odb.SeqFailure
+import gem.Observation
 import org.http4s.Uri
 
 sealed trait SeqexecFailure extends Exception with Product with Serializable
@@ -15,6 +16,10 @@ object SeqexecFailure {
 
   /** Something went wrong while running a sequence. **/
   final case class Execution(errMsg: String) extends SeqexecFailure
+
+  /** Aborted sequence **/
+  // TODO Reconsider if abort should be handled as an error
+  final case class Aborted(obsId: Observation.Id) extends SeqexecFailure
 
   /** Exception thrown while running a sequence. */
   final case class SeqexecException(ex: Throwable) extends SeqexecFailure
@@ -45,7 +50,7 @@ object SeqexecFailure {
   final case class GdsXmlError(msg: String, url: Uri) extends SeqexecFailure
 
   /** Null epics read */
-  final case class NullEpicsError(name: String) extends SeqexecFailure
+  final case class NullEpicsError(channel: String) extends SeqexecFailure
 
   /** Failed simulation */
   case object FailedSimulation extends SeqexecFailure
@@ -53,6 +58,7 @@ object SeqexecFailure {
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
+    case Aborted(obsId)               => s"Observation ${obsId.format} aborted"
     case SeqexecException(ex)         =>
       s"Application exception: ${Option(ex.getMessage).getOrElse(ex.toString)}"
     case SeqexecExceptionWhile(c, e)  =>

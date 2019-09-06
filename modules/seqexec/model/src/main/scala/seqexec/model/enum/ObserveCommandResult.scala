@@ -9,11 +9,12 @@ sealed trait ObserveCommandResult extends Product with Serializable
 
 object ObserveCommandResult {
   case object Success extends ObserveCommandResult
-  case object Paused extends ObserveCommandResult
+  case object Paused  extends ObserveCommandResult
   case object Stopped extends ObserveCommandResult
   case object Aborted extends ObserveCommandResult
+  case object Partial extends ObserveCommandResult // Used for N&S
 
   /** @group Typeclass Instances */
   implicit val ObserveCommandResultEnumerated: Enumerated[ObserveCommandResult] =
-    Enumerated.of(Success, Paused, Stopped, Aborted)
+    Enumerated.of(Success, Paused, Stopped, Aborted, Partial)
 }

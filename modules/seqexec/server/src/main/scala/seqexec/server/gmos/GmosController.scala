@@ -27,6 +27,8 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): F[Unit]
 
+  def setRowsToShuffle(rows: Int): F[Unit]
+
   def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
@@ -150,11 +152,13 @@ object GmosController {
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
       def nsPairs: Int
+      def exposureDivider: Int
     }
 
     object NSConfig {
       case object NoNodAndShuffle extends NSConfig {
         val nsPairs = 0
+        val exposureDivider = 1
       }
 
       final case class NodAndShuffle(
@@ -162,6 +166,7 @@ object GmosController {
         rows: Int,
         positions: Vector[NSPosition]) extends NSConfig {
         val nsPairs = cycles
+        val exposureDivider = 2
       }
     }
 
@@ -236,6 +241,6 @@ object GmosController {
   type GmosNorthController[F[_]] = GmosController[F, NorthTypes]
 
   implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
-    Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }
+    Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})" }
 
 }

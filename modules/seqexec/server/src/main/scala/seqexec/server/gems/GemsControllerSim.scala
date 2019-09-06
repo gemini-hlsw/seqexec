@@ -20,13 +20,13 @@ final class GemsControllerSim[F[_]: Sync] private extends GemsController[F] {
   ) }.pure[F]
 
   override val stateGetter: Gems.GemsWfsState[F] = GemsWfsState[F](
-    (Cwfs1DetectorState.Off:Cwfs1DetectorState).some.pure[F],
-    (Cwfs2DetectorState.Off:Cwfs2DetectorState).some.pure[F],
-    (Cwfs3DetectorState.Off:Cwfs3DetectorState).some.pure[F],
-    (Odgw1DetectorState.Off:Odgw1DetectorState).some.pure[F],
-    (Odgw2DetectorState.Off:Odgw2DetectorState).some.pure[F],
-    (Odgw3DetectorState.Off:Odgw3DetectorState).some.pure[F],
-    (Odgw4DetectorState.Off:Odgw4DetectorState).some.pure[F]
+    (Cwfs1DetectorState.Off:Cwfs1DetectorState).pure[F],
+    (Cwfs2DetectorState.Off:Cwfs2DetectorState).pure[F],
+    (Cwfs3DetectorState.Off:Cwfs3DetectorState).pure[F],
+    (Odgw1DetectorState.Off:Odgw1DetectorState).pure[F],
+    (Odgw2DetectorState.Off:Odgw2DetectorState).pure[F],
+    (Odgw3DetectorState.Off:Odgw3DetectorState).pure[F],
+    (Odgw4DetectorState.Off:Odgw4DetectorState).pure[F]
   )
 }
 

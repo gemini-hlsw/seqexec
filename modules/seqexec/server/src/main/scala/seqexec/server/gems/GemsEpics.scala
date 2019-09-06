@@ -3,7 +3,6 @@
 
 package seqexec.server.gems
 
-import cats.data.Nested
 import cats.effect.{IO, Async}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
@@ -11,7 +10,8 @@ import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSFloat, safeAttributeSInt}
+import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSIntF, safeAttributeSListSFloatF}
+import seqexec.server.EpicsUtil.{safeAttributeSListSDoubleF, safeAttributeSIntF}
 import squants.Time
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -41,117 +41,126 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val aniLoopAttr = mystStatus.addEnum("aniLoop", s"${MystTop}aniLoopStatus.VAL", classOf[LoopState],
     "ANI loop status")
-  def aniLoop: F[Option[LoopState]] = safeAttribute(aniLoopAttr)
+  def aniLoop: F[LoopState] = safeAttributeF(aniLoopAttr)
 
-  def astrometryReady: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("astromState")))
-    .map(_ === ReadyState.Ready.toString).value
+  def astrometryReady: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("astromState"))
+    .map(_ === ReadyState.Ready.toString)
 
   private val flexLoopAttr = mystStatus.addEnum("flexLoop", s"${MystTop}flexLoopStatus.VAL", classOf[LoopState],
     "Flexure loop status")
-  def flexureLoop: F[Option[LoopState]] = safeAttribute(flexLoopAttr)
+  def flexureLoop: F[LoopState] = safeAttributeF(flexLoopAttr)
 
   private val focusLoopAttr = mystStatus.addEnum("focLoop", s"${MystTop}focLoopStatus.VAL", classOf[LoopState],
     "Focus loop status")
-  def focusLoop: F[Option[LoopState]] = safeAttribute(focusLoopAttr)
+  def focusLoop: F[LoopState] = safeAttributeF(focusLoopAttr)
 
-  def lgsFlux: F[Option[Double]] = Nested(safeAttributeSFloat(mystStatus.getFloatAttribute("lgsFlux")))
-    .map(_.toDouble).value
+  def lgsFlux: F[List[Float]] = safeAttributeSListSFloatF(mystStatus.getFloatAttribute("lgsFlux"))
+
+  def lgsStrehl: F[Double] =  safeAttributeSDoubleF(mystStatus.getDoubleAttribute("lgsStrehl"))
+
+  def rZero: F[Double] = safeAttributeSDoubleF(mystStatus.getDoubleAttribute("rZero"))
+
+  def cnSquare: F[List[Double]] = safeAttributeSListSDoubleF(mystStatus.getDoubleAttribute("cnSquare"))
+
+  def astroMode: F[String] = safeAttributeF(mystStatus.getStringAttribute("astroMode"))
 
   private val lgsLoopAttr = mystStatus.addEnum("lgsLoop", s"${MystTop}lgsLoopStatus.VAL", classOf[LoopState],
     "LGS loop status")
-  def lgsLoop: F[Option[LoopState]] = safeAttribute(lgsLoopAttr)
+  def lgsLoop: F[LoopState] = safeAttributeF(lgsLoopAttr)
 
   private val lgsMatrixAttr = mystStatus.addEnum("lgsMatrix", s"${MystTop}lgsMatrixReady.VAL", classOf[ReadyState])
-  def lgsMatrixReady: F[Option[Boolean]] = Nested(safeAttribute(lgsMatrixAttr)).map(_ === ReadyState.Ready).value
+  def lgsMatrixReady: F[Boolean] = safeAttributeF(lgsMatrixAttr).map(_ === ReadyState.Ready)
 
   val usedStr: String = "Used"
-  def cwfs1Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1")))
-    .map(_ === usedStr).value
+  def cwfs1Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("ngs1"))
+    .map(_ === usedStr)
 
-  def cwfs2Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2")))
-    .map(_ === usedStr).value
+  def cwfs2Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("ngs2"))
+    .map(_ === usedStr)
 
-  def cwfs3Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3")))
-    .map(_ === usedStr).value
+  def cwfs3Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("ngs3"))
+    .map(_ === usedStr)
 
-  def cwfs1Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs1Mag")))
-    .map(_.toDouble).value
+  def cwfs1Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("ngs1Mag"))
+    .map(_.toDouble)
 
-  def cwfs2Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs2Mag")))
-    .map(_.toDouble).value
+  def cwfs2Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("ngs2Mag"))
+    .map(_.toDouble)
 
-  def cwfs3Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("ngs3Mag")))
-    .map(_.toDouble).value
+  def cwfs3Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("ngs3Mag"))
+    .map(_.toDouble)
 
-  def ngsFlux: F[Option[Int]] = safeAttributeSInt(mystStatus.getIntegerAttribute("ngsFlux"))
+  def ngsFlux: F[List[Int]] = safeAttributeSListSIntF(mystStatus.getIntegerAttribute("ngsFlux"))
 
-  def odgs1Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs1")))
-    .map(_ === usedStr).value
+  def odgs1Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("odgs1"))
+    .map(_ === usedStr)
 
-  def odgs2Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs2")))
-    .map(_ === usedStr).value
+  def odgs2Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("odgs2"))
+    .map(_ === usedStr)
 
-  def odgs3Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs3")))
-    .map(_ === usedStr).value
+  def odgs3Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("odgs3"))
+    .map(_ === usedStr)
 
-  def odgs4Used: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs4")))
-    .map(_ === usedStr).value
+  def odgs4Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("odgs4"))
+    .map(_ === usedStr)
 
-  def odgs1Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs1Mag")))
-    .map(_.toDouble).value
+  def odgs1Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("odgs1Mag"))
+    .map(_.toDouble)
 
-  def odgs2Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs2Mag")))
-    .map(_.toDouble).value
+  def odgs2Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("odgs2Mag"))
+    .map(_.toDouble)
 
-  def odgs3Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs3Mag")))
-    .map(_.toDouble).value
+  def odgs3Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("odgs3Mag"))
+    .map(_.toDouble)
 
-  def odgs4Magnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("odgs4Mag")))
-    .map(_.toDouble).value
+  def odgs4Magnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("odgs4Mag"))
+    .map(_.toDouble)
 
-  def oigsUsed: F[Option[Boolean]] = Nested(safeAttribute(mystStatus.getStringAttribute("oigs")))
-    .map(_ === usedStr).value
+  def oigsUsed: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("oigs"))
+    .map(_ === usedStr)
 
-  def oigsMagnitude: F[Option[Double]] = Nested(safeAttribute(mystStatus.getStringAttribute("oigsMag")))
-    .map(_.toDouble).value
+  def oigsMagnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("oigsMag"))
+    .map(_.toDouble)
 
   private val scienceStateAttr = mystStatus.addEnum("sciReady", s"${MystTop}sciReady.VAL", classOf[ReadyState])
-  def scienceReady: F[Option[Boolean]] = Nested(safeAttribute(scienceStateAttr)).map(_ === ReadyState.Ready).value
+  def scienceReady: F[Boolean] = safeAttributeF(scienceStateAttr).map(_ === ReadyState.Ready)
 
   def waitForStableLoops(timeout: Time): F[Unit] =
     EpicsUtil.waitForValueF(scienceStateAttr, ReadyState.Ready, timeout, "GeMS science ready flag")
 
-
   private val ttLoopAttr = mystStatus.addEnum("ttLoop", s"${MystTop}ttLoopStatus.VAL", classOf[LoopState],
     "TT loop status")
-  def ttLoop: F[Option[LoopState]] = safeAttribute(ttLoopAttr)
+  def ttLoop: F[LoopState] = safeAttributeF(ttLoopAttr)
 
   val rtcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::rtcsad")
 
-  def lgsExpTime: F[Option[Double]] = safeAttributeSDouble(rtcStatus.getDoubleAttribute("lgsExp"))
+  def lgsExpTime: F[Double] = safeAttributeSDoubleF(rtcStatus.getDoubleAttribute("lgsExp"))
 
-  def ngsExpMult: F[Option[Double]] = safeAttributeSDouble(rtcStatus.getDoubleAttribute("ngsExpMult"))
+  def ngsExpMult: F[Double] = safeAttributeSDoubleF(rtcStatus.getDoubleAttribute("ngsExpMult"))
 
-  def sourceMask: F[Option[Int]] = safeAttributeSInt(rtcStatus.getIntegerAttribute("sourceMask"))
+  def sourceMask: F[Int] = safeAttributeSIntF(rtcStatus.getIntegerAttribute("sourceMask"))
 
   private val apd1Attr = rtcStatus.addEnum("tt1Active", s"${RtcTop}ngs:apd1.VAL", classOf[ApdState])
-  def apd1Active: F[Option[Boolean]] = Nested(safeAttribute(apd1Attr)).map(_ === ApdState.ENABLED).value
+  def apd1Active: F[Boolean] = safeAttributeF(apd1Attr).map(_ === ApdState.ENABLED)
 
   private val apd2Attr = rtcStatus.addEnum("tt2Active", s"${RtcTop}ngs:apd2.VAL", classOf[ApdState])
-  def apd2Active: F[Option[Boolean]] = Nested(safeAttribute(apd2Attr)).map(_ === ApdState.ENABLED).value
+  def apd2Active: F[Boolean] = safeAttributeF(apd2Attr).map(_ === ApdState.ENABLED)
 
   private val apd3Attr = rtcStatus.addEnum("tt3Active", s"${RtcTop}ngs:apd3.VAL", classOf[ApdState])
-  def apd3Active: F[Option[Boolean]] = Nested(safeAttribute(apd3Attr)).map(_ === ApdState.ENABLED).value
+  def apd3Active: F[Boolean] = safeAttributeF(apd3Attr).map(_ === ApdState.ENABLED)
 
   val aomStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::aomsad")
 
   val closedStr = "CLOSED"
-  def scienceAdcLoopActive: F[Option[Boolean]] = Nested(safeAttribute(aomStatus.getStringAttribute("adcScLoop")))
-    .map(_ === closedStr).value
+  def scienceAdcLoopActive: F[Boolean] = safeAttributeF(aomStatus.getStringAttribute("adcScLoop"))
+    .map(_ === closedStr)
 
-  def scienceAdcState: F[Option[String]] = safeAttribute(aomStatus.getStringAttribute("adcScState"))
+  def ngsAdcLoopActive: F[Boolean] = safeAttributeF(aomStatus.getStringAttribute("adcNgsLoop"))
+    .map(_ === closedStr)
 
-  def beamSplitterState: F[Option[String]] = safeAttribute(aomStatus.getStringAttribute("beamSplitterState"))
+  def scienceAdcState: F[String] = safeAttributeF(aomStatus.getStringAttribute("adcScState"))
+
+  def beamSplitterState: F[String] = safeAttributeF(aomStatus.getStringAttribute("beamSplitterState"))
 
 }
 

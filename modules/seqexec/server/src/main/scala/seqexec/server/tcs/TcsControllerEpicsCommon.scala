@@ -36,8 +36,7 @@ object TcsControllerEpicsCommon {
 
   val logger: Logger = getLogger
 
-  def applyBasicConfig(subsystems: NonEmptySet[Subsystem],
-                           tcs: BasicTcsConfig): IO[Unit] = {
+  def applyBasicConfig(subsystems: NonEmptySet[Subsystem], tcs: BasicTcsConfig): IO[Unit] = {
 
     def sysConfig(current: BaseEpicsTcsConfig): IO[BaseEpicsTcsConfig] = {
       val params = configBaseParams(subsystems, current, tcs)
@@ -64,6 +63,30 @@ object TcsControllerEpicsCommon {
       s2 <- sysConfig(s1)
       _  <- guideOn(subsystems, s2, tcs)
     } yield ()
+  }
+
+  // To nod the telescope is just like applying a TCS configuration, but always with an offset
+  def nod(subsystems: NonEmptySet[Subsystem], offset: InstrumentOffset, guided: Boolean, tcs: BasicTcsConfig): IO[Unit] = {
+
+    val offsetConfig: BasicTcsConfig = (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(offset.some)(tcs)
+    val noddedConfig: BasicTcsConfig =
+      if(guided) offsetConfig
+      else BasicTcsConfig.gds.modify(
+        (BasicGuidersConfig.pwfs1 ^<-> tagIso).modify(
+          GuiderConfig.tracking.modify{ tr => if(tr.isActive) ProbeTrackingConfig.Frozen else tr} >>>
+          GuiderConfig.detector.set(GuiderSensorOff)
+        ) >>>
+          (BasicGuidersConfig.pwfs2 ^<-> tagIso).modify(
+            GuiderConfig.tracking.modify{ tr => if(tr.isActive) ProbeTrackingConfig.Frozen else tr} >>>
+            GuiderConfig.detector.set(GuiderSensorOff)
+          ) >>>
+          (BasicGuidersConfig.oiwfs ^<-> tagIso).modify(
+            GuiderConfig.tracking.modify{ tr => if(tr.isActive) ProbeTrackingConfig.Frozen else tr} >>>
+            GuiderConfig.detector.set(GuiderSensorOff)
+          )
+      )(offsetConfig)
+
+    applyBasicConfig(subsystems, noddedConfig)
   }
 
   def guideOff(subsystems: NonEmptySet[Subsystem], current: BaseEpicsTcsConfig, demand: BasicTcsConfig)
@@ -420,7 +443,7 @@ object TcsControllerEpicsCommon {
 
   /*
    * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current position is Parked and
-   * requested position is OUT (or the other way around), then is not necessary to move the HR pickup mirror.
+   * requested position is OUT (or the other way around), then it is not necessary to move the HR pickup mirror.
    */
   def setHrPickup[C](l: Lens[C, BaseEpicsTcsConfig])(
     subsystems: NonEmptySet[Subsystem], current: C, d: AGConfig

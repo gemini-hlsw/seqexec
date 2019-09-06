@@ -3,9 +3,9 @@
 
 package seqexec.server.gpi
 
+import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
@@ -14,9 +14,11 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.obsclass.ObsClass
 import fs2.Stream
-import java.lang.{ Boolean => JBoolean }
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import io.chrisdavenport.log4cats.Logger
+import java.lang.{Boolean => JBoolean}
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import gem.enum.GpiReadMode
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
@@ -27,13 +29,14 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+
 import scala.concurrent.duration._
 import squants.Time
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 
-final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
+final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controller: GpiController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -87,9 +90,9 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit] = Applicative[F].unit
 
-  override def calcObserveTime(config: Config): F[Time] = Sync[F].delay {
+  override def calcObserveTime(config: Config): F[Time] = MonadError[F, Throwable].catchNonFatal {
     val obsTime =
       for {
         exp <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
@@ -104,6 +107,9 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
     ProgressUtil.countdown[F](total, elapsed.self)
+
+  override def instrumentActions(config: Config): InstrumentActions[F] =
+    new GpiInstrumentActions[F]
 
 }
 
@@ -189,8 +195,8 @@ object Gpi {
           ConversionError(OBSERVE_KEY / DETECTOR_STARTX_PROP,
           "Cannot read readout area"))).flatten
 
-  private def regularSequenceConfig[F[_]: Sync](config: Config): F[GpiConfig] =
-    EitherT(Sync[F].delay(
+  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[GpiConfig] =
+    EitherT(ApplicativeError[F, Throwable].catchNonFatal(
       (for {
         adc      <- config.extractInstAs[Adc](ADC_PROP)
         exp      <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
@@ -211,10 +217,12 @@ object Gpi {
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
     )).widenRethrowT.widen[GpiConfig]
 
-  private def alignAndCalibConfig[F[_]: Sync]: F[GpiConfig] =
+  private def alignAndCalibConfig[F[_]: Applicative]: F[GpiConfig] =
     AlignAndCalibConfig.pure[F].widen[GpiConfig]
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): F[GpiConfig] =
-    Sync[F].delay(isAlignAndCalib(config)).ifM(alignAndCalibConfig, regularSequenceConfig(config))
+  def fromSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[GpiConfig] =
+    ApplicativeError[F, Throwable]
+      .catchNonFatal(isAlignAndCalib(config))
+      .ifM(alignAndCalibConfig[F], regularSequenceConfig[F](config))
 
 }

@@ -26,5 +26,5 @@ object AltairControllerSim extends AltairController[IO] {
     Log.info("Simulate endObserve notification for Altair")
   }
 
-  override def isFollowing: IO[Option[Boolean]] = IO(false.some)
+  override def isFollowing: IO[Boolean] = IO(false)
 }
