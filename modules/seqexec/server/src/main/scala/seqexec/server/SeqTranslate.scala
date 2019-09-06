@@ -396,7 +396,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
-      case StepType.DarkOrBias(_)         =>  List(sys).asRight
+      case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) => List(sys).asRight
 
       case StepType.AltairObs(inst)       => getTcs(
         inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
@@ -524,7 +524,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           calcInstHeader(config, sys).map(h => ctx =>
             List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h))
 
-      case StepType.DarkOrBias(_)   =>
+      case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_)  =>
           calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
       case StepType.AlignAndCalib   => TrySeq(_ => Nil) // No headers for A&C

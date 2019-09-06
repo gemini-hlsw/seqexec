@@ -172,34 +172,41 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
       .toList
       .flatten
 
+  private def nsActions(env:  ObserveEnvironment[F],
+                        post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+                       )
+  : List[ParallelActions[F]] =
+    Gmos
+      .nsConfig(config)
+      .map {
+        case NSConfig.NoNodAndShuffle =>
+          // This shouldn't happen but we need to code it anyway
+          Nil
+        case NSConfig.NodAndShuffle(cycles, rows, positions) =>
+          // Initial notification of N&S Starting
+          NonEmptyList.one(
+            Action(ActionType.Undefined,
+                   Stream.emits[F, Result[F]](
+                     List(Result.Partial(NSStart),
+                          Result.OK(Response.Ignored))
+                   ),
+                   Action.State(Action.ActionState.Idle, Nil))
+          ) ::
+            actionPositions(env, rows, positions, post) // Add steps for each cycle
+              .replicateA(cycles)
+              .toList
+              .flatten
+      }
+      .getOrElse(Nil)
+
   override def observeActions(
     env:  ObserveEnvironment[F],
     post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): List[ParallelActions[F]] =
     env.stepType match {
-      case StepType.NodAndShuffle(i) if i === inst.resource =>
-        Gmos
-          .nsConfig(config)
-          .map {
-            case NSConfig.NoNodAndShuffle =>
-              // This shouldn't happen but we need to code it anyway
-              Nil
-            case NSConfig.NodAndShuffle(cycles, rows, positions) =>
-              // Initial notification of N&S Starting
-              NonEmptyList.one(
-                Action(ActionType.Undefined,
-                       Stream.emits[F, Result[F]](
-                         List(Result.Partial(NSStart),
-                              Result.OK(Response.Ignored))
-                       ),
-                       Action.State(Action.ActionState.Idle, Nil))
-              ) ::
-                actionPositions(env, rows, positions, post) // Add steps for each cycle
-                  .replicateA(cycles)
-                  .toList
-                  .flatten
-          }
-          .getOrElse(Nil)
+      case StepType.NodAndShuffle(i) if i === inst.resource => nsActions(env, post)
+      case StepType.DarkOrBiasNS(i) if i === inst.resource  => nsActions(env, post)
+
       case _ =>
         // Regular GMOS obseravtions behave as any instrument
         InstrumentActions.defaultInstrumentActions[F].observeActions(env, post)

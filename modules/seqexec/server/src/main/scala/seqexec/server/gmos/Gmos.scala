@@ -108,12 +108,19 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Logger, T <: GmosControll
       ns <- Gmos.nsConfig(config)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
 
-  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] = {
+    val stdType = SequenceConfiguration.calcStepType(config)
     if (Gmos.isNodAndShuffle(config)) {
-      StepType.NodAndShuffle(instrument).asRight
+      stdType.flatMap {
+        case StepType.DarkOrBias(_)      => StepType.DarkOrBiasNS(instrument).asRight
+        case StepType.CelestialObject(_) => StepType.NodAndShuffle(instrument).asRight
+        case st                          => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
+          .asLeft
+      }
     } else {
-      SequenceConfiguration.calcStepType(config)
+      stdType
     }
+  }
 
   override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
