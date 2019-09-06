@@ -170,8 +170,10 @@ private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[
       toImageFileId(f"S${date.format(format)}S${c}%04d")
     }
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit] =
-    Logger[F].info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit] = {
+    val keyStr = keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", ")
+    Logger[F].info(s"file: $id, final: $finalFlag, keywords: $keyStr")
+  }
 
 }
 

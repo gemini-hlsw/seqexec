@@ -8,7 +8,7 @@ import cats.effect.Clock
 import cats.effect.ContextShift
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.noop.NoOpLogger
 import org.scalatest.FunSuite
 import scala.concurrent.duration._
 import seqexec.model.enum.ObserveCommandResult
@@ -17,7 +17,7 @@ import squants.time.TimeConversions._
 import scala.concurrent.ExecutionContext
 
 class InstrumentControllerSimSpec extends FunSuite {
-  private implicit def unsafeLogger = Slf4jLogger.unsafeCreate[IO]
+  private implicit def unsafeLogger = NoOpLogger.impl[IO]
 
   val noWaitTio: Timer[IO] = new Timer[IO] {
     override def clock: Clock[IO] = Clock.create[IO]
