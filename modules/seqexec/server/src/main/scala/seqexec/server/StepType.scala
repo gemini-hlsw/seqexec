@@ -19,6 +19,7 @@ object StepType {
   final case class AltairObs(override val instrument: Instrument) extends StepType
   final case class FlatOrArc(override val instrument: Instrument) extends StepType
   final case class DarkOrBias(override val instrument: Instrument) extends StepType
+  final case class DarkOrBiasNS(override val instrument: Instrument) extends StepType
   case object AlignAndCalib extends StepType {
     override val instrument: Instrument = Instrument.Gpi
   }
@@ -31,6 +32,7 @@ object StepType {
     case (AltairObs(i), AltairObs(j))             => i === j
     case (FlatOrArc(i), FlatOrArc(j))             => i === j
     case (DarkOrBias(i), DarkOrBias(j))           => i === j
+    case (DarkOrBiasNS(i), DarkOrBiasNS(j))       => i === j
     case (AlignAndCalib, AlignAndCalib)           => true
     case _                                        => false
   }
