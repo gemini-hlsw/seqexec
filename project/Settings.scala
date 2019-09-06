@@ -174,6 +174,7 @@ object Settings {
     val JuliSlf4j              = "org.slf4j"                 %   "jul-to-slf4j"                      % LibraryVersions.slf4j
     val NopSlf4j               = "org.slf4j"                 %   "slf4j-nop"                         % LibraryVersions.slf4j
     val Log4Cats               = Def.setting("io.chrisdavenport" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
+    val Log4CatsNoop           = Def.setting("io.chrisdavenport" %%% "log4cats-noop" % LibraryVersions.log4cats % "test")
     val Logback                = Seq(
       "ch.qos.logback"       % "logback-core"             % LibraryVersions.logback,
       "ch.qos.logback"       % "logback-classic"          % LibraryVersions.logback,

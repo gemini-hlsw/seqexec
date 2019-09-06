@@ -12,14 +12,14 @@ import edu.gemini.spModel.core.Peer
 import edu.gemini.seqexec.odb.{SeqExecService, SeqexecSequence}
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.wdba.xmlrpc.ServiceException
+import io.chrisdavenport.log4cats.Logger
 import gem.Observation
-import seqexec.model.dhs.ImageFileId
-import org.log4s.getLogger
+import seqexec.model.dhs._
 
 sealed trait OdbCommands[F[_]] {
   def queuedSequences(): F[List[Observation.Id]]
-  def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
-  def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean]
+  def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean]
+  def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean]
   def obsAbort(obsId: Observation.Id, reason: String): F[Boolean]
   def sequenceEnd(obsId: Observation.Id): F[Boolean]
   def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean]
@@ -34,8 +34,6 @@ sealed trait OdbProxy[F[_]] extends OdbCommands[F] {
 }
 
 object OdbProxy {
-  private val Log = getLogger
-
   def apply[F[_]: Sync](loc: Peer, cmds: OdbCommands[F]): OdbProxy[F] =
     new OdbProxy[F] {
       def read(oid: Observation.Id): F[SeqexecSequence] =
@@ -48,8 +46,8 @@ object OdbProxy {
           }).widenRethrowT
 
       def queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences()
-      def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = cmds.datasetStart(obsId, dataId, fileId)
-      def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = cmds.datasetComplete(obsId, dataId, fileId)
+      def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] = cmds.datasetStart(obsId, dataId, fileId)
+      def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] = cmds.datasetComplete(obsId, dataId, fileId)
       def obsAbort(obsId: Observation.Id, reason: String): F[Boolean] = cmds.obsAbort(obsId, reason)
       def sequenceEnd(obsId: Observation.Id): F[Boolean] = cmds.sequenceEnd(obsId)
       def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean] = cmds.sequenceStart(obsId, fileId)
@@ -59,8 +57,8 @@ object OdbProxy {
     }
 
   final class DummyOdbCommands[F[_]: Applicative] extends OdbCommands[F] {
-    override def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = false.pure[F]
-    override def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] = false.pure[F]
+    override def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] = false.pure[F]
+    override def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] = false.pure[F]
     override def obsAbort(obsId: Observation.Id, reason: String): F[Boolean] = false.pure[F]
     override def sequenceEnd(obsId: Observation.Id): F[Boolean] = false.pure[F]
     override def sequenceStart(obsId: Observation.Id, fileId: ImageFileId): F[Boolean] = false.pure[F]
@@ -76,16 +74,19 @@ object OdbProxy {
     def unExecutedSteps: Boolean = stepsCount =!= executedCount
   }
 
-  final case class OdbCommandsImpl[F[_]](host: Peer)(implicit val F: Sync[F]) extends OdbCommands[F] {
+  final case class OdbCommandsImpl[F[_]](host: Peer)(
+    implicit val F: Sync[F], L: Logger[F]) extends OdbCommands[F] {
     private val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
     private val sessionName = "sessionQueue"
 
-    override def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] =
+    override def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
+      L.debug(s"Start dataset for obsId: ${obsId.format} and dataId: $dataId") *>
       F.delay(
         xmlrpcClient.datasetStart(sessionName, obsId.format, dataId, fileId.toString)
       )
 
-    override def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): F[Boolean] =
+    override def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
+      L.debug(s"Complete dataset for obsId: ${obsId.format} and dataId: $dataId") *>
       F.delay(
         xmlrpcClient.datasetComplete(sessionName, obsId.format, dataId, fileId.toString)
       )
@@ -126,7 +127,7 @@ object OdbProxy {
       ).recoverWith {
         case e: ServiceException =>
           // We'll survive exceptions at the level of connecting to the wdba
-          Sync[F].delay(Log.warn(e.getMessage)) *> List.empty.pure[F]
+          L.warn(e.getMessage) *> List.empty.pure[F]
       }
   }
 
