@@ -17,6 +17,9 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import seqexec.model.enum.NodAndShuffleStage.{StageA, StageB}
 import seqexec.server.{ConfigUtilOps, SeqexecFailure}
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
+import gsp.math.{Angle, Offset}
+import monocle.Getter
+import seqexec.model.enum.NodAndShuffleStage
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
@@ -39,41 +42,23 @@ final case class GmosObsKeywordsReader[F[_]: Sync](config: Config) {
 
   def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles).explainExtractError
 
-  def nodAxOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
-    .flatMap(
-      _.positions.find(_.stage === StageA)
-        .map(x => (x.offset.p.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
-        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
-          .raiseError[F, Double]
-        )
-    )
+  private def extractOffset(stage: NodAndShuffleStage, l: Getter[Offset, Angle]): F[Double] =
+    Gmos.nodAndShuffle(config).explainExtractError
+      .flatMap(
+        _.positions.find(_.stage === stage)
+          .map{x => Angle.signedArcseconds.get(l.get(x.offset)).toDouble.pure[F]}
+          .getOrElse(SeqexecFailure.Unexpected(s"Cannot find stage ${stage.symbol} parameters in step configuration.")
+            .raiseError[F, Double]
+          )
+      )
 
-  def nodAyOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
-    .flatMap(
-      _.positions.find(_.stage === StageA)
-        .map(x => (x.offset.q.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
-        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
-          .raiseError[F, Double]
-        )
-    )
+  def nodAxOff: F[Double] = extractOffset(StageA, Offset.p.asGetter ^<-> Offset.P.angle)
 
-  def nodBxOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
-    .flatMap(
-      _.positions.find(_.stage === StageB)
-        .map(x => (x.offset.p.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
-        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
-          .raiseError[F, Double]
-        )
-    )
+  def nodAyOff: F[Double] = extractOffset(StageA, Offset.q.asGetter ^<-> Offset.Q.angle)
 
-  def nodByOff: F[Double] = Gmos.nodAndShuffle(config).explainExtractError
-    .flatMap(
-      _.positions.find(_.stage === StageB)
-        .map(x => (x.offset.q.toAngle.toMicroarcseconds.toDouble/1e6).pure[F])
-        .getOrElse(SeqexecFailure.Unexpected("Cannot find stage A parameters in step configuration.")
-          .raiseError[F, Double]
-        )
-    )
+  def nodBxOff: F[Double] = extractOffset(StageB, Offset.p.asGetter ^<-> Offset.P.angle)
+
+  def nodByOff: F[Double] = extractOffset(StageB, Offset.q.asGetter ^<-> Offset.Q.angle)
 
   def isNS: F[Boolean] = config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError
 
