@@ -17,13 +17,21 @@ This project uses an extra plugin
 Go to the JVM project
 
 ```
-    project edu_gemini_seqexec_web_server
+    project seqexec_web_server
     ~reStart
 ```
 
 Now every time a file is changed in the server code, the server files will be compiled, then the server will restart
 
-By default the REST backend will run on port 8080
+By default the REST backend will run on port 7070
+
+It can be stopped by executing
+
+```
+   reStop
+```
+
+from within the project.
 
 # Seqexec Web Client
 
@@ -43,7 +51,7 @@ Will do the following:
 
 * Launch the backend on the background
 * Pack the client going through scala.js and webpack
-* Raise webpack-dev-server with a proxy to the backend
+* Launch webpack-dev-server with a proxy to the backend
 
 Now you can open the client at
 
@@ -52,7 +60,7 @@ http://localhost:9090
 if you want to update the client and get automatic reload do in sbt:
 
 ```
-    project edu_gemini_seqexec_web_client
+    project seqexec_web_client
     ~fastOptJS
 ```
 
