@@ -33,7 +33,8 @@ object FooterStatus {
           <.div(SeqexecStyles.notInMobile,
                 ^.cls := s"ui header item sub",
                 wsConnect(ConnectionState.apply).unless(p.status.isConnected)),
-          <.div(^.cls := s"ui header item sub",
+          <.div(SeqexecStyles.notInMobile,
+                ^.cls := s"ui header item sub",
                 gcConnect(GuideConfigStatus.apply).when(p.status.isConnected)),
           ControlMenu(p.status)
         )

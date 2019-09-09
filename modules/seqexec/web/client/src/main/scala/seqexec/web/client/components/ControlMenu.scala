@@ -53,7 +53,6 @@ object ControlMenu {
       val status = p.status
       <.div(
         ^.cls := "ui secondary right menu",
-        SeqexecStyles.notInMobile,
         status.u.fold(
           <.div(
             ^.cls := "ui item",
