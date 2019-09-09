@@ -93,7 +93,7 @@ object Settings {
     val scalaXmlVerson          = "1.2.0"
 
     val http4sVersion           = "0.20.10"
-    val squants                 = "1.4.0"
+    val squants                 = "1.5.0"
     val argonaut                = "6.2.3"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
