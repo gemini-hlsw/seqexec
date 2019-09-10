@@ -4,18 +4,16 @@
 package seqexec.server
 
 import cats._
-import cats.data.EitherT
 import cats.implicits._
-import edu.gemini.spModel.obscomp.InstConstants._
 import fs2.Stream
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentSystem.ElapsedTime
 import squants.time.TimeConversions._
+import SeqTranslate.dataIdFromConfig
 
 /**
   * Methods usedd to generate observation related actions
@@ -110,14 +108,7 @@ trait ObserveActions {
   def dataId[F[_]: MonadError[?[_], Throwable]](
     env: ObserveEnvironment[F]
   ): F[DataId] =
-    EitherT
-      .fromEither[F](
-        env.config
-          .extractObsAs[String](DATA_LABEL_PROP)
-          .map(toDataId)
-          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-      )
-      .widenRethrowT
+    dataIdFromConfig[F](env.config)
 
   /**
     * Preamble for observations. It tells the odb, the subsystems
