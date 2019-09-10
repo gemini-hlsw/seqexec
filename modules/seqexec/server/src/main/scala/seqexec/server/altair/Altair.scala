@@ -4,14 +4,12 @@
 package seqexec.server.altair
 
 import cats.effect.Sync
-import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
-import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.enum.Resource
-import seqexec.server.TrySeq
+import seqexec.server.{CleanConfig, TrySeq}
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
@@ -74,12 +72,12 @@ object Altair {
 
   }
 
-  def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
-    config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).map { fieldLens =>
+  def fromConfig[F[_]: Sync](config: CleanConfig, controller: AltairController[F]): TrySeq[Altair[F]] =
+    config.extractAOAs[FieldLens](FIELD_LENSE_PROP).map { fieldLens =>
       new AltairImpl[F](controller, fieldLens)
     }.asTrySeq
 
-  def guideStarType(config: Config): TrySeq[GuideStarType] =
-    config.extractAs[GuideStarType](new ItemKey(AO_CONFIG_NAME) / GUIDESTAR_TYPE_PROP).asTrySeq
+  def guideStarType(config: CleanConfig): TrySeq[GuideStarType] =
+    config.extractAOAs[GuideStarType](GUIDESTAR_TYPE_PROP).asTrySeq
 
 }

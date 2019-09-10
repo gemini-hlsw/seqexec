@@ -6,7 +6,6 @@ package seqexec.server.gcal
 import cats._
 import cats.implicits._
 import cats.effect.Sync
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Lamp, Shutter}
 import java.util.{Set => JSet}
@@ -18,7 +17,8 @@ import scala.collection.JavaConverters._
 import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
-import seqexec.server.{ConfigResult, ConfigUtilOps, SeqexecFailure, System, TrySeq}
+import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, SeqexecFailure, System, TrySeq}
+import seqexec.server.CleanConfig.extractItem
 
 /**
   * Created by jluhrs on 3/21/17.
@@ -32,7 +32,7 @@ final case class Gcal[F[_]] private (controller: GcalController[F], cfg: GcalCon
   /**
     * Called to configure a system, returns a F[ConfigResult]
     */
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     for{
       _       <- F.delay(Log.info("Start GCAL configuration"))
       _       <- F.delay(Log.debug(s"GCAL configuration: ${cfg.show}"))
@@ -52,7 +52,7 @@ object Gcal {
 
   implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
 
-  def fromConfig[F[_]: Sync](controller: GcalController[F], isCP: Boolean)(config: Config): TrySeq[Gcal[F]] = {
+  def fromConfig[F[_]: Sync](controller: GcalController[F], isCP: Boolean)(config: CleanConfig): TrySeq[Gcal[F]] = {
       val lamps: Either[ConfigUtilOps.ExtractFailure, List[Lamp]] = config.extractCalibrationAs[JSet[Lamp]](LAMP_PROP)
         .map(_.asScala.toList)
         .recover{ case ConfigUtilOps.KeyNotFound(_) => List.empty[Lamp] }

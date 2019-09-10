@@ -11,7 +11,6 @@ import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import fs2.Stream
 import gem.Observation
@@ -24,7 +23,6 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model._
 import seqexec.model.dhs._
-import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem._
 import seqexec.server.SequenceGen.StepActionsGen
@@ -55,7 +53,7 @@ import squants.time.TimeConversions._
 class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]) extends ObserveActions {
   import SeqTranslate._
 
-  private def step(obsId: Observation.Id, i: StepId, config: Config, nextToRun: StepId,
+  private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
                    datasets: Map[Int, ExecutedDataset])(
                      implicit cio: Concurrent[IO],
                               tio: Timer[IO]
@@ -132,7 +130,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
              tio: Timer[IO]
   ): (List[SeqexecFailure], Option[SequenceGen[IO]]) = {
 
-    val configs = sequence.config.getAllSteps.toList
+    // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
+    val configs = sequence.config.getAllSteps.toList.map(CleanConfig(_))
 
     val nextToRun = configs
       .map(extractStatus)
@@ -346,7 +345,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
   private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[IO],
-                     lsource: LightSource, config: Config): TrySeq[System[IO]] = site match {
+                     lsource: LightSource, config: CleanConfig): TrySeq[System[IO]] = site match {
     case Site.GS => if(useGaos)
       Gems.fromConfig[IO](systems.gems, systems.guideDb)(config).map(a =>
         TcsSouth.fromConfig[IO](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
@@ -370,7 +369,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def calcSystems(
-    config: Config,
+    config: CleanConfig,
     stepType: StepType,
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
@@ -421,7 +420,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def calcInstHeader(
-    config: Config,
+    config: CleanConfig,
     sys: InstrumentSystem[IO]
   ): TrySeq[Header[IO]] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
@@ -454,7 +453,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: Config, tcsSubsystems: List[TcsController.Subsystem],
+  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: CleanConfig, tcsSubsystems: List[TcsController.Subsystem],
                             inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
@@ -498,7 +497,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   )
 
   private def calcHeaders(
-    config: Config,
+    config: CleanConfig,
     stepType: StepType,
     sys: InstrumentSystem[IO]
   ): TrySeq[HeaderExtraData => List[Header[IO]]] = {

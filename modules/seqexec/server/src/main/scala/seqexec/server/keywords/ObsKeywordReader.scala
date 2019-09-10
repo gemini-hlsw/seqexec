@@ -4,11 +4,9 @@
 package seqexec.server.keywords
 
 import cats.implicits._
-import cats.effect.Sync
-import cats.Eq
+import cats.{MonadError, Eq}
 import cats.data.EitherT
 import cats.data.Nested
-import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
@@ -25,8 +23,8 @@ import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
-import seqexec.server.ConfigUtilOps
-import seqexec.server.SeqexecFailure
+import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.Tcs
 
@@ -93,37 +91,51 @@ final case class TimingWindowKeywords(
 )
 
 object ObsKeywordReader extends ObsKeywordsReaderConstants {
-  def apply[F[_]: Sync](config: Config, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
-    private val F = implicitly[Sync[F]]
+  def apply[F[_]: MonadError[?[_], Throwable]](config: CleanConfig, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
     // Format used on FITS keywords
     val telescopeName: String = site match {
       case Site.GN => "Gemini-North"
       case Site.GS => "Gemini-South"
     }
 
-    override def obsType: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP))}")
+    override def obsType: F[String] = EitherT(
+      config.extractObsAs[String](OBSERVE_TYPE_PROP)
+        .leftMap(explainExtractError)
+        .pure[F]
+    ).widenRethrowT
 
-    override def obsClass: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP))}")
+    override def obsClass: F[String] = EitherT(
+      config.extractObsAs[String](OBS_CLASS_PROP)
+        .leftMap(explainExtractError)
+        .pure[F]
+    ).widenRethrowT
 
-    override def gemPrgId: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP))}")
+    override def gemPrgId: F[String] = EitherT(
+      config.extractAs[String](OCS_KEY / PROGRAMID_PROP)
+        .leftMap(explainExtractError)
+        .pure[F]
+    ).widenRethrowT
 
-    override def obsId: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP))}")
+    override def obsId: F[String] = EitherT(
+      config.extractAs[String](OCS_KEY / OBSERVATIONID_PROP)
+        .leftMap(explainExtractError)
+        .pure[F]
+    ).widenRethrowT
 
     private def explainExtractError(e: ExtractFailure): SeqexecFailure =
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
+    private val ObsConditionsProp = "obsConditions"
+
     override def requestedAirMassAngle: F[Map[String, Double]] = {
       val keys: F[List[Option[(String, Double)]]] =
         List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
-          val value: F[Option[Double]] = F.delay {
-            config.extractAs[String](new ItemKey(OCS_KEY, "obsConditions:" + key))
+          val value: F[Option[Double]] =
+            config.extractAs[String](OCS_KEY / ObsConditionsProp / key)
               .toOption
               .flatMap(_.parseDoubleOption)
-          }
+              .pure[F]
+
           Nested(value).map(key -> _).value
           .handleError(_ => none) // If there is an error ignore the key
         }.sequence
@@ -133,11 +145,12 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def requestedConditions: F[Map[String, String]] = {
       val keys: F[List[(String, String)]] =
         List(SB, CC, IQ, WV).map { key =>
-          val value: F[String] = F.delay {
-            config.extractAs[String](new ItemKey(OCS_KEY, "obsConditions:" + key))
+          val value: F[String] =
+            config.extractAs[String](OCS_KEY / ObsConditionsProp / key)
               .map { d => (d === "100").fold("Any", s"$d-percentile") }
               .toOption
-            }.safeValOrDefault
+              .pure[F]
+              .safeValOrDefault
           value.map(key -> _)
         }.sequence
       keys.map(_.toMap)
@@ -151,7 +164,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         repeat.parseIntOption
 
       def calcPeriod(period: String): Option[Double] =
-        period.parseDoubleOption.map(p => (p/1000))
+        period.parseDoubleOption.map(p => p/1000)
 
       def calcStart(start: String): Option[String] =
         start.parseLongOption.map { s =>
@@ -171,8 +184,8 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         // Keys on the ocs use the prefix and the value and they are always Strings
         val keys = prefixes.map(p => f"$p$w")
         keys.map { k =>
-          F.delay(s"${config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))}")
-        }.sequence.map {
+          config.extractAs[String](OCS_KEY / ObsConditionsProp / k).getOrElse("")
+        } match {
           case start :: duration :: repeat :: period :: Nil =>
             (calcStart(start), calcDuration(duration), calcRepeat(repeat), calcPeriod(period))
               .mapN(TimingWindowKeywords.apply)
@@ -180,13 +193,14 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
           case _ => none
         }
       }
-      windows.sequence.map(_.mapFilter(identity))
+      windows.flattenOption.pure[F]
     }
 
-    override def dataLabel: F[String] =
-      F.delay(
-        s"${config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP)}"
-      )
+    override def dataLabel: F[String] = EitherT(
+      config.extractObsAs[String](DATA_LABEL_PROP)
+        .leftMap(explainExtractError)
+        .pure[F]
+    ).widenRethrowT
 
     override def observatory: F[String] = telescopeName.pure[F]
 
@@ -199,9 +213,10 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     }
 
     override def pwfs1Guide: F[StandardGuideOptions.Value] =
-      EitherT(F.delay(
+      EitherT(
         config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
-          .leftMap(explainExtractError))
+          .leftMap(explainExtractError)
+          .pure[F]
       ).widenRethrowT
 
     override def pwfs1GuideS: F[String] =
@@ -209,9 +224,10 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         .map(decodeGuide)
 
     override def pwfs2Guide: F[StandardGuideOptions.Value] =
-      EitherT(F.delay(
+      EitherT(
         config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS2_PROP)
-          .leftMap(explainExtractError))
+          .leftMap(explainExtractError)
+          .pure[F]
       ).widenRethrowT
 
     override def pwfs2GuideS: F[String] =
@@ -219,12 +235,13 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         .map(decodeGuide)
 
     private def extractOptionalGuide(prop: String): F[StandardGuideOptions.Value] =
-      EitherT(F.delay(
+      EitherT(
         config.extractTelescopeAs[StandardGuideOptions.Value](prop)
         .recoverWith {
           case ConfigUtilOps.KeyNotFound(_) => StandardGuideOptions.Value.park.asRight
         }
-        .leftMap(explainExtractError))
+        .leftMap(explainExtractError)
+        .pure[F]
       ).widenRethrowT
 
     override def oiwfsGuide: F[StandardGuideOptions.Value] = extractOptionalGuide(GUIDE_WITH_OIWFS_PROP)
@@ -256,27 +273,27 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     private implicit val eqVisibility: Eq[Visibility] = Eq.by(_.ordinal())
 
     private val headerPrivacyF: F[Boolean] =
-      F.delay(config.extractAs[Visibility](HEADER_VISIBILITY_KEY).getOrElse(Visibility.PUBLIC)).map {
-        _ === Visibility.PRIVATE
-      }
+      (config.extractAs[Visibility](HEADER_VISIBILITY_KEY).getOrElse(Visibility.PUBLIC) === Visibility.PRIVATE)
+      .pure[F]
+
 
     override def headerPrivacy: F[Boolean] = headerPrivacyF
 
     private val noProprietaryMonths: F[String] =
-      F.delay(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
+      LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
 
     private val calcProprietaryMonths: F[String] =
       EitherT(
-        F.delay(
-          config.extractAs[Integer](PROPRIETARY_MONTHS_KEY)
-            .recoverWith {
-              case ConfigUtilOps.KeyNotFound(_) => new Integer(0).asRight
-            }
-            .leftMap(explainExtractError)
-            .map { v =>
-              LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)
-            }
-        ))
+        config.extractAs[Integer](PROPRIETARY_MONTHS_KEY)
+          .recoverWith {
+            case ConfigUtilOps.KeyNotFound(_) => new Integer(0).asRight
+          }
+          .leftMap(explainExtractError)
+          .map { v =>
+            LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)
+          }
+          .pure[F]
+        )
       .widenRethrowT
 
     override def proprietaryMonths: F[String] =
@@ -287,29 +304,28 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     private val manualDarkOverride = "Dark"
 
     override def obsObject: F[String] =
-      F.delay(
-        config.extractAs[String](OBSERVE_KEY / OBJECT_PROP)
-          .map(v => if (v === manualDarkValue) manualDarkOverride else v)
-          .toOption)
-      .safeValOrDefault
+      config.extractAs[String](OBSERVE_KEY / OBJECT_PROP)
+        .map(v => if (v === manualDarkValue) manualDarkOverride else v)
+        .toOption
+        .pure[F]
+        .safeValOrDefault
 
     override def geminiQA: F[String] = "UNKNOWN".pure[F]
 
     override def pIReq: F[String] = "UNKNOWN".pure[F]
 
     override def sciBand: F[Int] =
-      F.delay(
-        config.extractAs[Integer](OBSERVE_KEY / SCI_BAND)
-        .map(_.toInt)
-        .toOption)
+      config.extractAs[Integer](OBSERVE_KEY / SCI_BAND)
+      .map(_.toInt)
+      .toOption
+      .pure[F]
       .safeValOrDefault
 
     def astrometicField: F[Boolean] =
-      F.delay(
-        config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP)
-        .toOption
-        .map(Boolean.unbox)
-        .getOrElse(false)
-      )
+      config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP)
+      .toOption
+      .exists(Boolean.unbox)
+      .pure[F]
+
   }
 }

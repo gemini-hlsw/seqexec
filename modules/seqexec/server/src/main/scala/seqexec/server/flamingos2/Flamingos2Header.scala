@@ -11,26 +11,16 @@ import gem.Observation
 import gem.enum.KeywordName
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.data.YesNoType
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
+import seqexec.server.{CleanConfig, ConfigUtilOps, InstrumentSystem, SeqexecFailure}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.ConfigUtilOps
-import seqexec.server.SeqexecFailure
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import cats.implicits._
 
 object Flamingos2Header {
   def header[F[_]: Sync](inst:              InstrumentSystem[F],
@@ -63,19 +53,19 @@ object Flamingos2Header {
   }
 
   object ObsKeywordsReaderODB {
-    def apply[F[_]: Sync](config: Config): ObsKeywordsReader[F] =
+    def apply[F[_]: Sync](config: CleanConfig): ObsKeywordsReader[F] =
       new ObsKeywordsReader[F] {
         def getPreimage: F[YesNoType] =
           EitherT(
             Sync[F].delay(config
-              .extractAs[YesNoType](INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
+              .extractInstAs[YesNoType](MOS_PREIMAGING_PROP)
               .leftMap[Throwable](e =>
                 SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))).rethrowT
 
         def getReadMode: F[ReadMode] =
           EitherT(
             Sync[F].delay(config
-              .extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP)
+              .extractInstAs[ReadMode](READMODE_PROP)
               .leftMap[Throwable](e =>
                 SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))).rethrowT
 

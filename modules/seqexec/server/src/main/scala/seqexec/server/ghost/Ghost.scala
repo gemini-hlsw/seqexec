@@ -8,7 +8,6 @@ import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
 import gem.enum.LightSinkName
@@ -22,6 +21,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordsClient
@@ -40,7 +40,7 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
 
   override val resource: Instrument = Instrument.Ghost
 
-  override def sfName(config: Config): LightSinkName = LightSinkName.Ghost
+  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Ghost
 
   override val contributorName: String = "ghost"
 
@@ -48,7 +48,7 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
     InstrumentSystem.Uncontrollable
 
   override def observe(
-    config: Config
+    config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
       calcObserveTime(config).flatMap { x =>
@@ -58,7 +58,7 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
       }
     }
 
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     Ghost
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
@@ -69,13 +69,13 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def calcObserveTime(config: Config): F[Time] = Seconds(360).pure[F]
+  override def calcObserveTime(config: CleanConfig): F[Time] = Seconds(360).pure[F]
 
   override def observeProgress(
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
 }
@@ -86,7 +86,7 @@ object Ghost {
 
   val sfName: String = "GHOST"
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): F[GhostConfig] = {
+  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): F[GhostConfig] = {
     def extractor[A : ClassTag](propName: String): Option[A] =
       config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 

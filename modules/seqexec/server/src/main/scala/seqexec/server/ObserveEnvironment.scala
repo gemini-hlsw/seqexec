@@ -4,7 +4,6 @@
 package seqexec.server
 
 import gem.Observation
-import edu.gemini.spModel.config2.Config
 import seqexec.server.keywords._
 import seqexec.server.tcs.Tcs
 
@@ -13,7 +12,7 @@ import seqexec.server.tcs.Tcs
   */
 final case class ObserveEnvironment[F[_]](
   systems:  Systems[F],
-  config:   Config,
+  config:   CleanConfig,
   stepType: StepType,
   obsId:    Observation.Id,
   inst:     InstrumentSystem[F],
