@@ -57,7 +57,7 @@ object Settings {
     val logstash                = "6.2"
     val knobs                   = "7.0.24"
     val monocleVersion          = "2.0.0-RC1"
-    val circeVersion            = "0.11.1"
+    val circeVersion            = "0.12.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"
     val tucoVersion             = "0.4.1"
@@ -156,7 +156,7 @@ object Settings {
       "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion,
-      "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocleVersion % "test"))
+    ))
     val Tuco                   = Seq(
       "org.tpolecat" %% "tuco-core"  % LibraryVersions.tucoVersion,
       "org.tpolecat" %% "tuco-shell" % LibraryVersions.tucoVersion
