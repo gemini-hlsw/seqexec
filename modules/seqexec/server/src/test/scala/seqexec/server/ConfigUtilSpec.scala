@@ -5,12 +5,10 @@ package seqexec.server
 
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import edu.gemini.spModel.seqcomp.SeqConfigNames
-import seqexec.model.enum.SystemName
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
-import cats.implicits._
 
 trait ConfigArbitraries {
 
@@ -65,13 +63,6 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
         c.extract(k).as[String].left.value should matchPattern {
           case KeyNotFound(_) =>
         }
-      }
-    }
-    it should "convert to StepConfig" in {
-      forAll { (c: Config) =>
-        // Not much to check but at least verify the amount of subsystems
-        val subsystems = c.getKeys.map(_.getRoot.getName).map(SystemName.unsafeFromString).distinct
-        c.toStepConfig.keys should contain theSameElementsAs subsystems
       }
     }
 }

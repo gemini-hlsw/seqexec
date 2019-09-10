@@ -12,8 +12,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import seqexec.model.StepConfig
 import seqexec.model.enum.SystemName
 
-import scala.collection.breakOut
-
 /*
  * CleanConfig is a wrapper over Config that allows to override some of the Config parameters. It allows to change some
  * of the Config parameters without mutation.
@@ -21,6 +19,12 @@ import scala.collection.breakOut
  * now, but it allows for more to be added in the future.
  */
 class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
+  //Check that every value in overrides can be assigned instead of the value in config
+  private def checkTypes: Boolean =
+    overrides.forall{ case (k, v) => Option(config.getItemValue(k)).forall(_.getClass.isAssignableFrom(v.getClass))}
+  assert(checkTypes)
+
+
   def itemValue(k: ItemKey): Option[AnyRef] = overrides.get(k).orElse(Option(config.getItemValue(k)))
 
   private def sanitizeValue(s: Any): String = s match {
@@ -37,9 +41,9 @@ class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
     itemEntries.groupBy(_.getKey.getRoot).map {
       case (subsystem, entries) =>
         SystemName.unsafeFromString(subsystem.getName) ->
-          (entries.toList.map { e =>
+          entries.map { e =>
             (e.getKey.getPath, sanitizeValue(e.getItemValue))
-          }(breakOut): Map[String, String])
+          }.toMap
     }
 
 }

@@ -15,9 +15,6 @@ import edu.gemini.spModel.ao.AOConstants.AO_SYSTEM_KEY
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
 import scala.reflect.ClassTag
-import scala.collection.breakOut
-import seqexec.model.enum.SystemName
-import seqexec.model.StepConfig
 import shapeless.tag
 import shapeless.tag.@@
 
@@ -151,26 +148,6 @@ object ConfigUtilOps {
         .map(_.toInt.some)
         .map(_.map(tag[A][Int]))
         .recoverOption
-
-  }
-
-  implicit class ConfigOps(val c: Config) extends AnyVal {
-
-    private def sanitizeValue(s: Any): String = s match {
-      case x: edu.gemini.shared.util.immutable.Some[_] => s"${x.getValue}"
-      case _: edu.gemini.shared.util.immutable.None[_] => "None"
-      case _ => s"$s"
-    }
-
-    // config syntax: cfg.toStepConfig
-    def toStepConfig: StepConfig =
-      c.itemEntries().groupBy(_.getKey.getRoot).map {
-        case (subsystem, entries) =>
-          SystemName.unsafeFromString(subsystem.getName) ->
-            (entries.toList.map { e =>
-              (e.getKey.getPath, sanitizeValue(e.getItemValue))
-            }(breakOut): Map[String, String])
-      }
 
   }
 
