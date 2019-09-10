@@ -4,14 +4,14 @@
 package seqexec.server
 
 import cats._
-import cats.data.NonEmptySet
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
+import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
@@ -68,7 +68,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       val initialStepExecutions: List[ParallelActions[IO]] =
         // Ask the instrument if we need an initial action
         (i === 0 && ia.runInitialAction(stepType)).option {
-          NonEmptyList.one(systems.odb.sequenceStart(obsId, toImageFileId(""))
+          NonEmptyList.one(dataIdFromConfig[IO](config).flatMap(systems.odb.sequenceStart(obsId, _))
             .as(Response.Ignored).toAction(ActionType.Undefined))
         }.toList
 
@@ -566,5 +566,15 @@ object SeqTranslate {
   implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
+
+  def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[DataId] =
+    EitherT
+      .fromEither[F](
+        config
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .map(toDataId)
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      )
+      .widenRethrowT
 
 }
