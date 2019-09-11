@@ -7,27 +7,28 @@ import cats.implicits._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.ReactEvent
+import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.Reusability._
 import gem.Observation
 import react.common.implicits._
+
 import scala.collection.immutable.SortedMap
-import seqexec.model.enum._
 import seqexec.model.StepId
+import seqexec.model.enum._
 import seqexec.web.client.actions.RequestResourceRun
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ResourceRunOperation
-import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
-import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon
+import seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
+import seqexec.web.client.semanticui.Size
+
+import scala.scalajs.js
 
 /**
   * Contains the control buttons for each subsystem
@@ -37,7 +38,8 @@ object SubsystemControlCell {
     id:             Observation.Id,
     stepId:         Int,
     resources:      List[Resource],
-    resourcesCalls: SortedMap[Resource, ResourceRunOperation]
+    resourcesCalls: SortedMap[Resource, ResourceRunOperation],
+    canOperate:     Boolean
   )
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -96,21 +98,23 @@ object SubsystemControlCell {
         SeqexecStyles.notInMobile,
         p.resources.sorted.map { r =>
           val buttonIcon = determineIcon(p.resourcesCalls.get(r))
+
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
-                size  = Size.Small,
+                size = Size.Small,
                 color = buttonColor(p.resourcesCalls.get(r)),
                 disabled = p.resourcesCalls.get(r).exists {
                   case ResourceRunOperation.ResourceRunInFlight(_) => true
-                  case _                                           => false
+                  case _ => false
                 },
                 labeled = buttonIcon
                   .as(Button.LeftLabeled)
                   .getOrElse(Button.NotLabeled),
-                icon     = buttonIcon,
-                onClickE = requestResourceCall(p.id, p.stepId, r) _
+                icon = buttonIcon,
+                onClickE = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
+                extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
               ),
               r.show
             )

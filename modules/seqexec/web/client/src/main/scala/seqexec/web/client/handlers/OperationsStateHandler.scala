@@ -8,20 +8,12 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.enum.Resource
 import seqexec.model.RequestFailed
-import seqexec.web.client.model.PauseOperation
-import seqexec.web.client.model.CancelPauseOperation
-import seqexec.web.client.model.SyncOperation
-import seqexec.web.client.model.RunOperation
-import seqexec.web.client.model.StopOperation
-import seqexec.web.client.model.SequencesOnDisplay
-import seqexec.web.client.model.TabOperations
-import seqexec.web.client.model.AbortOperation
-import seqexec.web.client.model.ResourceRunOperation
-import seqexec.web.client.model.StartFromOperation
+import seqexec.web.client.model.{AbortOperation, CancelPauseOperation, PauseOperation, ResourceRunOperation, RunOperation, SequencesOnDisplay, StartFromOperation, StopOperation, SyncOperation, TabOperations}
 import seqexec.web.client.actions._
 
 /**
@@ -124,7 +116,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           TabOperations
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight(s).some)),
-        Effect(Future(UpdateSelectedStepForce(id, s)))
+        Effect.action(UpdateSelectedStepForce(id, s))
       )
   }
 
@@ -227,6 +219,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case ClearAllResourceOperations(id) =>
       updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
+
+    case ClearAllResourceOperationsOnStepChange(id, step) =>
+      if( !value.selectedStep(id).contains(step))
+        updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
+      else
+        noChange
 
     case ClearResourceOperations(id, r) =>
       updatedL(SequencesOnDisplay.resetResourceOperations(id, r))

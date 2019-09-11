@@ -92,12 +92,15 @@ object SyncOperation {
 }
 
 sealed trait ResourceRunOperation extends Product with Serializable
+sealed trait ResourceRunRequested extends ResourceRunOperation {
+  val stepId: StepId
+}
 
 object ResourceRunOperation {
   case object ResourceRunIdle extends ResourceRunOperation
-  final case class ResourceRunInFlight(stepId: StepId) extends ResourceRunOperation
-  final case class ResourceRunCompleted(stepId: StepId) extends ResourceRunOperation
-  final case class ResourceRunFailed(stepId: StepId) extends ResourceRunOperation
+  final case class ResourceRunInFlight(stepId: StepId) extends ResourceRunRequested
+  final case class ResourceRunCompleted(stepId: StepId) extends ResourceRunRequested
+  final case class ResourceRunFailed(stepId: StepId) extends ResourceRunRequested
 
   implicit val eqResourceRunOperation: Eq[ResourceRunOperation] = Eq.instance {
     case (ResourceRunIdle, ResourceRunIdle)                 => true
@@ -142,13 +145,20 @@ final case class TabOperations(
       case _ => false
     })
 
-  // Indicate if any resource is being executed
+  // Indicate if any resource is in error
   def resourceInError(id: StepId): Boolean =
     resourceRunRequested.exists(_._2 match {
       case ResourceRunOperation.ResourceRunFailed(sid) if sid === id =>
         true
       case _ => false
     })
+
+  // Indicate if any resource has had a run requested (which may be complete or not)
+  def resourceRunNotIdle(id: StepId): Boolean =
+  resourceRunRequested.exists(_._2 match {
+    case r: ResourceRunRequested if r.stepId === id => true
+    case _ => false
+  })
 
   def anyResourceInFlight: Boolean =
     resourceRunRequested.exists(_._2 match {

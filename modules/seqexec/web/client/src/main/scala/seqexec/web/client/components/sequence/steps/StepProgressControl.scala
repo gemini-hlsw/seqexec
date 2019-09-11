@@ -46,7 +46,8 @@ object StepProgressCell {
     val resourceRunRequested = tabOperations.resourceRunRequested
 
     def stepSelected(i: StepId): Boolean =
-      selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
+      selectedStep.exists(_ === i) && !isPreview &&
+        (clientStatus.isLogged || tabOperations.resourceRunNotIdle(i))
 
     def isStopping: Boolean =
       tabOperations.stopRequested === StopOperation.StopInFlight
@@ -181,12 +182,14 @@ object StepProgressCell {
         } else {
             props.step.show
         }),
-        SubsystemControlCell(
-          SubsystemControlCell
-            .Props(props.obsId,
-                   props.step.id,
-                   Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
-                   props.resourceRunRequested))
+      SubsystemControlCell(
+        SubsystemControlCell
+          .Props(
+            props.obsId,
+            props.step.id,
+            Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
+            props.resourceRunRequested,
+            props.clientStatus.canOperate))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -195,7 +198,7 @@ object StepProgressCell {
       props.step.show
     )
 
-  def stepDisplay(props: Props): VdomElement =
+  def stepDisplay(props: Props): VdomElement = {
     (props.state, props.step) match {
       case (f, s) if s.status === StepState.Running && f.userStopRequested =>
         // Case pause at the sequence level
@@ -221,6 +224,7 @@ object StepProgressCell {
       case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
+  }
 
   private val component = ScalaComponent
     .builder[Props]("StepProgressCell")
