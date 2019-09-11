@@ -88,7 +88,7 @@ object Settings {
     val mouseVersion            = "0.23"
     val fs2Version              = "1.0.5"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.6.5"
+    val attoVersion             = "0.7.0"
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
