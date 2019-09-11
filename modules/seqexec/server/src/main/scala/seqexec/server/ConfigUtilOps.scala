@@ -15,9 +15,6 @@ import edu.gemini.spModel.ao.AOConstants.AO_SYSTEM_KEY
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
 import scala.reflect.ClassTag
-import scala.collection.breakOut
-import seqexec.model.enum.SystemName
-import seqexec.model.StepConfig
 import shapeless.tag
 import shapeless.tag.@@
 
@@ -85,94 +82,73 @@ object ConfigUtilOps {
       } yield b
   }
 
-  implicit class ConfigOps(val c: Config) extends AnyVal {
+  implicit class ExtractOps[C: ExtractItem](val c: C) {
     // config syntax: cfg.extract(key).as[Type]
-    def extract(key: ItemKey): Extracted[Config] = new Extracted(c, key)
+    def extract(key: ItemKey): Extracted[C] = new Extracted(c, key)
 
     // config syntax: cfg.extractAs[Type](key)
     def extractAs[A](key: ItemKey)(
-      implicit clazz:     ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractInstAs[A](key: PropertyDescriptor)(
-      implicit clazz:         ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, INSTRUMENT_KEY / key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractInstAs[A](key: String)(
-      implicit clazz:         ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, INSTRUMENT_KEY / key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractObsAs[A](key: PropertyDescriptor)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, OBSERVE_KEY / key).as[A]
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractObsAs[A](key: String)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, OBSERVE_KEY / key).as[A]
 
     // config syntax: cfg.extractTelescopeAs[Type](key)
     def extractTelescopeAs[A](key: PropertyDescriptor)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, TELESCOPE_KEY / key).as[A]
 
     // config syntax: cfg.extractTelescopeAs[Type](key)
     def extractTelescopeAs[A](key: String)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, TELESCOPE_KEY / key).as[A]
 
     // config syntax: cfg.extractCalibrationAs[Type](key)
     def extractCalibrationAs[A](key: PropertyDescriptor)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, CALIBRATION_KEY / key).as[A]
 
     // config syntax: cfg.extractCalibrationAs[Type](key)
     def extractCalibrationAs[A](key: String)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, CALIBRATION_KEY / key).as[A]
 
-    // config syntax: cfg.extractInstAs[Type](key)
+    // config syntax: cfg.extractAOAs[Type](key)
     def extractAOAs[A](key: PropertyDescriptor)(
-      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, AO_SYSTEM_KEY / key).as[A]
 
-    private def sanitizeValue(s: Any): String = s match {
-      case x: edu.gemini.shared.util.immutable.Some[_] => s"${x.getValue}"
-      case _: edu.gemini.shared.util.immutable.None[_] => "None"
-      case _ => s"$s"
-    }
-
-    // config syntax: cfg.toStepConfig
-    def toStepConfig: StepConfig =
-      c.itemEntries().groupBy(_.getKey.getRoot).map {
-        case (subsystem, entries) =>
-          SystemName.unsafeFromString(subsystem.getName) ->
-            (entries.toList.map { e =>
-              (e.getKey.getPath, sanitizeValue(e.getItemValue))
-            }(breakOut): Map[String, String])
-      }
+    // config syntax: cfg.extractAOAs[Type](key)
+    def extractAOAs[A](key: String)(
+      implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, AO_SYSTEM_KEY / key).as[A]
 
     def extractInstInt[A](
       property: PropertyDescriptor
     ): Either[ExtractFailure, Option[Int @@ A]] =
-      c
-        .extractInstAs[JInt](property)
+      c.extractInstAs[JInt](property)
         .map(_.toInt.some)
         .map(_.map(tag[A][Int]))
         .recoverOption
 
   }
 
-  implicit class ConfigSequenceOps(val c: ConfigSequence) extends AnyVal {
-    // config syntax: cfgSequence.extract(key).as[Type]
-    def extract(key: ItemKey): Extracted[ConfigSequence] = new Extracted(c, key)
-
-    // config syntax: cfgSequence.extractAs[Type](key)
-    def extractAs[A](key: ItemKey)(
-      implicit clazz:     ClassTag[A]): Either[ExtractFailure, A] =
-      new Extracted(c, key).as[A]
-  }
 }

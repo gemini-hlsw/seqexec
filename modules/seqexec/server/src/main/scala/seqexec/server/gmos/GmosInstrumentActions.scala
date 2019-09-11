@@ -6,7 +6,6 @@ package seqexec.server.gmos
 import cats._
 import cats.implicits._
 import cats.data.NonEmptyList
-import edu.gemini.spModel.config2.Config
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
@@ -16,17 +15,10 @@ import seqexec.model.enum.{Guiding, ObserveCommandResult}
 import seqexec.engine.Action
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
-import seqexec.server.Response
+import seqexec.server.{CleanConfig, FileIdAllocated, FileIdProvider, InstrumentActions, ObserveActions, ObserveContext, ObserveEnvironment, Response, StepType}
 import seqexec.server.SeqTranslate._
-import seqexec.server.StepType
-import seqexec.server.FileIdAllocated
-import seqexec.server.FileIdProvider
-import seqexec.server.InstrumentActions
-import seqexec.server.ObserveEnvironment
-import seqexec.server.ObserveActions
-import seqexec.server.ObserveContext
 import seqexec.server.ObserveActions._
-import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.gmos.GmosController.Config.{NSConfig, NSPosition}
 import seqexec.server.tcs.TcsController.{InstrumentOffset, OffsetP, OffsetQ}
 import shapeless.tag
 import squants.space.AngleConversions._
@@ -36,7 +28,7 @@ import squants.space.AngleConversions._
   */
 class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
-  config: Config
+  config: CleanConfig
 ) extends InstrumentActions[F] {
   override def observationProgressStream(
     env: ObserveEnvironment[F]

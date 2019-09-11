@@ -4,8 +4,6 @@
 package seqexec.server
 
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.altair.AltairConstants
@@ -25,9 +23,10 @@ import seqexec.server.nifs._
 import seqexec.server.gnirs._
 import seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import seqexec.server.SeqexecFailure.Unexpected
+import seqexec.server.CleanConfig.extractItem
 
 trait SequenceConfiguration {
-  def extractInstrument(config: Config): Either[SeqexecFailure, Instrument] =
+  def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =
     config
       .extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP)
       .asTrySeq
@@ -44,18 +43,18 @@ trait SequenceConfiguration {
         case ins             => UnrecognizedInstrument(s"inst $ins").asLeft
       }
 
-  def extractStatus(config: Config): StepState =
-    config.getItemValue(new ItemKey("observe:status")).toString match {
+  def extractStatus(config: CleanConfig): StepState =
+    config.extractObsAs[String](STATUS_PROP).map {
       case "ready"    => StepState.Pending
       case "complete" => StepState.Completed
       case "skipped"  => StepState.Skipped
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
-    }
+    }.getOrElse(StepState.Failed("Logical error reading step status"))
 
-  def extractWavelength(config: Config): Option[Wavelength] =
+  def extractWavelength(config: CleanConfig): Option[Wavelength] =
     config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
 
-  def calcStepType(config: Config): TrySeq[StepType] = {
+  def calcStepType(config: CleanConfig): TrySeq[StepType] = {
     def extractGaos(inst: Instrument): TrySeq[StepType] =
       config.extractAs[String](AO_SYSTEM_KEY) match {
         case Left(ConfigUtilOps.ConversionError(_, _)) =>

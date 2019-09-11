@@ -4,7 +4,6 @@
 package seqexec.server
 
 import cats.data.Kleisli
-import edu.gemini.spModel.config2.Config
 import fs2.Stream
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
@@ -16,22 +15,22 @@ import squants.{Length, Time}
 trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   override val resource: Instrument
   // The name used for this instrument in the science fold configuration
-  def sfName(config: Config): LightSinkName
+  def sfName(config: CleanConfig): LightSinkName
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl[F]
 
-  def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult]
+  def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult]
 
   //Expected total observe lapse, used to calculate timeout
-  def calcObserveTime(config: Config): F[Time]
+  def calcObserveTime(config: CleanConfig): F[Time]
 
   def keywordsClient: KeywordsClient[F]
 
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 
-  def instrumentActions(config: Config): InstrumentActions[F]
+  def instrumentActions(config: CleanConfig): InstrumentActions[F]
 
-  def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+  def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] =
     SequenceConfiguration.calcStepType(config)
 
   override val oiOffsetGuideThreshold: Option[Length] = None

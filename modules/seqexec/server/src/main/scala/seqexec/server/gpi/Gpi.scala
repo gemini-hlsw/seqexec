@@ -8,7 +8,6 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Timer
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants
@@ -26,6 +25,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -52,11 +52,11 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
 
   override val resource: Instrument = Instrument.Gpi
 
-  override def sfName(config: Config): LightSinkName = LightSinkName.Gpi
+  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gpi
 
   override val contributorName: String = "gpi"
 
-  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+  override def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] =
     if (Gpi.isAlignAndCalib(config)) {
       StepType.AlignAndCalib.asRight
     } else {
@@ -67,7 +67,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
     InstrumentSystem.Uncontrollable
 
   override def observe(
-    config: Config
+    config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
       calcObserveTime(config).flatMap { ot =>
@@ -77,7 +77,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
       }
     }
 
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     if (Gpi.isAlignAndCalib(config)) {
       controller.alignAndCalib.as(ConfigResult(this))
     } else {
@@ -92,7 +92,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
 
   override def notifyObserveStart: F[Unit] = Applicative[F].unit
 
-  override def calcObserveTime(config: Config): F[Time] = MonadError[F, Throwable].catchNonFatal {
+  override def calcObserveTime(config: CleanConfig): F[Time] = MonadError[F, Throwable].catchNonFatal {
     val obsTime =
       for {
         exp <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
@@ -108,7 +108,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
   ): Stream[F, Progress] =
     ProgressUtil.countdown[F](total, elapsed.self)
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     new GpiInstrumentActions[F]
 
 }
@@ -116,7 +116,7 @@ final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger](controlle
 object Gpi {
   val name: String = INSTRUMENT_NAME_PROP
 
-  private def gpiAoFlags(config: Config): Either[ExtractFailure, AOFlags] =
+  private def gpiAoFlags(config: CleanConfig): Either[ExtractFailure, AOFlags] =
     for {
       useAo      <- config.extractInstAs[JBoolean](USE_AO_PROP)
       useCal     <- config.extractInstAs[JBoolean](USE_CAL_PROP)
@@ -127,7 +127,7 @@ object Gpi {
     } yield AOFlags(useAo, useCal, aoOptimize, alignFpm, magH, magI)
 
   private def gpiASU(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, ArtificialSources] =
     for {
       ir          <- config.extractInstAs[ArtificialSource](IR_LASER_LAMP_PROP)
@@ -137,7 +137,7 @@ object Gpi {
                        .map(_.toDouble)
     } yield ArtificialSources(ir, vis, sc, attenuation)
 
-  private def gpiShutters(config: Config): Either[ExtractFailure, Shutters] =
+  private def gpiShutters(config: CleanConfig): Either[ExtractFailure, Shutters] =
     for {
       entrance     <- config.extractInstAs[Shutter](ENTRANCE_SHUTTER_PROP)
       calEntrance  <- config.extractInstAs[Shutter](CAL_ENTRANCE_SHUTTER_PROP)
@@ -145,7 +145,7 @@ object Gpi {
       referenceArm <- config.extractInstAs[Shutter](REFERENCE_ARM_SHUTTER_PROP)
     } yield Shutters(entrance, calEntrance, scienceArm, referenceArm)
 
-  private def gpiMode(config: Config)
+  private def gpiMode(config: CleanConfig)
     : Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
     config
       .extractInstAs[ObservingMode](OBSERVING_MODE_PROP)
@@ -160,17 +160,17 @@ object Gpi {
         } else mode.asLeft.asRight
       }
 
-  val AcquisitionKey = ObsClass.ACQ.headerValue()
+  val AcquisitionKey: String = ObsClass.ACQ.headerValue()
 
   // TODO wrap this on F to keep RT, It involves a large change upstream
-  def isAlignAndCalib(config: Config): Boolean = {
+  def isAlignAndCalib(config: CleanConfig): Boolean = {
     (config.extractInstAs[String](InstConstants.INSTRUMENT_NAME_PROP), config.extractObsAs[String](InstConstants.OBS_CLASS_PROP)).mapN {
       case (Gpi.name, "acq") => true
       case _                 => false
     }.getOrElse(false)
   }
 
-  def gpiReadMode(config: Config): Either[ExtractFailure, GpiReadMode] =
+  def gpiReadMode(config: CleanConfig): Either[ExtractFailure, GpiReadMode] =
     // FIXME: This turned out ugly because on the ocs this value is
     // stored in an class DetectorSamplingMode which is private
     // The OCS will be updated eventually but in the mean time we have to
@@ -183,7 +183,7 @@ object Gpi {
           ConversionError(OBSERVE_KEY / DETECTOR_SAMPLING_MODE_PROP,
           "Cannot read gpi Read mode"))}
 
-  def gpiReadoutArea(config: Config): Either[ExtractFailure, ReadoutArea] =
+  def gpiReadoutArea(config: CleanConfig): Either[ExtractFailure, ReadoutArea] =
     (for {
       startX <- config.extractInstAs[JInt](DETECTOR_STARTX_PROP)
       startY <- config.extractInstAs[JInt](DETECTOR_STARTY_PROP)
@@ -195,7 +195,7 @@ object Gpi {
           ConversionError(OBSERVE_KEY / DETECTOR_STARTX_PROP,
           "Cannot read readout area"))).flatten
 
-  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[GpiConfig] =
+  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[GpiConfig] =
     EitherT(ApplicativeError[F, Throwable].catchNonFatal(
       (for {
         adc      <- config.extractInstAs[Adc](ADC_PROP)
@@ -220,7 +220,7 @@ object Gpi {
   private def alignAndCalibConfig[F[_]: Applicative]: F[GpiConfig] =
     AlignAndCalibConfig.pure[F].widen[GpiConfig]
 
-  def fromSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[GpiConfig] =
+  def fromSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[GpiConfig] =
     ApplicativeError[F, Throwable]
       .catchNonFatal(isAlignAndCalib(config))
       .ifM(alignAndCalibConfig[F], regularSequenceConfig[F](config))
