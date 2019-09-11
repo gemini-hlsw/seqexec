@@ -47,6 +47,8 @@ import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -567,7 +569,7 @@ object SeqTranslate {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
 
-  def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: Config): F[DataId] =
+  def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT
       .fromEither[F](
         config
