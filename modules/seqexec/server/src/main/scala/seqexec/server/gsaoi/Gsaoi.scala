@@ -10,7 +10,6 @@ import cats.implicits._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble}
@@ -106,7 +105,7 @@ object Gsaoi {
   private def extractObsType(
     config: CleanConfig
   ): Either[ExtractFailure, String] =
-    config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+    config.extractObsAs[String](OBSERVE_TYPE_PROP)
 
   private def readCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig] =
     for {

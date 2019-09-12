@@ -17,7 +17,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
@@ -90,15 +90,15 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Logger, T <: GmosControll
     (for {
       filter           <- ss.extractFilter(config)
       disp             <- ss.extractDisperser(config)
-      disperserOrder   =  config.extractAs[DisperserOrder](INSTRUMENT_KEY / DISPERSER_ORDER_PROP)
-      disperserLambda  =  config.extractAs[JDouble](INSTRUMENT_KEY / DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
+      disperserOrder   =  config.extractInstAs[DisperserOrder](DISPERSER_ORDER_PROP)
+      disperserLambda  =  config.extractInstAs[JDouble](DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
       fpuName          =  ss.extractFPU(config)
-      fpuMask          =  config.extractAs[String](INSTRUMENT_KEY / FPU_MASK_PROP)
-      fpu              <- config.extractAs[FPUnitMode](INSTRUMENT_KEY / FPU_MODE_PROP).map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
+      fpuMask          =  config.extractInstAs[String](FPU_MASK_PROP)
+      fpu              <- config.extractInstAs[FPUnitMode](FPU_MODE_PROP).map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
       stageMode        <- ss.extractStageMode(config)
-      dtax             <- config.extractAs[DTAX](INSTRUMENT_KEY / DTAX_OFFSET_PROP)
-      adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
-      electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
+      dtax             <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
+      adc              <- config.extractInstAs[ADC](ADC_PROP)
+      electronicOffset =  config.extractInstAs[UseElectronicOffset](USE_ELECTRONIC_OFFSETTING_PROP)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
     } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
@@ -203,8 +203,8 @@ object Gmos {
   private def nsPosition(config: CleanConfig, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
     NodAndShuffleStage.NSStageEnumerated.all.slice(0, sc).map { s =>
       for {
-        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-p").flatMap(configToAngle).map(Offset.P.apply)
-        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
+        p <- config.extractInstAs[String](s"nsBeam${s.symbol.name}-p").flatMap(configToAngle).map(Offset.P.apply)
+        q <- config.extractInstAs[String](s"nsBeam${s.symbol.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
         k = INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-guideWithOIWFS"
         g <- extractGuiding(config, k)
       } yield NSPosition(s, Offset(p, q), g)
@@ -213,15 +213,15 @@ object Gmos {
 
   def nodAndShuffle(config: CleanConfig): Either[ExtractFailure, NSConfig.NodAndShuffle] =
     for {
-      cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
-      rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
-      sc     <- config.extractAs[JInt](INSTRUMENT_KEY / NS_STEP_COUNT_PROP_NAME)
+      cycles <- config.extractInstAs[JInt](NUM_NS_CYCLES_PROP).map(_.toInt)
+      rows   <- config.extractInstAs[JInt](DETECTOR_ROWS_PROP).map(_.toInt)
+      sc     <- config.extractInstAs[JInt](NS_STEP_COUNT_PROP_NAME)
       pos    <- nsPosition(config, sc)
     } yield NSConfig.NodAndShuffle(cycles, rows, pos)
 
   def nsConfig(config: CleanConfig): TrySeq[NSConfig] =
     (for {
-      useNS <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      useNS <- config.extractInstAs[java.lang.Boolean](USE_NS_PROP)
       ns    <- if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
@@ -261,10 +261,10 @@ object Gmos {
   private def customROIs(config: CleanConfig): List[ROI] = {
     def attemptROI(i: Int): Option[ROI] =
       (for {
-        xStart <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Xmin").map(_.toInt)
-        xRange <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Xrange").map(_.toInt)
-        yStart <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Ymin").map(_.toInt)
-        yRange <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Yrange").map(_.toInt)
+        xStart <- config.extractInstAs[JInt](s"customROI${i}Xmin").map(_.toInt)
+        xRange <- config.extractInstAs[JInt](s"customROI${i}Xrange").map(_.toInt)
+        yStart <- config.extractInstAs[JInt](s"customROI${i}Ymin").map(_.toInt)
+        yRange <- config.extractInstAs[JInt](s"customROI${i}Yrange").map(_.toInt)
       } yield new ROI(xStart, yStart, xRange, yRange)).toOption
 
     val rois = for {
@@ -279,17 +279,17 @@ object Gmos {
 
   def dcConfigFromSequenceConfig(config: CleanConfig): TrySeq[DCConfig] =
     (for {
-      obsType      <- config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+      obsType      <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       biasTime     <- biasTimeObserveType(obsType).asRight
       shutterState <- shutterStateObserveType(obsType).asRight
-      exposureTime <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+      exposureTime <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
       ampReadMode  <- config.extractAs[AmpReadMode](AmpReadMode.KEY)
-      gainChoice   <- config.extractAs[AmpGain](INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP)
-      ampCount     <- config.extractAs[AmpCount](INSTRUMENT_KEY / AMP_COUNT_PROP)
-      gainSetting  <- config.extractAs[String](INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).flatMap(toGain)
-      xBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_X_BIN_PROP)
-      yBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_Y_BIN_PROP)
-      builtInROI   <- config.extractAs[BuiltinROI](INSTRUMENT_KEY / BUILTIN_ROI_PROP)
+      gainChoice   <- config.extractInstAs[AmpGain](AMP_GAIN_CHOICE_PROP)
+      ampCount     <- config.extractInstAs[AmpCount](AMP_COUNT_PROP)
+      gainSetting  <- config.extractInstAs[String](AMP_GAIN_SETTING_PROP).flatMap(toGain)
+      xBinning     <- config.extractInstAs[Binning](CCD_X_BIN_PROP)
+      yBinning     <- config.extractInstAs[Binning](CCD_Y_BIN_PROP)
+      builtInROI   <- config.extractInstAs[BuiltinROI](BUILTIN_ROI_PROP)
       customROI = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
       roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
     } yield

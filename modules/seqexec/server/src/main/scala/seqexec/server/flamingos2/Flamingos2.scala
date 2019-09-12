@@ -69,7 +69,7 @@ final case class Flamingos2[F[_]: Sync: Timer: Logger](f2Controller: Flamingos2C
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     Sync[F].delay(
-      config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+      config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
         .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360)))
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] =
@@ -112,12 +112,12 @@ object Flamingos2 {
   }
 
   def fpuConfig(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, FocalPlaneUnit] = {
-    val a = INSTRUMENT_KEY / FPU_PROP
-    val b = INSTRUMENT_KEY / FPU_MASK_PROP
+    val a = FPU_PROP
+    val b = FPU_MASK_PROP
 
-    config.extractAs[FPUnit](a).flatMap(x =>
+    config.extractInstAs[FPUnit](a).flatMap(x =>
       if(x =!= FPUnit.CUSTOM_MASK) fpuFromFPUnit(x).asRight
-      else config.extractAs[String](b).map(FocalPlaneUnit.Custom)
+      else config.extractInstAs[String](b).map(FocalPlaneUnit.Custom)
     )
   }
 
@@ -148,31 +148,31 @@ object Flamingos2 {
 
   def ccConfigFromSequenceConfig(config: CleanConfig): TrySeq[CCConfig] =
     (for {
-      obsType <- config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+      obsType <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       // WINDOW_COVER_PROP is optional. It can be a WindowCover, an Option[WindowCover], or not be present. If no
       // value is given, then window cover position is inferred from observe type.
       p <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP),
              windowCoverFromObserveType(obsType)
            )
-      q <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
+      q <- config.extractInstAs[Decker](DECKER_PROP)
       r <- fpuConfig(config)
-      f <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
+      f <- config.extractInstAs[Filter](FILTER_PROP)
       s <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
            else f.asRight
-      t <- config.extractAs[LyotWheel](INSTRUMENT_KEY / LYOT_WHEEL_PROP)
-      u <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP).map(disperserFromObserveType(obsType, _))
+      t <- config.extractInstAs[LyotWheel](LYOT_WHEEL_PROP)
+      u <- config.extractInstAs[Disperser](DISPERSER_PROP).map(disperserFromObserveType(obsType, _))
     } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected
     (ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: CleanConfig): TrySeq[DCConfig] =
     (for {
-      p <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(x => Duration(x, SECONDS))
+      p <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(x => Duration(x, SECONDS))
       // Reads is usually inferred from the read mode, but it can be explicit.
-      a <- config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP).map(readsFromReadMode)
+      a <- config.extractInstAs[ReadMode](READMODE_PROP).map(readsFromReadMode)
       q <- extractEngineeringParam(config.extract(OBSERVE_KEY / READS_PROP), a)
       // Readout mode defaults to SCIENCE if not present.
       r <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP), ReadoutMode.SCIENCE)
-      s <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
+      s <- config.extractInstAs[Decker](DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = ( for {

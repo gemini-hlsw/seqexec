@@ -12,7 +12,6 @@ import seqexec.server.keywords._
 import seqexec.server.gmos.GmosEpics.RoiStatus
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import seqexec.model.enum.NodAndShuffleStage.{StageA, StageB}
 import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
@@ -30,7 +29,7 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config
 
   def preimage: F[Boolean] = MonadError[F, Throwable].catchNonFatal(
     config
-      .extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+      .extractInstAs[YesNoType](IS_MOS_PREIMAGING_PROP)
       .getOrElse(YesNoType.NO)
       .toBoolean
   ).safeValOrDefault

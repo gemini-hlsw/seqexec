@@ -8,7 +8,6 @@ import cats.data.Kleisli
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -96,10 +95,10 @@ object Niri {
   val name: String = INSTRUMENT_NAME_PROP
 
   def extractExposureTime(config: CleanConfig): Either[ExtractFailure, Time] =
-    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+    config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
 
   def extractCoadds(config: CleanConfig): Either[ExtractFailure, Int] =
-    config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
+    config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
 
   def calcReadMode(readMode: OCSReadMode, wellDepth: WellDepth)
   : Either[ConfigUtilOps.ExtractFailure, NiriController.ReadMode] = {
@@ -117,20 +116,20 @@ object Niri {
   }
 
   def getCameraConfig(config: CleanConfig): Either[ExtractFailure, Camera] =
-    config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
+    config.extractInstAs[Camera](CAMERA_PROP)
 
   def getCCCommonConfig(config: CleanConfig): TrySeq[Common] = (for {
     cam <- getCameraConfig(config)
-    bms <- config.extractAs[BeamSplitter](INSTRUMENT_KEY / BEAM_SPLITTER_PROP)
-    foc <- config.extractAs[Focus](INSTRUMENT_KEY / FOCUS_PROP)
-    dsp <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
-    msk <- config.extractAs[Mask](INSTRUMENT_KEY / MASK_PROP)
+    bms <- config.extractInstAs[BeamSplitter](BEAM_SPLITTER_PROP)
+    foc <- config.extractInstAs[Focus](FOCUS_PROP)
+    dsp <- config.extractInstAs[Disperser](DISPERSER_PROP)
+    msk <- config.extractInstAs[Mask](MASK_PROP)
   } yield Common(cam, bms, foc, dsp, msk))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def getCCIlluminatedConfig(config: CleanConfig): TrySeq[Illuminated] = {
     val filter = (for {
-      f  <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
+      f  <- config.extractInstAs[Filter](FILTER_PROP)
       fl <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
       else f.asRight
     } yield fl)
@@ -142,7 +141,7 @@ object Niri {
   def getCCDarkConfig(config: CleanConfig): TrySeq[Dark] = getCCCommonConfig(config).map(Dark)
 
   def getCCConfig(config: CleanConfig): TrySeq[CCConfig] =
-    config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+    config.extractObsAs[String](OBSERVE_TYPE_PROP)
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       .flatMap{
         case DARK_OBSERVE_TYPE => getCCDarkConfig(config)
@@ -153,10 +152,10 @@ object Niri {
   def getDCConfig(config: CleanConfig): TrySeq[DCConfig] = (for {
       expTime    <- extractExposureTime(config)
       coadds     <- extractCoadds(config)
-      rm         <- config.extractAs[OCSReadMode](INSTRUMENT_KEY / READ_MODE_PROP)
-      wellDepth  <- config.extractAs[WellDepth](INSTRUMENT_KEY / WELL_DEPTH_PROP)
+      rm         <- config.extractInstAs[OCSReadMode](READ_MODE_PROP)
+      wellDepth  <- config.extractInstAs[WellDepth](WELL_DEPTH_PROP)
       readMode   <- calcReadMode(rm, wellDepth)
-      builtInROI <- config.extractAs[BuiltInROI](INSTRUMENT_KEY / BUILTIN_ROI_PROP)
+      builtInROI <- config.extractInstAs[BuiltInROI](BUILTIN_ROI_PROP)
     } yield DCConfig(expTime, coadds, readMode, builtInROI))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
