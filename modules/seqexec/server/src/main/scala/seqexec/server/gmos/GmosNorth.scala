@@ -18,7 +18,6 @@ import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_PROP}
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import squants.Length
 import squants.space.Arcseconds
 
@@ -26,13 +25,13 @@ final case class GmosNorth[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosNor
   new SiteSpecifics[NorthTypes] {
     override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
     override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
-      config.extractAs[NorthTypes#Filter](INSTRUMENT_KEY / FILTER_PROP)
+      config.extractInstAs[NorthTypes#Filter](FILTER_PROP)
     override def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.DisperserNorth] =
-      config.extractAs[NorthTypes#Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
+      config.extractInstAs[NorthTypes#Disperser](DISPERSER_PROP)
     override def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] =
-      config.extractAs[NorthTypes#FPU](INSTRUMENT_KEY / FPU_PROP_NAME)
+      config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
     override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
-      config.extractAs[NorthTypes#GmosStageMode](INSTRUMENT_KEY / STAGE_MODE_PROP)
+      config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
   })(northConfigTypes) {
   override val resource: Instrument = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"

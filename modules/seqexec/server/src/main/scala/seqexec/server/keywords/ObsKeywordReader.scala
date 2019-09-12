@@ -304,7 +304,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     private val manualDarkOverride = "Dark"
 
     override def obsObject: F[String] =
-      config.extractAs[String](OBSERVE_KEY / OBJECT_PROP)
+      config.extractObsAs[String](OBJECT_PROP)
         .map(v => if (v === manualDarkValue) manualDarkOverride else v)
         .toOption
         .pure[F]
@@ -315,14 +315,14 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def pIReq: F[String] = "UNKNOWN".pure[F]
 
     override def sciBand: F[Int] =
-      config.extractAs[Integer](OBSERVE_KEY / SCI_BAND)
+      config.extractObsAs[Integer](SCI_BAND)
       .map(_.toInt)
       .toOption
       .pure[F]
       .safeValOrDefault
 
     def astrometicField: F[Boolean] =
-      config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP)
+      config.extractInstAs[java.lang.Boolean](ASTROMETRIC_FIELD_PROP)
       .toOption
       .exists(Boolean.unbox)
       .pure[F]
