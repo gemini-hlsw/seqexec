@@ -377,7 +377,7 @@ object StepsTable extends Columns {
       tabOperations.resourceRunNotIdle(idx) && !isPreview
 
     def canControlSubsystems(idx: StepId): Boolean =
-      !rowGetter(idx).step.isFinished &&  canOperate && !isPreview
+      !rowGetter(idx).step.isFinished && canOperate && !isPreview
 
     val configTableState: TableState[StepConfigTable.TableColumn] =
       stepsTable.configTableState

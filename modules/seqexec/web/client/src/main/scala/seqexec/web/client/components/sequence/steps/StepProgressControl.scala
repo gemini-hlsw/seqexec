@@ -86,7 +86,7 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         "Configuring"
-        ),
+       ),
       <.div(
         SeqexecStyles.subsystems,
         Step.configStatus.getOption(step)
@@ -158,7 +158,7 @@ object StepProgressCell {
                                   props.step.isObservePaused,
                                   props.tabOperations))
         .when(controlButtonsActive(props))
-      )
+    )
 
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
@@ -197,7 +197,7 @@ object StepProgressCell {
       props.step.show
     )
 
-  def stepDisplay(props: Props): VdomElement = {
+  def stepDisplay(props: Props): VdomElement =
     (props.state, props.step) match {
       case (f, s) if s.status === StepState.Running && f.userStopRequested =>
         // Case pause at the sequence level
@@ -223,7 +223,6 @@ object StepProgressCell {
       case _                                                               =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
-  }
 
   private val component = ScalaComponent
     .builder[Props]("StepProgressCell")
