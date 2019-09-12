@@ -373,6 +373,9 @@ object StepsTable extends Columns {
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
 
+    def subsystemsNotIdle(idx: StepId): Boolean =
+      tabOperations.resourceRunNotIdle(idx) && !isPreview
+
     def canControlSubsystems(idx: StepId): Boolean =
       !rowGetter(idx).step.isFinished && canOperate && !isPreview
 
@@ -672,7 +675,8 @@ object StepsTable extends Columns {
         // Row running
         SeqexecStyles.runningRowHeight
       case StepRow(s)
-          if b.state.selected.exists(_ === s.id) && !s.skip && b.props.canControlSubsystems(s.id) =>
+          if b.state.selected.exists(_ === s.id) && !s.skip &&
+            (b.props.canControlSubsystems(s.id) || b.props.subsystemsNotIdle(s.id))=>
         // Selected
         SeqexecStyles.runningRowHeight
       case StepRow(s) if s.breakpoint =>
