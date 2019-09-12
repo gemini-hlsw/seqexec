@@ -34,14 +34,13 @@ import seqexec.web.client.reusability._
   * Component to display the step state and control
   */
 object StepProgressCell {
-
-  final case class Props(clientStatus: ClientStatus,
-                         instrument   : Instrument,
-                         obsId        : Observation.Id,
-                         state        : SequenceState,
-                         step         : Step,
-                         selectedStep : Option[StepId],
-                         isPreview    : Boolean,
+  final case class Props(clientStatus:  ClientStatus,
+                         instrument:    Instrument,
+                         obsId:         Observation.Id,
+                         state:         SequenceState,
+                         step:          Step,
+                         selectedStep:  Option[StepId],
+                         isPreview:     Boolean,
                          tabOperations: TabOperations) {
 
     val resourceRunRequested = tabOperations.resourceRunRequested
@@ -142,7 +141,7 @@ object StepProgressCell {
                                   props.step.isObservePaused,
                                   props.tabOperations))
         .when(controlButtonsActive(props))
-      )
+    )
 
   def stepObservationPausing(props: Props): VdomElement =
     <.div(
@@ -150,7 +149,7 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         props.state.show
-        ),
+      ),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
@@ -185,12 +184,11 @@ object StepProgressCell {
         }),
       SubsystemControlCell(
         SubsystemControlCell
-          .Props(
-            props.obsId,
-            props.step.id,
-            Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
-            props.resourceRunRequested,
-            props.clientStatus.canOperate))
+          .Props(props.obsId,
+                 props.step.id,
+                 Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
+                 props.resourceRunRequested,
+                 props.clientStatus.canOperate))
     )
 
   def stepPaused(props: Props): VdomElement =

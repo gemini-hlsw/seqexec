@@ -103,17 +103,17 @@ object SubsystemControlCell {
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
-                size = Size.Small,
-                color = buttonColor(p.resourcesCalls.get(r)),
-                disabled = p.resourcesCalls.get(r).exists {
+                size        = Size.Small,
+                color       = buttonColor(p.resourcesCalls.get(r)),
+                disabled    = p.resourcesCalls.get(r).exists {
                   case ResourceRunOperation.ResourceRunInFlight(_) => true
                   case _                                           => false
                 },
-                labeled = buttonIcon
+                labeled     = buttonIcon
                   .as(Button.LeftLabeled)
                   .getOrElse(Button.NotLabeled),
-                icon = buttonIcon,
-                onClickE = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
+                icon        = buttonIcon,
+                onClickE    = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
                 extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
               ),
               r.show

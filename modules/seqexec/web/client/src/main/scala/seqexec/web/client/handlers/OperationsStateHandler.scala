@@ -221,7 +221,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
 
     case ClearAllResourceOperationsOnStepChange(id, step) =>
-      if( !value.selectedStep(id).contains(step))
+      if(!value.selectedStep(id).contains(step))
         updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
       else
         noChange
