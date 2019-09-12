@@ -34,13 +34,14 @@ import seqexec.web.client.reusability._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(clientStatus:  ClientStatus,
-                         instrument:    Instrument,
-                         obsId:         Observation.Id,
-                         state:         SequenceState,
-                         step:          Step,
-                         selectedStep:  Option[StepId],
-                         isPreview:     Boolean,
+
+  final case class Props(clientStatus: ClientStatus,
+                         instrument   : Instrument,
+                         obsId        : Observation.Id,
+                         state        : SequenceState,
+                         step         : Step,
+                         selectedStep : Option[StepId],
+                         isPreview    : Boolean,
                          tabOperations: TabOperations) {
 
     val resourceRunRequested = tabOperations.resourceRunRequested
@@ -86,7 +87,7 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         "Configuring"
-      ),
+        ),
       <.div(
         SeqexecStyles.subsystems,
         Step.configStatus.getOption(step)
@@ -141,7 +142,7 @@ object StepProgressCell {
                                   props.step.isObservePaused,
                                   props.tabOperations))
         .when(controlButtonsActive(props))
-    )
+      )
 
   def stepObservationPausing(props: Props): VdomElement =
     <.div(
@@ -149,7 +150,7 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         props.state.show
-      ),
+        ),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
@@ -158,7 +159,7 @@ object StepProgressCell {
                                   props.step.isObservePaused,
                                   props.tabOperations))
         .when(controlButtonsActive(props))
-    )
+      )
 
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
@@ -180,7 +181,7 @@ object StepProgressCell {
             "Align & Calib"
           }
         } else {
-            props.step.show
+          props.step.show
         }),
       SubsystemControlCell(
         SubsystemControlCell
@@ -203,25 +204,25 @@ object StepProgressCell {
       case (f, s) if s.status === StepState.Running && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty    =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused && s.fileId.isDefined =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined               =>
         // Case for exposure paused, label and control buttons
         stepObservationPaused(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.status === StepState.Running && s.fileId.isDefined =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined  =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.wasSkipped =>
+      case (_, s) if s.wasSkipped                                          =>
         <.p("Skipped")
-      case (_, _) if props.step.skip =>
+      case (_, _) if props.step.skip                                       =>
         <.p("Skip")
       case (_, s)
-          if s.status === StepState.Completed && s.fileId.isDefined =>
+        if s.status === StepState.Completed && s.fileId.isDefined          =>
         <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
-      case (_, s) if props.stepSelected(s.id) && s.canConfigure =>
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure            =>
         stepSubsystemControl(props)
-      case _ =>
+      case _                                                               =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
   }

@@ -107,7 +107,7 @@ object SubsystemControlCell {
                 color = buttonColor(p.resourcesCalls.get(r)),
                 disabled = p.resourcesCalls.get(r).exists {
                   case ResourceRunOperation.ResourceRunInFlight(_) => true
-                  case _ => false
+                  case _                                           => false
                 },
                 labeled = buttonIcon
                   .as(Button.LeftLabeled)
