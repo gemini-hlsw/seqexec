@@ -149,7 +149,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     // Configure GMOS rows
     Stream.eval(
       inst.configureShuffle(rowsToShuffle).as(Result.Partial(NSRowsConfigure))
-    ).mergeHaltBoth(
+    ).merge(
       // TCS Nod
       (env.getTcs, nsPositionO).mapN {
         case (tcs, nsPos) =>
