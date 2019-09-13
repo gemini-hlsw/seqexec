@@ -8,6 +8,7 @@ import cats.data.Kleisli
 import cats.data.EitherT
 import cats.data.NonEmptyList
 import cats.implicits._
+import cats.effect.Concurrent
 import gem.enum.LightSinkName
 import gsp.math.Angle
 import gsp.math.Offset
@@ -40,7 +41,7 @@ import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 
-abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Logger, T <: GmosController.SiteDependentTypes]
+abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
 (controller: GmosController[F, T], ss: SiteSpecifics[T])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._

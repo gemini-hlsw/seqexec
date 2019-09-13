@@ -5,6 +5,7 @@ package seqexec.server.gmos
 
 import cats._
 import cats.implicits._
+import cats.effect.Concurrent
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs._
@@ -44,7 +45,7 @@ final case class Subexposure(
 /**
   * Gmos needs different actions for N&S
   */
-class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: GmosController.SiteDependentTypes](
+class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {
@@ -148,7 +149,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
     // Configure GMOS rows
     Stream.eval(
       inst.configureShuffle(rowsToShuffle).as(Result.Partial(NSRowsConfigure))
-    ) ++
+    ).mergeHaltBoth(
       // TCS Nod
       (env.getTcs, nsPositionO).mapN {
         case (tcs, nsPos) =>
@@ -164,7 +165,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
               )
               .as(Result.Partial(NSTCSNod))
           )
-      }.orEmpty ++
+      }.orEmpty) ++
       // Observes for each subexposure
       (if (sub.firstSubexposure) {
          post(initialObserve(fileId, env), env)

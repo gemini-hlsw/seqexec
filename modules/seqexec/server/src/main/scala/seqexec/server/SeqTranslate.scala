@@ -165,7 +165,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case ActionState.Started => true
@@ -224,7 +224,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def pauseObserve(seqId: Observation.Id)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
       case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause
@@ -324,7 +324,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def toInstrumentSys(inst: Instrument)(
-    implicit ev: Timer[IO]
+    implicit ev: Timer[IO], cio: Concurrent[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
