@@ -7,6 +7,10 @@ import cats.Eq
 import cats.implicits._
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
 
+package gsaoi{
+  trait GsaoiFullHandler[F[_]] extends GsaoiController[F] with GsaoiGuider[F]
+}
+
 package object gsaoi {
   implicit val dhsConnectedEq: Eq[DhsConnected] = Eq.by(_.ordinal)
 }

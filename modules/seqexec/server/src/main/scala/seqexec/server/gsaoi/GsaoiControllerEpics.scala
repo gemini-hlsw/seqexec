@@ -96,7 +96,7 @@ object GsaoiControllerEpics {
     guiding: Boolean
   )
 
-  def apply(): GsaoiController[IO] = new GsaoiController[IO] {
+  def apply(): GsaoiFullHandler[IO] = new GsaoiFullHandler[IO] {
 
     private val epicsSys = GsaoiEpics.instance
 
@@ -205,5 +205,28 @@ object GsaoiControllerEpics {
       gd <- epicsSys.guiding
     } yield EpicsGsaoiConfig(fl, uw, wc, rm, ro, co, et, fo, gd)
 
+    override def currentState: IO[GsaoiGuider.GuideState] = for {
+      guide <- epicsSys.guiding
+      m1    <- epicsSys.odgw1Multiplier
+      m2    <- epicsSys.odgw1Multiplier
+      m3    <- epicsSys.odgw1Multiplier
+      m4    <- epicsSys.odgw1Multiplier
+    } yield new GsaoiGuider.GuideState {
+      override def isGuideActive: Boolean = guide
+
+      override def isOdgwGuiding(odgwId: GsaoiGuider.OdgwId): Boolean = {
+        import GsaoiGuider.OdgwId._
+        odgwId match {
+          case Odgw1 => guide && m1 > 0
+          case Odgw2 => guide && m2 > 0
+          case Odgw3 => guide && m3 > 0
+          case Odgw4 => guide && m4 > 0
+        }
+      }
+    }
+
+    override def guide: IO[Unit] = epicsSys.guideCmd.mark[IO] *> epicsSys.guideCmd.post[IO].void
+
+    override def endGuide: IO[Unit] = epicsSys.endGuideCmd.mark[IO] *> epicsSys.guideCmd.post[IO].void
   }
 }
