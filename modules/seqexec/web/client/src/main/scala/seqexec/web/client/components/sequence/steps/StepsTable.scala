@@ -462,8 +462,7 @@ object StepsTable extends Columns {
     tableState:      TableState[TableColumn],
     breakpointHover: Option[Int],
     selected:        Option[StepId],
-    scrollCount:     Int,
-    scrollWhileRun:  Boolean
+    scrollCount:     Int
   ) {
 
     def visibleCols(p: Props): State =
@@ -488,7 +487,7 @@ object StepsTable extends Columns {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None, None, 0, false)
+    val InitialState: State = State(InitialTableState, None, None, 0)
   }
 
   val stdStepReuse: Reusability[StandardStep] =
@@ -818,16 +817,11 @@ object StepsTable extends Columns {
       State.scrollPosition.set(pos)(b.state)
     }
     val posDiff = abs(pos.toDouble - b.state.tableState.scrollPosition.toDouble)
-    // If running store it on the state
-    // We'll consider that the user has moved intentionally if the scroll is more than 2 rows
-    val scrolledWhileRunningMod = b.setStateL(State.scrollWhileRun)(true)
-      .when_(b.props.sequenceState.exists(_.isRunning) && posDiff > 2*(HeightWithOffsets + BreakpointLineHeight))
     // Always update the position and counts, but the modification flag only if
     // we are sure the user did scroll manually
     (posMod *>
       scrollCountMods *>
       modMod *>
-      scrolledWhileRunningMod *>
       // And silently update the model
       b.props.obsId
         .map(id =>
@@ -1003,15 +997,13 @@ object StepsTable extends Columns {
     (next.obsId, cur.runningStep, next.runningStep) match {
       case (Some(obsId), Some(RunningStep(i, _)), None) =>
         // This happens when a sequence stops, e.g. with a pasue
-        updateStep(b, next, obsId, i) *>
-          // And reset scrolling state
-          b.setStateL(State.scrollWhileRun)(false)
+        updateStep(b, next, obsId, i)
       case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
           if i =!= j =>
         // This happens when we keep running and move to the next step
         // If the user hasn't scrolled we'll focus on the next step
         updateStep(b, next, obsId, j) *>
-          scrollTo(j).unless_(b.state.scrollWhileRun)
+          scrollTo(j)
       case (Some(obsId), _, Some(RunningStep(j, _)))
           if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
         // When we start running
