@@ -153,7 +153,7 @@ object GemsControllerEpics {
   val Log = getLogger
 
   def apply[F[_]: Async](epicsSys: => GemsEpics[F],
-                         gsaoiGuider: => GsaoiGuider[F]
+                         gsaoiGuider: GsaoiGuider[F]
                         )
   : GemsController[F] = new GemsControllerEpics[F](epicsSys, gsaoiGuider)
 

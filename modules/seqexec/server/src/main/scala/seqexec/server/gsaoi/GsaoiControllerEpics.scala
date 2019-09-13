@@ -96,7 +96,7 @@ object GsaoiControllerEpics {
     guiding: Boolean
   )
 
-  def apply(): GsaoiController[IO] with GsaoiGuider[IO] = new GsaoiController[IO] with GsaoiGuider[IO] {
+  def apply(): GsaoiFullHandler[IO] = new GsaoiFullHandler[IO] {
 
     private val epicsSys = GsaoiEpics.instance
 
