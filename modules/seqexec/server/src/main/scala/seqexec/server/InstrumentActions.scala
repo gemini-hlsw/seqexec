@@ -54,8 +54,8 @@ trait InstrumentActions[F[_]] {
 object InstrumentActions {
 
   /**
-   * This is the default observe action, just a simple observe call
-   */
+    * This is the default observe action, just a simple observe call
+    */
   def defaultObserveActions[F[_]](
     observeResults: Stream[F, Result[F]]
   ): List[ParallelActions[F]] =
@@ -67,11 +67,13 @@ object InstrumentActions {
       )
     )
 
-  def safeObserve[F[_]: MonadError[?[_], Throwable]: Logger](
-    env: ObserveEnvironment[F], doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
+  def launchObserve[F[_]: MonadError[?[_], Throwable]: Logger](
+    env:       ObserveEnvironment[F],
+    doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] =
     Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
-      Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env)
+      Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++
+        doObserve(fileId, env)
     }
 
   /**
@@ -90,7 +92,7 @@ object InstrumentActions {
         post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
       ): List[ParallelActions[F]] =
         defaultObserveActions(
-          post(safeObserve(env, ObserveActions.stdObserve[F]), env)
+          post(launchObserve(env, ObserveActions.stdObserve[F]), env)
         )
 
       def runInitialAction(stepType: StepType): Boolean = true

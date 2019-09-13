@@ -5,28 +5,47 @@ package seqexec.server.gmos
 
 import cats._
 import cats.implicits._
-import cats.data.NonEmptyList
+import cats.effect.Concurrent
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.ActionType
 import seqexec.model.dhs._
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
-import seqexec.model.enum.{Guiding, ObserveCommandResult}
-import seqexec.engine.Action
+import seqexec.model.enum.Guiding
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
-import seqexec.server.{CleanConfig, FileIdAllocated, FileIdProvider, InstrumentActions, ObserveActions, ObserveContext, ObserveEnvironment, Response, StepType}
-import seqexec.server.SeqTranslate._
+import seqexec.server.CleanConfig
+import seqexec.server.FileIdAllocated
+import seqexec.server.FileIdProvider
+import seqexec.server.InstrumentActions
+import seqexec.server.ObserveActions
+import seqexec.server.ObserveContext
+import seqexec.server.ObserveEnvironment
+import seqexec.server.StepType
+import seqexec.server.InstrumentActions._
 import seqexec.server.ObserveActions._
-import seqexec.server.gmos.GmosController.Config.{NSConfig, NSPosition}
-import seqexec.server.tcs.TcsController.{InstrumentOffset, OffsetP, OffsetQ}
+import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.OffsetP
+import seqexec.server.tcs.TcsController.OffsetQ
 import shapeless.tag
 import squants.space.AngleConversions._
+
+final case class Subexposure(
+  totalCycles: Int,
+  cycle:       Int,
+  id:          Int,
+  stage:       NodAndShuffleStage
+) {
+  val firstSubexposure = cycle === 0 && id === 0
+  val lastSubexposure  = cycle === totalCycles - 1 && id === Gmos.NsSequence.length - 1
+}
 
 /**
   * Gmos needs different actions for N&S
   */
-class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: GmosController.SiteDependentTypes](
+class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {
@@ -43,32 +62,32 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
     dataId: DataId,
     env:    ObserveEnvironment[F]
   )(r:      ObserveCommandResult): Stream[F, Result[F]] =
-    Stream.eval(r match {
-      case ObserveCommandResult.Success =>
-        okTail(fileId, dataId, stopped = false, env).map(Stream.emit)
-      case ObserveCommandResult.Stopped =>
-        okTail(fileId, dataId, stopped = true, env).map(Stream.emit)
-      case ObserveCommandResult.Aborted =>
-        abortTail(env.systems, env.obsId, fileId).map(Stream.emit)
-      case ObserveCommandResult.Paused =>
-        env.inst
-          .calcObserveTime(env.config)
-          .map(
-            e =>
-              Stream.emit(
-                Result
-                  .Paused(ObserveContext(observeTail(fileId, dataId, env), e))
-              )
-          )
-      case ObserveCommandResult.Partial =>
-        Stream
-          .emits[F, Result[F]](
-            List(Result.Partial(NSStep), Result.OK(Response.Ignored))
-          )
-          .pure[F]
-    }).flatten
+    Stream
+      .eval(r match {
+        case ObserveCommandResult.Success =>
+          okTail(fileId, dataId, stopped = false, env).map(Stream.emit)
+        case ObserveCommandResult.Stopped =>
+          okTail(fileId, dataId, stopped = true, env).map(Stream.emit)
+        case ObserveCommandResult.Aborted =>
+          abortTail(env.systems, env.obsId, fileId).map(Stream.emit)
+        case ObserveCommandResult.Paused =>
+          env.inst
+            .calcObserveTime(env.config)
+            .map(
+              e =>
+                Stream.emit(
+                  Result
+                    .Paused(ObserveContext(observeTail(fileId, dataId, env), e))
+                )
+            )
+        case ObserveCommandResult.Partial =>
+          Stream
+            .emit[F, Result[F]](Result.Partial(NSStep))
+            .pure[F]
+      })
+      .flatten
 
-  private def startObserve(
+  private def initialObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
@@ -78,130 +97,128 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger, A <: Gmos
       ret              <- observeTail(fileId, dataId, env)(result)
     } yield ret
 
-  private def completeObserve(
+  private def lastObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
-    Stream.eval(for {
-      dataId  <- dataId(env)
-      timeout <- inst.calcObserveTime(env.config)
-      ret     <- inst.continueCommand(timeout)
-    } yield observeTail(fileId, dataId, env)(ret)).flatten
+    // the last step completes the observations doing an observeTail
+    Stream
+      .eval(for {
+        dataId  <- dataId(env)
+        timeout <- inst.calcObserveTime(env.config)
+        ret     <- inst.continueCommand(timeout)
+      } yield observeTail(fileId, dataId, env)(ret))
+      .flatten ++
+      Stream.emit[F, Result[F]](Result.Partial(NSComplete))
 
-  private def observe(i: Int, env: ObserveEnvironment[F])(fileId: ImageFileId): Stream[F, Result[F]] =
-    if (i === 0) {
-      // The first steps allocates a file and runs the firt observe
-      Stream.emit[F, Result[F]](Result.Partial(FileIdAllocated(fileId))) ++
-        startObserve(fileId, env)
-    } else if (i === Gmos.NsSequence.length - 1) {
-      // the last step completes the observations with a complete and a tail
-      completeObserve(fileId, env) ++
-        Stream.emit[F, Result[F]](Result.Partial(NSComplete))
-    } else {
-      // Steps in betweet do a continue
-      Stream
-        .eval(
-          inst
-            .calcObserveTime(env.config)
-            .flatMap(inst.continueCommand)
-        )
-        .as(Result.Partial(NSContinue)) ++
-        Stream.emit(Result.OK(Response.Ignored))
-    }
-
-  // TODO reduce duplication with respect to InstrumentActions.safeObserve
-  private def safeObserve(
-    i: Int,
+  private def continueObserve(
     env: ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
-    Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
-      observe(i, env)(fileId)
-    }
+    // Steps in between do a continue
+    Stream
+      .eval(
+        inst
+          .calcObserveTime(env.config)
+          .flatMap(inst.continueCommand)
+      )
+      .as(Result.Partial(NSContinue))
+
+  // Calculate the subexposures
+  private def subexposures(
+    cycles: Int
+  ): List[Subexposure] =
+    (for {
+      i     <- 0 until cycles
+      j     <- 0 until Gmos.NsSequence.length
+      stage = Gmos.NsSequence.toList.lift(j).getOrElse(StageA)
+    } yield Subexposure(cycles, i, j, stage)).toList
 
   /**
-   * Calculate the actions for a N&S cycle
-   */
-  private def actionPositions(
-    env:   ObserveEnvironment[F],
-    rows:  Int,
+    * Stream of actions of one sub exposure
+    */
+  def oneSubExposure(
+    fileId:    ImageFileId,
+    sub:       Subexposure,
+    rows:      Int,
     positions: Vector[NSPosition],
-    post:  (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
-  ): List[ParallelActions[F]] =
-    Gmos.NsSequence.zipWithIndex
-      .map {
-        case (stage, i) =>
-          val rowsToShuffle = if (stage === StageA) 0 else rows
-          val nsPositionO = positions.find(_.stage === stage)
-          List(
-            // Configure rows to shuffle
-            NonEmptyList(
-              inst
-                .configureShuffle(rowsToShuffle)
-                .as(Response.Configured(inst.resource))
-                .toAction(ActionType.Configure(inst.resource)),
-              (env.getTcs, nsPositionO).mapN{ case (tcs, nsPos) =>
-                tcs.nod(
-                  stage,
-                  InstrumentOffset(
-                    tag[OffsetP](nsPos.offset.p.toRadians.radians), tag[OffsetQ](nsPos.offset.q.toRadians.radians)),
-                  nsPos.guide === Guiding.Guide
-                ).toAction(ActionType.Configure(tcs.resource))
-              }.toList
-            ),
-            // Do an obs observe/continue
-            NonEmptyList.one(
-              Action(
-                ActionType.Observe,
-                post( // post lets upstream to mix progress events
-                  safeObserve(i, env),
-                  env
+    env:       ObserveEnvironment[F],
+    post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+  ): Stream[F, Result[F]] = {
+    val rowsToShuffle = if (sub.stage === StageA) 0 else rows
+    val nsPositionO   = positions.find(_.stage === sub.stage)
+    // Configure GMOS rows
+    Stream.eval(
+      inst.configureShuffle(rowsToShuffle).as(Result.Partial(NSRowsConfigure))
+    ).merge(
+      // TCS Nod
+      (env.getTcs, nsPositionO).mapN {
+        case (tcs, nsPos) =>
+          Stream.eval(
+            tcs
+              .nod(
+                sub.stage,
+                InstrumentOffset(
+                  tag[OffsetP](nsPos.offset.p.toRadians.radians),
+                  tag[OffsetQ](nsPos.offset.q.toRadians.radians)
                 ),
-                Action.State(Action.ActionState.Idle, Nil)
+                nsPos.guide === Guiding.Guide
               )
-            )
+              .as(Result.Partial(NSTCSNod))
           )
-      }
-      .toList
-      .flatten
+      }.orEmpty) ++
+      // Observes for each subexposure
+      (if (sub.firstSubexposure) {
+         post(initialObserve(fileId, env), env)
+       } else if (sub.lastSubexposure) {
+         post(lastObserve(fileId, env), env)
+       } else {
+         post(continueObserve(env), env)
+       })
+  }
 
-  private def nsActions(env:  ObserveEnvironment[F],
-                        post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
-                       )
-  : List[ParallelActions[F]] =
+  private def doObserve(
+    fileId: ImageFileId,
+    env:    ObserveEnvironment[F],
+    post:   (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+  ): Stream[F, Result[F]] =
     Gmos
       .nsConfig(config)
-      .map {
+      .foldMap {
         case NSConfig.NoNodAndShuffle =>
-          // This shouldn't happen but we need to code it anyway
-          Nil
+          Stream.empty
         case NSConfig.NodAndShuffle(cycles, rows, positions) =>
           // Initial notification of N&S Starting
-          NonEmptyList.one(
-            Action(ActionType.Undefined,
-                   Stream.emits[F, Result[F]](
-                     List(Result.Partial(NSStart),
-                          Result.OK(Response.Ignored))
-                   ),
-                   Action.State(Action.ActionState.Idle, Nil))
-          ) ::
-            actionPositions(env, rows, positions, post) // Add steps for each cycle
-              .replicateA(cycles)
-              .toList
-              .flatten
+          Stream.emit[F, Result[F]](Result.Partial(NSStart)) ++
+            // each subexposure actions
+            subexposures(cycles)
+              .map {
+                oneSubExposure(fileId, _, rows, positions, env, post)
+              }
+              .reduceOption(_ ++ _)
+              .orEmpty
       }
-      .getOrElse(Nil)
+
+  def launchObserve(
+    env:  ObserveEnvironment[F],
+    post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+  ): Stream[F, Result[F]] =
+    Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
+      Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env, post)
+    }
 
   override def observeActions(
     env:  ObserveEnvironment[F],
     post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): List[ParallelActions[F]] =
     env.stepType match {
-      case StepType.NodAndShuffle(i) if i === inst.resource => nsActions(env, post)
-      case StepType.DarkOrBiasNS(i) if i === inst.resource  => nsActions(env, post)
+      case StepType.NodAndShuffle(i) if i === inst.resource =>
+        defaultObserveActions(launchObserve(env, post))
+      case StepType.DarkOrBiasNS(i) if i === inst.resource  =>
+        defaultObserveActions(launchObserve(env, post))
 
       case _ =>
         // Regular GMOS obseravtions behave as any instrument
-        InstrumentActions.defaultInstrumentActions[F].observeActions(env, post)
+        defaultInstrumentActions[F].observeActions(env, post)
     }
 
   def runInitialAction(stepType: StepType): Boolean = true
