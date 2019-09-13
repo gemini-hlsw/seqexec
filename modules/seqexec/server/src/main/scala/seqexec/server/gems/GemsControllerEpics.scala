@@ -11,13 +11,13 @@ import mouse.boolean._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gems.Gems._
 import org.log4s.getLogger
-import seqexec.server.gsaoi.GsaoiEpics
+import seqexec.server.gsaoi.GsaoiGuider
 import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, PauseResume, ResumeCondition, ResumeConditionSet}
 import squants.Time
 import squants.time.TimeConversions._
 
 class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsSys: GemsEpics[F],
-                                                                          gsaoiSys: GsaoiEpics[F]
+                                                                          gsaoiGuider: GsaoiGuider[F]
                                                                          ) extends GemsController[F] {
   import GemsControllerEpics._
 
@@ -37,19 +37,16 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     )
   }
 
-  private def odgwActivityState[T: DetectorStateOps](multiplier: F[Int]): F[T] =
-    (gsaoiSys.guiding, multiplier).mapN{case (g, m) => g && m > 0}
-      .map(DetectorStateOps.fromBoolean[T])
-
+  import GsaoiGuider.OdgwId._
   override val stateGetter: GemsWfsState[F] = GemsWfsState(
-    epicsSys.apd1Active.map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]),
-    epicsSys.apd2Active.map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]),
-    epicsSys.apd3Active.map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]),
-    odgwActivityState[Odgw1DetectorState](gsaoiSys.odgw1Multiplier),
-    odgwActivityState[Odgw2DetectorState](gsaoiSys.odgw2Multiplier),
-    odgwActivityState[Odgw3DetectorState](gsaoiSys.odgw3Multiplier),
-    odgwActivityState[Odgw4DetectorState](gsaoiSys.odgw4Multiplier)
-  )
+      epicsSys.apd1Active.map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]),
+      epicsSys.apd2Active.map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]),
+      epicsSys.apd3Active.map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]),
+      gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw1DetectorState](x.isOdgwGuiding(Odgw1))),
+      gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw2DetectorState](x.isOdgwGuiding(Odgw2))),
+      gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw3DetectorState](x.isOdgwGuiding(Odgw3))),
+      gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw4DetectorState](x.isOdgwGuiding(Odgw4)))
+    )
 
   private val retrieveConfig: F[EpicsGems] = for{
     cwfs1 <- stateGetter.cwfs1
@@ -156,9 +153,9 @@ object GemsControllerEpics {
   val Log = getLogger
 
   def apply[F[_]: Async](epicsSys: => GemsEpics[F],
-                         gsaoiSys: => GsaoiEpics[F]
+                         gsaoiGuider: => GsaoiGuider[F]
                         )
-  : GemsController[F] = new GemsControllerEpics[F](epicsSys, gsaoiSys)
+  : GemsController[F] = new GemsControllerEpics[F](epicsSys, gsaoiGuider)
 
   @Lenses
   final case class EpicsGems(
