@@ -896,15 +896,16 @@ object StepsTable extends Columns {
   )(e:          ReactMouseEvent): Callback =
     // If alt is pressed or middle button flip the breakpoint
     if (e.altKey || e.button === MIDDLE_BUTTON) {
-      (p.obsId, p.stepsList.find(_.id === index + 1))
-        .mapN(
-          (oid, step) =>
-            SeqexecCircuit
-              .dispatchCB(FlipBreakpointStep(oid, step))
-              .when_(step.canSetBreakpoint(index + 1, p.nextStepToRun))
-        )
-        .getOrEmpty
-        .when_(p.canSetBreakpoint)
+      e.preventDefaultCB >>
+        (p.obsId, p.stepsList.find(_.id === index + 1))
+          .mapN(
+            (oid, step) =>
+              SeqexecCircuit
+                .dispatchCB(FlipBreakpointStep(oid, step))
+                .when_(step.canSetBreakpoint(index + 1, p.nextStepToRun))
+            )
+          .getOrEmpty
+          .when_(p.canSetBreakpoint)
     } else {
       onRowClick
         .filter(_ => e.clientX > ControlWidth)
@@ -935,7 +936,7 @@ object StepsTable extends Columns {
               ^.cls := className,
               ^.key := s"$key-top",
               SeqexecStyles.expandedTopRow,
-              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
               columns.toTagMod
             ),
@@ -943,7 +944,7 @@ object StepsTable extends Columns {
               <.div(
                 SeqexecStyles.expandedBottomRow,
                 SeqexecStyles.acProgressRow,
-              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
                 AlignAndCalibProgress(AlignAndCalibProgress.Props(s)),
                 ^.key := s"$key-base"
@@ -955,7 +956,7 @@ object StepsTable extends Columns {
               ^.key := key,
               ^.role := "row",
               ^.style := Style.toJsObject(style),
-              ^.onClick ==> allowedClick(p, index, onRowClick),
+              ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
               columns.toTagMod
             )
