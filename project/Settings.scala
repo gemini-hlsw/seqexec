@@ -39,7 +39,7 @@ object Settings {
     val mouseVersion            = "0.23"
     val fs2Version              = "1.0.5"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.7.0-RC1"
+    val attoVersion             = "0.7.0"
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
@@ -56,7 +56,7 @@ object Settings {
     val janino                  = "3.1.0"
     val logstash                = "6.2"
     val knobs                   = "7.0.24"
-    val monocleVersion          = "2.0.0-RC1"
+    val monocleVersion          = "2.0.0"
     val circeVersion            = "0.12.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"

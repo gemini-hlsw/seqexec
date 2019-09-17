@@ -201,7 +201,7 @@ lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings)
   .jsSettings(gspScalaJsSettings)
 
-lazy val ocs2_api_JVM = ocs2_api.jvm //.enablePlugins(AutomateHeaderPlugin)
+lazy val ocs2_api_JVM = ocs2_api.jvm
 
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
