@@ -107,7 +107,7 @@ object Settings {
     val knobs                   = "7.0.24"
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.11.1"
-    val doobieVersion           = "0.6.0"
+    val doobieVersion           = "0.8.2"
     val flywayVersion           = "6.0.1"
     val tucoVersion             = "0.4.1"
     val declineVersion          = "0.6.2"
