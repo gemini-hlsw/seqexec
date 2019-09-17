@@ -7,14 +7,12 @@ import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble}
@@ -26,17 +24,14 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.ConfigResult
-import seqexec.server.InstrumentSystem
-import seqexec.server.Progress
-import seqexec.server.TrySeq
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentActions, InstrumentSystem, Progress, TrySeq}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
-import seqexec.server.InstrumentActions
 import seqexec.server.nifs.NifsController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.space.Arcseconds
@@ -51,7 +46,7 @@ final case class Nifs[F[_]: Sync: Logger](
 
   import Nifs._
 
-  override def sfName(config: Config): LightSinkName = LightSinkName.Nifs
+  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Nifs
 
   override val contributorName: String = "NIFS"
 
@@ -60,7 +55,7 @@ final case class Nifs[F[_]: Sync: Logger](
                     AbortObserveCmd(controller.abortObserve))
 
   override def observe(
-    config: Config
+    config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
       EitherT.fromEither[F](getDCConfig(config).asTrySeq)
@@ -68,7 +63,7 @@ final case class Nifs[F[_]: Sync: Logger](
         .flatMap(controller.observe(fileId, _))
     }
 
-  override def calcObserveTime(config: Config): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(Sync[F].delay(60.seconds))
@@ -90,7 +85,7 @@ final case class Nifs[F[_]: Sync: Logger](
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     EitherT.fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
@@ -101,7 +96,7 @@ final case class Nifs[F[_]: Sync: Logger](
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 }
 
@@ -110,14 +105,14 @@ object Nifs {
   val name: String = INSTRUMENT_NAME_PROP
 
   private def centralWavelength(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, CentralWavelength] =
     config
       .extractInstAs[JDouble](CENTRAL_WAVELENGTH_PROP)
       .map(_.doubleValue)
       .map(tag[CentralWavelengthD][Double])
 
-  private def maskOffset(config: Config): Either[ExtractFailure, MaskOffset] =
+  private def maskOffset(config: CleanConfig): Either[ExtractFailure, MaskOffset] =
     config
       .extractInstAs[JDouble](MASK_OFFSET_PROP)
       .map(_.doubleValue)
@@ -129,7 +124,7 @@ object Nifs {
       case _                 => WindowCover.Opened
     }
 
-  private def otherCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
+  private def otherCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig] =
     for {
       filter    <- config.extractInstAs[Filter](FILTER_PROP)
       mask      <- config.extractInstAs[Mask](MASK_PROP)
@@ -140,47 +135,47 @@ object Nifs {
       wc        <- extractObsType(config).map(windowCoverFromObserveType)
     } yield StdCCConfig(filter, mask, disperser, imMirror, cw, mo, wc)
 
-  private def getCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
+  private def getCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig] =
     extractObsType(config).flatMap {
       case DARK_OBSERVE_TYPE => DarkCCConfig.asRight
       case _                 => otherCCConfig(config)
     }
 
   private def extractExposureTime(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Time] =
     config
       .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
       .map(_.toDouble.seconds)
 
-  private def extractCoadds(config: Config): Either[ExtractFailure, Coadds] =
+  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds] =
     config
       .extractObsAs[JInt](COADDS_PROP)
       .map(_.toInt)
       .map(tag[CoaddsI][Int])
 
   private def extractPeriod(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Option[Period]] =
     config.extractInstInt[PeriodI](PERIOD_PROP)
 
   private def extractNrResets(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Option[NumberOfResets]] =
     config.extractInstInt[NumberOfResetsI](NUMBER_OF_RESETS_PROP)
 
   private def extractNrPeriods(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Option[NumberOfPeriods]] =
     config.extractInstInt[NumberOfPeriodsI](NUMBER_OF_PERIODS_PROP)
 
   private def extractObsReadMode(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, ReadMode] =
     config.extractInstAs[ReadMode](READMODE_PROP)
 
   private def extractEngReadMode(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Option[EngReadMode]] =
     config
       .extractInstAs[EngReadMode](ENGINEERING_READMODE_PROP)
@@ -190,7 +185,7 @@ object Nifs {
       }
 
   private def extractReadMode(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Either[EngReadMode, ReadMode]] =
     for {
       eng <- extractEngReadMode(config)
@@ -198,16 +193,16 @@ object Nifs {
     } yield eng.map(_.asLeft).getOrElse(obs.asRight)
 
   private def extractNrSamples(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Option[NumberOfSamples]] =
     config.extractInstInt[NumberOfSamplesI](NUMBER_OF_SAMPLES_PROP)
 
   private def extractObsType(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, String] =
-    config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+    config.extractObsAs[String](OBSERVE_TYPE_PROP)
 
-  private def getDCConfig(config: Config): Either[ExtractFailure, DCConfig] =
+  private def getDCConfig(config: CleanConfig): Either[ExtractFailure, DCConfig] =
     for {
       coadds    <- extractCoadds(config)
       period    <- extractPeriod(config)
@@ -225,7 +220,7 @@ object Nifs {
           StdDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
       }
 
-  def fromSequenceConfig(config: Config): TrySeq[NifsConfig] =
+  def fromSequenceConfig(config: CleanConfig): TrySeq[NifsConfig] =
     for {
       cc <- getCCConfig(config).asTrySeq
       dc <- getDCConfig(config).asTrySeq

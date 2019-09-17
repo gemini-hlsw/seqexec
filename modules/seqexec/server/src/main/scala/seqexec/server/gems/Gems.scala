@@ -5,13 +5,13 @@ package seqexec.server.gems
 
 import cats.{Eq, MonadError}
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.{SeqexecFailure, TrySeq}
+import seqexec.server.{CleanConfig, SeqexecFailure, TrySeq}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.gems.GemsController.{GemsConfig, OIUsage, Odgw1Usage, Odgw2Usage, Odgw3Usage, Odgw4Usage, P1Usage}
@@ -70,7 +70,7 @@ object Gems {
   )
 
   def fromConfig[F[_]: MonadError[?[_], Throwable]](controller: GemsController[F], guideConfigDb: GuideConfigDb[F])
-                                                         (config: Config)
+                                                         (config: CleanConfig)
   : TrySeq[Gems[F]] = {
     for {
       p1    <- config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)

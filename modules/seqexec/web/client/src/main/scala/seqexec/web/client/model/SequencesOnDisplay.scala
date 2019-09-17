@@ -388,6 +388,10 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.selected)
       .set(step.some)(this)
 
+  def selectedStep(
+    id:   Observation.Id
+  ): Option[StepId] =
+    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.selected).headOption(this).flatten
 }
 
 /**

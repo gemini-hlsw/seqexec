@@ -7,11 +7,9 @@ import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble}
@@ -23,17 +21,12 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.ConfigResult
-import seqexec.server.InstrumentSystem
-import seqexec.server.Progress
-import seqexec.server.SeqexecFailure
-import seqexec.server.ConfigUtilOps
-import seqexec.server.TrySeq
+import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSystem, Progress, SeqexecFailure, TrySeq}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
 import seqexec.server.InstrumentSystem._
-import seqexec.server.InstrumentActions
 import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.space.Arcseconds
@@ -48,7 +41,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
 
   import Gsaoi._
 
-  override def sfName(config: Config): LightSinkName = LightSinkName.Gsaoi
+  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
 
   override val contributorName: String = "GSAOI"
 
@@ -57,7 +50,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
                  AbortObserveCmd[F](controller.abortObserve))
 
   override def observe(
-    config: Config
+    config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
       EitherT.fromEither[F]{
@@ -68,7 +61,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
         .flatMap(x => controller.observe(fileId, x))
     }
 
-  override def calcObserveTime(config: Config): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time] =
     readDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(Sync[F].delay(60.seconds))
@@ -90,7 +83,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     EitherT.fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
@@ -101,7 +94,7 @@ final case class Gsaoi[F[_]: Sync: Logger](
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 }
 
@@ -110,11 +103,11 @@ object Gsaoi {
   val name: String = INSTRUMENT_NAME_PROP
 
   private def extractObsType(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, String] =
-    config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+    config.extractObsAs[String](OBSERVE_TYPE_PROP)
 
-  private def readCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
+  private def readCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig] =
     for {
       obsType      <- extractObsType(config)
       filter       <- config.extractInstAs[Filter](FILTER_PROP)
@@ -127,30 +120,30 @@ object Gsaoi {
       }
 
   private def extractExposureTime(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Time] =
     config
       .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
       .map(_.toDouble.seconds)
 
-  private def extractCoadds(config: Config): Either[ExtractFailure, Coadds] =
+  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds] =
     config
       .extractInstAs[JInt](COADDS_PROP)
       .map(_.toInt)
       .map(tag[CoaddsI][Int])
 
   private def extractReadMode(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, ReadMode] =
     config.extractInstAs[ReadMode](READ_MODE_PROP)
 
   private def extractRoi(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, Roi] =
     config.extractInstAs[Roi](ROI_PROP)
 
   private def extractNrOfFowSamples(
-    config: Config
+    config: CleanConfig
   ): Either[ExtractFailure, NumberOfFowSamples] =
     extractReadMode(config).map {
       case ReadMode.BRIGHT      => 1
@@ -158,7 +151,7 @@ object Gsaoi {
       case ReadMode.VERY_FAINT  => 8
     }.map(tag[NumberOfFowSamplesI][Int])
 
-  private def readDCConfig(config: Config): Either[ExtractFailure, DCConfig] =
+  private def readDCConfig(config: CleanConfig): Either[ExtractFailure, DCConfig] =
     for {
       readMode   <- extractReadMode(config)
       roi        <- extractRoi(config)
@@ -167,7 +160,7 @@ object Gsaoi {
       fowSamples <- extractNrOfFowSamples(config)
     } yield DCConfig(readMode, roi, coadds, expTime, fowSamples)
 
-  def fromSequenceConfig(config: Config): TrySeq[GsaoiConfig] =
+  def fromSequenceConfig(config: CleanConfig): TrySeq[GsaoiConfig] =
     for {
       cc <- readCCConfig(config).asTrySeq
       dc <- readDCConfig(config).asTrySeq

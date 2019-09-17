@@ -4,15 +4,14 @@
 package seqexec.server
 
 import cats._
-import cats.data.NonEmptySet
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
+import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
@@ -24,7 +23,6 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model._
 import seqexec.model.dhs._
-import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem._
 import seqexec.server.SequenceGen.StepActionsGen
@@ -49,13 +47,15 @@ import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
 import squants.Time
 import squants.time.TimeConversions._
 
 class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]) extends ObserveActions {
   import SeqTranslate._
 
-  private def step(obsId: Observation.Id, i: StepId, config: Config, nextToRun: StepId,
+  private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
                    datasets: Map[Int, ExecutedDataset])(
                      implicit cio: Concurrent[IO],
                               tio: Timer[IO]
@@ -70,7 +70,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       val initialStepExecutions: List[ParallelActions[IO]] =
         // Ask the instrument if we need an initial action
         (i === 0 && ia.runInitialAction(stepType)).option {
-          NonEmptyList.one(systems.odb.sequenceStart(obsId, toImageFileId(""))
+          NonEmptyList.one(dataIdFromConfig[IO](config).flatMap(systems.odb.sequenceStart(obsId, _))
             .as(Response.Ignored).toAction(ActionType.Undefined))
         }.toList
 
@@ -132,7 +132,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
              tio: Timer[IO]
   ): (List[SeqexecFailure], Option[SequenceGen[IO]]) = {
 
-    val configs = sequence.config.getAllSteps.toList
+    // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
+    val configs = sequence.config.getAllSteps.toList.map(CleanConfig(_))
 
     val nextToRun = configs
       .map(extractStatus)
@@ -164,7 +165,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case ActionState.Started => true
@@ -223,7 +224,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def pauseObserve(seqId: Observation.Id)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
       case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause
@@ -323,7 +324,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def toInstrumentSys(inst: Instrument)(
-    implicit ev: Timer[IO]
+    implicit ev: Timer[IO], cio: Concurrent[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
@@ -346,7 +347,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
   private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[IO],
-                     lsource: LightSource, config: Config): TrySeq[System[IO]] = site match {
+                     lsource: LightSource, config: CleanConfig): TrySeq[System[IO]] = site match {
     case Site.GS => if(useGaos)
       Gems.fromConfig[IO](systems.gems, systems.guideDb)(config).map(a =>
         TcsSouth.fromConfig[IO](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
@@ -370,7 +371,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def calcSystems(
-    config: Config,
+    config: CleanConfig,
     stepType: StepType,
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
@@ -421,7 +422,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def calcInstHeader(
-    config: Config,
+    config: CleanConfig,
     sys: InstrumentSystem[IO]
   ): TrySeq[Header[IO]] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
@@ -454,7 +455,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: Config, tcsSubsystems: List[TcsController.Subsystem],
+  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: CleanConfig, tcsSubsystems: List[TcsController.Subsystem],
                             inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
@@ -498,7 +499,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   )
 
   private def calcHeaders(
-    config: Config,
+    config: CleanConfig,
     stepType: StepType,
     sys: InstrumentSystem[IO]
   ): TrySeq[HeaderExtraData => List[Header[IO]]] = {
@@ -567,5 +568,15 @@ object SeqTranslate {
   implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
+
+  def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
+    EitherT
+      .fromEither[F](
+        config
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .map(toDataId)
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      )
+      .widenRethrowT
 
 }

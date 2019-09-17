@@ -7,7 +7,6 @@ import cats.data.NonEmptySet
 import cats.effect.Sync
 import cats.implicits._
 import mouse.all._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
@@ -16,7 +15,8 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import monocle.macros.Lenses
 import org.log4s.getLogger
 import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure}
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.{AGConfig, AoGuidersConfig, AoTcsConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
 import seqexec.server.ConfigUtilOps._
@@ -49,7 +49,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
     case Subsystem.Gaos   => List()
   }
 
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
       Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
@@ -164,7 +164,7 @@ object TcsSouth {
 
   def fromConfig[F[_]: Sync](controller: TcsSouthController[F], subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Gems[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
-    config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
+    config: CleanConfig, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsSouth[F] = {
 
     val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption

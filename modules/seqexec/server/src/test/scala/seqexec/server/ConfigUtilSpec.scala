@@ -5,7 +5,6 @@ package seqexec.server
 
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import edu.gemini.spModel.seqcomp.SeqConfigNames
-import seqexec.model.enum.SystemName
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 import cats.tests.CatsSuite
@@ -63,13 +62,6 @@ class ConfigUtilSpec extends CatsSuite with EitherValues with ConfigArbitraries 
       c.extract(k).as[String].left.value should matchPattern {
         case KeyNotFound(_) =>
       }
-    }
-  }
-  test("ConfigUtil: convert to StepConfig") {
-    forAll { (c: Config) =>
-      // Not much to check but at least verify the amount of subsystems
-      val subsystems = c.getKeys.map(_.getRoot.getName).map(SystemName.unsafeFromString).distinct
-      c.toStepConfig.keys should contain theSameElementsAs subsystems
     }
   }
 }

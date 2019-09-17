@@ -4,11 +4,7 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.ActionHandler
-import diode.ActionResult
-import diode.Effect
-import diode.ModelRW
-import diode.NoAction
+import diode.{ActionBatch, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import org.scalajs.dom.window
 import seqexec.model.enum.ActionStatus
 import seqexec.model.SingleActionOp
@@ -28,6 +24,7 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import web.client.Audio
@@ -241,11 +238,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(
         SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
-      effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
+      effectOnly(Effect.action(RunResourceComplete(sid, stepId, r)))
 
     case ServerMessage(
         SingleActionEvent(SingleActionOp.Started(sid, stepId, r))) =>
-      effectOnly(Effect(Future(RunResourceRemote(sid, stepId, r))))
+      effectOnly(Effect.action(ActionBatch(ClearAllResourceOperationsOnStepChange(sid, stepId), RunResourceRemote(sid, stepId, r))))
 
     case ServerMessage(
         SingleActionEvent(SingleActionOp.Error(sid, stepId, r, msg))) =>

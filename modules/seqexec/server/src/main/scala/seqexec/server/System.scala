@@ -4,7 +4,6 @@
 package seqexec.server
 
 import seqexec.model.enum.Resource
-import edu.gemini.spModel.config2.Config
 
 trait System[F[_]] {
   val resource: Resource
@@ -12,7 +11,7 @@ trait System[F[_]] {
   /**
     * Called to configure a system
     */
-  def configure(config: Config): F[ConfigResult[F]]
+  def configure(config: CleanConfig): F[ConfigResult[F]]
 
   def notifyObserveStart: F[Unit]
 

@@ -7,12 +7,10 @@ import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect.Sync
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import gem.enum.LightSinkName
@@ -24,13 +22,14 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Filter1, Other, ReadMode}
 import seqexec.server._
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 final case class Gnirs[F[_]: Sync: Logger](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
-  override def sfName(config: Config): LightSinkName = LightSinkName.Gnirs
+  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
 
@@ -41,21 +40,21 @@ final case class Gnirs[F[_]: Sync: Logger](controller: GnirsController[F], dhsCl
   override val observeControl: ObserveControl[F] = UnpausableControl(StopObserveCmd(controller.stopObserve),
                                                                 AbortObserveCmd(controller.abortObserve))
 
-  override def observe(config: Config): Kleisli[F, ImageFileId, ObserveCommandResult] =
+  override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
       calcObserveTime(config).flatMap { x =>
         controller.observe(fileId, x)
       }
     }
 
-  override def calcObserveTime(config: Config): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(60.seconds.pure[F])
 
   override val resource: Instrument = Instrument.Gnirs
 
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     EitherT.fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
@@ -69,7 +68,7 @@ final case class Gnirs[F[_]: Sync: Logger](controller: GnirsController[F], dhsCl
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
 
-  override def instrumentActions(config: Config): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
 }
@@ -78,24 +77,24 @@ object Gnirs {
 
   val name: String = INSTRUMENT_NAME_PROP
 
-  def extractExposureTime(config: Config): Either[ExtractFailure, Time] =
-    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+  def extractExposureTime(config: CleanConfig): Either[ExtractFailure, Time] =
+    config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
 
-  def extractCoadds(config: Config): Either[ExtractFailure, Int] =
-    config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
+  def extractCoadds(config: CleanConfig): Either[ExtractFailure, Int] =
+    config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
 
-  def fromSequenceConfig(config: Config): TrySeq[GnirsController.GnirsConfig] =
+  def fromSequenceConfig(config: CleanConfig): TrySeq[GnirsController.GnirsConfig] =
     (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
 
-  private def getDCConfig(config: Config): TrySeq[DCConfig] = (for {
+  private def getDCConfig(config: CleanConfig): TrySeq[DCConfig] = (for {
     expTime <- extractExposureTime(config)
     coadds  <- extractCoadds(config)
-    readMode <- config.extractAs[ReadMode](INSTRUMENT_KEY / READ_MODE_PROP)
-    wellDepth <- config.extractAs[WellDepth](INSTRUMENT_KEY / WELL_DEPTH_PROP)
+    readMode <- config.extractInstAs[ReadMode](READ_MODE_PROP)
+    wellDepth <- config.extractInstAs[WellDepth](WELL_DEPTH_PROP)
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+  private def getCCConfig(config: CleanConfig): TrySeq[CCConfig] = config.extractObsAs[String](OBSERVE_TYPE_PROP)
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
     case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
     case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
@@ -111,28 +110,28 @@ object Gnirs {
     }
   }
 
-  private def getCCOtherConfig(config: Config): TrySeq[CCConfig] = (for {
-    xdisp   <- config.extractAs[CrossDispersed](INSTRUMENT_KEY / CROSS_DISPERSED_PROP)
-    woll    <- config.extractAs[WollastonPrism](INSTRUMENT_KEY / WOLLASTON_PRISM_PROP)
+  private def getCCOtherConfig(config: CleanConfig): TrySeq[CCConfig] = (for {
+    xdisp   <- config.extractInstAs[CrossDispersed](CROSS_DISPERSED_PROP)
+    woll    <- config.extractInstAs[WollastonPrism](WOLLASTON_PRISM_PROP)
     mode    <- getCCMode(config, xdisp, woll)
-    slit    <- config.extractAs[SlitWidth](INSTRUMENT_KEY / SLIT_WIDTH_PROP)
+    slit    <- config.extractInstAs[SlitWidth](SLIT_WIDTH_PROP)
     slitOp = getSlit(slit)
-    camera  <- config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
+    camera  <- config.extractInstAs[Camera](CAMERA_PROP)
     decker  <- getDecker(config, slit, woll, xdisp)
-    wavel   <- config.extractAs[Wavelength](INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
+    wavel   <- config.extractInstAs[Wavelength](CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
     focus   <- getFocus(config)
-    filter  <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP).optionalKey
-    hartm   <- config.extractAs[HartmannMask](INSTRUMENT_KEY / HARTMANN_MASK_PROP).optionalKey
+    filter  <- config.extractInstAs[Filter](FILTER_PROP).optionalKey
+    hartm   <- config.extractInstAs[HartmannMask](HARTMANN_MASK_PROP).optionalKey
     filter1 <- getFilter1(filter, hartm, slit, decker)
     filter2 = getFilter2(filter, xdisp)
   } yield Other(mode, camera, decker, filter1, filter2, focus, wavel, slitOp) )
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism)
+  private def getCCMode(config: CleanConfig, xdispersed: CrossDispersed, woll: WollastonPrism)
   : Either[ExtractFailure, GnirsController.Mode] =
     for {
-      acq        <- config.extractAs[AcquisitionMirror](INSTRUMENT_KEY / ACQUISITION_MIRROR_PROP)
-      disperser  <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
+      acq        <- config.extractInstAs[AcquisitionMirror](ACQUISITION_MIRROR_PROP)
+      disperser  <- config.extractInstAs[Disperser](DISPERSER_PROP)
     } yield {
       if(acq === AcquisitionMirror.IN) GnirsController.Acquisition
       else xdispersed match {
@@ -143,11 +142,11 @@ object Gnirs {
       }
     }
 
-  private def getDecker(config: Config, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed)
+  private def getDecker(config: CleanConfig, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed)
   : Either[ExtractFailure, GnirsController.Decker] =
-    config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP).orElse {
+    config.extractInstAs[Decker](DECKER_PROP).orElse {
       for {
-        pixScale <- config.extractAs[PixelScale](INSTRUMENT_KEY / PIXEL_SCALE_PROP)
+        pixScale <- config.extractInstAs[PixelScale](PIXEL_SCALE_PROP)
       } yield xdisp match {
         case CrossDispersed.LXD => Decker.LONG_CAM_X_DISP
         case CrossDispersed.SXD => Decker.SHORT_CAM_X_DISP
@@ -221,7 +220,7 @@ object Gnirs {
     case _                      => None
   }
 
-  private def getFocus(config: Config): Either[ExtractFailure, GnirsController.Focus] =
+  private def getFocus(config: CleanConfig): Either[ExtractFailure, GnirsController.Focus] =
     config.extractInstAs[Focus](FOCUS_PROP).flatMap{ v =>
       if (v.toString === FocusSuggestion.BEST_FOCUS.displayValue) GnirsController.Focus.Best.asRight
       else v.toString.parseIntOption.map(GnirsController.Focus.Manual(_).asRight)

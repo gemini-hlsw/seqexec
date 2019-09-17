@@ -10,12 +10,11 @@ import cats.implicits._
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.gmos.GmosEpics.RoiStatus
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import seqexec.model.enum.NodAndShuffleStage.{StageA, StageB}
-import seqexec.server.{ConfigUtilOps, SeqexecFailure}
+import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
+import seqexec.server.CleanConfig.extractItem
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
 import gsp.math.{Angle, Offset}
 import monocle.Getter
@@ -23,14 +22,14 @@ import seqexec.model.enum.NodAndShuffleStage
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config: Config) {
+final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config: CleanConfig) {
   import GmosObsKeywordsReader._
 
   private implicit val BooleanDefaultValue: DefaultHeaderValue[Boolean] = DefaultHeaderValue.FalseDefaultValue
 
   def preimage: F[Boolean] = MonadError[F, Throwable].catchNonFatal(
     config
-      .extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+      .extractInstAs[YesNoType](IS_MOS_PREIMAGING_PROP)
       .getOrElse(YesNoType.NO)
       .toBoolean
   ).safeValOrDefault

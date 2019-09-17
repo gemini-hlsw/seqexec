@@ -10,12 +10,12 @@ import cats.implicits._
 import mouse.all._
 import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
 import monocle.macros.Lenses
 import org.log4s.getLogger
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqexecFailure}
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.TcsController._
@@ -51,7 +51,7 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private(tcsController: T
     }
   }
 
-  override def configure(config: Config): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
       Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
@@ -162,7 +162,7 @@ object TcsNorth {
                              gaos: Option[Altair[F]],
                              instrument: InstrumentSystem[F],
                              guideConfigDb: GuideConfigDb[F]
-                            )(config: Config,
+                            )(config: CleanConfig,
                               lightPath: LightPath,
                               observingWavelength: Option[Wavelength]
   ): TcsNorth[F] = {
