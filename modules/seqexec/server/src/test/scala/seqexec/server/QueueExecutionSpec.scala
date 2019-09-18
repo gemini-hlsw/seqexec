@@ -8,7 +8,7 @@ import cats.implicits._
 import fs2.concurrent.Queue
 import gem.Observation
 import monocle.Monocle.index
-import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
+import org.scalatest.{Matchers, NonImplicitAssertions}
 import org.scalatest.Inside.inside
 import seqexec.engine.Sequence
 import seqexec.model.{CalibrationQueueId, Observer, SequenceState, UserDetails}
@@ -16,8 +16,9 @@ import seqexec.model.BatchCommandState
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource.TCS
 import seqexec.server.TestCommon._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class QueueExecutionSpec extends FlatSpec with Matchers with NonImplicitAssertions {
+class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
   "SeqexecEngine addSequenceToQueue" should
     "add sequence id to queue" in {
     val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)

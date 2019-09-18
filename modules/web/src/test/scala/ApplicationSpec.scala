@@ -30,11 +30,12 @@ import org.scalatest._
 
 import scala.collection.immutable.{ SortedSet, TreeMap }
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
 
 /**
  * Test cases for gem.web.Application.
  */
-class ApplicationSpec extends FlatSpec with Matchers {
+class ApplicationSpec extends AnyFlatSpec with Matchers {
 
   // Constants used in setting up the database for test cases.
   private object Setup {

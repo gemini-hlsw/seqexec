@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
-import org.scalatest.{FlatSpec, PrivateMethodTester}
+import org.scalatest.{ PrivateMethodTester}
 import org.scalatest.Matchers._
 import seqexec.model.{M1GuideConfig, M2GuideConfig, TelescopeGuideConfig}
 import seqexec.model.enum.{ComaOption, Instrument, M1Source, MountGuideOption, TipTiltSource}
@@ -16,11 +16,12 @@ import seqexec.server.tcs.TcsController.{AGConfig, BasicGuidersConfig, BasicTcsC
 import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, BaseEpicsTcsConfig, InstrumentPorts}
 import shapeless.tag
 import squants.space.{Arcseconds, Length, Microns, Millimeters}
+import org.scalatest.flatspec.AnyFlatSpec
 
-class TcsControllerEpicsCommonSpec extends FlatSpec with PrivateMethodTester {
-  
+class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester {
+
   import TcsControllerEpicsCommonSpec._
-  
+
   private val baseCurrentStatus = BaseEpicsTcsConfig(
     Arcseconds(33.8),
     FocalPlaneOffset(tag[OffsetX](Millimeters(0.0)), tag[OffsetY](Millimeters(0.0))),

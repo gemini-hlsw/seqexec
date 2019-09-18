@@ -8,15 +8,15 @@ import cats.data.NonEmptyList
 import fs2.Stream
 import gem.Observation
 import java.util.UUID
-import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
 import seqexec.engine.TestUtil.TestState
 import scala.concurrent.ExecutionContext
 import scala.Function.const
+import org.scalatest.flatspec.AnyFlatSpec
 
-class SequenceSpec extends FlatSpec {
+class SequenceSpec extends AnyFlatSpec {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

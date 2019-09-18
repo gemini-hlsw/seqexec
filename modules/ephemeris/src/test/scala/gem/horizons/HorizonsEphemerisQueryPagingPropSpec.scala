@@ -11,16 +11,13 @@ import gsp.math.syntax.time._
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Arbitrary.arbitrary
 
-import org.scalatest._
-import org.scalatest.prop._
-import org.scalatest.Matchers._
-
 import java.time.{ Duration, Instant }
 
 import scala.math.Ordering.Implicits._
+import cats.tests.CatsSuite
 
 
-class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks {
+class HorizonsEphemerisQueryPagingPropSpec extends CatsSuite {
 
   import HorizonsEphemerisQueryPagingPropSpec._
 
@@ -43,7 +40,7 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
       } yield TestCase(s, e, dʹ)
     }
 
-  property("queries should be contiguous") {
+  test("queries should be contiguous") {
     forAll { (t: TestCase) =>
       val times = t.paging.map(q => (q.startTime, q.endTime))
 
@@ -53,7 +50,7 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
     }
   }
 
-  property("last element should be less than two step sizes away from end") {
+  test("last element should be less than two step sizes away from end") {
     forAll { (t: TestCase) =>
       t.paging.lastOption match {
         case None    => fail
@@ -62,7 +59,7 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
     }
   }
 
-  property("explicitly handle case where last page would have one element using MaxElement-sized pages") {
+  test("explicitly handle case where last page would have one element using MaxElement-sized pages") {
     // This was a failing randomly generated test case, so we'll leave it as a test.
     val s = Instant.parse("2003-10-24T03:53:56.396546622Z")
     val e = Instant.parse("2003-11-28T00:22:17.151546622Z")
@@ -74,7 +71,7 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
     }
   }
 
-  property("first element should be exactly at start time") {
+  test("first element should be exactly at start time") {
     forAll { (t: TestCase) =>
       t.paging.headOption match {
         case None    => fail
@@ -83,7 +80,7 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
     }
   }
 
-  property("each element is spaced exactly by duration") {
+  test("each element is spaced exactly by duration") {
     forAll { (t: TestCase) =>
       val stepMs = t.step.toMillis
       val ds     = t.paging.map(q => (Duration.between(q.startTime, q.endTime).toMillis, q.elementLimit))

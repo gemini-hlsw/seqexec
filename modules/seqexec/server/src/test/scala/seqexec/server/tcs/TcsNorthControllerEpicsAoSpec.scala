@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
-import org.scalatest.{FlatSpec, PrivateMethodTester}
+import org.scalatest.PrivateMethodTester
 import org.scalatest.Matchers._
 import seqexec.model.enum._
 import seqexec.model.TelescopeGuideConfig
@@ -22,8 +22,9 @@ import seqexec.server.tcs.TcsNorthControllerEpicsAo.EpicsTcsAoConfig
 import shapeless.tag
 import shapeless.tag.@@
 import squants.space._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class TcsNorthControllerEpicsAoSpec extends FlatSpec with PrivateMethodTester {
+class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester {
   import TcsNorthControllerEpicsAoSpec._
 
   private val baseCurrentStatus = EpicsTcsAoConfig(

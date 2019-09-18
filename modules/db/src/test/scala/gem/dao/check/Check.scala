@@ -14,10 +14,11 @@ import gem.util.{ Timestamp, Location }
 import gsp.math._
 import java.time.LocalDate
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
 /** Trait for tests that check statement syntax and mappings. */
-trait Check extends FlatSpec with Matchers with IOChecker {
+trait Check extends AnyFlatSpec with Matchers with IOChecker {
 
   private implicit val contextShift: ContextShift[IO] =
     IO.contextShift(scala.concurrent.ExecutionContext.global)

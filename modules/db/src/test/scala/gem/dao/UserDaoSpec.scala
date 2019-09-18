@@ -10,11 +10,12 @@ import gem._
 import gem.enum.ProgramRole
 import gsp.math.syntax.prism._
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.collection.immutable.TreeMap
 
 
-class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
+class UserDaoSpec extends AnyFlatSpec with Matchers with DaoTest {
 
   private val pid1 = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
   private val pid2 = Program.Id.fromString.unsafeGet("GS-1234A-Q-3")

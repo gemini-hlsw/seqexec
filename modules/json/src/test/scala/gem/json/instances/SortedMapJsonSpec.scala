@@ -3,6 +3,7 @@
 
 package gem.json.instances
 
+import cats.implicits._
 import cats.laws.discipline.arbitrary._
 import cats.tests.CatsSuite
 import io.circe.testing.CodecTests

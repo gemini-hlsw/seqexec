@@ -4,10 +4,11 @@
 package seqexec.server
 
 import edu.gemini.spModel.config2.{DefaultConfig, ItemEntry, ItemKey}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import ConfigUtilOps._
 
-class CleanConfigSpec extends FlatSpec with Matchers {
+class CleanConfigSpec extends AnyFlatSpec with Matchers {
 
   val k1: ItemKey = new ItemKey("instrument:param1")
   val k2: ItemKey = new ItemKey("instrument:param2")

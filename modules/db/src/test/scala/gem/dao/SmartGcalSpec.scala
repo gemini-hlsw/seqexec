@@ -13,11 +13,12 @@ import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import gem.util.Location
 import gsp.math.Index
-import org.scalatest.{Assertion, FlatSpec, Matchers}
+import org.scalatest.{Assertion, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
 import java.time.Duration
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
-class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
+class SmartGcalSpec extends AnyFlatSpec with Matchers with DaoTest {
   import GcalLampType.{ Arc, Flat }
   import GcalBaselineType.Night
   import SmartGcalSpec._

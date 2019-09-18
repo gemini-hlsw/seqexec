@@ -12,11 +12,9 @@ import cats.tests.CatsSuite
 // import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 // import seqexec.web.client.circuit.SeqexecCircuit._
-import org.scalatest.prop.PropertyChecks
 
 final class CircuitReaderSpec
     extends CatsSuite
-    with PropertyChecks
     with ArbitrariesWebClient {
 
   checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
