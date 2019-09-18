@@ -67,6 +67,7 @@ echo "--- :scala: Running tests"
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   sql/flywayMigrate                                       \
   genEnums                                                \
+  headerCreate                                            \
   test
 
 # Check git status. if genEnums generated something mismatching, this should fail

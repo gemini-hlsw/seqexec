@@ -4,16 +4,15 @@
 package seqexec.web.server.security
 
 import seqexec.model.UserDetails
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
 import squants.time.Hours
+import cats.tests.CatsSuite
 
-class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
+class JWTTokensSpec extends CatsSuite {
   private val ldapConfig = LDAPConfig(Nil)
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "key", useSSL = false, ldapConfig)
   private val authService = AuthenticationService(config)
 
-  "JWT Tokens" should "encode/decode" in {
+  test("JWT Tokens: encode/decode") {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
       val token = authService.buildToken(userDetails).unsafeRunSync

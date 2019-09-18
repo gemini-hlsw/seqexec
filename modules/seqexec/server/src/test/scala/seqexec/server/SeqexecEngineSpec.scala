@@ -7,15 +7,16 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
-import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
+import org.scalatest.{ Matchers, NonImplicitAssertions}
 import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.{Conditions, Observer, Operator, SequenceState, StepState, UserDetails}
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
+class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
 
   "SeqexecEngine setOperator" should "set operator's name" in {
     val operator = Operator("Joe")

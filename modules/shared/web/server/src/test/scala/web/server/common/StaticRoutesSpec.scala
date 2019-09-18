@@ -9,12 +9,13 @@ import org.http4s.MediaType._
 import org.http4s._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
 import org.http4s.Uri.uri
-import org.scalatest.{EitherValues, FlatSpec, Matchers}
+import org.scalatest.{EitherValues, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext // N.B. using global for our blocking context here
 
-class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues {
+class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues {
   private val builtAtMillis = 1000L
 
   def index(devMode: Boolean): String = {
