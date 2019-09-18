@@ -13,6 +13,7 @@ name := Settings.Definitions.name
 
 organization in Global := "edu.gemini.ocs"
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 

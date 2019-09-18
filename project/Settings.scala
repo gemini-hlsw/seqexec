@@ -74,7 +74,7 @@ object Settings {
     // Pure JS libraries
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
-    val ocsVersion              = "2019101.1.3"
+    val ocsVersion              = "2019101.1.4"
     val uglifyJs                = "1.2.4"
 
     val apacheXMLRPC            = "3.1.3"
