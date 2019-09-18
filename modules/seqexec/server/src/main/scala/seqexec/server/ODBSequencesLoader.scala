@@ -79,7 +79,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]](odbProxy
     ): F[List[executeEngine.EventType]] = {
     val seqexecList = st.sequences.keys.toList
 
-    val loads = odbList.diff(seqexecList).map(loadEvents).sequence.map(_.flatten)
+    val loads = odbList.diff(seqexecList).traverse(loadEvents).map(_.flatten)
 
     val unloads = seqexecList.diff(odbList).map(unloadEvent)
 

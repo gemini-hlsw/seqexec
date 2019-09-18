@@ -21,7 +21,7 @@ class TcsControllerSim[F[_]: Sync] {
     def configSubsystem(subsystem: Subsystem): F[Unit] =
       info(s"Applying ${subsystem.show} configuration.")
 
-    subsystems.toList.map(configSubsystem).sequence.void
+    subsystems.toList.traverse_(configSubsystem)
   }
 
   def notifyObserveStart: F[Unit] = info("Simulate TCS observe")
