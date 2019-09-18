@@ -10,11 +10,12 @@ import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.enum._
 import gsp.math.{ Angle, Index, Offset }
 import java.time.Duration
-import org.scalatest._
+import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
 
-class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
+class StepDaoSpec extends AnyFlatSpec with Matchers with DaoTest {
 
   "StepDao" should "serialize telescope configurations properly" in {
 

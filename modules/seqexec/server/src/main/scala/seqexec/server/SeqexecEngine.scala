@@ -81,31 +81,35 @@ class SeqexecEngine(
   val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient),
     settings.ghostGDS)
 
-  private val systems = Systems[IO](
-    odbProxy,
-    settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
-      DhsClientSim.unsafeApply(settings.date)),
-    (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
-    (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
-    settings.gcalControl.command.fold(GcalControllerEpics(GcalEpics.instance), GcalControllerSim[IO]),
-    settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
-      settings.instForceError.fold(Flamingos2ControllerSimBad.unsafeApply[IO](settings.failAt),
-        Flamingos2ControllerSim.unsafeApply[IO])),
-    settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.unsafeSouth[IO]),
-    settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.unsafeNorth[IO]),
-    settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim.unsafeApply[IO]),
-    settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim.unsafeApply[IO]),
-    GpiController(gpi, gpiGDS),
-    GhostController(ghost, ghostGDS),
-    settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim.unsafeApply[IO]),
-    settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim.unsafeApply[IO]),
-    (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
-    (settings.gemsControl.command && settings.gemsControl.command).fold(
-      GemsControllerEpics(GemsEpics.instance, GsaoiEpics.instance),
-      GemsControllerSim[IO]
-    ),
-    guideConfigDb
-  )
+  private val systems = {
+    val gsaoiController = settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim.unsafeApply[IO])
+
+    Systems[IO](
+      odbProxy,
+      settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
+        DhsClientSim.unsafeApply(settings.date)),
+      (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
+      (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
+      settings.gcalControl.command.fold(GcalControllerEpics(GcalEpics.instance), GcalControllerSim[IO]),
+      settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
+        settings.instForceError.fold(Flamingos2ControllerSimBad.unsafeApply[IO](settings.failAt),
+          Flamingos2ControllerSim.unsafeApply[IO])),
+      settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.unsafeSouth[IO]),
+      settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.unsafeNorth[IO]),
+      settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim.unsafeApply[IO]),
+      gsaoiController,
+      GpiController(gpi, gpiGDS),
+      GhostController(ghost, ghostGDS),
+      settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim.unsafeApply[IO]),
+      settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim.unsafeApply[IO]),
+      (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
+      (settings.gemsControl.command && settings.tcsControl.command).fold(
+        GemsControllerEpics(GemsEpics.instance, gsaoiController),
+        GemsControllerSim[IO]
+      ),
+      guideConfigDb
+    )
+  }
 
   private val translatorSettings = TranslateSettings(
     tcsKeywords = settings.tcsControl.realKeywords,

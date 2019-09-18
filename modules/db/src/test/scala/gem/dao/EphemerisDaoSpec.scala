@@ -14,6 +14,7 @@ import gem.util.Timestamp
 import gem.arb.ArbTimestamp._
 
 import cats.implicits._
+import cats.tests.CatsSuite
 
 import doobie._
 import doobie.implicits._
@@ -22,12 +23,8 @@ import fs2.Stream
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
-import org.scalatest._
-import org.scalatest.prop._
-import org.scalatest.Matchers._
 
-
-class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
+class EphemerisDaoSpec extends CatsSuite with DaoTest {
 
   import EphemerisDaoSpec._
 
@@ -39,21 +36,21 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       .transact(xa)
       .unsafeRunSync
 
-  property("EphemerisDao should return empty ephmeris if the key is not found") {
+  test("EphemerisDao should return empty ephmeris if the key is not found") {
     forAll { (ks: KS, m: EphemerisMap) =>
       val e = execTest(m - ks, EphemerisDao.selectAll(ks.key, ks.site))
       e shouldEqual Ephemeris.empty
     }
   }
 
-  property("EphemerisDao should selectAll") {
+  test("EphemerisDao should selectAll") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val eʹ = execTest(m + (ks -> e), EphemerisDao.selectAll(ks.key, ks.site))
       e shouldEqual eʹ
     }
   }
 
-  property("EphemerisDao should selectRange") {
+  test("EphemerisDao should selectRange") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap, i0: Timestamp, i1: Timestamp) =>
       val List(start, end) = List(i0, i1).sorted
       val eʹ = execTest(m + (ks -> e), EphemerisDao.selectRange(ks.key, ks.site, start, end))
@@ -61,14 +58,14 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should delete by key") {
+  test("EphemerisDao should delete by key") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val eʹ = execTest(m + (ks -> e), EphemerisDao.delete(ks.key, ks.site) *> EphemerisDao.selectAll(ks.key, ks.site))
       eʹ shouldEqual Ephemeris.empty
     }
   }
 
-  property("EphemerisDao should not delete others") {
+  test("EphemerisDao should not delete others") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
       val p  = EphemerisDao.delete(ks.key, ks.site) *>
                  (m - ks).keys.toList.traverse(ksʹ => EphemerisDao.selectAll(ksʹ.key, ksʹ.site).tupleLeft(ksʹ)).map(_.toMap)
@@ -77,7 +74,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao update should replace existing") {
+  test("EphemerisDao update should replace existing") {
     forAll { (ks: KS, e0: Ephemeris, e1: Ephemeris, m: EphemerisMap) =>
       val p = EphemerisDao.update(ks.key, ks.site, e1) *>
                 EphemerisDao.selectAll(ks.key, ks.site)
@@ -86,7 +83,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should generate UserSupplied ephemeris keys") {
+  test("EphemerisDao should generate UserSupplied ephemeris keys") {
 
     // Select a handful of ids and make sure they are unique.
     //
@@ -105,7 +102,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     ids.distinct shouldEqual ids
   }
 
-  property("EphemerisDao meta select should return None if unknown key") {
+  test("EphemerisDao meta select should return None if unknown key") {
     forAll { (ks: KS) =>
       val meta = EphemerisDao.selectMeta(ks.key, ks.site)
         .transact(xa)
@@ -115,7 +112,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao meta should roundtrip") {
+  test("EphemerisDao meta should roundtrip") {
     forAll { (ks: KS, m: EphemerisMeta) =>
       val p = EphemerisDao.insertMeta(ks.key, ks.site, m) *>
                 EphemerisDao.selectMeta(ks.key, ks.site)
@@ -124,7 +121,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao meta should select by key and site") {
+  test("EphemerisDao meta should select by key and site") {
     forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
 
       val env = EphemerisMetaTestEnv(head, tail, i)
@@ -139,7 +136,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao meta should update") {
+  test("EphemerisDao meta should update") {
     forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int, meta: EphemerisMeta) =>
 
       val env = EphemerisMetaTestEnv(head, tail, i)
@@ -157,7 +154,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao meta should delete") {
+  test("EphemerisDao meta should delete") {
     forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
 
       val env = EphemerisMetaTestEnv(head, tail, i)
@@ -175,7 +172,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should stream insert") {
+  test("EphemerisDao should stream insert") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
 
       val mʹ = m + (ks -> e)
@@ -190,7 +187,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should stream update") {
+  test("EphemerisDao should stream update") {
     forAll { (ks: KS, e0: Ephemeris, e1: Ephemeris, m: EphemerisMap) =>
 
       val mʹ = m + (ks -> e0)
@@ -217,7 +214,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should select times") {
+  test("EphemerisDao should select times") {
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
 
       val p  = EphemerisDao.selectTimes(ks.key, ks.site)
@@ -231,7 +228,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao bracketRange") {
+  test("EphemerisDao bracketRange") {
     import Timestamp.{ Max, Min }
 
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
@@ -253,7 +250,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao bracketRange exact") {
+  test("EphemerisDao bracketRange exact") {
     import Timestamp.{ Max, Min }
 
     forAll { (ks: KS, e: Ephemeris, m: EphemerisMap) =>
@@ -267,7 +264,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("EphemerisDao should select None times if no matching ephemeris") {
+  test("EphemerisDao should select None times if no matching ephemeris") {
     forAll { (ks: KS, m: EphemerisMap) =>
 
       val p  = EphemerisDao.selectTimes(ks.key, ks.site)
@@ -277,7 +274,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   }
 
-  property("EphemerisDao should select all keys") {
+  test("EphemerisDao should select all keys") {
     forAll { (head: (KS, EphemerisMeta), tail: List[(KS, EphemerisMeta)], i: Int) =>
 
       val env = EphemerisMetaTestEnv(head, tail, i)

@@ -3,7 +3,6 @@
 
 package seqexec.server.tcs
 
-import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
 import io.circe.parser._
 import GuideConfigDb._
@@ -25,8 +24,9 @@ import seqexec.server.gems.GemsController.Cwfs1Usage
 import seqexec.server.gems.GemsController.Cwfs2Usage
 import seqexec.server.gems.GemsController.Cwfs3Usage
 import squants.space.Millimeters
+import org.scalatest.flatspec.AnyFlatSpec
 
-final class GuideConfigDbSpec extends FlatSpec {
+final class GuideConfigDbSpec extends AnyFlatSpec {
 
   val rawJson1: String = """
   {

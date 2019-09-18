@@ -4,10 +4,7 @@
 package seqexec.web.client
 
 import cats.effect.Sync
-import cats.effect.IO
-import cats.effect.LiftIO
-import cats.effect.IOApp
-import cats.effect.ExitCode
+import cats.effect._
 import gem.enum.Site
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
@@ -19,6 +16,7 @@ import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
 import org.log4s._
+import scala.concurrent.ExecutionContext
 
 /**
   * Seqexec WebApp entry point
@@ -30,6 +28,9 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
     setLoggerThreshold("seqexec", Info)
     setLoggerThreshold("", AllThreshold)
   }
+
+  private implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
 
   def serverSite: F[Site] =
     L.liftIO(IO.fromFuture {

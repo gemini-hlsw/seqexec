@@ -4,20 +4,16 @@
 package gem
 package dao
 
-import cats.implicits._
+import cats.tests.CatsSuite
 import doobie.implicits._
 import gsp.math.Index
-import org.scalatest._
-import org.scalatest.prop._
-import org.scalatest.Matchers._
 
-
-class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
+class UserTargetDaoSpec extends CatsSuite with DaoTest {
 
   import gem.arb.ArbObservation._
   import gem.arb.ArbUserTarget._
 
-  property("UserTargetDao should roundtrip") {
+  test("UserTargetDao should roundtrip") {
     forAll { (obs: Observation, ut: UserTarget) =>
       val oid = Observation.Id(pid, Index.One)
 
@@ -33,7 +29,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("UserTargetDao should bulk select observation") {
+  test("UserTargetDao should bulk select observation") {
     forAll { (obs: Observation) =>
       val oid = Observation.Id(pid, Index.One)
 
@@ -48,7 +44,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
     }
   }
 
-  property("UserTargetDao should bulk select program") {
+  test("UserTargetDao should bulk select program") {
     forAll(genObservationMap(10)) { m =>
 
       val obsList = m.toList

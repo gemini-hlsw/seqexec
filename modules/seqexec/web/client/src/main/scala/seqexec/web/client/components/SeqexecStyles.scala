@@ -337,4 +337,7 @@ object SeqexecStyles {
 
   val runFrom: Css =
     Css("SeqexecStyles-runFrom")
+
+  val defaultCursor: Css =
+    Css("SeqexecStyles-defaultCursor")
 }

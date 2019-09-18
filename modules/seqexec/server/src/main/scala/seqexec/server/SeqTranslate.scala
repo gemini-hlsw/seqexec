@@ -4,14 +4,14 @@
 package seqexec.server
 
 import cats._
-import cats.data.NonEmptySet
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
+import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
@@ -47,6 +47,8 @@ import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -68,7 +70,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       val initialStepExecutions: List[ParallelActions[IO]] =
         // Ask the instrument if we need an initial action
         (i === 0 && ia.runInitialAction(stepType)).option {
-          NonEmptyList.one(systems.odb.sequenceStart(obsId, toImageFileId(""))
+          NonEmptyList.one(dataIdFromConfig[IO](config).flatMap(systems.odb.sequenceStart(obsId, _))
             .as(Response.Ignored).toAction(ActionType.Undefined))
         }.toList
 
@@ -163,7 +165,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case ActionState.Started => true
@@ -222,7 +224,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def pauseObserve(seqId: Observation.Id)(
-    implicit tio: Timer[IO]
+    implicit tio: Timer[IO], cio: Concurrent[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
       case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause
@@ -322,7 +324,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   }
 
   def toInstrumentSys(inst: Instrument)(
-    implicit ev: Timer[IO]
+    implicit ev: Timer[IO], cio: Concurrent[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
@@ -566,5 +568,15 @@ object SeqTranslate {
   implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
+
+  def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
+    EitherT
+      .fromEither[F](
+        config
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .map(toDataId)
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      )
+      .widenRethrowT
 
 }

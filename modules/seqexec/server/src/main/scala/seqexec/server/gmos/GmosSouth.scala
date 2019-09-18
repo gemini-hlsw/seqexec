@@ -5,6 +5,7 @@ package seqexec.server.gmos
 
 import cats.MonadError
 import cats.implicits._
+import cats.effect.Concurrent
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
 import seqexec.server.{CleanConfig, ConfigUtilOps}
@@ -18,21 +19,20 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_PROP}
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
+final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
-      config.extractAs[SouthTypes#Filter](INSTRUMENT_KEY / FILTER_PROP)
+      config.extractInstAs[SouthTypes#Filter](FILTER_PROP)
     override def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] =
-      config.extractAs[SouthTypes#Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
+      config.extractInstAs[SouthTypes#Disperser](DISPERSER_PROP)
     override def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] =
-      config.extractAs[SouthTypes#FPU](INSTRUMENT_KEY / FPU_PROP_NAME)
+      config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
     override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
-      config.extractAs[SouthTypes#GmosStageMode](INSTRUMENT_KEY / STAGE_MODE_PROP)
+      config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
   })(southConfigTypes) {
   override val resource: Instrument = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
@@ -44,5 +44,5 @@ final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosSou
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: MonadError[?[_], Throwable]: Logger](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
+  def apply[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
 }

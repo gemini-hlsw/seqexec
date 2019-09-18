@@ -8,6 +8,8 @@ import seqexec.engine.Result.PartialVal
 package gmos {
   // N&S Partials. TODO add more details about the current step
   case object NSStart extends PartialVal
+  case object NSRowsConfigure extends PartialVal
+  case object NSTCSNod extends PartialVal
   case object NSStep extends PartialVal
   case object NSContinue extends PartialVal
   case object NSComplete extends PartialVal

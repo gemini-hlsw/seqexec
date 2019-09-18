@@ -115,6 +115,7 @@ object actions {
   final case class  ClearOperations(s:        Observation.Id)     extends Action
   final case object ClearAllOperations                            extends Action
   final case class  ClearAllResourceOperations(s: Observation.Id) extends Action
+  final case class  ClearAllResourceOperationsOnStepChange(s: Observation.Id, step: StepId) extends Action
   final case class  ClearResourceOperations(s: Observation.Id, r: Resource)
       extends Action
 

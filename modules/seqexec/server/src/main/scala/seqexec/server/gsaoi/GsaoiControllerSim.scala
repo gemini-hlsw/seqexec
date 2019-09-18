@@ -3,6 +3,7 @@
 
 package seqexec.server.gsaoi
 
+import cats.Applicative
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
@@ -18,8 +19,8 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GsaoiControllerSim {
-  def unsafeApply[F[_]: Sync: Logger: Timer]: GsaoiController[F] =
-    new GsaoiController[F] {
+  def unsafeApply[F[_]: Sync: Logger: Timer]: GsaoiFullHandler[F] =
+    new GsaoiFullHandler[F] {
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"GSAOI")
 
       override def observe(fileId: ImageFileId,
@@ -40,6 +41,15 @@ object GsaoiControllerSim {
       override def observeProgress(total: Time): fs2.Stream[F, Progress] =
         sim.observeCountdown(total, ElapsedTime(0.seconds))
 
+      override def currentState: F[GsaoiGuider.GuideState] = (new GsaoiGuider.GuideState {
+        override def isGuideActive: Boolean = false
+
+        override def isOdgwGuiding(odgwId: GsaoiGuider.OdgwId): Boolean = false
+      }).pure[F]
+
+      override def guide: F[Unit] = Applicative[F].unit
+
+      override def endGuide: F[Unit] = Applicative[F].unit
     }
 
 }

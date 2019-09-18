@@ -11,7 +11,6 @@ import java.util.UUID
 import gem.Observation
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
-import org.scalatest._
 import seqexec.engine.TestUtil.TestState
 import seqexec.engine.EventResult._
 import seqexec.engine.SystemEvent._
@@ -21,8 +20,9 @@ import seqexec.model.enum.Resource
 import seqexec.model.{ActionType, UserDetails}
 import scala.Function.const
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
 
-class StepSpec extends FlatSpec {
+class StepSpec extends AnyFlatSpec {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

@@ -5,12 +5,10 @@ package seqexec.web.server.security
 
 import seqexec.model.UserDetails
 import seqexec.model.UserDetails._
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import cats._
-import cats.implicits._
+import cats.tests.CatsSuite
 
-class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with PropertyChecks with NonImplicitAssertions {
+class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
   import FreeLDAPAuthenticationService._
 
   // Silly mock of a user database
@@ -36,19 +34,19 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
   def runMock[A](a: LdapM[A], db: MockAuthDB): A =
     a.foldMap(toMockDB(db))
 
-  "LDAP Auth Service" should "support simple auth" in {
+  test("LDAP Auth Service: support simple auth") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
       runMock(authenticate(u, ""), db) shouldEqual u
     }
   }
-  it should "support auth and name" in {
+  test("LDAP Auth Service: support auth and name") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
       runMock(authenticationAndName(u, ""), db) shouldEqual UserDetails(u, t._2)
     }
   }
-  it should "support auth and name with a password" in {
+  test("LDAP Auth Service: support auth and name with a password") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {
@@ -56,7 +54,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
       }
     }
   }
-  it should "handle exceptions" in {
+  test("LDAP Auth Service: handle exceptions") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
       intercept[RuntimeException] {

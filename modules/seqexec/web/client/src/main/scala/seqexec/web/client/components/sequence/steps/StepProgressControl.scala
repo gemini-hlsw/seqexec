@@ -46,7 +46,8 @@ object StepProgressCell {
     val resourceRunRequested = tabOperations.resourceRunRequested
 
     def stepSelected(i: StepId): Boolean =
-      selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
+      selectedStep.exists(_ === i) && !isPreview &&
+        (clientStatus.isLogged || tabOperations.resourceRunNotIdle(i))
 
     def isStopping: Boolean =
       tabOperations.stopRequested === StopOperation.StopInFlight
@@ -85,7 +86,7 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         "Configuring"
-      ),
+       ),
       <.div(
         SeqexecStyles.subsystems,
         Step.configStatus.getOption(step)
@@ -179,14 +180,15 @@ object StepProgressCell {
             "Align & Calib"
           }
         } else {
-            props.step.show
+          props.step.show
         }),
-        SubsystemControlCell(
-          SubsystemControlCell
-            .Props(props.obsId,
-                   props.step.id,
-                   Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
-                   props.resourceRunRequested))
+      SubsystemControlCell(
+        SubsystemControlCell
+          .Props(props.obsId,
+                 props.step.id,
+                 Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
+                 props.resourceRunRequested,
+                 props.clientStatus.canOperate))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -200,25 +202,25 @@ object StepProgressCell {
       case (f, s) if s.status === StepState.Running && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty    =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused && s.fileId.isDefined =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined               =>
         // Case for exposure paused, label and control buttons
         stepObservationPaused(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.status === StepState.Running && s.fileId.isDefined =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined  =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.wasSkipped =>
+      case (_, s) if s.wasSkipped                                          =>
         <.p("Skipped")
-      case (_, _) if props.step.skip =>
+      case (_, _) if props.step.skip                                       =>
         <.p("Skip")
       case (_, s)
-          if s.status === StepState.Completed && s.fileId.isDefined =>
+        if s.status === StepState.Completed && s.fileId.isDefined          =>
         <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
-      case (_, s) if props.stepSelected(s.id) && s.canConfigure =>
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure            =>
         stepSubsystemControl(props)
-      case _ =>
+      case _                                                               =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 

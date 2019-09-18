@@ -11,7 +11,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
-import edu.gemini.spModel.ao.AOConstants.AO_SYSTEM_KEY
+import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
 import scala.reflect.ClassTag
@@ -82,6 +82,8 @@ object ConfigUtilOps {
       } yield b
   }
 
+  val AO_KEY: ItemKey = new ItemKey(AO_CONFIG_NAME)
+
   implicit class ExtractOps[C: ExtractItem](val c: C) {
     // config syntax: cfg.extract(key).as[Type]
     def extract(key: ItemKey): Extracted[C] = new Extracted(c, key)
@@ -134,12 +136,12 @@ object ConfigUtilOps {
     // config syntax: cfg.extractAOAs[Type](key)
     def extractAOAs[A](key: PropertyDescriptor)(
       implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
-      new Extracted(c, AO_SYSTEM_KEY / key).as[A]
+      new Extracted(c, AO_KEY / key).as[A]
 
     // config syntax: cfg.extractAOAs[Type](key)
     def extractAOAs[A](key: String)(
       implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
-      new Extracted(c, AO_SYSTEM_KEY / key).as[A]
+      new Extracted(c, AO_KEY / key).as[A]
 
     def extractInstInt[A](
       property: PropertyDescriptor

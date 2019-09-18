@@ -88,7 +88,7 @@ object Ghost {
 
   def fromSequenceConfig[F[_]: Sync](config: CleanConfig): F[GhostConfig] = {
     def extractor[A : ClassTag](propName: String): Option[A] =
-      config.extractAs[A](INSTRUMENT_KEY / propName).toOption
+      config.extractInstAs[A](propName).toOption
 
     def formatExtractor[A](fmt: Format[String, A]): String => Either[ExtractFailure, Option[A]] = { propName =>
       // 1. If content is None, trivial success, so Right(None).

@@ -5,7 +5,6 @@ package seqexec.server
 
 import cats.implicits._
 import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.core.Wavelength
@@ -28,7 +27,7 @@ import seqexec.server.CleanConfig.extractItem
 trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =
     config
-      .extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP)
+      .extractInstAs[String](INSTRUMENT_NAME_PROP)
       .asTrySeq
       .flatMap {
         case Flamingos2.name => Instrument.F2.asRight
@@ -72,7 +71,7 @@ trait SequenceConfiguration {
       }
 
     (config
-       .extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
+       .extractObsAs[String](OBSERVE_TYPE_PROP)
        .leftMap(explainExtractError),
      extractInstrument(config)).mapN { (obsType, inst) =>
       obsType match {

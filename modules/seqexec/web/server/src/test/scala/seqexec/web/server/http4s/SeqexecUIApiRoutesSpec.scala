@@ -8,16 +8,15 @@ import fs2.concurrent.Topic
 import fs2.Stream
 import giapi.client.GiapiStatusDb
 import org.http4s._
-import org.http4s.syntax.StringSyntax
 import org.http4s.Uri.uri
-import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import seqexec.model.events._
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import squants.time._
 import scala.concurrent.ExecutionContext
+import cats.tests.CatsSuite
 
-class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax with NonImplicitAssertions {
+class SeqexecUIApiRoutesSpec extends CatsSuite {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
@@ -36,15 +35,15 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax wi
       o <- out
     } yield new SeqexecUIApiRoutes("GS", true, authService, GuideConfigDb.constant[IO], statusDb, o).service
 
-  "SeqexecUIApiRoutes login" should
-    "reject requests without body" in {
+    test("SeqexecUIApiRoutes login: reject requests without body") {
       for {
         s <- service
       } yield {
         s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.FailedDependency)
       }
     }
-    it should "reject GET requests" in {
+
+    test("SeqexecUIApiRoutes login: reject GET requests") {
       // This should in principle return a 405
       // see https://github.com/http4s/http4s/issues/234
       for {

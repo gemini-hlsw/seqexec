@@ -7,8 +7,9 @@ import cats.Id
 import cats.data.NonEmptyList
 import org.scalatest._
 import seqexec.model.ActionType
+import org.scalatest.flatspec.AnyFlatSpec
 
-class ExecutionSpec extends FlatSpec with Matchers {
+class ExecutionSpec extends AnyFlatSpec with Matchers {
 
   private object DummyResult extends Result.RetVal
   private val ok: Result[Nothing] = Result.OK(DummyResult)

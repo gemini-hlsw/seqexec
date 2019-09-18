@@ -7,11 +7,14 @@ val scalaJSVersion =
   Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.28")
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql"  % "42.2.6", // needed by flyway
+  "org.postgresql" % "postgresql"  % "42.2.7", // needed by flyway
   "org.slf4j"      % "slf4j-nop"   % "1.7.28", // to silence some log messages
-  "org.typelevel" %% "cats-core"   % "1.6.1",
-  "org.typelevel" %% "cats-effect" % "0.8"
+  "org.typelevel" %% "cats-core"   % "2.0.0",
+  "org.typelevel" %% "cats-effect" % "2.0.0"
 )
+
+addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.9")
+
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % scalaJSVersion)
 
 addSbtPlugin("org.flywaydb"       % "flyway-sbt"               % "4.2.0")
@@ -28,9 +31,6 @@ addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.4.1")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
-
-// add and check headers
-addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
 
 // Built the version out of git
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "1.0.0")

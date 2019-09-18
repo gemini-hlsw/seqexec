@@ -6,12 +6,12 @@ package seqexec.server
 import cats.Id
 import cats.effect.IO
 import cats.data.NonEmptyList
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.enum._
 
-class SeqexecEngineNSSpec extends FunSuite {
+class SeqexecEngineNSSpec extends AnyFunSuite {
 
   test("running after the first observe") {
     val executions: List[ParallelActions[IO]] = List(

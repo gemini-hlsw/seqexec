@@ -14,7 +14,6 @@ import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
-import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
@@ -37,8 +36,9 @@ import seqexec.server.nifs.NifsControllerSim
 import seqexec.server.altair.AltairControllerSim
 import seqexec.server.gems.GemsControllerSim
 import squants.time.Seconds
+import org.scalatest.flatspec.AnyFlatSpec
 
-class SeqTranslateSpec extends FlatSpec {
+class SeqTranslateSpec extends AnyFlatSpec {
   private implicit def unsafeLogger = NoOpLogger.impl[IO]
 
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
