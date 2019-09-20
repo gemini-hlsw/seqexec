@@ -87,14 +87,14 @@ trait ObserveActions {
   def notifyObserveStart[F[_]: Applicative](
     env: ObserveEnvironment[F]
   ): F[Unit] =
-    env.otherSys.map(_.notifyObserveStart).sequence.void
+    env.otherSys.traverse_(_.notifyObserveStart)
 
   /**
     * Tell each subsystem that an observe will end
     * Unlike observe start we also tell the instrumetn about it
     */
   def notifyObserveEnd[F[_]: Applicative](env: ObserveEnvironment[F]): F[Unit] =
-    (env.inst +: env.otherSys).map(_.notifyObserveEnd).sequence.void
+    (env.inst +: env.otherSys).traverse_(_.notifyObserveEnd)
 
   /**
     * Close the image, telling either DHS or GDS as it correspond
@@ -122,7 +122,7 @@ trait ObserveActions {
       d <- dataId(env)
       _ <- sendDataStart(env.systems, env.obsId, fileId, d)
       _ <- notifyObserveStart(env)
-      _ <- env.headers(env.ctx).map(_.sendBefore(env.obsId, fileId)).sequence
+      _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
       r <- env.inst.observe(env.config)(fileId)
       _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")

@@ -84,7 +84,7 @@ final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
   def exportAll(site: Site, start: Timestamp, end: Timestamp, dir: Path): M[Unit] =
     for {
       ks <- EphemerisDao.selectKeys(site).transact(xa)
-      _  <- ks.toList.traverse(k => exportOne(k, site, start, end, resolve(k, dir))).void
+      _  <- ks.toList.traverse_(k => exportOne(k, site, start, end, resolve(k, dir)))
     } yield ()
 }
 
