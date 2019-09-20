@@ -43,7 +43,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
-    val http4sVersion           = "0.20.10"
+    val http4sVersion           = "0.20.11"
     val squants                 = "1.5.0"
     val argonaut                = "6.2.3"
     val commonsHttp             = "2.0.2"
