@@ -98,7 +98,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ocs2,
     ephemeris,
     service,
-    web,
     sql,
     giapi,
     web_server_common,
@@ -217,18 +216,6 @@ lazy val service = project
   .in(file("modules/service"))
   .dependsOn(core.jvm, db, ephemeris, ocs2)
   .settings(commonSettings)
-
-lazy val web = project
-  .in(file("modules/web"))
-  .dependsOn(service, sql, json.jvm)
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      Http4sCirce,
-      JwtCore
-    ) ++ Http4s ++ Logging.value
-  )
 
 lazy val giapi = project
   .in(file("modules/giapi"))
