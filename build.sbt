@@ -97,7 +97,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ocs2_api.js,
     ocs2,
     ephemeris,
-    service,
     sql,
     giapi,
     web_server_common,
@@ -211,11 +210,6 @@ lazy val ephemeris = project
       Fs2IO
     ) ++ Http4sClient
   )
-
-lazy val service = project
-  .in(file("modules/service"))
-  .dependsOn(core.jvm, db, ephemeris, ocs2)
-  .settings(commonSettings)
 
 lazy val giapi = project
   .in(file("modules/giapi"))
