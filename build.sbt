@@ -83,18 +83,6 @@ resolvers in ThisBuild +=
 
 updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 
-// // Before printing the prompt check git to make sure all is well.
-// shellPrompt in ThisBuild := { state =>
-//   if (version.value != imageManifest.formatVersion) {
-//     import scala.Console.{ RED, RESET }
-//     print(RED)
-//     println(s"Computed version doesn't match the filesystem anymore.")
-//     println(s"Please `reload` to get back in sync.")
-//     print(RESET)
-//   }
-//   "> "
-// }
-
 ///////////////
 // Root project
 ///////////////
@@ -115,7 +103,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ctl,
     web,
     sql,
-    main,
     giapi,
     web_server_common,
     web_client_common,
@@ -271,43 +258,6 @@ lazy val ctl = project
       }
     } .value,
     fork in run := true
-  )
-
-lazy val imageManifest = SettingKey[ImageManifest]("imageManifest")
-
-lazy val main = project
-  .in(file("modules/main"))
-  .dependsOn(web, telnetd)
-  .settings(commonSettings)
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
-  .settings(
-    imageManifest         := ImageManifest.current("postgres:9.6.0", version.value).unsafeRunSync,
-    packageName in Docker := "gem",
-    dockerBaseImage       := "openjdk:8u141",
-    dockerExposedPorts    := List(9090, 9091),
-    dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
-    dockerLabels          := imageManifest.value.labels,
-
-    // Install nc before changing the user
-    dockerCommands       ++= dockerCommands.value.flatMap {
-      case c @ Cmd("USER", args @ _*) =>
-        Seq(
-          ExecCmd("RUN", "apt-get", "update"),
-          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
-          c
-        )
-      case cmd => Seq(cmd)
-    },
-
-    // Generate a file containing our git history
-    (mappings in Universal) += {
-      val out  = (target in Compile).value / "GIT_HISTORY"
-      val data = imageManifest.value.history
-      IO.writeLines(out, data.toList)
-      (out, "GIT_HISTORY")
-    }
-
   )
 
 lazy val giapi = project
