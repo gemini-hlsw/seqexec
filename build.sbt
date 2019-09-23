@@ -73,7 +73,6 @@ addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
 addCommandAlias("rebuildEnums", "; sql/flywayClean; sql/flywayMigrate; genEnums; coreJVM/compile")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
-addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("public")
@@ -99,7 +98,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ocs2,
     ephemeris,
     service,
-    ctl,
     web,
     sql,
     giapi,
@@ -230,25 +228,6 @@ lazy val web = project
       Http4sCirce,
       JwtCore
     ) ++ Http4s ++ Logging.value
-  )
-
-lazy val ctl = project
-  .in(file("modules/ctl"))
-  .settings(commonSettings)
-  .settings (
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
-    libraryDependencies ++= Seq(
-      CatsEffect.value,
-      CatsFree.value,
-      Decline
-    ),
-    TaskKey[Unit]("deployTest") := Def.taskDyn {
-      (runMain in Compile).toTask {
-        s" gem.ctl.main --verbose --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
-      }
-    } .value,
-    fork in run := true
   )
 
 lazy val giapi = project
