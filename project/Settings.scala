@@ -61,7 +61,7 @@ object Settings {
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"
     val tucoVersion             = "0.4.1"
-    val declineVersion          = "0.6.2"
+    val declineVersion          = "1.0.0"
 
     // test libraries
     val scalaTest               = "3.0.5"
