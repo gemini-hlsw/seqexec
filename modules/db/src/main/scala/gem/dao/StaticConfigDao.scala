@@ -82,7 +82,7 @@ object StaticConfigDao {
           Statements.Gmos.insertSouth(oid, gs).run.void
 
     def insertCustomRoiEntries(oid: Observation.Id, i: Instrument, rois: Set[GmosCustomRoiEntry]): ConnectionIO[Unit] =
-      rois.toList.traverse(Statements.Gmos.insertCustomRoiEntry(oid, i, _).run).void
+      rois.toList.traverse_(Statements.Gmos.insertCustomRoiEntry(oid, i, _).run)
 
     def insertNodAndShuffle(oid: Observation.Id, i: Instrument, ns: Option[GmosNodAndShuffle]): ConnectionIO[Unit] =
       ns.fold(().pure[ConnectionIO])(ns => Statements.Gmos.insertNodAndShuffle(oid, i, ns).run.void)

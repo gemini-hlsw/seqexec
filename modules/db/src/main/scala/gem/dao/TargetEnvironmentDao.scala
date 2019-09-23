@@ -18,7 +18,7 @@ object TargetEnvironmentDao {
 
   def insert(oid: Observation.Id, e: TargetEnvironment): ConnectionIO[Unit] =
     e.asterism.foldMap(AsterismDao.insert(oid, _)) *>
-    e.userTargets.toList.traverse(UserTargetDao.insert(oid, _)).void
+    e.userTargets.toList.traverse_(UserTargetDao.insert(oid, _))
 
   def selectObs(oid: Observation.Id): ConnectionIO[TargetEnvironment] =
     (AsterismDao.select(oid), UserTargetDao.selectObs(oid)).mapN {
