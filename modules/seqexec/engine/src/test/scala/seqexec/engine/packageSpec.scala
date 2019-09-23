@@ -10,7 +10,7 @@ import cats.effect._
 import fs2.Stream
 import gem.Observation
 import org.scalatest.Inside.inside
-import org.scalatest.{FlatSpec, NonImplicitAssertions}
+import org.scalatest.NonImplicitAssertions
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import seqexec.engine.Sequence.State.Final
@@ -21,8 +21,9 @@ import seqexec.model.{ActionType, UserDetails}
 import seqexec.engine.TestUtil.TestState
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
 
-class packageSpec extends FlatSpec with NonImplicitAssertions {
+class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

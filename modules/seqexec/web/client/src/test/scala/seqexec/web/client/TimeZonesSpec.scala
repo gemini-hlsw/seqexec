@@ -3,10 +3,11 @@
 
 package seqexec.web.client
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import java.time.ZoneId
 
-class TimeZonesSpec extends FlatSpec with Matchers {
+class TimeZonesSpec extends AnyFlatSpec with Matchers {
   "TimeZones" should
     "include Santiago" in {
       ZoneId.of("America/Santiago") should not be(null)

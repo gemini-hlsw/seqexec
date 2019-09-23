@@ -120,7 +120,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     (
       p.map(_._1).foldLeft(current){case (a, b) => b(a)},
       p.nonEmpty.option{
-        p.map(_._2).sequence *>
+        p.traverse(_._2) *>
         epicsSys.ApdControl.setTimeout(CmdTimeout) *>
         epicsSys.ApdControl.post.void
       }

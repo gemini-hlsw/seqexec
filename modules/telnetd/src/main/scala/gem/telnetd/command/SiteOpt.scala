@@ -35,7 +35,7 @@ trait SiteOpt {
   /** Multiple site options, defaulting to GS and GN. */
   val sites: Opts[Set[Site]] =
     Opts.options[String]("site", help = "GN | GS", short = "s")
-      .mapValidated { _.map(validateSite).sequence }
+      .mapValidated { _.traverse(validateSite) }
       .withDefault(NonEmptyList.of(Site.GN, Site.GS))
       .map { nel => Set(nel.toList: _*) }
 

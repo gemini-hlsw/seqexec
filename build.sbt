@@ -13,11 +13,7 @@ name := Settings.Definitions.name
 
 organization in Global := "edu.gemini.ocs"
 
-// sbt-header requires these settings even though we're using a custom license header
-organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
-startYear        in ThisBuild := Some(2019)
-licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
-
+Global / onChangedBuildSource := ReloadOnSourceChanges
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
@@ -149,22 +145,18 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       Shapeless.value,
       Atto.value,
       GspMath.value,
-      GspMathTestkit.value
-    ) ++ Monocle.value
-  ).jvmConfigure(
-    _.enablePlugins(AutomateHeaderPlugin)
+    ) ++ Monocle.value ++ TestLibs.value
   ).jsSettings(
     libraryDependencies ++=
       Seq(JavaTimeJS.value, GeminiLocales.value)
   )
-  .jsSettings(commonJSSettings)
+  .jsSettings(gspScalaJsSettings)
   .jvmSettings(
     libraryDependencies += Fs2
   )
 
 lazy val db = project
   .in(file("modules/db"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core.jvm % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
@@ -187,20 +179,15 @@ lazy val db = project
 lazy val json = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/json"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core % "test->test;compile->compile")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Circe.value
   )
-  .jsSettings(commonJSSettings)
-  .jvmConfigure(
-    _.enablePlugins(AutomateHeaderPlugin)
-  )
+  .jsSettings(gspScalaJsSettings)
 
 lazy val sql = project
   .in(file("modules/sql"))
-  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings ++ flywaySettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -213,13 +200,12 @@ lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .in(file("modules/ocs2_api"))
   .dependsOn(core)
   .settings(commonSettings)
-  .jsSettings(commonJSSettings)
+  .jsSettings(gspScalaJsSettings)
 
-lazy val ocs2_api_JVM = ocs2_api.jvm.enablePlugins(AutomateHeaderPlugin)
+lazy val ocs2_api_JVM = ocs2_api.jvm
 
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core.jvm, db, sql, ocs2_api_JVM)
   .settings(commonSettings)
   .settings(
@@ -234,7 +220,6 @@ lazy val ocs2 = project
 
 lazy val ephemeris = project
   .in(file("modules/ephemeris"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core.jvm % "compile->compile;test->test", db, sql)
   .settings(commonSettings)
   .settings(
@@ -246,13 +231,11 @@ lazy val ephemeris = project
 
 lazy val service = project
   .in(file("modules/service"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core.jvm, db, ephemeris, ocs2)
   .settings(commonSettings)
 
 lazy val telnetd = project
   .in(file("modules/telnetd"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql)
   .settings(commonSettings)
   .settings(
@@ -261,7 +244,6 @@ lazy val telnetd = project
 
 lazy val web = project
   .in(file("modules/web"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(service, sql, json.jvm)
   .settings(commonSettings)
   .settings(
@@ -274,7 +256,6 @@ lazy val web = project
 
 lazy val ctl = project
   .in(file("modules/ctl"))
-  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings (
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -296,7 +277,6 @@ lazy val imageManifest = SettingKey[ImageManifest]("imageManifest")
 
 lazy val main = project
   .in(file("modules/main"))
-  .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(web, telnetd)
   .settings(commonSettings)
   .enablePlugins(JavaAppPackaging)
@@ -332,7 +312,6 @@ lazy val main = project
 
 lazy val giapi = project
   .in(file("modules/giapi"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
@@ -348,7 +327,6 @@ lazy val giapi = project
 // Common utilities for web server projects
 lazy val web_server_common = project
   .in(file("modules/shared/web/server/"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
@@ -358,10 +336,9 @@ lazy val web_server_common = project
 // Common utilities for web client projects
 lazy val web_client_common = project
   .in(file("modules/shared/web/client"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
-  .settings(commonJSSettings: _*)
+  .settings(gspScalaJsSettings: _*)
   .settings(
     scalacOptions ~= (_.filterNot(Set(
       // By necessity facades will have unused params
@@ -378,21 +355,20 @@ lazy val web_client_common = project
       ScalaJSReactCats.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
-      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value
+      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value ++ TestLibs.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/seqexec/web/shared"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin)
   )
   .jvmSettings(commonSettings)
-  .jsSettings(commonJSSettings)
+  .jsSettings(gspScalaJsSettings)
   .jsSettings(
     libraryDependencies += Log4s.value,
   )
@@ -401,7 +377,6 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
 // Project for the server side application
 lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
@@ -425,10 +400,9 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .settings(commonJSSettings: _*)
+  .settings(gspScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
@@ -508,7 +482,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
 // List all the modules and their inter dependencies
 lazy val seqexec_server = project
   .in(file("modules/seqexec/server"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
@@ -546,7 +519,6 @@ lazy val seqexec_server = project
 lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/seqexec/model"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
@@ -554,7 +526,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   )
   .jvmSettings(
     commonSettings)
-  .jsSettings(commonJSSettings)
+  .jsSettings(gspScalaJsSettings)
   .jsSettings(
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
@@ -563,7 +535,6 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
 
 lazy val seqexec_engine = project
   .in(file("modules/seqexec/engine"))
-  .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
   .settings(commonSettings: _*)
@@ -575,7 +546,6 @@ lazy val seqexec_engine = project
 
 lazy val acm = project
   .in(file("modules/acm"))
-  .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(

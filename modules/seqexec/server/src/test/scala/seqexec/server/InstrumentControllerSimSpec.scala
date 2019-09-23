@@ -9,14 +9,14 @@ import cats.effect.ContextShift
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import io.chrisdavenport.log4cats.noop.NoOpLogger
-import org.scalatest.FunSuite
 import scala.concurrent.duration._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs._
 import squants.time.TimeConversions._
 import scala.concurrent.ExecutionContext
+import cats.tests.CatsSuite
 
-class InstrumentControllerSimSpec extends FunSuite {
+class InstrumentControllerSimSpec extends CatsSuite {
   private implicit def unsafeLogger = NoOpLogger.impl[IO]
 
   val noWaitTio: Timer[IO] = new Timer[IO] {

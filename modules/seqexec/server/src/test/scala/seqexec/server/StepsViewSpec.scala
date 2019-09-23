@@ -9,7 +9,8 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
-import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
+import org.scalatest.{Matchers, NonImplicitAssertions}
+import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.{Conditions, Observer, Operator, SequenceState, StepState, UserDetails}
@@ -17,7 +18,7 @@ import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
 
-class StepsViewSpec extends FlatSpec with Matchers with NonImplicitAssertions {
+class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
 
   "StepsView configStatus" should
     "build empty without tasks" in {
