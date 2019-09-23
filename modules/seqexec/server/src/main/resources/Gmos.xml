@@ -173,7 +173,7 @@
             <parameter name="ns_state">
                 <channel>dc:dcSetup.F</channel>
                 <type>STRING</type>
-                <description>NodShuffle State     </description>
+                <description>NodShuffle State</description>
             </parameter>
             <parameter name="ccdYsize3">
                 <channel>dc:roi.L</channel>

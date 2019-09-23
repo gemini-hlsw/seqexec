@@ -152,21 +152,27 @@ object GmosController {
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
       def nsPairs: Int
+      def nsRows: Int
       def exposureDivider: Int
+      def nsState: NodAndShuffleState
     }
 
     object NSConfig {
       case object NoNodAndShuffle extends NSConfig {
         val nsPairs = 0
+        val nsRows = 0
         val exposureDivider = 1
+        val nsState = NodAndShuffleState.Classic
       }
 
       final case class NodAndShuffle(
         cycles: Int,
         rows: Int,
         positions: Vector[NSPosition]) extends NSConfig {
-        val nsPairs = cycles
+        val nsPairs = cycles * positions.length / 2
+        val nsRows = rows
         val exposureDivider = 2
+        val nsState = NodAndShuffleState.NodShuffle
       }
     }
 
