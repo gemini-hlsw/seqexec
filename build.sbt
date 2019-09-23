@@ -564,7 +564,7 @@ lazy val acm = project
       val pkg = "edu.gemini.epics.acm.generated"
       val log = state.value.log
       val gen = (sourceManaged in Compile).value
-      val out = (gen /: pkg.split("\\."))(_ / _)
+      val out = pkg.split("\\.").foldLeft(gen)(_ / _)
       val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
       val cmd = List("xjc",
         "-d", gen.getAbsolutePath,
