@@ -59,7 +59,7 @@ object Settings {
     val monocleVersion          = "2.0.0"
     val circeVersion            = "0.12.0"
     val doobieVersion           = "0.6.0"
-    val flywayVersion           = "6.0.1"
+    val flywayVersion           = "6.0.4"
 
     // test libraries
     val scalaTest               = "3.0.5"
