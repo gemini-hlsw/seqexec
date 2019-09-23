@@ -60,8 +60,6 @@ object Settings {
     val circeVersion            = "0.12.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"
-    val tucoVersion             = "0.4.1"
-    val declineVersion          = "0.6.2"
 
     // test libraries
     val scalaTest               = "3.0.5"
@@ -116,7 +114,6 @@ object Settings {
     val Fs2IO                  = "co.fs2"                    %%  "fs2-io"                            % LibraryVersions.fs2Version % "test"
     val Mouse                  = Def.setting("org.typelevel" %%% "mouse"                             % LibraryVersions.mouseVersion)
     val Shapeless              = Def.setting("com.chuusai"   %%% "shapeless"                         % LibraryVersions.shapelessVersion)
-    val Decline                = "com.monovore"              %%  "decline"                           % LibraryVersions.declineVersion
     val Argonaut               = "io.argonaut"               %%  "argonaut"                          % LibraryVersions.argonaut
     val CommonsHttp            = "commons-httpclient"        %   "commons-httpclient"                % LibraryVersions.commonsHttp
     val UnboundId              = "com.unboundid"             %   "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
@@ -157,10 +154,6 @@ object Settings {
       "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion,
     ))
-    val Tuco                   = Seq(
-      "org.tpolecat" %% "tuco-core"  % LibraryVersions.tucoVersion,
-      "org.tpolecat" %% "tuco-shell" % LibraryVersions.tucoVersion
-    )
     val Circe                  = Def.setting(Seq(
       "io.circe" %%% "circe-core"    % LibraryVersions.circeVersion,
       "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,
