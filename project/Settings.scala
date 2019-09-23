@@ -60,7 +60,6 @@ object Settings {
     val circeVersion            = "0.12.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.1"
-    val tucoVersion             = "0.4.1"
     val declineVersion          = "0.6.2"
 
     // test libraries
@@ -157,10 +156,6 @@ object Settings {
       "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion,
     ))
-    val Tuco                   = Seq(
-      "org.tpolecat" %% "tuco-core"  % LibraryVersions.tucoVersion,
-      "org.tpolecat" %% "tuco-shell" % LibraryVersions.tucoVersion
-    )
     val Circe                  = Def.setting(Seq(
       "io.circe" %%% "circe-core"    % LibraryVersions.circeVersion,
       "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,

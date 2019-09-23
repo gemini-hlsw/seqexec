@@ -99,7 +99,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ocs2,
     ephemeris,
     service,
-    telnetd,
     ctl,
     web,
     sql,
@@ -220,14 +219,6 @@ lazy val service = project
   .in(file("modules/service"))
   .dependsOn(core.jvm, db, ephemeris, ocs2)
   .settings(commonSettings)
-
-lazy val telnetd = project
-  .in(file("modules/telnetd"))
-  .dependsOn(service, sql)
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Tuco
-  )
 
 lazy val web = project
   .in(file("modules/web"))
