@@ -167,7 +167,11 @@ object Gmos {
   // In principle we'd expect the OT to send the sequence but instead the
   // sequence is hardcoded in the seqexec and we only read the positions from
   // the OT
-  val NsSequence: NonEmptyList[NodAndShuffleStage] = NonEmptyList.of(StageB, StageA, StageA, StageB)
+  val NsSequence: NonEmptyList[NodAndShuffleStage] =
+    NonEmptyList.of(StageB, StageA, StageA, StageB)
+
+  def rowsToShuffle(stage: NodAndShuffleStage, rows: Int): Int =
+    if (stage === StageA) 0 else rows
 
   trait SiteSpecifics[T<:SiteDependentTypes] {
     def extractFilter(config: CleanConfig): Either[ExtractFailure, T#Filter]

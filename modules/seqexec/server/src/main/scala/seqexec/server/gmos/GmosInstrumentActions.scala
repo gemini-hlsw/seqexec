@@ -130,7 +130,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     env:       ObserveEnvironment[F],
     post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] = {
-    val rowsToShuffle = if (sub.stage === StageA) 0 else rows
+    val rowsToShuffle = Gmos.rowsToShuffle(sub.stage, rows)
     val nsPositionO   = positions.find(_.stage === sub.stage)
     // Configure GMOS rows
     Stream

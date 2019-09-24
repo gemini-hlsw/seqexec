@@ -169,8 +169,8 @@ object GmosController {
         cycles: Int,
         rows: Int,
         positions: Vector[NSPosition]) extends NSConfig {
-        val nsPairs = cycles * positions.length / 2
-        val nsRows = rows
+        val nsPairs = cycles * Gmos.NsSequence.length / 2
+        val nsRows = Gmos.rowsToShuffle(Gmos.NsSequence.head, rows)
         val exposureDivider = 2
         val nsState = NodAndShuffleState.NodShuffle
       }
