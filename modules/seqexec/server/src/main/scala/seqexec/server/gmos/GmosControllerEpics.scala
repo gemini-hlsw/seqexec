@@ -22,6 +22,7 @@ import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
+import shapeless.tag
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
@@ -95,8 +96,8 @@ private[gmos] final case class GmosDCEpicsState(
 )
 
 private[gmos] final case class GmosNSEpicsState(
-  nsPairs: Int,
-  nsRows: Int,
+  nsPairs: NsPairs,
+  nsRows: NsRows,
   nsState: String
 )
 
@@ -143,7 +144,8 @@ object GmosControllerEpics extends GmosEncoders {
     } yield GmosEpicsState(dc, cc, ns)
 
   private def retrieveNSState: IO[GmosNSEpicsState] =
-    (sys.nsPairs, sys.nsRows, sys.nsState).mapN(GmosNSEpicsState.apply)
+    (sys.nsPairs.map(tag[NsPairsI][Int]), sys.nsRows.map(tag[NsRowsI][Int]), sys.nsState)
+      .mapN(GmosNSEpicsState.apply)
 
   private def retrieveDCState: IO[GmosDCEpicsState] =
     for {
