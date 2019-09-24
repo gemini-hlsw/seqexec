@@ -550,25 +550,6 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]): SeqTranslate =
     new SeqTranslate(site, systems, settings)
 
-  implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {
-    def toResult[F[_]]: Result[F] = r.fold(e => e match {
-      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
-      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
-    }, r => Result.OK(r))
-  }
-
-  implicit class ResultToResult[F[_]](val r: Either[SeqexecFailure, Result[F]]) extends AnyVal {
-    def toResult: Result[F] = r.fold(e => Result.Error(SeqexecFailure.explain(e)), identity)
-  }
-
-  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
-    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
-  }
-
-  implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
-    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
-  }
-
   def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT
       .fromEither[F](

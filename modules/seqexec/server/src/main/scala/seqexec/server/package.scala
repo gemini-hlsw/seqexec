@@ -3,6 +3,8 @@
 
 package seqexec
 
+import cats.ApplicativeError
+import cats.Functor
 import cats.data._
 import cats.effect.IO
 import cats.effect.LiftIO
@@ -25,18 +27,9 @@ import monocle.function.At._
 import seqexec.engine.Engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result
-import seqexec.model.CalibrationQueueId
-import seqexec.model.CalibrationQueueName
-import seqexec.model.QueueId
-import seqexec.model.Conditions
-import seqexec.model.Observer
-import seqexec.model.Operator
-import seqexec.model.SequenceState
-import seqexec.model.BatchCommandState
+import seqexec.model._
 import seqexec.model.enum._
-import seqexec.engine.Event
-import seqexec.engine.Handle
-import seqexec.engine.Sequence
+import seqexec.engine._
 import seqexec.server.SequenceGen.StepGen
 import squants.Time
 
@@ -181,5 +174,27 @@ package object server {
     f.flatMap {
       MonadError[F, Throwable].raiseError(err).unlessA
     }
+
+  implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {
+    def toResult[F[_]]: Result[F] = r.fold(e => e match {
+      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    }, r => Result.OK(r))
+  }
+
+  implicit class AdaptFErrorOps[F[_]: ApplicativeError[?[_], Throwable], A](val r: F[Result[F]]) {
+    def safeResult: F[Result[F]] = r.recover {
+      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    }
+  }
+
+  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
+  }
+
+  implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
+  }
 
 }

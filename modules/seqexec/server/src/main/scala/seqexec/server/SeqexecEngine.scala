@@ -51,7 +51,6 @@ import seqexec.server.gems.{GemsControllerEpics, GemsControllerSim, GemsEpics}
 import seqexec.server.tcs.{GuideConfigDb, TcsEpics, TcsNorthControllerEpics, TcsNorthControllerSim, TcsSouthControllerEpics, TcsSouthControllerSim}
 import seqexec.server.SeqEvent._
 import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import shapeless.tag
@@ -152,7 +151,7 @@ class SeqexecEngine(
   }
 
   def start[F[_]: Functor](q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Either[SeqexecFailure, Unit]] =
-    q.enqueue1(Event.start[executeEngine.ConcreteTypes](id, user, clientId, checkResources(id))).map(_.asRight)
+    q.enqueue1(Event.start[IO, executeEngine.ConcreteTypes](id, user, clientId, checkResources(id))).map(_.asRight)
 
   def startFrom[F[_]: Functor](q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
