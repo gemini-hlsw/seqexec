@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
@@ -19,22 +18,29 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Contains the control to start a step from an arbitrary point
   */
+final case class RunFromStep(
+  id:               Observation.Id,
+  stepId:           Int,
+  resourceInFlight: Boolean,
+  runFrom:          StartFromOperation
+) extends ReactProps {
+  @inline def render: VdomElement = RunFromStep.component(this)
+}
+
 object RunFromStep {
-  final case class Props(id:               Observation.Id,
-                         stepId:           Int,
-                         resourceInFlight: Boolean,
-                         runFrom:          StartFromOperation)
+  type Props = RunFromStep
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestRunFrom(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestRunFrom(id, stepId))
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("RunFromStep")
     .render_P { p =>
       <.div(
@@ -55,6 +61,4 @@ object RunFromStep {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

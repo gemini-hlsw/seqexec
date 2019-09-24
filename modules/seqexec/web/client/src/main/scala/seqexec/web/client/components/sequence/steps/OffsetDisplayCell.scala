@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import react.common.implicits._
@@ -17,13 +16,20 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Component to display the offsets
   */
-object OffsetsDisplayCell {
+final case class OffsetsDisplayCell(
+  offsetsDisplay: OffsetsDisplay,
+  step: Step
+) extends ReactProps {
+  @inline def render: VdomElement = OffsetsDisplayCell.component(this)
+}
 
-  final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
+object OffsetsDisplayCell {
+  type Props = OffsetsDisplayCell
 
   implicit val doubleReuse: Reusability[Double] = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
@@ -32,7 +38,7 @@ object OffsetsDisplayCell {
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
 
-  private val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
+  protected val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
     .stateless
     .render_P { p =>
       p.offsetsDisplay match {
@@ -81,6 +87,4 @@ object OffsetsDisplayCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

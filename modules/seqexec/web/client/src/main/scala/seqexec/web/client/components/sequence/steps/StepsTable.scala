@@ -9,7 +9,6 @@ import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
@@ -18,6 +17,7 @@ import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.Lenses
+
 import scala.scalajs.js
 import scala.math._
 import react.common._
@@ -50,9 +50,11 @@ import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{ Size => SSize }
+import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.reusability._
 import react.virtualized._
+import seqexec.web.client.components.sequence.steps.StepsTable.{State, StepRow}
+import web.client.ReactProps
 import web.client.table._
 
 trait Columns {
@@ -290,6 +292,148 @@ trait Columns {
 /**
   * Container for a table with the steps
   */
+final case class StepsTable(
+                        router:     RouterCtl[SeqexecPages],
+                        canOperate: Boolean,
+                        stepsTable: StepsTableAndStatusFocus
+                      ) extends ReactProps {
+  @inline def render: VdomElement = StepsTable.component(this)
+
+  import StepsTable._ // Import static members from Columns
+
+  val status: ClientStatus             = stepsTable.status
+  val steps: Option[StepsTableFocus]   = stepsTable.stepsTable
+  val instrument: Option[Instrument]   = steps.map(_.instrument)
+  val runningStep: Option[RunningStep] = steps.flatMap(_.runningStep)
+  val obsId: Option[Observation.Id]    = steps.map(_.id)
+  val tableState: TableState[TableColumn] =
+    steps.map(_.tableState).getOrElse(State.InitialTableState)
+  val stepsList: List[Step]        = steps.foldMap(_.steps)
+  val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
+  val rowCount: Int                = stepsList.length
+  val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).orEmpty
+  def tabOperations: TabOperations =
+    steps.map(_.tabOperations).getOrElse(TabOperations.Default)
+  val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
+  val showExposure: Boolean  = showProp(InstrumentProperties.Exposure)
+  val showFilter: Boolean    = showProp(InstrumentProperties.Filter)
+  val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
+  val showCamera: Boolean    = showProp(InstrumentProperties.Camera)
+  val showDecker: Boolean    = showProp(InstrumentProperties.Decker)
+  val showImagingMirror: Boolean = showProp(
+    InstrumentProperties.ImagingMirror
+    )
+  val isPreview: Boolean        = steps.exists(_.isPreview)
+  val hasControls: Boolean      = canOperate && !isPreview
+  val canSetBreakpoint: Boolean = canOperate && !isPreview
+  val showObservingMode: Boolean = showProp(
+    InstrumentProperties.ObservingMode
+    )
+  val showReadMode: Boolean = showProp(InstrumentProperties.ReadMode)
+
+  val sequenceState: Option[SequenceState] = steps.map(_.state)
+
+  def stepSnapshot(step: Step): Option[StepStateSnapshot] =
+    (instrument, sequenceState).mapN(StepStateSnapshot(step, _, tabOperations, _))
+
+  def showSecondRow(step: Step): Boolean = stepSnapshot(step).forall(_.displayDetails)
+
+  def secondRowHeight(step: Step): Int = stepSnapshot(step) match {
+    case Some(s) if s.displayDetails => SeqexecStyles.runningBottomRowHeight
+    case _                           => 0
+  }
+
+  def stepSelectionAllowed(sid: StepId): Boolean =
+    canControlSubsystems(sid) && !tabOperations.resourceInFlight(sid) && !sequenceState
+      .exists(_.isRunning)
+
+  def rowGetter(idx: Int): StepRow =
+    steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
+
+  def subsystemsNotIdle(idx: StepId): Boolean =
+    tabOperations.resourceRunNotIdle(idx) && !isPreview
+
+  def canControlSubsystems(idx: StepId): Boolean =
+    !rowGetter(idx).step.isFinished && canOperate && !isPreview
+
+  val configTableState: TableState[StepConfigTable.TableColumn] =
+    stepsTable.configTableState
+  // Find out if offsets should be displayed
+  val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
+  private def showProp(p: InstrumentProperties): Boolean =
+    steps.exists(s => s.instrument.displayItems.contains(p))
+
+  val showOffsets: Boolean =
+    stepsList.headOption.flatMap(stepTypeO.getOption) match {
+      case Some(StepType.Object) => showProp(InstrumentProperties.Offsets)
+      case _                     => false
+    }
+
+  val offsetWidth: Option[Double] = {
+    val (p, q)     = stepsList.sequenceOffsetWidths
+    val labelWidth = max(pLabelWidth, qLabelWidth)
+    (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
+  }
+
+  val exposure: Step => Option[String] = s =>
+    instrument.flatMap(s.exposureAndCoaddsS)
+
+  val disperser: Step => Option[String] = s => instrument.flatMap(s.disperser)
+
+  val filter: Step => Option[String] = s => instrument.flatMap(s.filter)
+
+  val fpuOrMask: Step => Option[String] = s => instrument.flatMap(s.fpuOrMask)
+
+  val camera: Step => Option[String] = s => instrument.flatMap(s.cameraName)
+
+  val shownForInstrument: List[ColumnMeta[TableColumn]] =
+    all.filter {
+      case DisperserMeta     => showDisperser
+      case OffsetMeta        => showOffsets
+      case ObservingModeMeta => showObservingMode
+      case ExposureMeta      => showExposure
+      case FilterMeta        => showFilter
+      case FPUMeta           => showFPU
+      case CameraMeta        => showCamera
+      case DeckerMeta        => showDecker
+      case ImagingMirrorMeta => showImagingMirror
+      case ReadModeMeta      => showReadMode
+      case _                 => true
+    }
+
+  val visibleColumns: TableColumn => Boolean =
+    shownForInstrument.map(_.column).contains _
+
+  val extractors = List[(TableColumn, Step => Option[String])](
+    (ExposureColumn, exposure),
+    (FPUColumn, fpuOrMask),
+    (FilterColumn, filter),
+    (DisperserColumn, disperser),
+    (CameraColumn, camera),
+    (DeckerColumn, _.deckerName),
+    (ImagingMirrorColumn, _.imagingMirrorName),
+    (ObservingModeColumn, _.observingMode),
+    (ReadModeColumn, _.readMode)
+    ).toMap
+
+  private val valueCalculatedCols: TableColumn => Option[Double] = {
+    case ExecutionColumn => 200.0.some
+    case OffsetColumn    => offsetWidth
+    case _               => none
+  }
+
+  private val measuredColumnWidths: TableColumn => Option[Double] =
+    colWidthsO(stepsList,
+               allTC,
+               extractors,
+               columnsMinWidth,
+               Map.empty[TableColumn, Double])
+
+  val columnWidths: TableColumn => Option[Double] =
+    c => measuredColumnWidths(c).orElse(valueCalculatedCols(c))
+
+}
+
 object StepsTable extends Columns {
   type Backend      = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
@@ -319,143 +463,7 @@ object StepsTable extends Columns {
       (new js.Object).asInstanceOf[StepRow]
   }
 
-  final case class Props(
-    router:     RouterCtl[SeqexecPages],
-    canOperate: Boolean,
-    stepsTable: StepsTableAndStatusFocus
-  ) {
-    val status: ClientStatus             = stepsTable.status
-    val steps: Option[StepsTableFocus]   = stepsTable.stepsTable
-    val instrument: Option[Instrument]   = steps.map(_.instrument)
-    val runningStep: Option[RunningStep] = steps.flatMap(_.runningStep)
-    val obsId: Option[Observation.Id]    = steps.map(_.id)
-    val tableState: TableState[TableColumn] =
-      steps.map(_.tableState).getOrElse(State.InitialTableState)
-    val stepsList: List[Step]        = steps.foldMap(_.steps)
-    val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
-    val rowCount: Int                = stepsList.length
-    val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).orEmpty
-    def tabOperations: TabOperations =
-      steps.map(_.tabOperations).getOrElse(TabOperations.Default)
-    val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
-    val showExposure: Boolean  = showProp(InstrumentProperties.Exposure)
-    val showFilter: Boolean    = showProp(InstrumentProperties.Filter)
-    val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
-    val showCamera: Boolean    = showProp(InstrumentProperties.Camera)
-    val showDecker: Boolean    = showProp(InstrumentProperties.Decker)
-    val showImagingMirror: Boolean = showProp(
-      InstrumentProperties.ImagingMirror
-    )
-    val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
-    val hasControls: Boolean      = canOperate && !isPreview
-    val canSetBreakpoint: Boolean = canOperate && !isPreview
-    val showObservingMode: Boolean = showProp(
-      InstrumentProperties.ObservingMode
-    )
-    val showReadMode: Boolean = showProp(InstrumentProperties.ReadMode)
-
-    val sequenceState: Option[SequenceState] = steps.map(_.state)
-
-    def stepSnapshot(step: Step): Option[StepStateSnapshot] =
-      (instrument, sequenceState).mapN(StepStateSnapshot(step, _, tabOperations, _))
-
-    def showSecondRow(step: Step): Boolean = stepSnapshot(step).forall(_.displayDetails)
-
-    def secondRowHeight(step: Step): Int = stepSnapshot(step) match {
-      case Some(s) if s.displayDetails => SeqexecStyles.runningBottomRowHeight
-      case _                           => 0
-    }
-
-    def stepSelectionAllowed(sid: StepId): Boolean =
-      canControlSubsystems(sid) && !tabOperations.resourceInFlight(sid) && !sequenceState
-        .exists(_.isRunning)
-
-    def rowGetter(idx: Int): StepRow =
-      steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
-
-    def subsystemsNotIdle(idx: StepId): Boolean =
-      tabOperations.resourceRunNotIdle(idx) && !isPreview
-
-    def canControlSubsystems(idx: StepId): Boolean =
-      !rowGetter(idx).step.isFinished && canOperate && !isPreview
-
-    val configTableState: TableState[StepConfigTable.TableColumn] =
-      stepsTable.configTableState
-    // Find out if offsets should be displayed
-    val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
-    private def showProp(p: InstrumentProperties): Boolean =
-      steps.exists(s => s.instrument.displayItems.contains(p))
-
-    val showOffsets: Boolean =
-      stepsList.headOption.flatMap(stepTypeO.getOption) match {
-        case Some(StepType.Object) => showProp(InstrumentProperties.Offsets)
-        case _                     => false
-      }
-
-    val offsetWidth: Option[Double] = {
-      val (p, q)     = stepsList.sequenceOffsetWidths
-      val labelWidth = max(pLabelWidth, qLabelWidth)
-      (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
-    }
-
-    val exposure: Step => Option[String] = s =>
-      instrument.flatMap(s.exposureAndCoaddsS)
-
-    val disperser: Step => Option[String] = s => instrument.flatMap(s.disperser)
-
-    val filter: Step => Option[String] = s => instrument.flatMap(s.filter)
-
-    val fpuOrMask: Step => Option[String] = s => instrument.flatMap(s.fpuOrMask)
-
-    val camera: Step => Option[String] = s => instrument.flatMap(s.cameraName)
-
-    val shownForInstrument: List[ColumnMeta[TableColumn]] =
-      all.filter {
-        case DisperserMeta     => showDisperser
-        case OffsetMeta        => showOffsets
-        case ObservingModeMeta => showObservingMode
-        case ExposureMeta      => showExposure
-        case FilterMeta        => showFilter
-        case FPUMeta           => showFPU
-        case CameraMeta        => showCamera
-        case DeckerMeta        => showDecker
-        case ImagingMirrorMeta => showImagingMirror
-        case ReadModeMeta      => showReadMode
-        case _                 => true
-      }
-
-    val visibleColumns: TableColumn => Boolean =
-      shownForInstrument.map(_.column).contains _
-
-    val extractors = List[(TableColumn, Step => Option[String])](
-      (ExposureColumn, exposure),
-      (FPUColumn, fpuOrMask),
-      (FilterColumn, filter),
-      (DisperserColumn, disperser),
-      (CameraColumn, camera),
-      (DeckerColumn, _.deckerName),
-      (ImagingMirrorColumn, _.imagingMirrorName),
-      (ObservingModeColumn, _.observingMode),
-      (ReadModeColumn, _.readMode)
-    ).toMap
-
-    private val valueCalculatedCols: TableColumn => Option[Double] = {
-      case ExecutionColumn => 200.0.some
-      case OffsetColumn    => offsetWidth
-      case _               => none
-    }
-
-    private val measuredColumnWidths: TableColumn => Option[Double] =
-      colWidthsO(stepsList,
-                 allTC,
-                 extractors,
-                 columnsMinWidth,
-                 Map.empty[TableColumn, Double])
-
-    val columnWidths: TableColumn => Option[Double] =
-      c => measuredColumnWidths(c).orElse(valueCalculatedCols(c))
-
-  }
+  type Props = StepsTable
 
   @Lenses
   final case class State(
@@ -521,19 +529,17 @@ object StepsTable extends Columns {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepToolsCell(
-        StepToolsCell.Props(
-          b.props.status,
-          row.step,
-          rowHeight(b)(row.step.id),
-          b.props.secondRowHeight(row.step),
-          f.isPreview,
-          f.nextStepToRun,
-          f.id,
-          firstRunnableIndex(f.steps),
-          rowBreakpointHoverOnCB,
-          rowBreakpointHoverOffCB,
-          recomputeHeightsCB
-        )
+        b.props.status,
+        row.step,
+        rowHeight(b)(row.step.id),
+        b.props.secondRowHeight(row.step),
+        f.isPreview,
+        f.nextStepToRun,
+        f.id,
+        firstRunnableIndex(f.steps),
+        rowBreakpointHoverOnCB,
+        rowBreakpointHoverOffCB,
+        recomputeHeightsCB
       )
 
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] =
@@ -544,37 +550,36 @@ object StepsTable extends Columns {
     f: StepsTableFocus
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      SettingsCell(
-        SettingsCell
-          .Props(p.router, f.instrument, f.id, row.step.id, p.isPreview)
-      )
+      SettingsCell(p.router,
+                   f.instrument,
+                   f.id,
+                   row.step.id,
+                   p.isPreview)
 
   def stepProgressRenderer(
     f: StepsTableFocus,
     b: Backend
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      StepProgressCell(
-        StepProgressCell.Props(b.props.status,
-                               f.instrument,
-                               f.id,
-                               f.state,
-                               row.step,
-                               b.state.selected,
-                               b.props.isPreview,
-                               b.props.tabOperations)
-      )
+      StepProgressCell(b.props.status,
+                       f.instrument,
+                       f.id,
+                       f.state,
+                       row.step,
+                       b.state.selected,
+                       b.props.isPreview,
+                       b.props.tabOperations)
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
+      OffsetsDisplayCell(offsetsDisplay, row.step)
 
   def stepItemRenderer(
     f: Step => Option[String]
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => StepItemCell(StepItemCell.Props(f(row.step)))
+    (_, _, _, row: StepRow, _) => StepItemCell(f(row.step))
 
   private def stepItemRendererS(f: Step => Option[String]) =
     stepItemRenderer(f(_).map(_.sentenceCase))
@@ -583,7 +588,7 @@ object StepsTable extends Columns {
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ExposureTimeCell(ExposureTimeCell.Props(row.step, i))
+      ExposureTimeCell(row.step, i)
 
   def stepFPURenderer(
     i: Instrument
@@ -592,7 +597,7 @@ object StepsTable extends Columns {
       val fpu = row.step
         .fpu(i)
         .orElse(row.step.fpuOrMask(i).map(_.sentenceCase))
-      StepItemCell(StepItemCell.Props(fpu))
+      StepItemCell(fpu)
     }
 
   def stepObjectTypeRenderer(
@@ -600,7 +605,7 @@ object StepsTable extends Columns {
     size: SSize
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ObjectTypeCell(ObjectTypeCell.Props(i, row.step, size))
+      ObjectTypeCell(i, row.step, size)
 
   private val stepRowStyle: Step => Css = {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -940,7 +945,7 @@ object StepsTable extends Columns {
                 SeqexecStyles.acProgressRow,
               ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
-                AlignAndCalibProgress(AlignAndCalibProgress.Props(s)),
+                AlignAndCalibProgress(s),
                 ^.key := s"$key-base"
               )}
           )
@@ -1092,13 +1097,11 @@ object StepsTable extends Columns {
   def initialState(p: Props): State =
     (State.tableState.set(p.tableState) >>> State.selected.set(p.selectedStep))(State.InitialState)
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepsTable")
     .initialStateFromProps(initialState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps(receiveNewProps)
     .build
-
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }

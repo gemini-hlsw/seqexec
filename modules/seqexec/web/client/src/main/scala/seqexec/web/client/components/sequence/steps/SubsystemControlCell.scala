@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactEvent
@@ -27,20 +26,25 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import seqexec.web.client.semanticui.Size
+import web.client.ReactProps
 
 import scala.scalajs.js
 
 /**
   * Contains the control buttons for each subsystem
   */
+final case class SubsystemControlCell(
+  id: Observation.Id,
+  stepId: Int,
+  resources: List[Resource],
+  resourcesCalls: SortedMap[Resource, ResourceRunOperation],
+  canOperate: Boolean
+) extends ReactProps {
+    @inline def render: VdomElement = SubsystemControlCell.component(this)
+}
+
 object SubsystemControlCell {
-  final case class Props(
-    id:             Observation.Id,
-    stepId:         Int,
-    resources:      List[Resource],
-    resourcesCalls: SortedMap[Resource, ResourceRunOperation],
-    canOperate:     Boolean
-  )
+  type Props = SubsystemControlCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -91,7 +95,7 @@ object SubsystemControlCell {
       case _                                               => none
     }
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("SubsystemControl")
     .render_P { p =>
       <.div(
@@ -117,13 +121,11 @@ object SubsystemControlCell {
                 extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
               ),
               r.show
+              )
             )
-          )
         }.toTagMod
-      )
+        )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
