@@ -38,7 +38,7 @@ class StepSpec extends CatsSuite {
   private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
 
-  private val executionEngine = new Engine[TestState, Unit](TestState)
+  private val executionEngine = new Engine[IO, TestState, Unit](TestState)
 
   private object DummyResult extends Result.RetVal with Serializable
   private val result = Result.OK(DummyResult)

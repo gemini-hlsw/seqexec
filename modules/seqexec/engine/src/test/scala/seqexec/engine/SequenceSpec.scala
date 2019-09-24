@@ -8,6 +8,8 @@ import cats.data.NonEmptyList
 import fs2.Stream
 import gem.Observation
 import java.util.UUID
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
@@ -54,8 +56,10 @@ class SequenceSpec extends AnyFlatSpec {
 
   }
 
+  private implicit def logger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec-engine")
+
   private val user = UserDetails("telops", "Telops")
-  private val executionEngine = new Engine[TestState, Unit](TestState)
+  private val executionEngine = new Engine[IO, TestState, Unit](TestState)
 
   private def always[D]: D => Boolean = _ => true
 
