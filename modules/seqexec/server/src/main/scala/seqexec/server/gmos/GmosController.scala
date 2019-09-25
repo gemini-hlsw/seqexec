@@ -53,6 +53,16 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 }
 
 object GmosController {
+  trait NsPairsI
+  trait NsRowsI
+  trait NsExposureDividerI
+
+  type NsPairs           = Int @@ NsPairsI
+  type NsRows            = Int @@ NsRowsI
+  type NsExposureDivider = Int @@ NsExposureDividerI
+
+  implicit val nsPairsEq: Eq[NsPairs] = Eq.by(x => x: Int)
+  implicit val nsRowsEq: Eq[NsRows] = Eq.by(x => x: Int)
 
   sealed abstract class Config[T<:SiteDependentTypes] {
     import Config._
@@ -133,7 +143,7 @@ object GmosController {
         Enumerated.of(InBeam, OutOfBeam)
     }
 
-    sealed trait GmosFPU
+    sealed trait GmosFPU extends Product with Serializable
 
     final case object UnknownFPU extends GmosFPU
 
@@ -150,16 +160,6 @@ object GmosController {
       stage: NodAndShuffleStage,
       offset: Offset,
       guide: Guiding)
-    trait NsPairsI
-    trait NsRowsI
-    trait NsExposureDividerI
-
-    type NsPairs           = Int @@ NsPairsI
-    type NsRows            = Int @@ NsRowsI
-    type NsExposureDivider = Int @@ NsExposureDividerI
-
-    implicit val nsPairsEq: Eq[NsPairs] = Eq.by(identity)
-    implicit val nsRowsEq: Eq[NsRows] = Eq.by(identity)
 
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
