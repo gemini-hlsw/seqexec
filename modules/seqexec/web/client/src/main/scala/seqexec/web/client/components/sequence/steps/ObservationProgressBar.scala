@@ -6,7 +6,6 @@ package seqexec.web.client.components.sequence.steps
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
@@ -19,20 +18,28 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.progress.Progress
+import web.client.ReactProps
+
 import scala.concurrent.duration._
 import scala.math.max
 import scala.math.min
+
+final case class SmoothProgressBar(
+  fileId:   String,
+  total:    Long,
+  value:    Long,
+  stopping: Boolean,
+  paused:   Boolean
+) extends ReactProps {
+  @inline def render: VdomElement = SmoothProgressBar.component(this)
+}
 
 object SmoothProgressBar {
   val periodUpdate: Int = 50
   // This depends on the server side frequency of updates
   val remoteUpdatePeriod: Int = 1000
 
-  final case class Props(fileId:   String,
-                         total:    Long,
-                         value:    Long,
-                         stopping: Boolean,
-                         paused:   Boolean)
+  type Props = SmoothProgressBar
 
   @Lenses
   final case class State(total: Long, value: Long, skipStep: Boolean)
@@ -69,7 +76,7 @@ object SmoothProgressBar {
     }
   }
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("SmoothProgressBar")
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
@@ -98,26 +105,30 @@ object SmoothProgressBar {
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, State, Backend] = component(p)
 }
 
 /**
   * Component to wrap the progress bar
   */
+final case class ObservationProgressBar(
+  obsId:    Observation.Id,
+  stepId:   StepId,
+  fileId:   ImageFileId,
+  stopping: Boolean,
+  paused:   Boolean
+) extends ReactProps {
+  @inline def render: VdomElement = ObservationProgressBar.component(this)
+
+  protected[steps] val connect =
+    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
+}
+
 object ObservationProgressBar {
-  final case class Props(obsId:    Observation.Id,
-                         stepId:   StepId,
-                         fileId:   ImageFileId,
-                         stopping: Boolean,
-                         paused:   Boolean) {
-    protected[steps] val connect =
-      SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
-  }
+  type Props = ObservationProgressBar
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("ObservationProgressBar")
     .stateless
     .render_P(p =>
@@ -127,11 +138,11 @@ object ObservationProgressBar {
           x() match {
             case Some(ObservationProgress(_, _, r, t)) =>
               SmoothProgressBar(
-                SmoothProgressBar.Props(p.fileId,
-                                        r.millis,
-                                        r.millis - max(0, t.millis),
-                                        p.stopping,
-                                        p.paused))
+                p.fileId,
+                r.millis,
+                r.millis - max(0, t.millis),
+                p.stopping,
+                p.paused)
             case _ =>
               Progress(Progress.Props(
                 if (p.paused) s"${p.fileId} - Paused" else p.fileId,
@@ -146,6 +157,4 @@ object ObservationProgressBar {
     ))
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

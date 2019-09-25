@@ -37,7 +37,7 @@ object TabsArea {
         tabsConnect(x =>
           React.Fragment(x().toList.collect {
             case t: SequenceTabContentFocus =>
-              SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode
+              SequenceTabContent(p.router, t): VdomNode
             case t =>
               CalQueueTabContent(
                 CalQueueTabContent.Props(t.canOperate,
