@@ -5,6 +5,9 @@
 @background_color_5: #f5f5f5;
 @background_color_6: #f9fafb;
 @table_row_left_padding: 1em;
+@table_detail_row_right_padding: 2em;
+@table_detail_row_top_padding: 1em;
+@table_detail_row_bottom_padding: 1em;
 @breakpoint_line_color: #a5673f;
 @breakpoint_done_line_color: darkgray;
 @gutter_end_color: rgba(
@@ -429,13 +432,13 @@ body {
   margin-bottom: 1em;
 }
 
-.SeqexecStyles-acProgressRow {
+.SeqexecStyles-tableDetailRow {
   display: flex;
   flex-grow: 1;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: @table_row_left_padding;
+  padding: @table_detail_row_top_padding @table_detail_row_right_padding @table_detail_row_bottom_padding @table_row_left_padding;
   z-index: 100;
   position: relative;
   margin-left: 20px;
@@ -1143,10 +1146,10 @@ body {
   flex-direction: column;
 }
 .SeqexecStyles-expandedTopRow {
-  height: 50%;
+  height: 100%;
 }
 .SeqexecStyles-expandedBottomRow {
-  height: 50%;
+  height: 100%;
   background: @secondaryBackground;
   position: relative;
   z-index: 100;

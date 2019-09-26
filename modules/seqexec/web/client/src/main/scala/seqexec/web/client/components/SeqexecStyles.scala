@@ -18,8 +18,8 @@ object SeqexecStyles {
   val TableBorderWidth: Double = 1.0
   val TableRightPadding: Int   = 13
 
-  val acProgressRow: Css =
-    Css("SeqexecStyles-acProgressRow")
+  val tableDetailRow: Css =
+    Css("SeqexecStyles-tableDetailRow")
 
   val expandedRunningRow: Css =
     Css("SeqexecStyles-expandedRunningRow")

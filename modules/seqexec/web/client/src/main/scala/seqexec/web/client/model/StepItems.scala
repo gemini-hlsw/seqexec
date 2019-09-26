@@ -3,6 +3,7 @@
 
 package seqexec.web.client.model
 
+import cats.Eq
 import cats.implicits._
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
@@ -40,7 +41,7 @@ object StepItems {
       case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
       case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
       case Instrument.F2    => enumerations.fpu.Flamingos2.get
-      case _ =>
+      case _                =>
         _ =>
           none
     }
@@ -52,9 +53,9 @@ object StepItems {
       (coAdds, exposureTime) match {
         case (c, Some(e)) if c.exists(_ > 1) =>
           s"${c.foldMap(_.show)}x${formatExposureTime(i)(e)} [s]".some
-        case (_, Some(e)) =>
+        case (_, Some(e))                    =>
           s"${formatExposureTime(i)(e)} [s]".some
-        case _ => none
+        case _                               => none
       }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
     def fpu(i: Instrument): Option[String] =
@@ -76,20 +77,20 @@ object StepItems {
       i match {
         case Instrument.Gpi if stepClassO.getOption(s).forall(_ === "acq") =>
           StepType.AlignAndCalib.some
-        case _ => none
+        case _                                                             => none
       }
 
     def nodAndShuffle(i: Instrument): Option[StepType.NodAndShuffle.type] =
       i match {
         case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).forall(identity) =>
           StepType.NodAndShuffle.some
-        case _ => none
+        case _                                                                                     => none
       }
 
     def stepType(instrument: Instrument): Option[StepType] =
       alignAndCalib(instrument)
-      .orElse(nodAndShuffle(instrument))
-      .orElse(stepTypeO.getOption(s))
+        .orElse(nodAndShuffle(instrument))
+        .orElse(stepTypeO.getOption(s))
 
     private def gpiFilter: Step => Option[String] = s => {
       // Read the filter, if not found deduce it from the obs mode
@@ -113,11 +114,11 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.GmosNFilter.get)
-      case Instrument.F2 =>
+      case Instrument.F2    =>
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.F2Filter.get)
-      case Instrument.Niri =>
+      case Instrument.Niri  =>
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.Niri.get)
@@ -125,7 +126,7 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
-      case Instrument.Nifs =>
+      case Instrument.Nifs  =>
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
@@ -133,8 +134,8 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
-      case Instrument.Gpi => gpiFilter(s)
-      case _              => None
+      case Instrument.Gpi   => gpiFilter(s)
+      case _                => None
     }
 
     private def disperserNameMapper(i: Instrument): Map[String, String] =
@@ -163,16 +164,16 @@ object StepItems {
       telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
     def offsetQ: TelescopeOffset.Q =
       telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-    def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
+    def guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
 
     def offsetText(axis: OffsetAxis): String =
       offsetValueFormat(axis match {
-        case OffsetAxis.AxisP =>
-          telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
-        case OffsetAxis.AxisQ =>
-          telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-      })
+                          case OffsetAxis.AxisP =>
+                            telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
+                          case OffsetAxis.AxisQ =>
+                            telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
+                        })
 
     def offsetPText: String = offsetText(OffsetAxis.AxisP)
     def offsetQText: String = offsetText(OffsetAxis.AxisQ)
@@ -187,7 +188,7 @@ object StepItems {
         instrumentCameraO
           .getOption(s)
           .flatMap(enumerations.camera.Niri.get)
-      case _ => None
+      case _               => None
     }
 
     def deckerName: Option[String] =
@@ -219,8 +220,17 @@ object StepItems {
     val isAC: Boolean =
       step.alignAndCalib(i).isDefined
 
+    val isNS: Boolean =
+      step.nodAndShuffle(i).isDefined
+
+    private val isRunning =
+      t.resourceInFlight(step.id) || step.isRunning
+
     val isACRunning: Boolean =
-      isAC && (t.resourceInFlight(step.id) || step.isRunning)
+      isAC && isRunning
+
+    val isNSRunning: Boolean =
+      isNS && isRunning
 
     val anyError: Boolean =
       t.resourceInError(step.id) || step.hasError
@@ -228,8 +238,21 @@ object StepItems {
     val isACInError: Boolean =
       isAC && anyError
 
-    val displayDetails: Boolean =
-      isACRunning || isACInError
+    val isNSInError: Boolean =
+      isNS && anyError
+
+    val detailRows: Int =
+      if (isNSRunning)
+        2
+      else if (isACRunning || isACInError || isNSInError)
+        1
+      else
+        0
+  }
+
+  object StepStateSnapshot {
+    implicit val EqStepStateSnapshot: Eq[StepStateSnapshot] =
+      Eq.fromUniversalEquals
   }
 
 }
