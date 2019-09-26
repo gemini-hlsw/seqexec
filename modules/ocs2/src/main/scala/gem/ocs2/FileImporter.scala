@@ -10,9 +10,7 @@ import gem.dao.{ DatabaseConfiguration, UserDao }
 import gem.ocs2.Decoders._
 import gem.ocs2.pio.PioDecoder
 import java.io.File
-import org.flywaydb.core.Flyway
 import scala.xml.{XML, Elem}
-
 
 /** Imports OCS2 program files exported to the same format sent by the
   * Ocs3ExportServlet at http://g[ns]odb:8442/ocs3/fetch/programId or
@@ -34,14 +32,7 @@ object FileImporter extends DoobieClient {
         |""".stripMargin))
     }
 
-  val clean: IO[Int] =
-    IO {
-      val flyway = Flyway.configure.dataSource(conf.connectUrl, conf.userName, conf.password).load
-      flyway.clean()
-      flyway.migrate()
-    }
-
-  def read(f: File): IO[Elem] =
+    def read(f: File): IO[Elem] =
     IO(XML.loadFile(f))
 
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
@@ -65,7 +56,6 @@ object FileImporter extends DoobieClient {
       n <- IO(args.headOption.map(_.toInt).getOrElse(Int.MaxValue))
       _ <- checkArchive
       _ <- configureLogging[IO]
-      _ <- clean
       _ <- readAndInsertAll(u, n, l)
       _ <- l.shutdown(5 * 1000).transact(xa) // if we're not done soon something is wrong
       _ <- IO(Console.println("Done.")) // scalastyle:off console.io

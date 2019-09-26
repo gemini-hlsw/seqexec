@@ -88,16 +88,10 @@ updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 lazy val ocs3 = preventPublication(project.in(file(".")))
   .settings(commonSettings)
   .aggregate(
-    core.jvm,
-    core.js,
-    db,
-    json.jvm,
-    json.js,
     ocs2_api.jvm,
     ocs2_api.js,
     ocs2,
     ephemeris,
-    sql,
     giapi,
     web_server_common,
     web_client_common,
@@ -113,86 +107,28 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
 //////////////
 // Projects
 //////////////
-lazy val core = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Full)
-  .in(file("modules/core"))
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(
-      Cats.value,
-      CatsEffect.value,
-      Mouse.value,
-      Shapeless.value,
-      Atto.value,
-      GspMath.value,
-    ) ++ Monocle.value ++ TestLibs.value
-  ).jsSettings(
-    libraryDependencies ++=
-      Seq(JavaTimeJS.value, GeminiLocales.value)
-  )
-  .jsSettings(gspScalaJsSettings)
-  .jvmSettings(
-    libraryDependencies += Fs2
-  )
-
-lazy val db = project
-  .in(file("modules/db"))
-  .dependsOn(core.jvm % "compile->compile;test->test")
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Doobie,
-    initialCommands += """
-      |import cats._, cats.data._, cats.implicits._, cats.effect._
-      |import doobie._, doobie.implicits._
-      |import gem._, gem.enum._, gem.math._, gem.dao._, gem.dao.meta._, gem.dao.composite._
-      |val xa = Transactor.fromDriverManager[IO](
-      |  "org.postgresql.Driver",
-      |  "jdbc:postgresql:gem",
-      |  "postgres",
-      |  "")
-      |val y = xa.yolo
-      |import y._
-    """.stripMargin.trim
-  )
-
-lazy val json = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("modules/json"))
-  .dependsOn(core % "test->test;compile->compile")
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Circe.value
-  )
-  .jsSettings(gspScalaJsSettings)
-
-lazy val sql = project
-  .in(file("modules/sql"))
-  .settings(commonSettings ++ flywaySettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      Flyway
-    ) ++ Doobie
-  )
 
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/ocs2_api"))
-  .dependsOn(core)
   .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      GspCoreModel.value
+    )
+  )
   .jsSettings(gspScalaJsSettings)
 
 lazy val ocs2_api_JVM = ocs2_api.jvm
 
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
-  .dependsOn(core.jvm, db, sql, ocs2_api_JVM)
+  .dependsOn(ocs2_api_JVM)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
+      GspCoreDb.value,
       Fs2,
       ScalaXml.value,
       ScalaParserCombinators.value,
@@ -202,11 +138,13 @@ lazy val ocs2 = project
 
 lazy val ephemeris = project
   .in(file("modules/ephemeris"))
-  .dependsOn(core.jvm % "compile->compile;test->test", db, sql)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
+      GspCoreDb.value,
+      GspCoreTestkit.value,
+      Mouse.value,
       Fs2IO
     ) ++ Http4sClient
   )
@@ -413,7 +351,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine, ocs2_api.jvm, giapi, seqexec_model.jvm % "compile->compile;test->test", acm, core.jvm % "test->test")
+  .dependsOn(seqexec_engine % "compile->compile;test->test", ocs2_api.jvm, giapi, seqexec_model.jvm % "compile->compile;test->test", acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
@@ -423,7 +361,13 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(Squants.value, Mouse.value, BooPickle.value) ++ Monocle.value
+    libraryDependencies ++= Seq(
+      GspCoreModel.value,
+      GspCoreTestkit.value,
+      Squants.value,
+      Mouse.value,
+      BooPickle.value
+      ) ++ Monocle.value
   )
   .jvmSettings(
     commonSettings)
@@ -432,7 +376,6 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
   )
-  .dependsOn(core % "compile->compile;test->test")
 
 lazy val seqexec_engine = project
   .in(file("modules/seqexec/engine"))
@@ -465,7 +408,7 @@ lazy val acm = project
       val pkg = "edu.gemini.epics.acm.generated"
       val log = state.value.log
       val gen = (sourceManaged in Compile).value
-      val out = (gen /: pkg.split("\\."))(_ / _)
+      val out = pkg.split("\\.").foldLeft(gen)(_ / _)
       val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
       val cmd = List("xjc",
         "-d", gen.getAbsolutePath,
