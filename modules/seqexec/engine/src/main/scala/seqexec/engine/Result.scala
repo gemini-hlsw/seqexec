@@ -29,7 +29,7 @@ object Result {
     override val errMsg: Option[String] = msg.some
   }
   object Error {
-    implicit val eq: Eq[Error] = Eq.fromUniversalEquals
+    implicit val eq: Eq[Error] = Eq.by(_.msg)
   }
 
 }

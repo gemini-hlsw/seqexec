@@ -15,14 +15,7 @@ import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
-import seqexec.server.CleanConfig
-import seqexec.server.FileIdAllocated
-import seqexec.server.FileIdProvider
-import seqexec.server.InstrumentActions
-import seqexec.server.ObserveActions
-import seqexec.server.ObserveContext
-import seqexec.server.ObserveEnvironment
-import seqexec.server.StepType
+import seqexec.server._
 import seqexec.server.InstrumentActions._
 import seqexec.server.ObserveActions._
 import seqexec.server.gmos.GmosController.Config._
@@ -61,75 +54,68 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     fileId: ImageFileId,
     dataId: DataId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult): Stream[F, Result[F]] =
-    Stream
-      .eval(r match {
-        case ObserveCommandResult.Success =>
-          okTail(fileId, dataId, stopped = false, env).map(Stream.emit)
-        case ObserveCommandResult.Stopped =>
-          okTail(fileId, dataId, stopped = true, env).map(Stream.emit)
-        case ObserveCommandResult.Aborted =>
-          abortTail(env.systems, env.obsId, fileId).map(Stream.emit)
-        case ObserveCommandResult.Paused =>
-          env.inst
-            .calcObserveTime(env.config)
-            .map(
-              e =>
-                Stream.emit(
-                  Result
-                    .Paused(ObserveContext(observeTail(fileId, dataId, env), e))
+  )(r:      ObserveCommandResult): F[Result[F]] =
+    r match {
+      case ObserveCommandResult.Success =>
+        okTail(fileId, dataId, stopped = false, env)
+      case ObserveCommandResult.Stopped =>
+        okTail(fileId, dataId, stopped = true, env)
+      case ObserveCommandResult.Aborted =>
+        abortTail(env.systems, env.obsId, fileId)
+      case ObserveCommandResult.Paused =>
+        env.inst
+          .calcObserveTime(env.config)
+          .map(
+            e =>
+              Result
+                .Paused(
+                  ObserveContext(r => Stream.eval(observeTail(fileId, dataId, env)(r)), e)
                 )
-            )
-        case ObserveCommandResult.Partial =>
-          Stream
-            .emit[F, Result[F]](Result.Partial(NSStep))
-            .pure[F]
-      })
-      .flatten
+          )
+      case ObserveCommandResult.Partial =>
+        Result.Partial(NSStep).pure[F].widen[Result[F]]
+    }
 
   private def initialObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): Stream[F, Result[F]] =
+  ): F[Result[F]] =
     // Essentially the same as default observation but with a custom tail
-    for {
-      (dataId, result) <- Stream.eval(observePreamble(fileId, env))
+    (for {
+      (dataId, result) <- observePreamble(fileId, env)
       ret              <- observeTail(fileId, dataId, env)(result)
-    } yield ret
+    } yield ret).safeResult
 
   private def lastObserve(
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): Stream[F, Result[F]] =
+  ): F[Result[F]] =
     // the last step completes the observations doing an observeTail
-    Stream
-      .eval(for {
-        dataId  <- dataId(env)
-        timeout <- inst.calcObserveTime(env.config)
-        ret     <- inst.continueCommand(timeout)
-      } yield observeTail(fileId, dataId, env)(ret))
-      .flatten ++
-      Stream.emit[F, Result[F]](Result.Partial(NSComplete))
+    (for {
+      dataId  <- dataId(env)
+      timeout <- inst.calcObserveTime(env.config)
+      ret     <- inst.continueCommand(timeout)
+      t       <- observeTail(fileId, dataId, env)(ret)
+    } yield t).safeResult
 
   private def continueObserve(
     env: ObserveEnvironment[F]
-  ): Stream[F, Result[F]] =
+  ): F[Result[F]] =
     // Steps in between do a continue
-    Stream
-      .eval(
-        inst
-          .calcObserveTime(env.config)
-          .flatMap(inst.continueCommand)
-      )
+    inst
+      .calcObserveTime(env.config)
+      .flatMap(inst.continueCommand)
       .as(Result.Partial(NSContinue))
+      .widen[Result[F]]
+      .safeResult
 
   // Calculate the subexposures
   private def subexposures(
     cycles: Int
   ): List[Subexposure] =
     (for {
-      i     <- 0 until cycles
-      j     <- 0 until Gmos.NsSequence.length
+      i <- 0 until cycles
+      j <- 0 until Gmos.NsSequence.length
       stage = Gmos.NsSequence.toList.lift(j).getOrElse(StageA)
     } yield Subexposure(cycles, i, j, stage)).toList
 
@@ -147,32 +133,41 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     val rowsToShuffle = if (sub.stage === StageA) 0 else rows
     val nsPositionO   = positions.find(_.stage === sub.stage)
     // Configure GMOS rows
-    Stream.eval(
-      inst.configureShuffle(rowsToShuffle).as(Result.Partial(NSRowsConfigure))
-    ).merge(
-      // TCS Nod
-      (env.getTcs, nsPositionO).mapN {
-        case (tcs, nsPos) =>
-          Stream.eval(
-            tcs
-              .nod(
-                sub.stage,
-                InstrumentOffset(
-                  tag[OffsetP](nsPos.offset.p.toRadians.radians),
-                  tag[OffsetQ](nsPos.offset.q.toRadians.radians)
-                ),
-                nsPos.guide === Guiding.Guide
-              )
-              .as(Result.Partial(NSTCSNod))
-          )
-      }.orEmpty) ++
+    Stream
+      .eval(
+        inst
+          .configureShuffle(rowsToShuffle)
+          .as(Result.Partial(NSRowsConfigure))
+          .widen[Result[F]]
+          .safeResult
+      )
+      .merge(
+        // TCS Nod
+        (env.getTcs, nsPositionO).mapN {
+          case (tcs, nsPos) =>
+            Stream.eval(
+              tcs
+                .nod(
+                  sub.stage,
+                  InstrumentOffset(
+                    tag[OffsetP](nsPos.offset.p.toRadians.radians),
+                    tag[OffsetQ](nsPos.offset.q.toRadians.radians)
+                  ),
+                  nsPos.guide === Guiding.Guide
+                )
+                .as(Result.Partial(NSTCSNod))
+                .widen[Result[F]]
+                .safeResult
+            )
+        }.orEmpty
+      ) ++
       // Observes for each subexposure
       (if (sub.firstSubexposure) {
-         post(initialObserve(fileId, env), env)
+         post(Stream.eval(initialObserve(fileId, env)), env)
        } else if (sub.lastSubexposure) {
-         post(lastObserve(fileId, env), env)
+         post(Stream.eval(lastObserve(fileId, env)), env)
        } else {
-         post(continueObserve(env), env)
+         post(Stream.eval(continueObserve(env)) ++ Stream .emit[F, Result[F]](Result.Partial(NSComplete)), env)
        })
   }
 

@@ -76,7 +76,7 @@ class SequenceSpec extends AnyFlatSpec {
   }
 
   def runToCompletion(s0: TestState): Option[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, ClientId(UUID.randomUUID), always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, ClientId(UUID.randomUUID), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
