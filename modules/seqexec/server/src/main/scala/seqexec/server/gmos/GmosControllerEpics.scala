@@ -22,6 +22,7 @@ import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
+import shapeless.tag
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
@@ -50,6 +51,11 @@ trait GmosEncoders {
     case Order.ZERO => 0
     case Order.ONE  => 1
     case Order.TWO  => 2
+  }
+
+  implicit val nsStateEncoder: EncodeEpicsValue[NodAndShuffleState, String] = EncodeEpicsValue{
+    case NodAndShuffleState.Classic    => "CLASSIC"
+    case NodAndShuffleState.NodShuffle => "NOD_SHUFFLE"
   }
 
   implicit val exposureTimeEncoder: EncodeEpicsValue[ExposureTime, Int] = EncodeEpicsValue(_.toSeconds.toInt)
@@ -90,7 +96,9 @@ private[gmos] final case class GmosDCEpicsState(
 )
 
 private[gmos] final case class GmosNSEpicsState(
-  nsPairs: Int
+  nsPairs: NsPairs,
+  nsRows: NsRows,
+  nsState: String
 )
 
 private[gmos] final case class GmosCCEpicsState(
@@ -136,9 +144,8 @@ object GmosControllerEpics extends GmosEncoders {
     } yield GmosEpicsState(dc, cc, ns)
 
   private def retrieveNSState: IO[GmosNSEpicsState] =
-    for {
-      nsPairs <- sys.nsPairs
-    } yield GmosNSEpicsState(nsPairs)
+    (sys.nsPairs.map(tag[NsPairsI][Int]), sys.nsRows.map(tag[NsRowsI][Int]), sys.nsState)
+      .mapN(GmosNSEpicsState.apply)
 
   private def retrieveDCState: IO[GmosDCEpicsState] =
     for {
@@ -338,7 +345,9 @@ object GmosControllerEpics extends GmosEncoders {
 
       private def nsParams(state: GmosNSEpicsState, config: NSConfig): List[IO[Unit]] =
         List(
-          applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x))
+          applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x)),
+          applyParam(state.nsRows, config.nsRows, (x: Int) => DC.setNsRows(x)),
+          applyParam(state.nsState, encode(config.nsState), DC.setNsState)
         ).flattenOption
 
       private def ccParams(state: GmosCCEpicsState, config: Config[T]#CCConfig): List[IO[Unit]] =
