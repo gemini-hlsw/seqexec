@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.steps
 
 import gem.Observation
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common.implicits._
@@ -18,19 +17,26 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Component to display an icon for the state
   */
+final case class StepBreakStopCell(
+  clientStatus:       ClientStatus,
+  step:               Step,
+  rowHeight:          Int,
+  obsId:              Observation.Id,
+  firstRunnableIndex: Int,
+  breakPointEnterCB:  Int => Callback,
+  breakPointLeaveCB:  Int => Callback,
+  heightChangeCB:     Int => Callback
+) extends ReactProps {
+  @inline def render: VdomElement = StepBreakStopCell.component(this)
+}
+
 object StepBreakStopCell {
-  final case class Props(clientStatus:       ClientStatus,
-                         step:               Step,
-                         rowHeight:          Int,
-                         obsId:              Observation.Id,
-                         firstRunnableIndex: Int,
-                         breakPointEnterCB:  Int => Callback,
-                         breakPointLeaveCB:  Int => Callback,
-                         heightChangeCB:     Int => Callback)
+  type Props = StepBreakStopCell
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.caseClassExcept[Props]('heightChangeCB,
@@ -52,7 +58,7 @@ object StepBreakStopCell {
     Callback.when(p.clientStatus.canOperate)(
       SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step)))
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepBreakStopCell")
     .stateless
     .render_P { p =>
@@ -95,6 +101,4 @@ object StepBreakStopCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

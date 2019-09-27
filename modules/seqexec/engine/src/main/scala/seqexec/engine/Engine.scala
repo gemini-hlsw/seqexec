@@ -99,11 +99,11 @@ class Engine[D, U](stateL: Engine.State[D]) {
       Handle.fromStream[D, EventType](
         p.attempt.flatMap {
           case Right(r @ Result.OK(_))    =>
-            Stream.eval(IO(singleRunCompleted(c, r)))
+            Stream.emit(singleRunCompleted(c, r)).covary[IO]
           case Right(e @ Result.Error(_)) =>
-            Stream.eval(IO(singleRunFailed(c, e)))
+            Stream.emit(singleRunFailed(c, e)).covary[IO]
           case Right(r)                   =>
-            Stream.eval(IO(singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))))
+            Stream.emit(singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))).covary[IO]
           case Left(t: Throwable)         => Stream.raiseError[IO](t)
         }
       ).as[Outcome](Outcome.Ok)
@@ -179,12 +179,15 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def act(id: Observation.Id, stepId: StepId, t: (Stream[IO, Result[IO]], Int))
   : Stream[IO, EventType] = t match {
     case (gen, i) =>
-      gen.attempt.flatMap {
-        case Right(r@Result.OK(_))        => Stream.eval(IO(completed(id, stepId, i, r)))
-        case Right(r@Result.OKStopped(_)) => Stream.eval(IO(stopCompleted(id, stepId, i, r)))
-        case Right(r@Result.Partial(_))   => Stream.eval(IO(partial(id, stepId, i, r)))
-        case Right(e@Result.Error(_))     => Stream.eval(IO(failed(id, i, e)))
-        case Right(r@Result.Paused(_))    => Stream.eval(IO(paused[IO](id, i, r)))
+      gen.takeThrough {
+        case Result.Partial(_) => true
+        case _                 => false
+      }.attempt.flatMap {
+        case Right(r@Result.OK(_))        => Stream.emit(completed(id, stepId, i, r)).covary[IO]
+        case Right(r@Result.OKStopped(_)) => Stream.emit(stopCompleted(id, stepId, i, r)).covary[IO]
+        case Right(r@Result.Partial(_))   => Stream.emit(partial(id, stepId, i, r)).covary[IO]
+        case Right(e@Result.Error(_))     => Stream.emit(failed(id, i, e)).covary[IO]
+        case Right(r@Result.Paused(_))    => Stream.emit(paused[IO](id, i, r)).covary[IO]
         case Left(t: Throwable)           => Stream.raiseError[IO](t)
       }
   }
@@ -196,10 +199,21 @@ class Engine[D, U](stateL: Engine.State[D]) {
         putS(id)(seq) *> send(finished(id))
       case seq@Sequence.State.Zipper(z, _, _) =>
         val stepId = z.focus.toStep.id
-        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x =>
-          act(id, stepId, x))
+        val u: List[Stream[IO, EventType]] =
+          seq
+            .current
+            .actions
+            .map(_.gen)
+            .zipWithIndex
+            .map(act(id, stepId, _))
         val v: Stream[IO, EventType] = Stream.emits(u).parJoin(u.length)
-        val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
+        val w: List[HandleType[Unit]] =
+          seq
+            .current
+            .actions
+            .indices
+            .map(i => modifyS(id)(_.start(i)))
+            .toList
         w.sequence *> Handle.fromStream(v)
     }.getOrElse(unit) )
   }

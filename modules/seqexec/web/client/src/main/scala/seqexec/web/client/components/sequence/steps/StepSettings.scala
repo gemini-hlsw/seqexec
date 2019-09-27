@@ -5,11 +5,11 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
+import japgolly.scalajs.react.component.Scala.Unmounted
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
@@ -22,16 +22,21 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Component to display an item of a sequence
   */
+final case class StepItemCell(value: Option[String]) extends ReactProps {
+  @inline def render: VdomElement = StepItemCell.component(this)
+}
+
 object StepItemCell {
-  final case class Props(value: Option[String])
+  type Props = StepItemCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepItemCell")
     .stateless
     .render_P { p =>
@@ -42,19 +47,21 @@ object StepItemCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
   * Component to display the exposure time and coadds
   */
+final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps {
+  @inline def render: VdomElement = ExposureTimeCell.component(this)
+}
+
 object ExposureTimeCell {
-  final case class Props(s: Step, i: Instrument)
+  type Props = ExposureTimeCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("ExposureTimeCell")
     .stateless
     .render_P { p =>
@@ -91,8 +98,6 @@ object ExposureTimeCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
@@ -112,16 +117,22 @@ object StepIdCell {
 /**
   * Component to link to the settings
   */
+final case class SettingsCell(
+  ctl:        RouterCtl[Pages.SeqexecPages],
+  instrument: Instrument,
+  obsId:      Observation.Id,
+  index:      Int,
+  isPreview:  Boolean
+) extends ReactProps {
+  @inline def render: VdomElement = SettingsCell.component(this)
+}
+
 object SettingsCell {
-  final case class Props(ctl:        RouterCtl[Pages.SeqexecPages],
-                         instrument: Instrument,
-                         obsId:      Observation.Id,
-                         index:      Int,
-                         isPreview:  Boolean)
+  type Props = SettingsCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>
@@ -140,19 +151,25 @@ object SettingsCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
 
 /**
   * Component to display the object type
   */
+final case class ObjectTypeCell(
+  instrument: Instrument,
+  step: Step,
+  size: Size
+) extends ReactProps {
+  @inline def render: VdomElement = ObjectTypeCell.component(this)
+}
+
 object ObjectTypeCell {
-  final case class Props(instrument: Instrument, step: Step, size: Size)
+  type Props = ObjectTypeCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("ObjectTypeCell")
     .stateless
     .render_P { p =>
@@ -177,6 +194,4 @@ object ObjectTypeCell {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }

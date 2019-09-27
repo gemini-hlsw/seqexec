@@ -45,7 +45,7 @@ object NSCurrent {
   implicit val showNSCurrent: Show[NSCurrent] = Show.show { a =>
     s"NS State: file=${a.fileId}, cycle=${a.cycle + 1}, stage=${Gmos.NsSequence.toList
       .lift(a.exposureCount % Gmos.NsSequence.length)
-      .getOrElse("Unknown")}/${a.exposureCount % Gmos.NsSequence.length}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
+      .getOrElse("Unknown")}/${(a.exposureCount % Gmos.NsSequence.length) + 1}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
   }
 }
 

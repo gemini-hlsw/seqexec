@@ -7,7 +7,6 @@ import cats.implicits._
 import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.common.implicits._
@@ -15,22 +14,28 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
-import seqexec.web.client.semanticui.{ Size => _, _ }
+import seqexec.web.client.semanticui.{Size => _, _}
 import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Content of a single tab with a sequence
   */
-object SequenceTabContent {
-  final case class Props(router:  RouterCtl[SeqexecPages],
-                         content: SequenceTabContentFocus) {
+final case class SequenceTabContent(
+  router:  RouterCtl[SeqexecPages],
+  content: SequenceTabContentFocus
+) extends ReactProps {
+  @inline def render: VdomElement = SequenceTabContent.component(this)
 
-    val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
-      SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(content.id))
-  }
+  val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
+    SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(content.id))
+}
+
+object SequenceTabContent {
+  type Props = SequenceTabContent
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
     Reusability.derive[SequenceTabContentFocus]
@@ -58,7 +63,7 @@ object SequenceTabContent {
         p.stepsConnect { x =>
           <.div(
             ^.height := "100%",
-            StepsTable(StepsTable.Props(p.router, p.content.canOperate, x()))
+            StepsTable(p.router, p.content.canOperate, x())
           )
         }
 
@@ -70,13 +75,13 @@ object SequenceTabContent {
             val hs = focus.configTableState
             <.div(
               ^.height := "100%",
-              StepConfigTable(StepConfigTable.Props(steps, hs))
+              StepConfigTable(steps, hs)
             )
           }.getOrElse(<.div())
         }
     }
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
@@ -109,7 +114,4 @@ object SequenceTabContent {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] =
-    component(p)
 }

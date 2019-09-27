@@ -8,7 +8,6 @@ import cats.data.Nested
 import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
@@ -29,32 +28,38 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Component to display the step state and control
   */
+final case class StepProgressCell(
+  clientStatus : ClientStatus,
+  instrument   : Instrument,
+  obsId        : Observation.Id,
+  state        : SequenceState,
+  step         : Step,
+  selectedStep : Option[StepId],
+  isPreview    : Boolean,
+  tabOperations: TabOperations
+) extends ReactProps {
+  @inline def render: VdomElement = StepProgressCell.component(this)
+
+  val resourceRunRequested = tabOperations.resourceRunRequested
+
+  def stepSelected(i: StepId): Boolean =
+    selectedStep.exists(_ === i) && !isPreview &&
+      (clientStatus.isLogged || tabOperations.resourceRunNotIdle(i))
+
+  def isStopping: Boolean =
+    tabOperations.stopRequested === StopOperation.StopInFlight
+
+  val stateSnapshot: StepStateSnapshot =
+    StepStateSnapshot(step, instrument, tabOperations, state)
+}
+
 object StepProgressCell {
-  final case class Props(clientStatus:  ClientStatus,
-                         instrument:    Instrument,
-                         obsId:         Observation.Id,
-                         state:         SequenceState,
-                         step:          Step,
-                         selectedStep:  Option[StepId],
-                         isPreview:     Boolean,
-                         tabOperations: TabOperations) {
-
-    val resourceRunRequested = tabOperations.resourceRunRequested
-
-    def stepSelected(i: StepId): Boolean =
-      selectedStep.exists(_ === i) && !isPreview &&
-        (clientStatus.isLogged || tabOperations.resourceRunNotIdle(i))
-
-    def isStopping: Boolean =
-      tabOperations.stopRequested === StopOperation.StopInFlight
-
-    val stateSnapshot: StepStateSnapshot =
-      StepStateSnapshot(step, instrument, tabOperations, state)
-  }
+  type Props = StepProgressCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -109,20 +114,19 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar
-          .Props(props.obsId,
-                 stepId,
-                 fileId,
-                 stopping = props.isStopping,
-                 paused   = false)),
+        props.obsId,
+        stepId,
+        fileId,
+        stopping = props.isStopping,
+        paused   = false),
       StepsControlButtons(
-        StepsControlButtons.Props(props.obsId,
-                                  props.instrument,
-                                  props.state,
-                                  props.step.id,
-                                  props.step.isObservePaused,
-                                  props.tabOperations))
-        .when(controlButtonsActive(props))
+        props.obsId,
+        props.instrument,
+        props.state,
+        props.step.id,
+        props.step.isObservePaused,
+        props.tabOperations
+      ).when(controlButtonsActive(props))
     )
 
   def stepObservationPaused(props:  Props,
@@ -131,16 +135,19 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar
-          .Props(props.obsId, stepId, fileId, stopping = false, paused = true)),
+        props.obsId,
+        stepId,
+        fileId,
+        stopping = false,
+        paused = true),
       StepsControlButtons(
-        StepsControlButtons.Props(props.obsId,
-                                  props.instrument,
-                                  props.state,
-                                  props.step.id,
-                                  props.step.isObservePaused,
-                                  props.tabOperations))
-        .when(controlButtonsActive(props))
+        props.obsId,
+        props.instrument,
+        props.state,
+        props.step.id,
+        props.step.isObservePaused,
+        props.tabOperations
+      ).when(controlButtonsActive(props))
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -151,24 +158,24 @@ object StepProgressCell {
         props.state.show
       ),
       StepsControlButtons(
-        StepsControlButtons.Props(props.obsId,
-                                  props.instrument,
-                                  props.state,
-                                  props.step.id,
-                                  props.step.isObservePaused,
-                                  props.tabOperations))
-        .when(controlButtonsActive(props))
+        props.obsId,
+        props.instrument,
+        props.state,
+        props.step.id,
+        props.step.isObservePaused,
+        props.tabOperations
+      ).when(controlButtonsActive(props))
     )
 
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
       RunFromStep(
-        RunFromStep.Props(props.obsId,
-                          props.step.id,
-                          props.tabOperations.resourceInFlight(props.step.id),
-                          props.tabOperations.startFromRequested))
-        .when(props.step.canRunFrom && props.clientStatus.canOperate),
+        props.obsId,
+        props.step.id,
+        props.tabOperations.resourceInFlight(props.step.id),
+        props.tabOperations.startFromRequested
+      ).when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
         if (props.stateSnapshot.isAC) {//} && !props.stateSnapshot.anyError) {
@@ -183,13 +190,12 @@ object StepProgressCell {
           props.step.show
         }),
       SubsystemControlCell(
-        SubsystemControlCell
-          .Props(props.obsId,
-                 props.step.id,
-                 Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
-                 props.resourceRunRequested,
-                 props.clientStatus.canOperate))
-    )
+        props.obsId,
+        props.step.id,
+        Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
+        props.resourceRunRequested,
+        props.clientStatus.canOperate)
+      )
 
   def stepPaused(props: Props): VdomElement =
     <.div(
@@ -224,12 +230,10 @@ object StepProgressCell {
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepProgressCell")
     .stateless
     .render_P(stepDisplay)
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }

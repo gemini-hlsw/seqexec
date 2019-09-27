@@ -385,7 +385,7 @@ lazy val seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s.value) ++ Monocle.value
+    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s.value, Log4Cats.value) ++ Monocle.value
   )
 
 lazy val acm = project
