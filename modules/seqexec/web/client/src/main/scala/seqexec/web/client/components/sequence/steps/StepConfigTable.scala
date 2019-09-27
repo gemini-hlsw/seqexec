@@ -7,13 +7,13 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.Reusability
 import react.virtualized._
 import react.common.implicits._
+
 import scala.scalajs.js
 import scala.math.max
 import seqexec.model.Step
@@ -23,7 +23,30 @@ import seqexec.web.client.components.TableContainer
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 import web.client.table._
+
+final case class StepConfigTable(
+  step: Step,
+  startState: TableState[StepConfigTable.TableColumn]
+) extends ReactProps {
+  @inline def render: VdomElement = StepConfigTable.component(this)
+
+  val settingsList: List[(SystemName, String, String)] =
+    step.config.toList.flatMap {
+      case (s, c) =>
+        c.map {
+          case (k, v) => (s, k, v)
+        }
+    }
+
+  val rowCount: Int = settingsList.size
+
+  def rowGetter(idx: Int): StepConfigTable.SettingsRow =
+    settingsList
+      .lift(idx)
+      .fold(StepConfigTable.SettingsRow.zero)(Function.tupled(StepConfigTable.SettingsRow.apply))
+}
 
 object StepConfigTable {
   sealed trait TableColumn extends Product with Serializable
@@ -35,25 +58,9 @@ object StepConfigTable {
     implicit val reuse: Reusability[TableColumn] = Reusability.byRef
   }
 
+  type Props = StepConfigTable
+
   type Backend = RenderScope[Props, TableState[TableColumn], Unit]
-
-  final case class Props(step: Step, startState: TableState[TableColumn]) {
-
-    val settingsList: List[(SystemName, String, String)] =
-      step.config.toList.flatMap {
-        case (s, c) =>
-          c.map {
-            case (k, v) => (s, k, v)
-          }
-      }
-
-    val rowCount: Int = settingsList.size
-
-    def rowGetter(idx: Int): SettingsRow =
-      settingsList
-        .lift(idx)
-        .fold(SettingsRow.zero)(Function.tupled(SettingsRow.apply))
-  }
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(p => (p.settingsList, p.startState))
@@ -174,7 +181,7 @@ object StepConfigTable {
       headerHeight     = SeqexecStyles.headerHeight
     )
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render ( b =>
@@ -189,7 +196,4 @@ object StepConfigTable {
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] =
-    component(p)
 }

@@ -7,7 +7,6 @@ import cats.Show
 import cats.implicits._
 import gem.util.Enumerated
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
@@ -20,10 +19,19 @@ import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
 import seqexec.web.client.model.StepItems.StepStateSnapshot
 import seqexec.web.client.reusability._
+import web.client.ReactProps
+
 import scala.math.max
 
+final case class ACProgressBar(
+  step: AlignAndCalibStep,
+  state: StepStateSnapshot
+) extends ReactProps {
+  @inline def render: VdomElement = ACProgressBar.component(this)
+}
+
 object ACProgressBar {
-  final case class Props(step: AlignAndCalibStep, state: StepStateSnapshot)
+  type Props = ACProgressBar
 
   @Lenses
   final case class State(counter: Int, msg: String)
@@ -79,7 +87,7 @@ object ACProgressBar {
     Done
   )
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("ACProgressBar")
     .initialStateFromProps(State.initialStateFromProps)
     .render_PS { (p, s) =>
@@ -99,32 +107,32 @@ object ACProgressBar {
       x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show))
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
 
 /**
   * Component to wrap the progress bar
   */
+final case class AlignAndCalibProgress(state: StepStateSnapshot) extends ReactProps {
+  @inline def render: VdomElement = AlignAndCalibProgress.component(this)
+
+  protected[steps] val connect =
+    SeqexecCircuit.connect(SeqexecCircuit.acProgressRW)
+}
+
 object AlignAndCalibProgress {
-  final case class Props(state: StepStateSnapshot) {
-    protected[steps] val connect =
-      SeqexecCircuit.connect(SeqexecCircuit.acProgressRW)
-  }
+  type Props = AlignAndCalibProgress
 
   implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.never
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("AlignAndCalibProgress")
     .stateless
     .render_P(p =>
         p.connect{s =>
-          ACProgressBar(ACProgressBar.Props(s(), p.state))
+          ACProgressBar(s(), p.state)
         }
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

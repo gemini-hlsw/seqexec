@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import gem.Observation
@@ -19,64 +18,78 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Component to display an icon for the state
   */
+final case class StepToolsCell(
+  clientStatus:       ClientStatus,
+  step:               Step,
+  rowHeight:          Int,
+  secondRowHeight:    Int,
+  isPreview:          Boolean,
+  nextStepToRun:      Option[Int],
+  obsId:              Observation.Id,
+  firstRunnableIndex: Int,
+  breakPointEnterCB:  Int => Callback,
+  breakPointLeaveCB:  Int => Callback,
+  heightChangeCB:     Int => Callback
+) extends ReactProps {
+  @inline def render: VdomElement = StepToolsCell.component(this)
+}
+
 object StepToolsCell {
-  final case class Props(clientStatus:       ClientStatus,
-                         step:               Step,
-                         rowHeight:          Int,
-                         secondRowHeight:    Int,
-                         isPreview:          Boolean,
-                         nextStepToRun:      Option[Int],
-                         obsId:              Observation.Id,
-                         firstRunnableIndex: Int,
-                         breakPointEnterCB:  Int => Callback,
-                         breakPointLeaveCB:  Int => Callback,
-                         heightChangeCB:     Int => Callback)
+  type Props = StepToolsCell
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.caseClassExcept[Props]('heightChangeCB,
                                        'breakPointEnterCB,
                                        'breakPointLeaveCB)
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepToolsCell")
     .stateless
     .render_P { p =>
       <.div(
         SeqexecStyles.controlCell,
         StepBreakStopCell(
-          StepBreakStopCell.Props(p.clientStatus,
-                                  p.step,
-                                  p.rowHeight,
-                                  p.obsId,
-                                  p.firstRunnableIndex,
-                                  p.breakPointEnterCB,
-                                  p.breakPointLeaveCB,
-                                  p.heightChangeCB))
-          .when(p.clientStatus.isLogged)
-          .unless(p.isPreview),
+          p.clientStatus,
+          p.step,
+          p.rowHeight,
+          p.obsId,
+          p.firstRunnableIndex,
+          p.breakPointEnterCB,
+          p.breakPointLeaveCB,
+          p.heightChangeCB
+        ).when(p.clientStatus.isLogged)
+         .unless(p.isPreview),
         StepIconCell(
-          StepIconCell.Props(p.step.status,
-                             p.step.skip,
-                             p.nextStepToRun.forall(_ === p.step.id),
-                             p.rowHeight - p.secondRowHeight
-                           ))
+          p.step.status,
+          p.step.skip,
+          p.nextStepToRun.forall(_ === p.step.id),
+          p.rowHeight - p.secondRowHeight
+        )
       )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
   * Component to display an icon for the state
   */
+final case class StepIconCell(
+  status: StepState,
+  skip: Boolean,
+  nextToRun: Boolean,
+  height: Int
+) extends ReactProps {
+  @inline def render: VdomElement = StepIconCell.component(this)
+}
+
 object StepIconCell {
-  final case class Props(status: StepState, skip: Boolean, nextToRun: Boolean, height: Int)
+  type Props = StepIconCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -105,7 +118,7 @@ object StepIconCell {
       case _                   => SeqexecStyles.iconCell
     }
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepIconCell")
     .stateless
     .render_P(
@@ -117,6 +130,4 @@ object StepIconCell {
       ))
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

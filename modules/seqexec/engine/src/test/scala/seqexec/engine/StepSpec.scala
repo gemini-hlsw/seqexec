@@ -4,13 +4,17 @@
 package seqexec.engine
 
 import cats.effect.{ ContextShift, IO }
+import cats.effect.Timer
+import cats.effect.concurrent.Ref
 import cats.data.NonEmptyList
+import cats.tests.CatsSuite
 import fs2.concurrent.Queue
 import fs2.Stream
-import java.util.UUID
 import gem.Observation
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import java.util.UUID
 import org.scalatest.Inside._
-import org.scalatest.Matchers._
 import seqexec.engine.TestUtil.TestState
 import seqexec.engine.EventResult._
 import seqexec.engine.SystemEvent._
@@ -20,19 +24,23 @@ import seqexec.model.enum.Resource
 import seqexec.model.{ActionType, UserDetails}
 import scala.Function.const
 import scala.concurrent.ExecutionContext
-import org.scalatest.flatspec.AnyFlatSpec
+import scala.concurrent.duration._
 
-class StepSpec extends AnyFlatSpec {
+class StepSpec extends CatsSuite {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
+  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+
+  private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
+
   private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
 
-  private val executionEngine = new Engine[TestState, Unit](TestState)
+  private val executionEngine = new Engine[IO, TestState, Unit](TestState)
 
-  private object DummyResult extends Result.RetVal
+  private object DummyResult extends Result.RetVal with Serializable
   private val result = Result.OK(DummyResult)
   private val failure = Result.Error("Dummy error")
   private val actionFailed =  fromF[IO](ActionType.Undefined, IO(failure)).copy(state = Action.State
@@ -77,17 +85,17 @@ class StepSpec extends AnyFlatSpec {
   val stepzar0: Step.Zipper[IO] = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
   val stepzar1: Step.Zipper[IO] = simpleStep(List(NonEmptyList.one(action)), Execution(List(actionCompleted,
     actionCompleted)), List(NonEmptyList.one(result)))
-  private val startEvent = Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)
-  //scalastyle:off console.io
+  private val startEvent = Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always)
+
   /**
     * Emulates TCS configuration in the real world.
     *
     */
   val configureTcs: Action[IO] = fromF[IO](ActionType.Configure(Resource.TCS),
     for {
-      _ <- IO(println("System: Start TCS configuration"))
-      _ <- IO(Thread.sleep(200))
-      _ <- IO(println ("System: Complete TCS configuration"))
+      _ <- L.info("System: Start TCS configuration")
+      _ <- IO.sleep(new FiniteDuration(200, MILLISECONDS))
+      _ <- L.info("System: Complete TCS configuration")
     } yield Result.OK(DummyResult))
 
   /**
@@ -96,9 +104,9 @@ class StepSpec extends AnyFlatSpec {
     */
   val configureInst: Action[IO] = fromF[IO](ActionType.Configure(GmosS),
     for {
-      _ <- IO(println("System: Start Instrument configuration"))
-      _ <- IO(Thread.sleep(150))
-      _ <- IO(println("System: Complete Instrument configuration"))
+      _ <- L.info("System: Start Instrument configuration")
+      _ <- IO.sleep(new FiniteDuration(150, MILLISECONDS))
+      _ <- L.info("System: Complete Instrument configuration")
     } yield Result.OK(DummyResult))
 
   /**
@@ -107,18 +115,32 @@ class StepSpec extends AnyFlatSpec {
     */
   val observe: Action[IO] = fromF[IO](ActionType.Observe,
     for {
-    _ <- IO(println("System: Start observation"))
-    _ <- IO(Thread.sleep(200))
-    _ <- IO(println ("System: Complete observation"))
+    _ <- L.info("System: Start observation")
+    _ <- IO.sleep(new FiniteDuration(200, MILLISECONDS))
+    _ <- L.info("System: Complete observation")
   } yield Result.OK(DummyResult))
-  //scalastyle:on console.io
 
   def error(errMsg: String): Action[IO] = fromF[IO](ActionType.Undefined,
-    IO {
-      Thread.sleep(200)
-      Result.Error(errMsg)
-    }
+    IO.sleep(new FiniteDuration(200, MILLISECONDS)) *>
+      Result.Error(errMsg).pure[IO]
   )
+
+  def errorSet1(errMsg: String): (Ref[IO, Int], Action[IO]) = {
+    val ref = Ref.unsafe[IO, Int](0)
+    val action = fromF[IO](ActionType.Undefined,
+      ref.update(_ + 1).as(Result.OK(DummyResult)),
+      Result.Error(errMsg).pure[IO],
+      ref.update(_ + 1).as(Result.OK(DummyResult)))
+    (ref, action)
+  }
+
+  def errorSet2(errMsg: String): Action[IO] =
+    fromF[IO](ActionType.Undefined,
+      Result.Error(errMsg).pure[IO])
+
+  def fatalError(errMsg: String): Action[IO] =
+    fromF[IO](ActionType.Undefined,
+      IO.raiseError(new RuntimeException(errMsg)))
 
   def triggerPause(q: Queue[IO, executionEngine.EventType]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
@@ -142,25 +164,22 @@ class StepSpec extends AnyFlatSpec {
   }
 
   def runToCompletion(s0: TestState): Option[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   def runToCompletionL(s0: TestState): List[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector.unsafeRunSync.map(_._2).toList
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
   // The test will just run step and compare the output with the predefined sequence of updates.
-  ignore should "run and generate the predicted sequence of updates." in {
-
-  }
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
-  "pause" should "stop execution in response to a pause command" in {
+  test("pause should stop execution in response to a pause command") {
     val q: Stream[IO, Queue[IO, executionEngine.EventType]] = Stream.eval(Queue.bounded[IO, executionEngine.EventType](10))
     def qs0(q: Queue[IO, executionEngine.EventType]): TestState =
       TestState(
@@ -205,7 +224,7 @@ class StepSpec extends AnyFlatSpec {
 
   }
 
-  it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
+  test("resume execution from the non-running state in response to a resume command, rolling back a partially run step.") {
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
     val qs0: TestState =
       TestState(
@@ -248,7 +267,7 @@ class StepSpec extends AnyFlatSpec {
 
   }
 
-  it should "cancel a pause request in response to a cancel pause command." in {
+  test("cancel a pause request in response to a cancel pause command.") {
     val qs0: TestState =
       TestState(
         sequences = Map(
@@ -283,7 +302,7 @@ class StepSpec extends AnyFlatSpec {
 
   }
 
-  "engine" should "ignore pause command if step is not being executed." in {
+  test("engine should test pause command if step is not being executed.") {
     val qs0: TestState =
       TestState(
         sequences = Map(
@@ -318,7 +337,7 @@ class StepSpec extends AnyFlatSpec {
   }
 
   // Be careful that start command doesn't run an already running sequence.
-  "engine" should "ignore start command if step is already running." in {
+  test("engine test start command if step is already running.") {
     val q = Queue.bounded[IO, executionEngine.EventType](10)
     val qs0: TestState =
       TestState(
@@ -363,7 +382,7 @@ class StepSpec extends AnyFlatSpec {
   }
 
   // For this test, one of the actions in the step must produce an error as result.
-  "engine" should "stop execution and propagate error when an Action ends in error." in {
+  test("engine should stop execution and propagate error when an Action ends in error.") {
     val errMsg = "Dummy error"
     val qs0: TestState =
       TestState(
@@ -402,7 +421,102 @@ class StepSpec extends AnyFlatSpec {
     }
   }
 
-  "engine" should "record a partial result and continue execution." in {
+  test("engine should complete execution and propagate error when a partial Action ends in error.") {
+    val errMsg = "Dummy error"
+    val (ref, action) = errorSet1(errMsg)
+    val qs0: TestState =
+      TestState(
+        sequences = Map(
+          (seqId,
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    executions = List(
+                      NonEmptyList.one(action)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    val qs1 = runToCompletion(qs0)
+
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Final(_, status)) =>
+        // Without the error we should have a value 2
+        ref.get.unsafeRunSync() shouldBe(1)
+        // And that it ended in error
+        status shouldBe SequenceState.Completed
+    }
+  }
+
+  test("engine should stop execution and propagate error when a single partial Action fails") {
+    val errMsg = "Dummy error"
+    val qs0: TestState =
+      TestState(
+        sequences = Map(
+          (seqId,
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    executions = List(
+                      NonEmptyList.one(errorSet2(errMsg))
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    val qs1 = runToCompletion(qs0)
+
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(_, status, _)) =>
+        // Without the error we should have a value 2
+        // And that it ended in error
+        status should be (SequenceState.Failed(errMsg))
+    }
+  }
+
+  test("engine should let fatal errors bubble") {
+    val errMsg = "Dummy error"
+    val qs0: TestState =
+      TestState(
+        sequences = Map(
+          (seqId,
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    executions = List(
+                      NonEmptyList.one(fatalError(errMsg))
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    a [RuntimeException] should be thrownBy runToCompletion(qs0)
+
+  }
+
+  test("engine should record a partial result and continue execution.") {
 
     // For result types
     case class RetValDouble(v: Double) extends Result.RetVal
@@ -455,7 +569,7 @@ class StepSpec extends AnyFlatSpec {
 
   }
 
-  "uncurrentify" should "be None when not all executions are completed" in {
+  test("uncurrentify should be None when not all executions are completed") {
     assert(stepz0.uncurrentify.isEmpty)
     assert(stepza0.uncurrentify.isEmpty)
     assert(stepza1.uncurrentify.isEmpty)
@@ -466,7 +580,7 @@ class StepSpec extends AnyFlatSpec {
     assert(stepzar1.uncurrentify.isEmpty)
   }
 
-  "next" should "be None when there are no more pending executions" in {
+  test("next should be None when there are no more pending executions") {
     assert(stepz0.next.isEmpty)
     assert(stepza0.next.isEmpty)
     assert(stepza1.next.nonEmpty)
@@ -481,18 +595,18 @@ class StepSpec extends AnyFlatSpec {
   val step1: Step[IO] = Step.init(1, List(NonEmptyList.one(action)))
   val step2: Step[IO] = Step.init(2, List(NonEmptyList.of(action, action), NonEmptyList.one(action)))
 
-  "currentify" should "be None only when a Step is empty of executions" in {
+  test("currentify should be None only when a Step is empty of executions") {
     assert(Step.Zipper.currentify(Step.init(0, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
   }
 
-  "status" should "be completed when it doesn't have any executions" in {
+  test("status should be completed when it doesn't have any executions") {
     assert(Step.status(stepz0.toStep) === StepState.Completed)
   }
 
-  "status" should "be Error when at least one Action failed" in {
+  test("status should be Error when at least one Action failed") {
     assert(
       Step.status(
         Step.Zipper(
@@ -508,7 +622,7 @@ class StepSpec extends AnyFlatSpec {
     )
   }
 
-  "status" should "be Completed when all actions succeeded" in {
+  test("status should be Completed when all actions succeeded") {
     assert(
       Step.status(
         Step.Zipper(
@@ -524,7 +638,7 @@ class StepSpec extends AnyFlatSpec {
     )
   }
 
-  "status" should "be Running when there are both actions and results" in {
+  test("status should be Running when there are both actions and results") {
     assert(
       Step.status(
         Step.Zipper(
@@ -540,7 +654,7 @@ class StepSpec extends AnyFlatSpec {
     )
   }
 
-  "status" should "be Pending when there are only pending actions" in {
+  test("status should be Pending when there are only pending actions") {
     assert(
       Step.status(
         Step.Zipper(
@@ -556,7 +670,7 @@ class StepSpec extends AnyFlatSpec {
     )
   }
 
-  "status" should "be Skipped if the Step was skipped" in {
+  test("status should be Skipped if the Step was skipped") {
     assert(
       Step.status(
         Step.Zipper(

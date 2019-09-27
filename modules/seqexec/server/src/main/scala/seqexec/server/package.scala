@@ -3,6 +3,8 @@
 
 package seqexec
 
+import cats.ApplicativeError
+import cats.Functor
 import cats.data._
 import cats.effect.IO
 import cats.effect.LiftIO
@@ -16,6 +18,8 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue
 import fs2.Stream
 import gem.Observation
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import monocle.Lens
 import monocle.Optional
@@ -25,18 +29,9 @@ import monocle.function.At._
 import seqexec.engine.Engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result
-import seqexec.model.CalibrationQueueId
-import seqexec.model.CalibrationQueueName
-import seqexec.model.QueueId
-import seqexec.model.Conditions
-import seqexec.model.Observer
-import seqexec.model.Operator
-import seqexec.model.SequenceState
-import seqexec.model.BatchCommandState
+import seqexec.model._
 import seqexec.model.enum._
-import seqexec.engine.Event
-import seqexec.engine.Handle
-import seqexec.engine.Sequence
+import seqexec.engine._
 import seqexec.server.SequenceGen.StepGen
 import squants.Time
 
@@ -45,7 +40,7 @@ package server {
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData[IO]])
 
   // TODO EngineState extending Engine.State is problematic when trying to remove the strong IO dependency
-  object EngineState extends Engine.State[EngineState]{
+  object EngineState extends Engine.State[IO, EngineState]{
     val default: EngineState =
       EngineState(
         Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
@@ -96,8 +91,11 @@ package object server {
 
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
+  // This is far from ideal but we'll address this in another refactoring
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
+
   // TODO move this out of being a global. This act as an anchor to the rest of the code
-  val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState)
+  val executeEngine: Engine[IO, EngineState, SeqEvent] = new Engine[IO, EngineState, SeqEvent](EngineState)
 
   type EventQueue[F[_]] = Queue[F, executeEngine.EventType]
 
@@ -169,7 +167,7 @@ package object server {
 
   implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
     import Handle.StateToHandle
-    def toHandle: Handle[EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
+    def toHandle: Handle[IO, EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
       StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
   }
 
@@ -181,5 +179,27 @@ package object server {
     f.flatMap {
       MonadError[F, Throwable].raiseError(err).unlessA
     }
+
+  implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {
+    def toResult[F[_]]: Result[F] = r.fold(e => e match {
+      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    }, r => Result.OK(r))
+  }
+
+  implicit class AdaptFErrorOps[F[_]: ApplicativeError[?[_], Throwable], A](val r: F[Result[F]]) {
+    def safeResult: F[Result[F]] = r.recover {
+      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    }
+  }
+
+  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
+  }
+
+  implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
+  }
 
 }

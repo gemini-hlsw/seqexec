@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
@@ -28,19 +27,26 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Contains the control buttons like stop/abort at the row level
   */
+final case class StepsControlButtons(
+  id:              Observation.Id,
+  instrument:      Instrument,
+  sequenceState:   SequenceState,
+  stepId:          Int,
+  isObservePaused: Boolean,
+  tabOperations:   TabOperations
+) extends ReactProps {
+  @inline def render: VdomElement = StepsControlButtons.component(this)
+
+  val requestInFlight = tabOperations.stepRequestInFlight
+}
+
 object StepsControlButtons {
-  final case class Props(id:              Observation.Id,
-                         instrument:      Instrument,
-                         sequenceState:   SequenceState,
-                         stepId:          Int,
-                         isObservePaused: Boolean,
-                         tabOperations:   TabOperations) {
-    val requestInFlight = tabOperations.stepRequestInFlight
-  }
+  type Props = StepsControlButtons
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -56,7 +62,7 @@ object StepsControlButtons {
   def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
 
-  private val component = ScalaComponent
+  protected val component = ScalaComponent
     .builder[Props]("StepsControlButtons")
     .render_P { p =>
       <.div(
@@ -135,6 +141,4 @@ object StepsControlButtons {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

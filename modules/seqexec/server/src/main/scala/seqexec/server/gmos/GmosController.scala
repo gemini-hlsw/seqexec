@@ -21,6 +21,8 @@ import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server._
 import squants.{Length, Time}
+import shapeless.tag.@@
+import shapeless.tag
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
   import GmosController._
@@ -51,6 +53,16 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 }
 
 object GmosController {
+  trait NsPairsI
+  trait NsRowsI
+  trait NsExposureDividerI
+
+  type NsPairs           = Int @@ NsPairsI
+  type NsRows            = Int @@ NsRowsI
+  type NsExposureDivider = Int @@ NsExposureDividerI
+
+  implicit val nsPairsEq: Eq[NsPairs] = Eq.by(x => x: Int)
+  implicit val nsRowsEq: Eq[NsRows] = Eq.by(x => x: Int)
 
   sealed abstract class Config[T<:SiteDependentTypes] {
     import Config._
@@ -131,7 +143,7 @@ object GmosController {
         Enumerated.of(InBeam, OutOfBeam)
     }
 
-    sealed trait GmosFPU
+    sealed trait GmosFPU extends Product with Serializable
 
     final case object UnknownFPU extends GmosFPU
 
@@ -151,22 +163,28 @@ object GmosController {
 
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
-      def nsPairs: Int
-      def exposureDivider: Int
+      def nsPairs: NsPairs
+      def nsRows: NsRows
+      def exposureDivider: NsExposureDivider
+      def nsState: NodAndShuffleState
     }
 
     object NSConfig {
       case object NoNodAndShuffle extends NSConfig {
-        val nsPairs = 0
-        val exposureDivider = 1
+        val nsPairs = tag[NsPairsI][Int](0)
+        val nsRows = tag[NsRowsI][Int](0)
+        val exposureDivider = tag[NsExposureDividerI][Int](1)
+        val nsState = NodAndShuffleState.Classic
       }
 
       final case class NodAndShuffle(
         cycles: Int,
         rows: Int,
         positions: Vector[NSPosition]) extends NSConfig {
-        val nsPairs = cycles
-        val exposureDivider = 2
+        val nsPairs = tag[NsPairsI][Int](cycles * Gmos.NsSequence.length / 2)
+        val nsRows = tag[NsRowsI][Int](Gmos.rowsToShuffle(Gmos.NsSequence.head, rows))
+        val exposureDivider = tag[NsExposureDividerI][Int](2)
+        val nsState = NodAndShuffleState.NodShuffle
       }
     }
 
