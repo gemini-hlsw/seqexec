@@ -13,6 +13,6 @@ object EventResult {
     case object Failure extends Outcome
   }
 
-  final case class UserCommandResponse[D<:Engine.Types](ue: UserEvent[D], outcome: Outcome, ud: Option[D#EventData]) extends EventResult[D]
+  final case class UserCommandResponse[F[_], D <: Engine.Types](ue: UserEvent[F, D], outcome: Outcome, ud: Option[D#EventData]) extends EventResult[D]
   final case class SystemUpdate[F[_], D<:Engine.Types](se: SystemEvent[F], outcome: Outcome) extends EventResult[D]
 }

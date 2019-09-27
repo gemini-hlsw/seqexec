@@ -19,7 +19,7 @@ import seqexec.server.ConfigUtilOps._
 
 final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]](odbProxy: OdbProxy[F], translator: SeqTranslate) {
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
-    Event.modifyState[executeEngine.ConcreteTypes](
+    Event.modifyState[IO, executeEngine.ConcreteTypes](
       { st: EngineState =>
         if (executeEngine.canUnload(seqId)(st)) {
           (EngineState.sequences.modify(ss => ss - seqId) >>>
@@ -52,7 +52,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]](odbProxy
       }.attempt.map(_.flatten)
 
     def loadSequenceEvent(seqg: SequenceGen[IO]): executeEngine.EventType =
-      Event.modifyState[executeEngine.ConcreteTypes]({ st: EngineState =>
+      Event.modifyState[IO, executeEngine.ConcreteTypes]({ st: EngineState =>
         st.sequences
           .get(seqId)
           .fold(ODBSequencesLoader.loadSequenceEndo(seqId, seqg))(
@@ -90,7 +90,6 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]](odbProxy
 
 object ODBSequencesLoader {
 
-  // TODO Parametrize the IO
   private def toEngineSequence[F[_]](
     id:  Observation.Id,
     seq: SequenceGen[F],

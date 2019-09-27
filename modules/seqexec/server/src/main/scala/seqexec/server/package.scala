@@ -18,6 +18,8 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue
 import fs2.Stream
 import gem.Observation
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import monocle.Lens
 import monocle.Optional
@@ -38,7 +40,7 @@ package server {
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData[IO]])
 
   // TODO EngineState extending Engine.State is problematic when trying to remove the strong IO dependency
-  object EngineState extends Engine.State[EngineState]{
+  object EngineState extends Engine.State[IO, EngineState]{
     val default: EngineState =
       EngineState(
         Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
@@ -89,8 +91,11 @@ package object server {
 
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
+  // This is far from ideal but we'll address this in another refactoring
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
+
   // TODO move this out of being a global. This act as an anchor to the rest of the code
-  val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState)
+  val executeEngine: Engine[IO, EngineState, SeqEvent] = new Engine[IO, EngineState, SeqEvent](EngineState)
 
   type EventQueue[F[_]] = Queue[F, executeEngine.EventType]
 
@@ -162,7 +167,7 @@ package object server {
 
   implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
     import Handle.StateToHandle
-    def toHandle: Handle[EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
+    def toHandle: Handle[IO, EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
       StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
   }
 

@@ -4,7 +4,6 @@
 package seqexec.engine
 
 import cats.implicits._
-import cats.effect.IO
 import fs2.Stream
 import gem.Observation
 import seqexec.model.ClientId
@@ -19,25 +18,25 @@ import seqexec.engine.UserEvent._
 sealed trait Event[+F[_], +D <: Engine.Types] extends Product with Serializable
 
 object Event {
-  final case class EventUser[D <: Engine.Types](ue: UserEvent[D]) extends Event[Nothing, D]
+  final case class EventUser[F[_], D <: Engine.Types](ue: UserEvent[F, D]) extends Event[F, D]
   final case class EventSystem[F[_]](se: SystemEvent[F]) extends Event[F, Nothing]
 
   def start[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[F, D] =
-    EventUser[D](Start[D](id, user.some, clientId, userCheck))
-  def pause[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[F, D] = EventUser[D](Pause(id, user.some))
-  def cancelPause[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[F, D] = EventUser[D](CancelPause(id, user.some))
-  def breakpoint[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, D] = EventUser[D](Breakpoint(id, user.some, step, v))
-  def skip[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, D] = EventUser[D](SkipMark(id, user.some, step, v))
-  def poll(clientId: ClientId): Event[Nothing, Nothing] = EventUser(Poll(clientId))
-  def getState[D <: Engine.Types](f: D#StateType => Option[Stream[IO, Event[IO, D]]]): Event[IO, D] = EventUser[D](GetState[D](f))
-  def modifyState[D <: Engine.Types](f: Handle[D#StateType, Event[IO, D], D#EventData]): Event[IO, D] = EventUser[D](ModifyState[D](f))
-  def actionStop[D <: Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[IO, D]]]): Event[IO, D] = EventUser[D](ActionStop(id, f))
-  def actionResume[D <: Engine.Types](id: Observation.Id, i: Int, c: Stream[IO, Result[IO]]): Event[IO, D] =
-    EventUser[D](ActionResume(id, i, c))
-  def logDebugMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[D](LogDebug(msg))
-  def logInfoMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[D](LogInfo(msg))
-  def logWarningMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[D](LogWarning(msg))
-  def logErrorMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[D](LogError(msg))
+    EventUser[F, D](Start[D](id, user.some, clientId, userCheck))
+  def pause[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[F, D] = EventUser[F, D](Pause(id, user.some))
+  def cancelPause[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[F, D] = EventUser[F, D](CancelPause(id, user.some))
+  def breakpoint[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, D] = EventUser[F, D](Breakpoint(id, user.some, step, v))
+  def skip[F[_], D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, D] = EventUser[F, D](SkipMark(id, user.some, step, v))
+  def poll(clientId: ClientId): Event[Nothing, Nothing] = EventUser[Nothing, Nothing](Poll(clientId))
+  def getState[F[_], D <: Engine.Types](f: D#StateType => Option[Stream[F, Event[F, D]]]): Event[F, D] = EventUser[F, D](GetState(f))
+  def modifyState[F[_], D <: Engine.Types](f: Handle[F, D#StateType, Event[F, D], D#EventData]): Event[F, D] = EventUser[F, D](ModifyState(f))
+  def actionStop[F[_], D <: Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[F, Event[F, D]]]): Event[F, D] = EventUser[F, D](ActionStop(id, f))
+  def actionResume[F[_], D <: Engine.Types](id: Observation.Id, i: Int, c: Stream[F, Result[F]]): Event[F, D] =
+    EventUser[F, D](ActionResume(id, i, c))
+  def logDebugMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[F, D](LogDebug(msg))
+  def logInfoMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[F, D](LogInfo(msg))
+  def logWarningMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[F, D](LogWarning(msg))
+  def logErrorMsg[F[_], D <: Engine.Types](msg: String): Event[F, D] = EventUser[F, D](LogError(msg))
 
   def failed[F[_]](id: Observation.Id, i: Int, e: Result.Error): Event[F, Nothing] = EventSystem[F](Failed(id, i, e))
   def completed[F[_], R <: Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OK[R])

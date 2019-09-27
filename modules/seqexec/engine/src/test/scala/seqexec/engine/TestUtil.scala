@@ -13,7 +13,7 @@ object TestUtil {
   @Lenses
   final case class TestState(sequences: Map[Observation.Id, Sequence.State[IO]])
 
-  object TestState extends Engine.State[TestState] {
+  object TestState extends Engine.State[IO, TestState] {
     override def sequenceStateIndex(sid: Observation.Id): Optional[TestState, Sequence
     .State[IO]] =
       TestState.sequences ^|-? index(sid)
