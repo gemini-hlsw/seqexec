@@ -29,7 +29,6 @@ echo "--- :scala: Compiling tests"
 ### RUN TESTS
 ###
 
-# Set up the schema generate enums and run tests
 echo "--- :scala: Running tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
@@ -48,6 +47,7 @@ echo "--- :javascript: Linking Javascript"
 ###
 ### WEIGH
 ###
+
 if [ "$BUILDKITE" = "true" ] && [ -n "$GITHUB_TOKEN" ] && [ -n "$BUILDKITE_PULL_REQUEST" ]; then
   echo "--- :github: Calculate assets' sizes"
   $BUILDKITE_BUILD_CHECKOUT_PATH/build/weigh.sh
