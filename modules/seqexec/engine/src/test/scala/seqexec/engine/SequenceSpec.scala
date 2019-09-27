@@ -23,6 +23,8 @@ class SequenceSpec extends AnyFlatSpec {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
+
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-0-1")
 
   // All tests check the output of running a sequence against the expected sequence of updates.
@@ -55,8 +57,6 @@ class SequenceSpec extends AnyFlatSpec {
   ignore should "stop execution and propagate error when an Action ends in error." in {
 
   }
-
-  private implicit def logger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec-engine")
 
   private val user = UserDetails("telops", "Telops")
   private val executionEngine = new Engine[IO, TestState, Unit](TestState)

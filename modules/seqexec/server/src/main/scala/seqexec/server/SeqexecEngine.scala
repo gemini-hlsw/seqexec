@@ -68,7 +68,7 @@ class SeqexecEngine(
 
   // We establist here as the limit of where logger start
   // TODO Push it up the stack
-  private implicit def unsafeLogger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec")
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
   val odbProxy: OdbProxy[IO] = OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))

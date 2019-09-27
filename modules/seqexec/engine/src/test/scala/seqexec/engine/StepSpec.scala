@@ -33,7 +33,7 @@ class StepSpec extends CatsSuite {
 
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
 
-  private implicit def L: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec")
+  private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
   private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")

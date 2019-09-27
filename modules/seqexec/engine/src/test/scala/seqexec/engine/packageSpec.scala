@@ -30,7 +30,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  private implicit def logger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec-engine")
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 
   object DummyResult extends Result.RetVal
 

@@ -92,7 +92,7 @@ package object server {
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
   // This is far from ideal but we'll address this in another refactoring
-  private implicit def logger: Logger[IO] = Slf4jLogger.unsafeFromName[IO]("seqexec-engine")
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 
   // TODO move this out of being a global. This act as an anchor to the rest of the code
   val executeEngine: Engine[IO, EngineState, SeqEvent] = new Engine[IO, EngineState, SeqEvent](EngineState)
