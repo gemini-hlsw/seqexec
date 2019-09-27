@@ -87,7 +87,8 @@ object GmosController {
       stage: T#GmosStageMode,
       dtaX: DTAX,
       adc: ADC,
-      useElectronicOffset: Option[UseElectronicOffset]
+      useElectronicOffset: Option[UseElectronicOffset],
+      isDarkOrBias: Boolean
     )
 
   }
@@ -259,6 +260,11 @@ object GmosController {
   type GmosNorthController[F[_]] = GmosController[F, NorthTypes]
 
   implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
-    Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})" }
+    Show.show { config =>
+      val ccShow = if(config.cc.isDarkOrBias) "DarkOrBias"
+      else s"${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}"
+
+      s"($ccShow, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})"
+    }
 
 }
