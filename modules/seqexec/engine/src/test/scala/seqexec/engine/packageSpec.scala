@@ -11,6 +11,8 @@ import fs2.Stream
 import gem.Observation
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import seqexec.engine.Sequence.State.Final
@@ -27,6 +29,8 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
+
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 
   object DummyResult extends Result.RetVal
 
@@ -98,7 +102,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
       )
     )
 
-  private val executionEngine = new Engine[TestState, Unit](TestState)
+  private val executionEngine = new Engine[IO, TestState, Unit](TestState)
   private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
@@ -198,7 +202,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
             q.enqueue1(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always)),
             startedFlag.acquire,
             q.enqueue1(Event.nullEvent),
-            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent).some })
+            q.enqueue1(Event.getState[IO, executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent).some })
           ).sequence,
           executionEngine.process(PartialFunction.empty)(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)
@@ -410,7 +414,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     )
 
     val c = ActionCoordsInSeq(stepId, ExecutionIndex(0), ActionIndex(0))
-    val event = Event.modifyState[executionEngine.ConcreteTypes](
+    val event = Event.modifyState[IO, executionEngine.ConcreteTypes](
       executionEngine.startSingle(ActionCoords(seqId, c)).void
     )
     val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
@@ -469,7 +473,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     )
 
   it should "be able to start sequence from arbitrary step" in {
-    val event = Event.modifyState[executionEngine.ConcreteTypes](
+    val event = Event.modifyState[IO, executionEngine.ConcreteTypes](
       executionEngine.startFrom(seqId, 3).void
     )
 

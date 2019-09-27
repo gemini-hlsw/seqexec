@@ -3,14 +3,14 @@
 
 package seqexec.engine
 
-import cats.{Applicative, Monad}
+import cats.{Applicative, Functor, Monad}
+import cats.implicits._
 import cats.data.StateT
-import cats.effect.IO
 import fs2.Stream
 
 /**
   * Type constructor where all Seqexec side effect are managed.
-  * Handle is a State machine inside a IO, which can produce Streams as output. It is combined with the
+  * Handle is a State machine inside a F, which can produce Streams as output. It is combined with the
   * input stream to run seqexec engine.
   *
   * Its type parameters are:
@@ -18,15 +18,15 @@ import fs2.Stream
   * V: Type of the events
   * D: Type of the state machine state.
   */
-final case class Handle[D, V, A](run: StateT[IO, D, (A, Option[Stream[IO, V]])])
+final case class Handle[F[_], D, V, A](run: StateT[F, D, (A, Option[Stream[F, V]])])
 
 object Handle {
-  def fromStream[D, V](p: Stream[IO, V]): Handle[D, V, Unit] = {
-    Handle[D, V, Unit](Applicative[StateT[IO, D, ?]].pure[(Unit, Option[Stream[IO, V]])](((), Some(p))))
+  def fromStream[F[_]: Monad, D, V](p: Stream[F, V]): Handle[F, D, V, Unit] = {
+    Handle[F, D, V, Unit](Applicative[StateT[F, D, ?]].pure[(Unit, Option[Stream[F, V]])](((), Some(p))))
   }
 
-  implicit def handlePInstances[D, V]: Monad[Handle[D, V, ?]] = new Monad[Handle[D, V, ?]] {
-    private def concatOpP[F[_]](op1: Option[Stream[F, V]],
+  implicit def handlePMonad[F[_]: Monad, D, V]: Monad[Handle[F, D, V, ?]] = new Monad[Handle[F, D, V, ?]] {
+    private def concatOpP(op1: Option[Stream[F, V]],
                                 op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
       case (None, None) => None
       case (Some(p1), None) => Some(p1)
@@ -34,9 +34,9 @@ object Handle {
       case (Some(p1), Some(p2)) => Some(p1 ++ p2)
     }
 
-    override def pure[A](a: A): Handle[D, V, A] = Handle(Applicative[StateT[IO, D, ?]].pure((a, None)))
+    override def pure[A](a: A): Handle[F, D, V, A] = Handle(Applicative[StateT[F, D, ?]].pure((a, None)))
 
-    override def flatMap[A, B](fa: Handle[D, V, A])(f: A => Handle[D, V, B]): Handle[D, V, B] = Handle[D, V, B](
+    override def flatMap[A, B](fa: Handle[F, D, V, A])(f: A => Handle[F, D, V, B]): Handle[F, D, V, B] = Handle[F, D, V, B](
       fa.run.flatMap {
         case (a, op1) => f(a).run.map {
           case (b, op2) => (b, concatOpP(op1, op2))
@@ -45,14 +45,14 @@ object Handle {
     )
 
     // Kudos to @tpolecat
-    def tailRecM[A, B](a: A)(f: A => Handle[D, V, Either[A, B]]): Handle[D, V, B] = {
+    def tailRecM[A, B](a: A)(f: A => Handle[F, D, V, Either[A, B]]): Handle[F, D, V, B] = {
       // We don't really care what this type is
-      type Unused = Option[Stream[IO, V]]
+      type Unused = Option[Stream[F, V]]
 
-      // Construct a StateT that delegates to IO's tailRecM
-      val st: StateT[IO, D, (B, Unused)] =
+      // Construct a StateT that delegates to F's tailRecM
+      val st: StateT[F, D, (B, Unused)] =
         StateT { s =>
-          Monad[IO].tailRecM[(D, A), (D, (B, Unused))]((s, a)) {
+          Monad[F].tailRecM[(D, A), (D, (B, Unused))]((s, a)) {
             case (s, a) =>
               f(a).run.run(s).map {
                 case (sʹ, (Left(a), _)) => Left((sʹ, a))
@@ -66,19 +66,20 @@ object Handle {
     }
   }
 
-  implicit class StateToHandle[D, V, A](self: StateT[IO, D, A]) {
-    def toHandle: Handle[D, V, A] = Handle(self.map((_, None)))
+  implicit class StateToHandle[F[_]: Functor, D, V, A](self: StateT[F, D, A]) {
+    def toHandle: Handle[F, D, V, A] = Handle(self.map((_, None)))
   }
 
-  def unit[D, V]: Handle[D, V, Unit] = Applicative[Handle[D, V, ?]].pure(())
+  def unit[F[_]: Monad, D, V]: Handle[F, D, V, Unit] =
+    Applicative[Handle[F, D, V, ?]].unit
 
-  def get[D, V]: Handle[D, V, D] =
-    StateT.get[IO, D].toHandle
+  def get[F[_]: Applicative, D, V]: Handle[F, D, V, D] =
+    StateT.get[F, D].toHandle
 
-  def inspect[D, V, A](f: D => A): Handle[D, V, A] =
-    StateT.inspect[IO, D, A](f).toHandle
+  def inspect[F[_]: Applicative, D, V, A](f: D => A): Handle[F, D, V, A] =
+    StateT.inspect[F, D, A](f).toHandle
 
-  def modify[D, V](f: D => D): Handle[D, V, Unit] =
-    StateT.modify[IO, D](f).toHandle
+  def modify[F[_]: Applicative, D, V](f: D => D): Handle[F, D, V, Unit] =
+    StateT.modify[F, D](f).toHandle
 
 }

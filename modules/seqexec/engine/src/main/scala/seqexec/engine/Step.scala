@@ -25,15 +25,12 @@ object Step {
 
   @Lenses
   final case class BreakpointMark(self: Boolean) extends AnyVal
-  object BreakpointMark
 
   @Lenses
   final case class SkipMark(self: Boolean) extends AnyVal
-  object SkipMark
 
   @Lenses
   final case class Skipped(self: Boolean) extends AnyVal
-  object Skipped
 
   def breakpointL[F[_]]: Lens[Step[F], Boolean] = Step.breakpoint ^|-> BreakpointMark.self
   def skippedL[F[_]]: Lens[Step[F], Boolean] = Step.skipped ^|-> Skipped.self
