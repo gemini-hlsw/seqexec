@@ -16,6 +16,7 @@ import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.model.dhs._
 import shapeless.tag
+import shapeless.tag.@@
 import squants.time.TimeConversions._
 
 /**
@@ -43,6 +44,9 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     valuesMapPickler[A, Int](sourceIndex[A])
   }
   // scalastyle:on
+
+  implicit val timeProgressPickler =
+    transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
 
   val instrumentIdx = valuesMap(Instrument.all, (x: Instrument) => x.ordinal)
 
@@ -119,6 +123,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   implicit val imageIdPickler = transformPickler((s: String) => tag[ImageFileIdT](s))(identity)
   implicit val standardStepPickler = generatePickler[StandardStep]
+  implicit def taggedIntPickler[A]: Pickler[Int @@ A] = transformPickler((s: Int) => tag[A](s))(identity)
   implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
   implicit val nsStepPickler = generatePickler[NodAndShuffleStep]
 
@@ -248,8 +253,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val userNotificationPickler    = generatePickler[UserNotification]
   implicit val guideConfigPickler         = generatePickler[GuideConfigUpdate]
   implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
-  implicit val timeProgressPickler =
-    transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
   implicit val observationProgressPickler = generatePickler[ObservationProgress]
   implicit val obsProgressPickler         = generatePickler[ObservationProgressEvent]
   implicit val acProgressPickler          = generatePickler[AlignAndCalibEvent]

@@ -6,13 +6,8 @@ package seqexec.server.gmos
 import cats._
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.data.NonEmptyList
 import cats.implicits._
 import cats.effect.Concurrent
-import gem.enum.LightSinkName
-import gsp.math.Angle
-import gsp.math.Offset
-import gsp.math.syntax.string._
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -20,17 +15,22 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import gem.enum.LightSinkName
+import gsp.math.Angle
+import gsp.math.Offset
+import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
-
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
+import seqexec.model.GmosParameters._
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
+import seqexec.server.gmos.GmosController._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.SiteDependentTypes
@@ -40,6 +40,7 @@ import seqexec.server.CleanConfig.extractItem
 import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
+import shapeless.tag
 
 abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
 (controller: GmosController[F, T], ss: SiteSpecifics[T])
@@ -153,7 +154,7 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
       .as(ConfigResult(this))
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
-    (Gmos.expTime[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
+    (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
       v / ns.exposureDivider.toDouble
     }
 
@@ -164,13 +165,6 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
 
 object Gmos {
   val name: String = INSTRUMENT_NAME_PROP
-
-  // The sequence of nod and shuffle is always BAAB,
-  // In principle we'd expect the OT to send the sequence but instead the
-  // sequence is hardcoded in the seqexec and we only read the positions from
-  // the OT
-  val NsSequence: NonEmptyList[NodAndShuffleStage] =
-    NonEmptyList.of(StageB, StageA, StageA, StageB)
 
   def rowsToShuffle(stage: NodAndShuffleStage, rows: Int): Int =
     if (stage === StageA) 0 else rows
@@ -224,7 +218,7 @@ object Gmos {
       rows   <- config.extractInstAs[JInt](DETECTOR_ROWS_PROP).map(_.toInt)
       sc     <- config.extractInstAs[JInt](NS_STEP_COUNT_PROP_NAME)
       pos    <- nsPosition(config, sc)
-    } yield NSConfig.NodAndShuffle(cycles, rows, pos)
+    } yield NSConfig.NodAndShuffle(tag[NsCyclesI][Int](cycles), tag[NsRowsI][Int](rows), pos, expTime(config))
 
   def nsConfig(config: CleanConfig): TrySeq[NSConfig] =
     (for {
@@ -238,12 +232,15 @@ object Gmos {
         nsConfig(config).getOrElse(NSConfig.NoNodAndShuffle)
       )
 
-  def expTime[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[Time] =
+  def expTime(config: CleanConfig): Time =
+    config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+      .map(v => Seconds(v.toDouble))
+      .getOrElse(Seconds(10000))
+
+  def expTimeF[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[Time] =
     ApplicativeError[F, Throwable]
       .catchNonFatal(
-        config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
-          .map(v => Seconds(v.toDouble))
-          .getOrElse(Seconds(10000))
+        expTime(config)
       )
 
   // It seems this is unused but it shows up on the DC apply config

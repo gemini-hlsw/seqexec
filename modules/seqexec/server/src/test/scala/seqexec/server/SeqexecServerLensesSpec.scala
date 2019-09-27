@@ -5,18 +5,24 @@ package seqexec.server
 
 import cats.Eq
 import cats.tests.CatsSuite
-import seqexec.model.enum.Instrument
-import seqexec.engine
-import SequenceGen._
+import edu.gemini.spModel.config2.{Config, ItemKey}
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
+import seqexec.model.enum.Instrument
+import seqexec.engine
 import seqexec.engine.{Action, ParallelActions}
+import SequenceGen._
 
 /**
   * Tests SeqexecServer Lenses
   */
 final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitraries with ArbObservation {
+
+  implicit val eqItemKeys: Eq[Map[ItemKey, AnyRef]] = Eq.fromUniversalEquals
+  implicit val eqLegacyConfig: Eq[Config] = Eq.fromUniversalEquals
+  implicit val eqCleanConfig: Eq[CleanConfig] =
+    Eq.by(x => (x.config, x.overrides))
 
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
   implicit def actStateEq[F[_]]: Eq[Action.State[F]] = Eq.fromUniversalEquals

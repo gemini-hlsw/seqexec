@@ -220,15 +220,6 @@ object StandardStep {
   )
 }
 
-@Lenses
-final case class NodAndShuffleStatus(observing: ActionStatus)
-
-object NodAndShuffleStatus {
-
-  implicit val equalNodAndShuffleStatus: Eq[NodAndShuffleStatus] =
-    Eq.by(x => (x.observing))
-}
-
 // Other kinds of Steps to be defined.
 @Lenses
 final case class NodAndShuffleStep(

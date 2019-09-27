@@ -21,6 +21,7 @@ import seqexec.model.arb.ArbStep._
 import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
+import seqexec.model.arb.ArbTime._
 import squants.time.Time
 
 /**

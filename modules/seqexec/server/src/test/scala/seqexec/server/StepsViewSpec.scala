@@ -310,7 +310,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
         case Some(s) => assertResult(Some(Action.ActionState.Started))(
-          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState(_))
         )
       }
     }).unsafeRunSync

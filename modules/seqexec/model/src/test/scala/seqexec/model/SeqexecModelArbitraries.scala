@@ -8,7 +8,6 @@ import java.util.UUID
 import gem.Observation
 import gem.arb.ArbEnumerated._
 import gem.arb.ArbObservation._
-import gsp.math.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
@@ -18,6 +17,7 @@ import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbTime._
 
 trait SeqexecModelArbitraries {
 
@@ -242,15 +242,6 @@ trait SeqexecModelArbitraries {
   implicit val timeUnitCogen: Cogen[TimeUnit] =
     Cogen[String]
       .contramap(_.symbol)
-
-  implicit val arbTime: Arbitrary[Time] =
-    Arbitrary {
-      arbSDuration.arbitrary.map(Time.apply)
-    }
-
-  implicit val timeCogen: Cogen[Time] =
-    Cogen[Long]
-      .contramap(_.millis)
 
   implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
     Arbitrary {

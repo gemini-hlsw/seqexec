@@ -94,18 +94,18 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
           i,
-          config.toStepConfig,
+          config,
           calcResources(sys),
           StepActionsGen(initialStepExecutions, configs, rest)
         )
         case StepState.Pending                   => SequenceGen.SkippedStepGen(
           i,
-          config.toStepConfig
+          config
         )
         // TODO: This case should be for completed Steps only. Fail when step status is unknown.
         case _                                   => SequenceGen.CompletedStepGen(
           i,
-          config.toStepConfig,
+          config,
           datasets.get(i + 1).map(_.filename).map(toImageFileId)
         )
       }

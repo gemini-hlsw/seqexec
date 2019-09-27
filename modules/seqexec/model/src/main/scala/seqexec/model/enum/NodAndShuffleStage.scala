@@ -3,6 +3,7 @@
 
 package seqexec.model.enum
 
+import cats.data.NonEmptyList
 import gem.util.Enumerated
 
 sealed trait NodAndShuffleStage extends Product with Serializable {
@@ -36,4 +37,12 @@ object NodAndShuffleStage {
   /** @group Typeclass Instances */
   implicit val NSStageEnumerated: Enumerated[NodAndShuffleStage] =
     Enumerated.of(StageA, StageB, StageC, StageD, StageE, StageF, StageG)
+
+  // The sequence of nod and shuffle is always BAAB,
+  // In principle we'd expect the OT to send the sequence but instead the
+  // sequence is hardcoded in the seqexec and we only read the positions from
+  // the OT
+  val NsSequence: NonEmptyList[NodAndShuffleStage] =
+    NonEmptyList.of(StageB, StageA, StageA, StageB)
+
 }

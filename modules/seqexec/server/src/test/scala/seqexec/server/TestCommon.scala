@@ -148,7 +148,7 @@ object TestCommon {
     instrument = Instrument.F2,
     steps = List(SequenceGen.PendingStepGen(
       id = 1,
-      config = Map(),
+      config = CleanConfig.empty,
       resources = Set.empty,
       generator = SequenceGen.StepActionsGen(
         pre = Nil,
@@ -166,7 +166,7 @@ object TestCommon {
         .range(1, n)
         .map(SequenceGen.PendingStepGen(
           _,
-          config = Map(),
+          config = CleanConfig.empty,
           resources = Set.empty,
           generator = SequenceGen.StepActionsGen(
             pre = Nil,
@@ -182,7 +182,7 @@ object TestCommon {
     steps = List(
       SequenceGen.PendingStepGen(
         id = 1,
-        config = Map(),
+        config = CleanConfig.empty,
         resources = resources,
         generator = SequenceGen.StepActionsGen(
           pre = Nil,
@@ -192,7 +192,7 @@ object TestCommon {
       ),
       SequenceGen.PendingStepGen(
         id = 2,
-        config = Map(),
+        config = CleanConfig.empty,
         resources = resources,
         generator = SequenceGen.StepActionsGen(
           pre = Nil,
