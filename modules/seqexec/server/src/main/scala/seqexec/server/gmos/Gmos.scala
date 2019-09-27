@@ -101,7 +101,9 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
       adc              <- config.extractInstAs[ADC](ADC_PROP)
       electronicOffset =  config.extractInstAs[UseElectronicOffset](USE_ELECTRONIC_OFFSETTING_PROP)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption))
+      obsType          <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
+      isDarkOrBias = List(DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE).exists(_ === obsType)
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption, isDarkOrBias))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GmosController.GmosConfig[T]] =

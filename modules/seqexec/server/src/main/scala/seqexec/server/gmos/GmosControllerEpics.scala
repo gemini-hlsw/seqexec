@@ -350,13 +350,18 @@ object GmosControllerEpics extends GmosEncoders {
           applyParam(state.nsState, encode(config.nsState), DC.setNsState)
         ).flattenOption
 
+      // Don't set CC if Dark or Bias
       private def ccParams(state: GmosCCEpicsState, config: Config[T]#CCConfig): List[IO[Unit]] =
-        (setFilters(state, config.filter) ++
+        if(config.isDarkOrBias) List.empty
+        else (
+          setFilters(state, config.filter) ++
           setDisperserParams(state, cfg, config.disperser) ++
           setFPU(state, cfg, config.fpu) ++
           List(setStage(state, config.stage),
             setDtaXOffset(state, config.dtaX),
-            setElectronicOffset(state, config.useElectronicOffset))).flattenOption
+            setElectronicOffset(state, config.useElectronicOffset)
+          )
+        ).flattenOption
 
       override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = retrieveState.flatMap { state =>
         val params = dcParams(state.dc, config.dc) ++
