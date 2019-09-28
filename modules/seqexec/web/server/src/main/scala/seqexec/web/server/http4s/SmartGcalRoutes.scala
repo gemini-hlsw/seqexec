@@ -3,39 +3,23 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import org.http4s._
-import org.http4s.dsl.io._
-
-import edu.gemini.spModel.core.Peer
-import edu.gemini.spModel.gemini.calunit.smartgcal.CalibrationProviderHolder
-import edu.gemini.spModel.smartgcal.provider.CalibrationProviderImpl
-import edu.gemini.spModel.smartgcal.repository.CalibrationUpdater
-import edu.gemini.spModel.smartgcal.repository.CalibrationFileCache
-import edu.gemini.spModel.smartgcal.repository.CalibrationRemoteRepository
-import java.nio.file.Paths
+import org.http4s.dsl.Http4sDsl
 
 /**
-  * Rest Endpoints for SmartGceal
+  * Rest Endpoints for SmartGcal
   */
-class SmartGcalRoutes(smartGCalHost: String, smartGCalLocation: String) {
+class SmartGcalRoutes[F[_]: Sync](cal: SmartGcal) extends Http4sDsl[F] {
 
-  val peer       = new Peer(smartGCalHost, 8443, edu.gemini.spModel.core.Site.GS)
-  val calService = new CalibrationRemoteRepository(peer.host, peer.port)
-  val cachedRepo = new CalibrationFileCache(Paths.get(smartGCalLocation).toFile)
-  val provider   = new CalibrationProviderImpl(cachedRepo)
-  CalibrationProviderHolder.setProvider(provider)
-  CalibrationUpdater.instance.addListener(provider)
-  CalibrationUpdater.instance.start(cachedRepo, calService, Int.MaxValue)
-
-  val publicService: HttpRoutes[IO] = HttpRoutes.of {
-
+  val publicService: HttpRoutes[F] = HttpRoutes.of {
+    // This route can be used to manually refresh smart gcal
+    // In practice a cronjob calls this route once a day
     case POST -> Root / "refresh" =>
-      IO(CalibrationUpdater.instance.updateNowInBackground()) *>
+      Sync[F].delay(cal.cal.updateNowInBackground()) *>
         Ok("Smart GCal Refresh started")
-
   }
 
-  def service: HttpRoutes[IO] = publicService
+  def service: HttpRoutes[F] = publicService
 }

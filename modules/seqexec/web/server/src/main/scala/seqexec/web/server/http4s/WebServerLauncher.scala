@@ -145,6 +145,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   /** Resource that yields the running web server */
   def webServer(
     as: AuthenticationService,
+    cal: SmartGcal,
     inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
@@ -179,7 +180,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, gcdb, giapiDb, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service,
-      "/smartgcal"            -> new SmartGcalRoutes(conf.smartGCalHost, conf.smartGCalLocation).service
+      "/smartgcal"            -> new SmartGcalRoutes[IO](cal).service
     )
 
     val loggedRoutes = Logger.httpRoutes(logHeaders = false, logBody = false)(router)
@@ -191,11 +192,12 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   }
 
   def redirectWebServer(
-    gcdb: GuideConfigDb[IO]
+    gcdb: GuideConfigDb[IO],
+    cal: SmartGcal
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
     val router = Router[IO](
       "/api/seqexec/guide" -> new GuideConfigDbRoutes(gcdb).service,
-      "/smartgcal"         -> new SmartGcalRoutes(conf.smartGCalHost, conf.smartGCalLocation).service,
+      "/smartgcal"         -> new SmartGcalRoutes[IO](cal).service,
       "/"                  -> new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service
     )
 
@@ -259,12 +261,12 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
     }
 
-  // Override the default client config
-  val clientConfig = new DefaultAsyncHttpClientConfig.Builder(AsyncHttpClient.defaultConfig)
-    .setRequestTimeout(5000) // Change the timeout to 5 seconds
-    .build()
+    // Override the default client config
+    val clientConfig = new DefaultAsyncHttpClientConfig.Builder(AsyncHttpClient.defaultConfig)
+      .setRequestTimeout(5000) // Change the timeout to 5 seconds
+      .build()
 
-  def giapiClients: Resource[IO, (GpiClient[IO], GhostClient[IO])] =
+    def giapiClients: Resource[IO, (GpiClient[IO], GhostClient[IO])] =
       for {
         cfg          <- Resource.liftF(config)
         ghostUrl     <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.ghostUrl")))
@@ -275,13 +277,13 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl)
       } yield (gpi, ghost)
 
-  def engineIO(
-    httpClient: Client[IO],
-    guideConfigDb: GuideConfigDb[IO],
-    gpi: GpiClient[IO],
-    ghost: GhostClient[IO],
-    collector: CollectorRegistry
-  ): Resource[IO, SeqexecEngine] =
+    def engineIO(
+      httpClient: Client[IO],
+      guideConfigDb: GuideConfigDb[IO],
+      gpi: GpiClient[IO],
+      ghost: GhostClient[IO],
+      collector: CollectorRegistry
+    ): Resource[IO, SeqexecEngine] =
       for {
         cfg  <- Resource.liftF(config)
         site <- Resource.liftF(IO(cfg.require[Site]("seqexec-engine.site")))
@@ -304,8 +306,9 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         as <- Resource.liftF(authService(ac))
         _  <- Resource.liftF(logStart.run(wc))
         _  <- Resource.liftF(logToClients(out))
-        _  <- redirectWebServer(gcdb)(wc)
-        _  <- webServer(as, in, out, et, gcdb, gpi.statusDb, cr, bec)(wc)
+        ca <- Resource.liftF(SmartGcalInitializer.init[IO](wc.smartGCalHost, wc.smartGCalLocation))
+        _  <- redirectWebServer(gcdb, ca)(wc)
+        _  <- webServer(as, ca, in, out, et, gcdb, gpi.statusDb, cr, bec)(wc)
       } yield ()
 
     val r: Resource[IO, ExitCode] =
