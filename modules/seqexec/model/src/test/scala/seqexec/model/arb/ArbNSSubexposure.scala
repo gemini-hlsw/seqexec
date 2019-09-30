@@ -4,21 +4,23 @@
 package seqexec.model.arb
 
 import org.scalacheck.Arbitrary
-import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
+import org.scalacheck.Gen
 import gem.arb.ArbEnumerated._
 import seqexec.model._
+import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum._
+import seqexec.model.GmosParameters._
+import shapeless.tag
 
 trait ArbNSSubexposure {
   implicit val nsSubexposureArb = Arbitrary[NSSubexposure] {
     for {
-      t  <- arbitrary[Int]
-      c  <- arbitrary[Int]
-      i  <- arbitrary[Int]
-      s  <- arbitrary[NodAndShuffleStage]
+      t  <- Gen.posNum[Int].map(tag[NsCyclesI][Int])
+      c  <- Gen.choose(0, t).map(tag[NsCyclesI][Int])
+      i  <- Gen.choose(0, NsSequence.length)
     } yield
-      new NSSubexposure(t, c, i , s)
+      NSSubexposure(t, c, i).getOrElse(NSSubexposure.Zero)
   }
 
   implicit val nsSubexposureCogen: Cogen[NSSubexposure] =
@@ -29,7 +31,7 @@ trait ArbNSSubexposure {
       NodAndShuffleStage
     )].contramap(
       s =>
-        (s.totalCycles, s.cycle, s.id, s.stage)
+        (s.totalCycles, s.cycle, s.stageIndex, s.stage)
     )
 
 }

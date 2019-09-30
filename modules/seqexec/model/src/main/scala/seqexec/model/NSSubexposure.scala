@@ -7,29 +7,42 @@ import cats.Eq
 import cats.implicits._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
+import seqexec.model.GmosParameters._
+import shapeless.tag
 
-final case class NSSubexposure(
-  totalCycles: Int,
-  cycle:       Int,
-  id:          Int,
-  stage:       NodAndShuffleStage
+final case class NSSubexposure private (
+  totalCycles: NsCycles, // Total amount of cycles for a N&S step
+  cycle:       NsCycles, // Cycle for this sub exposure
+  stageIndex:  Int,      // Nod or stage index (between 0 and 3)
+  stage:       NodAndShuffleStage // Subexposure stage
 ) {
-  val firstSubexposure = cycle === 0 && id === 0
-  val lastSubexposure  = cycle === totalCycles - 1 && id === NsSequence.length - 1
+  val firstSubexposure = (cycle: Int) === 0 && stageIndex === 0
+  val lastSubexposure  = (cycle: Int) === (totalCycles: Int) - 1 && stageIndex === NsSequence.length - 1
 }
 
 object NSSubexposure {
   implicit val eqNSSubexposure: Eq[NSSubexposure] =
-    Eq.by(x => (x.totalCycles, x.cycle, x.id, x.stage))
+    Eq.by(x => (x.totalCycles, x.cycle, x.stageIndex, x.stage))
+
+  val Zero: NSSubexposure = NSSubexposure(tag[NsCyclesI][Int](0), tag[NsCyclesI][Int](0), 0, StageA)
+
+  // Smart constructor returns a Some if the parameters are logically consistent
+  def apply(
+    totalCycles: NsCycles,
+    cycle:       NsCycles,
+    stageIndex:  Int
+  ): Option[NSSubexposure] =
+    if (totalCycles >= 0 && cycle >= 0 && cycle < totalCycles && stageIndex >= 0 && stageIndex < NsSequence.length) {
+      NSSubexposure(totalCycles, cycle, stageIndex, NsSequence.toList.lift(stageIndex).getOrElse(StageA)).some
+    } else none
 
   // Calculate the subexposures
   def subexposures(
-    cycles: Int
+    totalCycles: Int
   ): List[NSSubexposure] =
     (for {
-      i <- 0 until cycles
+      i <- 0 until totalCycles
       j <- 0 until NsSequence.length
-      stage = NsSequence.toList.lift(j).getOrElse(StageA)
-    } yield NSSubexposure(cycles, i, j, stage)).toList
+    } yield NSSubexposure(tag[NsCyclesI][Int](totalCycles), tag[NsCyclesI][Int](i), j)).toList.flatten
 
 }
