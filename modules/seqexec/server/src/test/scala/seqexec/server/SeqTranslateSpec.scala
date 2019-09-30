@@ -113,7 +113,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     ghostSim,
     NiriControllerSim.unsafeApply[IO],
     NifsControllerSim.unsafeApply[IO],
-    AltairControllerSim,
+    AltairControllerSim[IO],
     GemsControllerSim[IO],
     GuideConfigDb.constant[IO]
   )
