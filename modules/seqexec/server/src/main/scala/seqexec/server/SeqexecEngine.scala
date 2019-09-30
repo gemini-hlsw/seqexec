@@ -101,7 +101,7 @@ class SeqexecEngine(
       GhostController(ghost, ghostGDS),
       settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim.unsafeApply[IO]),
       settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim.unsafeApply[IO]),
-      (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
+      (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim[IO]),
       (settings.gemsControl.command && settings.tcsControl.command).fold(
         GemsControllerEpics(GemsEpics.instance, gsaoiController),
         GemsControllerSim[IO]
