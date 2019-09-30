@@ -233,7 +233,7 @@ object GmosControllerEpics extends GmosEncoders {
                                                                            cfg: GmosController.Config[T],
                                                                            d: GmosController.Config[T]#GmosDisperser)
   : List[Option[IO[Unit]]] = {
-    val set: List[Option[IO[Unit]]] = d match {
+    val params: List[Option[IO[Unit]]] = d match {
       case cfg.GmosDisperser.Mirror => List(setDisperser(state, cfg.mirror))
       case cfg.GmosDisperser.Order0(d) =>
         val s0: Option[IO[Unit]] = setDisperser(state, d)
@@ -262,7 +262,7 @@ object GmosControllerEpics extends GmosEncoders {
     }
 
     //If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways
-    if(set.exists(_.isDefined)) set :+ CC.setDisperserMode(disperserMode0).some
+    if(params.exists(_.isDefined)) params :+ CC.setDisperserMode(disperserMode0).some
     else List(applyParam(disperserModeDecode(state.disperserMode), disperserMode0, CC.setDisperserMode))
   }
 
