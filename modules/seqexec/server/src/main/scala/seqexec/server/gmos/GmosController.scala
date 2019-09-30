@@ -29,8 +29,6 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): F[Unit]
 
-  def setRowsToShuffle(rows: Int): F[Unit]
-
   def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   // endObserve is to notify the completion of the observation, not to cause its end.

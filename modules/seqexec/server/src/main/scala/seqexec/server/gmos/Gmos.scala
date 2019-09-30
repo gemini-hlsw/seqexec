@@ -149,10 +149,6 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  def configureShuffle(rows: Int): F[ConfigResult[F]] =
-    controller.setRowsToShuffle(rows)
-      .as(ConfigResult(this))
-
   override def calcObserveTime(config: CleanConfig): F[Time] =
     (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
       v / ns.exposureDivider.toDouble

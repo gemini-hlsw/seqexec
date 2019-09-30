@@ -11,7 +11,7 @@ import fs2.Stream
 import mouse.all._
 
 import scala.concurrent.ExecutionContext
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.GmosParameters._
@@ -60,6 +60,12 @@ trait GmosEncoders {
     case NodAndShuffleState.NodShuffle => "NOD_SHUFFLE"
   }
 
+  implicit val nsStateDecoder: DecodeEpicsValue[String, Option[NodAndShuffleState]] = DecodeEpicsValue{
+    case "CLASSIC"     => NodAndShuffleState.Classic.some
+    case "NOD_SHUFFLE" => NodAndShuffleState.NodShuffle.some
+    case _             => none
+  }
+
   implicit val exposureTimeEncoder: EncodeEpicsValue[ExposureTime, Int] = EncodeEpicsValue(_.toSeconds.toInt)
 
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] =
@@ -85,6 +91,8 @@ trait GmosEncoders {
   def disperserModeDecode(v: Int): String = if (v === 0) disperserMode0 else disperserMode1
 
 }
+
+object GmosEncoders extends GmosEncoders
 
 private[gmos] final case class GmosDCEpicsState(
   shutterState: String,
@@ -129,7 +137,6 @@ private[gmos] final case class GmosEpicsState(
 )
 
 object GmosControllerEpics extends GmosEncoders {
-  private val Log = getLogger
 
   // TODO make this a variable
   private val sys = GmosEpics.instance
@@ -317,11 +324,15 @@ object GmosControllerEpics extends GmosEncoders {
 
   val DhsConnected: String = "CONNECTED"
 
-  def apply[T <: GmosController.SiteDependentTypes](cfg: GmosController.Config[T])(implicit e: Encoders[T]): GmosController[IO, T] =
+  def apply[T <: GmosController.SiteDependentTypes](cfg: GmosController.Config[T])(
+    implicit e: Encoders[T],
+             L: Logger[IO]
+  ): GmosController[IO, T] =
     new GmosController[IO, T] {
+
       private def warnOnDHSNotConected: IO[Unit] =
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(IO.unit,
-          IO(Log.warn("GMOS is not connected to the DHS")))
+          L.warn("GMOS is not connected to the DHS"))
 
       private def dcParams(state: GmosDCEpicsState, config: DCConfig): List[IO[Unit]] =
         List(
@@ -363,78 +374,81 @@ object GmosControllerEpics extends GmosEncoders {
                      ccParams(state.cc, config.cc) ++
                      nsParams(state.ns, config.ns)
 
-        IO(Log.info("Start Gmos configuration")) *>
-          IO(Log.debug(s"Gmos configuration: ${config.show}")) *>
+        L.info("Start Gmos configuration") *>
+          L.debug(s"Gmos configuration: ${config.show}") *>
           warnOnDHSNotConected *>
           (params.sequence *>
             sys.configCmd.setTimeout[IO](ConfigTimeout) *>
             sys.post
           ).unlessA(params.isEmpty) *>
-          IO(Log.info("Completed Gmos configuration"))
+          L.info("Completed Gmos configuration")
       }
-
-      override def setRowsToShuffle(rows: Int): IO[Unit] =
-        IO(Log.debug(s"Set rows to shuffle to $rows")) *>
-          DC.setNsRows(rows) *>
-          sys.configCmd.setTimeout[IO](ConfigTimeout) *>
-          sys.post.void
 
       override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommandResult] =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
           sys.observeCmd.setTimeout[IO](expTime + ReadoutTimeout) *>
-          sys.observeCmd.post[IO]
+          sys.observeCmd.post[IO].flatMap {
+            case ObserveCommandResult.Paused =>
+              sys.nsState.map(GmosEncoders.nsStateDecoder.decode).map {
+                case Some(NodAndShuffleState.NodShuffle) =>
+                  ObserveCommandResult.Partial
+                case _ =>
+                  ObserveCommandResult.Paused
+                }
+            case x => x.pure[IO]
+          }
 
       private def failOnDHSNotConected: IO[Unit] =
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(IO.unit,
           IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS")))
 
       override def stopObserve: IO[Unit] =
-        IO(Log.info("Stop Gmos exposure")) *>
+        L.info("Stop Gmos exposure") *>
           sys.stopCmd.setTimeout[IO](DefaultTimeout)
           sys.stopCmd.mark[IO] *>
           sys.stopCmd.post[IO]
 
       override def abortObserve: IO[Unit] =
-        IO(Log.info("Abort Gmos exposure")) *>
+        L.info("Abort Gmos exposure") *>
           sys.abortCmd.setTimeout[IO](DefaultTimeout) *>
           sys.abortCmd.mark[IO] *>
           sys.abortCmd.post[IO].void
 
       override def endObserve: IO[Unit] =
-        IO(Log.debug("Send endObserve to Gmos")) *>
+        L.debug("Send endObserve to Gmos") *>
           sys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
           sys.endObserveCmd.mark[IO] *>
           sys.endObserveCmd.post[IO].void
 
       override def pauseObserve: IO[Unit] =
-        IO(Log.info("Send pause to Gmos")) *>
+        L.info("Send pause to Gmos") *>
           sys.pauseCmd.setTimeout[IO](DefaultTimeout) *>
           sys.pauseCmd.mark[IO] *>
           sys.pauseCmd.post[IO].void
 
       override def resumePaused(expTime: Time): IO[ObserveCommandResult] = for {
-        _   <- IO(Log.debug("Resume Gmos observation"))
+        _   <- L.debug("Resume Gmos observation")
         _   <- sys.continueCmd.setTimeout[IO](expTime + ReadoutTimeout)
         _   <- sys.continueCmd.mark[IO]
         ret <- sys.continueCmd.post[IO]
-        _   <- IO(Log.debug("Completed Gmos observation"))
+        _   <- L.debug("Completed Gmos observation")
       } yield ret
 
       override def stopPaused: IO[ObserveCommandResult] = for {
-        _   <- IO(Log.info("Stop Gmos paused observation"))
+        _   <- L.info("Stop Gmos paused observation")
         _   <- sys.pauseCmd.setTimeout[IO](DefaultTimeout)
         _   <- sys.stopAndWaitCmd.mark[IO]
         ret <- sys.stopAndWaitCmd.post[IO]
-        _   <- IO(Log.info("Completed stopping Gmos observation"))
+        _   <- L.info("Completed stopping Gmos observation")
       } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Stopped else ret
 
       override def abortPaused: IO[ObserveCommandResult] = for {
-        _   <- IO(Log.info("Abort Gmos paused observation"))
+        _   <- L.info("Abort Gmos paused observation")
         _   <- sys.abortAndWait.setTimeout[IO](DefaultTimeout)
         _   <- sys.abortAndWait.mark[IO]
         ret <- sys.abortAndWait.post[IO]
-        _   <- IO(Log.info("Completed aborting Gmos observation"))
+        _   <- L.info("Completed aborting Gmos observation")
       } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Aborted else ret
 
       override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {

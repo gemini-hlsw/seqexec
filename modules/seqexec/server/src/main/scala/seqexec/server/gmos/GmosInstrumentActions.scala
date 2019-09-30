@@ -105,50 +105,37 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
   def oneSubExposure(
     fileId:    ImageFileId,
     sub:       NSSubexposure,
-    rows:      Int,
     positions: Vector[NSPosition],
     env:       ObserveEnvironment[F],
     post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] = {
-    val rowsToShuffle = Gmos.rowsToShuffle(sub.stage, rows)
     val nsPositionO   = positions.find(_.stage === sub.stage)
-    // Configure GMOS rows
-    Stream
-      .eval(
-        inst
-          .configureShuffle(rowsToShuffle)
-          .as(Result.Partial(NSRowsConfigure))
-          .widen[Result[F]]
-          .safeResult
-      )
-      .merge(
-        // TCS Nod
-        (env.getTcs, nsPositionO).mapN {
-          case (tcs, nsPos) =>
-            Stream.eval(
-              tcs
-                .nod(
-                  sub.stage,
-                  InstrumentOffset(
-                    tag[OffsetP](nsPos.offset.p.toRadians.radians),
-                    tag[OffsetQ](nsPos.offset.q.toRadians.radians)
-                  ),
-                  nsPos.guide === Guiding.Guide
-                )
-                .as(Result.Partial(NSTCSNod))
-                .widen[Result[F]]
-                .safeResult
+    // TCS Nod
+    (env.getTcs, nsPositionO).mapN {
+      case (tcs, nsPos) =>
+        Stream.eval(
+          tcs
+            .nod(
+              sub.stage,
+              InstrumentOffset(
+                tag[OffsetP](nsPos.offset.p.toRadians.radians),
+                tag[OffsetQ](nsPos.offset.q.toRadians.radians)
+              ),
+              nsPos.guide === Guiding.Guide
             )
-        }.orEmpty
-      ) ++
-      // Observes for each subexposure
-      (if (sub.firstSubexposure) {
-         post(Stream.eval(initialObserve(fileId, env)), env)
-       } else if (sub.lastSubexposure) {
-         post(Stream.eval(lastObserve(fileId, env)), env)
-       } else {
-         post(Stream.eval(continueObserve(env)) ++ Stream .emit[F, Result[F]](Result.Partial(NSComplete)), env)
-       })
+            .as(Result.Partial(NSTCSNod))
+            .widen[Result[F]]
+            .safeResult
+        )
+    }.orEmpty ++
+    // Observes for each subexposure
+    (if (sub.firstSubexposure) {
+       post(Stream.eval(initialObserve(fileId, env)), env)
+     } else if (sub.lastSubexposure) {
+       post(Stream.eval(lastObserve(fileId, env)), env)
+     } else {
+       post(Stream.eval(continueObserve(env)) ++ Stream .emit[F, Result[F]](Result.Partial(NSComplete)), env)
+     })
   }
 
   private def doObserve(
@@ -161,13 +148,13 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
       .foldMap {
         case NSConfig.NoNodAndShuffle =>
           Stream.empty
-        case NSConfig.NodAndShuffle(cycles, rows, positions, _) =>
+        case NSConfig.NodAndShuffle(cycles, _, positions, _) =>
           // Initial notification of N&S Starting
           Stream.emit[F, Result[F]](Result.Partial(NSStart)) ++
             // each subexposure actions
             NSSubexposure.subexposures(cycles)
               .map {
-                oneSubExposure(fileId, _, rows, positions, env, post)
+                oneSubExposure(fileId, _, positions, env, post)
               }
               .reduceOption(_ ++ _)
               .orEmpty
