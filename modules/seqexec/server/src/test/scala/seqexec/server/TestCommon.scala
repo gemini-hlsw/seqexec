@@ -129,7 +129,7 @@ object TestCommon {
   val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, GuideConfigDb.constant[IO], defaultSettings, sm)
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
-    (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
+    advanceN(q, s0, put, 1L)
 
   def advanceN(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))

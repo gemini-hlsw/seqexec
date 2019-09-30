@@ -49,7 +49,7 @@ object Settings {
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
     val jwt                     = "2.1.0"
-    val slf4j                   = "1.7.26"
+    val slf4j                   = "1.7.28"
     val log4s                   = "1.8.2"
     val log4cats                = "1.0.0"
     val logback                 = "1.2.3"
@@ -57,9 +57,9 @@ object Settings {
     val logstash                = "6.2"
     val knobs                   = "7.0.24"
     val monocleVersion          = "2.0.0"
-    val circeVersion            = "0.12.0"
+    val circeVersion            = "0.12.1"
     val doobieVersion           = "0.6.0"
-    val flywayVersion           = "6.0.1"
+    val flywayVersion           = "6.0.4"
 
     // test libraries
     val scalaTest               = "3.0.5"

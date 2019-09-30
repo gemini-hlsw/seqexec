@@ -3,12 +3,13 @@
 
 package seqexec.server.gmos
 
-import cats.effect.{ IO, Timer }
+import cats.effect.{IO, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
 import fs2.Stream
 import mouse.all._
+
 import scala.concurrent.ExecutionContext
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
@@ -22,6 +23,7 @@ import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
+import shapeless.tag
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
@@ -50,6 +52,11 @@ trait GmosEncoders {
     case Order.ZERO => 0
     case Order.ONE  => 1
     case Order.TWO  => 2
+  }
+
+  implicit val nsStateEncoder: EncodeEpicsValue[NodAndShuffleState, String] = EncodeEpicsValue{
+    case NodAndShuffleState.Classic    => "CLASSIC"
+    case NodAndShuffleState.NodShuffle => "NOD_SHUFFLE"
   }
 
   implicit val exposureTimeEncoder: EncodeEpicsValue[ExposureTime, Int] = EncodeEpicsValue(_.toSeconds.toInt)
@@ -90,7 +97,9 @@ private[gmos] final case class GmosDCEpicsState(
 )
 
 private[gmos] final case class GmosNSEpicsState(
-  nsPairs: Int
+  nsPairs: NsPairs,
+  nsRows: NsRows,
+  nsState: String
 )
 
 private[gmos] final case class GmosCCEpicsState(
@@ -136,9 +145,8 @@ object GmosControllerEpics extends GmosEncoders {
     } yield GmosEpicsState(dc, cc, ns)
 
   private def retrieveNSState: IO[GmosNSEpicsState] =
-    for {
-      nsPairs <- sys.nsPairs
-    } yield GmosNSEpicsState(nsPairs)
+    (sys.nsPairs.map(tag[NsPairsI][Int]), sys.nsRows.map(tag[NsRowsI][Int]), sys.nsState)
+      .mapN(GmosNSEpicsState.apply)
 
   private def retrieveDCState: IO[GmosDCEpicsState] =
     for {
@@ -211,10 +219,8 @@ object GmosControllerEpics extends GmosEncoders {
   def setDisperser[T <: GmosController.SiteDependentTypes: Encoders](state: GmosCCEpicsState, d: T#Disperser): Option[IO[Unit]] = {
     val encodedVal = Encoders[T].disperser.encode(d)
     val s = applyParam(state.disperser.toUpperCase, encodedVal.toUpperCase, (_: String) => CC.setDisperser(encodedVal))
-    // Force setting if disperser is parked
-    s.orElse(
-      applyParam(state.disperserParked, false, (_: Boolean) => CC.setDisperser(encodedVal))
-    )
+    // Force setting if not set and disperser is parked
+    s.orElse(state.disperserParked.option(CC.setDisperser(encodedVal)))
   }
 
   def setOrder(state: GmosCCEpicsState, o: DisperserOrder): Option[IO[Unit]] =
@@ -223,47 +229,41 @@ object GmosControllerEpics extends GmosEncoders {
   def setWavelength(state: GmosCCEpicsState, w: Length): Option[IO[Unit]] =
     applyParam(state.disperserWavel, encode(w), CC.setDisperserLambda)
 
-  def setDisperserParams[T <: GmosController.SiteDependentTypes: Encoders](state: GmosCCEpicsState, cfg: GmosController.Config[T], d: GmosController.Config[T]#GmosDisperser): List[Option[IO[Unit]]] = {
-    val set: List[Option[IO[Unit]]] = d match {
-      case cfg.GmosDisperser.Mirror =>
-        val s: Option[IO[Unit]] = setDisperser(state, cfg.mirror)
-        //If disperser is set, force mode configuration
-        s.foldMap(_ => List(s, CC.setDisperserMode(disperserMode0).some))
+  def setDisperserParams[T <: GmosController.SiteDependentTypes: Encoders](state: GmosCCEpicsState,
+                                                                           cfg: GmosController.Config[T],
+                                                                           d: GmosController.Config[T]#GmosDisperser)
+  : List[Option[IO[Unit]]] = {
+    val params: List[Option[IO[Unit]]] = d match {
+      case cfg.GmosDisperser.Mirror => List(setDisperser(state, cfg.mirror))
       case cfg.GmosDisperser.Order0(d) =>
         val s0: Option[IO[Unit]] = setDisperser(state, d)
         // If disperser is set, force order configuration
-        val s: List[Option[IO[Unit]]] = if(s0.isEmpty) List(setOrder(state, Order.ZERO))
-                else CC.setDisperserOrder(disperserOrderEncoder.encode(Order.ZERO)).some :: List(s0)
-        //If disperser or order are set, force mode configuration
-        s.foldMap(_ => s ++ List(CC.setDisperserMode(disperserMode0).some))
+        if(s0.isEmpty) List(setOrder(state, Order.ZERO))
+        else CC.setDisperserOrder(disperserOrderEncoder.encode(Order.ZERO)).some :: List(s0)
       case cfg.GmosDisperser.OrderN(d, o, w) =>
         val s0: Option[IO[Unit]] = setDisperser(state, d) // None means disperser is already in the right position
-        val s: List[Option[IO[Unit]]] =
-          // If disperser is set, the order has to be set regardless of current value.
-          if (s0.isEmpty) {
-            List(
-              setOrder(state, o),
-              setWavelength(state, w)
-            )
-          } else {
-            List(
-              CC.setDisperserOrder(disperserOrderEncoder.encode(o)).some,
-              s0,
-              setWavelength(state, w)
-            )
-          }
+        // If disperser is set, the order has to be set regardless of current value.
+        if (s0.isEmpty) {
+          List(
+            setOrder(state, o),
+            setWavelength(state, w)
+          )
+        } else {
+          List(
+            CC.setDisperserOrder(disperserOrderEncoder.encode(o)).some,
+            s0,
+            setWavelength(state, w)
+          )
+        }
 
-        //If disperser, order or wavelength are set, force mode configuration
-        s.foldMap(_ => s ++ List(CC.setDisperserMode(disperserMode0).some))
       //TODO Improve data model to remove this case. It is here because search includes types of
       // both sites.
       case _                   => List.empty
     }
-    if (set.isEmpty) {
-      List(applyParam(disperserModeDecode(state.disperserMode), disperserMode0, CC.setDisperserMode))
-    } else {
-      set
-    }
+
+    //If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways
+    if(params.exists(_.isDefined)) params :+ CC.setDisperserMode(disperserMode0).some
+    else List(applyParam(disperserModeDecode(state.disperserMode), disperserMode0, CC.setDisperserMode))
   }
 
   def setFPU[T <: GmosController.SiteDependentTypes: Encoders](state: GmosCCEpicsState, cfg: GmosController.Config[T], cc: GmosFPU): List[Option[IO[Unit]]] = {
@@ -338,16 +338,24 @@ object GmosControllerEpics extends GmosEncoders {
 
       private def nsParams(state: GmosNSEpicsState, config: NSConfig): List[IO[Unit]] =
         List(
-          applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x))
+          applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x)),
+          applyParam(state.nsRows, config.nsRows, (x: Int) => DC.setNsRows(x)),
+          applyParam(state.nsState, encode(config.nsState), DC.setNsState)
         ).flattenOption
 
+      // Don't set CC if Dark or Bias
       private def ccParams(state: GmosCCEpicsState, config: Config[T]#CCConfig): List[IO[Unit]] =
-        (setFilters(state, config.filter) ++
+        if(config.isDarkOrBias) List.empty
+        else (
+          setFilters(state, config.filter) ++
           setDisperserParams(state, cfg, config.disperser) ++
           setFPU(state, cfg, config.fpu) ++
-          List(setStage(state, config.stage),
+          List(
+            setStage(state, config.stage),
             setDtaXOffset(state, config.dtaX),
-            setElectronicOffset(state, config.useElectronicOffset))).flattenOption
+            setElectronicOffset(state, config.useElectronicOffset)
+          )
+        ).flattenOption
 
       override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = retrieveState.flatMap { state =>
         val params = dcParams(state.dc, config.dc) ++
