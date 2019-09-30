@@ -211,6 +211,14 @@ object actions {
     case i: NodAndShuffleStep => (i.id, i.status, i.configStatus, i.nsStatus)
   }
 
+  private object Printer {
+    private val pprinter: PPrinter =
+      PPrinter(defaultHeight = Int.MaxValue, colorApplyPrefix = fansi.Color.Blue)
+
+    def apply(x: Any): String =
+      fansi.Str.join(pprinter.tokenize(x, initialOffset = 4).toSeq:_*).toString
+  }
+
   implicit val show: Show[Action] = Show.show {
     case FlipBreakpointStep(oid, st) =>
       s"FlipBreakpointStep(${oid.format}, ${st.id})"
