@@ -19,6 +19,7 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.tcs.TcsController._
 import seqexec.server.{EpicsCommand, SeqexecFailure}
+import squants.time.TimeConversions._
 
 /**
  * Base implementation of an Epics TcsController
@@ -487,6 +488,10 @@ object TcsControllerEpicsCommon {
     override def applyBasicConfig(subsystems: NonEmptySet[Subsystem], tcs: BasicTcsConfig): F[Unit] = {
       def sysConfig(current: BaseEpicsTcsConfig): F[BaseEpicsTcsConfig] = {
         val params = configBaseParams(subsystems, current, tcs)
+        val stabilizationTime = tcs.tc.offsetA
+          .map(TcsSettleTimeCalculator.calc(current.instrumentOffset, _, subsystems, tcs.inst.instrument))
+          .getOrElse(0.seconds)
+
 
         if(params.nonEmpty)
           for {
@@ -494,7 +499,7 @@ object TcsControllerEpicsCommon {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Sync[F].unit

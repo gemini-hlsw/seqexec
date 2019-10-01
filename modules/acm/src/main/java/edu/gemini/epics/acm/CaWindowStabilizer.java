@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class CaWindowStabilizer<T> implements CaAttribute<T> {
 
     private final CaAttribute<T> sa;
-    private final Duration settleTime;
+    private Duration settleTime;
     private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final CaAttributeListener<T> valListener;
@@ -147,16 +147,20 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
         notifier.removeListener(listener);
     }
 
-    public CaWindowStabilizer<T> reset() {
+    public CaWindowStabilizer<T> restart(Duration settleTime) {
         filteredVal = null;
         //Restart the timer
         if (timeoutFuture != null) {
             timeoutFuture.cancel(true);
         }
+        this.settleTime = settleTime;
         timeoutFuture = executor.schedule(() -> CaWindowStabilizer.this.onTimeout(),
             settleTime.toMillis(), TimeUnit.MILLISECONDS);
 
         return this;
+    }
+    public CaWindowStabilizer<T> restart() {
+        return restart(settleTime);
     }
 
 }

@@ -198,10 +198,10 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   private val guideTimeout = 5.seconds
   def waitForGuideOn: F[Unit] =
-    Async[F].delay(filteredNotGuidingAttr.reset)
+    Async[F].delay(filteredNotGuidingAttr.restart)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 0, guideTimeout, "ODGW guide flag"))
   def waitForGuideOff: F[Unit] =
-    Async[F].delay(filteredNotGuidingAttr.reset)
+    Async[F].delay(filteredNotGuidingAttr.restart)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 1, guideTimeout, "ODGW guide flag"))
 
   def odgwBaseExpTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("baseExpTime"))

@@ -28,6 +28,7 @@ import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import shapeless.tag.@@
 import squants.space.Arcseconds
+import squants.time.TimeConversions._
 
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(subsystems: NonEmptySet[Subsystem],
@@ -100,6 +101,10 @@ object TcsNorthControllerEpicsAo {
 
       def sysConfig(current: EpicsTcsAoConfig): F[EpicsTcsAoConfig] = {
         val params = configParams(current)
+        val stabilizationTime = tcs.tc.offsetA
+          .map(TcsSettleTimeCalculator.calc(current.base.instrumentOffset, _, subsystems, tcs.inst.instrument))
+          .getOrElse(0.seconds)
+
 
         if(params.nonEmpty)
           for {
@@ -107,7 +112,7 @@ object TcsNorthControllerEpicsAo {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit

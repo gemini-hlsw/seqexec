@@ -380,19 +380,23 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("oi", tcsState)
 
-  private val tcsStabilizeTime = 1.seconds
+  private val defaultTcsStabilizeTime = 1.seconds
 
-  private val filteredInPositionAttr: CaWindowStabilizer[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
-  def filteredInPosition:F[String] = safeAttributeF(filteredInPositionAttr)
+  private val filteredInPositionAttr: CaWindowStabilizer[String] =
+    new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(defaultTcsStabilizeTime.toMillis))
+
 
   // This functions returns a SeqAction that, when run, will wait up to `timeout`
   // seconds for the TCS in-position flag to set to TRUE
-  def waitInPosition(timeout: Time): F[Unit] = Sync[F].delay(filteredInPositionAttr.reset)
-    .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
+  def waitInPosition(stabilizationTime: Time, timeout: Time): F[Unit] =
+    Sync[F].delay(filteredInPositionAttr.restart(java.time.Duration.ofMillis(stabilizationTime.toMillis)))
+      .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
 
   private val agStabilizeTime = 1.seconds
 
-  private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+  private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] =
+    new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+
   def filteredAGInPosition: F[Double] = safeAttributeSDoubleF(filteredAGInPositionAttr)
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
@@ -401,7 +405,7 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
    */
   private val AGSettleTime = 1100.milliseconds
   def waitAGInPosition(timeout: Time): F[Unit] = Sync[F].delay(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
-    Sync[F].delay(filteredAGInPositionAttr.reset).flatMap(
+    Sync[F].delay(filteredAGInPositionAttr.restart).flatMap(
       waitForValueF[java.lang.Double, F](_, 1.0, timeout, "AG inposition flag"))
 
   def hourAngle: F[String] = safeAttributeF(tcsState.getStringAttribute("ha"))

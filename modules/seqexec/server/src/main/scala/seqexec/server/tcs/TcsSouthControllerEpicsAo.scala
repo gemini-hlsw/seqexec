@@ -23,6 +23,7 @@ import seqexec.server.tcs.GemsSource._
 import seqexec.server.tcs.TcsController.{AoGuidersConfig, AoTcsConfig, GuiderConfig, GuiderSensorOff, GuiderSensorOption, ProbeTrackingConfig, Subsystem, wavelengthEq}
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, VirtualGemsTelescope}
 import seqexec.server.tcs.TcsSouthController.{GemsGuiders, TcsSouthAoConfig}
+import squants.time.TimeConversions._
 
 /**
  * Controller of Gemini's South AO system over epics
@@ -330,6 +331,9 @@ object TcsSouthControllerEpicsAo {
 
       def sysConfig(current: EpicsTcsAoConfig): F[EpicsTcsAoConfig] = {
         val params = configParams(current)
+        val stabilizationTime = tcs.tc.offsetA
+          .map(TcsSettleTimeCalculator.calc(current.base.instrumentOffset, _, subsystems, tcs.inst.instrument))
+          .getOrElse(0.seconds)
 
         if(params.nonEmpty)
           for {
@@ -337,7 +341,7 @@ object TcsSouthControllerEpicsAo {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime , tcsTimeout) *> L.info("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit
