@@ -8,22 +8,19 @@ import cats.data.NonEmptyList
 import seqexec.model.ActionType
 import seqexec.model.Step
 import seqexec.model.StandardStep
-import seqexec.model.NodAndShuffleStep
-import seqexec.model.NodAndShuffleStatus
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Instrument._
-import seqexec.model.enum.SystemName
 import seqexec.model.StepState
 import seqexec.engine
 import seqexec.engine.Action.ActionState
 import seqexec.engine.Action
 import seqexec.engine.ParallelActions
-import seqexec.server.gmos.Gmos
+import seqexec.server.gmos.GmosStepsView
 
-sealed trait StepsView[F[_]] {
+trait StepsView[F[_]] {
   /**
    * This method creates a view of the step for the client
    * The Step returned maybe a StandardStep of be specialized e.g. for N&S
@@ -96,7 +93,7 @@ object StepsView {
   /**
    * Overall pending status for a step
    */
-  private def stepConfigStatus[F[_]](step: engine.Step[F]): List[(Resource, ActionStatus)] =
+  def stepConfigStatus[F[_]](step: engine.Step[F]): List[(Resource, ActionStatus)] =
     engine.Step.status(step) match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)
@@ -106,23 +103,23 @@ object StepsView {
     // FIXME This is too naive and doesn't work properly for N&S
     executions.flatMap(_.toList).filter(_.kind === ActionType.Observe).headOption
 
-  private[server] def observeStatus[F[_]](executions: List[ParallelActions[F]]): ActionStatus =
+  def observeStatus[F[_]](executions: List[ParallelActions[F]]): ActionStatus =
     observeAction(executions)
       .map(_.state.runState.actionStatus)
       .getOrElse(ActionStatus.Pending)
 
-  private def fileId[F[_]](executions: List[engine.ParallelActions[F]]): Option[ImageFileId] =
+  def fileId[F[_]](executions: List[engine.ParallelActions[F]]): Option[ImageFileId] =
     observeAction(executions).flatMap(_.state.partials.collectFirst{
       case FileIdAllocated(fid) => fid
     })
 
-  private def runningOrComplete[F[_]](status: StepState): Boolean =
+  def runningOrComplete[F[_]](status: StepState): Boolean =
     status match {
       case StepState.Completed | StepState.Running => true
       case _                                       => false
     }
 
-  private def defaultStepsView[F[_]]: StepsView[F] = new StepsView[F] {
+  def defaultStepsView[F[_]]: StepsView[F] = new StepsView[F] {
     def stepView(
       stepg: SequenceGen.StepGen[F],
       step: engine.Step[F],
@@ -138,7 +135,7 @@ object StepsView {
 
       StandardStep(
         id = step.id,
-        config = stepg.config,
+        config = stepg.config.toStepConfig,
         status = status,
         breakpoint = step.breakpoint.self,
         skip = step.skipMark.self,
@@ -151,40 +148,8 @@ object StepsView {
 
   }
 
-  private def gmosStepsView[F[_]]: StepsView[F] = new StepsView[F] {
-    def stepView(
-      stepg: SequenceGen.StepGen[F],
-      step: engine.Step[F],
-      altCfgStatus: List[(Resource, ActionStatus)]
-    ): Step = {
-      // Not nice, At this stage we only have the raw config
-      if (stepg.config.get(SystemName.Instrument).exists(_.get(Gmos.NSKey.getPath).exists(_ === "true"))) {
-        val status = engine.Step.status(step)
-        val configStatus =
-          if (runningOrComplete(status)) {
-            stepConfigStatus(step)
-          } else {
-            altCfgStatus
-          }
-
-        NodAndShuffleStep(
-          id = step.id,
-          config = stepg.config,
-          status = status,
-          breakpoint = step.breakpoint.self,
-          skip = step.skipMark.self,
-          configStatus = configStatus,
-          nsStatus = NodAndShuffleStatus(observeStatus(step.executions)),
-          fileId = fileId(step.executions).orElse(stepg.some.collect{
-            case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
-          }.flatten))
-      } else defaultStepsView.stepView(stepg, step, altCfgStatus)
-    }
-
-  }
-
   def stepsView[F[_]](instrument: Instrument): StepsView[F] = instrument match {
-    case GmosN | GmosS => gmosStepsView[F]
+    case GmosN | GmosS => GmosStepsView.stepsView[F]
     case _ => defaultStepsView[F]
   }
 }

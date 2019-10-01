@@ -27,7 +27,7 @@ object Handle {
 
   implicit def handlePMonad[F[_]: Monad, D, V]: Monad[Handle[F, D, V, ?]] = new Monad[Handle[F, D, V, ?]] {
     private def concatOpP(op1: Option[Stream[F, V]],
-                                op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
+                          op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
       case (None, None) => None
       case (Some(p1), None) => Some(p1)
       case (None, Some(p2)) => Some(p2)

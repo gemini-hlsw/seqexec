@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats.implicits._
-import edu.gemini.spModel.config2.{Config, ItemEntry, ItemKey}
+import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.{ARC_OBSERVE_TYPE, FLAT_OBSERVE_TYPE, OBSERVE_TYPE_PROP, BIAS_OBSERVE_TYPE}
@@ -18,7 +18,7 @@ import seqexec.model.enum.SystemName
  * It is used to correct some inconsistencies in the sequences coming from the ODB. It has only one of those corrections
  * now, but it allows for more to be added in the future.
  */
-class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
+final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
   //Check that every value in overrides can be assigned instead of the value in config
   private def checkTypes: Boolean =
     overrides.forall{ case (k, v) => Option(config.getItemValue(k)).forall(_.getClass.isAssignableFrom(v.getClass))}
@@ -53,6 +53,9 @@ object CleanConfig {
   implicit val extractItem: ExtractItem[CleanConfig] = (a: CleanConfig, key: ItemKey) => a.itemValue(key)
 
   type ConfigWiper = Config => Map[ItemKey, AnyRef]
+
+  // We want a new one each time this is called as the underlying Config is mutable
+  def empty: CleanConfig = apply(new DefaultConfig())
 
   // The only check right now. GMOS arcs, flats and biases in a N&S sequence have shuffle parameters, even if that is
   // not supported. The shuffling is automatically disabled by setting the useNS flag to false.

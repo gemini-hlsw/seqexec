@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.GmosParameters._
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.EpicsUtil._
 import seqexec.server.InstrumentSystem.ElapsedTime

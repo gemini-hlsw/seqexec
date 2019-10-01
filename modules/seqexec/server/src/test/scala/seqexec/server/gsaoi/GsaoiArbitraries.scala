@@ -12,8 +12,7 @@ import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import shapeless.tag
 import seqexec.server.gsaoi.GsaoiController._
-import seqexec.model.SeqexecModelArbitraries.arbTime
-import seqexec.model.SeqexecModelArbitraries.timeCogen
+import seqexec.model.arb.ArbTime._
 
 trait GsaoiArbitraries {
 

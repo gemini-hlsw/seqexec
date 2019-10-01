@@ -9,10 +9,10 @@ import cats.effect.Concurrent
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs._
-import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.NSSubexposure
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
 import seqexec.server._
@@ -24,16 +24,6 @@ import seqexec.server.tcs.TcsController.OffsetP
 import seqexec.server.tcs.TcsController.OffsetQ
 import shapeless.tag
 import squants.space.AngleConversions._
-
-final case class Subexposure(
-  totalCycles: Int,
-  cycle:       Int,
-  id:          Int,
-  stage:       NodAndShuffleStage
-) {
-  val firstSubexposure = cycle === 0 && id === 0
-  val lastSubexposure  = cycle === totalCycles - 1 && id === Gmos.NsSequence.length - 1
-}
 
 /**
   * Gmos needs different actions for N&S
@@ -109,22 +99,12 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
       .widen[Result[F]]
       .safeResult
 
-  // Calculate the subexposures
-  private def subexposures(
-    cycles: Int
-  ): List[Subexposure] =
-    (for {
-      i <- 0 until cycles
-      j <- 0 until Gmos.NsSequence.length
-      stage = Gmos.NsSequence.toList.lift(j).getOrElse(StageA)
-    } yield Subexposure(cycles, i, j, stage)).toList
-
   /**
     * Stream of actions of one sub exposure
     */
   def oneSubExposure(
     fileId:    ImageFileId,
-    sub:       Subexposure,
+    sub:       NSSubexposure,
     rows:      Int,
     positions: Vector[NSPosition],
     env:       ObserveEnvironment[F],
@@ -181,11 +161,11 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
       .foldMap {
         case NSConfig.NoNodAndShuffle =>
           Stream.empty
-        case NSConfig.NodAndShuffle(cycles, rows, positions) =>
+        case NSConfig.NodAndShuffle(cycles, rows, positions, _) =>
           // Initial notification of N&S Starting
           Stream.emit[F, Result[F]](Result.Partial(NSStart)) ++
             // each subexposure actions
-            subexposures(cycles)
+            NSSubexposure.subexposures(cycles)
               .map {
                 oneSubExposure(fileId, _, rows, positions, env, post)
               }

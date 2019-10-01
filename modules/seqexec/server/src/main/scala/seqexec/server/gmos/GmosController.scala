@@ -15,13 +15,13 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage
+import seqexec.model.GmosParameters._
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server._
 import squants.{Length, Time}
-import shapeless.tag.@@
 import shapeless.tag
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
@@ -53,17 +53,6 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 }
 
 object GmosController {
-  trait NsPairsI
-  trait NsRowsI
-  trait NsExposureDividerI
-
-  type NsPairs           = Int @@ NsPairsI
-  type NsRows            = Int @@ NsRowsI
-  type NsExposureDivider = Int @@ NsExposureDividerI
-
-  implicit val nsPairsEq: Eq[NsPairs] = Eq.by(x => x: Int)
-  implicit val nsRowsEq: Eq[NsRows] = Eq.by(x => x: Int)
-
   sealed abstract class Config[T<:SiteDependentTypes] {
     import Config._
 
@@ -179,13 +168,18 @@ object GmosController {
       }
 
       final case class NodAndShuffle(
-        cycles: Int,
-        rows: Int,
-        positions: Vector[NSPosition]) extends NSConfig {
-        val nsPairs = tag[NsPairsI][Int](cycles * Gmos.NsSequence.length / 2)
-        val nsRows = tag[NsRowsI][Int](Gmos.rowsToShuffle(Gmos.NsSequence.head, rows))
+        cycles: NsCycles,
+        rows: NsRows,
+        positions: Vector[NSPosition],
+        exposureTime: Time) extends NSConfig {
+        val nsPairs = tag[NsPairsI][Int](cycles * NodAndShuffleStage.NsSequence.length / 2)
+        val nsRows = tag[NsRowsI][Int](Gmos.rowsToShuffle(NodAndShuffleStage.NsSequence.head, rows))
         val exposureDivider = tag[NsExposureDividerI][Int](2)
         val nsState = NodAndShuffleState.NodShuffle
+        val totalExposureTime: Time =
+          cycles * exposureTime / exposureDivider.toDouble
+        val nodExposureTime: Time =
+          exposureTime / exposureDivider.toDouble
       }
     }
 
