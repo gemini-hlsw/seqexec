@@ -13,6 +13,7 @@ import gem.util.Enumerated
 import java.time.Instant
 import seqexec.model._
 import seqexec.model.enum._
+import seqexec.model.GmosParameters._
 import seqexec.model.events._
 import seqexec.model.dhs._
 import shapeless.tag
@@ -124,6 +125,16 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val imageIdPickler = transformPickler((s: String) => tag[ImageFileIdT](s))(identity)
   implicit val standardStepPickler = generatePickler[StandardStep]
   implicit def taggedIntPickler[A]: Pickler[Int @@ A] = transformPickler((s: Int) => tag[A](s))(identity)
+  implicit val nsStagePickler = enumeratedPickler[NodAndShuffleStage]
+  implicit val nsActionPickler = enumeratedPickler[NSAction]
+  implicit val nsSubexposurePickler: Pickler[NSSubexposure] =
+    transformPickler[NSSubexposure, (NsCycles, NsCycles, Int)]{
+      case ((t: NsCycles, c: NsCycles, i: Int)) =>
+        NSSubexposure
+          .apply(t, c, i)
+          .getOrElse(throw new RuntimeException("Failed to decode ns subexposure"))
+        }((ns: NSSubexposure) => (ns.totalCycles, ns.cycle, ns.stageIndex))
+  implicit val nsRunningStatePickler = generatePickler[NSRunningState]
   implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
   implicit val nsStepPickler = generatePickler[NodAndShuffleStep]
 

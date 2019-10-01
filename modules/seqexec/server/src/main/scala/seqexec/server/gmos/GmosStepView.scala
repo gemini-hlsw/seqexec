@@ -9,6 +9,7 @@ import seqexec.model.enum._
 import seqexec.engine
 import seqexec.server._
 import seqexec.server.gmos.GmosController.Config._
+import mouse.all._
 
 final class GmosStepsView[F[_]] extends StepsView[F] {
   def stepView(
@@ -25,6 +26,20 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
           } else {
             altCfgStatus
           }
+        val runningState = (status === StepState.Running).option {
+          val nsPartials = step.executions
+            .filter {
+              case l => l.count(_.kind === ActionType.Observe) > 0
+            }
+            .foldMap(_.foldMap(_.state.partials))
+            .filter {
+              case _: NSPartial => true
+              case _            => false
+            }
+          nsPartials.headOption.map {
+            case NSPartial(act, sub) => NSRunningState(act, sub)
+          }
+        }
 
         NodAndShuffleStep(
           id           = step.id,
@@ -37,7 +52,8 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
             NodAndShuffleStatus(StepsView.observeStatus(step.executions),
                                 e.totalExposureTime,
                                 e.nodExposureTime,
-                                c),
+                                c,
+                                runningState.flatten),
           fileId = StepsView
             .fileId(step.executions)
             .orElse(stepg.some.collect {

@@ -32,6 +32,8 @@ import seqexec.model.NodAndShuffleStep
 import seqexec.model.NodAndShuffleStatus
 import seqexec.model.SequenceState
 import seqexec.model.RunningStep
+import seqexec.model.NSSubexposure
+import seqexec.model.NSRunningState
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
@@ -500,6 +502,10 @@ object StepsTable extends Columns {
 
   val stdStepReuse: Reusability[StandardStep] =
     Reusability.caseClassExcept('config)
+  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
+    Reusability.derive[NSSubexposure]
+  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
+    Reusability.derive[NSRunningState]
   implicit val nsStatus: Reusability[NodAndShuffleStatus] =
     Reusability.derive[NodAndShuffleStatus]
   val nsStepReuse: Reusability[NodAndShuffleStep] =

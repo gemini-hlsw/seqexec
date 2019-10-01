@@ -328,11 +328,9 @@ object Sequence {
         GenLens[Zipper[F]](_.zipper)
 
       override def mark(i: Int)(r: Result[F]): State[F] = {
-
         val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
         currentExecutionL.modify(_.mark(i)(r))(self)
-
       }
 
       override def start(i: Int): State[F] = {
@@ -340,7 +338,6 @@ object Sequence {
         val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
         currentExecutionL.modify(_.start(i))(self).clearSingles
-
       }
 
       // Some rules:

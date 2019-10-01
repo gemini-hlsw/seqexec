@@ -21,6 +21,8 @@ import seqexec.model.arb.ArbStep._
 import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
+import seqexec.model.arb.ArbNSSubexposure._
+import seqexec.model.arb.ArbNSRunningState._
 import seqexec.model.arb.ArbTime._
 import squants.time.Time
 
@@ -87,8 +89,12 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
   checkAll("Pickler[StepState]", PicklerTests[StepState].pickler)
   checkAll("Pickler[ActionStatus]", PicklerTests[ActionStatus].pickler)
   checkAll("Pickler[StandardStep]", PicklerTests[StandardStep].pickler)
+  checkAll("Pickler[NodAndShuffleStage]", PicklerTests[NodAndShuffleStage].pickler)
+  checkAll("Pickler[NSSubexposure]", PicklerTests[NSSubexposure].pickler)
+  checkAll("Pickler[NSAction]", PicklerTests[NSAction].pickler)
   checkAll("Pickler[NodAndShuffleStatus]", PicklerTests[NodAndShuffleStatus].pickler)
   checkAll("Pickler[NodAndShuffleStep]", PicklerTests[NodAndShuffleStep].pickler)
+  checkAll("Pickler[NSRunningState]", PicklerTests[NSRunningState].pickler)
   checkAll("Pickler[Step]", PicklerTests[Step].pickler)
   checkAll("Pickler[QueueId]", PicklerTests[QueueId].pickler)
   checkAll("Pickler[Time]", PicklerTests[Time].pickler)

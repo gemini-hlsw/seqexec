@@ -32,7 +32,7 @@ object NSSubexposure {
     cycle:       NsCycles,
     stageIndex:  Int
   ): Option[NSSubexposure] =
-    if (totalCycles >= 0 && cycle >= 0 && cycle < totalCycles && stageIndex >= 0 && stageIndex < NsSequence.length) {
+    if (totalCycles >= 0 && cycle >= 0 && cycle <= totalCycles && stageIndex >= 0 && stageIndex < NsSequence.length) {
       NSSubexposure(totalCycles, cycle, stageIndex, NsSequence.toList.lift(stageIndex).getOrElse(StageA)).some
     } else none
 

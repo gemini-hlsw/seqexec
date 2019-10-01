@@ -7,6 +7,9 @@ import seqexec.engine.Result.PartialVal
 import seqexec.model.dhs.ImageFileId
 import squants.Time
 
+// Marker trait for partials that won't result on a client message
+trait InternalPartialVal extends PartialVal
+
 final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
 final case class RemainingTime(self: Time) extends AnyVal
 final case class Progress(total: Time, remaining: RemainingTime) extends PartialVal {

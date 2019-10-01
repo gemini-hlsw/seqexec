@@ -56,7 +56,7 @@ object GmosController {
 
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
-    sealed trait GmosDisperser
+    sealed trait GmosDisperser extends Product with Serializable
     object GmosDisperser {
       case object Mirror extends GmosDisperser
       case class Order0(disperser: T#Disperser) extends GmosDisperser

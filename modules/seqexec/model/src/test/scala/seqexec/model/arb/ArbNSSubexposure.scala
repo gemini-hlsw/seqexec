@@ -18,7 +18,7 @@ trait ArbNSSubexposure {
     for {
       t  <- Gen.posNum[Int].map(tag[NsCyclesI][Int])
       c  <- Gen.choose(0, t).map(tag[NsCyclesI][Int])
-      i  <- Gen.choose(0, NsSequence.length)
+      i  <- Gen.choose(0, NsSequence.length - 1)
     } yield
       NSSubexposure(t, c, i).getOrElse(NSSubexposure.Zero)
   }

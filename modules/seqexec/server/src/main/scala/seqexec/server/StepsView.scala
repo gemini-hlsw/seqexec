@@ -41,7 +41,7 @@ object StepsView {
   def splitAfter[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p) + 1)
 
-  private[server] def separateActions[F[_]](ls: NonEmptyList[Action[F]]): (List[Action[F]], List[Action[F]]) =
+  def separateActions[F[_]](ls: NonEmptyList[Action[F]]): (List[Action[F]], List[Action[F]]) =
     ls.toList.partition(_.state.runState match {
         case ActionState.Completed(_) => false
         case ActionState.Failed(_)    => false
@@ -49,7 +49,7 @@ object StepsView {
       }
     )
 
-  private def actionsToResources[F[_]](s: NonEmptyList[Action[F]]) =
+  def actionsToResources[F[_]](s: NonEmptyList[Action[F]]): (List[Resource], List[Resource]) =
     separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
 
   private[server] def configStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] = {

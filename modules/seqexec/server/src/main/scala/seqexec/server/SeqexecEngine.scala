@@ -851,13 +851,15 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState): SeqexecEvent = {
     val sequences = qState.sequences.values.map(viewSequence).toList
-    val svs = SequencesQueue(
+    // Building the view is a relatively expensive operation
+    // By putting it into a def we only incur that cost if the message requires it
+    def svs =
+      SequencesQueue(
       EngineState.selected.get(qState),
       EngineState.conditions.get(qState),
       EngineState.operator.get(qState),
       executionQueueViews(qState),
-      sequences
-    )
+      sequences)
 
     ev match {
       case UserCommandResponse(ue, _, uev) => ue match {
@@ -882,6 +884,7 @@ object SeqexecEngine extends SeqexecConfiguration {
         // TODO: Sequence completed event not emitted by engine.
         case SystemEvent.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
         case SystemEvent.StopCompleted(id, _, _, _)                               => SequenceStopped(id, svs)
+        case SystemEvent.PartialResult(_, _, _, Partial(_: InternalPartialVal))   => NullEvent
         case SystemEvent.PartialResult(i, s, _, Partial(Progress(t, r)))          =>
           ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
         case SystemEvent.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>

@@ -10,16 +10,24 @@ import seqexec.model.GmosParameters._
 import monocle.macros.Lenses
 import squants.Time
 
+final case class NSRunningState(action: NSAction, sub: NSSubexposure)
+
+object NSRunningState {
+  implicit val equalNSRunningState: Eq[NSRunningState] =
+    Eq.by(x => (x.action, x.sub))
+}
+
 @Lenses
 final case class NodAndShuffleStatus(
   observing: ActionStatus,
   totalExposureTime: Time,
   nodExposureTime: Time,
-  cycles: NsCycles
+  cycles: NsCycles,
+  state: Option[NSRunningState]
 )
 
 object NodAndShuffleStatus {
 
   implicit val equalNodAndShuffleStatus: Eq[NodAndShuffleStatus] =
-    Eq.by(x => (x.observing, x.totalExposureTime, x.nodExposureTime, x.cycles))
+    Eq.by(x => (x.observing, x.totalExposureTime, x.nodExposureTime, x.cycles, x.state))
 }

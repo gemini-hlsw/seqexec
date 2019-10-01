@@ -16,4 +16,5 @@ object NodAndShuffleState {
   /** @group Typeclass Instances */
   implicit val NSStageEnumerated: Enumerated[NodAndShuffleState] =
     Enumerated.of(NodShuffle, Classic)
+
 }

@@ -25,6 +25,7 @@ import seqexec.model.arb.ArbDhsTypes._
 import seqexec.model.arb.ArbTime._
 import seqexec.model.arb.ArbNSSubexposure._
 import seqexec.model.arb.ArbGmosParameters._
+import seqexec.model.arb.ArbNSRunningState._
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -97,4 +98,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[DataId]", EqTests[DataId].eqv)
   checkAll("Eq[NsPairs]", EqTests[NsPairs].eqv)
   checkAll("Eq[NsRows]", EqTests[NsRows].eqv)
+  checkAll("Eq[NSAction]", EqTests[NSAction].eqv)
+  checkAll("Eq[NSRunningState]", EqTests[NSRunningState].eqv)
 }
