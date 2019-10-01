@@ -36,9 +36,9 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config
 
   def nodMode: F[String] = "STANDARD".pure[F]
 
-  def nodPix: F[Int] = Gmos.nodAndShuffle(config).map(_.rows).explainExtractError[F]
+  def nodPix: F[Int] = Gmos.nodAndShuffle(config).map(_.rows: Int).explainExtractError[F]
 
-  def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles).explainExtractError[F]
+  def nodCount: F[Int] = Gmos.nodAndShuffle(config).map(_.cycles: Int).explainExtractError[F]
 
   private def extractOffset(stage: NodAndShuffleStage, l: Getter[Offset, Angle]): F[Double] =
     Gmos.nodAndShuffle(config).explainExtractError[F]

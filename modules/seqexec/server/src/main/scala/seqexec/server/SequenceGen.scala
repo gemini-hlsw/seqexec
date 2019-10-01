@@ -10,7 +10,7 @@ import gem.Observation
 import seqexec.engine.{Action, ActionCoordsInSeq, ParallelActions, Step => EngineStep}
 import seqexec.engine.ExecutionIndex
 import seqexec.engine.ActionIndex
-import seqexec.model.{StepConfig, StepId}
+import seqexec.model.StepId
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs.ImageFileId
 
@@ -42,7 +42,7 @@ object SequenceGen {
 
   sealed trait StepGen[+F[_]] {
     val id: StepId
-    val config: StepConfig
+    val config: CleanConfig
   }
 
   object StepGen {
@@ -73,20 +73,20 @@ object SequenceGen {
   }
 
   final case class PendingStepGen[F[_]](override val id: StepId,
-                                  override val config: StepConfig,
+                                  override val config: CleanConfig,
                                   resources: Set[Resource],
                                   generator: StepActionsGen[F]
                              ) extends StepGen[F]
 
 
   final case class SkippedStepGen(override val id: StepId,
-                                  override val config: StepConfig
+                                  override val config: CleanConfig
                               ) extends StepGen[Nothing]
 
   // Receiving a sequence from the ODB with a completed step without an image file id would be
   // weird, but I still use an Option just in case
   final case class CompletedStepGen(override val id: StepId,
-                                    override val config: StepConfig,
+                                    override val config: CleanConfig,
                                     fileId: Option[ImageFileId]
                                 ) extends StepGen[Nothing]
 

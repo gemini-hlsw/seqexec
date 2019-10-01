@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.dhs._
-import seqexec.model.{ActionType, SequenceState, StepConfig}
+import seqexec.model.{ActionType, SequenceState}
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GdsClient
 import seqexec.server.flamingos2.Flamingos2ControllerSim
@@ -44,7 +44,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  private val config: StepConfig = Map()
+  private val config: CleanConfig = CleanConfig.empty
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState[IO]): NonEmptyList[Action[IO]] =

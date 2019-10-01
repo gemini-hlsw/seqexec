@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
+import seqexec.model.GmosParameters._
 import seqexec.model.dhs._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
@@ -21,6 +22,9 @@ import seqexec.model.arb.ArbNodAndShuffleStep._
 import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbStepConfig._
 import seqexec.model.arb.ArbDhsTypes._
+import seqexec.model.arb.ArbTime._
+import seqexec.model.arb.ArbNSSubexposure._
+import seqexec.model.arb.ArbGmosParameters._
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -41,6 +45,7 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ActionStatus]", EqTests[ActionStatus].eqv)
   checkAll("Eq[Step]", EqTests[Step].eqv)
   checkAll("Eq[StandardStep]", EqTests[StandardStep].eqv)
+  checkAll("Eq[NSSubexposure]", EqTests[NSSubexposure].eqv)
   checkAll("Eq[NodAndShuffleStatus]", EqTests[NodAndShuffleStatus].eqv)
   checkAll("Eq[NodAndShuffleStep]", EqTests[NodAndShuffleStep].eqv)
   checkAll("Eq[SequenceState]", EqTests[SequenceState].eqv)
@@ -90,4 +95,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[NodAndShuffleStage]", EqTests[NodAndShuffleStage].eqv)
   checkAll("Eq[ImageFileId]", EqTests[ImageFileId].eqv)
   checkAll("Eq[DataId]", EqTests[DataId].eqv)
+  checkAll("Eq[NsPairs]", EqTests[NsPairs].eqv)
+  checkAll("Eq[NsRows]", EqTests[NsRows].eqv)
 }

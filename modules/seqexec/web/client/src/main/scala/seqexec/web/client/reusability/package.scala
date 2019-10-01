@@ -39,10 +39,15 @@ import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
+import squants.Time
+import shapeless.tag.@@
 
 package object reusability {
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A] =
     Reusability.byRef
+  implicit def taggedInt[A]: Reusability[Int @@ A] =
+    Reusability.by(x => x: Int)
+  implicit val timeReuse: Reusability[Time]                 = Reusability.by(_.toMilliseconds.toLong)
   implicit val imageIdReuse: Reusability[ImageFileId]       = Reusability.byEq
   implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
