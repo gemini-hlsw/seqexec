@@ -11,8 +11,6 @@ object NSAction {
   case object Start extends NSAction
   case object NodStart extends NSAction
   case object NodComplete extends NSAction
-  case object ConfigureRowsStart extends NSAction
-  case object ConfigureRowsComplete extends NSAction
   case object StageObserveStart extends NSAction
   case object StageObserveComplete extends NSAction
   case object Done extends NSAction
@@ -22,8 +20,6 @@ object NSAction {
     Enumerated.of(Start,
                   NodStart,
                   NodComplete,
-                  ConfigureRowsStart,
-                  ConfigureRowsComplete,
                   StageObserveStart,
                   StageObserveComplete,
                   Done)

@@ -20,12 +20,6 @@ package gmos {
     case class NSStart(sub: NSSubexposure) extends NSPartial {
       override val ongoingAction = NSAction.Start
     }
-    case class NSRowsConfigureStart(sub: NSSubexposure) extends NSPartial {
-      override val ongoingAction = NSAction.ConfigureRowsStart
-    }
-    case class NSRowsConfigureComplete(sub: NSSubexposure) extends NSPartial {
-      override val ongoingAction = NSAction.ConfigureRowsComplete
-    }
     case class NSTCSNodStart(sub: NSSubexposure) extends NSPartial {
       override val ongoingAction = NSAction.NodStart
     }
