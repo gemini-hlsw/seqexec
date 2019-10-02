@@ -14,6 +14,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/*
+ * CaWindowStabilizer filters the value of a CaAttribute. A new value is not set unless it does not change during a time
+ * window given by the parameter settleTime.
+ * This filter is more useful for discrete signals. It is used for in-position signals.
+ */
 public class CaWindowStabilizer<T> implements CaAttribute<T> {
 
     private final CaAttribute<T> sa;
@@ -147,6 +152,9 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
         notifier.removeListener(listener);
     }
 
+    /*
+     * restart restarts the filtering of values, using a new settleTime for the time window.
+     */
     public CaWindowStabilizer<T> restart(Duration settleTime) {
         filteredVal = null;
         //Restart the timer
@@ -159,6 +167,7 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
 
         return this;
     }
+
     public CaWindowStabilizer<T> restart() {
         return restart(settleTime);
     }
