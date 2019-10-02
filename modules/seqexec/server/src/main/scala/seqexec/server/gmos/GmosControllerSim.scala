@@ -24,7 +24,6 @@ import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.InstrumentControllerSim
 import seqexec.server.Progress
 import squants.Time
-import scala.concurrent.duration._
 
 /**
   * Keep track of the current execution state
@@ -74,7 +73,7 @@ object NSObsState {
 }
 
 object GmosControllerSim {
-  def apply[F[_]: FlatMap: Timer, T <: SiteDependentTypes](
+  def apply[F[_]: FlatMap, T <: SiteDependentTypes](
     sim:      InstrumentControllerSim[F],
     nsConfig: Ref[F, NSObsState]
   ): GmosController[F, T] =
@@ -103,10 +102,6 @@ object GmosControllerSim {
       override def applyConfig(config: GmosConfig[T]): F[Unit] =
         nsConfig.set(NSObsState.fromConfig(config.ns)) *> // Keep the state of NS Config
           sim.applyConfig(config)
-
-      override def setRowsToShuffle(rows: Int): F[Unit] =
-        sim.log(s"Set rows to shuffle to $rows") *>
-          Timer[F].sleep(new FiniteDuration(2, SECONDS))
 
       override def stopObserve: F[Unit] = sim.stopObserve
 
