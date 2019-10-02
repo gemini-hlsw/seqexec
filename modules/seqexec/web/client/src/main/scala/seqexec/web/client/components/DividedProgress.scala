@@ -1,7 +1,11 @@
+// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package seqexec.web.client.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common.implicits._
 import react.common.Css
 import cats.implicits._
 import seqexec.web.client.semanticui.elements.progress.Progress
@@ -58,10 +62,7 @@ object DividedProgress {
             SeqexecStyles.dividedProgressBarRight
 
       <.span(
-
-        ^.width := "100%",
-        ^.display.flex,
-
+        SeqexecStyles.dividedProgress,
         p.sections.zip(sectionValuesAndColors).zip(sectionProgressStyles).zip(sectionBarStyles.padTo(countSections, Css.Zero)).toTagMod {
           case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
             Progress(Progress.Props(
@@ -74,7 +75,7 @@ object DividedProgress {
               p.progressCls :+ sectionProgressStyle,
               p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
               p.labelCls
-              ))
+            ))
         }
         )
     }

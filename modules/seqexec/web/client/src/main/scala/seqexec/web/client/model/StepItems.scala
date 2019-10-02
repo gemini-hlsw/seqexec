@@ -5,6 +5,7 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
@@ -12,11 +13,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.FPUMode
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.StepType
-import seqexec.model.Step
-import seqexec.model.SequenceState
-import seqexec.model.enumerations
-import seqexec.model.OffsetAxis
-import seqexec.model.TelescopeOffset
+import seqexec.model.{OffsetAxis, SequenceState, Step, StepId, TelescopeOffset, enumerations}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.Formatting._
 
@@ -89,8 +86,8 @@ object StepItems {
 
     def stepType(instrument: Instrument): Option[StepType] =
       alignAndCalib(instrument)
-        .orElse(nodAndShuffle(instrument))
-        .orElse(stepTypeO.getOption(s))
+      .orElse(nodAndShuffle(instrument))
+      .orElse(stepTypeO.getOption(s))
 
     private def gpiFilter: Step => Option[String] = s => {
       // Read the filter, if not found deduce it from the obs mode
@@ -164,16 +161,16 @@ object StepItems {
       telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
     def offsetQ: TelescopeOffset.Q =
       telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-    def guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
+    def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
 
     def offsetText(axis: OffsetAxis): String =
       offsetValueFormat(axis match {
-                          case OffsetAxis.AxisP =>
-                            telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
-                          case OffsetAxis.AxisQ =>
-                            telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-                        })
+        case OffsetAxis.AxisP =>
+          telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
+        case OffsetAxis.AxisQ =>
+          telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
+      })
 
     def offsetPText: String = offsetText(OffsetAxis.AxisP)
     def offsetQText: String = offsetText(OffsetAxis.AxisQ)
@@ -216,15 +213,19 @@ object StepItems {
     }
   }
 
-  final case class StepStateSnapshot(step: Step, i: Instrument, t: TabOperations, state: SequenceState) {
+  final case class StepStateSnapshot(step: Step,
+                                     obsId: Observation.Id,
+                                     instrument: Instrument,
+                                     tabOperations: TabOperations,
+                                     state: SequenceState) {
     val isAC: Boolean =
-      step.alignAndCalib(i).isDefined
+      step.alignAndCalib(instrument).isDefined
 
     val isNS: Boolean =
-      step.nodAndShuffle(i).isDefined
+      step.nodAndShuffle(instrument).isDefined
 
     private val isRunning =
-      t.resourceInFlight(step.id) || step.isRunning
+      tabOperations.resourceInFlight(step.id) || step.isRunning
 
     val isACRunning: Boolean =
       isAC && isRunning
@@ -233,7 +234,7 @@ object StepItems {
       isNS && isRunning
 
     val anyError: Boolean =
-      t.resourceInError(step.id) || step.hasError
+      tabOperations.resourceInError(step.id) || step.hasError
 
     val isACInError: Boolean =
       isAC && anyError
@@ -241,10 +242,10 @@ object StepItems {
     val isNSInError: Boolean =
       isNS && anyError
 
-    val detailRows: Int =
-      if (isNSRunning)
+    def detailRows(selected: Option[StepId]): Int =
+      if( (isNS && selected.exists(_ === step.id)) || isNSRunning || isNSInError)
         2
-      else if (isACRunning || isACInError || isNSInError)
+      else if (isACRunning || isACInError)
         1
       else
         0

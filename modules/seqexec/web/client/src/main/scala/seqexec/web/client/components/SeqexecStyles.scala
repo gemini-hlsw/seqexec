@@ -341,6 +341,9 @@ object SeqexecStyles {
   val defaultCursor: Css =
     Css("SeqexecStyles-defaultCursor")
 
+  val dividedProgress: Css =
+    Css("SeqexecStyles-dividedProgress")
+
   val dividedProgressSectionLeft: Css =
     Css("SeqexecStyles-dividedProgressSectionLeft")
 
@@ -361,4 +364,10 @@ object SeqexecStyles {
 
   val dividedProgressBarRight: Css =
     Css("SeqexecStyles-dividedProgressBarRight")
+
+  val nodAndShuffleDetailRow: Css =
+    Css("SeqexecStyles-nodAndShuffleDetailRow")
+
+  val nodAndShuffleControls: Css =
+    Css("SeqexecStyles-nodAndShuffleControls")
 }

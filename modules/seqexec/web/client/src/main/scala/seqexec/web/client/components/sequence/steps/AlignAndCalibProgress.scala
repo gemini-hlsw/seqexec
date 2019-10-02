@@ -43,7 +43,6 @@ object ACProgressBar {
     }
   }
 
-  implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.never
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
@@ -122,7 +121,6 @@ final case class AlignAndCalibProgress(state: StepStateSnapshot) extends ReactPr
 object AlignAndCalibProgress {
   type Props = AlignAndCalibProgress
 
-  implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.never
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent

@@ -33,13 +33,13 @@ import web.client.ReactProps
   * Contains a set of control buttons like stop/abort
   */
 final case class ControlButtons(
-                                      id:              Observation.Id,
-                                      operations:      List[Operations[_]],
-                                      sequenceState:   SequenceState,
-                                      stepId:          Int,
-                                      isObservePaused: Boolean,
-                                      tabOperations:   TabOperations
-                                    ) extends ReactProps {
+  id:              Observation.Id,
+  operations:      List[Operations[_]],
+  sequenceState:   SequenceState,
+  stepId:          Int,
+  isObservePaused: Boolean,
+  tabOperations:   TabOperations
+) extends ReactProps {
   @inline def render: VdomElement = ControlButtons.component(this)
 
   val requestInFlight = tabOperations.stepRequestInFlight
@@ -113,28 +113,34 @@ object ControlButtons {
            // N&S operations
            case PauseImmediatelyObservation =>
              Popup(
-               Popup.Props("button", "Pause the current exposure immediately"),
+               Popup.Props("button", "Pause the current exposure immediately (Not Yet Implemented)"),
                Button(
-                 Button.Props(icon = Some(IconPause), color = Some("teal"))))
+                 Button.Props(disabled = true,
+                              icon = Some(IconPause),
+                              color = Some("teal"),
+                              basic = true)))
            case PauseGracefullyObservation =>
              Popup(Popup.Props("button",
-                               "Pause the current exposure at the end of the cycle"),
+                               "Pause the current exposure at the end of the cycle (Not Yet Implemented)"),
                    Button(
-                     Button.Props(icon  = Some(IconPause),
-                                  color = Some("teal"),
-                                  basic = true)))
+                     Button.Props(disabled = true,
+                                  icon  = Some(IconPause),
+                                  color = Some("teal"))))
            case StopImmediatelyObservation =>
              Popup(
-               Popup.Props("button", "Stop the current exposure immediately"),
+               Popup.Props("button", "Stop the current exposure immediately (Not Yet Implemented)"),
                Button(
-                 Button.Props(icon = Some(IconStop), color = Some("orange"))))
+                 Button.Props(disabled = true,
+                              icon = Some(IconStop),
+                              color = Some("orange"),
+                              basic = true)))
            case StopGracefullyObservation =>
              Popup(Popup.Props("button",
-                               "Stop the current exposure at the end of the cycle"),
+                               "Stop the current exposure at the end of the cycle (Not Yet Implemented)"),
                    Button(
-                     Button.Props(icon  = Some(IconStop),
-                                  color = Some("orange"),
-                                  basic = true)))
+                     Button.Props(disabled = true,
+                                  icon  = Some(IconStop),
+                                  color = Some("orange"))))
          }
          .toTagMod
         )
@@ -153,6 +159,7 @@ final case class StepsControlButtons(
   sequenceState:   SequenceState,
   stepId:          Int,
   isObservePaused: Boolean,
+  isMultiLevel:    Boolean,
   tabOperations:   TabOperations
 ) extends ReactProps {
   @inline def render: VdomElement = StepsControlButtons.component(this)
@@ -182,7 +189,7 @@ object StepsControlButtons {
     .render_P { p =>
       ControlButtons(
         p.id,
-        p.instrument.operations[OperationLevel.Observation](p.isObservePaused),
+        p.instrument.operations[OperationLevel.Observation](p.isObservePaused, p.isMultiLevel),
         p.sequenceState,
         p.stepId,
         p.isObservePaused,

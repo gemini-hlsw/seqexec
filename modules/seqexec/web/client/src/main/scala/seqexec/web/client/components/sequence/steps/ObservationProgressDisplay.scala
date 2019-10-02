@@ -24,22 +24,23 @@ import scala.concurrent.duration._
 import scala.math.max
 import scala.math.min
 
-final case class SmoothProgressBar(
+final case class SmoothProgressDisplay(
   fileId:   String,
   total:    Long,
   value:    Long,
   stopping: Boolean,
-  paused:   Boolean
+  paused:   Boolean,
+  hideBar:  Boolean
 ) extends ReactProps {
-  @inline def render: VdomElement = SmoothProgressBar.component(this)
+  @inline def render: VdomElement = SmoothProgressDisplay.component(this)
 }
 
-object SmoothProgressBar {
+object SmoothProgressDisplay {
   val periodUpdate: Int = 50
   // This depends on the server side frequency of updates
   val remoteUpdatePeriod: Int = 1000
 
-  type Props = SmoothProgressBar
+  type Props = SmoothProgressDisplay
 
   @Lenses
   final case class State(total: Long, value: Long, skipStep: Boolean)
@@ -89,15 +90,22 @@ object SmoothProgressBar {
         else if (remaining > 0) s"${p.fileId} - $durationStr left"
         else s"${p.fileId} - Reading out..."
 
-      Progress(Progress.Props(
-        label       = label,
-        total       = p.total,
-        value       = s.value,
-        color       = "blue".some,
-        progressCls = List(SeqexecStyles.observationProgressBar),
-        barCls      = List(SeqexecStyles.observationBar),
-        labelCls    = List(SeqexecStyles.observationLabel)
-      ))
+      if(p.hideBar)
+        <.div(SeqexecStyles.specialStateLabel,
+
+              ^.fontWeight.bold,
+
+              label)
+      else
+        Progress(Progress.Props(
+          label       = label,
+          total       = p.total,
+          value       = s.value,
+          color       = "blue".some,
+          progressCls = List(SeqexecStyles.observationProgressBar),
+          barCls      = List(SeqexecStyles.observationBar),
+          labelCls    = List(SeqexecStyles.observationLabel)
+        ))
     }
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps(x =>
@@ -110,26 +118,27 @@ object SmoothProgressBar {
 /**
   * Component to wrap the progress bar
   */
-final case class ObservationProgressBar(
+final case class ObservationProgressDisplay(
   obsId:    Observation.Id,
   stepId:   StepId,
   fileId:   ImageFileId,
   stopping: Boolean,
-  paused:   Boolean
+  paused:   Boolean,
+  hideBar:  Boolean
 ) extends ReactProps {
-  @inline def render: VdomElement = ObservationProgressBar.component(this)
+  @inline def render: VdomElement = ObservationProgressDisplay.component(this)
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
 }
 
-object ObservationProgressBar {
-  type Props = ObservationProgressBar
+object ObservationProgressDisplay {
+  type Props = ObservationProgressDisplay
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent
-    .builder[Props]("ObservationProgressBar")
+    .builder[Props]("ObservationProgressDisplay")
     .stateless
     .render_P(p =>
       <.div(
@@ -137,22 +146,32 @@ object ObservationProgressBar {
         p.connect(x =>
           x() match {
             case Some(ObservationProgress(_, _, r, t)) =>
-              SmoothProgressBar(
+              SmoothProgressDisplay(
                 p.fileId,
                 r.millis,
                 r.millis - max(0, t.millis),
                 p.stopping,
-                p.paused)
+                p.paused,
+                p.hideBar)
             case _ =>
-              Progress(Progress.Props(
-                if (p.paused) s"${p.fileId} - Paused" else p.fileId,
-                total       = 100,
-                value       = 0,
-                color       = "blue".some,
-                progressCls = List(SeqexecStyles.observationProgressBar),
-                barCls      = List(SeqexecStyles.observationBar),
-                labelCls    = List(SeqexecStyles.observationLabel)
-              ))
+              val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
+
+              if(p.hideBar)
+                <.div(SeqexecStyles.specialStateLabel,
+
+                  ^.fontWeight.bold,
+
+                      msg)
+              else
+                Progress(Progress.Props(
+                  msg,
+                  total       = 100,
+                  value       = 0,
+                  color       = "blue".some,
+                  progressCls = List(SeqexecStyles.observationProgressBar),
+                  barCls      = List(SeqexecStyles.observationBar),
+                  labelCls    = List(SeqexecStyles.observationLabel)
+                ))
         })
     ))
     .configure(Reusability.shouldComponentUpdate)

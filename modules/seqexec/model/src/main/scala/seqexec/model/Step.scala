@@ -191,6 +191,10 @@ object Step {
       case _                                                          => false
     }
 
+    def isMultiLevel: Boolean = s match {
+      case _: NodAndShuffleStep => true
+      case _                    => false
+    }
   }
 }
 
