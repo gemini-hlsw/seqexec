@@ -166,7 +166,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
   ): Stream[F, Result[F]] =
     Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
       Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env, post)
-    }
+    }.handleErrorWith(catchObsErrors[F])
 
   override def observeActions(
     env:  ObserveEnvironment[F],

@@ -120,13 +120,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     } yield buildStep(is, systems, headers, stepType)
   }
 
-  def catchObsErrors[F[_]](t: Throwable): Stream[F, Result[F]] = t match {
-    case e: SeqexecFailure =>
-      Stream.emit(Result.Error(SeqexecFailure.explain(e)))
-    case e: Throwable =>
-      Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
-  }
-
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]

@@ -187,11 +187,18 @@ package object server {
     }, r => Result.OK(r))
   }
 
-  implicit class AdaptFErrorOps[F[_]: ApplicativeError[?[_], Throwable], A](val r: F[Result[F]]) {
+  implicit class RecoverResultErrorOps[F[_]: ApplicativeError[?[_], Throwable]](r: F[Result[F]]) {
     def safeResult: F[Result[F]] = r.recover {
       case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
       case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
     }
+  }
+
+  def catchObsErrors[F[_]](t: Throwable): Stream[F, Result[F]] = t match {
+    case e: SeqexecFailure =>
+      Stream.emit(Result.Error(SeqexecFailure.explain(e)))
+    case e: Throwable =>
+      Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
   }
 
   implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
