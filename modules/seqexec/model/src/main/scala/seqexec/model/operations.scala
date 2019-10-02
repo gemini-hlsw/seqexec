@@ -7,123 +7,135 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.Instrument._
 
 object operations {
-  // Operations possible at the sequence level
-  sealed trait SequenceOperations
-
-  object SequenceOperations {
-    case object PauseSequence extends SequenceOperations
-    case object StopSequence extends SequenceOperations
-    case object RunSequence extends SequenceOperations
+  sealed trait OperationLevel
+  object OperationLevel {
+    sealed trait Observation extends OperationLevel
+    sealed trait NsCycle extends OperationLevel
+    sealed trait NsNod extends OperationLevel
   }
 
-  // Operations possible at the observation level
-  sealed trait ObservationOperations
+  import OperationLevel._
 
-  object ObservationOperations {
-    case object PauseObservation extends ObservationOperations
-    case object StopObservation extends ObservationOperations
-    case object AbortObservation extends ObservationOperations
-    case object ResumeObservation extends ObservationOperations
-    // Operations for Hamamatsu
-    case object PauseImmediatelyObservation extends ObservationOperations
-    case object StopImmediatelyObservation extends ObservationOperations
-    case object PauseGracefullyObservation extends ObservationOperations
-    case object StopGracefullyObservation extends ObservationOperations
+  sealed trait Operations[A <: OperationLevel]
+  object Operations {
+    // Operations possible at the observation level
+    case object PauseObservation extends Operations[Observation]
+    case object StopObservation extends Operations[Observation]
+    case object AbortObservation extends Operations[Observation]
+    case object ResumeObservation extends Operations[Observation]
+
+    // Operations possible for N&S Cycle
+    case object PauseGracefullyObservation extends Operations[NsCycle]
+    case object StopGracefullyObservation extends Operations[NsCycle]
+
+    // Operations possible for N&S Nod
+    case object PauseImmediatelyObservation extends Operations[NsNod]
+    case object StopImmediatelyObservation extends Operations[NsNod]
   }
+
+  sealed trait OperationLevelType[L <: OperationLevel]
+  implicit object ObservationLevel extends OperationLevelType[Observation]
+  private implicit object NsCycleLevel extends OperationLevelType[NsCycle]
+  private implicit object NsNodLevel extends OperationLevelType[NsNod]
 
   sealed trait SupportedOperations {
-
-    /**
-      * Sorted list of operations supported at the sequence level
-      */
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations]
-
-    /**
-      * Sorted list of operations supported at the observation (row) level
-      */
-    def sequenceOperations: List[SequenceOperations]
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]]
   }
 
   private val F2SupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] = Nil
-    def sequenceOperations: List[SequenceOperations] = Nil
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      Nil
   }
 
   private val GmosSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] =
-      if (isObservePaused) {
-        List(ObservationOperations.ResumeObservation,
-             ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
-      } else {
-        List(ObservationOperations.PauseObservation,
-             ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          if (isObservePaused) {
+            List(Operations.ResumeObservation,
+                 Operations.StopObservation,
+                 Operations.AbortObservation)
+          } else {
+            List(Operations.PauseObservation,
+                 Operations.StopObservation,
+                 Operations.AbortObservation)
+          }
+        case NsCycleLevel =>
+            List(Operations.PauseGracefullyObservation,
+                 Operations.StopGracefullyObservation)
+        case NsNodLevel =>
+          List(Operations.PauseImmediatelyObservation,
+               Operations.StopImmediatelyObservation)
+        case _                => Nil
       }
-
-    def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val GnirsSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] =
-      if (isObservePaused) {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
-      } else {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          if (isObservePaused) {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          } else {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          }
+        case _                => Nil
       }
-
-    def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val NiriSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] =
-      if (isObservePaused) {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
-      } else {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          if (isObservePaused) {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          } else {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          }
+        case _                => Nil
       }
-
-    def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val NifsSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean
-    ): List[ObservationOperations] =
-      if (isObservePaused) {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
-      } else {
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation)
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+                                  (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          if (isObservePaused) {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          } else {
+            List(Operations.StopObservation,
+                 Operations.AbortObservation)
+          }
+        case _                => Nil
       }
-
-    def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val GsaoiSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean
-    ): List[ObservationOperations] =
-      List(ObservationOperations.StopObservation,
-           ObservationOperations.AbortObservation)
-
-    def sequenceOperations: List[SequenceOperations] = Nil
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+                                  (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          List(Operations.StopObservation,
+               Operations.AbortObservation)
+        case _                => Nil
+      }
   }
 
   private val NilSupportedOperations = new SupportedOperations {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] = Nil
-    def sequenceOperations: List[SequenceOperations] = Nil
+    def apply[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
+      Nil
   }
 
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
@@ -138,15 +150,10 @@ object operations {
 
   final implicit class SupportedOperationsOps(val i: Instrument)
       extends AnyVal {
-    def observationOperations(
-      isObservePaused: Boolean): List[ObservationOperations] =
+    def operations[L <: OperationLevel](isObservePaused: Boolean)
+      (implicit level: OperationLevelType[L]): List[Operations[L]] =
       instrumentOperations
-        .getOrElse(i, NilSupportedOperations)
-        .observationOperations(isObservePaused)
-    def sequenceOperations: List[SequenceOperations] =
-      instrumentOperations
-        .getOrElse(i, NilSupportedOperations)
-        .sequenceOperations
+        .getOrElse(i, NilSupportedOperations)(isObservePaused)
   }
 
 }

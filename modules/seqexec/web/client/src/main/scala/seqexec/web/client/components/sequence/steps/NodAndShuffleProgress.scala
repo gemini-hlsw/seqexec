@@ -8,9 +8,10 @@ import japgolly.scalajs.react.vdom.html_<^._
 import seqexec.web.client.model.StepItems.StepStateSnapshot
 import web.client.ReactProps
 import japgolly.scalajs.react.internal.CatsReactExt
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
-//import cats.syntax.option._
 import cats.implicits._
+import seqexec.model.NodAndShuffleStep
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
 import seqexec.web.client.semanticui.elements.popup.Popup
@@ -25,13 +26,11 @@ object NodAndShuffleCycleProgress extends CatsReactExt {
   implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.byEq
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val cycleSections: List[DividedProgress.Label] =
-    List.range(1, 8).map(_.show)
-
   protected val component = ScalaComponent
     .builder[Props]("NodAndShuffleCycleProgress")
     .stateless
     .render_P { p =>
+      val nsStatus = p.state.step.asInstanceOf[NodAndShuffleStep].nsStatus
       val isInError = !p.state.isNSRunning && p.state.isNSInError
 //      val msg = if (isInError) "Error" else "Running..."
 
@@ -42,10 +41,9 @@ object NodAndShuffleCycleProgress extends CatsReactExt {
 
         DividedProgress(
           //            s"Nod and Shuffle Cycle: $msg",
-          cycleSections,
-          10,
-          //            total = 100, //enum.all.length.toLong - 1,
-          value = 33, //max(0, s.counter.toLong),
+          List.range(1, nsStatus.cycles + 1).map(_.show),
+          nsStatus.nodExposureTime.toSeconds.toInt * NodAndShuffleStage.NsSequence.length,
+          value = 8,
           completeSectionColor = if (isInError) "red".some else "green".some,
           ongoingSectionColor = if (isInError) "red".some else "blue".some,
           progressCls = List(SeqexecStyles.observationProgressBar),
@@ -85,12 +83,13 @@ object NodAndShuffleNodProgress extends CatsReactExt {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val nodSections: List[DividedProgress.Label] =
-    List("B", "A", "A", "B")
+    NodAndShuffleStage.NsSequence.map(_.symbol.name).toList
 
   protected val component = ScalaComponent
     .builder[Props]("NodAndShuffleNodProgress")
     .stateless
     .render_P { p =>
+      val nsStatus = p.state.step.asInstanceOf[NodAndShuffleStep].nsStatus
       val isInError = !p.state.isNSRunning && p.state.isNSInError
 //      val msg = if (isInError) "Error" else "Running..."
 
@@ -102,9 +101,8 @@ object NodAndShuffleNodProgress extends CatsReactExt {
         DividedProgress(
           //          s"Nod and Shuffle Nod: $msg",
           nodSections,
-          sectionTotal = 2,
-          //          total = 100, //enum.all.length.toLong - 1,
-          value = 5, //max(0, s.counter.toLong),
+          sectionTotal = nsStatus.nodExposureTime.toSeconds.toInt,
+          value = 5,
           completeSectionColor = if (isInError) "red".some else "green".some,
           ongoingSectionColor = if (isInError) "red".some else "blue".some,
           progressCls = List(SeqexecStyles.observationProgressBar),
