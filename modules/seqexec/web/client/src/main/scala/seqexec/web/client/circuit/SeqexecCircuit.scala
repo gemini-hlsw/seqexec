@@ -23,6 +23,8 @@ import seqexec.web.client.actions.OpenUserNotificationBox
 import seqexec.web.client.actions.ServerMessage
 import seqexec.web.client.actions.show
 
+import scala.scalajs.LinkingInfo
+
 /**
   * Diode processor to log some of the action to aid in debugging
   */
@@ -42,7 +44,8 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case UpdateStepTableState(_, _)                 =>
       case UpdateCalTableState(_, _)                  =>
       case UpdateSelectedStep(_, _)                   =>
-      case a: Action                                  => logger.info(s"Action: ${a.show}")
+      case a: Action                                  =>
+        if(LinkingInfo.developmentMode) logger.info(s"Action: ${a.show}")
       case _                                          =>
     }
     // call the next processor
