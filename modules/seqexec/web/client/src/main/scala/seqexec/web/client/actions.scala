@@ -203,7 +203,7 @@ object actions {
       PPrinter(defaultHeight = 200, colorApplyPrefix = fansi.Color.Blue)
 
     def apply(x: Any): String =
-      fansi.Str.join(pprinter.tokenize(x, initialOffset = 4).toSeq:_*).toString
+      pprinter(x, initialOffset = 4).toString
   }
 
   private val stepInfo: PartialFunction[Step, Product] = {
