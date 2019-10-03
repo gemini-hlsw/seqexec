@@ -6,6 +6,9 @@ package seqexec.model
 import cats.Eq
 import cats.implicits._
 import shapeless.tag.@@
+import scala.concurrent.duration.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GmosParameters {
   trait NsPairsI
@@ -21,6 +24,10 @@ trait GmosParameters {
   implicit val nsPairsEq: Eq[NsPairs] = Eq.by(x => x: Int)
   implicit val nsRowsEq: Eq[NsRows] = Eq.by(x => x: Int)
   implicit val nsCyclesEq: Eq[NsCycles] = Eq.by(x => x: Int)
+
+  // Remaining time when it is not safe to stop, pause or abort
+  val SafetyCutoff: FiniteDuration = new FiniteDuration(3, SECONDS)
+
 }
 
 object GmosParameters extends GmosParameters
