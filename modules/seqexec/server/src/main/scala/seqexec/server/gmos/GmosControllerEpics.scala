@@ -18,7 +18,7 @@ import seqexec.model.GmosParameters._
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.EpicsUtil._
 import seqexec.server.InstrumentSystem.ElapsedTime
-import seqexec.server.{EpicsUtil, Progress, SeqexecFailure}
+import seqexec.server.{EpicsCommand, EpicsUtil, Progress, SeqexecFailure}
 import seqexec.server.EpicsCodex._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
@@ -403,17 +403,25 @@ object GmosControllerEpics extends GmosEncoders {
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(IO.unit,
           IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS")))
 
-      override def stopObserve: IO[Unit] =
-        L.info("Stop Gmos exposure") *>
-          sys.stopCmd.setTimeout[IO](DefaultTimeout)
-          sys.stopCmd.mark[IO] *>
-          sys.stopCmd.post[IO]
+      private def protectedObserveCommand(name: String, cmd: EpicsCommand): IO[Unit] = {
+        val safetyCutoffAsDouble: Double = SafetyCutoff.toSeconds.toDouble
 
-      override def abortObserve: IO[Unit] =
-        L.info("Abort Gmos exposure") *>
-          sys.abortCmd.setTimeout[IO](DefaultTimeout) *>
-          sys.abortCmd.mark[IO] *>
-          sys.abortCmd.post[IO].void
+        (sys.dcIsAcquiring, sys.countdown).mapN { case (isAcq, timeLeft) =>
+          if(!isAcq)
+            L.info(s"Gmos $name Observe canceled because it is not acquiring.")
+          else if(timeLeft <= safetyCutoffAsDouble)
+            L.info(s"Gmos $name Observe canceled because there is less than $safetyCutoffAsDouble seconds left.")
+          else
+            L.info(s"$name Gmos exposure") *>
+              cmd.setTimeout[IO](DefaultTimeout)
+              cmd.mark[IO] *>
+              cmd.post[IO].void
+        }.flatten
+      }
+
+      override def stopObserve: IO[Unit] = protectedObserveCommand("Stop", sys.stopCmd)
+
+      override def abortObserve: IO[Unit] = protectedObserveCommand("Abort", sys.abortCmd)
 
       override def endObserve: IO[Unit] =
         L.debug("Send endObserve to Gmos") *>
@@ -421,11 +429,7 @@ object GmosControllerEpics extends GmosEncoders {
           sys.endObserveCmd.mark[IO] *>
           sys.endObserveCmd.post[IO].void
 
-      override def pauseObserve: IO[Unit] =
-        L.info("Send pause to Gmos") *>
-          sys.pauseCmd.setTimeout[IO](DefaultTimeout) *>
-          sys.pauseCmd.mark[IO] *>
-          sys.pauseCmd.post[IO].void
+      override def pauseObserve: IO[Unit] = protectedObserveCommand("Pause", sys.pauseCmd)
 
       override def resumePaused(expTime: Time): IO[ObserveCommandResult] = for {
         _   <- L.debug("Resume Gmos observation")
