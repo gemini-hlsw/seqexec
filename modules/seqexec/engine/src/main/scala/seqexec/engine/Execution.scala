@@ -51,10 +51,10 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result[F]): Execution[F] =
-    Execution((execution &|-? index(i)).modify(a => a.copy(state = actionStateFromResult(r)(a.state))))
+    Execution((execution &|-? index(i) ^|-> Action.state).modify(actionStateFromResult(r)))
 
   def start(i: Int): Execution[F] =
-    Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = ActionState.Started))))
+    Execution((execution &|-? index(i) ^|-> Action.runStateL).set(ActionState.Started))
 }
 
 object Execution {
@@ -70,13 +70,13 @@ object Execution {
 
   def errored[F[_]](ex: Execution[F]): Boolean = ex.execution.exists(_.state.runState match {
     case ActionState.Failed(_) => true
-    case _                => false
+    case _                     => false
   })
 
   def finished[F[_]](ex: Execution[F]): Boolean = ex.execution.forall(_.state.runState match {
     case ActionState.Completed(_) => true
     case ActionState.Failed(_)    => true
-    case _                   => false
+    case _                        => false
   })
 
   def progressRatio[F[_]](ex: Execution[F]): (Int, Int) = (ex.results.length, ex.execution.length)

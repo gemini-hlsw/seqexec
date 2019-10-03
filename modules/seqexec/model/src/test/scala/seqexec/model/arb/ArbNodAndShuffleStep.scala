@@ -15,6 +15,7 @@ import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbDhsTypes._
 import seqexec.model.arb.ArbTime._
 import seqexec.model.arb.ArbGmosParameters._
+import seqexec.model.arb.ArbNSRunningState._
 import squants._
 
 trait ArbNodAndShuffleStep {
@@ -24,7 +25,8 @@ trait ArbNodAndShuffleStep {
       t  <- arbitrary[Time]
       n  <- arbitrary[Time]
       c  <- arbitrary[NsCycles]
-    } yield NodAndShuffleStatus(as, t, n, c)
+      s  <- arbitrary[Option[NSRunningState]]
+    } yield NodAndShuffleStatus(as, t, n, c, s)
   }
 
   implicit val nodAndShuffleStatusCogen: Cogen[NodAndShuffleStatus] =

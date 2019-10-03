@@ -3,14 +3,41 @@
 
 package seqexec.server
 
+import seqexec.model.enum.NSAction
+import seqexec.model.NSSubexposure
 import seqexec.engine.Result.PartialVal
 
 package gmos {
-  // N&S Partials. TODO add more details about the current step
-  case object NSStart extends PartialVal
-  case object NSRowsConfigure extends PartialVal
-  case object NSTCSNod extends PartialVal
-  case object NSStep extends PartialVal
-  case object NSContinue extends PartialVal
-  case object NSComplete extends PartialVal
+
+  sealed trait NSPartial extends PartialVal {
+    def ongoingAction: NSAction
+    def sub: NSSubexposure
+  }
+  object NSPartial {
+    def unapply(s: NSPartial): Option[(NSAction, NSSubexposure)] =
+      Some((s.ongoingAction, s.sub))
+
+    case class NSStart(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.Start
+    }
+    case class NSTCSNodStart(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.NodStart
+    }
+    case class NSTCSNodComplete(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.NodComplete
+    }
+    case class NSSubexposureStart(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.StageObserveStart
+    }
+    case class NSSubexposureEnd(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.StageObserveComplete
+    }
+    case class NSComplete(sub: NSSubexposure) extends NSPartial {
+      override val ongoingAction = NSAction.Done
+    }
+
+    case object NSContinue extends InternalPartialVal
+    case object NSSubPaused extends InternalPartialVal
+    case object NSFinalObs extends InternalPartialVal
+  }
 }

@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import fs2.Stream
+import monocle.Lens
 import seqexec.engine.Result.Error
 import seqexec.engine.Result.PartialVal
 import seqexec.engine.Result.PauseContext
@@ -21,6 +22,10 @@ final case class Action[F[_]](
 
 object Action {
 
+  def runStateL[F[_]]: Lens[Action[F], ActionState[F]] =
+    Action.state ^|-> State.runState
+
+  @Lenses
   final case class State[F[_]](
     runState: ActionState[F],
     partials: List[PartialVal]
