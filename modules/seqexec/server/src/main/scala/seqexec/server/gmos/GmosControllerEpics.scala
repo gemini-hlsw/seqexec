@@ -403,17 +403,32 @@ object GmosControllerEpics extends GmosEncoders {
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(IO.unit,
           IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS")))
 
-      override def stopObserve: IO[Unit] =
-        L.info("Stop Gmos exposure") *>
-          sys.stopCmd.setTimeout[IO](DefaultTimeout)
-          sys.stopCmd.mark[IO] *>
-          sys.stopCmd.post[IO]
+      // Remaining time when it is not safe to stop, pause or abort
+      val SafetyCutoff = 3.0 // seconds
 
-      override def abortObserve: IO[Unit] =
-        L.info("Abort Gmos exposure") *>
-          sys.abortCmd.setTimeout[IO](DefaultTimeout) *>
-          sys.abortCmd.mark[IO] *>
-          sys.abortCmd.post[IO].void
+      override def stopObserve: IO[Unit] = (sys.dcIsAcquiring, sys.countdown).mapN { case (isAcq, timeLeft) =>
+        if(!isAcq)
+          L.info("Gmos Stop Observe canceled because it is not acquiring.")
+        else if(timeLeft <= 3.0)
+          L.info(s"Gmos Stop Observe canceled because there is less than $SafetyCutoff seconds left.")
+        else
+          L.info("Stop Gmos exposure") *>
+            sys.stopCmd.setTimeout[IO](DefaultTimeout)
+            sys.stopCmd.mark[IO] *>
+            sys.stopCmd.post[IO].void
+      }.flatten
+
+      override def abortObserve: IO[Unit] = (sys.dcIsAcquiring, sys.countdown).mapN { case (isAcq, timeLeft) =>
+        if (!isAcq)
+          L.info("Gmos Abort Observe canceled because it is not acquiring.")
+        else if (timeLeft <= SafetyCutoff)
+          L.info(s"Gmos Abort Observe canceled because there is less than $SafetyCutoff seconds left.")
+        else
+          L.info("Abort Gmos exposure") *>
+            sys.abortCmd.setTimeout[IO](DefaultTimeout) *>
+            sys.abortCmd.mark[IO] *>
+            sys.abortCmd.post[IO].void
+      }.flatten
 
       override def endObserve: IO[Unit] =
         L.debug("Send endObserve to Gmos") *>
@@ -421,11 +436,17 @@ object GmosControllerEpics extends GmosEncoders {
           sys.endObserveCmd.mark[IO] *>
           sys.endObserveCmd.post[IO].void
 
-      override def pauseObserve: IO[Unit] =
-        L.info("Send pause to Gmos") *>
-          sys.pauseCmd.setTimeout[IO](DefaultTimeout) *>
-          sys.pauseCmd.mark[IO] *>
-          sys.pauseCmd.post[IO].void
+      override def pauseObserve: IO[Unit] = (sys.dcIsAcquiring, sys.countdown).mapN { case (isAcq, timeLeft) =>
+        if (!isAcq)
+          L.info("Gmos Pause Observe canceled because it is not acquiring.")
+        else if (timeLeft <= SafetyCutoff)
+          L.info(s"Gmos Pause Observe canceled because there is less than $SafetyCutoff seconds left.")
+        else
+          L.info("Send pause to Gmos") *>
+            sys.pauseCmd.setTimeout[IO](DefaultTimeout) *>
+            sys.pauseCmd.mark[IO] *>
+            sys.pauseCmd.post[IO].void
+      }.flatten
 
       override def resumePaused(expTime: Time): IO[ObserveCommandResult] = for {
         _   <- L.debug("Resume Gmos observation")

@@ -469,6 +469,11 @@
             <type>STRING</type>
             <description>GMOS detector controller s/w</description>
         </attribute>
+        <attribute name="obsAcq">
+            <channel>sad:dc:acq.VAL</channel>
+            <type>INTEGER</type>
+            <description>Observation is aquiring</description>
+        </attribute>
     </Status>
     <Status name="gmos::status">
         <top>gm</top>
