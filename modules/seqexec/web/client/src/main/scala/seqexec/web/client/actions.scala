@@ -18,6 +18,7 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.queue.CalQueueTable
 import org.scalajs.dom.WebSocket
+import pprint.PPrinter
 import web.client.table._
 
 object actions {
@@ -195,9 +196,19 @@ object actions {
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
 
-  private val stepInfo: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
+  // This, together with the whole pprint library, is shaken off when linking
+  // for production, since show is not called in that case (see LoggingProcessor).
+  private object Printer {
+    private val pprinter: PPrinter =
+      PPrinter(defaultHeight = 200, colorApplyPrefix = fansi.Color.Blue)
+
+    def apply(x: Any): String =
+      pprinter(x, initialOffset = 4).toString
+  }
+
+  private val stepInfo: PartialFunction[Step, Product] = {
     case i: StandardStep => (i.id, i.status, i.configStatus)
-    case i: NodAndShuffleStep => (i.id, i.status, i.configStatus)
+    case i: NodAndShuffleStep => (i.id, i.status, i.configStatus, i.nsStatus)
   }
 
   implicit val show: Show[Action] = Show.show {
@@ -212,11 +223,17 @@ object actions {
            s"steps: ${s.steps.length}",
            s"state: ${s.status}",
            s.steps
-             .filter(_.status === StepState.Pending)
-             .slice(0, scala.math.min(s.steps.length, 20))
-             .collect(stepInfo)))
+            .filter(x => List(StepState.Pending, StepState.Running).exists(_ === x.status))
+            .slice(0, scala.math.min(s.steps.length, 20))
+            .collect(stepInfo)
+          )
+        )
       val dayCalQueue = view.queues.values.map(x => s"${x.execState} ${x.queue}").mkString(",")
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, dayCal: '${dayCalQueue}', loaded: '${view.loaded.mkString(",")}', $someSteps)"
+      s"${s.getClass.getSimpleName}(\n" +
+        s"  ${Printer(u.getClass.getSimpleName)},\n" +
+        s"  dayCal: ${Printer(dayCalQueue)},\n" +
+        s"  loaded: ${Printer(view.loaded)},\n" +
+        s"  ${Printer(someSteps)}\n)"
     case a                                              =>
       s"$a"
   }
