@@ -9,7 +9,6 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
-import monocle.macros.Lenses
 import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
@@ -20,69 +19,32 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.progress.Progress
 import web.client.ReactProps
 
-import scala.concurrent.duration._
 import scala.math.max
-import scala.math.min
 
 final case class SmoothProgressDisplay(
   fileId:   String,
-  total:    Long,
-  value:    Long,
+  total:    Int,
+  value:    Int,
   stopping: Boolean,
   paused:   Boolean,
   hideBar:  Boolean
-) extends ReactProps {
+) extends SmoothProgressBarProps {
   @inline def render: VdomElement = SmoothProgressDisplay.component(this)
+
+  override val maxValue = total
 }
 
-object SmoothProgressDisplay {
-  val periodUpdate: Int = 50
-  // This depends on the server side frequency of updates
-  val remoteUpdatePeriod: Int = 1000
-
+object SmoothProgressDisplay extends SmoothProgressBar[SmoothProgressDisplay] {
   type Props = SmoothProgressDisplay
 
-  @Lenses
-  final case class State(total: Long, value: Long, skipStep: Boolean)
-
-  object State {
-    def fromProps(p: Props): State = State(p.total, p.value, false)
-  }
-
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
-
-  class Backend(b: BackendScope[Props, State]) extends TimerSupport {
-    def setupTimer: Callback =
-      setInterval(tickTotal, periodUpdate.millisecond)
-
-    def newStateFromProps(prev: Props, next: Props): Callback =
-      b.modState { s =>
-        if (prev.paused =!= next.paused || prev.stopping =!= next.stopping) {
-          s
-        } else if (next.stopping) {
-          s
-        } else {
-          State(next.total, next.value, s.value > next.value)
-        }
-      }
-
-    def tickTotal: Callback = b.props.zip(b.state) >>= {
-      case (p, s) =>
-        val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-        b.modState(State.value.set(min(p.total, next)))
-          .when(!s.skipStep && !p.paused && !p.stopping) *>
-          b.modState(State.skipStep.set(false)) *>
-          Callback.empty
-    }
-  }
 
   protected val component = ScalaComponent
     .builder[Props]("SmoothProgressBar")
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
-      val remaining   = (s.total - s.value) / 1000
+      val remaining   = (s.maxValue - s.value) / 1000
       val durationStr = if (remaining > 1) s"$remaining seconds" else "1 second"
       val label =
         if (p.paused) s"${p.fileId} - Paused - $durationStr left"
@@ -91,11 +53,11 @@ object SmoothProgressDisplay {
         else s"${p.fileId} - Reading out..."
 
       if(p.hideBar)
-        <.div(SeqexecStyles.specialStateLabel,
-
-              ^.fontWeight.bold,
-
-              label)
+        <.div(
+          SeqexecStyles.specialStateLabel,
+          SeqexecStyles.progressMessage,
+          label
+        )
       else
         Progress(Progress.Props(
           label       = label,
@@ -143,13 +105,13 @@ object ObservationProgressDisplay {
     .render_P(p =>
       <.div(
         SeqexecStyles.observationProgressRow,
-        p.connect(x =>
-          x() match {
-            case Some(ObservationProgress(_, _, r, t)) =>
+        p.connect(proxy =>
+          proxy() match {
+            case Some(ObservationProgress(_, _, total, remaining)) =>
               SmoothProgressDisplay(
                 p.fileId,
-                r.millis,
-                r.millis - max(0, t.millis),
+                total.toMilliseconds.toInt,
+                total.toMilliseconds.toInt - max(0, remaining.toMilliseconds.toInt),
                 p.stopping,
                 p.paused,
                 p.hideBar)
@@ -157,11 +119,11 @@ object ObservationProgressDisplay {
               val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
 
               if(p.hideBar)
-                <.div(SeqexecStyles.specialStateLabel,
-
-                  ^.fontWeight.bold,
-
-                      msg)
+                <.div(
+                  SeqexecStyles.specialStateLabel,
+                  SeqexecStyles.progressMessage,
+                  msg
+                )
               else
                 Progress(Progress.Props(
                   msg,

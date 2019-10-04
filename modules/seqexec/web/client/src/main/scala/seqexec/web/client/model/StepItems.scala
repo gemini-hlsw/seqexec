@@ -9,11 +9,8 @@ import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.FPUMode
-import seqexec.model.enum.Guiding
-import seqexec.model.enum.StepType
-import seqexec.model.{OffsetAxis, SequenceState, Step, StepId, TelescopeOffset, enumerations}
+import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
+import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, OffsetAxis, SequenceState, Step, StepId, TelescopeOffset, enumerations}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.Formatting._
 
@@ -213,11 +210,18 @@ object StepItems {
     }
   }
 
-  final case class StepStateSnapshot(step: Step,
-                                     obsId: Observation.Id,
-                                     instrument: Instrument,
-                                     tabOperations: TabOperations,
-                                     state: SequenceState) {
+  sealed abstract class DetailRows(val rows: Int)
+  object DetailRows {
+    final case object NoDetailRows extends DetailRows(0)
+    final case object OneDetailRow extends DetailRows(1)
+    final case object TwoDetailRows extends DetailRows(2)
+  }
+
+  final case class StepStateSummary(step         : Step,
+                                    obsId        : Observation.Id,
+                                    instrument   : Instrument,
+                                    tabOperations: TabOperations,
+                                    state        : SequenceState) {
     val isAC: Boolean =
       step.alignAndCalib(instrument).isDefined
 
@@ -242,18 +246,23 @@ object StepItems {
     val isNSInError: Boolean =
       isNS && anyError
 
-    def detailRows(selected: Option[StepId]): Int =
+    def detailRows(selected: Option[StepId]): DetailRows =
       if( (isNS && selected.exists(_ === step.id)) || isNSRunning || isNSInError)
-        2
+        DetailRows.TwoDetailRows
       else if (isACRunning || isACInError)
-        1
+        DetailRows.OneDetailRow
       else
-        0
+        DetailRows.NoDetailRows
+
+    val nsStatus: Option[NodAndShuffleStatus] = step match {
+      case NodAndShuffleStep(_, _ , _, _, _, _, _, nsStatus) => Some(nsStatus)
+      case _                                                 => None
+    }
   }
 
-  object StepStateSnapshot {
-    implicit val EqStepStateSnapshot: Eq[StepStateSnapshot] =
-      Eq.fromUniversalEquals
+  object StepStateSummary {
+    implicit val EqStepStateSummary: Eq[StepStateSummary] =
+      Eq.by(x => (x.step, x.obsId, x.instrument, x.tabOperations, x.state))
   }
 
 }

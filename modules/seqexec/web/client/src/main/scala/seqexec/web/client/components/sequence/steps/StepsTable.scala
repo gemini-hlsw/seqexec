@@ -335,11 +335,11 @@ final case class StepsTable(
 
   val sequenceState: Option[SequenceState] = steps.map(_.state)
 
-  def stepSnapshot(step: Step): Option[StepStateSnapshot] =
-    (obsId, instrument, sequenceState).mapN(StepStateSnapshot(step, _, _, tabOperations, _))
+  def stepSummary(step: Step): Option[StepStateSummary] =
+    (obsId, instrument, sequenceState).mapN(StepStateSummary(step, _, _, tabOperations, _))
 
   def detailRowCount(step: Step, selected: Option[StepId]): Option[Int] =
-    stepSnapshot(step).map(_.detailRows(selected.filter(_ => stepSelectionAllowed(step.id))))
+    stepSummary(step).map(_.detailRows(selected.filter(_ => stepSelectionAllowed(step.id))).rows)
 
   def showRowDetails(step: Step, selected: Option[StepId]): Boolean =
     detailRowCount(step, selected).forall(_ > 0)
@@ -445,6 +445,7 @@ object StepsTable extends Columns {
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
   private val MIDDLE_BUTTON = 1 // As defined by React.js
+  private val HEADER_ROW = -1
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -645,7 +646,7 @@ object StepsTable extends Columns {
       b.props.rowGetter(i),
       b.props.canSetBreakpoint,
       b.state.breakpointHover) match {
-      case (-1, _, _, _)                                           =>
+      case (HEADER_ROW, _, _, _)                                   =>
         // Header
         SeqexecStyles.headerRowStyle
       case (_, StepRow(s), true, _) if s.breakpoint                =>
@@ -949,8 +950,8 @@ object StepsTable extends Columns {
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
               columns.toTagMod
             ),
-            p.stepSnapshot(s).whenDefined { s =>
-              val rowComponents: List[StepStateSnapshot => ReactProps] =
+            p.stepSummary(s).whenDefined { s =>
+              val rowComponents: List[StepStateSummary => ReactProps] =
                 if (s.isAC)
                   List(AlignAndCalibProgress.apply)
                 else if (s.isNS)

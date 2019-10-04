@@ -17,7 +17,7 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.progress.Progress
 import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
-import seqexec.web.client.model.StepItems.StepStateSnapshot
+import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.reusability._
 import web.client.ReactProps
 
@@ -25,7 +25,7 @@ import scala.math.max
 
 final case class ACProgressBar(
   step: AlignAndCalibStep,
-  state: StepStateSnapshot
+  state: StepStateSummary
 ) extends ReactProps {
   @inline def render: VdomElement = ACProgressBar.component(this)
 }
@@ -94,8 +94,8 @@ object ACProgressBar {
       val msg = if (isInError) "Error" else s.msg
       Progress(Progress.Props(
         s"Align and Calib: $msg",
-        total       = enum.all.length.toLong - 1,
-        value       = max(0, s.counter.toLong),
+        total       = enum.all.length - 1,
+        value       = max(0, s.counter),
         color       = if (isInError) "red".some else "green".some,
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
@@ -111,7 +111,7 @@ object ACProgressBar {
 /**
   * Component to wrap the progress bar
   */
-final case class AlignAndCalibProgress(state: StepStateSnapshot) extends ReactProps {
+final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps {
   @inline def render: VdomElement = AlignAndCalibProgress.component(this)
 
   protected[steps] val connect =

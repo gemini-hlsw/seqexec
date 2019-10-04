@@ -4,7 +4,7 @@
 package seqexec.web.client.components.sequence
 
 package object steps {
-  implicit class ControlButtonResolverSyntax[A](val a: A) extends AnyVal {
+  implicit class ControlButtonResolverOps[A](val a: A) extends AnyVal {
     def controlButtonsActive(implicit resolver: ControlButtonResolver[A]): Boolean =
       resolver.controlButtonsActive(a)
   }

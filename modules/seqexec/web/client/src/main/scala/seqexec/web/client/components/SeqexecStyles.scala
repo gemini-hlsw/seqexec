@@ -185,8 +185,9 @@ object SeqexecStyles {
 
   val configuringRow: Css = Css("SeqexecStyles-configuringRow")
 
-  val specialStateLabel: Css =
-    Css("SeqexecStyles-specialStateLabel")
+  val specialStateLabel: Css = Css("SeqexecStyles-specialStateLabel")
+
+  val progressMessage: Css = Css("SeqexecStyles-progressMessage")
 
   val subsystems: Css = Css("SeqexecStyles-subsystems")
 

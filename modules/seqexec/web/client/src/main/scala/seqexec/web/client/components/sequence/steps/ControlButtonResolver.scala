@@ -6,7 +6,7 @@ package seqexec.web.client.components.sequence.steps
 import seqexec.model.{SequenceState, Step}
 import seqexec.web.client.model.ClientStatus
 
-trait ControlButtonResolver[A] {
+sealed trait ControlButtonResolver[A] {
   def extractor(a: A): (ClientStatus, SequenceState, Step)
 
   def controlButtonsActive(a: A): Boolean = {

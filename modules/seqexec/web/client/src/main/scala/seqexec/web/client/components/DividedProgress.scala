@@ -10,6 +10,7 @@ import react.common.Css
 import cats.implicits._
 import seqexec.web.client.semanticui.elements.progress.Progress
 import web.client.ReactProps
+import seqexec.web.client.semanticui._
 
 /**
   * Progress bar divided in steps
@@ -35,22 +36,26 @@ object DividedProgress {
   type Label = String
   type Quantity = Int
 
-  implicit val propsReuse: Reusability[Props] = Reusability.byRef
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[DividedProgress]
 
   protected val component = ScalaComponent
     .builder[Props]("DividedProgress")
     .stateless
     .render_P { p =>
+      val countSections = p.sections.length
+
       val sectionProgressStyles: List[Css] =
+      // Length is 1 + (countSections - 2) + 1 = countSections
         SeqexecStyles.dividedProgressSectionLeft +:
-          List.fill(p.sections.length - 2)(SeqexecStyles.dividedProgressSectionMiddle) :+
+          List.fill(countSections - 2)(SeqexecStyles.dividedProgressSectionMiddle) :+
           SeqexecStyles.dividedProgressSectionRight
 
-      val countSections = p.sections.length
-      val completeSections = p.value / countSections
+      val completeSections = p.value / p.sectionTotal
+
       val sectionValuesAndColors: List[(Quantity, Option[String])] =
+      // Length is completeSections + 1 + (countSections - completeSections - 1) = countSections
         (List.fill(completeSections)((p.sectionTotal, p.completeSectionColor)) :+
-          ((p.value % countSections, p.ongoingSectionColor))) ++
+          ((p.value % p.sectionTotal, p.ongoingSectionColor))) ++
           List.fill(countSections - completeSections - 1)((0, None))
 
       val sectionBarStyles: List[Css] =
@@ -58,25 +63,31 @@ object DividedProgress {
           List.empty
         else
           SeqexecStyles.dividedProgressBarLeft +:
-            List.fill(completeSections - 1)(SeqexecStyles.dividedProgressBarMiddle) :+
+            List.fill(completeSections - 1)(SeqexecStyles.dividedProgressBarMiddle).take(countSections - 2) :+
             SeqexecStyles.dividedProgressBarRight
 
-      <.span(
-        SeqexecStyles.dividedProgress,
-        p.sections.zip(sectionValuesAndColors).zip(sectionProgressStyles).zip(sectionBarStyles.padTo(countSections, Css.Zero)).toTagMod {
-          case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
-            Progress(Progress.Props(
-              label,
-              p.sectionTotal.toLong,
-              sectionValue.toLong,
-              p.indicating,
-              p.progress,
-              sectionColor,
-              p.progressCls :+ sectionProgressStyle,
-              p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
-              p.labelCls
-            ))
-        }
+      val sectionInfo =
+        p.sections
+         .zip(sectionValuesAndColors)
+         .zip(sectionProgressStyles)
+         .zip(sectionBarStyles.padTo(countSections, Css.Zero)) // Due to padding, length = countSections
+
+        <.span(
+          SeqexecStyles.dividedProgress,
+          sectionInfo.toTagMod {
+            case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
+              Progress(Progress.Props(
+                label,
+                p.sectionTotal,
+                sectionValue,
+                p.indicating,
+                p.progress,
+                sectionColor,
+                p.progressCls :+ sectionProgressStyle,
+                p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
+                p.labelCls
+                ))
+          }
         )
     }
     .configure(Reusability.shouldComponentUpdate)

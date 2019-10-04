@@ -54,8 +54,8 @@ final case class StepProgressCell(
   def isStopping: Boolean =
     tabOperations.stopRequested === StopOperation.StopInFlight
 
-  val stateSnapshot: StepStateSnapshot =
-    StepStateSnapshot(step, obsId, instrument, tabOperations, state)
+  val stateSummary: StepStateSummary =
+    StepStateSummary(step, obsId, instrument, tabOperations, state)
 }
 
 object StepProgressCell {
@@ -181,10 +181,10 @@ object StepProgressCell {
       ).when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
-        if (props.stateSnapshot.isAC) {//} && !props.stateSnapshot.anyError) {
-          if (props.stateSnapshot.isACRunning) {
+        if (props.stateSummary.isAC) {//} && !props.stateSnapshot.anyError) {
+          if (props.stateSummary.isACRunning) {
             "Running Align & Calib..."
-          } else if (props.stateSnapshot.anyError) {
+          } else if (props.stateSummary.anyError) {
             props.step.show
           } else {
             "Align & Calib"

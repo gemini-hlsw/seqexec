@@ -6,22 +6,136 @@ package seqexec.web.client.components.sequence.steps
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common.implicits._
-import seqexec.web.client.model.StepItems.StepStateSnapshot
+import seqexec.web.client.model.StepItems.StepStateSummary
 import web.client.ReactProps
-import japgolly.scalajs.react.internal.CatsReactExt
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
 import cats.implicits._
-import seqexec.model.NodAndShuffleStep
+import diode.react.ReactConnectProxy
+import japgolly.scalajs.react.extra.TimerSupport
+import monocle.macros.Lenses
+import react.common.Css
+import seqexec.model.{NodAndShuffleStatus, ObservationProgress}
 import seqexec.model.operations._
-import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.{ClientStatus, StopOperation}
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui._
 
-final case class NodAndShuffleCycleProgress(state: StepStateSnapshot) extends ReactProps {
+import scala.math.max
+
+final case class SmoothDividedProgressBar(
+  sections            : List[DividedProgress.Label],
+  sectionTotal        : DividedProgress.Quantity,
+  value               : DividedProgress.Quantity,
+  maxValue            : DividedProgress.Quantity,
+  completeSectionColor: Option[String] = None,
+  ongoingSectionColor : Option[String] = None,
+  progressCls         : List[Css] = Nil,
+  barCls              : List[Css],
+  labelCls            : List[Css] = Nil,
+  stopping            : Boolean,
+  paused: Boolean
+) extends SmoothProgressBarProps {
+  @inline def render: VdomElement = SmoothDividedProgressBar.component(this)
+}
+
+object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressBar] {
+  type Props = SmoothDividedProgressBar
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  protected val component = ScalaComponent
+    .builder[Props]("SmoothDividedProgressBar")
+    .initialStateFromProps(State.fromProps)
+    .backend(x => new Backend(x))
+    .render_PS { (p, s) =>
+      DividedProgress(
+        sections = p.sections,
+        sectionTotal = p.sectionTotal,
+        value = s.value,
+        completeSectionColor = p.completeSectionColor,
+        ongoingSectionColor = p.ongoingSectionColor,
+        progressCls = p.progressCls,
+        barCls = p.barCls,
+        labelCls = p.labelCls
+        )
+    }
+    .componentDidMount(_.backend.setupTimer)
+    .componentWillReceiveProps($ =>
+                                 $.backend.newStateFromProps($.currentProps, $.nextProps))
+    .configure(TimerSupport.install)
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+}
+
+final case class NodAndShuffleProgress(
+  summary: StepStateSummary,
+  sections: NodAndShuffleStatus => List[DividedProgress.Label],
+  quantitiesFromNodMillis: // (nsStatus, nodMillis) => (sectionTotal, currentValue)
+    (NodAndShuffleStatus, DividedProgress.Quantity) =>
+      (DividedProgress.Quantity, Option[DividedProgress.Quantity])
+) extends ReactProps {
+  @inline def render: VdomElement = NodAndShuffleProgress.component(this)
+
+  def isStopping: Boolean =
+    summary.tabOperations.stopRequested === StopOperation.StopInFlight
+
+  protected[steps] val connect =
+    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(summary.obsId, summary.step.id))
+}
+
+object  NodAndShuffleProgress {
+  type Props = NodAndShuffleProgress
+
+  @Lenses
+  final case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.summary)
+  implicit val stateReuse: Reusability[State] = Reusability.always
+
+  protected val component = ScalaComponent
+    .builder[Props]("NodAndShuffleProgress")
+    .initialStateFromProps(p => State(p.connect))
+    .render_PS { (p, s) =>
+      s.progressConnect { proxy =>
+        val (totalMillis, remainingMillis) =
+          proxy()
+            .map(p => (p.total.toMilliseconds.toInt, p.remaining.toMilliseconds.toInt))
+            .getOrElse((0, 0))
+        val elapsedMillis = totalMillis - max(0, remainingMillis)
+
+        p.summary.nsStatus.map[VdomElement] { nsStatus =>
+          val isInError = !p.summary.isNSRunning && p.summary.isNSInError
+          val nodMillis = nsStatus.nodExposureTime.toMilliseconds.toInt
+          val (sectionTotal, currentValue) = p.quantitiesFromNodMillis(nsStatus, nodMillis)
+
+          SmoothDividedProgressBar(
+            sections = p.sections(nsStatus),
+            sectionTotal = sectionTotal,
+            value = currentValue.map(_ + elapsedMillis).getOrElse(0),
+            maxValue = currentValue.map(_ + nodMillis).getOrElse(0),
+            completeSectionColor = if (isInError) "red".some else "green".some,
+            ongoingSectionColor = if (isInError) "red".some else "blue".some,
+            progressCls = List(SeqexecStyles.observationProgressBar),
+            barCls = List(SeqexecStyles.observationBar),
+            labelCls = List(SeqexecStyles.observationLabel),
+            stopping = p.isStopping,
+            paused = p.summary.step.isObservePaused
+            )
+        } getOrElse
+          <.div("NodAndShuffleProgress invoked without a Nod&Shuffle step summary")
+      }
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+}
+
+final case class NodAndShuffleCycleProgress(summary: StepStateSummary) extends ReactProps {
   @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
 }
 
-object NodAndShuffleCycleProgress extends CatsReactExt {
+object NodAndShuffleCycleProgress {
   type Props = NodAndShuffleCycleProgress
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -30,74 +144,64 @@ object NodAndShuffleCycleProgress extends CatsReactExt {
     .builder[Props]("NodAndShuffleCycleProgress")
     .stateless
     .render_P { p =>
-      val nsStatus = p.state.step.asInstanceOf[NodAndShuffleStep].nsStatus
-      val isInError = !p.state.isNSRunning && p.state.isNSInError
-
-      DividedProgress(
-        List.range(1, nsStatus.cycles + 1).map(_.show),
-        nsStatus.nodExposureTime.toSeconds.toInt * NodAndShuffleStage.NsSequence.length,
-        value = 0,
-        completeSectionColor = if (isInError) "red".some else "green".some,
-        ongoingSectionColor = if (isInError) "red".some else "blue".some,
-        progressCls = List(SeqexecStyles.observationProgressBar),
-        barCls = List(SeqexecStyles.observationBar),
-        labelCls = List(SeqexecStyles.observationLabel)
+      NodAndShuffleProgress(
+        p.summary,
+        nsStatus => List.range(1, nsStatus.cycles + 1).map(_.show),
+        (nsStatus, nodMillis) => {
+          val cycleMillis = nodMillis * NodAndShuffleStage.NsSequence.length
+          val currentValue = nsStatus.state.map { s =>
+            s.sub.cycle * cycleMillis + s.sub.stageIndex * nodMillis
+          }
+          (cycleMillis, currentValue)
+        }
       )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
 
-final case class NodAndShuffleNodProgress(state: StepStateSnapshot) extends ReactProps {
+final case class NodAndShuffleNodProgress(summary: StepStateSummary) extends ReactProps {
   @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
 }
 
-object NodAndShuffleNodProgress extends CatsReactExt {
+object NodAndShuffleNodProgress {
   type Props = NodAndShuffleNodProgress
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-
-  private val nodSections: List[DividedProgress.Label] =
-    NodAndShuffleStage.NsSequence.map(_.symbol.name).toList
 
   protected val component = ScalaComponent
     .builder[Props]("NodAndShuffleNodProgress")
     .stateless
     .render_P { p =>
-      val nsStatus = p.state.step.asInstanceOf[NodAndShuffleStep].nsStatus
-      val isInError = !p.state.isNSRunning && p.state.isNSInError
-
-      DividedProgress(
-        nodSections,
-        sectionTotal = nsStatus.nodExposureTime.toSeconds.toInt,
-        value = 0,
-        completeSectionColor = if (isInError) "red".some else "green".some,
-        ongoingSectionColor = if (isInError) "red".some else "blue".some,
-        progressCls = List(SeqexecStyles.observationProgressBar),
-        barCls = List(SeqexecStyles.observationBar),
-        labelCls = List(SeqexecStyles.observationLabel)
-      )
+      NodAndShuffleProgress(
+        p.summary,
+        _ => NodAndShuffleStage.NsSequence.map(_.symbol.name).toList,
+        (nsStatus, nodMillis) => {
+          val currentValue = nsStatus.state.map(_.sub.stageIndex * nodMillis)
+          (nodMillis, currentValue)
+        }
+        )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
 
-final case class NodAndShuffleCycleRowProps(
-  clientStatus : ClientStatus,
-  stateSnapshot: StepStateSnapshot
-) extends ReactProps {
-  @inline def render: VdomElement = NodAndShuffleCycleRow.component(this)
+sealed trait NodAndShuffleRowProps extends ReactProps {
+  val clientStatus: ClientStatus
+  val stateSummary: StepStateSummary
 }
 
-object NodAndShuffleCycleRow extends CatsReactExt {
-  def apply(clientStatus : ClientStatus)(state: StepStateSnapshot): NodAndShuffleCycleRowProps =
-    NodAndShuffleCycleRowProps(clientStatus, state)
+trait NodAndShuffleRow[L <: OperationLevel] {
+  type Props <: NodAndShuffleRowProps
 
-  type Props = NodAndShuffleCycleRowProps
+  implicit val propsReuse: Reusability[Props]
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
-    ControlButtonResolver.build(p => (p.clientStatus, p.stateSnapshot.state, p.stateSnapshot.step))
+    ControlButtonResolver.build(p => (p.clientStatus, p.stateSummary.state, p.stateSummary.step))
+
+  implicit private val operationLevelType: OperationLevelType[L] = implicitly[OperationLevelType[L]]
+
+  protected def progressControl(summary: StepStateSummary): VdomElement
 
   protected[steps] val component = ScalaComponent
     .builder[Props]("NodAndShuffleCycleRow")
@@ -105,61 +209,58 @@ object NodAndShuffleCycleRow extends CatsReactExt {
     .render_P { p =>
       <.span(
         SeqexecStyles.nodAndShuffleDetailRow,
-        NodAndShuffleCycleProgress(p.stateSnapshot),
+        progressControl(p.stateSummary),
         <.span(
           SeqexecStyles.nodAndShuffleControls,
           ControlButtons(
-            p.stateSnapshot.obsId,
-            p.stateSnapshot.instrument.operations[OperationLevel.NsCycle](p.stateSnapshot.step.isObservePaused),
-            p.stateSnapshot.state,
-            p.stateSnapshot.step.id,
-            p.stateSnapshot.step.isObservePaused,
-            p.stateSnapshot.tabOperations
-          )
-        ).when(p.controlButtonsActive)
-      )
+            p.stateSummary.obsId,
+            p.stateSummary.instrument.operations[L](p.stateSummary.step.isObservePaused),
+            p.stateSummary.state,
+            p.stateSummary.step.id,
+            p.stateSummary.step.isObservePaused,
+            p.stateSummary.tabOperations
+            )
+          ).when(p.controlButtonsActive)
+        )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
 
+final case class NodAndShuffleCycleRowProps(
+  clientStatus: ClientStatus,
+  stateSummary: StepStateSummary
+) extends NodAndShuffleRowProps {
+  @inline def render: VdomElement = NodAndShuffleCycleRow.component(this)
+}
+
+object NodAndShuffleCycleRow extends NodAndShuffleRow[OperationLevel.NsCycle] {
+  def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleCycleRowProps =
+    NodAndShuffleCycleRowProps(clientStatus, state)
+
+  type Props = NodAndShuffleCycleRowProps
+
+  implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  protected def progressControl(summary: StepStateSummary): VdomElement =
+    NodAndShuffleCycleProgress(summary)
+}
+
 final case class NodAndShuffleNodRowProps(
-  clientStatus : ClientStatus,
-  stateSnapshot: StepStateSnapshot
-) extends ReactProps {
+  clientStatus: ClientStatus,
+  stateSummary: StepStateSummary
+) extends NodAndShuffleRowProps {
   @inline def render: VdomElement = NodAndShuffleNodRow.component(this)
 }
 
-object NodAndShuffleNodRow extends CatsReactExt {
-  def apply(clientStatus : ClientStatus)(state: StepStateSnapshot): NodAndShuffleNodRowProps =
+object NodAndShuffleNodRow extends NodAndShuffleRow[OperationLevel.NsNod] {
+  def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleNodRowProps =
     NodAndShuffleNodRowProps(clientStatus, state)
 
   type Props = NodAndShuffleNodRowProps
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
-    ControlButtonResolver.build(p => (p.clientStatus, p.stateSnapshot.state, p.stateSnapshot.step))
+  implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleNodRow")
-    .stateless
-    .render_P { p =>
-      <.span(
-        SeqexecStyles.nodAndShuffleDetailRow,
-        NodAndShuffleNodProgress(p.stateSnapshot),
-        <.span(
-          SeqexecStyles.nodAndShuffleControls,
-          ControlButtons(
-            p.stateSnapshot.obsId,
-            p.stateSnapshot.instrument.operations[OperationLevel.NsNod](p.stateSnapshot.step.isObservePaused),
-            p.stateSnapshot.state,
-            p.stateSnapshot.step.id,
-            p.stateSnapshot.step.isObservePaused,
-            p.stateSnapshot.tabOperations
-            )
-        ).when(p.controlButtonsActive)
-      )
-    }
-    .configure(Reusability.shouldComponentUpdate)
-    .build
+  protected def progressControl(summary: StepStateSummary): VdomElement =
+    NodAndShuffleNodProgress(summary)
 }
