@@ -14,6 +14,9 @@ name := Settings.Definitions.name
 organization in Global := "edu.gemini.ocs"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+ThisBuild / publishArtifact in (Compile, packageDoc) := false
+
 // Gemini repository
 resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
@@ -572,6 +575,14 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
     mappings in Universal += {
       val jar = (packageBin in Compile).value
       jar -> ("lib/" + jar.getName)
+    },
+    mappings in Universal := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (mappings in Universal).value
+      val filtered = universalMappings filter {
+        case (_, name) => !name.contains("_sjs")
+      }
+      filtered
     },
     mappings in Universal += {
       val f = (resourceDirectory in Compile).value / "update_smartgcal"
