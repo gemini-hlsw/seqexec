@@ -535,7 +535,8 @@ lazy val seqexecCommonSettings = Seq(
     "-J-XX:+ExitOnOutOfMemoryError",
     "-J-XX:+CrashOnOutOfMemoryError",
     "-J-XX:HeapDumpPath=/tmp",
-    "-J-Xrunjdwp:transport=dt_socket,address=8457,server=y,suspend=n"
+    "-J-Xrunjdwp:transport=dt_socket,address=8457,server=y,suspend=n",
+    "-java-home ${app_home}/../jre" // This breaks builds without jre
   )
 ) ++ commonSettings
 
@@ -602,13 +603,21 @@ lazy val app_seqexec_server_gs_test = preventPublication(project.in(file("app/se
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
-  .settings(embeddedJreSettingsLinux64: _*)
   .settings(
     description := "Seqexec GS test deployment",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GS,
-    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
-  ).dependsOn(seqexec_server)
+    mappings in Universal := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val filtered = universalMappings filter {
+        case (_, name) => !name.contains("_sjs")
+      }
+      filtered
+    }
+  )
+  .settings(embeddedJreSettingsLinux64: _*)
+  .dependsOn(seqexec_server)
 
 /**
   * Project for the seqexec test server at GN on Linux 64
@@ -622,13 +631,21 @@ lazy val app_seqexec_server_gn_test = preventPublication(project.in(file("app/se
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
-  .settings(embeddedJreSettingsLinux64: _*)
   .settings(
     description := "Seqexec GN test deployment",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GN,
-    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
-  ).dependsOn(seqexec_server)
+    mappings in Universal := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val filtered = universalMappings filter {
+        case (_, name) => !name.contains("_sjs")
+      }
+      filtered
+    }
+  )
+  .settings(embeddedJreSettingsLinux64: _*)
+  .dependsOn(seqexec_server)
 
 /**
   * Project for the seqexec server app for production on Linux 64
@@ -642,13 +659,21 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
-  .settings(embeddedJreSettingsLinux64: _*)
   .settings(
     description := "Seqexec Gemini South server production",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GS,
-    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
-  ).dependsOn(seqexec_server)
+    mappings in Universal := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val filtered = universalMappings filter {
+        case (_, name) => !name.contains("_sjs")
+      }
+      filtered
+    }
+  )
+  .settings(embeddedJreSettingsLinux64: _*)
+  .dependsOn(seqexec_server)
 
 /**
   * Project for the GN seqexec server app for production on Linux 64
@@ -662,10 +687,18 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
   .settings(seqexecCommonSettings: _*)
   .settings(seqexecRPMSettings: _*)
   .settings(deployedAppMappings: _*)
-  .settings(embeddedJreSettingsLinux64: _*)
   .settings(
     description := "Seqexec Gemini North server production",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GN,
-    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
-  ).dependsOn(seqexec_server)
+    mappings in Universal := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val filtered = universalMappings filter {
+        case (_, name) => !name.contains("_sjs")
+      }
+      filtered
+    }
+  )
+  .settings(embeddedJreSettingsLinux64: _*)
+  .dependsOn(seqexec_server)
