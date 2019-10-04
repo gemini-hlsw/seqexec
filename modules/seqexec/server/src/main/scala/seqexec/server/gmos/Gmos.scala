@@ -118,9 +118,9 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
     val stdType = SequenceConfiguration.calcStepType(config)
     if (Gmos.isNodAndShuffle(config)) {
       stdType.flatMap {
-        case StepType.DarkOrBias(_)      => StepType.DarkOrBiasNS(instrument).asRight
-        case StepType.CelestialObject(_) => StepType.NodAndShuffle(instrument).asRight
-        case st                          => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
+        case StepType.ExclusiveDarkOrBias(_) => StepType.DarkOrBiasNS(instrument).asRight
+        case StepType.CelestialObject(_)     => StepType.NodAndShuffle(instrument).asRight
+        case st                              => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
           .asLeft
       }
     } else {

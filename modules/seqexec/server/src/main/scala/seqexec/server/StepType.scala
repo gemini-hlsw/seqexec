@@ -20,20 +20,22 @@ object StepType {
   final case class FlatOrArc(override val instrument: Instrument) extends StepType
   final case class DarkOrBias(override val instrument: Instrument) extends StepType
   final case class DarkOrBiasNS(override val instrument: Instrument) extends StepType
+  final case class ExclusiveDarkOrBias(override val instrument: Instrument) extends StepType
   case object AlignAndCalib extends StepType {
     override val instrument: Instrument = Instrument.Gpi
   }
 
   implicit val eqStepType: Eq[StepType] = Eq.instance {
-    case (CelestialObject(i), CelestialObject(j)) => i === j
-    case (Dark(i), Dark(j))                       => i === j
-    case (NodAndShuffle(i), NodAndShuffle(j))     => i === j
-    case (Gems(i), Gems(j))                       => i === j
-    case (AltairObs(i), AltairObs(j))             => i === j
-    case (FlatOrArc(i), FlatOrArc(j))             => i === j
-    case (DarkOrBias(i), DarkOrBias(j))           => i === j
-    case (DarkOrBiasNS(i), DarkOrBiasNS(j))       => i === j
-    case (AlignAndCalib, AlignAndCalib)           => true
-    case _                                        => false
+    case (CelestialObject(i), CelestialObject(j))         => i === j
+    case (Dark(i), Dark(j))                               => i === j
+    case (NodAndShuffle(i), NodAndShuffle(j))             => i === j
+    case (Gems(i), Gems(j))                               => i === j
+    case (AltairObs(i), AltairObs(j))                     => i === j
+    case (FlatOrArc(i), FlatOrArc(j))                     => i === j
+    case (DarkOrBias(i), DarkOrBias(j))                   => i === j
+    case (DarkOrBiasNS(i), DarkOrBiasNS(j))               => i === j
+    case (ExclusiveDarkOrBias(i), ExclusiveDarkOrBias(j)) => i === j
+    case (AlignAndCalib, AlignAndCalib)                   => true
+    case _                                                => false
   }
 }
