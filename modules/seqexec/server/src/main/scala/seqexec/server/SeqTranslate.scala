@@ -369,7 +369,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case StepType.CelestialObject(inst) => getTcs(
+      case StepType.CelestialObject(inst)  => getTcs(
         inst.hasOI.fold(allButGaos, allButGaosNorOi),
         useGaos = false,
         sys,
@@ -377,7 +377,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         config
       ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.NodAndShuffle(inst)   => getTcs(
+      case StepType.NodAndShuffle(inst)    => getTcs(
         inst.hasOI.fold(allButGaos, allButGaosNorOi),
         useGaos = false,
         sys,
@@ -385,14 +385,16 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         config
       ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.FlatOrArc(inst)       => for {
+      case StepType.FlatOrArc(inst)        => for {
         tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, sys, TcsController.LightSource.GCAL, config)
         gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
       } yield List(sys, tcs, gcal)
 
-      case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) => List(sys).asRight
+      case StepType.DarkOrBias(_) => List(sys).asRight
 
-      case StepType.AltairObs(inst)       => getTcs(
+      case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) => List(sys, Gcal.defaultGcal[IO](systems.gcal)).asRight
+
+      case StepType.AltairObs(inst)        => getTcs(
         inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
         useGaos = true,
         sys,
@@ -400,9 +402,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         config
       ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case StepType.AlignAndCalib         => List(sys).asRight
+      case StepType.AlignAndCalib          => List(sys).asRight
 
-      case StepType.Gems(inst)            => getTcs(
+      case StepType.Gems(inst)             => getTcs(
         inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
         useGaos = true,
         sys,
@@ -410,7 +412,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         config
       ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-      case _                              => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
+      case _                               => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
 
@@ -518,7 +520,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           calcInstHeader(config, sys).map(h => ctx =>
             List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h))
 
-      case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_)  =>
+      case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) | StepType.ExclusiveDarkOrBias(_) =>
           calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
       case StepType.AlignAndCalib   => TrySeq(_ => Nil) // No headers for A&C
