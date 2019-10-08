@@ -69,14 +69,8 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
     .build
 }
 
-final case class NodAndShuffleProgress(
-  summary: StepStateSummary,
-  sections: NodAndShuffleStatus => List[DividedProgress.Label],
-  quantitiesFromNodMillis: // (nsStatus, nodMillis) => (sectionTotal, currentValue)
-    (NodAndShuffleStatus, DividedProgress.Quantity) =>
-      (DividedProgress.Quantity, Option[DividedProgress.Quantity])
-) extends ReactProps {
-  @inline def render: VdomElement = NodAndShuffleProgress.component(this)
+sealed trait NodAndShuffleProgressProps extends ReactProps {
+  val summary: StepStateSummary
 
   def isStopping: Boolean =
     summary.tabOperations.stopRequested === StopOperation.StopInFlight
@@ -85,19 +79,26 @@ final case class NodAndShuffleProgress(
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(summary.obsId, summary.step.id))
 }
 
-object  NodAndShuffleProgress {
-  type Props = NodAndShuffleProgress
+sealed trait NodAndShuffleProgress {
+  type Props <: NodAndShuffleProgressProps
 
-  @Lenses
   // From diode doc (Usage with React): "Having a single reference to (connect)
   // during your components lifecycle ensures that React will update your
   // component rather than unmounting and remounting it."
-  final case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
+  @Lenses
+  protected case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.summary)
+  implicit val propsReuse: Reusability[Props]
   implicit val stateReuse: Reusability[State] = Reusability.always
 
-  protected val component = ScalaComponent
+  protected def sections(nsStatus: NodAndShuffleStatus): List[DividedProgress.Label]
+
+  protected def quantitiesFromNodMillis(
+    nsStatus:  NodAndShuffleStatus,
+    nodMillis: DividedProgress.Quantity
+  ): (DividedProgress.Quantity, Option[DividedProgress.Quantity]) // (sectionTotal, currentValue)
+
+  protected[steps] val component = ScalaComponent
     .builder[Props]("NodAndShuffleProgress")
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
@@ -110,10 +111,10 @@ object  NodAndShuffleProgress {
         p.summary.nsStatus.map[VdomElement] { nsStatus =>
           val isInError = !p.summary.isNSRunning && p.summary.isNSInError
           val nodMillis = nsStatus.nodExposureTime.toMilliseconds.toInt
-          val (sectionTotal, currentValue) = p.quantitiesFromNodMillis(nsStatus, nodMillis)
+          val (sectionTotal, currentValue) = quantitiesFromNodMillis(nsStatus, nodMillis)
 
           SmoothDividedProgressBar(
-            sections = p.sections(nsStatus),
+            sections = sections(nsStatus),
             sectionTotal = sectionTotal,
             value = currentValue.map(_ + elapsedMillis).getOrElse(0),
             maxValue = currentValue.map(_ + nodMillis).getOrElse(0),
@@ -133,59 +134,51 @@ object  NodAndShuffleProgress {
     .build
 }
 
-final case class NodAndShuffleCycleProgress(summary: StepStateSummary) extends ReactProps {
-  @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
+final case class NodAndShuffleCycleProgress(summary: StepStateSummary)
+  extends NodAndShuffleProgressProps {
+    @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
 }
 
-object NodAndShuffleCycleProgress {
+object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
   type Props = NodAndShuffleCycleProgress
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  protected val component = ScalaComponent
-    .builder[Props]("NodAndShuffleCycleProgress")
-    .stateless
-    .render_P { p =>
-      NodAndShuffleProgress(
-        p.summary,
-        nsStatus => List.range(1, nsStatus.cycles + 1).map(_.show),
-        (nsStatus, nodMillis) => {
-          val cycleMillis = nodMillis * NodAndShuffleStage.NsSequence.length
-          val currentValue = nsStatus.state.map { s =>
-            s.sub.cycle * cycleMillis + s.sub.stageIndex * nodMillis
-          }
-          (cycleMillis, currentValue)
-        }
-      )
+  protected def sections(nsStatus: NodAndShuffleStatus): List[DividedProgress.Label] =
+    List.range(1, nsStatus.cycles + 1).map(_.show)
+
+  protected def quantitiesFromNodMillis(
+    nsStatus:  NodAndShuffleStatus,
+    nodMillis: DividedProgress.Quantity
+  ): (DividedProgress.Quantity, Option[DividedProgress.Quantity]) = {
+    val cycleMillis = nodMillis * NodAndShuffleStage.NsSequence.length
+    val currentValue = nsStatus.state.map { s =>
+      s.sub.cycle * cycleMillis + s.sub.stageIndex * nodMillis
     }
-    .configure(Reusability.shouldComponentUpdate)
-    .build
+    (cycleMillis, currentValue)
+  }
 }
 
-final case class NodAndShuffleNodProgress(summary: StepStateSummary) extends ReactProps {
-  @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
+final case class NodAndShuffleNodProgress(summary: StepStateSummary)
+  extends NodAndShuffleProgressProps {
+    @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
 }
 
-object NodAndShuffleNodProgress {
+object NodAndShuffleNodProgress extends NodAndShuffleProgress {
   type Props = NodAndShuffleNodProgress
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  protected val component = ScalaComponent
-    .builder[Props]("NodAndShuffleNodProgress")
-    .stateless
-    .render_P { p =>
-      NodAndShuffleProgress(
-        p.summary,
-        _ => NodAndShuffleStage.NsSequence.map(_.symbol.name).toList,
-        (nsStatus, nodMillis) => {
-          val currentValue = nsStatus.state.map(_.sub.stageIndex * nodMillis)
-          (nodMillis, currentValue)
-        }
-        )
-    }
-    .configure(Reusability.shouldComponentUpdate)
-    .build
+  protected def sections(nsStatus: NodAndShuffleStatus): List[DividedProgress.Label] =
+    NodAndShuffleStage.NsSequence.map(_.symbol.name).toList
+
+  protected def quantitiesFromNodMillis(
+    nsStatus:  NodAndShuffleStatus,
+    nodMillis: DividedProgress.Quantity
+  ): (DividedProgress.Quantity, Option[DividedProgress.Quantity]) = {
+    val currentValue = nsStatus.state.map(_.sub.stageIndex * nodMillis)
+    (nodMillis, currentValue)
+  }
 }
 
 sealed trait NodAndShuffleRowProps extends ReactProps {
@@ -193,7 +186,7 @@ sealed trait NodAndShuffleRowProps extends ReactProps {
   val stateSummary: StepStateSummary
 }
 
-trait NodAndShuffleRow[L <: OperationLevel] {
+sealed trait NodAndShuffleRow[L <: OperationLevel] {
   type Props <: NodAndShuffleRowProps
 
   implicit val propsReuse: Reusability[Props]
