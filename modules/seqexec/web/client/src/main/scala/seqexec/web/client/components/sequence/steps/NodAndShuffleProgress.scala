@@ -89,6 +89,9 @@ object  NodAndShuffleProgress {
   type Props = NodAndShuffleProgress
 
   @Lenses
+  // From diode doc (Usage with React): "Having a single reference to (connect)
+  // during your components lifecycle ensures that React will update your
+  // component rather than unmounting and remounting it."
   final case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.summary)
@@ -199,7 +202,7 @@ trait NodAndShuffleRow[L <: OperationLevel] {
   implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
     ControlButtonResolver.build(p => (p.clientStatus, p.stateSummary.state, p.stateSummary.step))
 
-  implicit private val operationLevelType: OperationLevelType[L] = implicitly[OperationLevelType[L]]
+  implicit protected val operationLevelType: OperationLevelType[L]
 
   protected def progressControl(summary: StepStateSummary): VdomElement
 
@@ -242,6 +245,9 @@ object NodAndShuffleCycleRow extends NodAndShuffleRow[OperationLevel.NsCycle] {
 
   implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
+  implicit protected val operationLevelType: OperationLevelType[OperationLevel.NsCycle] =
+    implicitly[OperationLevelType[OperationLevel.NsCycle]]
+
   protected def progressControl(summary: StepStateSummary): VdomElement =
     NodAndShuffleCycleProgress(summary)
 }
@@ -260,6 +266,9 @@ object NodAndShuffleNodRow extends NodAndShuffleRow[OperationLevel.NsNod] {
   type Props = NodAndShuffleNodRowProps
 
   implicit lazy val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  implicit protected val operationLevelType: OperationLevelType[OperationLevel.NsNod] =
+    implicitly[OperationLevelType[OperationLevel.NsNod]]
 
   protected def progressControl(summary: StepStateSummary): VdomElement =
     NodAndShuffleNodProgress(summary)
