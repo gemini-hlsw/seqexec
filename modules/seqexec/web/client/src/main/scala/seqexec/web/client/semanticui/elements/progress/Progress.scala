@@ -17,8 +17,8 @@ import web.client.facades.semanticui.SemanticUIProgress._
   */
 object Progress {
   final case class Props(label:       String,
-                         total:       Long,
-                         value:       Long,
+                         total:       Int,
+                         value:       Int,
                          indicating:  Boolean = false,
                          progress:    Boolean = false,
                          color:       Option[String] = None,

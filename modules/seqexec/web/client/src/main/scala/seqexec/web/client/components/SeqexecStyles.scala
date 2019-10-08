@@ -18,8 +18,8 @@ object SeqexecStyles {
   val TableBorderWidth: Double = 1.0
   val TableRightPadding: Int   = 13
 
-  val acProgressRow: Css =
-    Css("SeqexecStyles-acProgressRow")
+  val tableDetailRow: Css =
+    Css("SeqexecStyles-tableDetailRow")
 
   val expandedRunningRow: Css =
     Css("SeqexecStyles-expandedRunningRow")
@@ -185,8 +185,9 @@ object SeqexecStyles {
 
   val configuringRow: Css = Css("SeqexecStyles-configuringRow")
 
-  val specialStateLabel: Css =
-    Css("SeqexecStyles-specialStateLabel")
+  val specialStateLabel: Css = Css("SeqexecStyles-specialStateLabel")
+
+  val progressMessage: Css = Css("SeqexecStyles-progressMessage")
 
   val subsystems: Css = Css("SeqexecStyles-subsystems")
 
@@ -340,4 +341,34 @@ object SeqexecStyles {
 
   val defaultCursor: Css =
     Css("SeqexecStyles-defaultCursor")
+
+  val dividedProgress: Css =
+    Css("SeqexecStyles-dividedProgress")
+
+  val dividedProgressSectionLeft: Css =
+    Css("SeqexecStyles-dividedProgressSectionLeft")
+
+  val dividedProgressSectionMiddle: Css =
+    Css("SeqexecStyles-dividedProgressSectionMiddle")
+
+  val dividedProgressSectionRight: Css =
+    Css("SeqexecStyles-dividedProgressSectionRight")
+
+  val dividedProgressBar: Css =
+    Css("SeqexecStyles-dividedProgressBar")
+
+  val dividedProgressBarLeft: Css =
+    Css("SeqexecStyles-dividedProgressBarLeft")
+
+  val dividedProgressBarMiddle: Css =
+    Css("SeqexecStyles-dividedProgressBarMiddle")
+
+  val dividedProgressBarRight: Css =
+    Css("SeqexecStyles-dividedProgressBarRight")
+
+  val nodAndShuffleDetailRow: Css =
+    Css("SeqexecStyles-nodAndShuffleDetailRow")
+
+  val nodAndShuffleControls: Css =
+    Css("SeqexecStyles-nodAndShuffleControls")
 }

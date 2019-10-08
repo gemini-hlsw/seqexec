@@ -39,6 +39,7 @@ import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
+import seqexec.web.client.model.StepItems.StepStateSummary
 import squants.Time
 import shapeless.tag.@@
 
@@ -54,6 +55,8 @@ package object reusability {
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
   implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
   implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
+  implicit val stepStateSnapshotReuse: Reusability[StepStateSummary] =
+    Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
   implicit val stepTTReuse: Reusability[StepsTableTypeSelection] =

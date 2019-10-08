@@ -3,19 +3,14 @@
 
 package seqexec.web.client.model
 
+import cats.Eq
 import cats.implicits._
+import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.FPUMode
-import seqexec.model.enum.Guiding
-import seqexec.model.enum.StepType
-import seqexec.model.Step
-import seqexec.model.SequenceState
-import seqexec.model.enumerations
-import seqexec.model.OffsetAxis
-import seqexec.model.TelescopeOffset
+import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
+import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, OffsetAxis, SequenceState, Step, StepId, TelescopeOffset, enumerations}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.Formatting._
 
@@ -40,7 +35,7 @@ object StepItems {
       case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
       case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
       case Instrument.F2    => enumerations.fpu.Flamingos2.get
-      case _ =>
+      case _                =>
         _ =>
           none
     }
@@ -52,9 +47,9 @@ object StepItems {
       (coAdds, exposureTime) match {
         case (c, Some(e)) if c.exists(_ > 1) =>
           s"${c.foldMap(_.show)}x${formatExposureTime(i)(e)} [s]".some
-        case (_, Some(e)) =>
+        case (_, Some(e))                    =>
           s"${formatExposureTime(i)(e)} [s]".some
-        case _ => none
+        case _                               => none
       }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
     def fpu(i: Instrument): Option[String] =
@@ -76,14 +71,14 @@ object StepItems {
       i match {
         case Instrument.Gpi if stepClassO.getOption(s).forall(_ === "acq") =>
           StepType.AlignAndCalib.some
-        case _ => none
+        case _                                                             => none
       }
 
     def nodAndShuffle(i: Instrument): Option[StepType.NodAndShuffle.type] =
       i match {
         case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).forall(identity) =>
           StepType.NodAndShuffle.some
-        case _ => none
+        case _                                                                                     => none
       }
 
     def stepType(instrument: Instrument): Option[StepType] =
@@ -113,11 +108,11 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.GmosNFilter.get)
-      case Instrument.F2 =>
+      case Instrument.F2    =>
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.F2Filter.get)
-      case Instrument.Niri =>
+      case Instrument.Niri  =>
         instrumentFilterO
           .getOption(s)
           .flatMap(enumerations.filter.Niri.get)
@@ -125,7 +120,7 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
-      case Instrument.Nifs =>
+      case Instrument.Nifs  =>
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
@@ -133,8 +128,8 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
-      case Instrument.Gpi => gpiFilter(s)
-      case _              => None
+      case Instrument.Gpi   => gpiFilter(s)
+      case _                => None
     }
 
     private def disperserNameMapper(i: Instrument): Map[String, String] =
@@ -187,7 +182,7 @@ object StepItems {
         instrumentCameraO
           .getOption(s)
           .flatMap(enumerations.camera.Niri.get)
-      case _ => None
+      case _               => None
     }
 
     def deckerName: Option[String] =
@@ -215,21 +210,59 @@ object StepItems {
     }
   }
 
-  final case class StepStateSnapshot(step: Step, i: Instrument, t: TabOperations, state: SequenceState) {
+  sealed abstract class DetailRows(val rows: Int)
+  object DetailRows {
+    final case object NoDetailRows extends DetailRows(0)
+    final case object OneDetailRow extends DetailRows(1)
+    final case object TwoDetailRows extends DetailRows(2)
+  }
+
+  final case class StepStateSummary(step         : Step,
+                                    obsId        : Observation.Id,
+                                    instrument   : Instrument,
+                                    tabOperations: TabOperations,
+                                    state        : SequenceState) {
     val isAC: Boolean =
-      step.alignAndCalib(i).isDefined
+      step.alignAndCalib(instrument).isDefined
+
+    val isNS: Boolean =
+      step.nodAndShuffle(instrument).isDefined
+
+    private val isRunning =
+      tabOperations.resourceInFlight(step.id) || step.isRunning
 
     val isACRunning: Boolean =
-      isAC && (t.resourceInFlight(step.id) || step.isRunning)
+      isAC && isRunning
+
+    val isNSRunning: Boolean =
+      isNS && isRunning
 
     val anyError: Boolean =
-      t.resourceInError(step.id) || step.hasError
+      tabOperations.resourceInError(step.id) || step.hasError
 
     val isACInError: Boolean =
       isAC && anyError
 
-    val displayDetails: Boolean =
-      isACRunning || isACInError
+    val isNSInError: Boolean =
+      isNS && anyError
+
+    def detailRows(selected: Option[StepId]): DetailRows =
+      if( (isNS && selected.exists(_ === step.id)) || isNSRunning || isNSInError)
+        DetailRows.TwoDetailRows
+      else if (isACRunning || isACInError)
+        DetailRows.OneDetailRow
+      else
+        DetailRows.NoDetailRows
+
+    val nsStatus: Option[NodAndShuffleStatus] = step match {
+      case NodAndShuffleStep(_, _ , _, _, _, _, _, nsStatus) => Some(nsStatus)
+      case _                                                 => None
+    }
+  }
+
+  object StepStateSummary {
+    implicit val EqStepStateSummary: Eq[StepStateSummary] =
+      Eq.by(x => (x.step, x.obsId, x.instrument, x.tabOperations, x.state))
   }
 
 }

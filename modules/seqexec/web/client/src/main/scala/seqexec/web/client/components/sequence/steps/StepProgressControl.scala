@@ -54,14 +54,16 @@ final case class StepProgressCell(
   def isStopping: Boolean =
     tabOperations.stopRequested === StopOperation.StopInFlight
 
-  val stateSnapshot: StepStateSnapshot =
-    StepStateSnapshot(step, instrument, tabOperations, state)
+  val stateSummary: StepStateSummary =
+    StepStateSummary(step, obsId, instrument, tabOperations, state)
 }
 
 object StepProgressCell {
   type Props = StepProgressCell
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
+    ControlButtonResolver.build(p => (p.clientStatus, p.state, p.step))
 
   def labelColor(status: ActionStatus): String = status match {
     case ActionStatus.Pending   => "gray"
@@ -102,10 +104,6 @@ object StepProgressCell {
       )
     )
 
-  def controlButtonsActive(props: Props): Boolean =
-    props.clientStatus.isLogged && props.state.isRunning &&
-      (props.step.isObserving || props.step.isObservePaused || props.state.userStopRequested)
-
   def stepObservationStatusAndFile(
     props:  Props,
     stepId: StepId,
@@ -113,20 +111,22 @@ object StepProgressCell {
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      ObservationProgressBar(
+      ObservationProgressDisplay(
         props.obsId,
         stepId,
         fileId,
         stopping = props.isStopping,
-        paused   = false),
+        paused   = false,
+        hideBar  = props.step.isMultiLevel),
       StepsControlButtons(
         props.obsId,
         props.instrument,
         props.state,
         props.step.id,
         props.step.isObservePaused,
+        props.step.isMultiLevel,
         props.tabOperations
-      ).when(controlButtonsActive(props))
+      ).when(props.controlButtonsActive)
     )
 
   def stepObservationPaused(props:  Props,
@@ -134,20 +134,22 @@ object StepProgressCell {
                             fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      ObservationProgressBar(
+      ObservationProgressDisplay(
         props.obsId,
         stepId,
         fileId,
         stopping = false,
-        paused = true),
+        paused = true,
+        hideBar  = props.step.isMultiLevel),
       StepsControlButtons(
         props.obsId,
         props.instrument,
         props.state,
         props.step.id,
         props.step.isObservePaused,
+        props.step.isMultiLevel,
         props.tabOperations
-      ).when(controlButtonsActive(props))
+      ).when(props.controlButtonsActive)
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -163,8 +165,9 @@ object StepProgressCell {
         props.state,
         props.step.id,
         props.step.isObservePaused,
+        props.step.isMultiLevel,
         props.tabOperations
-      ).when(controlButtonsActive(props))
+      ).when(props.controlButtonsActive)
     )
 
   def stepSubsystemControl(props: Props): VdomElement =
@@ -178,10 +181,10 @@ object StepProgressCell {
       ).when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
-        if (props.stateSnapshot.isAC) {//} && !props.stateSnapshot.anyError) {
-          if (props.stateSnapshot.isACRunning) {
+        if (props.stateSummary.isAC) {
+          if (props.stateSummary.isACRunning) {
             "Running Align & Calib..."
-          } else if (props.stateSnapshot.anyError) {
+          } else if (props.stateSummary.anyError) {
             props.step.show
           } else {
             "Align & Calib"

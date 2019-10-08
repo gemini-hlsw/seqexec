@@ -17,7 +17,7 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.progress.Progress
 import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
-import seqexec.web.client.model.StepItems.StepStateSnapshot
+import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.reusability._
 import web.client.ReactProps
 
@@ -25,7 +25,7 @@ import scala.math.max
 
 final case class ACProgressBar(
   step: AlignAndCalibStep,
-  state: StepStateSnapshot
+  state: StepStateSummary
 ) extends ReactProps {
   @inline def render: VdomElement = ACProgressBar.component(this)
 }
@@ -43,11 +43,10 @@ object ACProgressBar {
     }
   }
 
-  implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.never
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  val enum = Enumerated[AlignAndCalibStep]
+  val acSteps = Enumerated[AlignAndCalibStep]
   implicit val showACS: Show[AlignAndCalibStep] = Show.show {
     case NoAction           => ""
     case StartGuiding       => "Start Guiding"
@@ -95,13 +94,13 @@ object ACProgressBar {
       val msg = if (isInError) "Error" else s.msg
       Progress(Progress.Props(
         s"Align and Calib: $msg",
-        total       = enum.all.length.toLong - 1,
-        value       = max(0, s.counter.toLong),
+        total       = acSteps.all.length - 1,
+        value       = max(0, s.counter),
         color       = if (isInError) "red".some else "green".some,
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
-      ))
+        ))
     }
     .componentWillReceiveProps(x =>
       x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show))
@@ -112,7 +111,7 @@ object ACProgressBar {
 /**
   * Component to wrap the progress bar
   */
-final case class AlignAndCalibProgress(state: StepStateSnapshot) extends ReactProps {
+final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps {
   @inline def render: VdomElement = AlignAndCalibProgress.component(this)
 
   protected[steps] val connect =
@@ -122,7 +121,6 @@ final case class AlignAndCalibProgress(state: StepStateSnapshot) extends ReactPr
 object AlignAndCalibProgress {
   type Props = AlignAndCalibProgress
 
-  implicit val stepReuse: Reusability[StepStateSnapshot] = Reusability.never
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent
