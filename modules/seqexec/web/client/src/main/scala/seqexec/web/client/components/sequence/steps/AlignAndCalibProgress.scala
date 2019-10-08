@@ -46,7 +46,7 @@ object ACProgressBar {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  val enum = Enumerated[AlignAndCalibStep]
+  val acSteps = Enumerated[AlignAndCalibStep]
   implicit val showACS: Show[AlignAndCalibStep] = Show.show {
     case NoAction           => ""
     case StartGuiding       => "Start Guiding"
@@ -94,13 +94,13 @@ object ACProgressBar {
       val msg = if (isInError) "Error" else s.msg
       Progress(Progress.Props(
         s"Align and Calib: $msg",
-        total       = enum.all.length - 1,
+        total       = acSteps.all.length - 1,
         value       = max(0, s.counter),
         color       = if (isInError) "red".some else "green".some,
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
-      ))
+        ))
     }
     .componentWillReceiveProps(x =>
       x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show))

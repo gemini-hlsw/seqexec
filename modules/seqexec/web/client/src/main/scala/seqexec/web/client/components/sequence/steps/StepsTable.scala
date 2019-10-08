@@ -444,8 +444,8 @@ object StepsTable extends Columns {
   type Backend      = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
-  private val MIDDLE_BUTTON = 1 // As defined by React.js
-  private val HEADER_ROW = -1
+  private val MiddleButton = 1 // As defined by React.js
+  private val HeaderRow = -1
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -646,7 +646,7 @@ object StepsTable extends Columns {
       b.props.rowGetter(i),
       b.props.canSetBreakpoint,
       b.state.breakpointHover) match {
-      case (HEADER_ROW, _, _, _)                                   =>
+      case (HeaderRow, _, _, _)                                   =>
         // Header
         SeqexecStyles.headerRowStyle
       case (_, StepRow(s), true, _) if s.breakpoint                =>
@@ -905,7 +905,7 @@ object StepsTable extends Columns {
     onRowClick: Option[OnRowClick]
   )(e:          ReactMouseEvent): Callback =
     // If alt is pressed or middle button flip the breakpoint
-    if (e.altKey || e.button === MIDDLE_BUTTON) {
+    if (e.altKey || e.button === MiddleButton) {
       e.preventDefaultCB >>
         (p.obsId, p.stepsList.find(_.id === index + 1))
           .mapN(

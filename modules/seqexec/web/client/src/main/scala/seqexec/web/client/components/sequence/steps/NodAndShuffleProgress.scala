@@ -103,9 +103,8 @@ object  NodAndShuffleProgress {
     .render_PS { (p, s) =>
       s.progressConnect { proxy =>
         val (totalMillis, remainingMillis) =
-          proxy()
-            .map(p => (p.total.toMilliseconds.toInt, p.remaining.toMilliseconds.toInt))
-            .getOrElse((0, 0))
+          proxy().foldMap(p =>
+            (p.total.toMilliseconds.toInt, p.remaining.toMilliseconds.toInt))
         val elapsedMillis = totalMillis - max(0, remainingMillis)
 
         p.summary.nsStatus.map[VdomElement] { nsStatus =>

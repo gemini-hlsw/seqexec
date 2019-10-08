@@ -181,7 +181,7 @@ object StepProgressCell {
       ).when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
-        if (props.stateSummary.isAC) {//} && !props.stateSnapshot.anyError) {
+        if (props.stateSummary.isAC) {
           if (props.stateSummary.isACRunning) {
             "Running Align & Calib..."
           } else if (props.stateSummary.anyError) {
