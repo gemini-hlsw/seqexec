@@ -194,10 +194,12 @@ package object server {
     }
   }
 
-  def catchObsErrors[F[_]](t: Throwable): Stream[F, Result[F]] = t match {
+  def catchObsErrors[F[_]](t: Throwable)(implicit L: Logger[F]): Stream[F, Result[F]] = t match {
     case e: SeqexecFailure =>
+      Stream.eval(L.error(e)(s"Observation error: ${e.getMessage}")) *>
       Stream.emit(Result.Error(SeqexecFailure.explain(e)))
     case e: Throwable =>
+      Stream.eval(L.error(e)(s"Observation error: ${e.getMessage}")) *>
       Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
   }
 
