@@ -24,16 +24,7 @@ import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
-import seqexec.model.StepState
-import seqexec.model.Step
-import seqexec.model.StepId
-import seqexec.model.StandardStep
-import seqexec.model.NodAndShuffleStep
-import seqexec.model.NodAndShuffleStatus
-import seqexec.model.SequenceState
-import seqexec.model.RunningStep
-import seqexec.model.NSSubexposure
-import seqexec.model.NSRunningState
+import seqexec.model.{RunningStep, SequenceState, Step, StepId, StepState}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
@@ -505,23 +496,6 @@ object StepsTable extends Columns {
     val InitialState: State = State(InitialTableState, None, None, 0)
   }
 
-  val stdStepReuse: Reusability[StandardStep] =
-    Reusability.caseClassExcept('config)
-  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
-    Reusability.derive[NSSubexposure]
-  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
-    Reusability.derive[NSRunningState]
-  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
-    Reusability.derive[NodAndShuffleStatus]
-  val nsStepReuse: Reusability[NodAndShuffleStep] =
-    Reusability.caseClassExcept('config)
-
-  implicit val stepReuse: Reusability[Step] =
-    Reusability {
-      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
-      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
-      case _                                            => false
-    }
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
@@ -573,13 +547,14 @@ object StepsTable extends Columns {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(b.props.status,
-                       f.instrument,
-                       f.id,
-                       f.state,
-                       row.step,
+                       StepStateSummary(
+                         row.step,
+                         f.id,
+                         f.instrument,
+                         b.props.tabOperations,
+                         f.state),
                        b.state.selected,
-                       b.props.isPreview,
-                       b.props.tabOperations)
+                       b.props.isPreview)
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay

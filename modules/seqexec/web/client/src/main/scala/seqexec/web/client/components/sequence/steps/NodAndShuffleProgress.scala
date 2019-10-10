@@ -12,10 +12,12 @@ import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
 import cats.implicits._
 import diode.react.ReactConnectProxy
+import gem.Observation
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common.Css
-import seqexec.model.{NodAndShuffleStatus, ObservationProgress}
+import seqexec.model.dhs.ImageFileId
+import seqexec.model.{NodAndShuffleStatus, ObservationProgress, StepId}
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
@@ -23,6 +25,54 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
 
 import scala.math.max
+
+final case class NodAndShuffleProgressMessage(
+                                               obsId : Observation.Id,
+                                               stepId: StepId,
+                                               fileId: ImageFileId,
+                                               stopping: Boolean,
+                                               paused: Boolean,
+                                               nsStatus: NodAndShuffleStatus
+                                             ) extends ReactProps {
+  @inline def render: VdomElement = NodAndShuffleProgressMessage.component(this)
+
+  protected[steps] val connect =
+    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
+}
+
+object NodAndShuffleProgressMessage extends ProgressLabel {
+  type Props = NodAndShuffleProgressMessage
+
+  @Lenses
+  protected case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val stateReuse: Reusability[State] = Reusability.always
+
+  protected[steps] val component = ScalaComponent
+    .builder[Props]("NodAndShuffleProgress")
+    .initialStateFromProps(p => State(p.connect))
+    .render_PS { (p, s) =>
+      <.div(
+        SeqexecStyles.specialStateLabel,
+        SeqexecStyles.progressMessage,
+        p.nsStatus.state.map[VdomElement] { nsState =>
+          s.progressConnect { proxy =>
+            val nodCount = NodAndShuffleStage.NsSequence.length
+            val nodMillis = p.nsStatus.nodExposureTime.toMilliseconds.toInt
+            val cycleMillis = nodMillis * nodCount
+            val remainingCycles = p.nsStatus.cycles - nsState.sub.cycle - 1
+            val remainingNods = nodCount - nsState.sub.stageIndex - 1
+            val remainingNodMillis = proxy().foldMap(_.remaining.toMilliseconds.toInt)
+            val remainingMillis = remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
+            <.span(label(p.fileId, remainingMillis, p.stopping, p.paused))
+          }
+        } getOrElse <.span(p.fileId)
+        )
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+}
 
 final case class SmoothDividedProgressBar(
   sections            : List[DividedProgress.Label],

@@ -21,21 +21,38 @@ import web.client.ReactProps
 
 import scala.math.max
 
-final case class SmoothProgressDisplay(
+trait ProgressLabel {
+  def label(
+    fileId:          String,
+    remainingMillis: Int,
+    stopping:        Boolean,
+    paused:          Boolean
+  ): String = {
+    val remainingSecs = remainingMillis / 1000
+    val durationStr = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
+
+    if (paused) s"$fileId - Paused - $durationStr left"
+      else if (stopping) s"$fileId - Stopping - $durationStr left"
+      else if (remainingSecs > 0) s"$fileId - $durationStr left"
+      else s"$fileId - Reading out..."
+  }
+}
+
+final case class SmoothObservationProgressBar(
   fileId:   String,
   total:    Int,
   value:    Int,
   stopping: Boolean,
-  paused:   Boolean,
-  hideBar:  Boolean
+  paused:   Boolean
 ) extends SmoothProgressBarProps {
-  @inline def render: VdomElement = SmoothProgressDisplay.component(this)
+  @inline def render: VdomElement = SmoothObservationProgressBar.component(this)
 
   override val maxValue = total
 }
 
-object SmoothProgressDisplay extends SmoothProgressBar[SmoothProgressDisplay] {
-  type Props = SmoothProgressDisplay
+object SmoothObservationProgressBar
+  extends SmoothProgressBar[SmoothObservationProgressBar] with ProgressLabel {
+  type Props = SmoothObservationProgressBar
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -44,30 +61,17 @@ object SmoothProgressDisplay extends SmoothProgressBar[SmoothProgressDisplay] {
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
-      val remaining   = (s.maxValue - s.value) / 1000
-      val durationStr = if (remaining > 1) s"$remaining seconds" else "1 second"
-      val label =
-        if (p.paused) s"${p.fileId} - Paused - $durationStr left"
-        else if (p.stopping) s"${p.fileId} - Stopping - $durationStr left"
-        else if (remaining > 0) s"${p.fileId} - $durationStr left"
-        else s"${p.fileId} - Reading out..."
+      val remainingMillis = s.maxValue - s.value
 
-      if(p.hideBar)
-        <.div(
-          SeqexecStyles.specialStateLabel,
-          SeqexecStyles.progressMessage,
-          label
-        )
-      else
-        Progress(Progress.Props(
-          label       = label,
-          total       = p.total,
-          value       = s.value,
-          color       = "blue".some,
-          progressCls = List(SeqexecStyles.observationProgressBar),
-          barCls      = List(SeqexecStyles.observationBar),
-          labelCls    = List(SeqexecStyles.observationLabel)
-        ))
+      Progress(Progress.Props(
+        label       = label(p.fileId, remainingMillis, p.stopping, p.paused),
+        total       = p.total,
+        value       = s.value,
+        color       = "blue".some,
+        progressCls = List(SeqexecStyles.observationProgressBar),
+        barCls      = List(SeqexecStyles.observationBar),
+        labelCls    = List(SeqexecStyles.observationLabel)
+      ))
     }
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps(x =>
@@ -80,22 +84,21 @@ object SmoothProgressDisplay extends SmoothProgressBar[SmoothProgressDisplay] {
 /**
   * Component to wrap the progress bar
   */
-final case class ObservationProgressDisplay(
+final case class ObservationProgressBar(
   obsId:    Observation.Id,
   stepId:   StepId,
   fileId:   ImageFileId,
   stopping: Boolean,
-  paused:   Boolean,
-  hideBar:  Boolean
+  paused:   Boolean
 ) extends ReactProps {
-  @inline def render: VdomElement = ObservationProgressDisplay.component(this)
+  @inline def render: VdomElement = ObservationProgressBar.component(this)
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
 }
 
-object ObservationProgressDisplay {
-  type Props = ObservationProgressDisplay
+object ObservationProgressBar {
+  type Props = ObservationProgressBar
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -108,32 +111,24 @@ object ObservationProgressDisplay {
         p.connect(proxy =>
           proxy() match {
             case Some(ObservationProgress(_, _, total, remaining)) =>
-              SmoothProgressDisplay(
+              SmoothObservationProgressBar(
                 p.fileId,
                 total.toMilliseconds.toInt,
                 total.toMilliseconds.toInt - max(0, remaining.toMilliseconds.toInt),
                 p.stopping,
-                p.paused,
-                p.hideBar)
+                p.paused)
             case _ =>
               val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
 
-              if(p.hideBar)
-                <.div(
-                  SeqexecStyles.specialStateLabel,
-                  SeqexecStyles.progressMessage,
-                  msg
-                )
-              else
-                Progress(Progress.Props(
-                  msg,
-                  total       = 100,
-                  value       = 0,
-                  color       = "blue".some,
-                  progressCls = List(SeqexecStyles.observationProgressBar),
-                  barCls      = List(SeqexecStyles.observationBar),
-                  labelCls    = List(SeqexecStyles.observationLabel)
-                ))
+              Progress(Progress.Props(
+                msg,
+                total       = 100,
+                value       = 0,
+                color       = "blue".some,
+                progressCls = List(SeqexecStyles.observationProgressBar),
+                barCls      = List(SeqexecStyles.observationBar),
+                labelCls    = List(SeqexecStyles.observationLabel)
+              ))
         })
     ))
     .configure(Reusability.shouldComponentUpdate)
