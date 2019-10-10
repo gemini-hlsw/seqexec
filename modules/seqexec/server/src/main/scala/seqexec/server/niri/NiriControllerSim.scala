@@ -16,28 +16,28 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NiriControllerSim {
-  def unsafeApply[F[_]: Sync: Logger: Timer]: NiriController[F] =
-    new NiriController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"NIRI")
+  def apply[F[_]: Sync: Logger: Timer]: F[NiriController[F]] =
+    InstrumentControllerSim[F](s"NIRI").map { sim =>
+      new NiriController[F] {
+        override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
+          calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))
 
-      override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
-        calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))
+        override def applyConfig(config: NiriConfig): F[Unit] = sim.applyConfig(config)
 
-      override def applyConfig(config: NiriConfig): F[Unit] = sim.applyConfig(config)
+        override def stopObserve: F[Unit] = sim.stopObserve
 
-      override def stopObserve: F[Unit] = sim.stopObserve
+        override def abortObserve: F[Unit] = sim.abortObserve
 
-      override def abortObserve: F[Unit] = sim.abortObserve
+        override def endObserve: F[Unit] = sim.endObserve
 
-      override def endObserve: F[Unit] = sim.endObserve
+        override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+          sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-      override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-        sim.observeCountdown(total, ElapsedTime(0.seconds))
+        override def calcTotalExposureTime(cfg: DCConfig): F[Time] = {
+          val MinIntTime = 0.5.seconds
 
-      override def calcTotalExposureTime(cfg: DCConfig): F[Time] = {
-        val MinIntTime = 0.5.seconds
-
-        (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-      }.pure[F]
+          (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
+        }.pure[F]
+      }
     }
 }

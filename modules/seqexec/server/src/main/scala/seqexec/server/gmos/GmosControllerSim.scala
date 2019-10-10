@@ -147,15 +147,13 @@ object GmosControllerSim {
 
     }
 
-  def unsafeSouth[F[_]: Sync: Logger: Timer]: GmosController[F, SouthTypes] = {
-    val nsConfig: Ref[F, NSObsState] = Ref.unsafe(NSObsState.Zero)
-    val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"GMOS South")
-    GmosControllerSim[F, SouthTypes](sim, nsConfig)
-  }
+  def south[F[_]: Sync: Logger: Timer]: F[GmosController[F, SouthTypes]] =
+    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS South")).mapN {(nsConfig, sim) =>
+      GmosControllerSim[F, SouthTypes](sim, nsConfig)
+    }
 
-  def unsafeNorth[F[_]: Sync: Logger: Timer]: GmosController[F, NorthTypes] = {
-    val nsConfig: Ref[F, NSObsState] = Ref.unsafe(NSObsState.Zero)
-    val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply[F](s"GMOS North")
-    GmosControllerSim[F, NorthTypes](sim, nsConfig)
-  }
+  def north[F[_]: Sync: Logger: Timer]: F[GmosController[F, NorthTypes]] =
+    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS North")).mapN {(nsConfig, sim) =>
+      GmosControllerSim[F, NorthTypes](sim, nsConfig)
+    }
 }

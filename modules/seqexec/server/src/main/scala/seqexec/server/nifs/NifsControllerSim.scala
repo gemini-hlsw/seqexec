@@ -18,32 +18,32 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NifsControllerSim {
-  def unsafeApply[F[_]: Sync: Logger: Timer]: NifsController[F] =
-    new NifsController[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"NIRI")
+  def apply[F[_]: Sync: Logger: Timer]: F[NifsController[F]] =
+    InstrumentControllerSim[F](s"NIFS").map { sim =>
+      new NifsController[F] {
 
-      override def observe(fileId: ImageFileId,
-                           cfg:    DCConfig): F[ObserveCommandResult] =
-        calcTotalExposureTime(cfg).flatMap {ot =>
-          sim
-            .observe(fileId, ot)
-        }
+        override def observe(fileId: ImageFileId,
+                             cfg:    DCConfig): F[ObserveCommandResult] =
+          calcTotalExposureTime(cfg).flatMap {ot =>
+            sim
+              .observe(fileId, ot)
+          }
 
-      override def applyConfig(config: NifsConfig): F[Unit] =
-        sim.applyConfig(config)
+        override def applyConfig(config: NifsConfig): F[Unit] =
+          sim.applyConfig(config)
 
-      override def stopObserve: F[Unit] = sim.stopObserve
+        override def stopObserve: F[Unit] = sim.stopObserve
 
-      override def abortObserve: F[Unit] = sim.abortObserve
+        override def abortObserve: F[Unit] = sim.abortObserve
 
-      override def endObserve: F[Unit] = sim.endObserve
+        override def endObserve: F[Unit] = sim.endObserve
 
-      override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-        sim.observeCountdown(total, ElapsedTime(0.seconds))
+        override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+          sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-      override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
-        NifsController.calcTotalExposureTime[F](cfg)
+        override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+          NifsController.calcTotalExposureTime[F](cfg)
 
+      }
     }
-
 }

@@ -7,6 +7,12 @@ import seqexec.model.enum.NSAction
 import seqexec.model.NSSubexposure
 import seqexec.engine.Result.PartialVal
 
+package object gmos {
+  type GmosSouthController[F[_]] = GmosController[F, GmosController.SouthTypes]
+
+  type GmosNorthController[F[_]] = GmosController[F, GmosController.NorthTypes]
+}
+
 package gmos {
 
   sealed trait NSPartial extends PartialVal {

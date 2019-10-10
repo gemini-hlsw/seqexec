@@ -8,12 +8,11 @@ import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
+import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
 import java.util.UUID
 import gem.Observation
 import gem.enum.Site
-import giapi.client.ghost.GhostClient
-import giapi.client.gpi.GpiClient
 import org.http4s.Uri
 import org.http4s.Uri.uri
 import seqexec.engine
@@ -24,12 +23,13 @@ import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs._
 import seqexec.server.keywords.GdsClient
-import seqexec.server.tcs.GuideConfigDb
 import shapeless.tag
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 object TestCommon {
+  private implicit def logger = NoOpLogger.impl[IO]
+
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
@@ -60,6 +60,8 @@ object TestCommon {
     instForceError = false,
     failAt = 0,
     10.seconds,
+    tag[GpiSettings][Uri](uri("vm://localhost:8888/xmlrpc")),
+    tag[GhostSettings][Uri](uri("vm://localhost:8888/xmlrpc")),
     tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
@@ -122,11 +124,7 @@ object TestCommon {
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
 
-  val gpiSim: GpiClient[IO] = GpiClient.simulatedGpiClient[IO].use(IO(_)).unsafeRunSync
-
-  val ghostSim: GhostClient[IO] = GhostClient.simulatedGhostClient[IO].use(IO(_)).unsafeRunSync
-
-  val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, GuideConfigDb.constant[IO], defaultSettings, sm)
+  val seqexecEngine: SeqexecEngine = Systems.build(GdsClient.alwaysOkClient, defaultSettings).use(SeqexecEngine(_, defaultSettings, sm).pure[IO]).unsafeRunSync
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     advanceN(q, s0, put, 1L)
