@@ -46,6 +46,22 @@ package object reusability {
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
   implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
+  val stdStepReuse: Reusability[StandardStep] =
+    Reusability.caseClassExcept('config)
+  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
+    Reusability.derive[NSSubexposure]
+  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
+    Reusability.derive[NSRunningState]
+  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
+    Reusability.derive[NodAndShuffleStatus]
+  val nsStepReuse: Reusability[NodAndShuffleStep] =
+    Reusability.caseClassExcept('config)
+  implicit val stepReuse: Reusability[Step] =
+    Reusability {
+      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
+      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
+      case _                                            => false
+    }
   implicit val stepStateSnapshotReuse: Reusability[StepStateSummary] =
     Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
@@ -95,20 +111,4 @@ package object reusability {
     Reusability.derive[M2GuideConfig]
   implicit val configReuse: Reusability[TelescopeGuideConfig] =
     Reusability.derive[TelescopeGuideConfig]
-  val stdStepReuse: Reusability[StandardStep] =
-    Reusability.caseClassExcept('config)
-  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
-    Reusability.derive[NSSubexposure]
-  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
-    Reusability.derive[NSRunningState]
-  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
-    Reusability.derive[NodAndShuffleStatus]
-  val nsStepReuse: Reusability[NodAndShuffleStep] =
-    Reusability.caseClassExcept('config)
-  implicit val stepReuse: Reusability[Step] =
-    Reusability {
-      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
-      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
-      case _                                            => false
-    }
 }
