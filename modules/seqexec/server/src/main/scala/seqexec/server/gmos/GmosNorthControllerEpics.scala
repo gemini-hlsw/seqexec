@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import cats.effect.IO
+import cats.effect._
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex
@@ -113,6 +113,8 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
 }
 
 object GmosNorthControllerEpics {
-  def apply()(implicit L: Logger[IO]): GmosController[IO, NorthTypes] =
-    GmosControllerEpics[NorthTypes](northConfigTypes)(GmosNorthEncoders, L)
+  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
+    implicit val encoders = GmosNorthEncoders
+    GmosControllerEpics[F, NorthTypes](sys, northConfigTypes)
+  }
 }

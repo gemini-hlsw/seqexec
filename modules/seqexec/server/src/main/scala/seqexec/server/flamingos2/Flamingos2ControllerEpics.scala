@@ -97,7 +97,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val DefaultTimeout: Time = Seconds(60)
   val ConfigTimeout: Time = Seconds(400)
 
-  def apply[F[_]: Async](sys: Flamingos2Epics[F])(implicit tio: Timer[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+  def apply[F[_]: Async](sys: => Flamingos2Epics[F])(implicit tio: Timer[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
     private val Log = getLogger
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {

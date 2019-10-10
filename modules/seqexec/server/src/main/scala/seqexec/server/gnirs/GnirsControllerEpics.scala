@@ -4,12 +4,12 @@
 package seqexec.server.gnirs
 
 import cats.implicits._
-import cats.effect.{ IO, Timer }
+import cats.effect.{ Async, Sync, Timer }
 import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import fs2.Stream
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsUtil._
@@ -92,80 +92,6 @@ trait GnirsEncoders {
 }
 
 object GnirsControllerEpics extends GnirsEncoders {
-  private val Log = getLogger
-
-  private def epicsSys = GnirsEpics.instance
-  private def ccCmd = epicsSys.configCCCmd
-  private def dcCmd = epicsSys.configDCCmd
-
-  private def setAcquisitionMirror(mode: Mode): IO[Option[IO[Unit]]] = {
-    val v = mode match {
-      case Acquisition => "In"
-      case _           => "Out"
-    }
-
-    smartSetParamF(v, epicsSys.acqMirror.map(removePartName), ccCmd.setAcqMirror(v))
-  }
-
-  private def setGrating(s: Spectrography, c: Camera): List[IO[Option[IO[Unit]]]] = {
-    def stdConversion(d: Disperser): String = (d, c) match {
-      case (Disperser.D_10, Camera.SHORT_RED)   => "10/mmSR"
-      case (Disperser.D_32, Camera.SHORT_RED)   => "32/mmSR"
-      case (Disperser.D_111, Camera.SHORT_RED)  => "111/mmSR"
-      case (Disperser.D_10, Camera.LONG_RED)    => "10/mmLR"
-      case (Disperser.D_32, Camera.LONG_RED)    => "32/mmLR"
-      case (Disperser.D_111, Camera.LONG_RED)   => "111/mmLR"
-      case (Disperser.D_10, Camera.SHORT_BLUE)  => "10/mmSB"
-      case (Disperser.D_32, Camera.SHORT_BLUE)  => "32/mmSB"
-      case (Disperser.D_111, Camera.SHORT_BLUE) => "111/mmSB"
-      case (Disperser.D_10, Camera.LONG_BLUE)   => "10/mmLB"
-      case (Disperser.D_32, Camera.LONG_BLUE)   => "32/mmLB"
-      case (Disperser.D_111, Camera.LONG_BLUE)  => "111/mmLB"
-    }
-
-    val v = s match {
-      case CrossDisperserS(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBSX"
-      case CrossDisperserL(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBLX"
-      case _                                                         => stdConversion(s.disperser)
-    }
-
-    val defaultMode = "WAVELENGTH"
-
-    List(
-      smartSetParamF(v, epicsSys.grating.map(removePartName), ccCmd.setGrating(v)),
-      smartSetParamF(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode)))
-  }
-
-  private def setPrism(s: Spectrography, c: Camera): IO[Option[IO[Unit]]] = {
-    val cameraStr = c match {
-      case Camera.LONG_BLUE  => "LB"
-      case Camera.LONG_RED   => "LR"
-      case Camera.SHORT_BLUE => "SB"
-      case Camera.SHORT_RED  => "SR"
-    }
-
-    val v = s match {
-      case Mirror(_)          => "MIR"
-      case Wollaston(_)       => "WOLL"
-      case CrossDisperserL(_) => s"$cameraStr+LXD"
-      case CrossDisperserS(_) => s"$cameraStr+SXD"
-    }
-
-    smartSetParamF(v, epicsSys.prism.map(removePartName), ccCmd.setPrism(v))
-  }
-
-  private def setDarkCCParams: List[IO[Option[IO[Unit]]]] = {
-    val closed = "Closed"
-    val darkFilter = "Dark"
-    List(
-      smartSetParamF(closed, epicsSys.cover.map(removePartName), ccCmd.setCover(closed)),
-      smartSetParamF(darkFilter, epicsSys.filter1.map(removePartName), ccCmd.setFilter1(darkFilter)))
-  }
-
-  private def setSpectrographyComponents(mode: Mode, c: Camera): List[IO[Option[IO[Unit]]]] = mode match {
-    case Acquisition => Nil
-    case s:Spectrography => setGrating(s, c) :+ setPrism(s, c)
-  }
 
   private def autoFilter(wavel: Length): GnirsController.Filter2Pos = {
     val table = List(
@@ -182,136 +108,208 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
   }
 
-  private def setFilter2(f: Filter2, w: Wavelength): IO[Option[IO[Unit]]] = {
-    val pos = f match {
-      case Manual(p) => p
-      case Auto      => autoFilter(w)
-    }
-    smartSetParamF(encode(pos), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(pos)))
-  }
+  def apply[F[_]: Async: Timer](epicsSys: => GnirsEpics[F])(implicit L: Logger[F]): GnirsController[F] =
+    new GnirsController[F] {
 
-  private def setOtherCCParams(config: Other): List[IO[Option[IO[Unit]]]] = {
-    val open = "Open"
-    val bestFocus = "best focus"
-    val wavelengthTolerance = 0.0001
-    val filter1 = smartSetParamF(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1)))
-    val filter2 = setFilter2(config.filter2, config.wavel)
-    val camera = smartSetParamF(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
-    val spectrographyAndCamera = setSpectrographyComponents(config.mode, config.camera) :+ camera
-    val params: List[IO[Option[IO[Unit]]]] = List(
-      setAcquisitionMirror(config.mode),
-      filter1,
-      filter2) ::: spectrographyAndCamera
+      private val ccCmd = epicsSys.configCCCmd
+      private val dcCmd = epicsSys.configDCCmd
 
-    val focusParam: IO[Option[IO[Unit]]] = config.focus match {
-      case Focus.Best => IO(ccCmd.setFocusBest(bestFocus).some)
-      case Focus.Manual(v) => smartSetParamF(v, epicsSys.focusEng, ccCmd.setFocus(v))
-    }
+      private val warnOnDhs = epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
 
-    val cover = smartSetParamF(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open))
-    val slitWidth  = config.slitWidth.map(sl => smartSetParamF(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).orEmpty
-    val decker = smartSetParamF(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker)))
-    val centralWavelength = smartSetDoubleParamF(wavelengthTolerance)(encode(config.wavel), epicsSys.centralWavelength, ccCmd.setCentralWavelength(encode(config.wavel)))
+      private val warnOnArray =
+        epicsSys.arrayActive.flatMap(L.warn("GNIRS detector array is not active").unlessA)
 
-    (cover :: params) :::
-      List(focusParam, slitWidth, decker, centralWavelength)
+      private val checkDhs = failUnlessM(epicsSys.dhsConnected, SeqexecFailure.Execution("GNIRS is not connected to DHS"))
 
-  }
+      private val checkArray =
+        failUnlessM(epicsSys.arrayActive, SeqexecFailure.Execution("GNIRS detector array is not active"))
 
-  private def setCCParams(config: CCConfig): IO[Unit] = {
-    val params = config match {
-      case Dark    => setDarkCCParams
-      case c: Other => setOtherCCParams(c)
-    }
-    executeIfNeeded(
-      params,
-      ccCmd.setTimeout[IO](ConfigTimeout) *>
-      ccCmd.post[IO])
-  }
+      private def setAcquisitionMirror(mode: Mode): F[Option[F[Unit]]] = {
+        val v = mode match {
+          case Acquisition => "In"
+          case _           => "Out"
+        }
 
-  private def setDCParams(config: DCConfig): IO[Unit] = {
+        smartSetParamF(v, epicsSys.acqMirror.map(removePartName), ccCmd.setAcqMirror(v))
+      }
 
-    val expTimeTolerance = 0.0001
-    // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
-    // 0.3V bias
-    val biasTolerance = 0.15
+      private def setGrating(s: Spectrography, c: Camera): List[F[Option[F[Unit]]]] = {
+        def stdConversion(d: Disperser): String = (d, c) match {
+          case (Disperser.D_10, Camera.SHORT_RED)   => "10/mmSR"
+          case (Disperser.D_32, Camera.SHORT_RED)   => "32/mmSR"
+          case (Disperser.D_111, Camera.SHORT_RED)  => "111/mmSR"
+          case (Disperser.D_10, Camera.LONG_RED)    => "10/mmLR"
+          case (Disperser.D_32, Camera.LONG_RED)    => "32/mmLR"
+          case (Disperser.D_111, Camera.LONG_RED)   => "111/mmLR"
+          case (Disperser.D_10, Camera.SHORT_BLUE)  => "10/mmSB"
+          case (Disperser.D_32, Camera.SHORT_BLUE)  => "32/mmSB"
+          case (Disperser.D_111, Camera.SHORT_BLUE) => "111/mmSB"
+          case (Disperser.D_10, Camera.LONG_BLUE)   => "10/mmLB"
+          case (Disperser.D_32, Camera.LONG_BLUE)   => "32/mmLB"
+          case (Disperser.D_111, Camera.LONG_BLUE)  => "111/mmLB"
+        }
 
-    val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
+        val v = s match {
+          case CrossDisperserS(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBSX"
+          case CrossDisperserL(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBLX"
+          case _                                                         => stdConversion(s.disperser)
+        }
 
-    val expTimeWriter = smartSetDoubleParamF(expTimeTolerance)(config.exposureTime.toSeconds,
-      epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds))
+        val defaultMode = "WAVELENGTH"
 
-    val coaddsWriter = smartSetParamF(config.coadds, epicsSys.numCoadds,
-      dcCmd.setCoadds(config.coadds))
+        List(
+          smartSetParamF(v, epicsSys.grating.map(removePartName), ccCmd.setGrating(v)),
+          smartSetParamF(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode)))
+      }
 
-    // Value read from the instrument is the negative of what was set
-    val biasWriter = smartSetDoubleParamF(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
-      dcCmd.setDetBias(encode(config.wellDepth)))
+      private def setSpectrographyComponents(mode: Mode, c: Camera): List[F[Option[F[Unit]]]] = mode match {
+        case Acquisition => Nil
+        case s:Spectrography => setGrating(s, c) :+ setPrism(s, c)
+      }
 
-    val lowNoiseWriter = smartSetParamF(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
+      private def setPrism(s: Spectrography, c: Camera): F[Option[F[Unit]]] = {
+        val cameraStr = c match {
+          case Camera.LONG_BLUE  => "LB"
+          case Camera.LONG_RED   => "LR"
+          case Camera.SHORT_BLUE => "SB"
+          case Camera.SHORT_RED  => "SR"
+        }
 
-    val digitalAvgsWriter = smartSetParamF(digitalAvgs, epicsSys.digitalAvgs,
-      dcCmd.setDigitalAvgs(digitalAvgs))
+        val v = s match {
+          case Mirror(_)          => "MIR"
+          case Wollaston(_)       => "WOLL"
+          case CrossDisperserL(_) => s"$cameraStr+LXD"
+          case CrossDisperserS(_) => s"$cameraStr+SXD"
+        }
 
-    val params = List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
+        smartSetParamF(v, epicsSys.prism.map(removePartName), ccCmd.setPrism(v))
+      }
 
-    executeIfNeeded(params,
-      dcCmd.setTimeout[IO](DefaultTimeout) *>
-      dcCmd.post[IO])
-  }
+      private def setDarkCCParams: List[F[Option[F[Unit]]]] = {
+        val closed = "Closed"
+        val darkFilter = "Dark"
+        List(
+          smartSetParamF(closed, epicsSys.cover.map(removePartName), ccCmd.setCover(closed)),
+          smartSetParamF(darkFilter, epicsSys.filter1.map(removePartName), ccCmd.setFilter1(darkFilter)))
+      }
 
-  private val checkDhs = failUnlessM(epicsSys.dhsConnected, SeqexecFailure.Execution("GNIRS is not connected to DHS"))
+      private def setFilter2(f: Filter2, w: Wavelength): F[Option[F[Unit]]] = {
+        val pos = f match {
+          case Manual(p) => p
+          case Auto      => autoFilter(w)
+        }
+        smartSetParamF(encode(pos), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(pos)))
+      }
 
-  private val checkArray =
-    failUnlessM(epicsSys.arrayActive, SeqexecFailure.Execution("GNIRS detector array is not active"))
+      private def setOtherCCParams(config: Other): List[F[Option[F[Unit]]]] = {
+        val open = "Open"
+        val bestFocus = "best focus"
+        val wavelengthTolerance = 0.0001
+        val filter1 = smartSetParamF(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1)))
+        val filter2 = setFilter2(config.filter2, config.wavel)
+        val camera = smartSetParamF(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
+        val spectrographyAndCamera = setSpectrographyComponents(config.mode, config.camera) :+ camera
+        val params: List[F[Option[F[Unit]]]] = List(
+          setAcquisitionMirror(config.mode),
+          filter1,
+          filter2) ::: spectrographyAndCamera
 
-  private val warnOnDhs = epicsSys.dhsConnected.flatMap(IO(Log.warn("GNIRS is not connected to DHS")).unlessA)
+        val focusParam: F[Option[F[Unit]]] = config.focus match {
+          case Focus.Best      => Sync[F].delay(ccCmd.setFocusBest(bestFocus).some)
+          case Focus.Manual(v) => smartSetParamF(v, epicsSys.focusEng, ccCmd.setFocus(v))
+        }
 
-  private val warnOnArray =
-    epicsSys.arrayActive.flatMap(IO(Log.warn("GNIRS detector array is not active")).unlessA)
+        val cover = smartSetParamF(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open))
+        val slitWidth  = config.slitWidth.map(sl => smartSetParamF(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).getOrElse(none.pure[F])
+        val decker = smartSetParamF(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker)))
+        val centralWavelength = smartSetDoubleParamF(wavelengthTolerance)(encode(config.wavel), epicsSys.centralWavelength, ccCmd.setCentralWavelength(encode(config.wavel)))
 
-  def apply()(implicit ioTimer: Timer[IO]): GnirsController[IO] =
-    new GnirsController[IO] {
+        (cover :: params) :::
+          List(focusParam, slitWidth, decker, centralWavelength)
 
-      override def applyConfig(config: GnirsConfig): IO[Unit] =
-        IO(Log.debug("Starting GNIRS configuration")) *>
+      }
+
+      private def setCCParams(config: CCConfig): F[Unit] = {
+        val params = config match {
+          case Dark    => setDarkCCParams
+          case c: Other => setOtherCCParams(c)
+        }
+        executeIfNeeded(
+          params,
+          ccCmd.setTimeout[F](ConfigTimeout) *>
+          ccCmd.post[F])
+      }
+
+      private def setDCParams(config: DCConfig): F[Unit] = {
+
+        val expTimeTolerance = 0.0001
+        // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
+        // 0.3V bias
+        val biasTolerance = 0.15
+
+        val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
+
+        val expTimeWriter = smartSetDoubleParamF(expTimeTolerance)(config.exposureTime.toSeconds,
+          epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds))
+
+        val coaddsWriter = smartSetParamF(config.coadds, epicsSys.numCoadds,
+          dcCmd.setCoadds(config.coadds))
+
+        // Value read from the instrument is the negative of what was set
+        val biasWriter = smartSetDoubleParamF(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
+          dcCmd.setDetBias(encode(config.wellDepth)))
+
+        val lowNoiseWriter = smartSetParamF(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
+
+        val digitalAvgsWriter = smartSetParamF(digitalAvgs, epicsSys.digitalAvgs,
+          dcCmd.setDigitalAvgs(digitalAvgs))
+
+        val params = List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
+
+        executeIfNeeded(params,
+          dcCmd.setTimeout[F](DefaultTimeout) *>
+          dcCmd.post[F])
+      }
+
+      override def applyConfig(config: GnirsConfig): F[Unit] =
+        L.debug("Starting GNIRS configuration") *>
           warnOnDhs *>
           warnOnArray *>
           setDCParams(config.dc) *>
           setCCParams(config.cc) *>
-          IO(Log.debug("Completed GNIRS configuration"))
+          L.debug("Completed GNIRS configuration")
 
-      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommandResult] =
-        IO(Log.info("Start GNIRS observe")) *>
+      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
+        L.info("Start GNIRS observe") *>
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          epicsSys.observeCmd.setTimeout[IO](expTime + ReadoutTimeout) *>
-          epicsSys.observeCmd.post[IO]
+          epicsSys.observeCmd.setTimeout[F](expTime + ReadoutTimeout) *>
+          epicsSys.observeCmd.post[F]
 
-      override def endObserve: IO[Unit] =
-        IO(Log.debug("Send endObserve to GNIRS")) *>
-          epicsSys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
-          epicsSys.endObserveCmd.mark[IO] *>
-          epicsSys.endObserveCmd.post[IO].void
+      override def endObserve: F[Unit] =
+        L.debug("Send endObserve to GNIRS") *>
+          epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.endObserveCmd.mark[F] *>
+          epicsSys.endObserveCmd.post[F].void
 
-      override def stopObserve: IO[Unit] =
-        IO(Log.info("Stop GNIRS exposure")) *>
-          epicsSys.stopCmd.setTimeout[IO](DefaultTimeout) *>
-          epicsSys.stopCmd.mark[IO] *>
-          epicsSys.stopCmd.post[IO].void
+      override def stopObserve: F[Unit] =
+        L.info("Stop GNIRS exposure") *>
+          epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.stopCmd.mark[F] *>
+          epicsSys.stopCmd.post[F].void
 
-      override def abortObserve: IO[Unit] =
-        IO(Log.info("Abort GNIRS exposure")) *>
-          epicsSys.abortCmd.setTimeout[IO](DefaultTimeout) *>
-          epicsSys.abortCmd.mark[IO] *>
-          epicsSys.abortCmd.post[IO].void
+      override def abortObserve: F[Unit] =
+        L.info("Abort GNIRS exposure") *>
+          epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.abortCmd.mark[F] *>
+          epicsSys.abortCmd.post[F].void
 
-      override def observeProgress(total: Time): Stream[IO, Progress] =
-        ProgressUtil.countdown[IO](total, 0.seconds)
+      override def observeProgress(total: Time): Stream[F, Progress] =
+        ProgressUtil.countdown[F](total, 0.seconds)
 
-      override def calcTotalExposureTime(cfg: GnirsController.DCConfig): IO[Time] =
-        GnirsController.calcTotalExposureTime[IO](cfg)
+      override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time] =
+        GnirsController.calcTotalExposureTime[F](cfg)
     }
 
   private val DefaultTimeout: Time = Seconds(60)

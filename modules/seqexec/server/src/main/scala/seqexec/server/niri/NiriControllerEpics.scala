@@ -134,144 +134,142 @@ object NiriControllerEpics extends NiriEncoders {
 
   import EpicsCodex._
 
-  private val epicsSys = NiriEpics.instance
-
-  /**
-   * The instrument has three filter wheels with a status channel for each one. But it does not have
-   * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
-   * one wheel can be in a not open position at a given time.
-   */
-  private def currentFilter: IO[Option[String]] = {
-    val filter1 = epicsSys.filter1
-    val filter2 = epicsSys.filter2
-    val filter3 = epicsSys.filter3
-    val Open = "open"
-
-    for {
-      iof1 <- filter1
-      iof2 <- filter2
-      iof3 <- filter3
-    } yield {
-      val l = List(iof1, iof2, iof3).filterNot(_ === Open)
-      if(l.length === 1) l.headOption
-      else none
-    }.map(removePartName)
-  }
-
-  private def setFocus(f: Focus): IO[Option[IO[Unit]]] = {
-    val encoded = encode(f)
-    smartSetParamF(encoded, epicsSys.focus, epicsSys.configCmd.setFocus(encoded))
-  }
-
-  private def setCamera(c: Camera): IO[Option[IO[Unit]]] = {
-    val encoded = encode(c)
-    smartSetParamF(encoded.toString, epicsSys.camera, epicsSys.configCmd.setCamera(encoded))
-  }
-
-  private def setBeamSplitter(b: BeamSplitter): IO[Option[IO[Unit]]] = {
-    val encoded = encode(b)
-    smartSetParamF(encoded.toString, epicsSys.beamSplitter,
-      epicsSys.configCmd.setBeamSplitter(encoded))
-  }
-
-  private def setFilter(f: Filter): IO[Option[IO[Unit]]] = {
-    val encoded = encode(f)
-
-    smartSetParamF(encoded.some, currentFilter, epicsSys.configCmd.setFilter(encoded))
-  }
-
-  private def setBlankFilter: IO[Option[IO[Unit]]] = {
-    val BlankFilter = "blank"
-
-    smartSetParamF(BlankFilter.some, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
-  }
-
-  private def setMask(m: Mask): IO[Option[IO[Unit]]] = {
-    val encoded = encode(m)
-
-    smartSetParamF(encoded.toString, epicsSys.mask, epicsSys.configCmd.setMask(encoded))
-  }
-
-  private def setDisperser(d: Disperser): IO[Unit] = {
-    val encoded = encode(d)
-
-    // There is no status for the disperser
-    epicsSys.configCmd.setDisperser(encoded)
-  }
-
   val WindowOpen = "open"
   val WindowClosed = "closed"
-
-  private def setWindowCover(pos: String): IO[Option[IO[Unit]]] =
-    smartSetParamF(pos, epicsSys.windowCover, epicsSys.windowCoverConfig.setWindowCover(pos))
-
-  private def setExposureTime(t: ExposureTime): IO[Option[IO[Unit]]] = {
-    val ExposureTimeTolerance = 0.001
-    smartSetDoubleParamF[IO](ExposureTimeTolerance)(t.toSeconds, epicsSys.integrationTime,
-      epicsSys.configCmd.setExposureTime(t.toSeconds)
-    )
-  }
-
-  private def setCoadds(n: Coadds): IO[Option[IO[Unit]]] =
-    smartSetParamF(n, epicsSys.coadds, epicsSys.configCmd.setCoadds(n))
-
-  private def setROI(r: BuiltInROI): IO[Unit] = {
-    val encoded = encode(r)
-
-    // There is no status for the builtin ROI
-    epicsSys.configCmd.setBuiltInROI(encoded)
-  }
-
-  // There is no status for the read mode
-  private def setReadMode(rm: ReadMode): IO[Unit] =
-    epicsSys.configCmd.setReadMode(rm)
-
-  private def configDC(cfg: DCConfig): List[IO[Option[IO[Unit]]]] =
-    List(
-      setExposureTime(cfg.exposureTime),
-        setCoadds(cfg.coadds),
-        setReadMode(cfg.readMode).wrapped,
-        setROI(cfg.builtInROI).wrapped)
-
-  private def configCommonCC(cfg: Common): List[IO[Option[IO[Unit]]]] =
-    List(
-      setBeamSplitter(cfg.beamSplitter),
-      setCamera(cfg.camera),
-      setDisperser(cfg.disperser).wrapped,
-      setFocus(cfg.focus),
-      setMask(cfg.mask))
-
-  private def configDarkCC(cfg: Dark): List[IO[Option[IO[Unit]]]] =
-    List(
-      setWindowCover(WindowClosed),
-      setBlankFilter) ++
-      configCommonCC(cfg.common)
-
-  private def configIlluminatedCC(cfg: Illuminated): List[IO[Option[IO[Unit]]]] =
-    List(
-      setWindowCover(WindowOpen),
-      setFilter(cfg.filter)) ++
-      configCommonCC(cfg.common)
-
-  private def configCC(cfg: CCConfig): List[IO[Option[IO[Unit]]]] = cfg match {
-    case d@Dark(_)           => configDarkCC(d)
-    case i@Illuminated(_, _) => configIlluminatedCC(i)
-  }
-
-  def calcObserveTimeout(cfg: DCConfig): IO[Time] = {
-    epicsSys.minIntegration.map { t =>
-      val MinIntTime = t.seconds
-      val CoaddOverhead = 2.5
-      val TotalOverhead = 30.seconds
-
-      (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
-    }
-  }
 
   private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
-  def apply(): NiriController[IO] = new NiriController[IO] {
+  def apply(epicsSys: => NiriEpics[IO]): NiriController[IO] = new NiriController[IO] {
+    /**
+     * The instrument has three filter wheels with a status channel for each one. But it does not have
+     * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
+     * one wheel can be in a not open position at a given time.
+     */
+    private def currentFilter: IO[Option[String]] = {
+      val filter1 = epicsSys.filter1
+      val filter2 = epicsSys.filter2
+      val filter3 = epicsSys.filter3
+      val Open = "open"
+
+      for {
+        iof1 <- filter1
+        iof2 <- filter2
+        iof3 <- filter3
+      } yield {
+        val l = List(iof1, iof2, iof3).filterNot(_ === Open)
+        if(l.length === 1) l.headOption
+        else none
+      }.map(removePartName)
+    }
+
+    private def setFocus(f: Focus): IO[Option[IO[Unit]]] = {
+      val encoded = encode(f)
+      smartSetParamF(encoded, epicsSys.focus, epicsSys.configCmd.setFocus(encoded))
+    }
+
+    private def setCamera(c: Camera): IO[Option[IO[Unit]]] = {
+      val encoded = encode(c)
+      smartSetParamF(encoded.toString, epicsSys.camera, epicsSys.configCmd.setCamera(encoded))
+    }
+
+    private def setBeamSplitter(b: BeamSplitter): IO[Option[IO[Unit]]] = {
+      val encoded = encode(b)
+      smartSetParamF(encoded.toString, epicsSys.beamSplitter,
+        epicsSys.configCmd.setBeamSplitter(encoded))
+    }
+
+    private def setFilter(f: Filter): IO[Option[IO[Unit]]] = {
+      val encoded = encode(f)
+
+      smartSetParamF(encoded.some, currentFilter, epicsSys.configCmd.setFilter(encoded))
+    }
+
+    private def setBlankFilter: IO[Option[IO[Unit]]] = {
+      val BlankFilter = "blank"
+
+      smartSetParamF(BlankFilter.some, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
+    }
+
+    private def setMask(m: Mask): IO[Option[IO[Unit]]] = {
+      val encoded = encode(m)
+
+      smartSetParamF(encoded.toString, epicsSys.mask, epicsSys.configCmd.setMask(encoded))
+    }
+
+    private def setDisperser(d: Disperser): IO[Unit] = {
+      val encoded = encode(d)
+
+      // There is no status for the disperser
+      epicsSys.configCmd.setDisperser(encoded)
+    }
+
+    private def configCommonCC(cfg: Common): List[IO[Option[IO[Unit]]]] =
+      List(
+        setBeamSplitter(cfg.beamSplitter),
+        setCamera(cfg.camera),
+        setDisperser(cfg.disperser).wrapped,
+        setFocus(cfg.focus),
+        setMask(cfg.mask))
+
+    private def configDarkCC(cfg: Dark): List[IO[Option[IO[Unit]]]] =
+      List(
+        setWindowCover(WindowClosed),
+        setBlankFilter) ++
+        configCommonCC(cfg.common)
+
+    private def configCC(cfg: CCConfig): List[IO[Option[IO[Unit]]]] = cfg match {
+      case d@Dark(_)           => configDarkCC(d)
+      case i@Illuminated(_, _) => configIlluminatedCC(i)
+    }
+
+    private def configIlluminatedCC(cfg: Illuminated): List[IO[Option[IO[Unit]]]] =
+      List(
+        setWindowCover(WindowOpen),
+        setFilter(cfg.filter)) ++
+        configCommonCC(cfg.common)
+
+    private def setWindowCover(pos: String): IO[Option[IO[Unit]]] =
+      smartSetParamF(pos, epicsSys.windowCover, epicsSys.windowCoverConfig.setWindowCover(pos))
+
+    private def setExposureTime(t: ExposureTime): IO[Option[IO[Unit]]] = {
+      val ExposureTimeTolerance = 0.001
+      smartSetDoubleParamF[IO](ExposureTimeTolerance)(t.toSeconds, epicsSys.integrationTime,
+        epicsSys.configCmd.setExposureTime(t.toSeconds)
+      )
+    }
+
+    private def configDC(cfg: DCConfig): List[IO[Option[IO[Unit]]]] =
+      List(
+        setExposureTime(cfg.exposureTime),
+          setCoadds(cfg.coadds),
+          setReadMode(cfg.readMode).wrapped,
+          setROI(cfg.builtInROI).wrapped)
+
+    private def setCoadds(n: Coadds): IO[Option[IO[Unit]]] =
+      smartSetParamF(n, epicsSys.coadds, epicsSys.configCmd.setCoadds(n))
+
+    private def setROI(r: BuiltInROI): IO[Unit] = {
+      val encoded = encode(r)
+
+      // There is no status for the builtin ROI
+      epicsSys.configCmd.setBuiltInROI(encoded)
+    }
+
+    // There is no status for the read mode
+    private def setReadMode(rm: ReadMode): IO[Unit] =
+      epicsSys.configCmd.setReadMode(rm)
+
+    private def calcObserveTimeout(cfg: DCConfig): IO[Time] = {
+      epicsSys.minIntegration.map { t =>
+        val MinIntTime = t.seconds
+        val CoaddOverhead = 2.5
+        val TotalOverhead = 30.seconds
+
+        (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+      }
+    }
+
     private def actOnDHSNotConected(act: IO[Unit]): IO[Unit] =
       epicsSys.dhsConnected.ifM(IO.unit, act)
 
