@@ -25,6 +25,7 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.elements.popup.Popup
 import web.client.ReactProps
 
 /**
@@ -146,6 +147,12 @@ object StepProgressCell {
       stepControlButtons(props)
     )
 
+  private def textWithPopup(text: String): VdomElement =
+    Popup(
+      Popup.Props("span", text),
+      <.span(text)
+    )
+
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
@@ -161,12 +168,12 @@ object StepProgressCell {
           if (props.stateSummary.isACRunning) {
             "Running Align & Calib..."
           } else if (props.stateSummary.anyError) {
-            props.step.show
+            textWithPopup(props.step.show)
           } else {
             "Align & Calib"
           }
         } else {
-          props.step.show
+          textWithPopup(props.step.show)
         }),
       SubsystemControlCell(
         props.obsId,
