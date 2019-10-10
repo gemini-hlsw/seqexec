@@ -9,20 +9,12 @@ import gem.Observation
 import gem.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
+
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Resource
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.dhs._
-import seqexec.model.Observer
-import seqexec.model.QueueId
-import seqexec.model.Step
-import seqexec.model.StepConfig
-import seqexec.model.StepState
-import seqexec.model.UserDetails
-import seqexec.model.SequenceState
-import seqexec.model.M1GuideConfig
-import seqexec.model.M2GuideConfig
-import seqexec.model.TelescopeGuideConfig
+import seqexec.model.{M1GuideConfig, M2GuideConfig, NSRunningState, NSSubexposure, NodAndShuffleStatus, NodAndShuffleStep, Observer, QueueId, SequenceState, StandardStep, Step, StepConfig, StepState, TelescopeGuideConfig, UserDetails}
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
@@ -54,7 +46,6 @@ package object reusability {
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
   implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
-  implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
   implicit val stepStateSnapshotReuse: Reusability[StepStateSummary] =
     Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
@@ -104,4 +95,20 @@ package object reusability {
     Reusability.derive[M2GuideConfig]
   implicit val configReuse: Reusability[TelescopeGuideConfig] =
     Reusability.derive[TelescopeGuideConfig]
+  val stdStepReuse: Reusability[StandardStep] =
+    Reusability.caseClassExcept('config)
+  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
+    Reusability.derive[NSSubexposure]
+  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
+    Reusability.derive[NSRunningState]
+  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
+    Reusability.derive[NodAndShuffleStatus]
+  val nsStepReuse: Reusability[NodAndShuffleStep] =
+    Reusability.caseClassExcept('config)
+  implicit val stepReuse: Reusability[Step] =
+    Reusability {
+      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
+      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
+      case _                                            => false
+    }
 }

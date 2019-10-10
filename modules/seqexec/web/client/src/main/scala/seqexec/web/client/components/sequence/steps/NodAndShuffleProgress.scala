@@ -17,7 +17,7 @@ import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common.Css
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{NSRunningState, NSSubexposure, NodAndShuffleStatus, ObservationProgress, StepId}
+import seqexec.model.{NodAndShuffleStatus, ObservationProgress, StepId}
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
@@ -46,9 +46,6 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
   @Lenses
   protected case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
 
-  implicit val nsSubReuse: Reusability[NSSubexposure] = Reusability.derive[NSSubexposure]
-  implicit val nsStateReuse: Reusability[NSRunningState] = Reusability.derive[NSRunningState]
-  implicit val nsStatusReuse: Reusability[NodAndShuffleStatus] = Reusability.derive[NodAndShuffleStatus]
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.always
 

@@ -24,7 +24,7 @@ import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
-import seqexec.model.{NSRunningState, NSSubexposure, NodAndShuffleStatus, NodAndShuffleStep, RunningStep, SequenceState, StandardStep, Step, StepId, StepState}
+import seqexec.model.{RunningStep, SequenceState, Step, StepId, StepState}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
@@ -496,23 +496,6 @@ object StepsTable extends Columns {
     val InitialState: State = State(InitialTableState, None, None, 0)
   }
 
-  val stdStepReuse: Reusability[StandardStep] =
-    Reusability.caseClassExcept('config)
-  implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
-    Reusability.derive[NSSubexposure]
-  implicit val nsRunningStateReuse: Reusability[NSRunningState] =
-    Reusability.derive[NSRunningState]
-  implicit val nsStatus: Reusability[NodAndShuffleStatus] =
-    Reusability.derive[NodAndShuffleStatus]
-  val nsStepReuse: Reusability[NodAndShuffleStep] =
-    Reusability.caseClassExcept('config)
-
-  implicit val stepReuse: Reusability[Step] =
-    Reusability {
-      case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)
-      case (a: NodAndShuffleStep, b: NodAndShuffleStep) => nsStepReuse.test(a, b)
-      case _                                            => false
-    }
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
