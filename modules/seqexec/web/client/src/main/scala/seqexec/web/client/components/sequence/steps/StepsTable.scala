@@ -24,16 +24,7 @@ import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
-import seqexec.model.StepState
-import seqexec.model.Step
-import seqexec.model.StepId
-import seqexec.model.StandardStep
-import seqexec.model.NodAndShuffleStep
-import seqexec.model.NodAndShuffleStatus
-import seqexec.model.SequenceState
-import seqexec.model.RunningStep
-import seqexec.model.NSSubexposure
-import seqexec.model.NSRunningState
+import seqexec.model.{NSRunningState, NSSubexposure, NodAndShuffleStatus, NodAndShuffleStep, RunningStep, SequenceState, StandardStep, Step, StepId, StepState}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
@@ -573,13 +564,14 @@ object StepsTable extends Columns {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(b.props.status,
-                       f.instrument,
-                       f.id,
-                       f.state,
-                       row.step,
+                       StepStateSummary(
+                         row.step,
+                         f.id,
+                         f.instrument,
+                         b.props.tabOperations,
+                         f.state),
                        b.state.selected,
-                       b.props.isPreview,
-                       b.props.tabOperations)
+                       b.props.isPreview)
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay

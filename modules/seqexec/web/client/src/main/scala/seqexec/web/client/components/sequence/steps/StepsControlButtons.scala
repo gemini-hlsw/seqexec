@@ -194,7 +194,7 @@ object StepsControlButtons {
         p.stepId,
         p.isObservePaused,
         p.tabOperations
-        )
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

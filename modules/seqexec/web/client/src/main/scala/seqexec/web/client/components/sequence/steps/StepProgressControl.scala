@@ -14,10 +14,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
-import seqexec.model.StepState
-import seqexec.model.Step
-import seqexec.model.StepId
-import seqexec.model.SequenceState
+import seqexec.model.{SequenceState, Step, StepId, StepState}
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.StopOperation
@@ -35,15 +32,16 @@ import web.client.ReactProps
   */
 final case class StepProgressCell(
   clientStatus : ClientStatus,
-  instrument   : Instrument,
-  obsId        : Observation.Id,
-  state        : SequenceState,
-  step         : Step,
+  stateSummary : StepStateSummary,
   selectedStep : Option[StepId],
-  isPreview    : Boolean,
-  tabOperations: TabOperations
+  isPreview    : Boolean
 ) extends ReactProps {
   @inline def render: VdomElement = StepProgressCell.component(this)
+  val step: Step = stateSummary.step
+  val obsId: Observation.Id = stateSummary.obsId
+  val instrument: Instrument = stateSummary.instrument
+  val tabOperations: TabOperations = stateSummary.tabOperations
+  val state: SequenceState = stateSummary.state
 
   val resourceRunRequested = tabOperations.resourceRunRequested
 
@@ -53,9 +51,6 @@ final case class StepProgressCell(
 
   def isStopping: Boolean =
     tabOperations.stopRequested === StopOperation.StopInFlight
-
-  val stateSummary: StepStateSummary =
-    StepStateSummary(step, obsId, instrument, tabOperations, state)
 }
 
 object StepProgressCell {
@@ -104,52 +99,41 @@ object StepProgressCell {
       )
     )
 
+  def stepControlButtons(props: Props): TagMod =
+    StepsControlButtons(
+      props.obsId,
+      props.instrument,
+      props.state,
+      props.step.id,
+      props.step.isObservePaused,
+      props.step.isMultiLevel,
+      props.tabOperations
+      ).when(props.controlButtonsActive)
+
   def stepObservationStatusAndFile(
-    props:  Props,
-    stepId: StepId,
-    fileId: ImageFileId
+    props:   Props,
+    fileId:  ImageFileId,
+    paused:  Boolean
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      ObservationProgressDisplay(
-        props.obsId,
-        stepId,
-        fileId,
-        stopping = props.isStopping,
-        paused   = false,
-        hideBar  = props.step.isMultiLevel),
-      StepsControlButtons(
-        props.obsId,
-        props.instrument,
-        props.state,
-        props.step.id,
-        props.step.isObservePaused,
-        props.step.isMultiLevel,
-        props.tabOperations
-      ).when(props.controlButtonsActive)
-    )
-
-  def stepObservationPaused(props:  Props,
-                            stepId: StepId,
-                            fileId: ImageFileId): VdomElement =
-    <.div(
-      SeqexecStyles.configuringRow,
-      ObservationProgressDisplay(
-        props.obsId,
-        stepId,
-        fileId,
-        stopping = false,
-        paused = true,
-        hideBar  = props.step.isMultiLevel),
-      StepsControlButtons(
-        props.obsId,
-        props.instrument,
-        props.state,
-        props.step.id,
-        props.step.isObservePaused,
-        props.step.isMultiLevel,
-        props.tabOperations
-      ).when(props.controlButtonsActive)
+      props.stateSummary.nsStatus.fold[VdomElement] {
+          ObservationProgressBar(
+            props.obsId,
+            props.step.id,
+            fileId,
+            stopping = !paused && props.isStopping,
+            paused)
+      } { nsStatus =>
+        NodAndShuffleProgressMessage(
+          props.obsId,
+          props.step.id,
+          fileId,
+          props.isStopping,
+          paused,
+          nsStatus)
+      },
+      stepControlButtons(props)
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -159,15 +143,7 @@ object StepProgressCell {
         SeqexecStyles.specialStateLabel,
         props.state.show
       ),
-      StepsControlButtons(
-        props.obsId,
-        props.instrument,
-        props.state,
-        props.step.id,
-        props.step.isObservePaused,
-        props.step.isMultiLevel,
-        props.tabOperations
-      ).when(props.controlButtonsActive)
+      stepControlButtons(props)
     )
 
   def stepSubsystemControl(props: Props): VdomElement =
@@ -208,28 +184,28 @@ object StepProgressCell {
 
   def stepDisplay(props: Props): VdomElement =
     (props.state, props.step) match {
-      case (f, s) if s.status === StepState.Running && f.userStopRequested =>
+      case (f, s) if s.status === StepState.Running && s.fileId.isEmpty && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty    =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty                        =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused && s.fileId.isDefined               =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined                                   =>
         // Case for exposure paused, label and control buttons
-        stepObservationPaused(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.status === StepState.Running && s.fileId.isDefined  =>
+        stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = true)
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined                      =>
         // Case for a exposure onging, progress bar and control buttons
-        stepObservationStatusAndFile(props, s.id, s.fileId.orEmpty)
-      case (_, s) if s.wasSkipped                                          =>
+        stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = false)
+      case (_, s) if s.wasSkipped                                                              =>
         <.p("Skipped")
-      case (_, _) if props.step.skip                                       =>
+      case (_, _) if props.step.skip                                                           =>
         <.p("Skip")
       case (_, s)
-        if s.status === StepState.Completed && s.fileId.isDefined          =>
+        if s.status === StepState.Completed && s.fileId.isDefined                              =>
         <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
-      case (_, s) if props.stepSelected(s.id) && s.canConfigure            =>
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure                                =>
         stepSubsystemControl(props)
-      case _                                                               =>
+      case _                                                                                   =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
