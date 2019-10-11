@@ -392,35 +392,35 @@
             <description>ODGW size</description>
         </attribute>
         <attribute name="odgw1x">
-            <channel>gsaoi:sad:dc:d_gdr_winXo1.VAL</channel>
+            <channel>sad:dc:d_gdr_winXo1.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw1y">
-            <channel>gsaoi:sad:dc:d_gdr_winYo1.VAL</channel>
+            <channel>sad:dc:d_gdr_winYo1.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw2x">
-            <channel>gsaoi:sad:dc:d_gdr_winXo2.VAL</channel>
+            <channel>sad:dc:d_gdr_winXo2.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw2y">
-            <channel>gsaoi:sad:dc:d_gdr_winYo2.VAL</channel>
+            <channel>sad:dc:d_gdr_winYo2.VAL</channel>
             <type>INTEGER</type>
         </attribute>
-        <attribute name="odgw1x">
-            <channel>gsaoi:sad:dc:d_gdr_winXo3.VAL</channel>
+        <attribute name="odgw3x">
+            <channel>sad:dc:d_gdr_winXo3.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw3y">
-            <channel>gsaoi:sad:dc:d_gdr_winYo3.VAL</channel>
+            <channel>sad:dc:d_gdr_winYo3.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw4x">
-            <channel>gsaoi:sad:dc:d_gdr_winXo4.VAL</channel>
+            <channel>sad:dc:d_gdr_winXo4.VAL</channel>
             <type>INTEGER</type>
         </attribute>
         <attribute name="odgw4y">
-            <channel>gsaoi:sad:dc:d_gdr_winYo4.VAL</channel>
+            <channel>sad:dc:d_gdr_winYo4.VAL</channel>
             <type>INTEGER</type>
         </attribute>
     </Status>
