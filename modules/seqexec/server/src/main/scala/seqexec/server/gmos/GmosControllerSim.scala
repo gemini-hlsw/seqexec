@@ -145,6 +145,7 @@ object GmosControllerSim {
       ): fs2.Stream[F, Progress] =
         sim.observeCountdown(total, elapsed)
 
+      override def nsCount: F[Int] = nsConfig.get.map(_.current.map(_.exposureCount).orNull)
     }
 
   def south[F[_]: Sync: Logger: Timer]: F[GmosController[F, SouthTypes]] =

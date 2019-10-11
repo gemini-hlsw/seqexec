@@ -15,6 +15,8 @@ package object gmos {
 
 package gmos {
 
+  import gem.util.Enumerated
+
   sealed trait NSPartial extends PartialVal {
     def ongoingAction: NSAction
     def sub: NSSubexposure
@@ -45,5 +47,21 @@ package gmos {
     case object NSContinue extends InternalPartialVal
     case object NSSubPaused extends InternalPartialVal
     case object NSFinalObs extends InternalPartialVal
+
+    sealed trait NSObserveCommand extends Product with Serializable
+    case object StopGracefully extends NSObserveCommand
+    case object StopImmediately extends NSObserveCommand
+    case object AbortGracefully extends NSObserveCommand
+    case object AbortImmediately extends NSObserveCommand
+    case object PauseGracefully extends NSObserveCommand
+    case object PauseImmediately extends NSObserveCommand
+
+    object NSObserveCommand {
+      implicit val nsObserveCommandEnum: Enumerated[NSObserveCommand] =
+        Enumerated.of(
+          StopGracefully, StopImmediately,AbortGracefully, AbortImmediately, PauseGracefully, PauseImmediately
+        )
+    }
+
   }
 }

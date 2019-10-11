@@ -48,6 +48,8 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 
   def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress]
 
+  def nsCount: F[Int]
+
 }
 
 object GmosController {

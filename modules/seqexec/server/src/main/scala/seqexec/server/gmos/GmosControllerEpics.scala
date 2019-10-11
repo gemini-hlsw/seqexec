@@ -458,7 +458,11 @@ object GmosControllerEpics extends GmosEncoders {
           IO(sys.observeState))
       }
 
-  }
+      override def nsCount: IO[Int] = for{
+        a <- sys.aExpCount
+        b <- sys.bExpCount
+      } yield a + b
+    }
 
   // Parameters to define a ROI
   sealed abstract case class XStart(value: Int)

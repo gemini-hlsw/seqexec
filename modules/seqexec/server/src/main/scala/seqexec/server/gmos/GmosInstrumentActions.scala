@@ -6,6 +6,7 @@ package seqexec.server.gmos
 import cats._
 import cats.implicits._
 import cats.effect.Concurrent
+import cats.effect.concurrent.Ref
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs._
@@ -70,8 +71,6 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
                   )
                 )
           )
-      case ObserveCommandResult.Partial =>
-        Result.Partial(NSSubPaused).pure[F].widen[Result[F]]
     }
 
   private def initialObserve(
@@ -96,16 +95,53 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
       t       <- observeTail(fileId, dataId, env)(ret)
     } yield t).safeResult
 
+  private def continueResult(
+    fileId: ImageFileId,
+    dataId: DataId,
+    env:    ObserveEnvironment[F],
+    subExp: NSSubexposure,
+    nsObsCmd: Option[NSObserveCommand])(obsResult: ObserveCommandResult): F[Result[F]] =
+    (nsObsCmd, obsResult) match {
+      case (Some(PauseImmediately), ObserveCommandResult.Paused) |
+           (_, ObserveCommandResult.Success) |
+           (_, ObserveCommandResult.Aborted) |
+           (_, ObserveCommandResult.Stopped) => observeTail(fileId, dataId, env)(obsResult)
+
+      case (Some(PauseGracefully), ObserveCommandResult.Paused) if subExp.lastSubexposure
+                                             => observeTail(fileId, dataId, env)(obsResult)
+
+      case (Some(StopImmediately), _)        => inst.observeControl.stopPaused.self
+        .flatMap(observeTail(fileId, dataId, env))
+
+      case (Some(StopGracefully), _) if subExp.lastSubexposure
+                                             => inst.observeControl.stopPaused.self
+        .flatMap(observeTail(fileId, dataId, env))
+
+      case (Some(AbortImmediately), _)       => inst.observeControl.abortPaused.self
+        .flatMap(observeTail(fileId, dataId, env))
+
+      case (Some(StopGracefully), _) if subExp.lastSubexposure
+                                             => inst.observeControl.abortPaused.self
+        .flatMap(observeTail(fileId, dataId, env))
+
+      case _                                 => Result.Partial(NSContinue).pure[F].widen[Result[F]]
+
+    }
+
   private def continueObserve(
-    env: ObserveEnvironment[F]
-  ): F[Result[F]] =
-    // Steps in between do a continue
-    inst
-      .calcObserveTime(env.config)
-      .flatMap(inst.continueCommand)
-      .as(Result.Partial(NSContinue))
-      .widen[Result[F]]
-      .safeResult
+    fileId: ImageFileId,
+    env:    ObserveEnvironment[F],
+    subExp: NSSubexposure,
+    nsObsCmdRef: Ref[F, Option[NSObserveCommand]]
+  ): F[Result[F]] = (
+    for{
+      t     <- inst.calcObserveTime(env.config)
+      dId   <- dataId(env)
+      r     <- inst.continueCommand(t)
+      nsCmd <- nsObsCmdRef.get
+      x     <- continueResult(fileId, dId, env, subExp, nsCmd)(r)
+    } yield x
+  ).safeResult
 
   /**
     * Stream of actions of one sub exposure
@@ -115,6 +151,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     sub:       NSSubexposure,
     positions: Vector[NSPosition],
     env:       ObserveEnvironment[F],
+    nsCmd:     Ref[F, Option[NSObserveCommand]],
     post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] = {
     val nsPositionO   = positions.find(_.stage === sub.stage)
@@ -145,7 +182,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
          } else if (sub.lastSubexposure) {
            Stream.eval(lastObserve(fileId, env))
          } else {
-           Stream.eval(continueObserve(env))
+           Stream.eval(continueObserve(fileId, env, sub, nsCmd))
          }) ++
         Stream.emit(Result.Partial(NSSubexposureEnd(sub))),
       env
@@ -179,13 +216,41 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
             NSSubexposure
               .subexposures(cycles)
               .map {
-                oneSubExposure(fileId, _, positions, env, post)
+                oneSubExposure(fileId, _, positions, env, inst.nsCmdRef, post)
               }
               .reduceOption(_ ++ _)
               .orEmpty ++
             Stream.emit(Result.Partial(NSComplete(nsLast))) ++
             Stream.emit(Result.OK(Response.Observed(fileId)))
       }
+
+  def resumeObserve(
+    fileId: ImageFileId,
+    env:    ObserveEnvironment[F],
+    nsConfig: NSConfig.NodAndShuffle,
+    post:   (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+    )(r: ObserveCommandResult): Stream[F, Result[F]] = {
+
+      val nsLast =
+        NSSubexposure
+          .subexposures(nsConfig.cycles)
+          .lastOption
+          .getOrElse(NSSubexposure.Zero)
+
+
+      Stream.eval(inst.nsCount).flatMap { cnt =>
+        NSSubexposure
+          .subexposures(nsConfig.cycles)
+          .map {
+            oneSubExposure(fileId, _, nsConfig.positions, env, inst.nsCmdRef, post)
+          }
+          .drop(cnt)
+          .reduceOption(_ ++ _)
+          .orEmpty ++
+          Stream.emit(Result.Partial(NSComplete(nsLast))) ++
+          Stream.emit(Result.OK(Response.Observed(fileId)))
+      }
+  }
 
   def launchObserve(
     env:  ObserveEnvironment[F],
@@ -206,7 +271,7 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
         defaultObserveActions(launchObserve(env, post))
 
       case _ =>
-        // Regular GMOS obseravtions behave as any instrument
+        // Regular GMOS observations behave as any instrument
         defaultInstrumentActions[F].observeActions(env, post)
     }
 

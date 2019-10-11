@@ -12,9 +12,8 @@ object ObserveCommandResult {
   case object Paused  extends ObserveCommandResult
   case object Stopped extends ObserveCommandResult
   case object Aborted extends ObserveCommandResult
-  case object Partial extends ObserveCommandResult // Used for N&S
 
   /** @group Typeclass Instances */
   implicit val ObserveCommandResultEnumerated: Enumerated[ObserveCommandResult] =
-    Enumerated.of(Success, Paused, Stopped, Aborted, Partial)
+    Enumerated.of(Success, Paused, Stopped, Aborted)
 }

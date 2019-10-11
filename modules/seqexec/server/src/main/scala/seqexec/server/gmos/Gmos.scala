@@ -7,13 +7,13 @@ import cats._
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
-import cats.effect.Concurrent
+import cats.effect.{Concurrent, Sync}
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import gem.enum.LightSinkName
 import gsp.math.Angle
@@ -21,6 +21,7 @@ import gsp.math.Offset
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
+import cats.effect.concurrent.Ref
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -37,13 +38,14 @@ import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.gmos.NSPartial.NSObserveCommand
 import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 import shapeless.tag
 
 abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
-(controller: GmosController[F, T], ss: SiteSpecifics[T])
+(controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
@@ -54,8 +56,12 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
 
   override val keywordsClient: KeywordsClient[F] = this
 
+  val nsCmdRef: Ref[F, Option[NSObserveCommand]] = nsCmdR
+
   val continueCommand: Time => F[ObserveCommandResult] =
     controller.resumePaused
+
+  val nsCount: F[Int] = controller.nsCount
 
   override val observeControl: InstrumentSystem.CompleteControl[F] = CompleteControl(
     StopObserveCmd(controller.stopObserve),
@@ -292,5 +298,7 @@ object Gmos {
     } yield
       DCConfig(exposureTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
+  def nsCmdRef[F[_]: Sync]: F[Ref[F, Option[NSObserveCommand]]] = Ref.of(none)
 
  }
