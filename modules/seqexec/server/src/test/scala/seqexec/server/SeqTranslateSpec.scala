@@ -39,7 +39,7 @@ import squants.time.Seconds
 import org.scalatest.flatspec.AnyFlatSpec
 
 class SeqTranslateSpec extends AnyFlatSpec {
-  private implicit def unsafeLogger = NoOpLogger.impl[IO]
+  private implicit def logger = NoOpLogger.impl[IO]
 
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -91,32 +91,43 @@ class SeqTranslateSpec extends AnyFlatSpec {
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
-  private val gpiSim: GpiController[IO] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
-    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
-  ).unsafeRunSync
-  private val ghostSim : GhostController[IO] = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
-    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
-  ).unsafeRunSync
+  private val gpiSim: IO[GpiController[IO]] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
+    new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
+  private val ghostSim : IO[GhostController[IO]] = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
+    new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
 
-  private val systems = Systems[IO](
-    OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
-    DhsClientSim.unsafeApply(LocalDate.of(2016, 4, 15)),
-    TcsSouthControllerSim[IO],
-    TcsNorthControllerSim[IO],
-    GcalControllerSim[IO],
-    Flamingos2ControllerSim.unsafeApply[IO],
-    GmosControllerSim.unsafeSouth[IO],
-    GmosControllerSim.unsafeNorth[IO],
-    GnirsControllerSim.unsafeApply[IO],
-    GsaoiControllerSim.unsafeApply[IO],
+  private val systems =
+    (
+    Flamingos2ControllerSim[IO],
+    GmosControllerSim.south[IO],
+    GmosControllerSim.north[IO],
+    GnirsControllerSim[IO],
+    GsaoiControllerSim[IO],
     gpiSim,
     ghostSim,
-    NiriControllerSim.unsafeApply[IO],
-    NifsControllerSim.unsafeApply[IO],
-    AltairControllerSim[IO],
-    GemsControllerSim[IO],
-    GuideConfigDb.constant[IO]
-  )
+    NiriControllerSim[IO],
+    NifsControllerSim[IO]).mapN{ (f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+      Systems[IO](
+        OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
+        DhsClientSim.unsafeApply(LocalDate.of(2016, 4, 15)),
+        TcsSouthControllerSim[IO],
+        TcsNorthControllerSim[IO],
+        GcalControllerSim[IO],
+        f2,
+        gmosS,
+        gmosN,
+        gnirs,
+        gsaoi,
+        gpi,
+        ghost,
+        niri,
+        nifs,
+        AltairControllerSim[IO],
+        GemsControllerSim[IO],
+        GuideConfigDb.constant[IO]
+      )}.unsafeRunSync
 
   private val translatorSettings =
     TranslateSettings(tcsKeywords = false,

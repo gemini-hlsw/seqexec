@@ -169,14 +169,15 @@ object InstrumentControllerSim {
 
   }
 
-  def unsafeApply[F[_]: Sync: Logger: Timer](name: String): InstrumentControllerSim[F] = {
-    val obsStateRef = InstrumentControllerSim.ObserveState.unsafeRef[F]
-    new InstrumentControllerSimImpl[F](name,
-                                       false,
-                                       FiniteDuration(5, SECONDS),
-                                       FiniteDuration(1500, MILLISECONDS),
-                                       FiniteDuration(5, SECONDS),
-                                       obsStateRef)
+  def apply[F[_]: Sync: Logger: Timer](name: String): F[InstrumentControllerSim[F]] = {
+    InstrumentControllerSim.ObserveState.ref[F].map { obsStateRef =>
+      new InstrumentControllerSimImpl[F](name,
+                                         false,
+                                         FiniteDuration(5, SECONDS),
+                                         FiniteDuration(1500, MILLISECONDS),
+                                         FiniteDuration(5, SECONDS),
+                                         obsStateRef)
+    }
   }
 
   def unsafeWithTimes[F[_]: Sync: Logger: Timer](

@@ -19,37 +19,38 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GsaoiControllerSim {
-  def unsafeApply[F[_]: Sync: Logger: Timer]: GsaoiFullHandler[F] =
-    new GsaoiFullHandler[F] {
-      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim.unsafeApply(s"GSAOI")
+  def apply[F[_]: Sync: Logger: Timer]: F[GsaoiFullHandler[F]] =
+    InstrumentControllerSim[F]("GSAOI").map { sim =>
+      new GsaoiFullHandler[F] {
 
-      override def observe(fileId: ImageFileId,
-                           cfg:    DCConfig): F[ObserveCommandResult] =
-        calcTotalExposureTime(cfg).flatMap {
-          sim.observe(fileId, _)
-        }
+        override def observe(fileId: ImageFileId,
+                             cfg:    DCConfig): F[ObserveCommandResult] =
+          calcTotalExposureTime(cfg).flatMap {
+            sim.observe(fileId, _)
+          }
 
-      override def applyConfig(config: GsaoiConfig): F[Unit] =
-        sim.applyConfig(config)
+        override def applyConfig(config: GsaoiConfig): F[Unit] =
+          sim.applyConfig(config)
 
-      override def stopObserve: F[Unit] = sim.stopObserve
+        override def stopObserve: F[Unit] = sim.stopObserve
 
-      override def abortObserve: F[Unit] = sim.abortObserve
+        override def abortObserve: F[Unit] = sim.abortObserve
 
-      override def endObserve: F[Unit] = sim.endObserve
+        override def endObserve: F[Unit] = sim.endObserve
 
-      override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-        sim.observeCountdown(total, ElapsedTime(0.seconds))
+        override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+          sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-      override def currentState: F[GsaoiGuider.GuideState] = (new GsaoiGuider.GuideState {
-        override def isGuideActive: Boolean = false
+        override def currentState: F[GsaoiGuider.GuideState] = (new GsaoiGuider.GuideState {
+          override def isGuideActive: Boolean = false
 
-        override def isOdgwGuiding(odgwId: GsaoiGuider.OdgwId): Boolean = false
-      }).pure[F]
+          override def isOdgwGuiding(odgwId: GsaoiGuider.OdgwId): Boolean = false
+        }).pure[F]
 
-      override def guide: F[Unit] = Applicative[F].unit
+        override def guide: F[Unit] = Applicative[F].unit
 
-      override def endGuide: F[Unit] = Applicative[F].unit
+        override def endGuide: F[Unit] = Applicative[F].unit
+      }
     }
 
 }

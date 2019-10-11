@@ -23,6 +23,7 @@ import gem.enum.GpiReadMode
 import giapi.client.commands.Configuration
 import giapi.client.commands.CommandResultException
 import giapi.client.gpi.GpiClient
+import giapi.client.GiapiStatusDb
 import mouse.boolean._
 import org.log4s._
 import scala.concurrent.duration._
@@ -149,6 +150,8 @@ case object AlignAndCalibConfig extends GpiConfig {
 
 trait GpiController[F[_]] extends GiapiInstrumentController[F, GpiConfig] {
   def gdsClient: GdsClient[F]
+
+  def statusDb: GiapiStatusDb[F]
 
   def alignAndCalib: F[Unit]
 }
@@ -307,6 +310,8 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
           case c: RegularGpiConfig => computeRegularConfig(client, c)
           case AlignAndCalibConfig => AlignAndCalibConfig.config.pure[F]
         }
+
+      override def statusDb: GiapiStatusDb[F] = client.statusDb
     }
 
 }

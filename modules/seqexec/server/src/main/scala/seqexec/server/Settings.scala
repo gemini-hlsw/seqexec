@@ -36,5 +36,7 @@ final case class Settings(site:                    Site,
                           instForceError:          Boolean,
                           failAt:                  Int,
                           odbQueuePollingInterval: Duration,
+                          gpiUrl:                  Uri @@ GpiSettings,
+                          ghostUrl:                Uri @@ GhostSettings,
                           gpiGDS:                  Uri @@ GpiSettings,
                           ghostGDS:                Uri @@ GhostSettings)

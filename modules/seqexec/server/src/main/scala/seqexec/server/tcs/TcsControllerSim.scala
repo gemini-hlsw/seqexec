@@ -3,19 +3,17 @@
 
 package seqexec.server.tcs
 
+import cats.Applicative
 import cats.data.NonEmptySet
-import cats.effect.Sync
-import seqexec.server.tcs.TcsController._
 import cats.implicits._
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
+import seqexec.server.tcs.TcsController._
 import seqexec.model.enum.NodAndShuffleStage
 
 
-class TcsControllerSim[F[_]: Sync] {
+class TcsControllerSim[F[_]: Applicative: Logger] {
 
-  import TcsControllerSim.Log
-
-  def info(msg: String): F[Unit] = Sync[F].delay(Log.info(msg))
+  def info(msg: String): F[Unit] = Logger[F].info(msg)
 
   def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] = {
     def configSubsystem(subsystem: Subsystem): F[Unit] =
@@ -30,10 +28,4 @@ class TcsControllerSim[F[_]: Sync] {
 
   def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
     info(s"Simulate TCS Nod to position ${stage.symbol}, offset=$offset, guided=$guided")
-}
-
-object TcsControllerSim {
-
-  val Log = getLogger
-
 }

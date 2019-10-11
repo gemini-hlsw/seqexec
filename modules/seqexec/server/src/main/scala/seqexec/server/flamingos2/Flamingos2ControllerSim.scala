@@ -37,8 +37,8 @@ final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControlle
 }
 
 object Flamingos2ControllerSim {
-  def unsafeApply[F[_]: Sync: Logger: Timer]: Flamingos2Controller[F] =
-    Flamingos2ControllerSim(InstrumentControllerSim.unsafeApply("FLAMINGOS-2"))
+  def apply[F[_]: Sync: Logger: Timer]: F[Flamingos2Controller[F]] =
+    InstrumentControllerSim("FLAMINGOS-2").map(Flamingos2ControllerSim(_))
 
 }
 
@@ -68,10 +68,13 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: L
 }
 
 object Flamingos2ControllerSimBad {
-  def unsafeApply[F[_]: Sync: Logger: Timer](failAt: Int): Flamingos2Controller[F] =
-    Flamingos2ControllerSimBad(
-      failAt,
-      InstrumentControllerSim.unsafeApply("FLAMINGOS-2 (bad)"),
-      Ref.unsafe[F, Int](0))
+  def apply[F[_]: Sync: Logger: Timer](failAt: Int): F[Flamingos2Controller[F]] =
+    (Ref.of[F, Int](0), InstrumentControllerSim("FLAMINGOS-2 (bad)")).mapN { (counter, sim) =>
+      Flamingos2ControllerSimBad(
+        failAt,
+        sim,
+        counter
+      )
+    }
 
 }

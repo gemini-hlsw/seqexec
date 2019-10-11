@@ -3,16 +3,12 @@
 
 package seqexec.server.gcal
 
-import cats.effect.Sync
-import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.server.gcal.GcalController.GcalConfig
-import org.log4s.getLogger
 
 object GcalControllerSim {
-  def apply[F[_]: Sync]: GcalController[F] = new GcalController[F] {
-    private val Log = getLogger
-
+  def apply[F[_]: Logger]: GcalController[F] = new GcalController[F] {
     override def applyConfig(config: GcalConfig): F[Unit] =
-      Sync[F].delay(Log.debug("Simulating GCAL configuration")).void
+      Logger[F].debug("Simulating GCAL configuration")
   }
 }

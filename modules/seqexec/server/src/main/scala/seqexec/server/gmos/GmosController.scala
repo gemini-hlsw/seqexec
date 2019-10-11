@@ -247,10 +247,6 @@ object GmosController {
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig, ns: NSConfig) = this(cc, dc, c, ns)
   }
 
-  type GmosSouthController[F[_]] = GmosController[F, SouthTypes]
-
-  type GmosNorthController[F[_]] = GmosController[F, NorthTypes]
-
   implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
     Show.show { config =>
       val ccShow = if(config.cc.isDarkOrBias) "DarkOrBias"

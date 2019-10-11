@@ -3,7 +3,7 @@
 
 package seqexec.server.keywords
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.Effect
 import cats.Functor
@@ -166,8 +166,8 @@ object GdsClient {
   /**
     * Client for testing always returns ok
     */
-  val alwaysOkClient: Client[IO] = {
-    val service = HttpRoutes.of[IO] {
+  def alwaysOkClient[F[_]: Sync]: Client[F] = {
+    val service = HttpRoutes.of[F] {
       case _ =>
         val response =
           <methodResponse>
@@ -177,7 +177,7 @@ object GdsClient {
               </param>
             </params>
           </methodResponse>
-        Response[IO](Status.Ok).withEntity(response).pure[IO]
+        Response[F](Status.Ok).withEntity(response).pure[F]
     }
     Client.fromHttpApp(service.orNotFound)
   }

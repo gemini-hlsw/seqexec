@@ -4,13 +4,14 @@
 package seqexec.server.tcs
 
 import cats.data.NonEmptySet
-import cats.effect.Sync
+import cats.Applicative
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.Altair
 import seqexec.server.tcs.TcsController.{InstrumentOffset, Subsystem}
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
 
-class TcsNorthControllerSim[F[_]: Sync] private extends TcsNorthController[F] {
+class TcsNorthControllerSim[F[_]: Applicative: Logger] private extends TcsNorthController[F] {
  val sim = new TcsControllerSim[F]
 
   override def applyConfig(subsystems: NonEmptySet[Subsystem],
@@ -30,6 +31,6 @@ class TcsNorthControllerSim[F[_]: Sync] private extends TcsNorthController[F] {
 
 object TcsNorthControllerSim {
 
-  def apply[F[_]: Sync]: TcsNorthController[F] = new TcsNorthControllerSim[F]
+  def apply[F[_]: Applicative: Logger]: TcsNorthController[F] = new TcsNorthControllerSim[F]
 
 }

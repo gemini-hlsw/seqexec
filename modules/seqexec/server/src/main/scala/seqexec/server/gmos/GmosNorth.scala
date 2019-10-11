@@ -12,7 +12,7 @@ import seqexec.server.{CleanConfig, ConfigUtilOps}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.Gmos.SiteSpecifics
-import seqexec.server.gmos.GmosController.{GmosNorthController, NorthTypes, northConfigTypes}
+import seqexec.server.gmos.GmosController.{NorthTypes, northConfigTypes}
 import seqexec.server.keywords.DhsClient
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import edu.gemini.spModel.gemini.gmos.GmosNorthType

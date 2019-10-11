@@ -9,21 +9,18 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.epics.acm.CaService
-import edu.gemini.spModel.core.Peer
 import fs2.{Pure, Stream}
 import gem.Observation
 import gem.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import knobs.Config
 import mouse.all._
 import monocle.Monocle._
 import monocle.Optional
-import org.http4s.client.Client
 import org.http4s.Uri
 import seqexec.engine.Result.Partial
 import seqexec.engine.EventResult._
@@ -35,80 +32,30 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
-import seqexec.server.keywords._
-import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
-import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
-import seqexec.server.ghost.GhostController
-import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
-import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
-import seqexec.server.gpi.GpiController
+import seqexec.server.flamingos2.Flamingos2Epics
+import seqexec.server.gcal.GcalEpics
+import seqexec.server.gmos.GmosEpics
+import seqexec.server.gnirs.GnirsEpics
 import seqexec.server.gpi.GpiStatusApply
-import seqexec.server.gsaoi.{GsaoiControllerEpics, GsaoiControllerSim, GsaoiEpics}
-import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
-import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
+import seqexec.server.gsaoi.GsaoiEpics
+import seqexec.server.niri.NiriEpics
+import seqexec.server.nifs.NifsEpics
 import seqexec.server.gws.GwsEpics
-import seqexec.server.gems.{GemsControllerEpics, GemsControllerSim, GemsEpics}
-import seqexec.server.tcs.{GuideConfigDb, TcsEpics, TcsNorthControllerEpics, TcsNorthControllerSim, TcsSouthControllerEpics, TcsSouthControllerSim}
+import seqexec.server.gems.GemsEpics
+import seqexec.server.tcs.TcsEpics
 import seqexec.server.SeqEvent._
-import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
+import seqexec.server.altair.AltairEpics
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import shapeless.tag
 
 class SeqexecEngine(
-  httpClient: Client[IO],
-  gpi: GpiClient[IO],
-  ghost: GhostClient[IO],
-  guideConfigDb: GuideConfigDb[IO],
+  val systems: Systems[IO],
   settings: Settings,
   sm: SeqexecMetrics)(
-  implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
+  implicit ceio: ConcurrentEffect[IO], tio: Timer[IO], L: Logger[IO]
 ) {
   import SeqexecEngine._
-
-  // We establist here as the limit of where logger start
-  // TODO Push it up the stack
-  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
-
-  val odbProxy: OdbProxy[IO] = OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
-    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
-    else new OdbProxy.DummyOdbCommands[IO])
-
-  val gpiGDS: GdsClient[IO] = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient),
-    settings.gpiGDS)
-
-  val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient),
-    settings.ghostGDS)
-
-  private val systems = {
-    val gsaoiController = settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim.unsafeApply[IO])
-
-    Systems[IO](
-      odbProxy,
-      settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
-        DhsClientSim.unsafeApply(settings.date)),
-      (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(guideConfigDb), TcsSouthControllerSim[IO]),
-      (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
-      settings.gcalControl.command.fold(GcalControllerEpics(GcalEpics.instance), GcalControllerSim[IO]),
-      settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
-        settings.instForceError.fold(Flamingos2ControllerSimBad.unsafeApply[IO](settings.failAt),
-          Flamingos2ControllerSim.unsafeApply[IO])),
-      settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.unsafeSouth[IO]),
-      settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.unsafeNorth[IO]),
-      settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim.unsafeApply[IO]),
-      gsaoiController,
-      GpiController(gpi, gpiGDS),
-      GhostController(ghost, ghostGDS),
-      settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim.unsafeApply[IO]),
-      settings.nifsControl.command.fold(NifsControllerEpics(), NifsControllerSim.unsafeApply[IO]),
-      (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim[IO]),
-      (settings.gemsControl.command && settings.tcsControl.command).fold(
-        GemsControllerEpics(GemsEpics.instance, gsaoiController),
-        GemsControllerSim[IO]
-      ),
-      guideConfigDb
-    )
-  }
 
   private val translatorSettings = TranslateSettings(
     tcsKeywords = settings.tcsControl.realKeywords,
@@ -126,7 +73,7 @@ class SeqexecEngine(
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
-  private val odbLoader = new ODBSequencesLoader(odbProxy, translator)
+  private val odbLoader = new ODBSequencesLoader(systems.odb, translator)
 
   def sync(q: EventQueue[IO], seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
     odbLoader.loadEvents(seqId).flatMap{ e =>
@@ -244,7 +191,7 @@ class SeqexecEngine(
 
   def seqQueueRefreshStream: Stream[IO, Either[SeqexecFailure, executeEngine.EventType]] = {
     val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-    Stream.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences).flatMap { x =>
+    Stream.fixedDelay[IO](fd).evalMap(_ => systems.odb.queuedSequences).flatMap { x =>
       Stream.emit(Event.getState[IO, executeEngine.ConcreteTypes] { st =>
         Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
       }.asRight)
@@ -544,11 +491,13 @@ class SeqexecEngine(
 
 object SeqexecEngine extends SeqexecConfiguration {
 
-  def apply(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], guideDb: GuideConfigDb[IO],
-            settings: Settings, c: SeqexecMetrics)(
+  def apply(systems: Systems[IO],
+            settings: Settings,
+            c: SeqexecMetrics)(
            implicit ceio: ConcurrentEffect[IO],
-           tio: Timer[IO]
-  ): SeqexecEngine = new SeqexecEngine(httpClient, gpi, ghost, guideDb, settings, c)
+                    tio: Timer[IO],
+                    L: Logger[IO]
+  ): SeqexecEngine = new SeqexecEngine(systems, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -665,6 +614,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   def seqexecConfiguration(
     implicit cs: ContextShift[IO]
   ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+    // TODO replace with pure-config
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
@@ -685,6 +635,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     val niriControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.niri")
     val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
     val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
+    val gpiUrl                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiUrl"))
+    val ghostUrl                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostUrl"))
     val gpiGDS                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiGDS"))
     val ghostGDS                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostGDS"))
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
@@ -761,6 +713,8 @@ object SeqexecEngine extends SeqexecConfiguration {
                    instForceError,
                    failAt,
                    odbQueuePollingInterval,
+                   gpiUrl,
+                   ghostUrl,
                    gpiGDS,
                    ghostGDS)
                  }

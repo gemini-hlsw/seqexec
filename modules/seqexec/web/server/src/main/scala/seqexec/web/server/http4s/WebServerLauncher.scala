@@ -11,10 +11,9 @@ import ch.qos.logback.core.Appender
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
 import gem.enum.Site
-import giapi.client.GiapiStatusDb
-import giapi.client.gpi.GpiClient
-import giapi.client.ghost.GhostClient
 import io.prometheus.client.CollectorRegistry
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.nio.file.{Path => FilePath}
 import java.util.concurrent.{ExecutorService, Executors}
 import knobs.{Resource => _, _}
@@ -27,18 +26,18 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
-import org.http4s.server.middleware.Logger
+import org.http4s.server.middleware.{Logger => Http4sLogger}
 import org.http4s.server.Router
 import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
-import org.log4s._
 import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
-import seqexec.server.{ControlStrategy, SeqexecConfiguration, SeqexecEngine, SeqexecMetrics, executeEngine}
+import seqexec.server.{SeqexecConfiguration, SeqexecEngine, SeqexecMetrics, executeEngine}
 import seqexec.server.SeqexecFailure
+import seqexec.server.Systems
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -46,7 +45,7 @@ import squants.time.Hours
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
 
 object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfiguration {
-  private val logger = getLogger
+  private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
   final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
@@ -149,8 +148,6 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
-    gcdb: GuideConfigDb[IO],
-    giapiDb: GiapiStatusDb[IO],
     cr: CollectorRegistry,
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
@@ -178,12 +175,12 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     val router = Router[IO](
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, gcdb, giapiDb, outputs).service,
-      "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, se.systems.guideDb, se.systems.gpi.statusDb, outputs).service,
+      "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
       "/smartgcal"            -> new SmartGcalRoutes[IO](cal).service
     )
 
-    val loggedRoutes = Logger.httpRoutes(logHeaders = false, logBody = false)(router)
+    val loggedRoutes = Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
     val metricsMiddleware = Prometheus[IO](cr, "seqexec").map(
       Metrics[IO](_)(loggedRoutes))
 
@@ -217,7 +214,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
              /_/
 """
     val msg = s"""Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode, version ${OcsBuildInfo.version}"""
-    IO(logger.info(banner + msg))
+    L.info(banner + msg)
   }
 
   // We need to manually update the configuration of the logging subsystem
@@ -248,8 +245,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
   // Logger of error of last resort.
   def logError: PartialFunction[Throwable, IO[Unit]] = {
-    case e: SeqexecFailure => IO(logger.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}"))
-    case e: Exception      => IO(logger.error(e)("Seqexec global error handler"))
+    case e: SeqexecFailure => L.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
+    case e: Exception      => L.error(e)("Seqexec global error handler")
   }
 
   /** Reads the configuration and launches the web server */
@@ -266,22 +263,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       .setRequestTimeout(5000) // Change the timeout to 5 seconds
       .build()
 
-    def giapiClients: Resource[IO, (GpiClient[IO], GhostClient[IO])] =
-      for {
-        cfg          <- Resource.liftF(config)
-        ghostUrl     <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.ghostUrl")))
-        ghostControl <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")))
-        gpiUrl       <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.gpiUrl")))
-        gpiControl   <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")))
-        gpi          <- SeqexecEngine.gpiClient(gpiControl, gpiUrl)
-        ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl)
-      } yield (gpi, ghost)
-
     def engineIO(
       httpClient: Client[IO],
-      guideConfigDb: GuideConfigDb[IO],
-      gpi: GpiClient[IO],
-      ghost: GhostClient[IO],
       collector: CollectorRegistry
     ): Resource[IO, SeqexecEngine] =
       for {
@@ -289,14 +272,13 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         site <- Resource.liftF(IO(cfg.require[Site]("seqexec-engine.site")))
         seqc <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
         met  <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
-      } yield SeqexecEngine(httpClient, gpi, ghost, guideConfigDb, seqc, met)
+        sys  <- Systems.build(httpClient, seqc)
+      } yield SeqexecEngine(sys, seqc, met)
 
     def webServerIO(
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
-      et:  SeqexecEngine,
-      gcdb: GuideConfigDb[IO],
-      gpi: GpiClient[IO],
+      en:  SeqexecEngine,
       cr:  CollectorRegistry,
       bec: ExecutionContext
     ): Resource[IO, Unit] =
@@ -307,8 +289,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         _  <- Resource.liftF(logStart.run(wc))
         _  <- Resource.liftF(logToClients(out))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](wc.smartGCalHost, wc.smartGCalLocation))
-        _  <- redirectWebServer(gcdb, ca)(wc)
-        _  <- webServer(as, ca, in, out, et, gcdb, gpi.statusDb, cr, bec)(wc)
+        _  <- redirectWebServer(en.systems.guideDb, ca)(wc)
+        _  <- webServer(as, ca, in, out, en, cr, bec)(wc)
       } yield ()
 
     val r: Resource[IO, ExitCode] =
@@ -319,11 +301,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         bec    <- blockingExecutionContext
-        gcdb   <- Resource.liftF(GuideConfigDb.newDb[IO])
-        giapi  <- giapiClients
-        (gpi, ghost) = giapi
-        engine <- engineIO(cli, gcdb, gpi, ghost, cr)
-        _      <- webServerIO(inq, out, engine, gcdb, gpi, cr, bec)
+        engine <- engineIO(cli, cr)
+        _      <- webServerIO(inq, out, engine, cr, bec)
         f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
