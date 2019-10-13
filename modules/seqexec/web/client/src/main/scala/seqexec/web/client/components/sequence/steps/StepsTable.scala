@@ -1074,9 +1074,10 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
+          val areaSize = Size(size.height, size.width - 15) // Subtract scroll bar width
           val ts =
             b.state.tableState
-              .columnBuilder(size, colBuilder(b, size), b.props.columnWidths)
+              .columnBuilder(areaSize, colBuilder(b, areaSize), b.props.columnWidths)
               .map(_.vdomElement)
 
           if (size.width > 0) {
