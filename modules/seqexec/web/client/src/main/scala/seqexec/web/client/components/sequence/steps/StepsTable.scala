@@ -917,10 +917,12 @@ object StepsTable extends Columns {
             ^.key := key,
             ^.style := Style.toJsObject(style),
             SeqexecStyles.expandedRunningRow,
+            SeqexecStyles.stepRow,
             <.div(
               ^.cls := className,
               ^.key := s"$key-top",
               SeqexecStyles.expandedTopRow,
+              ^.height := SeqexecStyles.runningRowHeight.px,
               ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
               columns.toTagMod
@@ -939,6 +941,7 @@ object StepsTable extends Columns {
                   ^.key := s"$key-subRow-$rowIdx",
                   SeqexecStyles.expandedBottomRow,
                   SeqexecStyles.tableDetailRow,
+                  ^.height := SeqexecStyles.runningRowHeight.px,
                   ^.onMouseDown ==> allowedClick(p, index, onRowClick),
                   ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
                   rowComponent(s)
