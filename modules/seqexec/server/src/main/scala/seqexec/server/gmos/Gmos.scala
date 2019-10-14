@@ -100,11 +100,11 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
       stageMode        <- ss.extractStageMode(config)
       dtax             <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
       adc              <- config.extractInstAs[ADC](ADC_PROP)
-      electronicOffset =  config.extractInstAs[UseElectronicOffset](USE_ELECTRONIC_OFFSETTING_PROP)
+      electronicOffset =  Gmos.ccElectronicOffset(config)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
       obsType          <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       isDarkOrBias = List(DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE).exists(_ === obsType)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption, isDarkOrBias))
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset, isDarkOrBias))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
@@ -157,6 +157,7 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller
       .observeProgress(total, elapsed)
+
 }
 
 object Gmos {
@@ -183,6 +184,14 @@ object Gmos {
     config.extractAs[java.lang.Boolean](NSKey)
       .map(_.booleanValue())
       .getOrElse(false)
+
+  def ccElectronicOffset(config: CleanConfig): UseElectronicOffset = {
+    tag[UseElectronicOffsetI][Boolean](
+      config.extractInstAs[java.lang.Boolean](USE_ELECTRONIC_OFFSETTING_PROP)
+        .map(_.booleanValue())
+        .getOrElse(false) // We should always set electronic offset to false unless explicitly enabled
+    )
+  }
 
   private def configToAngle(s: String): Either[ExtractFailure, Angle] =
     s.parseDoubleOption

@@ -6,12 +6,10 @@ package seqexec.server.gmos
 import cats.effect.{IO, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
+import io.chrisdavenport.log4cats.Logger
 import fs2.Stream
 import mouse.all._
-
 import scala.concurrent.ExecutionContext
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.GmosParameters._
@@ -72,7 +70,7 @@ trait GmosEncoders {
     EncodeEpicsValue((l: Length) => l.toNanometers)
 
   implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] =
-    EncodeEpicsValue(_.allow.fold(1, 0))
+    EncodeEpicsValue(_.fold(1, 0))
 
   val InBeamVal: String    = "IN-BEAM"
   val OutOfBeamVal: String = "OUT-OF-BEAM"
@@ -316,11 +314,8 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
 
-  private def setElectronicOffset(state: GmosCCEpicsState, e: Option[UseElectronicOffset]): Option[IO[Unit]] = {
-    val useEOffset = e.getOrElse(UseElectronicOffsettingRuling.deny(""))
-
-    applyParam(state.useElectronicOffsetting, useEOffset.allow, (_: Boolean) => CC.setElectronicOffsetting(encode(useEOffset)))
-  }
+  private def setElectronicOffset(state: GmosCCEpicsState, e: UseElectronicOffset): Option[IO[Unit]] =
+    applyParam(state.useElectronicOffsetting, e, (_: Boolean) => CC.setElectronicOffsetting(encode(e)))
 
   val DhsConnected: String = "CONNECTED"
 
@@ -413,7 +408,7 @@ object GmosControllerEpics extends GmosEncoders {
             L.info(s"Gmos $name Observe canceled because there is less than $safetyCutoffAsDouble seconds left.")
           else
             L.info(s"$name Gmos exposure") *>
-              cmd.setTimeout[IO](DefaultTimeout)
+              cmd.setTimeout[IO](DefaultTimeout) *>
               cmd.mark[IO] *>
               cmd.post[IO].void
         }.flatten
@@ -460,6 +455,7 @@ object GmosControllerEpics extends GmosEncoders {
         EpicsUtil.countdown[IO](total, sys.countdown.map(_.seconds.some),
           IO(sys.observeState))
       }
+
   }
 
   // Parameters to define a ROI

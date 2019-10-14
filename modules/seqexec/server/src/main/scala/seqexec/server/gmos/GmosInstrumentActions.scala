@@ -112,7 +112,6 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
     post:      (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] = {
     val nsPositionO   = positions.find(_.stage === sub.stage)
-    // Configure GMOS rows
     // TCS Nod
     (env.getTcs, nsPositionO).mapN {
       case (tcs, nsPos) =>
