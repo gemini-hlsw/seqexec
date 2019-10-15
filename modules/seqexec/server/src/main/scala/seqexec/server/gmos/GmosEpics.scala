@@ -274,8 +274,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def stageMode: F[String] = read("stageMode")
 
-  def useElectronicOffsetting: F[Boolean] = readI("useElectronicOffsetting")
-    .map(_ =!= 0)
+  def electronicOffset: F[Int] = readI("useElectronicOffsetting")
 
   def disperserWavel: F[Double] = readD("disperserLambda")
 

@@ -6,12 +6,10 @@ package seqexec.server.gmos
 import cats.effect.{IO, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
+import io.chrisdavenport.log4cats.Logger
 import fs2.Stream
 import mouse.all._
-
 import scala.concurrent.ExecutionContext
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.GmosParameters._
@@ -71,8 +69,11 @@ trait GmosEncoders {
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] =
     EncodeEpicsValue((l: Length) => l.toNanometers)
 
-  implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] =
-    EncodeEpicsValue(_.allow.fold(1, 0))
+  implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int] =
+    EncodeEpicsValue {
+      case ElectronicOffset.On  => 1
+      case ElectronicOffset.Off => 0
+    }
 
   val InBeamVal: String    = "IN-BEAM"
   val OutOfBeamVal: String = "OUT-OF-BEAM"
@@ -124,7 +125,7 @@ private[gmos] final case class GmosCCEpicsState(
   stageMode: String,
   dtaXOffset: Double,
   dtaXCenter: Double,
-  useElectronicOffsetting: Boolean
+  useElectronicOffsetting: Int
 )
 
 /**
@@ -170,19 +171,19 @@ object GmosControllerEpics extends GmosEncoders {
 
   private def retrieveCCState: IO[GmosCCEpicsState] =
     for {
-      filter1                <- sys.filter1
-      filter2                <- sys.filter2
-      disperserMode          <- sys.disperserMode
-      disperser              <- sys.disperser
-      disperserParked        <- sys.disperserParked
-      disperserOrder         <- sys.disperserOrder
-      disperserWavel         <- sys.disperserWavel
-      fpu                    <- sys.fpu
-      inBeam                 <- sys.inBeam
-      stageMode              <- sys.stageMode
-      dtaXOffset             <- sys.dtaXOffset
-      dtaXCenter             <- sys.dtaXCenter
-      useElectronicOffsetting <- sys.useElectronicOffsetting
+      filter1                 <- sys.filter1
+      filter2                 <- sys.filter2
+      disperserMode           <- sys.disperserMode
+      disperser               <- sys.disperser
+      disperserParked         <- sys.disperserParked
+      disperserOrder          <- sys.disperserOrder
+      disperserWavel          <- sys.disperserWavel
+      fpu                     <- sys.fpu
+      inBeam                  <- sys.inBeam
+      stageMode               <- sys.stageMode
+      dtaXOffset              <- sys.dtaXOffset
+      dtaXCenter              <- sys.dtaXCenter
+      useElectronicOffsetting <- sys.electronicOffset
     } yield GmosCCEpicsState(filter1, filter2, disperserMode, disperser, disperserParked, disperserOrder, disperserWavel, fpu, inBeam, stageMode, dtaXOffset, dtaXCenter, useElectronicOffsetting)
 
   private def setShutterState(s: GmosDCEpicsState, dc: DCConfig): Option[IO[Unit]] = dc.s match {
@@ -316,11 +317,8 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
 
-  private def setElectronicOffset(state: GmosCCEpicsState, e: Option[UseElectronicOffset]): Option[IO[Unit]] = {
-    val useEOffset = e.getOrElse(UseElectronicOffsettingRuling.deny(""))
-
-    applyParam(state.useElectronicOffsetting, useEOffset.allow, (_: Boolean) => CC.setElectronicOffsetting(encode(useEOffset)))
-  }
+  private def setElectronicOffset(state: GmosCCEpicsState, e: ElectronicOffset): Option[IO[Unit]] =
+    applyParam(state.useElectronicOffsetting, encode(e), (e: Int) => CC.setElectronicOffsetting(e))
 
   val DhsConnected: String = "CONNECTED"
 
@@ -413,7 +411,7 @@ object GmosControllerEpics extends GmosEncoders {
             L.info(s"Gmos $name Observe canceled because there is less than $safetyCutoffAsDouble seconds left.")
           else
             L.info(s"$name Gmos exposure") *>
-              cmd.setTimeout[IO](DefaultTimeout)
+              cmd.setTimeout[IO](DefaultTimeout) *>
               cmd.mark[IO] *>
               cmd.post[IO].void
         }.flatten
@@ -460,6 +458,7 @@ object GmosControllerEpics extends GmosEncoders {
         EpicsUtil.countdown[IO](total, sys.countdown.map(_.seconds.some),
           IO(sys.observeState))
       }
+
   }
 
   // Parameters to define a ROI

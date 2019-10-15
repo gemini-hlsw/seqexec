@@ -74,7 +74,7 @@ object GmosController {
       stage: T#GmosStageMode,
       dtaX: DTAX,
       adc: ADC,
-      useElectronicOffset: Option[UseElectronicOffset],
+      useElectronicOffset: ElectronicOffset,
       isDarkOrBias: Boolean
     )
 
@@ -83,7 +83,6 @@ object GmosController {
   object Config {
     type DTAX                = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
     type ADC                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
-    type UseElectronicOffset = edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
     type DisperserOrder      = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
     type Binning             = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
     type AmpReadMode         = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
@@ -129,6 +128,20 @@ object GmosController {
       /** @group Typeclass Instances */
       implicit val BeamEnumerated: Enumerated[Beam] =
         Enumerated.of(InBeam, OutOfBeam)
+    }
+
+    sealed trait ElectronicOffset extends Product with Serializable
+
+    object ElectronicOffset {
+      case object On extends ElectronicOffset
+      case object Off extends ElectronicOffset
+
+      def fromBoolean(v: Boolean): ElectronicOffset =
+        if (v) On else Off
+
+      /** @group Typeclass Instances */
+      implicit val ElectronicOffsetEnumerated: Enumerated[ElectronicOffset] =
+        Enumerated.of(On, Off)
     }
 
     sealed trait GmosFPU extends Product with Serializable
