@@ -14,9 +14,7 @@ import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
-
 import org.http4s.Uri._
-
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS

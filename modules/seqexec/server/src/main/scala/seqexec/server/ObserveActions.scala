@@ -166,13 +166,13 @@ trait ObserveActions {
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
         env.inst.calcObserveTime(env.config)
-          .flatMap(t => env.inst.observeControl match {
+          .flatMap(totalTime => env.inst.observeControl match {
             case c: CompleteControl[F] => Result.Paused(
               ObserveContext[F](
-                (t: Time) => Stream.eval(c.continue.self(t)).flatMap(observeTail(fileId, dataId, env)),
+                (elapsed: Time) => Stream.eval(c.continue.self(elapsed)).flatMap(observeTail(fileId, dataId, env)),
                 Stream.eval(c.stopPaused.self).flatMap(observeTail(fileId, dataId, env)),
                 Stream.eval(c.abortPaused.self).flatMap(observeTail(fileId, dataId, env)),
-                t
+                totalTime
               )
             ).pure[F].widen[Result[F]]
             case _                     =>
