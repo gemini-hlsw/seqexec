@@ -941,6 +941,9 @@ object StepsTable extends Columns {
                   ^.key := s"$key-subRow-$rowIdx",
                   SeqexecStyles.expandedBottomRow,
                   SeqexecStyles.tableDetailRow,
+                  SeqexecStyles.tableDetailRowWithGutter
+                               .when(p.status.isLogged)
+                               .unless(p.isPreview),
                   ^.height := SeqexecStyles.runningRowHeight.px,
                   ^.onMouseDown ==> allowedClick(p, index, onRowClick),
                   ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),

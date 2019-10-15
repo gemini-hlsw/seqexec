@@ -21,6 +21,9 @@ object SeqexecStyles {
   val tableDetailRow: Css =
     Css("SeqexecStyles-tableDetailRow")
 
+  val tableDetailRowWithGutter: Css =
+    Css("SeqexecStyles-tableDetailRowWithGutter")
+
   val expandedRunningRow: Css =
     Css("SeqexecStyles-expandedRunningRow")
 
