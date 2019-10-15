@@ -185,13 +185,12 @@ object Gmos {
       .map(_.booleanValue())
       .getOrElse(false)
 
-  def ccElectronicOffset(config: CleanConfig): UseElectronicOffset = {
-    tag[UseElectronicOffsetI][Boolean](
+  def ccElectronicOffset(config: CleanConfig): ElectronicOffset =
+    ElectronicOffset.fromBoolean(
       config.extractInstAs[java.lang.Boolean](USE_ELECTRONIC_OFFSETTING_PROP)
         .map(_.booleanValue())
         .getOrElse(false) // We should always set electronic offset to false unless explicitly enabled
     )
-  }
 
   private def configToAngle(s: String): Either[ExtractFailure, Angle] =
     s.parseDoubleOption

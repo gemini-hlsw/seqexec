@@ -69,8 +69,11 @@ trait GmosEncoders {
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] =
     EncodeEpicsValue((l: Length) => l.toNanometers)
 
-  implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] =
-    EncodeEpicsValue(_.fold(1, 0))
+  implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int] =
+    EncodeEpicsValue {
+      case ElectronicOffset.ElectronicOffsetOn => 1
+      case ElectronicOffset.ElectronicOffsetOff => 0
+    }
 
   val InBeamVal: String    = "IN-BEAM"
   val OutOfBeamVal: String = "OUT-OF-BEAM"
@@ -122,7 +125,7 @@ private[gmos] final case class GmosCCEpicsState(
   stageMode: String,
   dtaXOffset: Double,
   dtaXCenter: Double,
-  useElectronicOffsetting: Boolean
+  useElectronicOffsetting: Int
 )
 
 /**
@@ -168,19 +171,19 @@ object GmosControllerEpics extends GmosEncoders {
 
   private def retrieveCCState: IO[GmosCCEpicsState] =
     for {
-      filter1                <- sys.filter1
-      filter2                <- sys.filter2
-      disperserMode          <- sys.disperserMode
-      disperser              <- sys.disperser
-      disperserParked        <- sys.disperserParked
-      disperserOrder         <- sys.disperserOrder
-      disperserWavel         <- sys.disperserWavel
-      fpu                    <- sys.fpu
-      inBeam                 <- sys.inBeam
-      stageMode              <- sys.stageMode
-      dtaXOffset             <- sys.dtaXOffset
-      dtaXCenter             <- sys.dtaXCenter
-      useElectronicOffsetting <- sys.useElectronicOffsetting
+      filter1                 <- sys.filter1
+      filter2                 <- sys.filter2
+      disperserMode           <- sys.disperserMode
+      disperser               <- sys.disperser
+      disperserParked         <- sys.disperserParked
+      disperserOrder          <- sys.disperserOrder
+      disperserWavel          <- sys.disperserWavel
+      fpu                     <- sys.fpu
+      inBeam                  <- sys.inBeam
+      stageMode               <- sys.stageMode
+      dtaXOffset              <- sys.dtaXOffset
+      dtaXCenter              <- sys.dtaXCenter
+      useElectronicOffsetting <- sys.electronicOffset
     } yield GmosCCEpicsState(filter1, filter2, disperserMode, disperser, disperserParked, disperserOrder, disperserWavel, fpu, inBeam, stageMode, dtaXOffset, dtaXCenter, useElectronicOffsetting)
 
   private def setShutterState(s: GmosDCEpicsState, dc: DCConfig): Option[IO[Unit]] = dc.s match {
@@ -314,8 +317,8 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
 
-  private def setElectronicOffset(state: GmosCCEpicsState, e: UseElectronicOffset): Option[IO[Unit]] =
-    applyParam(state.useElectronicOffsetting, e, (_: Boolean) => CC.setElectronicOffsetting(encode(e)))
+  private def setElectronicOffset(state: GmosCCEpicsState, e: ElectronicOffset): Option[IO[Unit]] =
+    applyParam(state.useElectronicOffsetting, encode(e), (e: Int) => CC.setElectronicOffsetting(e))
 
   val DhsConnected: String = "CONNECTED"
 
