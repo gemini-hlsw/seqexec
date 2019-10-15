@@ -241,10 +241,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       )
 
     (st.sequences.get(seqId).flatMap{x => toInstrumentSys(x.seqGen.instrument).toOption}, observeIndex).mapN{
-      case (ins, (obCtx, t, i)) =>Stream.eval(IO(Event.actionResume(seqId, i,
+      case (ins, (obCtx, t, i)) => Stream.eval(IO(Event.actionResume(seqId, i,
         ins.observeProgress(obCtx.expTime, ElapsedTime(t.getOrElse(0.0.seconds)))
           .map(Result.Partial(_))
           .mergeHaltR(obCtx.resumePaused(obCtx.expTime))
+          .handleErrorWith(catchObsErrors[IO])
       )))
     }
   }
@@ -256,7 +257,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         _.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
           case (a, i) => a.state.runState match {
             case ActionState.Paused(c: ObserveContext[IO]) =>
-              Stream.eval(IO(Event.actionResume(seqId, i, l(c)))).some
+              Stream.eval(IO(Event.actionResume(seqId, i, l(c).handleErrorWith(catchObsErrors[IO])))).some
             case _                                         => none
           }
         }
