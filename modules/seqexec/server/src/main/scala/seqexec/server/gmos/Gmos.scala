@@ -57,7 +57,7 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
   val continueCommand: Time => F[ObserveCommandResult] =
     controller.resumePaused
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] = CompleteControl(
+  override val observeControl: InstrumentSystem.CompleteControl[F] = CompleteControl(
     StopObserveCmd(controller.stopObserve),
     AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(controller.pauseObserve),

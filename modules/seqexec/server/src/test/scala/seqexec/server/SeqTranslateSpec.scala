@@ -14,7 +14,9 @@ import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
+
 import org.http4s.Uri._
+
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
@@ -82,11 +84,13 @@ class SeqTranslateSpec extends AnyFlatSpec {
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(toImageFileId(fileId)))))(baseState)
   // Observe paused
   private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ =>
-      Stream.emit(
-        Result.OK(
-          Observed(toImageFileId(fileId))
-        )).covary[IO], Seconds(1)))))(baseState)
+    .modify(_.mark(0)(
+      Result.Paused(
+        ObserveContext[IO](
+          _ => Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
+          Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
+          Stream.eval(SeqexecFailure.Aborted(seqId).raiseError[IO, Result[IO]]),
+          Seconds(1)))))(baseState)
   // Observe failed
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)

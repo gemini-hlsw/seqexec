@@ -24,6 +24,7 @@ import seqexec.server.tcs.TcsController.InstrumentOffset
 import seqexec.server.tcs.TcsController.OffsetP
 import seqexec.server.tcs.TcsController.OffsetQ
 import shapeless.tag
+import squants.Time
 import squants.space.AngleConversions._
 
 /**
@@ -61,7 +62,12 @@ class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logge
             e =>
               Result
                 .Paused(
-                  ObserveContext(r => Stream.eval(observeTail(fileId, dataId, env)(r)), e)
+                  ObserveContext(
+                    (_: Time) => Stream.emit(Result.Error("Resuming a paused GMOS N&S observation is not yet supported")),
+                    Stream.emit(Result.Error("Stopping a paused GMOS N&S observation is not yet supported")),
+                    Stream.emit(Result.Error("Aborting a paused GMOS N&S observation is not yet supported")),
+                    e
+                  )
                 )
           )
       case ObserveCommandResult.Partial =>

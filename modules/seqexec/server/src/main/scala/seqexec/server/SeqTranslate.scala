@@ -20,7 +20,6 @@ import mouse.all._
 import seqexec.engine._
 import seqexec.engine.Action.ActionState
 import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model._
 import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure.Unexpected
@@ -226,95 +225,48 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     deliverObserveCmd(seqId, f)
   }
 
-  private def pausedCommand(seqId: Observation.Id,
-                            f: ObserveControl[IO] => Option[Time => IO[ObserveCommandResult]],
-                            useCountdown: Boolean)(
+  def resumePaused(seqId: Observation.Id)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
-  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
-
-    def resumeIO(c: ObserveContext[IO], resumeCmd: IO[ObserveCommandResult]): Stream[IO, Result[IO]] =
-      for {
-        r <- Stream.eval(resumeCmd)
-        ret <- c.t(r)
-      } yield ret
-
-    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO,
-      executeEngine.EventType]] = {
-
-      val inst = toInstrumentSys(instrument).toOption
-
-      val observeIndex: Option[(ObserveContext[IO], Option[Time], Int)] =
-        seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = (st: EngineState) => {
+    val observeIndex: Option[(ObserveContext[IO], Option[Time], Int)] =
+      st.sequences.get(seqId)
+        .flatMap(_.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
           case (a, i) => a.state.runState match {
             case ActionState.Paused(c: ObserveContext[IO]) => (c, a.state.partials.collectFirst{
               case x@Progress(_, _) => x.progress}, i).some
             case _ => none
           }
         }
+      )
 
-      val u: Option[Time => IO[ObserveCommandResult]] =
-        inst.flatMap(x => f(x.observeControl))
+    (st.sequences.get(seqId).flatMap{x => toInstrumentSys(x.seqGen.instrument).toOption}, observeIndex).mapN{
+      case (ins, (obCtx, t, i)) =>Stream.eval(IO(Event.actionResume(seqId, i,
+        ins.observeProgress(obCtx.expTime, ElapsedTime(t.getOrElse(0.0.seconds)))
+          .map(Result.Partial(_))
+          .mergeHaltR(obCtx.resumePaused(obCtx.expTime))
+      )))
+    }
+  }
 
-      (u, observeIndex, inst).mapN {
-        (cmd, t, ins) =>
-          t match {
-            case (c, to, i) =>
-              if(useCountdown)
-                Stream.eval(IO(Event.actionResume(seqId, i,
-                  ins.observeProgress(c.expTime, ElapsedTime(to.getOrElse(0.0.seconds)))
-                    .map(Result.Partial(_))
-                    .mergeHaltR(resumeIO(c, cmd(c.expTime)))
-                )))
-              else
-                Stream.eval(IO(Event.actionResume(seqId, i,
-                  resumeIO(c, cmd(c.expTime)))))
+  private def endPaused(seqId: Observation.Id, l: ObserveContext[IO] => Stream[IO, Result[IO]])(st: EngineState)
+  : Option[Stream[IO, executeEngine.EventType]] =
+    st.sequences.get(seqId)
+      .flatMap(
+        _.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
+          case (a, i) => a.state.runState match {
+            case ActionState.Paused(c: ObserveContext[IO]) =>
+              Stream.eval(IO(Event.actionResume(seqId, i, l(c)))).some
+            case _                                         => none
           }
-      }
-    }
+        }
+      )
 
-    for {
-      seqg   <- st.sequences.seq.get(seqId)
-      obsseq <- st.sequences.get(seqId)
-      r      <- seqCmd(obsseq.seq, seqg.seqGen.instrument)
-    } yield r
-  }
+  private def stopPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] =
+    endPaused(seqId, _.stopPaused)
 
-  def resumePaused(seqId: Observation.Id)(
-    implicit cio: Concurrent[IO],
-             tio: Timer[IO]
-  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
-      case CompleteControl(_, _, _, ContinuePausedCmd(a), _, _) => a.some
-      case _                                                    => none
-    }
-
-    pausedCommand(seqId, f, useCountdown = true)
-  }
-
-  private def stopPaused(seqId: Observation.Id)(
-    implicit cio: Concurrent[IO],
-             tio: Timer[IO]
-  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
-      case CompleteControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
-      case _                                                => none
-    }
-
-    pausedCommand(seqId, f, useCountdown = false)
-  }
-
-  private def abortPaused(seqId: Observation.Id)(
-    implicit cio: Concurrent[IO],
-             tio: Timer[IO]
-  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl[IO]): Option[Time => IO[ObserveCommandResult]] = o match {
-      case CompleteControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
-      case _                                                 => none
-    }
-
-    pausedCommand(seqId, f, useCountdown = false)
-  }
+  private def abortPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] =
+    endPaused(seqId, _.abortPaused)
 
   def toInstrumentSys(inst: Instrument)(
     implicit ev: Timer[IO], cio: Concurrent[IO]

@@ -11,9 +11,10 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.InstrumentSystem.{CompleteControl, ElapsedTime}
 import squants.time.TimeConversions._
 import SeqTranslate.dataIdFromConfig
+import squants.time.Time
 
 /**
   * Methods usedd to generate observation related actions
@@ -164,13 +165,24 @@ trait ObserveActions {
       case ObserveCommandResult.Aborted =>
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
-        env.inst
-          .calcObserveTime(env.config)
-          .map(e => Result.Paused(ObserveContext(observeTail(fileId, dataId, env), e)))
+        env.inst.calcObserveTime(env.config)
+          .flatMap(t => env.inst.observeControl match {
+            case c: CompleteControl[F] => Result.Paused(
+              ObserveContext[F](
+                (t: Time) => Stream.eval(c.continue.self(t)).flatMap(observeTail(fileId, dataId, env)),
+                Stream.eval(c.stopPaused.self).flatMap(observeTail(fileId, dataId, env)),
+                Stream.eval(c.abortPaused.self).flatMap(observeTail(fileId, dataId, env)),
+                t
+              )
+            ).pure[F].widen[Result[F]]
+            case _                     =>
+              SeqexecFailure.Execution("Observation paused for an instrument that does not support pause")
+                .raiseError[F, Result[F]]
+          })
       case ObserveCommandResult.Partial =>
         // This shouldn't happen in normal observations. Raise an error
         MonadError[F, Throwable]
-          .raiseError(SeqexecFailure.Execution("Unuspported Partial observation"))
+          .raiseError[Result[F]](SeqexecFailure.Execution("Unsupported Partial observation"))
     })
   }
 
