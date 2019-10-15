@@ -133,15 +133,15 @@ object GmosController {
     sealed trait ElectronicOffset extends Product with Serializable
 
     object ElectronicOffset {
-      case object ElectronicOffsetOn extends ElectronicOffset
-      case object ElectronicOffsetOff extends ElectronicOffset
+      case object On extends ElectronicOffset
+      case object Off extends ElectronicOffset
 
       def fromBoolean(v: Boolean): ElectronicOffset =
-        if (v) ElectronicOffsetOn else ElectronicOffsetOff
+        if (v) On else Off
 
       /** @group Typeclass Instances */
       implicit val ElectronicOffsetEnumerated: Enumerated[ElectronicOffset] =
-        Enumerated.of(ElectronicOffsetOn, ElectronicOffsetOff)
+        Enumerated.of(On, Off)
     }
 
     sealed trait GmosFPU extends Product with Serializable

@@ -71,8 +71,8 @@ trait GmosEncoders {
 
   implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int] =
     EncodeEpicsValue {
-      case ElectronicOffset.ElectronicOffsetOn => 1
-      case ElectronicOffset.ElectronicOffsetOff => 0
+      case ElectronicOffset.On  => 1
+      case ElectronicOffset.Off => 0
     }
 
   val InBeamVal: String    = "IN-BEAM"
