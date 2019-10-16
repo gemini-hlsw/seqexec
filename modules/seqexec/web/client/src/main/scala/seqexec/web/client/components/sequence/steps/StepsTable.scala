@@ -10,13 +10,13 @@ import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
+import japgolly.scalajs.react.component.builder.Lifecycle.{ComponentDidUpdate, ComponentWillReceiveProps, RenderScope}
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.Lenses
+import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.js
 import scala.math._
@@ -433,6 +433,7 @@ final case class StepsTable(
 
 object StepsTable extends Columns {
   type Backend      = RenderScope[Props, State, Unit]
+  type DidUpdate    = ComponentDidUpdate[Props, State, Unit, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
   private val MiddleButton = 1 // As defined by React.js
@@ -468,7 +469,8 @@ object StepsTable extends Columns {
     tableState:      TableState[TableColumn],
     breakpointHover: Option[Int],
     selected:        Option[StepId],
-    scrollCount:     Int
+    scrollCount:     Int,
+    scrollBarWidth:  Double
   ) {
 
     def visibleCols(p: Props): State =
@@ -493,14 +495,15 @@ object StepsTable extends Columns {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None, None, 0)
+    val InitialState: State = State(InitialTableState, None, None, 0, 0.0)
   }
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
+  implicit val scrollBarReuse: Reusability[Double] = Reusability.double(1.0)
   implicit val stateReuse: Reusability[State] =
-    Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
+    Reusability.by(x => (x.tableState, x.breakpointHover, x.selected, x.scrollBarWidth))
 
   private def firstRunnableIndex(l: List[Step]): Int =
     l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
@@ -917,10 +920,12 @@ object StepsTable extends Columns {
             ^.key := key,
             ^.style := Style.toJsObject(style),
             SeqexecStyles.expandedRunningRow,
+            SeqexecStyles.stepRow,
             <.div(
               ^.cls := className,
               ^.key := s"$key-top",
               SeqexecStyles.expandedTopRow,
+              ^.height := SeqexecStyles.runningRowHeight.px,
               ^.onMouseDown ==> allowedClick(p, index, onRowClick),
               ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
               columns.toTagMod
@@ -939,6 +944,10 @@ object StepsTable extends Columns {
                   ^.key := s"$key-subRow-$rowIdx",
                   SeqexecStyles.expandedBottomRow,
                   SeqexecStyles.tableDetailRow,
+                  SeqexecStyles.tableDetailRowWithGutter
+                               .when(p.status.isLogged)
+                               .unless(p.isPreview),
+                  ^.height := SeqexecStyles.runningRowHeight.px,
                   ^.onMouseDown ==> allowedClick(p, index, onRowClick),
                   ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
                   rowComponent(s)
@@ -1023,6 +1032,21 @@ object StepsTable extends Columns {
     }.getOrEmpty
   }
 
+  private val computeScrollBarWidth: CallbackTo[Double] =
+    ref.get.map(_.getDOMNode.toHtml).asCallback.map{
+      _.flatten.flatMap { tableNode =>
+        // Table has a Grid inside, which is the one actually showing the scroll bar.
+        Option(tableNode.querySelector(".ReactVirtualized__Table__Grid")).map {
+          case gridNode: HTMLElement => gridNode.offsetWidth - gridNode.clientWidth
+          case _                     => SeqexecStyles.DefaultScrollBarWidth
+        }
+      }.getOrElse(SeqexecStyles.DefaultScrollBarWidth)
+    }
+
+  def didUpdate(b: DidUpdate): Callback = {
+    computeScrollBarWidth >>= {sw => b.modState(State.scrollBarWidth.set(sw)) }
+  }
+
   // We need to update the state if the props change
   def receiveNewProps(b: ReceiveProps): Callback = {
     val (cur: Props, next: Props) = (b.currentProps, b.nextProps)
@@ -1071,9 +1095,10 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
+          val areaSize = Size(size.height, size.width - b.state.scrollBarWidth)
           val ts =
             b.state.tableState
-              .columnBuilder(size, colBuilder(b, size), b.props.columnWidths)
+              .columnBuilder(areaSize, colBuilder(b, areaSize), b.props.columnWidths)
               .map(_.vdomElement)
 
           if (size.width > 0) {
@@ -1099,6 +1124,7 @@ object StepsTable extends Columns {
     .initialStateFromProps(initialState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
+    .componentDidUpdate(didUpdate)
     .componentWillReceiveProps(receiveNewProps)
     .build
 }
