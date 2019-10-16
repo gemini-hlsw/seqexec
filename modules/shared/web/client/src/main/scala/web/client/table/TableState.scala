@@ -152,7 +152,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
       }.sum
       val minWidth           = minVarWidth(calculatedWidth, visibleCols)
-      val totalVariableWidth = s.width - fixedWidth(calculatedWidth)
+      val totalVariableWidth = max(0.0, s.width - fixedWidth(calculatedWidth))
       val cols =
         if (totalVariableWidth > requestedWidth) {
           // There is extra space on the table, lets distribute it among the cols
