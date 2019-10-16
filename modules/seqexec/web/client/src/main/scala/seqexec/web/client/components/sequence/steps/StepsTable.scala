@@ -1032,19 +1032,16 @@ object StepsTable extends Columns {
     }.getOrEmpty
   }
 
-  private val computeScrollBarWidth: CallbackTo[Double] = {
-    import org.querki.jquery.$
-
+  private val computeScrollBarWidth: CallbackTo[Double] =
     ref.get.map(_.getDOMNode.toHtml).asCallback.map{
       _.flatten.flatMap { tableNode =>
         // Table has a Grid inside, which is the one actually showing the scroll bar.
-        $(tableNode).find(".ReactVirtualized__Table__Grid").get(0).toOption.map {
+        Option(tableNode.querySelector(".ReactVirtualized__Table__Grid")).map {
           case gridNode: HTMLElement => gridNode.offsetWidth - gridNode.clientWidth
-          case _                     => 0.0
+          case _                     => SeqexecStyles.DefaultScrollBarWidth
         }
-      }.getOrElse(0.0)
+      }.getOrElse(SeqexecStyles.DefaultScrollBarWidth)
     }
-  }
 
   def didUpdate(b: DidUpdate): Callback = {
     computeScrollBarWidth >>= {sw => b.modState(State.scrollBarWidth.set(sw)) }

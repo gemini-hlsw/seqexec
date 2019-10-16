@@ -10,13 +10,14 @@ import react.common.style._
   */
 object SeqexecStyles {
 
-  val headerHeight: Int        = 33
-  val rowHeight: Int           = 30
-  val overscanRowCount: Int    = 10
-  val runningRowHeight: Int    = 60
-  val runningBottomRowHeight: Int    = 60
-  val TableBorderWidth: Double = 1.0
-  val TableRightPadding: Int   = 13
+  val headerHeight: Int             = 33
+  val rowHeight: Int                = 30
+  val overscanRowCount: Int         = 10
+  val runningRowHeight: Int         = 60
+  val runningBottomRowHeight: Int   = 60
+  val TableBorderWidth: Double      = 1.0
+  val TableRightPadding: Int        = 13
+  val DefaultScrollBarWidth: Double = 15.0
 
   val tableDetailRow: Css =
     Css("SeqexecStyles-tableDetailRow")
