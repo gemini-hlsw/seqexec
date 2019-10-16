@@ -279,7 +279,7 @@ object GmosControllerEpics extends GmosEncoders {
     def builtInFPU(fpu: T#FPU): (Option[String], Option[String]) = Encoders[T].fpu.encode(fpu)
 
     def customFPU(name: String): (Option[String], Option[String]) = name match {
-      case "None" => (none, none)
+      case "None" => (none, beamEncoder.encode(Beam.OutOfBeam).some)
       case _      => (name.some, beamEncoder.encode(Beam.InBeam).some)
     }
 
@@ -315,7 +315,6 @@ object GmosControllerEpics extends GmosEncoders {
     // XCenter value
     applyParamT(Tolerance)(state.dtaXOffset - state.dtaXCenter, offsetInMicrons, CC.setDtaXOffset)
   }
-
 
   private def setElectronicOffset(state: GmosCCEpicsState, e: ElectronicOffset): Option[IO[Unit]] =
     applyParam(state.useElectronicOffsetting, encode(e), (e: Int) => CC.setElectronicOffsetting(e))
