@@ -4,12 +4,15 @@
 package seqexec.model
 
 import cats.tests.CatsSuite
+import gem.arb.ArbEnumerated._
+import gsp.math.laws.discipline.FormatTests
+import gsp.math.arb.ArbOffset._
+import gsp.math.arb.ArbAngle._
 import monocle.law.discipline.LensTests
 import monocle.law.discipline.OptionalTests
 import monocle.law.discipline.PrismTests
 import monocle.law.discipline.TraversalTests
 import org.scalacheck.Arbitrary._
-import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
@@ -97,4 +100,10 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
            OptionalTests(Step.observeStatus))
   checkAll("Step.configStatus",
            OptionalTests(Step.configStatus))
+  checkAll("signedPFormat",
+           FormatTests(signedPFormat).formatWith(stringsOffsets))
+  checkAll("signedQFormat",
+           FormatTests(signedQFormat).formatWith(stringsOffsets))
+  checkAll("signedArcsecFormat",
+           FormatTests(signedArcsecFormat).formatWith(stringsOffsets))
 }
