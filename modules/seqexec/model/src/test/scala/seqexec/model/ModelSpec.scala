@@ -56,9 +56,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[SequencesQueue[SequenceView]]",
            EqTests[SequencesQueue[SequenceView]].eqv)
   checkAll("Eq[StepType]", EqTests[StepType].eqv)
-  checkAll("Order[TelescopeOffset.P]", OrderTests[TelescopeOffset.P].order)
-  checkAll("Order[TelescopeOffset.Q]", OrderTests[TelescopeOffset.Q].order)
-  checkAll("Eq[TelescopeOffset]", EqTests[TelescopeOffset].eqv)
   checkAll("Eq[Guiding]", EqTests[Guiding].eqv)
   checkAll("Eq[FPUMode]", EqTests[FPUMode].eqv)
   checkAll("Eq[CloudCover]", EqTests[CloudCover].eqv)

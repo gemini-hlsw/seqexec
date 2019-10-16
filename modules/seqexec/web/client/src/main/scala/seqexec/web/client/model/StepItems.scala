@@ -9,8 +9,9 @@ import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
+import gsp.math.Offset
 import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
-import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, OffsetAxis, SequenceState, Step, StepId, TelescopeOffset, enumerations}
+import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, SequenceState, Step, StepId, enumerations}
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.Formatting._
 
@@ -154,23 +155,12 @@ object StepItems {
       }
     }
 
-    def offsetP: TelescopeOffset.P =
-      telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
-    def offsetQ: TelescopeOffset.Q =
-      telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
+    def offsetP: Offset.P =
+      telescopeOffsetPF.fold(s).orEmpty
+    def offsetQ: Offset.Q =
+      telescopeOffsetQF.fold(s).orEmpty
     def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
-
-    def offsetText(axis: OffsetAxis): String =
-      offsetValueFormat(axis match {
-        case OffsetAxis.AxisP =>
-          telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
-        case OffsetAxis.AxisQ =>
-          telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-      })
-
-    def offsetPText: String = offsetText(OffsetAxis.AxisP)
-    def offsetQText: String = offsetText(OffsetAxis.AxisQ)
 
     def observingMode: Option[String] =
       instrumentObservingModeO
@@ -197,10 +187,10 @@ object StepItems {
     def areNonZeroOffsets: Boolean =
       steps
         .map(
-          s =>
-            telescopeOffsetPO
-              .exist(_ =!= TelescopeOffset.P.Zero)(s) || telescopeOffsetQO
-              .exist(_ =!= TelescopeOffset.Q.Zero)(s))
+            s =>
+            telescopeOffsetPF
+              .exist(_ =!= Offset.P.Zero.some)(s) || telescopeOffsetQF
+              .exist(_ =!= Offset.Q.Zero.some)(s))
         .fold(false)(_ || _)
 
     // Offsets to be displayed with a width

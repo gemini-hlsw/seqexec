@@ -102,22 +102,6 @@ trait SeqexecModelArbitraries {
     } yield s
   }
 
-  implicit val telOffPArb = Arbitrary[TelescopeOffset.P] {
-    for {
-      d <- Gen.choose(-999.0, 999.0)
-    } yield TelescopeOffset.P(d)
-  }
-  implicit val telOffQArb = Arbitrary[TelescopeOffset.Q] {
-    for {
-      d <- Gen.choose(-999.0, 999.0)
-    } yield TelescopeOffset.Q(d)
-  }
-  implicit val telOffArb = Arbitrary[TelescopeOffset] {
-    for {
-      p <- arbitrary[TelescopeOffset.P]
-      q <- arbitrary[TelescopeOffset.Q]
-    } yield TelescopeOffset(p, q)
-  }
   implicit val svArb = Arbitrary[SequenceView] {
     for {
       id <- arbitrary[Observation.Id]
@@ -159,15 +143,6 @@ trait SeqexecModelArbitraries {
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
     Cogen[(Conditions, Option[Operator], List[A])].contramap(s =>
       (s.conditions, s.operator, s.sessionQueue))
-
-  implicit val offPCogen: Cogen[TelescopeOffset.P] =
-    Cogen[Double].contramap(_.value)
-
-  implicit val offQCogen: Cogen[TelescopeOffset.Q] =
-    Cogen[Double].contramap(_.value)
-
-  implicit val offCogen: Cogen[TelescopeOffset] =
-    Cogen[(TelescopeOffset.P, TelescopeOffset.Q)].contramap(o => (o.p, o.q))
 
   implicit val conCogen: Cogen[Conditions] =
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>

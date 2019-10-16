@@ -6,10 +6,10 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import gsp.math.syntax.all._
-import monocle.Lens
-import monocle.Optional
-import monocle.Prism
-import monocle.Traversal
+import gsp.math.Angle
+import gsp.math.Offset
+import gsp.math.optics.Format
+import monocle._
 import monocle.macros.GenLens
 import monocle.macros.GenPrism
 import monocle.function.At.at
@@ -147,10 +147,14 @@ trait ModelLenses {
     paramValueL(SystemName.Observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
-  private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] =
-    Iso(TelescopeOffset.P.apply)(_.value)
-  private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] =
-    Iso(TelescopeOffset.Q.apply)(_.value)
+  val signedArcsecFormat: Format[String, Angle] =
+    Format[String, BigDecimal](_.parseBigDecimalOption, _.toString)
+      .composeFormat(Angle.signedArcseconds.reverse.asFormat)
+  val signedQFormat: Format[String, Offset.Q] =
+    signedArcsecFormat.composeIso(Offset.Q.angle.reverse)
+  val signedPFormat: Format[String, Offset.P] =
+    signedArcsecFormat.composeIso(Offset.P.angle.reverse)
+
   val stringToDoubleP: Prism[String, Double] =
     Prism((x: String) => x.parseDoubleOption)(_.show)
 
@@ -248,13 +252,13 @@ trait ModelLenses {
                         stringToDoubleP)
 
   // Lens to find p offset
-  def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
-    stepObserveOptional(SystemName.Telescope, x.configItem, stringToDoubleP)
+  def telescopeOffsetO(x: OffsetAxis): Optional[Step, String] =
+    stepObserveOptional(SystemName.Telescope, x.configItem, Prism.id[String])
 
-  val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(
-    OffsetAxis.AxisP) ^<-> telescopeOffsetPI
-  val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(
-    OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
+  val telescopeOffsetPF: Fold[Step, Option[Offset.P]] = telescopeOffsetO(
+    OffsetAxis.AxisP).composeGetter(Getter(signedPFormat.getOption))
+  val telescopeOffsetQF: Fold[Step, Option[Offset.Q]] = telescopeOffsetO(
+    OffsetAxis.AxisQ).composeGetter(Getter(signedQFormat.getOption))
 
   val stringToGuidingP: Prism[String, Guiding] =
     Prism(Guiding.fromString)(_.configValue)
@@ -303,3 +307,5 @@ trait ModelLenses {
     scienceTargetNameO        // science target name
 
 }
+
+object ModelLenses extends ModelLenses

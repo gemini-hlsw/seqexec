@@ -5,8 +5,8 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gsp.math.Angle
 import seqexec.model.enum.Instrument
-import seqexec.model.Offset
 import seqexec.model.OffsetAxis
 import seqexec.model.Step
 import seqexec.web.client.model.StepItems._
@@ -30,10 +30,10 @@ object Formatting {
   }
 
   def offsetAxis(axis: OffsetAxis): String =
-    f"${axis.show}:"
+    s"${axis.show}:"
 
-  def offsetValueFormat(off: Offset): String =
-    f" ${off.value}%03.2f″"
+  def offsetAngle(off: Angle): String =
+    f" ${Angle.signedArcseconds.get(off).toDouble}%03.2f″"
 
   val pLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
   val qLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
@@ -43,7 +43,7 @@ object Formatting {
     def sequenceOffsetWidths: (Double, Double) =
       steps
         .map(s =>
-          (tableTextWidth(s.offsetPText), tableTextWidth(s.offsetQText)))
+          (tableTextWidth(offsetAngle(s.offsetP.toAngle)), tableTextWidth(offsetAngle(s.offsetQ.toAngle))))
         .foldLeft((0.0, 0.0)) {
           case ((p1, q1), (p2, q2)) => (p1.max(p2), q1.max(q2))
         }
