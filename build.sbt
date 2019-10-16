@@ -221,11 +221,7 @@ lazy val giapi = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging.value ++ Monocle.value,
-    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
-    excludeDependencies ++= Seq(
-      // Remove to silence logging on tests
-      ExclusionRule("ch.qos.logback", "logback-classic", "jar", Vector(Test), CrossVersion.binary)
-    )
+    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test")
   )
 
 // Common utilities for web server projects
