@@ -155,10 +155,10 @@ object StepItems {
       }
     }
 
-    def offsetP: Offset.P =
-      telescopeOffsetPF.fold(s).orEmpty
-    def offsetQ: Offset.Q =
-      telescopeOffsetQF.fold(s).orEmpty
+    def offset[T, A](implicit resolver: OffsetConfigResolver[T, A],
+      m: Monoid[Offset.Component[A]]): Offset.Component[A] =
+        offsetF[T, A].fold(s).orEmpty
+
     def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
 
@@ -183,21 +183,13 @@ object StepItems {
   }
 
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {
-    // Calculate if there are non-zero offsets
-    def areNonZeroOffsets: Boolean =
-      steps
-        .map(
-            s =>
-            telescopeOffsetPF
-              .exist(_ =!= Offset.P.Zero.some)(s) || telescopeOffsetQF
-              .exist(_ =!= Offset.Q.Zero.some)(s))
-        .fold(false)(_ || _)
 
     // Offsets to be displayed with a width
     def offsetsDisplay: OffsetsDisplay = {
       val (p, q) = steps.sequenceOffsetWidths
       OffsetsDisplay.DisplayOffsets(scala.math.max(p, q))
     }
+
   }
 
   sealed abstract class DetailRows(val rows: Int)
