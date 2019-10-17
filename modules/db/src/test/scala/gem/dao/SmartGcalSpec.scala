@@ -13,7 +13,8 @@ import gem.config.GcalConfig.GcalLamp
 import gem.enum._
 import gem.util.Location
 import gsp.math.Index
-import org.scalatest.{Assertion, Matchers}
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import java.time.Duration
 import scala.collection.immutable.{ TreeMap, TreeSet }

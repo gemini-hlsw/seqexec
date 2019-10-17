@@ -11,7 +11,7 @@ import java.util.UUID
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.Logger
 import org.scalatest.Inside.inside
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
 import seqexec.engine.TestUtil.TestState
 import scala.concurrent.ExecutionContext

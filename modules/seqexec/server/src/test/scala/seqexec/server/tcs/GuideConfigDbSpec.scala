@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import io.circe.parser._
 import GuideConfigDb._
 import cats.effect.IO
