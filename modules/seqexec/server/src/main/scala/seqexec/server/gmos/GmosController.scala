@@ -93,19 +93,6 @@ object GmosController {
     type ExposureTime        = Duration
     type PosAngle            = edu.gemini.spModel.core.Angle
 
-    // I'm not totally sure this is being used
-    sealed trait BiasTime extends Product with Serializable
-
-    object BiasTime {
-      case object BiasTimeSet extends BiasTime
-      case object BiasTimeEmpty extends BiasTime
-      case object BiasTimeUnset extends BiasTime
-
-      /** @group Typeclass Instances */
-      implicit val BiasTimeEnumerated: Enumerated[BiasTime] =
-        Enumerated.of(BiasTimeSet, BiasTimeEmpty, BiasTimeUnset)
-    }
-
     // Used for the shutterState
     sealed trait ShutterState extends Product with Serializable
 
@@ -207,7 +194,6 @@ object GmosController {
 
     final case class DCConfig(
       t: ExposureTime,
-      b: BiasTime,
       s: ShutterState,
       r: CCDReadout,
       bi: CCDBinning,
@@ -265,7 +251,7 @@ object GmosController {
       val ccShow = if(config.cc.isDarkOrBias) "DarkOrBias"
       else s"${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}"
 
-      s"($ccShow, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})"
+      s"($ccShow, ${config.dc.t}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})"
     }
 
 }

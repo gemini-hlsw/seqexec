@@ -12,7 +12,6 @@ import seqexec.server.gmos.GmosController.Config._
   * Tests Gmos Config typeclasses
   */
 final class GmosSpec extends CatsSuite {
-  checkAll("Eq[BiasTime]", EqTests[BiasTime].eqv)
   checkAll("Eq[ShutterState]", EqTests[ShutterState].eqv)
   checkAll("Eq[Beam]", EqTests[Beam].eqv)
 }
