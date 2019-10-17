@@ -51,13 +51,15 @@ object OffsetsDisplayCell {
             SeqexecStyles.guidingCell,
             guidingIcon.when(guiding),
             noGuidingIcon.unless(guiding),
+
+
             <.div(
               SeqexecStyles.inlineBlock,
               SeqexecStyles.offsetsBlock,
               ^.textAlign := "right",
               <.div(
                 <.div(
-                  ^.width := pLabelWidth.px,
+                  ^.width := axisLabelWidth[Axis.P].px,
                   SeqexecStyles.inlineBlock,
                   offsetAxis(OffsetAxis.AxisP)
                 ),
@@ -70,7 +72,7 @@ object OffsetsDisplayCell {
               <.div(
                   SeqexecStyles.inlineBlock,
                 <.div(
-                  ^.width := qLabelWidth.px,
+                  ^.width := axisLabelWidth[Axis.Q].px,
                   SeqexecStyles.inlineBlock,
                   offsetAxis(OffsetAxis.AxisQ)
                 ),
@@ -81,6 +83,8 @@ object OffsetsDisplayCell {
                 )
               )
             )
+
+
           )
         case _ => <.div()
       }

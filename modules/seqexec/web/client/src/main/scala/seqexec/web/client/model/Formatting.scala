@@ -35,8 +35,8 @@ object Formatting {
   def offsetAngle(off: Angle): String =
     f" ${Angle.signedArcseconds.get(off).toDouble}%03.2f″"
 
-  val pLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
-  val qLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
+  def axisLabelWidth[A](implicit show: OffsetAxisShow[A]): Double =
+    tableTextWidth(offsetAxis[A])
 
   implicit class OffsetWidthsFnsOps(val steps: List[Step]) extends AnyVal {
     // Calculate the widest offset step
