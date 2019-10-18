@@ -247,16 +247,6 @@ object Gmos {
         expTime(config)
       )
 
-  // It seems this is unused but it shows up on the DC apply config
-  private def biasTimeObserveType(observeType: String): BiasTime = observeType match {
-    case SCIENCE_OBSERVE_TYPE => BiasTime.BiasTimeUnset
-    case FLAT_OBSERVE_TYPE    => BiasTime.BiasTimeUnset
-    case ARC_OBSERVE_TYPE     => BiasTime.BiasTimeEmpty
-    case DARK_OBSERVE_TYPE    => BiasTime.BiasTimeEmpty
-    case BIAS_OBSERVE_TYPE    => BiasTime.BiasTimeUnset
-    case _                    => BiasTime.BiasTimeUnset
-  }
-
   private def shutterStateObserveType(observeType: String): ShutterState = observeType match {
     case SCIENCE_OBSERVE_TYPE => ShutterState.OpenShutter
     case FLAT_OBSERVE_TYPE    => ShutterState.OpenShutter
@@ -288,7 +278,6 @@ object Gmos {
   def dcConfigFromSequenceConfig(config: CleanConfig): TrySeq[DCConfig] =
     (for {
       obsType      <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
-      biasTime     <- biasTimeObserveType(obsType).asRight
       shutterState <- shutterStateObserveType(obsType).asRight
       exposureTime <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
       ampReadMode  <- config.extractAs[AmpReadMode](AmpReadMode.KEY)
@@ -301,7 +290,7 @@ object Gmos {
       customROI = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
       roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
     } yield
-      DCConfig(exposureTime, biasTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
+      DCConfig(exposureTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
  }
