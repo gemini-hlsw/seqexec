@@ -150,9 +150,7 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
       .as(ConfigResult(this))
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
-    (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
-      v / ns.exposureDivider.toDouble
-    }
+    Gmos.expTimeF[F](config)
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller
@@ -229,12 +227,6 @@ object Gmos {
       useNS <- config.extractInstAs[java.lang.Boolean](USE_NS_PROP)
       ns    <- if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-
-  def nsConfigF[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[NSConfig] =
-    ApplicativeError[F, Throwable]
-      .catchNonFatal(
-        nsConfig(config).getOrElse(NSConfig.NoNodAndShuffle)
-      )
 
   def expTime(config: CleanConfig): Time =
     config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)

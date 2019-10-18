@@ -91,10 +91,10 @@ object GmosControllerSim {
               NSObsState.current.set(NSCurrent(fileId, cycles, 0, expTime).some)
             (update(s), update(s))
         } >>= {
-          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) =>
+          case NSObsState(s: NSConfig.NodAndShuffle, Some(curr)) =>
             sim.log(s"Simulate Gmos N&S observation ${curr.show}") *>
               // Initial N&S obs
-              sim.observe(fileId, expTime).as(ObserveCommandResult.Partial)
+              sim.observe(fileId, expTime / s.exposureDivider.toDouble).as(ObserveCommandResult.Partial)
           case NSObsState(_, _) =>
             sim.observe(fileId, expTime) // Regular observation
         }
@@ -113,7 +113,7 @@ object GmosControllerSim {
 
       override def resumePaused(expTime: Time): F[ObserveCommandResult] =
         nsConfig.modify {
-          case s @ NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
+          case s @ NSObsState(_: NSConfig.NodAndShuffle, Some(curr))
               if !curr.lastSubexposure =>
             // We should keep track of where on a N&S Sequence are we
             // Let's just increase the exposure counter
@@ -122,14 +122,14 @@ object GmosControllerSim {
           case s =>
             (s, s)
         } >>= {
-          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
+          case NSObsState(s: NSConfig.NodAndShuffle, Some(curr))
               if !curr.lastSubexposure =>
             sim.log(s"Next Nod ${curr.show}") *>
-              sim.observe(curr.fileId, expTime).as(ObserveCommandResult.Partial)
-          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
+              sim.observe(curr.fileId, expTime /  s.exposureDivider.toDouble).as(ObserveCommandResult.Partial)
+          case NSObsState(s: NSConfig.NodAndShuffle, Some(curr))
               if curr.lastSubexposure =>
             sim.log(s"Final Nod ${curr.show}") *>
-              sim.observe(curr.fileId, expTime)
+              sim.observe(curr.fileId, expTime /  s.exposureDivider.toDouble)
           case _ =>
             // Regular observation
             sim.resumePaused
