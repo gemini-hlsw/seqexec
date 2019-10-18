@@ -847,8 +847,8 @@ object StepsTable extends Columns {
         SeqexecCircuit
           .dispatchCB(ClearAllResourceOperations(id)) *>
         b.modState(State.selected.set(Some(i))) *>
-        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
-        .when_(b.props.stepSelectionAllowed(i))
+        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i))
+      ).when_(b.props.stepSelectionAllowed(i) && State.selected.get(b.state).forall(_ =!= i))
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
