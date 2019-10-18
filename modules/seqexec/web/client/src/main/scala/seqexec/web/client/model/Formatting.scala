@@ -7,7 +7,7 @@ import cats.Eq
 import cats.implicits._
 import gsp.math.Angle
 import seqexec.model.enum.Instrument
-import seqexec.model.OffsetAxis
+import seqexec.model.{OffsetShow, OffsetType, Step}
 import seqexec.model.Step
 import seqexec.web.client.model.StepItems._
 import web.client.utils._
@@ -29,13 +29,16 @@ object Formatting {
       }
   }
 
-  def offsetAxis(axis: OffsetAxis): String =
-    s"${axis.show}:"
+  def offsetAxis[A](implicit show: OffsetShow[A]): String =
+    s"${show.show}:"
+
+  def offsetNSNod[T](implicit show: OffsetShow[T]): String =
+    s"${show.show}"
 
   def offsetAngle(off: Angle): String =
     f" ${Angle.signedArcseconds.get(off).toDouble}%03.2f″"
 
-  def axisLabelWidth[A](implicit show: OffsetAxisShow[A]): Double =
+  def axisLabelWidth[A](implicit show: OffsetShow[A]): Double =
     tableTextWidth(offsetAxis[A])
 
   implicit class OffsetWidthsFnsOps(val steps: List[Step]) extends AnyVal {

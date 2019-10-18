@@ -183,9 +183,7 @@ object SeqexecStyles {
 
   val guidingCell: Css = Css("SeqexecStyles-guidingCell")
 
-  val offsetsBlock: Css = Css("SeqexecStyles-offsetsBlock")
-
-  val inlineBlock: Css = Css("SeqexecStyles-inlineBlock")
+  val offsetsTable: Css = Css("SeqexecStyles-offsetsTable")
 
   val configuringRow: Css = Css("SeqexecStyles-configuringRow")
 
