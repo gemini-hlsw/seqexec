@@ -38,37 +38,39 @@ object OffsetsDisplayCell {
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
 
-  private def standardOffsetsRender(step: StandardStep, width: Double): VdomElement = {
+  private def standardOffsetsRender(step: StandardStep, offsetWidth: Double, axisLabelWidth: Double): VdomElement = {
     val offsetP = step.offset[OffsetType.Telescope, Axis.P]
     val offsetQ = step.offset[OffsetType.Telescope, Axis.Q]
 
     <.table(
       SeqexecStyles.offsetsTable,
       ^.textAlign := "right",
-      <.tr(
-        <.td(
-          ^.width := axisLabelWidth[Axis.P].px,
-          offsetAxis[Axis.P]
+      <.tbody(
+        <.tr(
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.P]
           ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetP.toAngle)
-          )
-        ),
-      <.tr(
-        <.td(
-          ^.width := axisLabelWidth[Axis.Q].px,
-          offsetAxis[Axis.Q]
+          <.td(
+            ^.width := offsetWidth.px,
+            offsetAngle(offsetP.toAngle)
+            )
           ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetQ.toAngle)
+        <.tr(
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.Q]
+          ),
+          <.td(
+            ^.width := offsetWidth.px,
+            offsetAngle(offsetQ.toAngle)
           )
         )
       )
+    )
   }
 
-  private def nodAndShuffleOffsetsRender(step: NodAndShuffleStep, width: Double): VdomElement = {
+  private def nodAndShuffleOffsetsRender(step: NodAndShuffleStep, width: Double, axisLabelWidth: Double, nsNodLabelWidth: Double): VdomElement = {
     val offsetBP = step.offset[OffsetType.NSNodB, Axis.P]
     val offsetBQ = step.offset[OffsetType.NSNodB, Axis.Q]
     val offsetAP = step.offset[OffsetType.NSNodA, Axis.P]
@@ -77,65 +79,64 @@ object OffsetsDisplayCell {
     <.table(
       SeqexecStyles.offsetsTable,
       ^.textAlign := "right",
-      <.tr(
-
-
-        <.td(
-          ^.rowSpan := 2,
-          <.b(offsetNSNod[OffsetType.NSNodB])
+      <.tbody(
+        <.tr(
+          <.td(
+            ^.rowSpan := 2,
+            ^.width := nsNodLabelWidth.px,
+            SeqexecStyles.offsetsNodLabel,
+            offsetNSNod[OffsetType.NSNodB]
+          ),
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.P]
+          ),
+          <.td(
+            ^.width := width.px,
+            offsetAngle(offsetBP.toAngle)
+          ),
+          <.td(
+            ^.rowSpan := 2,
+            ^.width := nsNodLabelWidth.px,
+            SeqexecStyles.offsetsNodLabel,
+            offsetNSNod[OffsetType.NSNodA]
+          ),
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.P]
+          ),
+          <.td(
+            ^.width := width.px,
+            offsetAngle(offsetAP.toAngle)
+          ),
         ),
-
-        <.td(
-          ^.width := axisLabelWidth[Axis.P].px,
-          offsetAxis[Axis.P]
+        <.tr(
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.Q]
           ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetBP.toAngle)
+          <.td(
+            ^.width := width.px,
+            offsetAngle(offsetBQ.toAngle)
           ),
-
-        <.td(
-          ^.rowSpan := 2,
-          <.b(offsetNSNod[OffsetType.NSNodA])
+          <.td(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.Q]
           ),
-
-        <.td(
-          ^.width := axisLabelWidth[Axis.P].px,
-          offsetAxis[Axis.P]
-          ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetAP.toAngle)
-          ),
-
-        ),
-      <.tr(
-        <.td(
-          ^.width := axisLabelWidth[Axis.Q].px,
-          offsetAxis[Axis.Q]
-          ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetBQ.toAngle)
-          ),
-        <.td(
-          ^.width := axisLabelWidth[Axis.Q].px,
-          offsetAxis[Axis.Q]
-          ),
-        <.td(
-          ^.width := width.px,
-          offsetAngle(offsetAQ.toAngle)
+          <.td(
+            ^.width := width.px,
+            offsetAngle(offsetAQ.toAngle)
           )
-
         )
       )
+    )
   }
 
   protected val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
     .stateless
     .render_P { p =>
       p.offsetsDisplay match {
-        case OffsetsDisplay.DisplayOffsets(offsetWidth) =>
+        case OffsetsDisplay.DisplayOffsets(offsetWidth, axisLabelWidth, nsNodLabelWidth) =>
           val guiding = p.step.guiding
 
           <.div(
@@ -143,8 +144,8 @@ object OffsetsDisplayCell {
             guidingIcon.when(guiding),
             noGuidingIcon.unless(guiding),
             p.step match {
-              case s: StandardStep => standardOffsetsRender(s, offsetWidth)
-              case s: NodAndShuffleStep => nodAndShuffleOffsetsRender(s, offsetWidth)
+              case s: StandardStep => standardOffsetsRender(s, offsetWidth, axisLabelWidth)
+              case s: NodAndShuffleStep => nodAndShuffleOffsetsRender(s, offsetWidth, axisLabelWidth, nsNodLabelWidth)
             }
           )
         case _ => <.div()

@@ -6,8 +6,7 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import gsp.math.syntax.all._
-import gsp.math.Angle
-import gsp.math.Offset
+import gsp.math.{Angle, Offset}
 import gsp.math.optics.Format
 import monocle._
 import monocle.macros.GenLens
@@ -18,7 +17,6 @@ import monocle.function.FilterIndex.filterIndex
 import monocle.unsafe.MapTraversal._
 import monocle.std.option.some
 import monocle.std.string._
-import monocle.Iso
 import seqexec.model.enum._
 import seqexec.model.events._
 
@@ -150,10 +148,8 @@ trait ModelLenses {
   val signedArcsecFormat: Format[String, Angle] =
     Format[String, BigDecimal](_.parseBigDecimalOption, _.toString)
       .composeFormat(Angle.signedArcseconds.reverse.asFormat)
-  val signedQFormat: Format[String, Offset.Q] =
-    signedArcsecFormat.composeIso(Offset.Q.angle.reverse)
-  val signedPFormat: Format[String, Offset.P] =
-    signedArcsecFormat.composeIso(Offset.P.angle.reverse)
+  def signedComponentFormat[A]: Format[String, Offset.Component[A]] =
+    signedArcsecFormat.composeIso(Offset.Component.angle[A].reverse)
 
   val stringToDoubleP: Prism[String, Double] =
     Prism((x: String) => x.parseDoubleOption)(_.show)
@@ -251,14 +247,12 @@ trait ModelLenses {
                         "disperserLambda",
                         stringToDoubleP)
 
-  // Lens to find p offset
-  def telescopeOffsetO(x: OffsetAxis): Optional[Step, String] =
-    stepObserveOptional(SystemName.Telescope, x.configItem, Prism.id[String])
+  // Lens to find offsets
+  def offsetO[T, A](implicit resolver: OffsetConfigResolver[T, A]): Optional[Step, String] =
+    stepObserveOptional(resolver.systemName, resolver.configItem, Prism.id[String])
 
-  val telescopeOffsetPF: Fold[Step, Option[Offset.P]] = telescopeOffsetO(
-    OffsetAxis.AxisP).composeGetter(Getter(signedPFormat.getOption))
-  val telescopeOffsetQF: Fold[Step, Option[Offset.Q]] = telescopeOffsetO(
-    OffsetAxis.AxisQ).composeGetter(Getter(signedQFormat.getOption))
+  def offsetF[T, A](implicit resolver: OffsetConfigResolver[T, A]): Fold[Step, Option[Offset.Component[A]]] =
+    offsetO[T, A].composeGetter(Getter(signedComponentFormat[A].getOption))
 
   val stringToGuidingP: Prism[String, Guiding] =
     Prism(Guiding.fromString)(_.configValue)

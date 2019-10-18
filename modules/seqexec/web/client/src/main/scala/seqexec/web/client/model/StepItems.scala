@@ -3,13 +3,14 @@
 
 package seqexec.web.client.model
 
-import cats.Eq
+import cats.{Eq, Monoid}
 import cats.implicits._
 import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
 import gsp.math.Offset
+import seqexec.model.OffsetConfigResolver
 import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
 import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, SequenceState, Step, StepId, enumerations}
 import seqexec.web.client.model.lenses._
@@ -186,8 +187,7 @@ object StepItems {
 
     // Offsets to be displayed with a width
     def offsetsDisplay: OffsetsDisplay = {
-      val (p, q) = steps.sequenceOffsetWidths
-      OffsetsDisplay.DisplayOffsets(scala.math.max(p, q))
+      (OffsetsDisplay.DisplayOffsets.apply _).tupled(steps.sequenceOffsetMaxWidth)
     }
 
   }

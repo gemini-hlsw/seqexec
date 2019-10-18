@@ -12,24 +12,24 @@ object OffsetType {
   type NSNodB
 }
 
-sealed trait OffsetShow[A] {
-  val show: String
+sealed trait OffsetFormat[A] {
+  val format: String
 }
-object OffsetShow {
-  implicit object OffsetNSNodAShow extends OffsetShow[OffsetType.NSNodA] {
-    override val show = "A"
+object OffsetFormat {
+  implicit object OffsetNSNodAFormat extends OffsetFormat[OffsetType.NSNodA] {
+    override val format = "A"
   }
 
-  implicit object OffsetNSNodBShow extends OffsetShow[OffsetType.NSNodB] {
-    override val show = "B"
+  implicit object OffsetNSNodBFormat extends OffsetFormat[OffsetType.NSNodB] {
+    override val format = "B"
   }
 
-  implicit object OffsetAxisPShow extends OffsetShow[Axis.P] {
-    override val show = "p"
+  implicit object OffsetAxisPFormat extends OffsetFormat[Axis.P] {
+    override val format = "p"
   }
 
-  implicit object OffsetAxisQShow extends OffsetShow[Axis.Q] {
-    override val show = "q"
+  implicit object OffsetAxisQFormat extends OffsetFormat[Axis.Q] {
+    override val format = "q"
   }
 }
 

@@ -185,6 +185,8 @@ object SeqexecStyles {
 
   val offsetsTable: Css = Css("SeqexecStyles-offsetsTable")
 
+  val offsetsNodLabel: Css = Css("SeqexecStyles-offsetsNodLabel")
+
   val configuringRow: Css = Css("SeqexecStyles-configuringRow")
 
   val specialStateLabel: Css = Css("SeqexecStyles-specialStateLabel")

@@ -22,7 +22,6 @@ import scala.scalajs.js
 import scala.math._
 import react.common._
 import react.common.implicits._
-import gsp.math.Axis
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.{RunningStep, SequenceState, Step, StepId, StepState}
@@ -368,9 +367,13 @@ final case class StepsTable(
     }
 
   val offsetWidth: Option[Double] = {
-    val (p, q)     = stepsList.sequenceOffsetWidths
-    val labelWidth = max(axisLabelWidth[Axis.P], axisLabelWidth[Axis.Q])
-    (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
+    val (maxWidth, maxAxisLabelWidth, maxNodLabelWidth) = stepsList.sequenceOffsetMaxWidth
+    val (labelsWidth, padding) =
+      if(maxNodLabelWidth === 0.0)
+        (maxAxisLabelWidth, OffsetPadding * 4)
+      else
+        (maxAxisLabelWidth * 2 + maxNodLabelWidth * 2, OffsetPadding * 7)
+    (maxWidth + labelsWidth + OffsetIconWidth + padding).some
   }
 
   val exposure: Step => Option[String] = s =>
