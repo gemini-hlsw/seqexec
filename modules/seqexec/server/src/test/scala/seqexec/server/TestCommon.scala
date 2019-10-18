@@ -124,7 +124,7 @@ object TestCommon {
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = Systems.build(GdsClient.alwaysOkClient, defaultSettings).use(SeqexecEngine(_, defaultSettings, sm).pure[IO]).unsafeRunSync
+  val seqexecEngine: SeqexecEngine = Systems.build(GdsClient.alwaysOkClient, defaultSettings).use(SeqexecEngine(_, defaultSettings, sm)).unsafeRunSync
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     advanceN(q, s0, put, 1L)

@@ -166,7 +166,7 @@ trait ObserveActions {
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
         env.inst.calcObserveTime(env.config)
-          .flatMap(totalTime => env.inst.observeControl match {
+          .flatMap(totalTime => env.inst.observeControl(env.config) match {
             case c: CompleteControl[F] => Result.Paused(
               ObserveContext[F](
                 (elapsed: Time) => Stream.eval(c.continue.self(elapsed)).flatMap(observeTail(fileId, dataId, env)),
@@ -179,10 +179,6 @@ trait ObserveActions {
               SeqexecFailure.Execution("Observation paused for an instrument that does not support pause")
                 .raiseError[F, Result[F]]
           })
-      case ObserveCommandResult.Partial =>
-        // This shouldn't happen in normal observations. Raise an error
-        MonadError[F, Throwable]
-          .raiseError[Result[F]](SeqexecFailure.Execution("Unsupported Partial observation"))
     })
   }
 

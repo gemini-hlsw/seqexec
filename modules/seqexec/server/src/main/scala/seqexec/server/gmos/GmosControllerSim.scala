@@ -94,7 +94,7 @@ object GmosControllerSim {
           case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) =>
             sim.log(s"Simulate Gmos N&S observation ${curr.show}") *>
               // Initial N&S obs
-              sim.observe(fileId, expTime).as(ObserveCommandResult.Partial)
+              sim.observe(fileId, expTime).as(ObserveCommandResult.Paused)
           case NSObsState(_, _) =>
             sim.observe(fileId, expTime) // Regular observation
         }
@@ -125,7 +125,7 @@ object GmosControllerSim {
           case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
               if !curr.lastSubexposure =>
             sim.log(s"Next Nod ${curr.show}") *>
-              sim.observe(curr.fileId, expTime).as(ObserveCommandResult.Partial)
+              sim.observe(curr.fileId, expTime).as(ObserveCommandResult.Paused)
           case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
               if curr.lastSubexposure =>
             sim.log(s"Final Nod ${curr.show}") *>
@@ -145,7 +145,7 @@ object GmosControllerSim {
       ): fs2.Stream[F, Progress] =
         sim.observeCountdown(total, elapsed)
 
-      override def nsCount: F[Int] = nsConfig.get.map(_.current.map(_.exposureCount).orNull)
+      override def nsCount: F[Int] = nsConfig.get.map(_.current.map(_.exposureCount).getOrElse(0))
     }
 
   def south[F[_]: Sync: Logger: Timer]: F[GmosController[F, SouthTypes]] =

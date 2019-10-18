@@ -4,6 +4,7 @@
 package seqexec.server.gpi
 
 import cats._
+import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -17,7 +18,7 @@ import seqexec.server.ObserveEnvironment
 /**
   * Gpi needs different actions for A&C
   */
-class GpiInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger]
+class GpiInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger: Concurrent]
     extends InstrumentActions[F] {
 
   override def observationProgressStream(
@@ -26,13 +27,12 @@ class GpiInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger]
     ObserveActions.observationProgressStream(env)
 
   override def observeActions(
-    env:  ObserveEnvironment[F],
-    post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+    env:  ObserveEnvironment[F]
   ): List[ParallelActions[F]] =
     if (env.stepType === StepType.AlignAndCalib) {
       Nil
     } else {
-      InstrumentActions.defaultInstrumentActions[F].observeActions(env, post)
+      InstrumentActions.defaultInstrumentActions[F].observeActions(env)
     }
 
   override def runInitialAction(stepType: StepType): Boolean =

@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.MonadError
 import cats.data.NonEmptyList
+import cats.effect.Concurrent
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
@@ -35,13 +36,11 @@ trait InstrumentActions[F[_]] {
   /**
     * Builds a list of actions to run while observing
     * In most cases it is just a plain observe but could be skipped or made more complex
-    * if needed
+    * if needed. It should include the progress updates.
     * @param env Properties of the observation
-    * @param post Function to customize the output of the parallel actions
     */
   def observeActions(
-    env:  ObserveEnvironment[F],
-    post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+    env:  ObserveEnvironment[F]
   ): List[ParallelActions[F]]
 
   /**
@@ -79,7 +78,7 @@ object InstrumentActions {
   /**
     * Default Actions for most instruments it basically delegates to ObserveActions
     */
-  def defaultInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger]
+  def defaultInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger]
     : InstrumentActions[F] =
     new InstrumentActions[F] {
       def observationProgressStream(
@@ -88,11 +87,12 @@ object InstrumentActions {
         ObserveActions.observationProgressStream(env)
 
       override def observeActions(
-        env: ObserveEnvironment[F],
-        post: (Stream[F, Result[F]], ObserveEnvironment[F]) => Stream[F, Result[F]]
+        env: ObserveEnvironment[F]
       ): List[ParallelActions[F]] =
         defaultObserveActions(
-          post(launchObserve(env, ObserveActions.stdObserve[F]), env)
+          observationProgressStream(env)
+            .mergeHaltR(launchObserve(env, ObserveActions.stdObserve[F]))
+            .handleErrorWith(catchObsErrors[F])
         )
 
       def runInitialAction(stepType: StepType): Boolean = true

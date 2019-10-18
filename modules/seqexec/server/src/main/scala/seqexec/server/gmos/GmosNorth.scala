@@ -20,7 +20,6 @@ import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_PROP}
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
-import seqexec.server.gmos.NSPartial.NSObserveCommand
 import squants.Length
 import squants.space.Arcseconds
 

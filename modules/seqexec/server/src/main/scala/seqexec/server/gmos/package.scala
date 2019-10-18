@@ -48,7 +48,11 @@ package gmos {
     case object NSSubPaused extends InternalPartialVal
     case object NSFinalObs extends InternalPartialVal
 
-    sealed trait NSObserveCommand extends Product with Serializable
+  }
+
+  sealed trait NSObserveCommand extends Product with Serializable
+
+  object NSObserveCommand {
     case object StopGracefully extends NSObserveCommand
     case object StopImmediately extends NSObserveCommand
     case object AbortGracefully extends NSObserveCommand
@@ -56,12 +60,10 @@ package gmos {
     case object PauseGracefully extends NSObserveCommand
     case object PauseImmediately extends NSObserveCommand
 
-    object NSObserveCommand {
-      implicit val nsObserveCommandEnum: Enumerated[NSObserveCommand] =
-        Enumerated.of(
-          StopGracefully, StopImmediately,AbortGracefully, AbortImmediately, PauseGracefully, PauseImmediately
-        )
-    }
-
+    implicit val nsObserveCommandEnum: Enumerated[NSObserveCommand] =
+      Enumerated.of(
+        StopGracefully, StopImmediately,AbortGracefully, AbortImmediately, PauseGracefully, PauseImmediately
+      )
   }
+
 }

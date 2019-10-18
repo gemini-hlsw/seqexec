@@ -182,6 +182,8 @@ object Sequence {
       */
     val current: Execution[F]
 
+    val currentStep: Option[Step[F]]
+
     val done: List[Step[F]]
 
     /**
@@ -301,6 +303,8 @@ object Sequence {
           // Execution
           .focus
 
+      override val currentStep: Option[Step[F]] = zipper.focus.toStep.some
+
       override val pending: List[Step[F]] = zipper.pending
 
       override def rollback: Zipper[F] = self.copy(zipper = zipper.rollback)
@@ -398,6 +402,8 @@ object Sequence {
       override val next: Option[State[F]] = None
 
       override val current: Execution[F] = Execution.empty
+
+      override val currentStep: Option[Step[F]] = none
 
       override val pending: List[Step[F]] = Nil
 

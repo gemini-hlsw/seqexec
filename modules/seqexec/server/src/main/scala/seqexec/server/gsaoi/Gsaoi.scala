@@ -5,7 +5,7 @@ package seqexec.server.gsaoi
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import cats.implicits._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
@@ -33,7 +33,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: Sync: Logger](
+final case class Gsaoi[F[_]: Sync: Logger: Concurrent](
   controller: GsaoiController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
@@ -45,9 +45,11 @@ final case class Gsaoi[F[_]: Sync: Logger](
 
   override val contributorName: String = "GSAOI"
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl[F](StopObserveCmd[F](controller.stopObserve),
-                 AbortObserveCmd[F](controller.abortObserve))
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
+    UnpausableControl[F](
+      StopObserveCmd[F](_ => controller.stopObserve),
+      AbortObserveCmd[F](_ => controller.abortObserve)
+    )
 
   override def observe(
     config: CleanConfig

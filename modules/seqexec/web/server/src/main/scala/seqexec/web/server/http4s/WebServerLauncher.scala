@@ -273,7 +273,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         seqc <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
         met  <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
         sys  <- Systems.build(httpClient, seqc)
-      } yield SeqexecEngine(sys, seqc, met)
+        seqE <- Resource.liftF(SeqexecEngine(sys, seqc, met))
+      } yield seqE
 
     def webServerIO(
       in:  Queue[IO, executeEngine.EventType],

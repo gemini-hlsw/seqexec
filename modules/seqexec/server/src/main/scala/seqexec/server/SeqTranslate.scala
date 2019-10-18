@@ -8,6 +8,7 @@ import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.Sync
 import cats.effect.LiftIO
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
@@ -48,10 +49,11 @@ import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.gmos.NSObserveCommand
 import squants.Time
 import squants.time.TimeConversions._
 
-class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]) extends ObserveActions {
+class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings, gmosNsCmd: Ref[IO, Option[NSObserveCommand]])(implicit L: Logger[IO]) extends ObserveActions {
   import SeqTranslate._
 
   private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
@@ -84,10 +86,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         val env = ObserveEnvironment(systems, config, stepType, obsId, inst, sys.filterNot(inst.equals), headers, ctx)
         // Request the instrument to build the observe actions and merge them with the progress
         // Also catches any errors in the process of runnig an observation
-        ia.observeActions(env, (s, env) =>
-          ia.observationProgressStream(env)
-            .mergeHaltR(s)
-            .handleErrorWith(catchObsErrors[IO]))
+        ia.observeActions(env)
       }
 
       extractStatus(config) match {
@@ -159,29 +158,22 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => IO[Unit])(st: EngineState)(
     implicit tio: Timer[IO], cio: Concurrent[IO]
   ): Option[Stream[IO, executeEngine.EventType]] = {
-    def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
-      case ActionState.Started => true
-      case _                   => false
-    })
 
-    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
-      toInstrumentSys(instrument)
-        .toOption
-        .map(x => f(x.observeControl))
-        .flatMap { v =>
-          seqState
-            .current
-            .execution
-            .exists(isObserving)
-            .option(Stream.eval(v.attempt.map(handleError)))
+    def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && v.state.runState.started
+
+    st.sequences.get(seqId)
+      .flatMap { obsSeq =>
+        (toInstrumentSys(obsSeq.seqGen.instrument).toOption,
+          obsSeq.seq.currentStep.map(_.id).flatMap(x => obsSeq.seqGen.steps.find(_.id === x)).map(_.config)
+          ).mapN { case (inst, cfg) => f(inst.observeControl(cfg)) }
+          .flatMap { v =>
+            obsSeq.seq
+              .current
+              .execution
+              .exists(isObserving)
+              .option(Stream.eval(v.attempt.map(handleError)))
+          }
       }
-
-    for {
-      seqg   <- st.sequences.seq.get(seqId)
-      obsseq <- st.sequences.get(seqId)
-      r      <- seqCmd(obsseq.seq, seqg.seqGen.instrument)
-    } yield r
-
   }
 
   private def handleError: Either[Throwable, Unit] => executeEngine.EventType = {
@@ -190,36 +182,36 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case _       => Event.nullEvent
   }
 
-  def stopObserve(seqId: Observation.Id)(
+  def stopObserve(seqId: Observation.Id, graceful: Boolean)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
-      case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop
-      case UnpausableControl(StopObserveCmd(stop), _)           => stop
+      case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop(graceful)
+      case UnpausableControl(StopObserveCmd(stop), _)           => stop(graceful)
       case _                                                    => IO.unit
     }
     deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
   }
 
-  def abortObserve(seqId: Observation.Id)(
+  def abortObserve(seqId: Observation.Id, graceful: Boolean)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
-      case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
-      case UnpausableControl(_, AbortObserveCmd(abort))           => abort
+      case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort(graceful)
+      case UnpausableControl(_, AbortObserveCmd(abort))           => abort(graceful)
       case _                                                      => IO.unit
     }
 
     deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
   }
 
-  def pauseObserve(seqId: Observation.Id)(
+  def pauseObserve(seqId: Observation.Id, graceful: Boolean)(
     implicit tio: Timer[IO], cio: Concurrent[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl[IO]): IO[Unit] = oc match {
-      case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause
+      case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause(graceful)
       case _                                                      => IO.unit
     }
     deliverObserveCmd(seqId, f)
@@ -273,8 +265,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit ev: Timer[IO], cio: Concurrent[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
-    case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
-    case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
+    case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs, gmosNsCmd))
+    case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs, gmosNsCmd))
     case Instrument.Gnirs => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Instrument.Gpi   => TrySeq(Gpi(systems.gpi))
     case Instrument.Ghost => TrySeq(Ghost(systems.ghost))
@@ -495,8 +487,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]): SeqTranslate =
-    new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]): IO[SeqTranslate] =
+    Ref.of[IO, Option[NSObserveCommand]](none).map((new SeqTranslate(site, systems, settings, _)))
 
   def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT

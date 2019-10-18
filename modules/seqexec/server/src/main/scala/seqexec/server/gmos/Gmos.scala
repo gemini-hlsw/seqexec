@@ -21,7 +21,9 @@ import gsp.math.Offset
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
+
 import cats.effect.concurrent.Ref
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -38,14 +40,13 @@ import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.gmos.NSPartial.NSObserveCommand
 import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 import shapeless.tag
 
 abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
-(controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
+(val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
@@ -58,19 +59,45 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
 
   val nsCmdRef: Ref[F, Option[NSObserveCommand]] = nsCmdR
 
-  val continueCommand: Time => F[ObserveCommandResult] =
-    controller.resumePaused
-
   val nsCount: F[Int] = controller.nsCount
 
-  override val observeControl: InstrumentSystem.CompleteControl[F] = CompleteControl(
-    StopObserveCmd(controller.stopObserve),
-    AbortObserveCmd(controller.abortObserve),
-    PauseObserveCmd(controller.pauseObserve),
-    ContinuePausedCmd(continueCommand),
-    StopPausedCmd(controller.stopPaused),
-    AbortPausedCmd(controller.abortPaused)
-  )
+  override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F] =
+    if(isNodAndShuffle(config))
+      CompleteControl(
+        StopObserveCmd(stopNS),
+        AbortObserveCmd(abortNS),
+        PauseObserveCmd(pauseNS),
+        ContinuePausedCmd(controller.resumePaused),
+        StopPausedCmd(controller.stopPaused),
+        AbortPausedCmd(controller.abortPaused)
+      )
+    else
+      CompleteControl(
+        StopObserveCmd(_ => controller.stopObserve),
+        AbortObserveCmd(_ => controller.abortObserve),
+        PauseObserveCmd(_ => controller.pauseObserve),
+        ContinuePausedCmd(controller.resumePaused),
+        StopPausedCmd(controller.stopPaused),
+        AbortPausedCmd(controller.abortPaused)
+      )
+
+  def stopNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.StopGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.StopImmediately.some) *> controller.stopObserve
+
+  def abortNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.AbortGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
+
+  def pauseNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.PauseGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.stopObserve
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
     case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))

@@ -5,7 +5,7 @@ package seqexec.server.ghost
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -30,7 +30,7 @@ import squants.time.Time
 
 import scala.reflect.ClassTag
 
-final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
+final case class Ghost[F[_]: Sync: Logger: Concurrent](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -44,7 +44,7 @@ final case class Ghost[F[_]: Sync: Logger](controller: GhostController[F])
 
   override val contributorName: String = "ghost"
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] =
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable
 
   override def observe(
