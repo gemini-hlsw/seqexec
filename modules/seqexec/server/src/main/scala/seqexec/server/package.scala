@@ -160,13 +160,13 @@ package object server {
   implicit class ControlStrategyOps(v: ControlStrategy) {
     val connect: Boolean = v match {
       case ControlStrategy.Simulated => false
-      case _         => true
+      case _                         => true
     }
     // If connected, then use real values for keywords
     val realKeywords: Boolean = connect
     val command: Boolean = v match {
       case ControlStrategy.FullControl => true
-      case _           => false
+      case _                           => false
     }
   }
 

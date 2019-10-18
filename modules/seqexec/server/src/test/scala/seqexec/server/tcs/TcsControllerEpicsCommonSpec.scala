@@ -13,7 +13,6 @@ import seqexec.model.enum.{ComaOption, Instrument, M1Source, MountGuideOption, T
 import seqexec.server.InstrumentGuide
 import seqexec.server.tcs.TcsController.LightSource.Sky
 import seqexec.server.tcs.TcsController.{AGConfig, BasicGuidersConfig, BasicTcsConfig, FocalPlaneOffset, GuiderConfig, GuiderSensorOff, GuiderSensorOn, HrwfsPickupPosition, InstrumentOffset, LightPath, NodChopTrackingConfig, OIConfig, OffsetP, OffsetQ, OffsetX, OffsetY, P1Config, P2Config, ProbeTrackingConfig, TelescopeConfig}
-import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, BaseEpicsTcsConfig, InstrumentPorts}
 import shapeless.tag
 import squants.space.{Arcseconds, Length, Microns, Millimeters}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -72,7 +71,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       baseCurrentStatus,
       (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
         InstrumentOffset(
-          tag[OffsetP](TcsControllerEpicsCommon.pwfs1OffsetThreshold * 2 * FOCAL_PLANE_SCALE),
+          tag[OffsetP](pwfs1OffsetThreshold * 2 * FOCAL_PLANE_SCALE),
           tag[OffsetQ](Arcseconds(0.0))
         ).some
       )(baseConfig)
@@ -86,7 +85,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>
@@ -106,7 +105,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>
@@ -127,7 +126,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs1OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs1OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>
@@ -150,7 +149,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>
@@ -170,7 +169,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>
@@ -191,7 +190,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
           InstrumentOffset(
-            tag[OffsetP](TcsControllerEpicsCommon.pwfs2OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
+            tag[OffsetP](pwfs2OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
             tag[OffsetQ](Arcseconds(0.0))
           ).some
         ) >>>

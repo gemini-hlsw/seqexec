@@ -59,12 +59,12 @@ object Systems {
     if (settings.gcalControl.command) GcalControllerEpics(GcalEpics.instance).pure[IO]
     else                              GcalControllerSim[IO].pure[IO]
 
-  def tcsSouth(settings: Settings, gcdb: GuideConfigDb[IO])(implicit L: Logger[IO]): IO[TcsSouthController[IO]] =
-    if (settings.tcsControl.command && settings.site === Site.GS) TcsSouthControllerEpics(gcdb).pure[IO]
+  def tcsSouth(tcsEpics: => TcsEpics[IO], settings: Settings, gcdb: GuideConfigDb[IO])(implicit L: Logger[IO]): IO[TcsSouthController[IO]] =
+    if (settings.tcsControl.command && settings.site === Site.GS) TcsSouthControllerEpics(tcsEpics, gcdb).pure[IO]
     else                                                          TcsSouthControllerSim[IO].pure[IO]
 
-  def tcsNorth(settings: Settings)(implicit L: Logger[IO]): IO[TcsNorthController[IO]] =
-    if (settings.tcsControl.command && settings.site === Site.GN) TcsNorthControllerEpics().pure[IO]
+  def tcsNorth(tcsEpics: => TcsEpics[IO], settings: Settings)(implicit L: Logger[IO]): IO[TcsNorthController[IO]] =
+    if (settings.tcsControl.command && settings.site === Site.GN) TcsNorthControllerEpics(tcsEpics).pure[IO]
     else                                                          TcsNorthControllerSim[IO].pure[IO]
 
   def altair(settings: Settings)(implicit L: Logger[IO]): IO[AltairController[IO]] =
@@ -136,8 +136,8 @@ object Systems {
       dhsClient       <- Resource.pure[IO, DhsClient[IO]](dhs[IO](settings, httpClient))
       gcdb            <- Resource.liftF(GuideConfigDb.newDb[IO])
       gcalController  <- Resource.liftF(gcal(settings))
-      tcsGS           <- Resource.liftF(tcsSouth(settings, gcdb))
-      tcsGN           <- Resource.liftF(tcsNorth(settings))
+      tcsGS           <- Resource.liftF(tcsSouth(TcsEpics.instance, settings, gcdb))
+      tcsGN           <- Resource.liftF(tcsNorth(TcsEpics.instance, settings))
       altair          <- Resource.liftF(altair(settings))
       gsaoiController <- Resource.liftF(gsaoi(settings))
       gems            <- Resource.liftF(gems(settings, gsaoiController))

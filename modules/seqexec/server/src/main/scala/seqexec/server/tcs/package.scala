@@ -11,6 +11,8 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.{Angle, Length, Ratio}
 import squants.space.{Arcseconds, Millimeters}
+import squants.Time
+import squants.time._
 
 package tcs {
 
@@ -43,9 +45,21 @@ package tcs {
 }
 
 package object tcs {
+  val BottomPort: Int = 1
+  val InvalidPort: Int = 0
+
+  val tcsTimeout: Time = Seconds(60)
+  val agTimeout: Time = Seconds(60)
+
+  val NonStopExposures = -1
 
   // Focal plane scale, expressed with squants quantities.
   val FOCAL_PLANE_SCALE = new FocalPlaneScale(Arcseconds(1.61144), Millimeters(1))
+
+  val pwfs1OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val pwfs2OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+
+  val AoOffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
 
   implicit val ooEq: Eq[BinaryOnOff] =
     Eq[Int].contramap(_.ordinal())

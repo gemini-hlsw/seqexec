@@ -3,11 +3,11 @@
 
 package seqexec.server.tcs
 
-import cats.Endo
+import cats._
 import cats.data._
-import cats.effect.{IO, Sync}
+import cats.effect.Async
 import cats.implicits._
-import org.log4s.{Logger, getLogger}
+import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
 import monocle.macros.Lenses
 import squants.Length
@@ -25,30 +25,17 @@ import seqexec.server.tcs.TcsController._
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.Gaos._
-import seqexec.server.tcs.TcsControllerEpicsCommon._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import shapeless.tag.@@
 import squants.space.Arcseconds
 
+trait TcsNorthControllerEpicsAo[F[_]] {
+  def applyAoConfig(subsystems: NonEmptySet[Subsystem],
+                    gaos: Altair[F],
+                    tcs: TcsNorthAoConfig): F[Unit]
+}
+
 object TcsNorthControllerEpicsAo {
-
-  val Log: Logger = getLogger
-
-  private def setAltairProbe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
-  : Option[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] =
-    if(subsystems.contains(Subsystem.Gaos)) {
-      val actions = List(
-        (c.getNodChop =!= d.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd)(d.getNodChop)),
-        (c.follow =!= d.follow).option(TcsEpics.instance.aoProbeFollowCmd.setFollowState(encode(d.follow)))
-      ).collect{ case Some(x) => x }
-
-      actions.nonEmpty.option{ x => actions.sequence *>
-        IO(EpicsTcsAoConfig.aowfs.set(d)(x))
-      }
-    }
-    else none
-
   private def aoOffsetThreshold(instrument: Instrument): Option[Length] = instrument match {
     case Instrument.Nifs  => (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
     case Instrument.Niri  => (Arcseconds(3.0)/FOCAL_PLANE_SCALE).some
@@ -75,183 +62,206 @@ object TcsNorthControllerEpicsAo {
     distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
   }
 
-  def applyAoConfig(subsystems: NonEmptySet[Subsystem],
-                           gaos: Altair[IO],
-                           tcs: TcsNorthAoConfig): IO[Unit] = {
-    def configParams(current: EpicsTcsAoConfig): List[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] = List(
-      setPwfs1Probe(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.tracking, tcs.gds.pwfs1.tracking),
-      setAltairProbe(subsystems, current.aowfs, tcs.gds.aoguide.tracking),
-      setOiwfsProbe(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.tracking, tcs.gds.oiwfs.tracking),
-      tcs.tc.offsetA.flatMap(o => applyParam(subsystems.contains(Subsystem.Mount), current.base.offset,
-        o.toFocalPlaneOffset(current.base.iaa), setTelescopeOffset, EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.offset
-      )),
-      tcs.tc.wavelA.flatMap(applyParam(subsystems.contains(Subsystem.Mount), current.base.wavelA, _, setWavelength,
-        EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.wavelA
-      )),
-      setScienceFold(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc.sfPos),
-      setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
+  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
+    private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
+    private val commonController = TcsControllerEpicsCommon[F](epicsSys)
+
+    private def setAltairProbe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
+    : Option[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] =
+      if(subsystems.contains(Subsystem.Gaos)) {
+        val actions = List(
+          (c.getNodChop =!= d.getNodChop)
+            .option(commonController.setNodChopProbeTrackingConfig(epicsSys.pwfs2ProbeGuideCmd)(d.getNodChop)),
+          (c.follow =!= d.follow).option(epicsSys.aoProbeFollowCmd.setFollowState(encode(d.follow)))
+        ).collect{ case Some(x) => x }
+
+        actions.nonEmpty.option{ x => actions.sequence *>
+          EpicsTcsAoConfig.aowfs.set(d)(x).pure[F]
+        }
+      }
+      else none
+
+    override def applyAoConfig(subsystems: NonEmptySet[Subsystem],
+                             gaos: Altair[F],
+                             tcs: TcsNorthAoConfig): F[Unit] = {
+      def configParams(current: EpicsTcsAoConfig): List[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] = List(
+        commonController.setPwfs1Probe(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.tracking, tcs.gds.pwfs1.tracking),
+        setAltairProbe(subsystems, current.aowfs, tcs.gds.aoguide.tracking),
+        commonController.setOiwfsProbe(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.tracking, tcs.gds.oiwfs.tracking),
+        tcs.tc.offsetA.flatMap(o => TcsControllerEpicsCommon.applyParam(subsystems.contains(Subsystem.Mount), current.base.offset,
+          o.toFocalPlaneOffset(current.base.iaa), commonController.setTelescopeOffset, EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.offset
+        )),
+        tcs.tc.wavelA.flatMap(TcsControllerEpicsCommon.applyParam(subsystems.contains(Subsystem.Mount), current.base.wavelA, _, commonController.setWavelength,
+          EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.wavelA
+        )),
+        commonController.setScienceFold(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc.sfPos),
+        commonController.setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
+      ).flattenOption
+
+      def sysConfig(current: EpicsTcsAoConfig): F[EpicsTcsAoConfig] = {
+        val params = configParams(current)
+
+        if(params.nonEmpty)
+          for {
+            s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
+            _ <- epicsSys.post
+            _ <- L.debug("TCS configuration command post")
+            _ <- if(subsystems.contains(Subsystem.Mount))
+              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+            else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
+              epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
+            else Applicative[F].unit
+          } yield s
+        else
+          L.debug("Skipping TCS configuration") *> current.pure[F]
+      }
+
+      for {
+        s0 <- tcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
+        _  <- SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[F, Unit].whenA(s0.base.useAo)
+        pr <- pauseResumeGaos(gaos, s0, tcs)
+        _  <- pr.pause.getOrElse(Applicative[F].unit)
+        s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
+        s2 <- sysConfig(s1)
+        _  <- guideOn(subsystems, s2, tcs, pr.resume.isDefined)
+        _  <- pr.resume.getOrElse(Applicative[F].unit) //resume Gaos
+      } yield ()
+    }
+
+    def guideParams(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig)
+    : List[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] = List(
+      commonController.setMountGuide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.mountGuide, demand.gc.mountGuide),
+      commonController.setM1Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m1Guide, demand.gc.m1Guide),
+      commonController.setM2Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
+      commonController.setPwfs1(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.detector, demand.gds.pwfs1.detector),
+      commonController.setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
     ).flattenOption
 
-    def sysConfig(current: EpicsTcsAoConfig): IO[EpicsTcsAoConfig] = {
-      val params = configParams(current)
+    def calcGuideOff(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig, gaosEnabled: Boolean): TcsNorthAoConfig = {
+      val mustOff = mustPauseWhileOffsetting(current, demand)
+      // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
+      def calc(c: GuiderSensorOption, d: GuiderSensorOption) = (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
+
+      (AoTcsConfig.gds[GuiderConfig@@AoGuide, AltairConfig].modify(
+        (AoGuidersConfig.pwfs1[GuiderConfig@@AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
+          .set(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+          (AoGuidersConfig.oiwfs[GuiderConfig@@AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
+            .set(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
+      ) >>> AoTcsConfig.gc[GuiderConfig@@AoGuide, AltairConfig].modify(
+        TelescopeGuideConfig.mountGuide.set(
+          (mustOff || demand.gc.mountGuide === MountGuideOption.MountGuideOff).fold(MountGuideOption.MountGuideOff, current.base.telescopeGuideConfig.mountGuide)
+        ) >>>
+          TelescopeGuideConfig.m1Guide.set(
+            (mustOff || demand.gc.m1Guide === M1GuideConfig.M1GuideOff).fold(M1GuideConfig.M1GuideOff, current.base.telescopeGuideConfig.m1Guide)
+          ) >>>
+          TelescopeGuideConfig.m2Guide.set(
+            (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff).fold(M2GuideConfig.M2GuideOff, current.base.telescopeGuideConfig.m2Guide)
+          )
+      ) >>> normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(demand)
+    }
+
+    def calcAoPauseConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): PauseConditionSet =
+      PauseConditionSet.fromList(
+        List(
+          demand.tc.offsetA.flatMap(v => (v =!= current.base.instrumentOffset)
+            .option(PauseCondition.OffsetMove(v.toFocalPlaneOffset(current.base.iaa)))),
+          (current.base.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(PauseCondition.OiOff),
+          (current.base.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(PauseCondition.P1Off),
+          (demand.gds.aoguide.detector === GuiderSensorOff).option(PauseCondition.GaosGuideOff)
+        ).flattenOption
+      )
+
+    def calcAoResumeConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): ResumeConditionSet =
+      ResumeConditionSet.fromList(
+        List(
+          demand.tc.offsetA.map(v => ResumeCondition.OffsetReached(v.toFocalPlaneOffset(current.base.iaa))),
+          (demand.gds.oiwfs.detector === GuiderSensorOn).option(ResumeCondition.OiOn),
+          (demand.gds.pwfs1.detector === GuiderSensorOn).option(ResumeCondition.P1On),
+          (demand.gds.aoguide.detector === GuiderSensorOn).option(ResumeCondition.GaosGuideOn)
+        ).flattenOption
+      )
+
+    def pauseResumeGaos(gaos: Altair[F], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig)
+    : F[PauseResume[F]] =
+      gaos.pauseResume(demand.gaos, calcAoPauseConditions(current, demand), calcAoResumeConditions(current, demand))
+
+    def updateEpicsGuideConfig(epicsCfg: EpicsTcsAoConfig, demand: TcsNorthAoConfig): EpicsTcsAoConfig = (
+      (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.telescopeGuideConfig).set(demand.gc) >>>
+        (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.pwfs1 ^|-> GuiderConfig.detector).set(demand.gds.pwfs1.detector) >>>
+        (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector).set(demand.gds.oiwfs.detector)
+      )(epicsCfg)
+
+    def guideOff(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig, pauseGaos: Boolean)
+    : F[EpicsTcsAoConfig] = {
+      val params = guideParams(subsystems, current, calcGuideOff(current, demand, pauseGaos) )
 
       if(params.nonEmpty)
         for {
-          s <- params.foldLeft(IO(current)){ case (c, p) => c.flatMap(p) }
-          _ <- TcsEpics.instance.post
-          _ <- IO(Log.debug("TCS configuration command post"))
-          _ <- if(subsystems.contains(Subsystem.Mount))
-            TcsEpics.instance.waitInPosition(tcsTimeout) *> IO.apply(Log.info("TCS inposition"))
-          else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
-            TcsEpics.instance.waitAGInPosition(agTimeout) *> IO.apply(Log.debug("AG inposition"))
-          else IO.unit
+          s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
+          _ <- epicsSys.post
+          _ <- L.info("Turning guide off")
         } yield s
       else
-        IO(Log.debug("Skipping TCS configuration")) *> IO(current)
+        L.info("Skipping guide off") *> current.pure[F]
     }
 
-    for {
-      s0 <- TcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
-      _  <- if(s0.base.useAo) IO.unit
-            else SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[IO, Unit]
-      pr <- pauseResumeGaos[IO](gaos, s0, tcs)
-      _  <- pr.pause.getOrElse(IO.unit)
-      s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
-      s2 <- sysConfig(s1)
-      _  <- guideOn(subsystems, s2, tcs, pr.resume.isDefined)
-      _  <- pr.resume.getOrElse(IO.unit) //resume Gaos
-    } yield ()
-  }
+    def guideOn(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig,
+                gaosEnabled: Boolean): F[EpicsTcsAoConfig] = {
+      // If the demand turned off any WFS, normalize will turn off the corresponding processing
+      val normalizedGuiding = (normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>>
+        normalizeMountGuiding)(demand)
 
-  def guideParams(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig)
-  : List[EpicsTcsAoConfig => IO[EpicsTcsAoConfig]] = List(
-    setMountGuide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.mountGuide, demand.gc.mountGuide),
-    setM1Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m1Guide, demand.gc.m1Guide),
-    setM2Guide(EpicsTcsAoConfig.base)(subsystems, current.base.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
-    setPwfs1(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.detector, demand.gds.pwfs1.detector),
-    setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
-  ).flattenOption
+      val params = guideParams(subsystems, current, normalizedGuiding)
 
-  def calcGuideOff(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig, gaosEnabled: Boolean): TcsNorthAoConfig = {
-    val mustOff = mustPauseWhileOffsetting(current, demand)
-    // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
-    def calc(c: GuiderSensorOption, d: GuiderSensorOption) = (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
+      if(params.nonEmpty)
+        for {
+          s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
+          _ <- epicsSys.post
+          _ <- L.info("Turning guide on")
+        } yield s
+      else
+        L.info("Skipping guide on") *> current.pure[F]
+    }
 
-    (AoTcsConfig.gds[GuiderConfig@@AoGuide, AltairConfig].modify(
-      (AoGuidersConfig.pwfs1[GuiderConfig@@AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
-        .set(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
-        (AoGuidersConfig.oiwfs[GuiderConfig@@AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
-          .set(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
-    ) >>> AoTcsConfig.gc[GuiderConfig@@AoGuide, AltairConfig].modify(
-      TelescopeGuideConfig.mountGuide.set(
-        (mustOff || demand.gc.mountGuide === MountGuideOption.MountGuideOff).fold(MountGuideOption.MountGuideOff, current.base.telescopeGuideConfig.mountGuide)
-      ) >>>
-        TelescopeGuideConfig.m1Guide.set(
-          (mustOff || demand.gc.m1Guide === M1GuideConfig.M1GuideOff).fold(M1GuideConfig.M1GuideOff, current.base.telescopeGuideConfig.m1Guide)
-        ) >>>
-        TelescopeGuideConfig.m2Guide.set(
-          (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff).fold(M2GuideConfig.M2GuideOff, current.base.telescopeGuideConfig.m2Guide)
-        )
-    ) >>> normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(demand)
-  }
-
-  def calcAoPauseConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): PauseConditionSet =
-    PauseConditionSet.fromList(
-      List(
-        demand.tc.offsetA.flatMap(v => (v =!= current.base.instrumentOffset)
-          .option(PauseCondition.OffsetMove(v.toFocalPlaneOffset(current.base.iaa)))),
-        (current.base.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(PauseCondition.OiOff),
-        (current.base.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(PauseCondition.P1Off),
-        (demand.gds.aoguide.detector === GuiderSensorOff).option(PauseCondition.GaosGuideOff)
-      ).flattenOption
-    )
-
-  def calcAoResumeConditions(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): ResumeConditionSet =
-    ResumeConditionSet.fromList(
-      List(
-        demand.tc.offsetA.map(v => ResumeCondition.OffsetReached(v.toFocalPlaneOffset(current.base.iaa))),
-        (demand.gds.oiwfs.detector === GuiderSensorOn).option(ResumeCondition.OiOn),
-        (demand.gds.pwfs1.detector === GuiderSensorOn).option(ResumeCondition.P1On),
-        (demand.gds.aoguide.detector === GuiderSensorOn).option(ResumeCondition.GaosGuideOn)
-      ).flattenOption
-    )
-
-  def pauseResumeGaos[F[_]: Sync ](gaos: Altair[F], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig)
-  : F[PauseResume[F]] =
-    gaos.pauseResume(demand.gaos, calcAoPauseConditions(current, demand), calcAoResumeConditions(current, demand))
-
-  def updateEpicsGuideConfig(epicsCfg: EpicsTcsAoConfig, demand: TcsNorthAoConfig): EpicsTcsAoConfig = (
-    (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.telescopeGuideConfig).set(demand.gc) >>>
-      (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.pwfs1 ^|-> GuiderConfig.detector).set(demand.gds.pwfs1.detector) >>>
-      (EpicsTcsAoConfig.base ^|-> BaseEpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector).set(demand.gds.oiwfs.detector)
-    )(epicsCfg)
-
-  def guideOff(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig, pauseGaos: Boolean)
-  : IO[EpicsTcsAoConfig] = {
-    val params = guideParams(subsystems, current, calcGuideOff(current, demand, pauseGaos) )
-
-    if(params.nonEmpty)
-      for {
-        s <- params.foldLeft(IO(current)){ case (c, p) => c.flatMap(p)}
-        _ <- TcsEpics.instance.post
-        _ <- IO(Log.info("Turning guide off"))
-      } yield s
-    else
-      IO(Log.info("Skipping guide off")) *> IO(current)
-  }
-
-  def guideOn(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig,
-              gaosEnabled: Boolean): IO[EpicsTcsAoConfig] = {
-    // If the demand turned off any WFS, normalize will turn off the corresponding processing
-    val normalizedGuiding = (normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>>
-      normalizeMountGuiding)(demand)
-
-    val params = guideParams(subsystems, current, normalizedGuiding)
-
-    if(params.nonEmpty)
-      for {
-        s <- params.foldLeft(IO(current)){ case (c, p) => c.flatMap(p)}
-        _ <- TcsEpics.instance.post
-        _ <- IO(Log.info("Turning guide on"))
-      } yield s
-    else
-      IO(Log.info("Skipping guide on")) *> IO(current)
-  }
-
-  // Disable M1 guiding if source is off
-  def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsNorthAoConfig] = cfg =>
-    (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
-      case g @ M1GuideConfig.M1GuideOn(src) => src match {
-        case M1Source.PWFS1 => if(cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
-        case M1Source.OIWFS => if(cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
-        case M1Source.GAOS  => if(cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled) g
-                               else M1GuideConfig.M1GuideOff
-        case _              => g
-      }
-      case x                => x
-    }(cfg)
-
-  // Disable M2 sources if they are off, disable M2 guiding if all are off
-  def normalizeM2Guiding(gaosEnabled: Boolean): Endo[TcsNorthAoConfig] = cfg =>
-    (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
-      case M2GuideConfig.M2GuideOn(coma, srcs) =>
-        val ss = srcs.filter{
-          case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
-          case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
-          case TipTiltSource.GAOS  => cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled
-          case _                   => true
+    // Disable M1 guiding if source is off
+    def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsNorthAoConfig] = cfg =>
+      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
+        case g @ M1GuideConfig.M1GuideOn(src) => src match {
+          case M1Source.PWFS1 => if(cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
+          case M1Source.OIWFS => if(cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
+          case M1Source.GAOS  => if(cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled) g
+                                 else M1GuideConfig.M1GuideOff
+          case _              => g
         }
-        if(ss.isEmpty) M2GuideConfig.M2GuideOff
-        else M2GuideConfig.M2GuideOn((cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff).fold(coma, ComaOption.ComaOff), ss)
-      case x                     => x
-    }(cfg)
+        case x                => x
+      }(cfg)
 
-  // Disable Mount guiding if M2 guiding is disabled
-  val normalizeMountGuiding: Endo[TcsNorthAoConfig] = cfg =>
-    (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
-      case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) => MountGuideOption.MountGuideOn
-      case _                                                              => MountGuideOption.MountGuideOff
-    } }(cfg)
+    // Disable M2 sources if they are off, disable M2 guiding if all are off
+    def normalizeM2Guiding(gaosEnabled: Boolean): Endo[TcsNorthAoConfig] = cfg =>
+      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
+        case M2GuideConfig.M2GuideOn(coma, srcs) =>
+          val ss = srcs.filter{
+            case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
+            case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
+            case TipTiltSource.GAOS  => cfg.gds.aoguide.detector === GuiderSensorOn && gaosEnabled
+            case _                   => true
+          }
+          if(ss.isEmpty) M2GuideConfig.M2GuideOff
+          else M2GuideConfig.M2GuideOn((cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff).fold(coma, ComaOption.ComaOff), ss)
+        case x                     => x
+      }(cfg)
+
+    // Disable Mount guiding if M2 guiding is disabled
+    val normalizeMountGuiding: Endo[TcsNorthAoConfig] = cfg =>
+      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
+        case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) => MountGuideOption.MountGuideOn
+        case _                                                              => MountGuideOption.MountGuideOff
+      } }(cfg)
+
+  }
+
+  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
+    new TcsNorthControllerEpicsAoImpl(epicsSys)
 
   @Lenses
   final case class EpicsTcsAoConfig(

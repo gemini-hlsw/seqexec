@@ -17,7 +17,6 @@ import seqexec.server.altair.AltairController
 import seqexec.server.altair.AltairController.AltairOff
 import seqexec.server.tcs.TcsController.LightSource.Sky
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsControllerEpicsCommon.{AoFold, BaseEpicsTcsConfig, InstrumentPorts}
 import seqexec.server.tcs.TcsNorthControllerEpicsAo.EpicsTcsAoConfig
 import shapeless.tag
 import shapeless.tag.@@
