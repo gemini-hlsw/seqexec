@@ -3,7 +3,6 @@
 
 package seqexec.server.gmos
 
-import cats._
 import cats.implicits._
 import cats.effect.Concurrent
 import cats.effect.concurrent.Ref
@@ -32,7 +31,7 @@ import squants.space.AngleConversions._
 /**
   * Gmos needs different actions for N&S
   */
-class GmosInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, A <: GmosController.SiteDependentTypes](
+class GmosInstrumentActions[F[_]: Concurrent: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {

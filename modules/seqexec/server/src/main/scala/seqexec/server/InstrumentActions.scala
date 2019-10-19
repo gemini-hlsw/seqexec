@@ -78,7 +78,7 @@ object InstrumentActions {
   /**
     * Default Actions for most instruments it basically delegates to ObserveActions
     */
-  def defaultInstrumentActions[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger]
+  def defaultInstrumentActions[F[_]: Concurrent: Logger]
     : InstrumentActions[F] =
     new InstrumentActions[F] {
       def observationProgressStream(

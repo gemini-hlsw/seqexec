@@ -31,7 +31,7 @@ import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
-final case class Flamingos2[F[_]: Sync: Timer: Logger: Concurrent](
+final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   f2Controller: Flamingos2Controller[F],
   dhsClient: DhsClient[F]
 ) extends DhsInstrument[F] with InstrumentSystem[F] {

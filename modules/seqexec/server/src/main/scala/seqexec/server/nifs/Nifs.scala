@@ -38,7 +38,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Nifs[F[_]: Sync: Logger: Concurrent](
+final case class Nifs[F[_]: Logger: Concurrent](
   controller: NifsController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]

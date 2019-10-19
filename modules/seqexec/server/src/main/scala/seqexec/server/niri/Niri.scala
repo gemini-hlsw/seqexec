@@ -32,7 +32,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Niri[F[_]: Sync: Timer: Logger: Concurrent](controller: NiriController[F], dhsClient: DhsClient[F])
+final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriController[F], dhsClient: DhsClient[F])
   extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Niri._

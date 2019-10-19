@@ -33,7 +33,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: Sync: Logger: Concurrent](
+final case class Gsaoi[F[_]: Logger: Concurrent](
   controller: GsaoiController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]

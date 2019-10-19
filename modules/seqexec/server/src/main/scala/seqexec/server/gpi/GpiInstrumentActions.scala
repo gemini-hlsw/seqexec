@@ -3,7 +3,6 @@
 
 package seqexec.server.gpi
 
-import cats._
 import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
@@ -18,7 +17,7 @@ import seqexec.server.ObserveEnvironment
 /**
   * Gpi needs different actions for A&C
   */
-class GpiInstrumentActions[F[_]: MonadError[?[_], Throwable]: Logger: Concurrent]
+class GpiInstrumentActions[F[_]: Logger: Concurrent]
     extends InstrumentActions[F] {
 
   override def observationProgressStream(

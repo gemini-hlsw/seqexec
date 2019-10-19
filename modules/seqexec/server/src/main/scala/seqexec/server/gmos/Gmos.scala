@@ -45,7 +45,7 @@ import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 import shapeless.tag
 
-abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
+abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
 (val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._

@@ -30,7 +30,7 @@ import squants.time.Time
 
 import scala.reflect.ClassTag
 
-final case class Ghost[F[_]: Sync: Logger: Concurrent](controller: GhostController[F])
+final case class Ghost[F[_]: Logger: Concurrent](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 

@@ -159,7 +159,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit tio: Timer[IO], cio: Concurrent[IO]
   ): Option[Stream[IO, executeEngine.EventType]] = {
 
-    def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && v.state.runState.started
+    def isObserving[F[_]](v: Action[F]): Boolean = v.kind === ActionType.Observe && v.state.runState.started
 
     st.sequences.get(seqId)
       .flatMap { obsSeq =>

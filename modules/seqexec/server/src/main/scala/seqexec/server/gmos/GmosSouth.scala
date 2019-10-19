@@ -3,7 +3,6 @@
 
 package seqexec.server.gmos
 
-import cats.MonadError
 import cats.implicits._
 import cats.effect.Concurrent
 import cats.effect.concurrent.Ref
@@ -23,7 +22,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](
+final case class GmosSouth[F[_]: Concurrent: Logger](
  c: GmosSouthController[F],
  dhsClient: DhsClient[F],
  nsCmdR: Ref[F, Option[NSObserveCommand]]
@@ -52,7 +51,7 @@ final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](
+  def apply[F[_]: Concurrent: Logger](
     c: GmosController[F, SouthTypes],
     dhsClient: DhsClient[F],
     nsCmdR: Ref[F, Option[NSObserveCommand]]

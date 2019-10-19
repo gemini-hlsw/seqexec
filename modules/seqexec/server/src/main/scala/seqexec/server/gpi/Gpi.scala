@@ -36,7 +36,7 @@ import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 
-final case class Gpi[F[_]: MonadError[?[_], Throwable]: Timer: Logger: Concurrent](controller: GpiController[F])
+final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
