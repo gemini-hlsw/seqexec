@@ -3,9 +3,9 @@
 
 package seqexec.server.gmos
 
-import cats.MonadError
 import cats.implicits._
 import cats.effect.Concurrent
+import cats.effect.concurrent.Ref
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
 import seqexec.server.{CleanConfig, ConfigUtilOps}
@@ -22,7 +22,12 @@ import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
+final case class GmosSouth[F[_]: Concurrent: Logger](
+ c: GmosSouthController[F],
+ dhsClient: DhsClient[F],
+ nsCmdR: Ref[F, Option[NSObserveCommand]]
+) extends Gmos[F, SouthTypes](
+  c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
@@ -33,7 +38,9 @@ final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger
       config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
     override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
       config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
-  })(southConfigTypes) {
+  },
+  nsCmdR
+)(southConfigTypes) {
   override val resource: Instrument = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
 
@@ -44,5 +51,9 @@ final case class GmosSouth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
+  def apply[F[_]: Concurrent: Logger](
+    c: GmosController[F, SouthTypes],
+    dhsClient: DhsClient[F],
+    nsCmdR: Ref[F, Option[NSObserveCommand]]
+  ): GmosSouth[F] = new GmosSouth[F](c, dhsClient, nsCmdR)
 }

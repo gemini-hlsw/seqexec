@@ -3,9 +3,9 @@
 
 package seqexec.server.gmos
 
-import cats.MonadError
 import cats.implicits._
 import cats.effect.Concurrent
+import cats.effect.concurrent.Ref
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
 import seqexec.server.{CleanConfig, ConfigUtilOps}
@@ -22,7 +22,11 @@ import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosNorth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosNorthController[F], dhsClient: DhsClient[F]) extends Gmos[F, NorthTypes](c,
+final case class GmosNorth[F[_]: Concurrent: Logger](
+  c: GmosNorthController[F],
+  dhsClient: DhsClient[F],
+  nsCmdR: Ref[F, Option[NSObserveCommand]]
+) extends Gmos[F, NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
     override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
     override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
@@ -33,7 +37,9 @@ final case class GmosNorth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger
       config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
     override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
-  })(northConfigTypes) {
+  },
+  nsCmdR
+)(northConfigTypes) {
   override val resource: Instrument = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
   // TODO Use different value if using electronic offsets
@@ -43,5 +49,9 @@ final case class GmosNorth[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger
 object GmosNorth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger](c: GmosController[F, NorthTypes], dhsClient: DhsClient[F]): GmosNorth[F] = new GmosNorth[F](c, dhsClient)
+  def apply[F[_]: Concurrent: Logger](
+    c: GmosController[F, NorthTypes],
+    dhsClient: DhsClient[F],
+    nsCmdR: Ref[F, Option[NSObserveCommand]]
+  ): GmosNorth[F] = new GmosNorth[F](c, dhsClient, nsCmdR)
 }

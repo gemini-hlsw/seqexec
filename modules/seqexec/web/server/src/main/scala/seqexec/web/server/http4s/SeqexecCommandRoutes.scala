@@ -79,20 +79,38 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>
       for {
-        _    <- se.stopObserve(inputQueue, obsId)
+        _    <- se.stopObserve(inputQueue, obsId, graceful = false)
         resp <- Ok(s"Stop requested for $obsId on step $stepId")
+      } yield resp
+
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" as _ =>
+      for {
+        _    <- se.stopObserve(inputQueue, obsId, graceful = true)
+        resp <- Ok(s"Stop gracefully requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
       for {
-        _    <- se.abortObserve(inputQueue, obsId)
+        _    <- se.abortObserve(inputQueue, obsId, graceful = false)
         resp <- Ok(s"Abort requested for $obsId on step $stepId")
+      } yield resp
+
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abortGracefully" as _ =>
+      for {
+        _    <- se.abortObserve(inputQueue, obsId, graceful = true)
+        resp <- Ok(s"Abort gracefully requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>
       for {
-        _    <- se.pauseObserve(inputQueue, obsId)
+        _    <- se.pauseObserve(inputQueue, obsId, graceful = false)
         resp <- Ok(s"Pause observation requested for $obsId on step $stepId")
+      } yield resp
+
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" as _ =>
+      for {
+        _    <- se.pauseObserve(inputQueue, obsId, graceful = true)
+        resp <- Ok(s"Pause observation gracefully requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>

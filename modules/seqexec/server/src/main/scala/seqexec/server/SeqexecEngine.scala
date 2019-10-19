@@ -52,26 +52,12 @@ import shapeless.tag
 class SeqexecEngine(
   val systems: Systems[IO],
   settings: Settings,
-  sm: SeqexecMetrics)(
-  implicit ceio: ConcurrentEffect[IO], tio: Timer[IO], L: Logger[IO]
+  sm: SeqexecMetrics,
+  translator: SeqTranslate
+)(
+  implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
-
-  private val translatorSettings = TranslateSettings(
-    tcsKeywords = settings.tcsControl.realKeywords,
-    f2Keywords = settings.f2Control.realKeywords,
-    gwsKeywords = settings.gwsControl.realKeywords,
-    gcalKeywords = settings.gcalControl.realKeywords,
-    gmosKeywords = settings.gmosControl.realKeywords,
-    gnirsKeywords = settings.gnirsControl.realKeywords,
-    niriKeywords = settings.niriControl.realKeywords,
-    nifsKeywords = settings.nifsControl.realKeywords,
-    altairKeywords = settings.altairControl.realKeywords,
-    gsaoiKeywords = settings.gsaoiControl.realKeywords,
-    gemsKeywords = settings.gemsControl.realKeywords
-  )
-
-  private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
   private val odbLoader = new ODBSequencesLoader(systems.odb, translator)
 
@@ -216,16 +202,16 @@ class SeqexecEngine(
   : Stream[IO, (executeEngine.ResultType, EngineState)] =
     executeEngine.process(iterateQueues)(p)(s0)
 
-  def stopObserve[F[_]](q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
-    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.stopObserve(seqId))
+  def stopObserve[F[_]](q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
+    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.stopObserve(seqId, graceful))
   )
 
-  def abortObserve[F[_]](q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
-    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.abortObserve(seqId))
+  def abortObserve[F[_]](q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
+    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.abortObserve(seqId, graceful))
   )
 
-  def pauseObserve[F[_]](q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
-    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.pauseObserve(seqId))
+  def pauseObserve[F[_]](q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
+    Event.actionStop[IO, executeEngine.ConcreteTypes](seqId, translator.pauseObserve(seqId, graceful))
   )
 
   def resumeObserve[F[_]](q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
@@ -497,7 +483,27 @@ object SeqexecEngine extends SeqexecConfiguration {
            implicit ceio: ConcurrentEffect[IO],
                     tio: Timer[IO],
                     L: Logger[IO]
-  ): SeqexecEngine = new SeqexecEngine(systems, settings, c)
+  ): IO[SeqexecEngine] = createTranslator(systems, settings).map(new SeqexecEngine(systems, settings, c, _))
+
+  def createTranslator(systems: Systems[IO], settings: Settings)(implicit L: Logger[IO]): IO[SeqTranslate] = {
+
+    val translatorSettings = TranslateSettings(
+      tcsKeywords = settings.tcsControl.realKeywords,
+      f2Keywords = settings.f2Control.realKeywords,
+      gwsKeywords = settings.gwsControl.realKeywords,
+      gcalKeywords = settings.gcalControl.realKeywords,
+      gmosKeywords = settings.gmosControl.realKeywords,
+      gnirsKeywords = settings.gnirsControl.realKeywords,
+      niriKeywords = settings.niriControl.realKeywords,
+      nifsKeywords = settings.nifsControl.realKeywords,
+      altairKeywords = settings.altairControl.realKeywords,
+      gsaoiKeywords = settings.gsaoiControl.realKeywords,
+      gemsKeywords = settings.gemsControl.realKeywords
+    )
+
+    SeqTranslate(settings.site, systems, translatorSettings)
+
+  }
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))

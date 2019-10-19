@@ -5,8 +5,7 @@ package seqexec.server.niri
 
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
@@ -33,7 +32,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Niri[F[_]: Sync: Timer: Logger](controller: NiriController[F], dhsClient: DhsClient[F])
+final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriController[F], dhsClient: DhsClient[F])
   extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Niri._
@@ -46,9 +45,11 @@ final case class Niri[F[_]: Sync: Timer: Logger](controller: NiriController[F], 
   }.getOrElse(LightSinkName.Niri_f6)
 
   override val contributorName: String = "mko-dc-data-niri"
-  override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl(StopObserveCmd(controller.stopObserve),
-                    AbortObserveCmd(controller.abortObserve))
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
+    UnpausableControl(
+      StopObserveCmd(_ => controller.stopObserve),
+      AbortObserveCmd(_ => controller.abortObserve)
+    )
 
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>

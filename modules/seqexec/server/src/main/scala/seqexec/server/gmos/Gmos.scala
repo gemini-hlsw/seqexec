@@ -7,13 +7,13 @@ import cats._
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
-import cats.effect.Concurrent
+import cats.effect.{Concurrent, Sync}
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import gem.enum.LightSinkName
 import gsp.math.Angle
@@ -21,6 +21,9 @@ import gsp.math.Offset
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
+
+import cats.effect.concurrent.Ref
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -42,8 +45,8 @@ import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 import shapeless.tag
 
-abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
-(controller: GmosController[F, T], ss: SiteSpecifics[T])
+abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
+(val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
@@ -54,17 +57,47 @@ abstract class Gmos[F[_]: MonadError[?[_], Throwable]: Concurrent: Logger, T <: 
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  val continueCommand: Time => F[ObserveCommandResult] =
-    controller.resumePaused
+  val nsCmdRef: Ref[F, Option[NSObserveCommand]] = nsCmdR
 
-  override val observeControl: InstrumentSystem.CompleteControl[F] = CompleteControl(
-    StopObserveCmd(controller.stopObserve),
-    AbortObserveCmd(controller.abortObserve),
-    PauseObserveCmd(controller.pauseObserve),
-    ContinuePausedCmd(continueCommand),
-    StopPausedCmd(controller.stopPaused),
-    AbortPausedCmd(controller.abortPaused)
-  )
+  val nsCount: F[Int] = controller.nsCount
+
+  override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F] =
+    if(isNodAndShuffle(config))
+      CompleteControl(
+        StopObserveCmd(stopNS),
+        AbortObserveCmd(abortNS),
+        PauseObserveCmd(pauseNS),
+        ContinuePausedCmd(controller.resumePaused),
+        StopPausedCmd(controller.stopPaused),
+        AbortPausedCmd(controller.abortPaused)
+      )
+    else
+      CompleteControl(
+        StopObserveCmd(_ => controller.stopObserve),
+        AbortObserveCmd(_ => controller.abortObserve),
+        PauseObserveCmd(_ => controller.pauseObserve),
+        ContinuePausedCmd(controller.resumePaused),
+        StopPausedCmd(controller.stopPaused),
+        AbortPausedCmd(controller.abortPaused)
+      )
+
+  def stopNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.StopGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.StopImmediately.some) *> controller.stopObserve
+
+  def abortNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.AbortGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
+
+  def pauseNS(gracefully: Boolean): F[Unit] =
+    if(gracefully)
+      nsCmdRef.set(NSObserveCommand.PauseGracefully.some)
+    else
+      nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.stopObserve
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
     case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
@@ -292,5 +325,7 @@ object Gmos {
     } yield
       DCConfig(exposureTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
+  def nsCmdRef[F[_]: Sync]: F[Ref[F, Option[NSObserveCommand]]] = Ref.of(none)
 
  }

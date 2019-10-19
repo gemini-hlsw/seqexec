@@ -385,16 +385,7 @@ object GmosControllerEpics extends GmosEncoders {
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
           sys.observeCmd.setTimeout[IO](expTime + ReadoutTimeout) *>
-          sys.observeCmd.post[IO].flatMap {
-            case ObserveCommandResult.Paused =>
-              sys.nsState.map(GmosEncoders.nsStateDecoder.decode).map {
-                case Some(NodAndShuffleState.NodShuffle) =>
-                  ObserveCommandResult.Partial
-                case _ =>
-                  ObserveCommandResult.Paused
-                }
-            case x => x.pure[IO]
-          }
+          sys.observeCmd.post[IO]
 
       private def failOnDHSNotConected: IO[Unit] =
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(IO.unit,
@@ -458,7 +449,11 @@ object GmosControllerEpics extends GmosEncoders {
           IO(sys.observeState))
       }
 
-  }
+      override def nsCount: IO[Int] = for{
+        a <- sys.aExpCount
+        b <- sys.bExpCount
+      } yield a + b
+    }
 
   // Parameters to define a ROI
   sealed abstract case class XStart(value: Int)

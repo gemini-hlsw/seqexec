@@ -5,7 +5,7 @@ package seqexec.server.nifs
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import cats.implicits._
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
@@ -38,7 +38,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Nifs[F[_]: Sync: Logger](
+final case class Nifs[F[_]: Logger: Concurrent](
   controller: NifsController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
@@ -50,9 +50,9 @@ final case class Nifs[F[_]: Sync: Logger](
 
   override val contributorName: String = "NIFS"
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl(StopObserveCmd(controller.stopObserve),
-                    AbortObserveCmd(controller.abortObserve))
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
+    UnpausableControl(StopObserveCmd(_ => controller.stopObserve),
+      AbortObserveCmd(_ => controller.abortObserve))
 
   override def observe(
     config: CleanConfig

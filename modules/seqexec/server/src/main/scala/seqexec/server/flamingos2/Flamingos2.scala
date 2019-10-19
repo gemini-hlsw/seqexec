@@ -5,8 +5,7 @@ package seqexec.server.flamingos2
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
@@ -32,7 +31,10 @@ import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
-final case class Flamingos2[F[_]: Sync: Timer: Logger](f2Controller: Flamingos2Controller[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
+final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
+  f2Controller: Flamingos2Controller[F],
+  dhsClient: DhsClient[F]
+) extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Flamingos2._
 
@@ -46,7 +48,7 @@ final case class Flamingos2[F[_]: Sync: Timer: Logger](f2Controller: Flamingos2C
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
