@@ -10,7 +10,6 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.server.tcs.TcsController._
 import seqexec.model.enum.NodAndShuffleStage
 
-
 class TcsControllerSim[F[_]: Applicative: Logger] {
 
   def info(msg: String): F[Unit] = Logger[F].info(msg)

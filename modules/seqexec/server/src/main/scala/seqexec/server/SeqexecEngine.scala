@@ -591,7 +591,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     }._2
   }
 
-  /*
+  /**
    * shouldSchedule checks if a set of sequences are candidates for been run in a queue.
    * It is used to check if sequences added to a queue should be started.
    */

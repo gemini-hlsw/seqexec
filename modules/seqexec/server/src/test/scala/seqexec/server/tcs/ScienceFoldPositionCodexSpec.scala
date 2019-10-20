@@ -8,7 +8,6 @@ import ScienceFoldPositionCodex._
 import seqexec.server.EpicsCodex._
 import gem.enum.LightSinkName.{Gmos, Gsaoi, Nifs, Niri_f32, F2}
 import seqexec.server.tcs.TcsController.LightSource.{AO, GCAL, Sky}
-import seqexec.server.tcs.TcsControllerEpicsCommon.ScienceFold
 import org.scalatest.flatspec.AnyFlatSpec
 
 class ScienceFoldPositionCodexSpec extends AnyFlatSpec {

@@ -7,15 +7,13 @@ import cats.implicits._
 import atto._, Atto._
 import gem.enum.LightSinkName
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}
+import seqexec.server.tcs.TcsController.LightSource._
 import seqexec.server.tcs.TcsController.LightSource
-import seqexec.server.tcs.TcsControllerEpicsCommon.ScienceFold.{Parked, Position}
-import seqexec.server.tcs.TcsControllerEpicsCommon.ScienceFold
+import seqexec.server.tcs.ScienceFold.{Parked, Position}
 
 // Decoding and encoding the science fold position require some common definitions, therefore I
 // put them inside an object
-private[server] object ScienceFoldPositionCodex {
-
-  import LightSource._
+private[server] trait ScienceFoldPositionCodex {
 
   private val AO_PREFIX = "ao2"
   private val GCAL_PREFIX = "gcal2"
@@ -43,6 +41,6 @@ private[server] object ScienceFoldPositionCodex {
     }
   })
 
-
-
 }
+
+object ScienceFoldPositionCodex extends ScienceFoldPositionCodex
