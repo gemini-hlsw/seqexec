@@ -68,7 +68,7 @@ object Systems {
     else                                                          TcsNorthControllerSim[IO].pure[IO]
 
   def altair(settings: Settings)(implicit L: Logger[IO]): IO[AltairController[IO]] =
-    if (settings.altairControl.command && settings.tcsControl.command) AltairControllerEpics.pure[IO]
+    if (settings.altairControl.command && settings.tcsControl.command) AltairControllerEpics(AltairEpics.instance, TcsEpics.instance).pure[IO]
     else                                                               AltairControllerSim[IO].pure[IO]
 
   def gems(settings: Settings, gsaoiController: GsaoiGuider[IO])(implicit L: Logger[IO]): IO[GemsController[IO]] =
@@ -76,27 +76,27 @@ object Systems {
     else                                                             GemsControllerSim[IO].pure[IO]
 
   def gsaoi(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GsaoiFullHandler[IO]] =
-    if (settings.gsaoiControl.command) GsaoiControllerEpics().pure[IO]
+    if (settings.gsaoiControl.command) GsaoiControllerEpics(GsaoiEpics.instance).pure[IO]
     else                               GsaoiControllerSim[IO]
 
   def gnirs(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GnirsController[IO]] =
-    if (settings.gnirsControl.command) GnirsControllerEpics().pure[IO]
+    if (settings.gnirsControl.command) GnirsControllerEpics(GnirsEpics.instance).pure[IO]
     else                               GnirsControllerSim[IO]
 
   def niri(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[NiriController[IO]] =
-    if (settings.niriControl.command) NiriControllerEpics().pure[IO]
+    if (settings.niriControl.command) NiriControllerEpics(NiriEpics.instance).pure[IO]
     else                              NiriControllerSim[IO]
 
   def nifs(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[NifsController[IO]] =
-    if (settings.nifsControl.command) NifsControllerEpics().pure[IO]
+    if (settings.nifsControl.command) NifsControllerEpics(NifsEpics.instance).pure[IO]
     else                              NifsControllerSim[IO]
 
   def gmosSouth(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosSouthController[IO]] =
-    if (settings.gmosControl.command) GmosSouthControllerEpics().pure[IO]
+    if (settings.gmosControl.command) GmosSouthControllerEpics(GmosEpics.instance).pure[IO]
     else                              GmosControllerSim.south[IO]
 
   def gmosNorth(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosNorthController[IO]] =
-    if (settings.gmosControl.command) GmosNorthControllerEpics().pure[IO]
+    if (settings.gmosControl.command) GmosNorthControllerEpics(GmosEpics.instance).pure[IO]
     else                              GmosControllerSim.north[IO]
 
   def flamingos2(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[Flamingos2Controller[IO]] =

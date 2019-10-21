@@ -383,14 +383,14 @@ object TcsSouthControllerEpicsAo {
           else M2GuideConfig.M2GuideOn(if(cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff) coma else ComaOption.ComaOff, ss)
         case x                     => x
       }(cfg)
-
-    // Disable Mount guiding if M2 guiding is disabled
-    val normalizeMountGuiding: Endo[TcsSouthAoConfig] = cfg =>
-      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
-        case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) => MountGuideOption.MountGuideOn
-        case _                                                              => MountGuideOption.MountGuideOff
-      } }(cfg)
   }
+
+  // Disable Mount guiding if M2 guiding is disabled
+  val normalizeMountGuiding: Endo[TcsSouthAoConfig] = cfg =>
+    (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
+      case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) => MountGuideOption.MountGuideOn
+      case _                                                              => MountGuideOption.MountGuideOff
+    } }(cfg)
 
   def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
     new TcsSouthControllerEpicsAoImpl(epicsSys)
