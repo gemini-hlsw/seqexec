@@ -90,9 +90,10 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-    case RunStarted(_) | RunStop(_) | RunAbort(_) | RunObsPause(_) |
-        RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) |
-        RunResource(_, _, _) =>
+    case RunStarted(_) | RunStop(_) | RunGracefulStop(_) |
+         RunAbort(_) | RunObsPause(_) | RunGracefulObsPause(_) |
+         RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) |
+         RunResource(_, _, _) =>
       noChange
 
     case RunSync(id) =>

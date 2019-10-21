@@ -79,6 +79,18 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
             }))
   }
 
+  def handleGracefulStop: PartialFunction[Any, ActionResult[M]] = {
+    case RequestGracefulStop(id, step) =>
+      effectOnly(
+        Effect(
+          SeqexecWebClient
+            .stopGracefully(id, step)
+            .as(RunGracefulStop(id))
+            .recover {
+              case _ => RunGracefulStopFailed(id)
+            }))
+  }
+
   def handleAbort: PartialFunction[Any, ActionResult[M]] = {
     case RequestAbort(id, step) =>
       effectOnly(
@@ -100,6 +112,18 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
             .as(RunObsPause(id))
             .recover {
               case _ => RunObsPauseFailed(id)
+            }))
+  }
+
+  def handleGracefulObsPause: PartialFunction[Any, ActionResult[M]] = {
+    case RequestGracefulObsPause(id, step) =>
+      effectOnly(
+        Effect(
+          SeqexecWebClient
+            .pauseObsGracefully(id, step)
+            .as(RunGracefulObsPause(id))
+            .recover {
+              case _ => RunGracefulObsPauseFailed(id)
             }))
   }
 
@@ -149,8 +173,10 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
          handlePause,
          handleCancelPause,
          handleStop,
+         handleGracefulStop,
          handleAbort,
          handleObsPause,
+         handleGracefulObsPause,
          handleObsResume,
          handleSync,
          handleRunFrom,

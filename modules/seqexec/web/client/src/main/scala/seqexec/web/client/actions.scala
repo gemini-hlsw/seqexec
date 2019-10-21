@@ -48,22 +48,24 @@ object actions {
       extends Action
   case object SelectCalibrationQueue extends Action
   case object SelectRoot extends Action
-  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int)
+  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: StepId)
       extends Action
   final case class ShowPreviewStepConfig(i:    Instrument,
                                          id:   Observation.Id,
-                                         step: Int)
+                                         step: StepId)
       extends Action
 
   // Actions related to executing sequences
-  final case class RequestRun(s:         Observation.Id) extends Action
-  final case class RequestSync(s:        Observation.Id) extends Action
-  final case class RequestPause(s:       Observation.Id) extends Action
-  final case class RequestCancelPause(s: Observation.Id) extends Action
-  final case class RequestStop(id:       Observation.Id, step: Int) extends Action
-  final case class RequestAbort(id:      Observation.Id, step: Int) extends Action
-  final case class RequestObsPause(id:   Observation.Id, step: Int) extends Action
-  final case class RequestObsResume(id:  Observation.Id, step: Int) extends Action
+  final case class RequestRun(s:               Observation.Id) extends Action
+  final case class RequestSync(s:              Observation.Id) extends Action
+  final case class RequestPause(s:             Observation.Id) extends Action
+  final case class RequestCancelPause(s:       Observation.Id) extends Action
+  final case class RequestStop(id:             Observation.Id, step: StepId) extends Action
+  final case class RequestGracefulStop(id:     Observation.Id, step: StepId) extends Action
+  final case class RequestAbort(id:            Observation.Id, step: StepId) extends Action
+  final case class RequestObsPause(id:         Observation.Id, step: StepId) extends Action
+  final case class RequestGracefulObsPause(id: Observation.Id, step: StepId) extends Action
+  final case class RequestObsResume(id:        Observation.Id, step: StepId) extends Action
   case object RequestSoundEcho extends Action
 
   final case class RequestResourceRun(id:       Observation.Id,
@@ -94,26 +96,30 @@ object actions {
   final case class RunFromFailed(id: Observation.Id, step: StepId)
       extends Action
 
-  final case class  RunStarted(s:             Observation.Id) extends Action
-  final case class  RunPaused(s:              Observation.Id) extends Action
-  final case class  RunCancelPaused(s:        Observation.Id) extends Action
-  final case class  RunSync(s:                Observation.Id) extends Action
-  final case class  RunStartFailed(s:         Observation.Id) extends Action
-  final case class  RunPauseFailed(s:         Observation.Id) extends Action
-  final case class  RunCancelPauseFailed(s:   Observation.Id) extends Action
-  final case class  RunSyncFailed(s:          Observation.Id) extends Action
-  final case class  RunStop(s:                Observation.Id) extends Action
-  final case class  RunStopCompleted(s:       Observation.Id) extends Action
-  final case class  RunStopFailed(s:          Observation.Id) extends Action
-  final case class  RunAbort(s:               Observation.Id) extends Action
-  final case class  RunAbortFailed(s:         Observation.Id) extends Action
-  final case class  RunObsPause(s:            Observation.Id) extends Action
-  final case class  RunObsResume(s:           Observation.Id) extends Action
-  final case class  RunObsPauseFailed(s:      Observation.Id) extends Action
-  final case class  RunObsResumeFailed(s:     Observation.Id) extends Action
+  final case class  RunStarted(s:                Observation.Id) extends Action
+  final case class  RunPaused(s:                 Observation.Id) extends Action
+  final case class  RunCancelPaused(s:           Observation.Id) extends Action
+  final case class  RunSync(s:                   Observation.Id) extends Action
+  final case class  RunStartFailed(s:            Observation.Id) extends Action
+  final case class  RunPauseFailed(s:            Observation.Id) extends Action
+  final case class  RunCancelPauseFailed(s:      Observation.Id) extends Action
+  final case class  RunSyncFailed(s:             Observation.Id) extends Action
+  final case class  RunStop(s:                   Observation.Id) extends Action
+  final case class  RunGracefulStop(s:           Observation.Id) extends Action
+  final case class  RunStopCompleted(s:          Observation.Id) extends Action
+  final case class  RunStopFailed(s:             Observation.Id) extends Action
+  final case class  RunGracefulStopFailed(s:     Observation.Id) extends Action
+  final case class  RunAbort(s:                  Observation.Id) extends Action
+  final case class  RunAbortFailed(s:            Observation.Id) extends Action
+  final case class  RunObsPause(s:               Observation.Id) extends Action
+  final case class  RunGracefulObsPause(s:       Observation.Id) extends Action
+  final case class  RunObsResume(s:              Observation.Id) extends Action
+  final case class  RunObsPauseFailed(s:         Observation.Id) extends Action
+  final case class  RunGracefulObsPauseFailed(s: Observation.Id) extends Action
+  final case class  RunObsResumeFailed(s:        Observation.Id) extends Action
 
-  final case class  ClearRunOnError(s:        Observation.Id)     extends Action
-  final case class  ClearOperations(s:        Observation.Id)     extends Action
+  final case class  ClearRunOnError(s:           Observation.Id)  extends Action
+  final case class  ClearOperations(s:           Observation.Id)  extends Action
   final case object ClearAllOperations                            extends Action
   final case class  ClearAllResourceOperations(s: Observation.Id) extends Action
   final case class  ClearAllResourceOperationsOnStepChange(s: Observation.Id, step: StepId) extends Action
