@@ -108,7 +108,7 @@ object OffsetsDisplayCell {
           <.td(
             ^.width := width.px,
             offsetAngle(offsetAP.toAngle)
-          ),
+          )
         ),
         <.tr(
           <.td(
