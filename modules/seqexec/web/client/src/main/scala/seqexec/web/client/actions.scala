@@ -48,11 +48,11 @@ object actions {
       extends Action
   case object SelectCalibrationQueue extends Action
   case object SelectRoot extends Action
-  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int)
+  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: StepId)
       extends Action
   final case class ShowPreviewStepConfig(i:    Instrument,
                                          id:   Observation.Id,
-                                         step: Int)
+                                         step: StepId)
       extends Action
 
   // Actions related to executing sequences
@@ -60,12 +60,12 @@ object actions {
   final case class RequestSync(s:              Observation.Id) extends Action
   final case class RequestPause(s:             Observation.Id) extends Action
   final case class RequestCancelPause(s:       Observation.Id) extends Action
-  final case class RequestStop(id:             Observation.Id, step: Int) extends Action
-  final case class RequestGracefulStop(id:     Observation.Id, step: Int) extends Action
-  final case class RequestAbort(id:            Observation.Id, step: Int) extends Action
-  final case class RequestObsPause(id:         Observation.Id, step: Int) extends Action
-  final case class RequestGracefulObsPause(id: Observation.Id, step: Int) extends Action
-  final case class RequestObsResume(id:        Observation.Id, step: Int) extends Action
+  final case class RequestStop(id:             Observation.Id, step: StepId) extends Action
+  final case class RequestGracefulStop(id:     Observation.Id, step: StepId) extends Action
+  final case class RequestAbort(id:            Observation.Id, step: StepId) extends Action
+  final case class RequestObsPause(id:         Observation.Id, step: StepId) extends Action
+  final case class RequestGracefulObsPause(id: Observation.Id, step: StepId) extends Action
+  final case class RequestObsResume(id:        Observation.Id, step: StepId) extends Action
   case object RequestSoundEcho extends Action
 
   final case class RequestResourceRun(id:       Observation.Id,
