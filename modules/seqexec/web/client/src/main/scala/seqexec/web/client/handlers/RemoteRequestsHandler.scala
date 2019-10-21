@@ -84,7 +84,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
       effectOnly(
         Effect(
           SeqexecWebClient
-            .stop(id, step)
+            .stopGracefully(id, step)
             .as(RunGracefulStop(id))
             .recover {
               case _ => RunGracefulStopFailed(id)
