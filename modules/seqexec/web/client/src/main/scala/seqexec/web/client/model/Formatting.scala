@@ -50,7 +50,7 @@ object Formatting {
 
   implicit class OffsetWidthsFnsOps(val steps: List[Step]) extends AnyVal {
     private def maxWidth(angles: List[Angle]): Double =
-      angles.map(angle => tableTextWidth(offsetAngle(angle))).max
+      angles.map(angle => tableTextWidth(offsetAngle(angle))).maximumOption.orEmpty
 
     // Calculate the widest offset step, widest axis label and widest NS nod label
     def sequenceOffsetMaxWidth: (Double, Double, Double) =

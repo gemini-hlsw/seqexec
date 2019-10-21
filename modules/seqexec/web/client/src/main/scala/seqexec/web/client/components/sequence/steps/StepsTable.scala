@@ -368,12 +368,10 @@ final case class StepsTable(
 
   val offsetWidth: Option[Double] = {
     val (maxWidth, maxAxisLabelWidth, maxNodLabelWidth) = stepsList.sequenceOffsetMaxWidth
-    val (labelsWidth, padding) =
-      if(maxNodLabelWidth === 0.0)
-        (maxAxisLabelWidth, OffsetPadding * 4)
-      else
-        (maxAxisLabelWidth * 2 + maxNodLabelWidth * 2, OffsetPadding * 7)
-    (maxWidth + labelsWidth + OffsetIconWidth + padding).some
+    if(maxNodLabelWidth === 0.0)
+      (maxWidth + maxAxisLabelWidth + OffsetIconWidth + OffsetPadding * 4).some
+    else
+      ((maxWidth + maxAxisLabelWidth + maxNodLabelWidth) * 2 + OffsetIconWidth + OffsetPadding * 5).some
   }
 
   val exposure: Step => Option[String] = s =>

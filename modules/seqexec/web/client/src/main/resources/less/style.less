@@ -516,19 +516,21 @@ body {
   padding-right: @table_row_left_padding;
 }
 
-.SeqexecStyles-offsetsTable {
+.SeqexecStyles-offsetsBlock {
   margin-left: auto;
-  border-spacing: 0;
-
-  td {
-    padding: 0;
-  }
+  display: flex;
+  align-items: center;
+  text-align: right;
 }
 
 .SeqexecStyles-offsetsNodLabel {
   font-weight: bold;
-  padding-left: 10px !important;;
-  padding-right: 7px !important;
+  margin-left: 10px;
+  margin-right: 3px;
+}
+
+.SeqexecStyles-offsetComponent {
+  display: flex;
 }
 
 .SeqexecStyles-configuringRow {

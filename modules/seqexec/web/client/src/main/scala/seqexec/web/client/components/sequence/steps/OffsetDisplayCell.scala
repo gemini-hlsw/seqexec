@@ -42,26 +42,27 @@ object OffsetsDisplayCell {
     val offsetP = step.offset[OffsetType.Telescope, Axis.P]
     val offsetQ = step.offset[OffsetType.Telescope, Axis.Q]
 
-    <.table(
-      SeqexecStyles.offsetsTable,
-      ^.textAlign := "right",
-      <.tbody(
-        <.tr(
-          <.td(
+    <.div(
+      SeqexecStyles.offsetsBlock,
+      <.div(
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
             ^.width := axisLabelWidth.px,
             offsetAxis[Axis.P]
           ),
-          <.td(
+          <.div(
             ^.width := offsetWidth.px,
             offsetAngle(offsetP.toAngle)
-            )
-          ),
-        <.tr(
-          <.td(
+          )
+        ),
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
             ^.width := axisLabelWidth.px,
             offsetAxis[Axis.Q]
           ),
-          <.td(
+          <.div(
             ^.width := offsetWidth.px,
             offsetAngle(offsetQ.toAngle)
           )
@@ -76,54 +77,61 @@ object OffsetsDisplayCell {
     val offsetAP = step.offset[OffsetType.NSNodA, Axis.P]
     val offsetAQ = step.offset[OffsetType.NSNodA, Axis.Q]
 
-    <.table(
-      SeqexecStyles.offsetsTable,
-      ^.textAlign := "right",
-      <.tbody(
-        <.tr(
-          <.td(
-            ^.rowSpan := 2,
-            ^.width := nsNodLabelWidth.px,
-            SeqexecStyles.offsetsNodLabel,
-            offsetNSNod[OffsetType.NSNodB]
-          ),
-          <.td(
+    <.div(
+      SeqexecStyles.offsetsBlock,
+      <.div(
+          ^.width := nsNodLabelWidth.px,
+          SeqexecStyles.offsetsNodLabel,
+          offsetNSNod[OffsetType.NSNodB]
+      ),
+      <.div(
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
             ^.width := axisLabelWidth.px,
             offsetAxis[Axis.P]
           ),
-          <.td(
+          <.div(
             ^.width := width.px,
             offsetAngle(offsetBP.toAngle)
+          )
+        ),
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
+            ^.width := axisLabelWidth.px,
+            offsetAxis[Axis.Q]
           ),
-          <.td(
-            ^.rowSpan := 2,
-            ^.width := nsNodLabelWidth.px,
-            SeqexecStyles.offsetsNodLabel,
-            offsetNSNod[OffsetType.NSNodA]
-          ),
-          <.td(
+          <.div(
+            ^.width := width.px,
+            offsetAngle(offsetBQ.toAngle)
+          )
+        )
+      ),
+      <.div(
+        ^.width := nsNodLabelWidth.px,
+        SeqexecStyles.offsetsNodLabel,
+        offsetNSNod[OffsetType.NSNodA]
+      ),
+      <.div(
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
             ^.width := axisLabelWidth.px,
             offsetAxis[Axis.P]
           ),
-          <.td(
+          <.div(
             ^.width := width.px,
             offsetAngle(offsetAP.toAngle)
           )
         ),
-        <.tr(
-          <.td(
+        <.div(
+          SeqexecStyles.offsetComponent,
+          <.div(
             ^.width := axisLabelWidth.px,
             offsetAxis[Axis.Q]
           ),
-          <.td(
-            ^.width := width.px,
-            offsetAngle(offsetBQ.toAngle)
-          ),
-          <.td(
-            ^.width := axisLabelWidth.px,
-            offsetAxis[Axis.Q]
-          ),
-          <.td(
+          <.div(
             ^.width := width.px,
             offsetAngle(offsetAQ.toAngle)
           )
