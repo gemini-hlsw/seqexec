@@ -7,7 +7,8 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
-import org.scalatest.{ Matchers, NonImplicitAssertions}
+import org.scalatest.NonImplicitAssertions
+import org.scalatest.matchers.should.Matchers
 import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.{Conditions, Observer, Operator, SequenceState, StepState, UserDetails}

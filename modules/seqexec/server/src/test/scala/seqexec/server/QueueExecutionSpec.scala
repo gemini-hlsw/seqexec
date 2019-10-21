@@ -8,7 +8,8 @@ import cats.implicits._
 import fs2.concurrent.Queue
 import gem.Observation
 import monocle.Monocle.index
-import org.scalatest.{Matchers, NonImplicitAssertions}
+import org.scalatest.NonImplicitAssertions
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.Inside.inside
 import seqexec.engine.Sequence
 import seqexec.model.{CalibrationQueueId, Observer, SequenceState, UserDetails}

@@ -10,7 +10,7 @@ import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.enum._
 import gsp.math.{ Angle, Index, Offset }
 import java.time.Duration
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import scala.collection.immutable.{ TreeMap, TreeSet }
 

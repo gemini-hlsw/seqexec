@@ -7,7 +7,7 @@ import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
 import org.scalatest.PrivateMethodTester
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import seqexec.model.enum._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.model.M1GuideConfig

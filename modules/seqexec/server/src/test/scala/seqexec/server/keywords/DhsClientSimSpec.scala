@@ -7,7 +7,7 @@ import cats.effect.IO
 import gem.enum.KeywordName
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.time.LocalDate
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import seqexec.server.keywords.DhsClient.Permanent
 import org.scalatest.flatspec.AnyFlatSpec
 

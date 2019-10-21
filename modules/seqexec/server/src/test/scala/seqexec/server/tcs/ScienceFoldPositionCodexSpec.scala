@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import ScienceFoldPositionCodex._
 import seqexec.server.EpicsCodex._
 import gem.enum.LightSinkName.{Gmos, Gsaoi, Nifs, Niri_f32, F2}

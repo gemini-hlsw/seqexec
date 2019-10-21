@@ -9,6 +9,7 @@ import doobie.postgres.implicits._
 import gem._
 import gem.enum.ProgramRole
 import gsp.math.syntax.prism._
+import org.scalatest.matchers.should.Matchers
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 

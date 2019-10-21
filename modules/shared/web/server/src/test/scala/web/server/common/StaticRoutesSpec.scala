@@ -9,7 +9,8 @@ import org.http4s.MediaType._
 import org.http4s._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
 import org.http4s.Uri.uri
-import org.scalatest.{EitherValues, Matchers}
+import org.scalatest.EitherValues
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.concurrent.duration._

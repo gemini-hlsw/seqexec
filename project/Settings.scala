@@ -62,9 +62,6 @@ object Settings {
     val flywayVersion           = "6.0.4"
 
     // test libraries
-    val scalaTest               = "3.0.5"
-    val scalaCheck              = "1.13.5"
-    val discipline              = "0.9.0"
     val xmlUnit                 = "1.6"
     val jUnitInterface          = "0.11"
     val scalaMock               = "4.1.0"
@@ -93,7 +90,7 @@ object Settings {
     val pprint                  = "0.5.5"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.6"
+    val gspMath                 = "0.1.7"
   }
 
   /**

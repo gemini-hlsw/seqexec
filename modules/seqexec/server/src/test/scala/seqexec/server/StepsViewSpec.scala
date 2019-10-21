@@ -9,7 +9,8 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside
-import org.scalatest.{Matchers, NonImplicitAssertions}
+import org.scalatest.NonImplicitAssertions
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.server.TestCommon._
 import seqexec.engine._
