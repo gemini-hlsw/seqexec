@@ -164,8 +164,9 @@ object Step {
     }
 
     def isObservePaused: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, _, o) => o === ActionStatus.Paused
-      case _                                    => false
+      case StandardStep(_, _, _, _, _, _, _, o)      => o === ActionStatus.Paused
+      case NodAndShuffleStep(_, _, _, _, _, _, _, o) => o.observing === ActionStatus.Paused
+      case _                                         => false
     }
 
     def isConfiguring: Boolean = s match {

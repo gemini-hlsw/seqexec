@@ -55,7 +55,12 @@ object operations {
       level match {
         case ObservationLevel =>
           if(isMultiLevel) {
-            List(Operations.AbortObservation)
+            if (isObservePaused) {
+              List(Operations.ResumeObservation,
+                   Operations.AbortObservation)
+            } else {
+              List(Operations.AbortObservation)
+            }
           } else {
             if (isObservePaused) {
               List(Operations.ResumeObservation,
