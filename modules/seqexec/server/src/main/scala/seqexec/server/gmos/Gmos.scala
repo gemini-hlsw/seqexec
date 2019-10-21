@@ -8,6 +8,7 @@ import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect.{Concurrent, Sync}
+import cats.effect.concurrent.Ref
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -21,9 +22,6 @@ import gsp.math.Offset
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import java.lang.{Double => JDouble, Integer => JInt}
-
-import cats.effect.concurrent.Ref
-
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -143,8 +141,8 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
   private def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
     for {
       cc <- ccConfigFromSequenceConfig(config)
-      dc <- dcConfigFromSequenceConfig(config)
       ns <- Gmos.nsConfig(config)
+      dc <- dcConfigFromSequenceConfig(config, ns)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
 
   override def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] = {
@@ -308,11 +306,16 @@ object Gmos {
     s.parseDoubleOption
       .toRight(ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting"))
 
-  def dcConfigFromSequenceConfig(config: CleanConfig): TrySeq[DCConfig] =
+  private def exposureTime(config: CleanConfig, nsConfig: NSConfig): Either[ExtractFailure, FiniteDuration] =
+    config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map { e =>
+      (e / nsConfig.exposureDivider).seconds
+    }
+
+  def dcConfigFromSequenceConfig(config: CleanConfig, nsConfig: NSConfig): TrySeq[DCConfig] =
     (for {
       obsType      <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       shutterState <- shutterStateObserveType(obsType).asRight
-      exposureTime <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+      exposureTime <- exposureTime(config, nsConfig)
       ampReadMode  <- config.extractAs[AmpReadMode](AmpReadMode.KEY)
       gainChoice   <- config.extractInstAs[AmpGain](AMP_GAIN_CHOICE_PROP)
       ampCount     <- config.extractInstAs[AmpCount](AMP_COUNT_PROP)
