@@ -83,7 +83,7 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Requests the backend to stop immediately this sequence
+    * Requests the backend to stop this sequence immediately
     */
   def stop(sid: Observation.Id, step: StepId): Future[Unit] =
     Ajax
@@ -93,7 +93,17 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Requests the backend to abort this sequenece
+    * Requests the backend to stop this sequence gracefully
+    */
+  def stopGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
+    Ajax
+      .post(
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stopGracefully"
+        )
+      .void
+
+  /**
+    * Requests the backend to abort this sequenece immediately
     */
   def abort(sid: Observation.Id, step: StepId): Future[Unit] =
     Ajax
@@ -103,13 +113,33 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Requests the backend to hold the current exposure
+    * Requests the backend to abort this sequenece gracefully
+    */
+  def abortGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
+    Ajax
+      .post(
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abortGracefully"
+        )
+      .void
+
+  /**
+    * Requests the backend to hold the current exposure immediately
     */
   def pauseObs(sid: Observation.Id, step: StepId): Future[Unit] =
     Ajax
       .post(
         url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObs"
       )
+      .void
+
+  /**
+    * Requests the backend to hold the current exposure gracefully
+    */
+  def pauseObsGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
+    Ajax
+      .post(
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObsGracefully"
+        )
       .void
 
   /**

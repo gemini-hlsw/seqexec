@@ -13,10 +13,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.operations.Operations._
 import seqexec.model.operations._
-import seqexec.web.client.actions.RequestAbort
-import seqexec.web.client.actions.RequestObsPause
-import seqexec.web.client.actions.RequestObsResume
-import seqexec.web.client.actions.RequestStop
+import seqexec.web.client.actions.{RequestAbort, RequestGracefulObsPause, RequestGracefulStop, RequestObsPause, RequestObsResume, RequestStop}
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -54,11 +51,17 @@ object ControlButtons {
   def requestStop(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
 
+  def requestGracefulStop(id: Observation.Id, stepId: Int): Callback =
+    SeqexecCircuit.dispatchCB(RequestGracefulStop(id, stepId))
+
   def requestAbort(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestAbort(id, stepId))
 
   def requestObsPause(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsPause(id, stepId))
+
+  def requestGracefulObsPause(id: Observation.Id, stepId: Int): Callback =
+    SeqexecCircuit.dispatchCB(RequestGracefulObsPause(id, stepId))
 
   def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
@@ -77,8 +80,7 @@ object ControlButtons {
                Button(
                  Button.Props(icon  = Some(IconPause),
                               color = Some("teal"),
-                              onClick =
-                                requestObsPause(p.id, p.stepId),
+                              onClick = requestObsPause(p.id, p.stepId),
                               disabled = p.requestInFlight || p.isObservePaused))
                )
            case StopObservation =>
@@ -104,43 +106,50 @@ object ControlButtons {
              Popup(
                Popup.Props("button", "Resume the current exposure"),
                Button(
-                 Button.Props(icon  = Some(IconPlay),
-                              color = Some("blue"),
-                              onClick =
-                                requestObsResume(p.id, p.stepId),
+                 Button.Props(icon     = Some(IconPlay),
+                              color    = Some("blue"),
+                              onClick  = requestObsResume(p.id, p.stepId),
                               disabled = p.requestInFlight || !p.isObservePaused))
                )
            // N&S operations
            case PauseImmediatelyObservation =>
              Popup(
-               Popup.Props("button", "Pause the current exposure immediately (Not Yet Implemented)"),
+               Popup.Props("button", "Pause the current exposure immediately"),
                Button(
-                 Button.Props(disabled = true,
-                              icon = Some(IconPause),
-                              color = Some("teal"),
-                              basic = true)))
+                 Button.Props(icon     = Some(IconPause),
+                              color    = Some("teal"),
+                              basic    = true,
+                              onClick  = requestObsPause(p.id, p.stepId),
+                              disabled = p.requestInFlight || p.isObservePaused))
+             )
            case PauseGracefullyObservation =>
              Popup(Popup.Props("button",
-                               "Pause the current exposure at the end of the cycle (Not Yet Implemented)"),
+                               "Pause the current exposure at the end of the cycle"),
                    Button(
-                     Button.Props(disabled = true,
-                                  icon  = Some(IconPause),
-                                  color = Some("teal"))))
+                     Button.Props(icon     = Some(IconPause),
+                                  color    = Some("teal"),
+                                  onClick  = requestGracefulObsPause(p.id, p.stepId),
+                                  disabled = p.requestInFlight || p.isObservePaused))
+             )
            case StopImmediatelyObservation =>
              Popup(
-               Popup.Props("button", "Stop the current exposure immediately (Not Yet Implemented)"),
+               Popup.Props("button", "Stop the current exposure immediately"),
                Button(
-                 Button.Props(disabled = true,
-                              icon = Some(IconStop),
-                              color = Some("orange"),
-                              basic = true)))
+                 Button.Props(icon     = Some(IconStop),
+                              color    = Some("orange"),
+                              basic    = true,
+                              onClick  = requestStop(p.id, p.stepId),
+                              disabled = p.requestInFlight))
+             )
            case StopGracefullyObservation =>
              Popup(Popup.Props("button",
-                               "Stop the current exposure at the end of the cycle (Not Yet Implemented)"),
+                               "Stop the current exposure at the end of the cycle"),
                    Button(
-                     Button.Props(disabled = true,
-                                  icon  = Some(IconStop),
-                                  color = Some("orange"))))
+                     Button.Props(icon  = Some(IconStop),
+                                  color = Some("orange"),
+                                  onClick  = requestGracefulStop(p.id, p.stepId),
+                                  disabled = p.requestInFlight))
+             )
          }
          .toTagMod
         )
@@ -171,18 +180,6 @@ object StepsControlButtons {
   type Props = StepsControlButtons
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-
-  def requestStop(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
-
-  def requestAbort(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestAbort(id, stepId))
-
-  def requestObsPause(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestObsPause(id, stepId))
-
-  def requestObsResume(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
 
   protected val component = ScalaComponent
     .builder[Props]("StepsControlButtons")
