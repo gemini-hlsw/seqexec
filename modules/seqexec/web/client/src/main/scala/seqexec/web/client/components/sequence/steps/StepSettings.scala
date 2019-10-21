@@ -186,6 +186,7 @@ object ObjectTypeCell {
               case StepType.Calibration                       => "blue"
               case StepType.AlignAndCalib                     => "brown"
               case StepType.NodAndShuffle                     => "olive"
+              case StepType.NodAndShuffleDark                 => "darkolive"
             }
             Label(
               Label.Props(st.show, color = stepTypeColor.some, size = p.size))
