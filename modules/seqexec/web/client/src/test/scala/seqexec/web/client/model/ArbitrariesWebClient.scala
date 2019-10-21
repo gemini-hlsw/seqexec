@@ -192,19 +192,30 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     Cogen[Zipper[SeqexecTab]]
       .contramap(_.tabs)
 
+
+  private val posNumTuple3Gen: Gen[(Double, Double, Double)] =
+    for {
+      a1 <- Gen.posNum[Double]
+      a2 <- Gen.posNum[Double]
+      a3 <- Gen.posNum[Double]
+    } yield {
+      (a1, a2, a3)
+    }
+
   implicit val arbOffsetsDisplay: Arbitrary[OffsetsDisplay] =
     Arbitrary {
       for {
-        s <- Gen.option(Gen.posNum[Double])
+        s <- Gen.option(posNumTuple3Gen)
       } yield
         s.fold(OffsetsDisplay.NoDisplay: OffsetsDisplay)(
-          OffsetsDisplay.DisplayOffsets.apply)
+          (OffsetsDisplay.DisplayOffsets.apply _).tupled
+        )
     }
 
   implicit val odCogen: Cogen[OffsetsDisplay] =
-    Cogen[Option[Double]].contramap {
-      case OffsetsDisplay.NoDisplay         => None
-      case OffsetsDisplay.DisplayOffsets(i) => Some(i)
+    Cogen[Option[(Double, Double, Double)]].contramap {
+      case OffsetsDisplay.NoDisplay                  => None
+      case OffsetsDisplay.DisplayOffsets(ow, aw, nw) => Some((ow, aw, nw))
     }
 
   implicit val arbWebSocket: Arbitrary[WebSocket] =

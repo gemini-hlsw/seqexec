@@ -8,6 +8,7 @@ import gem.arb.ArbEnumerated._
 import gsp.math.laws.discipline.FormatTests
 import gsp.math.arb.ArbOffset._
 import gsp.math.arb.ArbAngle._
+import gsp.math.Axis
 import monocle.law.discipline.LensTests
 import monocle.law.discipline.OptionalTests
 import monocle.law.discipline.PrismTests
@@ -50,9 +51,9 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("step type prism", PrismTests(stringToStepTypeP))
   checkAll("step step type optional", OptionalTests(stepTypeO))
   checkAll("telescope offset p optional",
-           OptionalTests(telescopeOffsetO(OffsetAxis.AxisP)))
+           OptionalTests(offsetO[OffsetType.Telescope, Axis.P]))
   checkAll("telescope offset q optional",
-           OptionalTests(telescopeOffsetO(OffsetAxis.AxisQ)))
+           OptionalTests(offsetO[OffsetType.Telescope, Axis.Q]))
   checkAll("step double prism", PrismTests(stringToDoubleP))
   checkAll("param guiding prism", PrismTests(stringToGuidingP))
   checkAll("telescope guiding traversal", TraversalTests(telescopeGuidingWithT))
@@ -101,9 +102,9 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("Step.configStatus",
            OptionalTests(Step.configStatus))
   checkAll("signedPFormat",
-           FormatTests(signedPFormat).formatWith(stringsOffsets))
+           FormatTests(signedComponentFormat[Axis.P]).formatWith(stringsOffsets))
   checkAll("signedQFormat",
-           FormatTests(signedQFormat).formatWith(stringsOffsets))
+           FormatTests(signedComponentFormat[Axis.Q]).formatWith(stringsOffsets))
   checkAll("signedArcsecFormat",
            FormatTests(signedArcsecFormat).formatWith(stringsOffsets))
 }

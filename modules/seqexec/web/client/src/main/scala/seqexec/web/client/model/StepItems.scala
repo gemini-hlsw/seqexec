@@ -3,13 +3,14 @@
 
 package seqexec.web.client.model
 
-import cats.Eq
+import cats.{Eq, Monoid}
 import cats.implicits._
 import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
 import gsp.math.Offset
+import seqexec.model.OffsetConfigResolver
 import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
 import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, SequenceState, Step, StepId, enumerations}
 import seqexec.web.client.model.lenses._
@@ -155,10 +156,10 @@ object StepItems {
       }
     }
 
-    def offsetP: Offset.P =
-      telescopeOffsetPF.fold(s).orEmpty
-    def offsetQ: Offset.Q =
-      telescopeOffsetQF.fold(s).orEmpty
+    def offset[T, A](implicit resolver: OffsetConfigResolver[T, A],
+      m: Monoid[Offset.Component[A]]): Offset.Component[A] =
+        offsetF[T, A].fold(s).orEmpty
+
     def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
 
@@ -183,21 +184,12 @@ object StepItems {
   }
 
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {
-    // Calculate if there are non-zero offsets
-    def areNonZeroOffsets: Boolean =
-      steps
-        .map(
-            s =>
-            telescopeOffsetPF
-              .exist(_ =!= Offset.P.Zero.some)(s) || telescopeOffsetQF
-              .exist(_ =!= Offset.Q.Zero.some)(s))
-        .fold(false)(_ || _)
 
     // Offsets to be displayed with a width
     def offsetsDisplay: OffsetsDisplay = {
-      val (p, q) = steps.sequenceOffsetWidths
-      OffsetsDisplay.DisplayOffsets(scala.math.max(p, q))
+      (OffsetsDisplay.DisplayOffsets.apply _).tupled(steps.sequenceOffsetMaxWidth)
     }
+
   }
 
   sealed abstract class DetailRows(val rows: Int)
