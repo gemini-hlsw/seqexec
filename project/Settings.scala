@@ -141,9 +141,10 @@ object Settings {
     val Http4sClient           = Seq(
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
       "org.http4s" %% "http4s-async-http-client" % LibraryVersions.http4sVersion)
-    val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"                 % LibraryVersions.http4sVersion
-    val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"                     % LibraryVersions.http4sVersion
-    val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"                 % LibraryVersions.http4sVersion
+    val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"          % LibraryVersions.http4sVersion
+    val Http4sCore             = "org.http4s"                         %%  "http4s-core"               % LibraryVersions.http4sVersion
+    val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"              % LibraryVersions.http4sVersion
+    val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"          % LibraryVersions.http4sVersion
     val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-metrics" % LibraryVersions.http4sVersion
     val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
     val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)

@@ -421,7 +421,7 @@ lazy val seqexec_server = project
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
 lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
+  .crossType(CrossType.Full)
   .in(file("modules/seqexec/model"))
   .enablePlugins(GitBranchPrompt)
   .settings(
@@ -433,7 +433,9 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     Test / libraryDependencies += GspMathTestkit.value
   )
   .jvmSettings(
-    commonSettings)
+    commonSettings,
+    libraryDependencies += Http4sCore
+  )
   .jsSettings(gspScalaJsSettings)
   .jsSettings(
     // And add a custom one
