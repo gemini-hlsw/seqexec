@@ -7,5 +7,6 @@ import cats.Eq
 import java.nio.file.Path
 
 package object config {
+  // Used to internally define Eq instances
   private[config] implicit val pathEq: Eq[Path] = Eq.fromUniversalEquals
 }

@@ -3,6 +3,7 @@
 
 package seqexec.model.config
 
+import cats.implicits._
 import gem.util.Enumerated
 
 sealed trait ControlStrategy extends Product with Serializable
@@ -26,16 +27,10 @@ object ControlStrategy {
     Enumerated.of(FullControl, ReadOnly, Simulated)
 
   implicit class ControlStrategyOps(v: ControlStrategy) {
-    val connect: Boolean = v match {
-      case ControlStrategy.Simulated => false
-      case _         => true
-    }
+    val connect: Boolean = v =!= ControlStrategy.Simulated
     // If connected, then use real values for keywords
     val realKeywords: Boolean = connect
-    val command: Boolean = v match {
-      case ControlStrategy.FullControl => true
-      case _           => false
-    }
+    val command: Boolean = v === ControlStrategy.FullControl
   }
 
 }

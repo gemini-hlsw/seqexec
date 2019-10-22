@@ -5,6 +5,9 @@ package seqexec.model.config
 
 import gem.util.Enumerated
 
+/**
+ * Operating mode of the seqexec, development or production
+ */
 sealed trait Mode extends Product with Serializable
 
 object Mode {

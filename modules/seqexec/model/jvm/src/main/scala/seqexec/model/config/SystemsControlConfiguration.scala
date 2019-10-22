@@ -6,6 +6,9 @@ package seqexec.model.config
 import cats._
 import cats.implicits._
 
+/**
+  * Indicates how each subsystems is treated, e.g. full connection or simulated
+  */
 final case class SystemsControlConfiguration(
   altair:   ControlStrategy,
   gems:     ControlStrategy,
@@ -27,6 +30,24 @@ final case class SystemsControlConfiguration(
 
 object SystemsControlConfiguration {
   implicit val eqSystemsControl: Eq[SystemsControlConfiguration] =
-    Eq.by(x => (x.altair, x.gems, x.dhs, x.f2, x.gcal, x.ghost, x.gmos, x.gnirs, x.gpi, x.gpiGds, x.ghostGds, x.gsaoi, x.gws, x.nifs, x.niri, x.tcs))
+    Eq.by(
+      x =>
+        (x.altair,
+         x.gems,
+         x.dhs,
+         x.f2,
+         x.gcal,
+         x.ghost,
+         x.gmos,
+         x.gnirs,
+         x.gpi,
+         x.gpiGds,
+         x.ghostGds,
+         x.gsaoi,
+         x.gws,
+         x.nifs,
+         x.niri,
+         x.tcs)
+    )
 
 }

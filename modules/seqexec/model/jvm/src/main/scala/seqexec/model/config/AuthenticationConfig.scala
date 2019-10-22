@@ -15,7 +15,7 @@ import org.http4s.Uri
   * @param cookieName Name of the cookie to store the token
   * @param secretKey Secret key to encrypt jwt tokens
   * @param useSSL Whether we use SSL setting the cookie to be https only
-  * @param ldap Configuration for the ldap client
+  * @param ldap URL of the ldap servers
   */
 final case class AuthenticationConfig(
   sessionLifeHrs: FiniteDuration,
@@ -27,6 +27,13 @@ final case class AuthenticationConfig(
 
 object AuthenticationConfig {
   implicit val eqAuthenticationConfig: Eq[AuthenticationConfig] =
-    Eq.by(x => (x.sessionLifeHrs.toNanos, x.cookieName, x.secretKey, x.useSSL, x.ldapURLs))
+    Eq.by(
+      x =>
+        (x.sessionLifeHrs.toNanos,
+         x.cookieName,
+         x.secretKey,
+         x.useSSL,
+         x.ldapURLs)
+    )
 
 }

@@ -7,6 +7,12 @@ import cats.Eq
 import cats.implicits._
 import java.nio.file.Path
 
+/**
+  * Configuration for the TLS server
+  * @param keyStore Location where to find the keystore
+  * @param keyStorePwd Password for the keystore
+  * @param certPwd Password for the certificate used for TLS
+  */
 final case class TLSConfig(keyStore: Path, keyStorePwd: String, certPwd: String)
 
 object TLSConfig {
@@ -15,7 +21,14 @@ object TLSConfig {
     Eq.by(x => (x.keyStore, x.keyStorePwd, x.certPwd))
 }
 
-/** Configuration for the web server */
+/**
+  * Configuration for the web server side of the seqexec
+  * @param host Host name to listen, typicall 0.0.0.0
+  * @param port Port to listen for web requestes
+  * @param insecurePort Port where we setup a redirect server to send to https
+  * @param externalBaseUrl Redirects need an external facing name
+  * @param tls Configuration of TLS, optional
+  */
 final case class WebServerConfiguration(
   host:            String,
   port:            Int,

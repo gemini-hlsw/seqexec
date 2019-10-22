@@ -7,16 +7,33 @@ import cats.Eq
 import cats.implicits._
 import gem.enum.Site
 
+/**
+ * Top configuration of the seqexec
+ * @param site Site this seqexec instance handles (GN/GS)
+ * @param mode Execution mode
+ * @param seqexecEngine Configuration of the engine
+ * @param webServer Web side configuration
+ * @param smartGcal Configuration to reach SmartGCal
+ * @param authentication Configuration to support authentication
+ */
 final case class SeqexecConfiguration(
-  site:      Site,
-  mode:      Mode,
-  seqexecEngine: SeqexecServerConfiguration,
-  webServer: WebServerConfiguration,
-  smartGcal: SmartGcalConfiguration,
+  site:           Site,
+  mode:           Mode,
+  seqexecEngine:  SeqexecEngineConfiguration,
+  webServer:      WebServerConfiguration,
+  smartGcal:      SmartGcalConfiguration,
   authentication: AuthenticationConfig
 )
 
 object SeqexecConfiguration {
   implicit val eqSeqexecConfiguration: Eq[SeqexecConfiguration] =
-    Eq.by(x => (x.site, x.mode, x.seqexecEngine, x.webServer, x.smartGcal, x.authentication))
+    Eq.by(
+      x =>
+        (x.site,
+         x.mode,
+         x.seqexecEngine,
+         x.webServer,
+         x.smartGcal,
+         x.authentication)
+    )
 }
