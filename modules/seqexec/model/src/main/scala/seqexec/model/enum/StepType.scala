@@ -12,14 +12,15 @@ sealed abstract class StepType(val label: String)
 
 object StepType {
 
-  case object Object        extends StepType("OBJECT")
-  case object Arc           extends StepType("ARC")
-  case object Flat          extends StepType("FLAT")
-  case object Bias          extends StepType("BIAS")
-  case object Dark          extends StepType("DARK")
-  case object Calibration   extends StepType("CAL")
-  case object AlignAndCalib extends StepType("A & C")
-  case object NodAndShuffle extends StepType("N & S")
+  case object Object            extends StepType("OBJECT")
+  case object Arc               extends StepType("ARC")
+  case object Flat              extends StepType("FLAT")
+  case object Bias              extends StepType("BIAS")
+  case object Dark              extends StepType("DARK")
+  case object Calibration       extends StepType("CAL")
+  case object AlignAndCalib     extends StepType("A & C")
+  case object NodAndShuffle     extends StepType("N & S")
+  case object NodAndShuffleDark extends StepType("N&S DARK")
 
   implicit val show: Show[StepType] =
     Show.show(_.label)
@@ -29,6 +30,6 @@ object StepType {
 
   /** @group Typeclass Instances */
   implicit val StepTypeEnumerated: Enumerated[StepType] =
-    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib, NodAndShuffle)
+    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib, NodAndShuffle, NodAndShuffleDark)
 
 }

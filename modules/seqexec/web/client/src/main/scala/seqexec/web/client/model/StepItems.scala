@@ -71,15 +71,18 @@ object StepItems {
 
     def alignAndCalib(i: Instrument): Option[StepType.AlignAndCalib.type] =
       i match {
-        case Instrument.Gpi if stepClassO.getOption(s).forall(_ === "acq") =>
+        case Instrument.Gpi if stepClassO.getOption(s).exists(_ === "acq") =>
           StepType.AlignAndCalib.some
         case _                                                             => none
       }
 
-    def nodAndShuffle(i: Instrument): Option[StepType.NodAndShuffle.type] =
+    def nodAndShuffle(i: Instrument): Option[StepType] =
       i match {
-        case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).forall(identity) =>
-          StepType.NodAndShuffle.some
+        case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).exists(identity) =>
+          stepTypeO.getOption(s) match {
+            case Some(StepType.Dark) => StepType.NodAndShuffleDark.some
+            case _                   => StepType.NodAndShuffle.some
+          }
         case _                                                                                     => none
       }
 
