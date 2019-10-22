@@ -5,24 +5,26 @@ package seqexec.server.keywords
 
 import cats.effect.IO
 import gem.enum.KeywordName
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
 import org.scalatest.matchers.should.Matchers
-import seqexec.server.keywords.DhsClient.Permanent
 import org.scalatest.flatspec.AnyFlatSpec
+import seqexec.server.keywords.DhsClient.Permanent
 
 class DhsClientSimSpec extends AnyFlatSpec with Matchers {
-  private implicit def unsafeLogger = Slf4jLogger.unsafeCreate[IO]
+  private implicit def logger = NoOpLogger.impl[IO]
 
   "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim.unsafeApply[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).unsafeRunSync() should matchPattern {
+      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).flatMap(_.createImage(DhsClient.ImageParameters(Permanent, Nil))).unsafeRunSync() should matchPattern {
         case "S20160415S0001" =>
       }
     }
   it should "accept keywords" in {
-    val client = DhsClientSim.unsafeApply[IO](LocalDate.of(2016, 4, 15))
-    client.createImage(DhsClient.ImageParameters(Permanent, Nil)).flatMap { id =>
-      client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true)
-    }.unsafeRunSync() shouldEqual (())
+    (for {
+      client <- DhsClientSim.apply[IO]
+      id     <- client.createImage(DhsClient.ImageParameters(Permanent, Nil))
+      _      <- client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true)
+    } yield ()).unsafeRunSync() shouldEqual (())
   }
+
 }

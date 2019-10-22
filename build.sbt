@@ -281,8 +281,8 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sPrometheus, Argonaut, CommonsHttp) ++
-      Http4sClient ++ Http4s ++ Logging.value,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Http4sPrometheus, Argonaut, CommonsHttp) ++
+      Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
@@ -399,7 +399,6 @@ lazy val seqexec_server = project
           // OCS bundles
           SpModelCore,
           POT,
-          Knobs,
           OpenCSV,
           Log4s.value,
           Http4sXml,
@@ -407,7 +406,7 @@ lazy val seqexec_server = project
           PrometheusClient,
           Log4Cats.value,
           Log4CatsNoop.value
-      ) ++ Http4s ++ Http4sClient ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value ++
+      ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value ++
         Circe.value
   )
   .settings(

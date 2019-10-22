@@ -10,7 +10,7 @@ import edu.gemini.spModel.smartgcal.provider.CalibrationProviderImpl
 import edu.gemini.spModel.smartgcal.repository.CalibrationUpdater
 import edu.gemini.spModel.smartgcal.repository.CalibrationFileCache
 import edu.gemini.spModel.smartgcal.repository.CalibrationRemoteRepository
-import java.nio.file.Paths
+import seqexec.model.config._
 
 // This makes it cleaner that we have started SmartGcal
 // Though in practice it can be bypassed with the Java API
@@ -21,11 +21,11 @@ sealed trait SmartGcal extends Product with Serializable {
 object SmartGcalInitializer {
   private final case class SmartGcalImpl(val cal: CalibrationUpdater) extends SmartGcal
 
-  def init[F[_]: Sync](smartGCalHost: String, smartGCalLocation: String): F[SmartGcal] =
+  def init[F[_]: Sync](conf: SmartGcalConfiguration): F[SmartGcal] =
     Sync[F].delay {
-      val peer       = new Peer(smartGCalHost, 8443, edu.gemini.spModel.core.Site.GS)
+      val peer       = new Peer(conf.smartGCalHost.renderString, 8443, edu.gemini.spModel.core.Site.GS)
       val calService = new CalibrationRemoteRepository(peer.host, peer.port)
-      val cachedRepo = new CalibrationFileCache(Paths.get(smartGCalLocation).toFile)
+      val cachedRepo = new CalibrationFileCache(conf.smartGCalDir.toFile)
       val provider   = new CalibrationProviderImpl(cachedRepo)
       CalibrationProviderHolder.setProvider(provider)
       CalibrationUpdater.instance.addListener(provider)

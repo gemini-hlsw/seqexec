@@ -3,21 +3,17 @@
 
 package seqexec.web.server.http4s
 
-import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
-import gem.enum.Site
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.nio.file.{Path => FilePath}
 import java.util.concurrent.{ExecutorService, Executors}
-import knobs.{Resource => _, _}
-import mouse.all._
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
@@ -31,126 +27,53 @@ import org.http4s.server.Router
 import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
+import pureconfig._
 import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
-import seqexec.server.{SeqexecConfiguration, SeqexecEngine, SeqexecMetrics, executeEngine}
+import seqexec.model.config._
+import seqexec.web.server.config._
+import seqexec.server.{SeqexecEngine, SeqexecMetrics, executeEngine}
 import seqexec.server.SeqexecFailure
 import seqexec.server.Systems
 import seqexec.web.server.OcsBuildInfo
+import seqexec.web.server.config._
 import seqexec.web.server.logging.AppenderForClients
-import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import squants.time.Hours
+import seqexec.web.server.security.AuthenticationService
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
 
-object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfiguration {
+object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
-
-  final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
-
-  /** Configuration for the web server */
-  final case class WebServerConfiguration(
-    site:              String,
-    host:              String,
-    port:              Int,
-    insecurePort:      Int,
-    externalBaseUrl:   String,
-    devMode:           Boolean,
-    sslConfig:         Option[SSLConfig],
-    smartGCalHost:     String,
-    smartGCalLocation: String
-  )
 
   // Attempt to get the configuration file relative to the base dir
   val configurationFile: IO[FilePath] =
-    baseDir.map(_.resolve("conf").resolve("app.conf"))
+    baseDir[IO].map(_.resolve("conf").resolve("app.conf"))
 
-  // Read the config, first attempt the file or default to the classpath file
-  val defaultConfig: IO[Config] =
-    knobs.loadImmutable[IO](ClassPathResource("app.conf").required :: Nil)
+  // Try to load config from the file and fall back to the common one in the class path
+  val config = {
+    val defaultConfig = ConfigSource.resources("app.conf").pure[IO]
+    val fileConfig = configurationFile.map(ConfigSource.file)
 
-  val fileConfig: IO[Config] =
-    configurationFile.flatMap { f =>
-      knobs.loadImmutable[IO](FileResource(f.toFile).optional :: Nil)
-    }
-
-  val config: IO[Config] =
-    (defaultConfig, fileConfig).mapN(_ ++ _)
-
-  // configuration specific to the web server
-  val serverConf: IO[WebServerConfiguration] =
-    config.map { cfg =>
-
-      val site            = cfg.require[String]("seqexec-engine.site")
-      val host            = cfg.require[String]("web-server.host")
-      val port            = cfg.require[Int]("web-server.port")
-      val insecurePort    = cfg.require[Int]("web-server.insecurePort")
-      val externalBaseUrl = cfg.require[String]("web-server.externalBaseUrl")
-      val devMode         = cfg.require[String]("mode")
-      val keystore        = cfg.lookup[String]("web-server.tls.keyStore")
-      val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
-      val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
-      val sslConfig       = (keystore, keystorePwd, certPwd).mapN(SSLConfig.apply)
-      val smartGCalHost   = cfg.require[String]("seqexec-engine.smartGCalHost")
-      val smartGCalDir    = cfg.require[String]("seqexec-engine.smartGCalDir")
-
-      WebServerConfiguration(
-        site,
-        host,
-        port,
-        insecurePort,
-        externalBaseUrl,
-        devMode.equalsIgnoreCase("dev"),
-        sslConfig,
-        smartGCalHost,
-        smartGCalDir
-      )
-
-    }
-
-  // Configuration of the ldap clients
-  val ldapConf: IO[LDAPConfig] =
-    config.map { cfg =>
-      val urls = cfg.require[List[String]]("authentication.ldapURLs")
-      LDAPConfig(urls)
-    }
-
-  // Configuration of the authentication service
-  val authConf: IO[AuthenticationConfig] =
-    (ldapConf, config).mapN { (ld, cfg) =>
-
-      val devMode        = cfg.require[String]("mode")
-      val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
-      val cookieName     = cfg.require[String]("authentication.cookieName")
-      val secretKey      = cfg.require[String]("authentication.secretKey")
-      val sslSettings    = cfg.lookup[String]("web-server.tls.keyStore")
-
-      AuthenticationConfig(
-        devMode.equalsIgnoreCase("dev"),
-        Hours(sessionTimeout),
-        cookieName,
-        secretKey,
-        sslSettings.isDefined,
-        ld
-      )
-
-    }
+    // ConfigSource, first attempt the file or default to the classpath file
+    (fileConfig, defaultConfig).mapN(_.optional.withFallback(_))
+  }
 
   /** Configures the Authentication service */
-  def authService(conf: AuthenticationConfig): IO[AuthenticationService] =
-    IO.apply(AuthenticationService(conf))
+  def authService(mode: Mode, conf: AuthenticationConfig): IO[AuthenticationService] =
+    IO.apply(AuthenticationService(mode, conf))
 
   /** Resource that yields the running web server */
   def webServer(
-    as: AuthenticationService,
+    conf: SeqexecConfiguration,
     cal: SmartGcal,
+    as: AuthenticationService,
     inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
     cr: CollectorRegistry,
     bec: ExecutionContext
-  )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
+  ): Resource[IO, Server[IO]] = {
 
     // The prometheus route does not get logged
     val prRouter = Router[IO](
@@ -161,21 +84,21 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
       val builder =
         BlazeServerBuilder[IO]
-          .bindHttp(conf.port, conf.host)
+          .bindHttp(conf.webServer.port, conf.webServer.host)
           .withWebSockets(true)
           .withHttpApp((prRouter <+> all).orNotFound)
 
-      conf.sslConfig.fold(builder) { ssl =>
-        val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
-        builder.withSSL(storeInfo, ssl.certPwd, "TLS")
+      conf.webServer.tls.fold(builder) { tls =>
+        val storeInfo = StoreInfo(tls.keyStore.toFile.getAbsolutePath, tls.keyStorePwd)
+        builder.withSSL(storeInfo, tls.certPwd, "TLS")
       }.resource
 
     }
 
     val router = Router[IO](
-      "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
+      "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, se.systems.guideDb, se.systems.gpi.statusDb, outputs).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.mode, as, se.systems.guideDb, se.systems.gpi.statusDb, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
       "/smartgcal"            -> new SmartGcalRoutes[IO](cal).service
     )
@@ -204,7 +127,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       .resource
   }
 
-  def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
+  def printBanner(conf: SeqexecConfiguration): IO[Unit] = {
     val banner = """
    _____
   / ___/___  ____ ____  _  _____  _____
@@ -213,7 +136,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 /____/\___/\__, /\___/_/|_|\___/\___/
              /_/
 """
-    val msg = s"""Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode, version ${OcsBuildInfo.version}"""
+    val msg = s"""Start web server for site ${conf.site} on ${conf.mode} mode, version ${OcsBuildInfo.version}"""
     L.info(banner + msg)
   }
 
@@ -249,8 +172,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     case e: Exception      => L.error(e)("Seqexec global error handler")
   }
 
-  /** Reads the configuration and launches the web server */
-  def run(args: List[String]): IO[ExitCode] = {
+  /** Reads the configuration and launches the seqexec engine and web server */
+  def seqexec: IO[ExitCode] = {
 
     def blockingExecutionContext: Resource[IO, ExecutionContext] = {
       val alloc = IO(Executors.newCachedThreadPool)
@@ -264,19 +187,18 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       .build()
 
     def engineIO(
+      conf: SeqexecConfiguration,
       httpClient: Client[IO],
       collector: CollectorRegistry
     ): Resource[IO, SeqexecEngine] =
       for {
-        cfg  <- Resource.liftF(config)
-        site <- Resource.liftF(IO(cfg.require[Site]("seqexec-engine.site")))
-        seqc <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
-        met  <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
-        sys  <- Systems.build(httpClient, seqc)
-        seqE <- Resource.liftF(SeqexecEngine(sys, seqc, met))
+        met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
+        sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine)
+        seqE <- Resource.liftF(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
       } yield seqE
 
     def webServerIO(
+      conf: SeqexecConfiguration,
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
       en:  SeqexecEngine,
@@ -284,32 +206,36 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       bec: ExecutionContext
     ): Resource[IO, Unit] =
       for {
-        wc <- Resource.liftF(serverConf)
-        ac <- Resource.liftF(authConf)
-        as <- Resource.liftF(authService(ac))
-        _  <- Resource.liftF(logStart.run(wc))
-        _  <- Resource.liftF(logToClients(out))
-        ca <- Resource.liftF(SmartGcalInitializer.init[IO](wc.smartGCalHost, wc.smartGCalLocation))
-        _  <- redirectWebServer(en.systems.guideDb, ca)(wc)
-        _  <- webServer(as, ca, in, out, en, cr, bec)(wc)
+        as <- Resource.liftF(authService(conf.mode, conf.authentication))
+        ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
+        _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
+        _  <- webServer(conf, ca, as, in, out, en, cr, bec)
       } yield ()
 
-    val r: Resource[IO, ExitCode] =
+    val seqexec: Resource[IO, ExitCode] =
       for {
-        _      <- Resource.liftF(configLog) // Initialize log before the engine is setup
+        _      <- Resource.liftF(configLog[IO]) // Initialize log before the engine is setup
+        conf   <- Resource.liftF(config.flatMap(loadConfiguration[IO]))
+        _      <- Resource.liftF(printBanner(conf))
         cli    <- AsyncHttpClient.resource[IO](clientConfig)
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
+        _      <- Resource.liftF(logToClients(out))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         bec    <- blockingExecutionContext
-        engine <- engineIO(cli, cr)
-        _      <- webServerIO(inq, out, engine, cr, bec)
+        engine <- engineIO(conf, cli, cr)
+        _      <- webServerIO(conf, inq, out, engine, cr, bec)
         f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
-    r.use(_ => IO.never)
+    seqexec.use(_ => IO.never)
 
+  }
+
+  /** Reads the configuration and launches the seqexec */
+  override def run(args: List[String]): IO[ExitCode] = {
+    seqexec
   }
 
 }

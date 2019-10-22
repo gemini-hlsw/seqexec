@@ -3,16 +3,15 @@
 
 package seqexec.web.server.security
 
-import com.unboundid.ldap.sdk.LDAPURL
-import seqexec.model.UserDetails
-import seqexec.web.server.security.AuthenticationService.AuthResult
-import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
 import argonaut._
 import Argonaut._
 import cats.effect.IO
-import squants.Time
-import squants.time.Seconds
 import cats.implicits._
+import com.unboundid.ldap.sdk.LDAPURL
+import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
+import seqexec.model.UserDetails
+import seqexec.model.config._
+import seqexec.web.server.security.AuthenticationService.AuthResult
 
 sealed trait AuthenticationFailure
 final case class UserNotFound(user: String) extends AuthenticationFailure
@@ -29,40 +28,24 @@ trait AuthService {
   def authenticateUser(username: String, password: String): IO[AuthResult]
 }
 
-/**
-  * Configuration for the LDAP client
-  */
-final case class LDAPConfig(ldapHosts: List[String]) {
-  private val hosts = ldapHosts.map(new LDAPURL(_)).map(u => (u.getHost, u.getPort))
-
-  val ldapService: AuthService = new FreeLDAPAuthenticationService(hosts)
-}
-
-/**
-  * Configuration for the general authentication service
-  * @param devMode Indicates if we are in development mode, In this mode there is an internal list of users
-  * @param sessionLifeHrs How long will the session live in hours
-  * @param cookieName Name of the cookie to store the token
-  * @param secretKey Secret key to encrypt jwt tokens
-  * @param useSSL Whether we use SSL setting the cookie to be https only
-  * @param ldap Configuration for the ldap client
-  */
-final case class AuthenticationConfig(devMode: Boolean, sessionLifeHrs: Time, cookieName: String, secretKey: String, useSSL: Boolean, ldap: LDAPConfig)
-
 // Intermediate class to decode the claim stored in the JWT token
 final case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName: String) {
   def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
-final case class AuthenticationService(config: AuthenticationConfig) extends AuthService {
+final case class AuthenticationService(mode: Mode, config: AuthenticationConfig) extends AuthService {
   import AuthenticationService._
+
+  private val hosts = config.ldapURLs.map(u => new LDAPURL(u.renderString)).map(u => (u.getHost, u.getPort))
+
+  val ldapService: AuthService = new FreeLDAPAuthenticationService(hosts)
 
   implicit def UserDetailsCodecJson: CodecJson[UserDetails] =
     casecodec2(UserDetails.apply, UserDetails.unapply)("username", "displayName")
 
   private val authServices =
-    if (config.devMode) List(TestAuthenticationService, config.ldap.ldapService)
-    else List(config.ldap.ldapService)
+    if (mode === Mode.Development) List(TestAuthenticationService, ldapService)
+    else List(ldapService)
 
   /**
     * From the user details it creates a JSON Web Token
@@ -81,7 +64,7 @@ final case class AuthenticationService(config: AuthenticationConfig) extends Aut
       userDetails <- claim.decodeEither[UserDetails].leftMap(DecodingFailure.apply)
     } yield userDetails
 
-  val sessionTimeout: Time = config.sessionLifeHrs in Seconds
+  val sessionTimeout: Long = config.sessionLifeHrs.toSeconds
 
   override def authenticateUser(username: String, password: String): IO[AuthResult] =
     authServices.authenticateUser(username, password)

@@ -9,7 +9,6 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.noop.NoOpLogger
-import java.time.LocalDate
 import java.util.UUID
 import gem.Observation
 import gem.enum.Site
@@ -22,6 +21,7 @@ import seqexec.engine.Result.PartialVal
 import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs._
+import seqexec.model.config._
 import seqexec.server.keywords.GdsClient
 import shapeless.tag
 import scala.concurrent.duration._
@@ -36,34 +36,38 @@ object TestCommon {
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
-  val defaultSettings: Settings = Settings(Site.GS,
-    odbHost = "localhost",
-    date = LocalDate.of(2017, 1, 1),
-    dhsURI = uri("http://localhost/"),
-    altairControl = ControlStrategy.Simulated,
-    gemsControl = ControlStrategy.Simulated,
-    dhsControl = ControlStrategy.Simulated,
-    f2Control = ControlStrategy.Simulated,
-    gcalControl = ControlStrategy.Simulated,
-    ghostControl = ControlStrategy.Simulated,
-    gmosControl = ControlStrategy.Simulated,
-    gnirsControl = ControlStrategy.Simulated,
-    gpiControl = ControlStrategy.Simulated,
-    gpiGdsControl = ControlStrategy.Simulated,
-    ghostGdsControl = ControlStrategy.Simulated,
-    gsaoiControl = ControlStrategy.Simulated,
-    gwsControl = ControlStrategy.Simulated,
-    nifsControl = ControlStrategy.Simulated,
-    niriControl = ControlStrategy.Simulated,
-    tcsControl = ControlStrategy.Simulated,
+  val defaultSettings: SeqexecEngineConfiguration = SeqexecEngineConfiguration(
+    odb = uri("localhost"),
+    dhsServer = uri("http://localhost/"),
+    systemControl = SystemsControlConfiguration(
+      altair = ControlStrategy.Simulated,
+      gems = ControlStrategy.Simulated,
+      dhs = ControlStrategy.Simulated,
+      f2 = ControlStrategy.Simulated,
+      gcal = ControlStrategy.Simulated,
+      gmos = ControlStrategy.Simulated,
+      gnirs = ControlStrategy.Simulated,
+      gpi = ControlStrategy.Simulated,
+      gpiGds = ControlStrategy.Simulated,
+      ghost = ControlStrategy.Simulated,
+      ghostGds = ControlStrategy.Simulated,
+      gsaoi = ControlStrategy.Simulated,
+      gws = ControlStrategy.Simulated,
+      nifs = ControlStrategy.Simulated,
+      niri = ControlStrategy.Simulated,
+      tcs = ControlStrategy.Simulated
+    ),
     odbNotifications = false,
     instForceError = false,
     failAt = 0,
     10.seconds,
     tag[GpiSettings][Uri](uri("vm://localhost:8888/xmlrpc")),
-    tag[GhostSettings][Uri](uri("vm://localhost:8888/xmlrpc")),
     tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
-    tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
+    tag[GhostSettings][Uri](uri("vm://localhost:8888/xmlrpc")),
+    tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
+    "",
+    Some("127.0.0.1"),
+    3.seconds
   )
 
   def configure[F[_]: Applicative](resource: Resource): F[Result[F]] =
@@ -124,7 +128,7 @@ object TestCommon {
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = Systems.build(GdsClient.alwaysOkClient, defaultSettings).use(SeqexecEngine(_, defaultSettings, sm)).unsafeRunSync
+  val seqexecEngine: SeqexecEngine = Systems.build(Site.GS, GdsClient.alwaysOkClient, defaultSettings).use(x => SeqexecEngine.createTranslator(Site.GS, x, defaultSettings).map(y => new SeqexecEngine(x, defaultSettings, sm, y))).unsafeRunSync
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     advanceN(q, s0, put, 1L)

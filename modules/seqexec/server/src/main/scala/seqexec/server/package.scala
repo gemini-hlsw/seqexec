@@ -157,19 +157,6 @@ package object server {
     def clear: ExecutionQueue = q.copy(queue = List.empty)
   }
 
-  implicit class ControlStrategyOps(v: ControlStrategy) {
-    val connect: Boolean = v match {
-      case ControlStrategy.Simulated => false
-      case _                         => true
-    }
-    // If connected, then use real values for keywords
-    val realKeywords: Boolean = connect
-    val command: Boolean = v match {
-      case ControlStrategy.FullControl => true
-      case _                           => false
-    }
-  }
-
   implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
     import Handle.StateToHandle
     def toHandle: Handle[IO, EngineState, Event[IO, executeEngine.ConcreteTypes], A] =

@@ -12,5 +12,4 @@ import gem.arb.ArbEnumerated._
   */
 final class SeqexecServerSpec extends CatsSuite with SeqexecServerArbitraries {
   checkAll("Eq[EpicsHealth]", EqTests[EpicsHealth].eqv)
-  checkAll("Eq[ControlStrategy]", EqTests[ControlStrategy].eqv)
 }

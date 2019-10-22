@@ -3,6 +3,9 @@
 
 package seqexec.web.server.security
 
+import cats.data.{Kleisli, OptionT}
+import cats.implicits._
+import cats.effect.IO
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import org.http4s._
@@ -10,17 +13,15 @@ import org.http4s.dsl.io._
 import org.http4s.server.AuthMiddleware
 import java.time.Instant
 
-import cats.data.{Kleisli, OptionT}
-import cats.implicits._
-import cats.effect.IO
-
 /**
   * Bridge between http4s authentication and the actual internal authenticator
   */
 class Http4sAuthentication(auth: AuthenticationService) {
-  private val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
+  private val cookieService =
+    CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout)
 
-  def loginCookie(user: UserDetails): IO[ResponseCookie] = cookieService.loginCookie(auth, user)
+  def loginCookie(user: UserDetails): IO[ResponseCookie] =
+    cookieService.loginCookie(auth, user)
 
   private def authRequest(request: Request[IO]) = {
     val authResult = for {

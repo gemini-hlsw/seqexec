@@ -11,6 +11,7 @@ import io.chrisdavenport.log4cats.Logger
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import org.http4s.client.Client
+import seqexec.model.config._
 import seqexec.server.altair._
 import seqexec.server.flamingos2._
 import seqexec.server.keywords._
@@ -46,107 +47,109 @@ final case class Systems[F[_]](
 )
 
 object Systems {
-  def odbProxy[F[_]: Sync: Logger](settings: Settings): OdbProxy[F] = OdbProxy[F](new Peer(settings.odbHost, 8443, null),
-    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[F](new Peer(settings.odbHost, 8442, null))
+  def odbProxy[F[_]: Sync: Logger](settings: SeqexecEngineConfiguration): OdbProxy[F] = OdbProxy[F](new Peer(settings.odb.renderString, 8443, null),
+    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[F](new Peer(settings.odb.renderString, 8442, null))
     else new OdbProxy.DummyOdbCommands[F])
 
-  def dhs[F[_]: Effect: Timer: Logger](settings: Settings, httpClient: Client[F]): DhsClient[F] =
-    if (settings.dhsControl.command) DhsClientHttp[F](httpClient, settings.dhsURI)
-    else                             DhsClientSim.unsafeApply(settings.date)
+  def dhs[F[_]: Sync: Effect: Timer: Logger](settings: SeqexecEngineConfiguration, httpClient: Client[F]): F[DhsClient[F]] =
+    if (settings.systemControl.dhs.command)
+      DhsClientHttp[F](httpClient, settings.dhsServer).pure[F]
+    else
+      DhsClientSim.apply[F]
 
   // TODO make instruments controllers generalized on F
-  def gcal(settings: Settings)(implicit L: Logger[IO]): IO[GcalController[IO]] =
-    if (settings.gcalControl.command) GcalControllerEpics(GcalEpics.instance).pure[IO]
+  def gcal(settings: SystemsControlConfiguration)(implicit L: Logger[IO]): IO[GcalController[IO]] =
+    if (settings.gcal.command) GcalControllerEpics(GcalEpics.instance).pure[IO]
     else                              GcalControllerSim[IO].pure[IO]
 
-  def tcsSouth(tcsEpics: => TcsEpics[IO], settings: Settings, gcdb: GuideConfigDb[IO])(implicit L: Logger[IO]): IO[TcsSouthController[IO]] =
-    if (settings.tcsControl.command && settings.site === Site.GS) TcsSouthControllerEpics(tcsEpics, gcdb).pure[IO]
-    else                                                          TcsSouthControllerSim[IO].pure[IO]
+  def tcsSouth(tcsEpics: => TcsEpics[IO], site: Site, settings: SystemsControlConfiguration, gcdb: GuideConfigDb[IO])(implicit L: Logger[IO]): IO[TcsSouthController[IO]] =
+    if (settings.tcs.command && site === Site.GS) TcsSouthControllerEpics(tcsEpics, gcdb).pure[IO]
+    else                                          TcsSouthControllerSim[IO].pure[IO]
 
-  def tcsNorth(tcsEpics: => TcsEpics[IO], settings: Settings)(implicit L: Logger[IO]): IO[TcsNorthController[IO]] =
-    if (settings.tcsControl.command && settings.site === Site.GN) TcsNorthControllerEpics(tcsEpics).pure[IO]
-    else                                                          TcsNorthControllerSim[IO].pure[IO]
+  def tcsNorth(tcsEpics: => TcsEpics[IO], site: Site, settings: SystemsControlConfiguration)(implicit L: Logger[IO]): IO[TcsNorthController[IO]] =
+    if (settings.tcs.command && site === Site.GN) TcsNorthControllerEpics(tcsEpics).pure[IO]
+    else                                          TcsNorthControllerSim[IO].pure[IO]
 
-  def altair(settings: Settings)(implicit L: Logger[IO]): IO[AltairController[IO]] =
-    if (settings.altairControl.command && settings.tcsControl.command) AltairControllerEpics(AltairEpics.instance, TcsEpics.instance).pure[IO]
+  def altair(settings: SystemsControlConfiguration)(implicit L: Logger[IO]): IO[AltairController[IO]] =
+    if (settings.altair.command && settings.tcs.command) AltairControllerEpics(AltairEpics.instance, TcsEpics.instance).pure[IO]
     else                                                               AltairControllerSim[IO].pure[IO]
 
-  def gems(settings: Settings, gsaoiController: GsaoiGuider[IO])(implicit L: Logger[IO]): IO[GemsController[IO]] =
-    if (settings.gemsControl.command && settings.tcsControl.command) GemsControllerEpics(GemsEpics.instance, gsaoiController).pure[IO]
+  def gems(settings: SystemsControlConfiguration, gsaoiController: GsaoiGuider[IO])(implicit L: Logger[IO]): IO[GemsController[IO]] =
+    if (settings.gems.command && settings.tcs.command) GemsControllerEpics(GemsEpics.instance, gsaoiController).pure[IO]
     else                                                             GemsControllerSim[IO].pure[IO]
 
-  def gsaoi(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GsaoiFullHandler[IO]] =
-    if (settings.gsaoiControl.command) GsaoiControllerEpics(GsaoiEpics.instance).pure[IO]
+  def gsaoi(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[GsaoiFullHandler[IO]] =
+    if (settings.gsaoi.command) GsaoiControllerEpics(GsaoiEpics.instance).pure[IO]
     else                               GsaoiControllerSim[IO]
 
-  def gnirs(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GnirsController[IO]] =
-    if (settings.gnirsControl.command) GnirsControllerEpics(GnirsEpics.instance).pure[IO]
+  def gnirs(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[GnirsController[IO]] =
+    if (settings.gnirs.command) GnirsControllerEpics(GnirsEpics.instance).pure[IO]
     else                               GnirsControllerSim[IO]
 
-  def niri(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[NiriController[IO]] =
-    if (settings.niriControl.command) NiriControllerEpics(NiriEpics.instance).pure[IO]
+  def niri(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[NiriController[IO]] =
+    if (settings.niri.command) NiriControllerEpics(NiriEpics.instance).pure[IO]
     else                              NiriControllerSim[IO]
 
-  def nifs(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[NifsController[IO]] =
-    if (settings.nifsControl.command) NifsControllerEpics(NifsEpics.instance).pure[IO]
+  def nifs(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[NifsController[IO]] =
+    if (settings.nifs.command) NifsControllerEpics(NifsEpics.instance).pure[IO]
     else                              NifsControllerSim[IO]
 
-  def gmosSouth(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosSouthController[IO]] =
-    if (settings.gmosControl.command) GmosSouthControllerEpics(GmosEpics.instance).pure[IO]
+  def gmosSouth(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosSouthController[IO]] =
+    if (settings.gmos.command) GmosSouthControllerEpics(GmosEpics.instance).pure[IO]
     else                              GmosControllerSim.south[IO]
 
-  def gmosNorth(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosNorthController[IO]] =
-    if (settings.gmosControl.command) GmosNorthControllerEpics(GmosEpics.instance).pure[IO]
+  def gmosNorth(settings: SystemsControlConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[GmosNorthController[IO]] =
+    if (settings.gmos.command) GmosNorthControllerEpics(GmosEpics.instance).pure[IO]
     else                              GmosControllerSim.north[IO]
 
-  def flamingos2(settings: Settings)(implicit T: Timer[IO], L: Logger[IO]): IO[Flamingos2Controller[IO]] =
-    if (settings.f2Control.command) Flamingos2ControllerEpics[IO](Flamingos2Epics.instance).pure[IO]
+  def flamingos2(settings: SeqexecEngineConfiguration)(implicit T: Timer[IO], L: Logger[IO]): IO[Flamingos2Controller[IO]] =
+    if (settings.systemControl.f2.command) Flamingos2ControllerEpics[IO](Flamingos2Epics.instance).pure[IO]
     else if (settings.instForceError) Flamingos2ControllerSimBad[IO](settings.failAt)
     else Flamingos2ControllerSim[IO]
 
-  def gpi[F[_]: ConcurrentEffect: Timer](settings: Settings, httpClient: Client[F]): Resource[F, GpiController[F]] = {
-    def gpiClient(settings: Settings): Resource[F, GpiClient[F]] =
-      if (settings.gpiControl.command) GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
+  def gpi[F[_]: ConcurrentEffect: Timer](settings: SeqexecEngineConfiguration, httpClient: Client[F]): Resource[F, GpiController[F]] = {
+    def gpiClient: Resource[F, GpiClient[F]] =
+      if (settings.systemControl.gpi.command) GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
       else                             GpiClient.simulatedGpiClient[F]
 
-    def gpiGDS(settings: Settings, httpClient: Client[F]): Resource[F, GdsClient[F]] =
+    def gpiGDS: Resource[F, GdsClient[F]] =
       Resource.pure(GdsClient(
-        if (settings.gpiGdsControl.command) httpClient else GdsClient.alwaysOkClient[F],
+        if (settings.systemControl.gpiGds.command) httpClient else GdsClient.alwaysOkClient[F],
         settings.gpiGDS))
 
-    (gpiClient(settings), gpiGDS(settings, httpClient)).mapN(GpiController(_, _))
+    (gpiClient, gpiGDS).mapN(GpiController(_, _))
   }
 
-  def ghost[F[_]: ConcurrentEffect: Timer](settings: Settings, httpClient: Client[F]): Resource[F, GhostController[F]] = {
-    def ghostClient(settings: Settings): Resource[F, GhostClient[F]] =
-      if (settings.ghostControl.command) GhostClient.ghostClient[F](settings.ghostUrl.renderString)
+  def ghost[F[_]: ConcurrentEffect: Timer](settings: SeqexecEngineConfiguration, httpClient: Client[F]): Resource[F, GhostController[F]] = {
+    def ghostClient: Resource[F, GhostClient[F]] =
+      if (settings.systemControl.ghost.command) GhostClient.ghostClient[F](settings.ghostUrl.renderString)
        else                              GhostClient.simulatedGhostClient
 
-    def ghostGDS(settings: Settings, httpClient: Client[F]): Resource[F, GdsClient[F]] =
+    def ghostGDS: Resource[F, GdsClient[F]] =
       Resource.pure(GdsClient(
-        if (settings.ghostGdsControl.command) httpClient else GdsClient.alwaysOkClient[F],
+        if (settings.systemControl.ghostGds.command) httpClient else GdsClient.alwaysOkClient[F],
         settings.ghostGDS))
 
-    (ghostClient(settings), ghostGDS(settings, httpClient)).mapN(GhostController(_, _))
+    (ghostClient, ghostGDS).mapN(GhostController(_, _))
   }
 
-  def build(httpClient: Client[IO], settings: Settings)(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] = {
+  def build(site: Site, httpClient: Client[IO], settings: SeqexecEngineConfiguration)(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] = {
     for {
       odbProxy        <- Resource.pure[IO, OdbProxy[IO]](odbProxy[IO](settings))
-      dhsClient       <- Resource.pure[IO, DhsClient[IO]](dhs[IO](settings, httpClient))
+      dhsClient       <- Resource.liftF(dhs[IO](settings, httpClient))
       gcdb            <- Resource.liftF(GuideConfigDb.newDb[IO])
-      gcalController  <- Resource.liftF(gcal(settings))
-      tcsGS           <- Resource.liftF(tcsSouth(TcsEpics.instance, settings, gcdb))
-      tcsGN           <- Resource.liftF(tcsNorth(TcsEpics.instance, settings))
-      altair          <- Resource.liftF(altair(settings))
-      gsaoiController <- Resource.liftF(gsaoi(settings))
-      gems            <- Resource.liftF(gems(settings, gsaoiController))
-      gnirsController <- Resource.liftF(gnirs(settings))
+      gcalController  <- Resource.liftF(gcal(settings.systemControl))
+      tcsGS           <- Resource.liftF(tcsSouth(TcsEpics.instance, site, settings.systemControl, gcdb))
+      tcsGN           <- Resource.liftF(tcsNorth(TcsEpics.instance, site, settings.systemControl))
+      altair          <- Resource.liftF(altair(settings.systemControl))
+      gsaoiController <- Resource.liftF(gsaoi(settings.systemControl))
+      gems            <- Resource.liftF(gems(settings.systemControl, gsaoiController))
+      gnirsController <- Resource.liftF(gnirs(settings.systemControl))
       f2Controller    <- Resource.liftF(flamingos2(settings))
-      niriController  <- Resource.liftF(niri(settings))
-      nifsController  <- Resource.liftF(nifs(settings))
-      gmosSController <- Resource.liftF(gmosSouth(settings))
-      gmosNController <- Resource.liftF(gmosNorth(settings))
+      niriController  <- Resource.liftF(niri(settings.systemControl))
+      nifsController  <- Resource.liftF(nifs(settings.systemControl))
+      gmosSController <- Resource.liftF(gmosSouth(settings.systemControl))
+      gmosNController <- Resource.liftF(gmosNorth(settings.systemControl))
       gpiController   <- gpi[IO](settings, httpClient)
       ghostController <- ghost[IO](settings, httpClient)
     } yield

@@ -42,7 +42,7 @@ final case class SeqexecEngineConfiguration(
   ghostUrl:                Uri @@ GhostSettings,
   ghostGDS:                Uri @@ GhostSettings,
   tops:                    String,
-  caAddrList:              String,
+  epicsCaAddrList:         Option[String],
   ioTimeout:               FiniteDuration
 )
 
@@ -64,7 +64,7 @@ object SeqexecEngineConfiguration {
          x.ghostUrl,
          x.ghostGDS,
          x.tops,
-         x.caAddrList,
+         x.epicsCaAddrList,
          x.ioTimeout)
     )
 
