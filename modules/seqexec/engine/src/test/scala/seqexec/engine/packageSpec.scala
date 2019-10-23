@@ -113,13 +113,17 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   }
 
   def runToCompletion(s0: TestState): Option[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(
+      Stream.eval(
+        IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))
+      )
+    )(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always)))
+    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
     val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -149,7 +153,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
         )
       ) ) )
     )
-    val p = Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always)))
+    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
 
     //take(3): Start, Executing, Paused
     executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
@@ -199,10 +203,10 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
         )
         Stream.eval(List(
           List[IO[Unit]](
-            q.enqueue1(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, clientId, always)),
+            q.enqueue1(Event.start[IO, TestState, Unit](seqId, user, clientId, always)),
             startedFlag.acquire,
             q.enqueue1(Event.nullEvent),
-            q.enqueue1(Event.getState[IO, executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent).some })
+            q.enqueue1(Event.getState[IO, TestState, Unit] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent[IO]).some })
           ).sequence,
           executionEngine.process(PartialFunction.empty)(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)
@@ -414,7 +418,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     )
 
     val c = ActionCoordsInSeq(stepId, ExecutionIndex(0), ActionIndex(0))
-    val event = Event.modifyState[IO, executionEngine.ConcreteTypes](
+    val event = Event.modifyState[IO, TestState, Unit](
       executionEngine.startSingle(ActionCoords(seqId, c)).void
     )
     val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
@@ -473,7 +477,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     )
 
   it should "be able to start sequence from arbitrary step" in {
-    val event = Event.modifyState[IO, executionEngine.ConcreteTypes](
+    val event = Event.modifyState[IO, TestState, Unit](
       executionEngine.startFrom(seqId, 3).void
     )
 

@@ -21,17 +21,13 @@ import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
 import seqexec.model.{ClientId, SequenceState, StepId}
 
-class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.State[F, D]) {
+class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.State[F, S]) {
   val L: Logger[F] = Logger[F]
 
-  class ConcreteTypes extends Engine.Types {
-    override type StateType = D
-    override type EventData = U
-  }
-  type EventType = Event[F, ConcreteTypes]
-  type ResultType = EventResult[ConcreteTypes]
-  type UserEventType = UserEvent[F, ConcreteTypes]
-  type HandleType[A] = Handle[F, D, EventType, A]
+  type EventType = Event[F, S, U]
+  type ResultType = EventResult[U]
+  type UserEventType = UserEvent[F, S, U]
+  type HandleType[A] = Handle[F, S, EventType, A]
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
@@ -39,7 +35,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
     modifyS(id)(Sequence.State.status.set(st))
 
-  def start(id: Observation.Id, clientId: ClientId, userCheck: D => Boolean): HandleType[Unit] =
+  def start(id: Observation.Id, clientId: ClientId, userCheck: S => Boolean): HandleType[Unit] =
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences
@@ -97,7 +93,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
 
     x.map(p =>
       modifyS(c.sid)(_.startSingle(c.actCoords)) *>
-      Handle.fromStream[F, D, EventType](
+      Handle.fromStream[F, S, EventType](
         p.attempt.flatMap {
           case Right(r @ Result.OK(_))    =>
             Stream.emit(singleRunCompleted(c, r))
@@ -121,7 +117,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
   /**
     * Tells if a sequence can be safely removed
     */
-  def canUnload(id: Observation.Id)(st: D): Boolean =
+  def canUnload(id: Observation.Id)(st: S): Boolean =
     stateL.sequenceStateIndex(id).getOption(st).forall(!Sequence.State.isRunning(_))
 
   /**
@@ -130,7 +126,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
     * @param steps List of new steps definitions
     * @return
     */
-  def update(id: Observation.Id, steps: List[Step[F]]): Endo[D] =
+  def update(id: Observation.Id, steps: List[Step[F]]): Endo[S] =
     stateL.sequenceStateIndex(id).modify(_.update(steps.map(_.executions)))
 
   /**
@@ -219,12 +215,12 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
     }.getOrElse(unit) )
   }
 
-  private def getState(f: D => Option[Stream[F, EventType]]): HandleType[Unit] =
-    get.flatMap(s => Handle[F, D, EventType, Unit](f(s).pure[StateT[F, D, ?]].map(((), _))))
+  private def getState(f: S => Option[Stream[F, EventType]]): HandleType[Unit] =
+    get.flatMap(s => Handle[F, S, EventType, Unit](f(s).pure[StateT[F, S, ?]].map(((), _))))
 
-  private def actionStop(id: Observation.Id, f: D => Option[Stream[F, EventType]]): HandleType[Unit] =
+  private def actionStop(id: Observation.Id, f: S => Option[Stream[F, EventType]]): HandleType[Unit] =
     getS(id).flatMap(_.map{s =>
-      (Handle(StateT[F, D, (Unit, Option[Stream[F, EventType]])](st => ((st, ((), f(st)))).pure[F])) *>
+      (Handle(StateT[F, S, (Unit, Option[Stream[F, EventType]])](st => ((st, ((), f(st)))).pure[F])) *>
         modifyS(id)(Sequence.State.internalStopSet(true))).whenA(Sequence.State.isRunning(s))
     }.getOrElse(unit))
 
@@ -236,12 +232,12 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
     */
   private def complete[R <: RetVal](id: Observation.Id, i: Int, r: Result.OK[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(r)) *>
     getS(id).flatMap(_.flatMap(
-      _.current.execution.forall(Action.completed).option(Handle.fromStream[F, D, EventType](Stream(executed(id))))
+      _.current.execution.forall(Action.completed).option(Handle.fromStream[F, S, EventType](Stream(executed(id))))
     ).getOrElse(unit))
 
   private def stopComplete[R <: RetVal](id: Observation.Id, i: Int, r: Result.OKStopped[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(r)) *>
     getS(id).flatMap(_.flatMap(
-      _.current.execution.forall(Action.completed).option(Handle.fromStream[F, D, EventType](Stream(executed(id))))
+      _.current.execution.forall(Action.completed).option(Handle.fromStream[F, S, EventType](Stream(executed(id))))
     ).getOrElse(unit))
 
   private def partialResult[R <: PartialVal](id: Observation.Id, i: Int, p: Result.Partial[R]): HandleType[Unit] =
@@ -303,7 +299,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
       modifyS(id)(_.setSkipMark(step, v)) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case Poll(_)                       => debug("Engine: Polling current state") *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case GetState(f)                   => getState(f) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
-    case ModifyState(f)                => f.map(r => UserCommandResponse[F, ConcreteTypes](ue, Outcome.Ok, Some(r)))
+    case ModifyState(f)                => f.map(r => UserCommandResponse[F, U](ue, Outcome.Ok, Some(r)))
     case ActionStop(id, f)             => debug("Engine: Action stop requested") *> actionStop(id, f) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case ActionResume(id, i, cont)     => debug("Engine: Action resume requested") *> actionResume(id, i, cont) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case LogDebug(msg)                 => debug(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
@@ -361,7 +357,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
   // input, stream of events
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
-  def mapEvalState[A, S, B](input: Stream[F, A],
+  def mapEvalState[A, B](input: Stream[F, A],
                             initialState: S, f: (A, S) => F[(S, B, Option[Stream[F, A]])])
                            (implicit ev: Concurrent[F]): Stream[F, B] = {
     Stream.eval(fs2.concurrent.Queue.unbounded[F, Stream[F, A]]).flatMap { q =>
@@ -376,17 +372,17 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
   }
 
   private def runE(userReact: PartialFunction[SystemEvent[F], HandleType[Unit]])
-                  (ev: EventType,s: D)
+                  (ev: EventType,s: S)
                   (implicit ci: Concurrent[F])
-  : F[(D, (ResultType, D), Option[Stream[F, EventType]])] =
+  : F[(S, (ResultType, S), Option[Stream[F, EventType]])] =
     run(userReact)(ev).run.run(s).map {
       case (si, (r, p)) => (si, (r, si), p)
     }
 
   def process(userReact: PartialFunction[SystemEvent[F], HandleType[Unit]])
-             (input: Stream[F, EventType])(qs: D)(implicit ev: Concurrent[F])
-  : Stream[F, (ResultType, D)] =
-    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
+             (input: Stream[F, EventType])(qs: S)(implicit ev: Concurrent[F])
+  : Stream[F, (ResultType, S)] =
+    mapEvalState[EventType, (ResultType, S)](input, qs, runE(userReact)(_, _))
 
   // Functions for type bureaucracy
 
@@ -395,13 +391,13 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, D, U](stateL: Engine.Sta
   val unit: HandleType[Unit] =
     Handle.unit
 
-  val get: HandleType[D] =
+  val get: HandleType[S] =
     Handle.get
 
-  private def inspect[A](f: D => A): HandleType[A] =
+  private def inspect[A](f: S => A): HandleType[A] =
     Handle.inspect(f)
 
-  def modify(f: D => D): HandleType[Unit] =
+  def modify(f: S => S): HandleType[Unit] =
     Handle.modify(f)
 
   private def getS(id: Observation.Id): HandleType[Option[Sequence.State[F]]] =
@@ -428,9 +424,9 @@ object Engine {
     def sequenceStateIndex(sid: Observation.Id): Optional[D, Sequence.State[F]]
   }
 
-  abstract class Types {
-    type StateType
-    type EventData
+  trait Types[S, E] {
+    type StateType = S
+    type EventData = E
   }
 
 }
