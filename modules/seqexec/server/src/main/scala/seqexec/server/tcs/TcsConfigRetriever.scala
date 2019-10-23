@@ -43,7 +43,7 @@ sealed trait TcsConfigRetriever[F[_]] {
 
 object TcsConfigRetriever {
   private class TcsConfigRetrieverImpl[F[_]: MonadError[?[_], Throwable]](
-    epicsSys: TcsEpics[F]) extends TcsConfigRetriever[F]
+    epicsSys: => TcsEpics[F]) extends TcsConfigRetriever[F]
                            with    TcsConfigDecoders
                            with    ScienceFoldPositionCodex {
 
@@ -174,13 +174,13 @@ object TcsConfigRetriever {
       wfs <- active.map{x => if(DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff}
     } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
 
-    private val getCwfs1: (VirtualGemsTelescope, F[Cwfs1DetectorState]) => F[GuiderConfig] =
+    private lazy val getCwfs1: (VirtualGemsTelescope, F[Cwfs1DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs1Follow)
 
-    private val getCwfs2: (VirtualGemsTelescope, F[Cwfs2DetectorState]) => F[GuiderConfig] =
+    private lazy val getCwfs2: (VirtualGemsTelescope, F[Cwfs2DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs1Follow)
 
-    private val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
+    private lazy val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs1Follow)
 
     private def getOdgw[T: DetectorStateOps: Eq](getParked: F[Boolean], getFollow: F[Boolean])
@@ -192,16 +192,16 @@ object TcsConfigRetriever {
       wfs <- active.map{x => if(DetectorStateOps.isActive[T](x)) GuiderSensorOn else GuiderSensorOff}
     } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-    private val getOdgw1: (VirtualGemsTelescope, F[Odgw1DetectorState]) => F[GuiderConfig] =
+    private lazy val getOdgw1: (VirtualGemsTelescope, F[Odgw1DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw1Parked, epicsSys.odgw1Follow)
 
-    private val getOdgw2: (VirtualGemsTelescope, F[Odgw2DetectorState]) => F[GuiderConfig] =
+    private lazy val getOdgw2: (VirtualGemsTelescope, F[Odgw2DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw2Parked, epicsSys.odgw2Follow)
 
-    private val getOdgw3: (VirtualGemsTelescope, F[Odgw3DetectorState]) => F[GuiderConfig] =
+    private lazy val getOdgw3: (VirtualGemsTelescope, F[Odgw3DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw3Parked, epicsSys.odgw3Follow)
 
-    private val getOdgw4: (VirtualGemsTelescope, F[Odgw4DetectorState]) => F[GuiderConfig] =
+    private lazy val getOdgw4: (VirtualGemsTelescope, F[Odgw4DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw4Parked, epicsSys.odgw4Follow)
 
     private def getInstrumentPorts: F[InstrumentPorts] = for {
@@ -290,6 +290,6 @@ object TcsConfigRetriever {
 
   }
 
-  def apply[F[_]: MonadError[?[_], Throwable]](epicsSys: TcsEpics[F]): TcsConfigRetriever[F] =
+  def apply[F[_]: MonadError[?[_], Throwable]](epicsSys: => TcsEpics[F]): TcsConfigRetriever[F] =
     new TcsConfigRetrieverImpl(epicsSys)
 }

@@ -205,7 +205,7 @@ object TcsControllerEpicsCommon {
   ): Option[C => F[C]] =
     (used && current =!= demand).option(c => act(demand) *> lens.set(demand)(c).pure[F])
 
-  private class TcsControllerEpicsCommonImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsControllerEpicsCommon[F] with TcsControllerEncoders with ScienceFoldPositionCodex {
+  private class TcsControllerEpicsCommonImpl[F[_]: Async](epicsSys: => TcsEpics[F])(implicit L: Logger[F]) extends TcsControllerEpicsCommon[F] with TcsControllerEncoders with ScienceFoldPositionCodex {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
 
     override def setMountGuide[C](l: Lens[C, BaseEpicsTcsConfig])(
@@ -464,25 +464,24 @@ object TcsControllerEpicsCommon {
       setHrPickup(Lens.id)(subsystems, current, tcs.agc)
     ).flattenOption
 
-  def guideOn(subsystems: NonEmptySet[Subsystem], current: BaseEpicsTcsConfig, demand: BasicTcsConfig)
-  : F[BaseEpicsTcsConfig] = {
+    def guideOn(subsystems: NonEmptySet[Subsystem], current: BaseEpicsTcsConfig, demand: BasicTcsConfig)
+    : F[BaseEpicsTcsConfig] = {
 
-    // If the demand turned off any WFS, normalize will turn off the corresponding processing
-    val normalizedGuiding = (normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>>
-      normalizeMountGuiding)(demand)
+      // If the demand turned off any WFS, normalize will turn off the corresponding processing
+      val normalizedGuiding = (normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>>
+        normalizeMountGuiding)(demand)
 
-    val params = guideParams(subsystems, current, normalizedGuiding)
+      val params = guideParams(subsystems, current, normalizedGuiding)
 
-    if(params.nonEmpty)
-      for {
-        s <- params.foldLeft(Sync[F].delay(current)){ case (c, p) => c.flatMap(p)}
-        _ <- epicsSys.post
-        _ <- L.info("Turning guide on")
-      } yield s
-    else
-      L.info("Skipping guide on") *> Sync[F].delay(current)
-  }
-
+      if(params.nonEmpty)
+        for {
+          s <- params.foldLeft(Sync[F].delay(current)){ case (c, p) => c.flatMap(p)}
+          _ <- epicsSys.post
+          _ <- L.info("Turning guide on")
+        } yield s
+      else
+        L.info("Skipping guide on") *> Sync[F].delay(current)
+    }
 
     override def applyBasicConfig(subsystems: NonEmptySet[Subsystem], tcs: BasicTcsConfig): F[Unit] = {
       def sysConfig(current: BaseEpicsTcsConfig): F[BaseEpicsTcsConfig] = {
@@ -545,7 +544,7 @@ object TcsControllerEpicsCommon {
 
   }
 
-  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
+  def apply[F[_]: Async: Logger](epicsSys: => TcsEpics[F]): TcsControllerEpicsCommon[F] =
     new TcsControllerEpicsCommonImpl(epicsSys)
 
 }

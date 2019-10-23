@@ -62,7 +62,7 @@ object TcsNorthControllerEpicsAo {
       distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
     }
 
-  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
+  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: => TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
     private val commonController = TcsControllerEpicsCommon[F](epicsSys)
 

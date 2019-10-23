@@ -111,17 +111,17 @@ object GnirsControllerEpics extends GnirsEncoders {
   def apply[F[_]: Async: Timer](epicsSys: => GnirsEpics[F])(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {
 
-      private val ccCmd = epicsSys.configCCCmd
-      private val dcCmd = epicsSys.configDCCmd
+      private lazy val ccCmd = epicsSys.configCCCmd
+      private lazy val dcCmd = epicsSys.configDCCmd
 
-      private val warnOnDhs = epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
+      private lazy val warnOnDhs = epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
 
-      private val warnOnArray =
+      private lazy val warnOnArray =
         epicsSys.arrayActive.flatMap(L.warn("GNIRS detector array is not active").unlessA)
 
-      private val checkDhs = failUnlessM(epicsSys.dhsConnected, SeqexecFailure.Execution("GNIRS is not connected to DHS"))
+      private lazy val checkDhs = failUnlessM(epicsSys.dhsConnected, SeqexecFailure.Execution("GNIRS is not connected to DHS"))
 
-      private val checkArray =
+      private lazy val checkArray =
         failUnlessM(epicsSys.arrayActive, SeqexecFailure.Execution("GNIRS detector array is not active"))
 
       private def setAcquisitionMirror(mode: Mode): F[Option[F[Unit]]] = {

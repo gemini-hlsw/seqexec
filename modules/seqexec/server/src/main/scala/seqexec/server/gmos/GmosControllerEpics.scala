@@ -149,8 +149,8 @@ object GmosControllerEpics extends GmosEncoders {
              T: Timer[F]
   ): GmosController[F, T] =
     new GmosController[F, T] {
-      private val CC = sys.configCmd
-      private val DC = sys.configDCCmd
+      private lazy val CC = sys.configCmd
+      private lazy val DC = sys.configDCCmd
 
       // Read the current state of the
       private def retrieveState: F[GmosEpicsState] =

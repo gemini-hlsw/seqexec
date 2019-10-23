@@ -99,7 +99,6 @@ object NifsControllerEpics extends NifsEncoders {
   private val ConfigTimeout: Time  = Seconds(400)
   private val DefaultTimeout: Time = Seconds(60)
 
-
   import NifsController._
   import NifsLookupTables._
 
@@ -318,7 +317,7 @@ object NifsControllerEpics extends NifsEncoders {
           }
       }
 
-    private val postCcConfig =
+    private lazy val postCcConfig =
       epicsSys.ccConfigCmd.setTimeout[F](ConfigTimeout) *>
         epicsSys.ccConfigCmd.post[F]
 
@@ -349,7 +348,7 @@ object NifsControllerEpics extends NifsEncoders {
     override def applyConfig(config: NifsController.NifsConfig): F[Unit] =
       configCC(config.cc) *> configDC(config.dc)
 
-    private val checkDhs =
+    private lazy val checkDhs =
       failUnlessM(
         epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
                   SeqexecFailure.Execution("NIFS is not connected to DHS"))

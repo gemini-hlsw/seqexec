@@ -50,7 +50,7 @@ object TcsSouthControllerEpicsAo {
     odgw4: GuiderConfig
   )
 
-  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(
+  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async](epicsSys: => TcsEpics[F])(
     implicit L: Logger[F]) extends TcsSouthControllerEpicsAo[F] with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
     private val commonController = TcsControllerEpicsCommon[F](epicsSys)
@@ -77,15 +77,15 @@ object TcsSouthControllerEpicsAo {
       }
       else none
 
-    val setCwfs1Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    lazy val setCwfs1Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
       Option[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] =
       setNgsGuide(epicsSys.cwfs1ProbeFollowCmd, EpicsTcsAoConfig.cwfs1)
 
-    val setCwfs2Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    lazy val setCwfs2Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
       Option[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] =
       setNgsGuide(epicsSys.cwfs2ProbeFollowCmd, EpicsTcsAoConfig.cwfs2)
 
-    val setCwfs3Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
+    lazy val setCwfs3Guide: (VirtualGemsTelescope, NonEmptySet[Subsystem], ProbeTrackingConfig, ProbeTrackingConfig) =>
       Option[EpicsTcsAoConfig => F[EpicsTcsAoConfig]] =
       setNgsGuide(epicsSys.cwfs3ProbeFollowCmd, EpicsTcsAoConfig.cwfs3)
 
@@ -392,7 +392,7 @@ object TcsSouthControllerEpicsAo {
       case _                                                              => MountGuideOption.MountGuideOff
     } }(cfg)
 
-  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger](epicsSys: => TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
     new TcsSouthControllerEpicsAoImpl(epicsSys)
 
 }
