@@ -78,6 +78,9 @@ object SeqexecAppRootModel {
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
 
+  val sequenceTabsT: Traversal[SeqexecAppRootModel, SequenceTab] =
+    SeqexecAppRootModel.sequencesOnDisplayL ^|->> SequencesOnDisplay.sequenceTabs
+
   val sessionQueueL: Lens[SeqexecAppRootModel, List[SequenceView]] =
     SeqexecAppRootModel.sequences ^|-> SequencesQueue.sessionQueue
 

@@ -187,6 +187,19 @@ object SequenceTab {
           case t: PreviewSequenceTab    => t.copy(stepConfig = n)
     })
 
+  val tabOperationsL: Lens[SequenceTab, TabOperations] =
+    Lens[SequenceTab, TabOperations] {
+      case t: InstrumentSequenceTab => t.tabOperations
+      case t: PreviewSequenceTab    => t.tabOperations
+    }(n =>
+        a =>
+          a match {
+            case t: InstrumentSequenceTab => t.copy(tabOperations = n)
+            case t: PreviewSequenceTab    => t.copy(tabOperations = n)
+          })
+
+  val resourcesRunOperationsL: Lens[SequenceTab, SortedMap[Resource, ResourceRunOperation]] =
+    SequenceTab.tabOperationsL ^|-> TabOperations.resourceRunRequested
 }
 
 @Lenses

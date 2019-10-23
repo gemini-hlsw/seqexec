@@ -4,10 +4,11 @@
 package seqexec.model
 
 import monocle.macros.Lenses
-
 import cats._
 import cats.implicits._
 import gem.Observation
+import monocle.Traversal
+import monocle.function.Each._
 
 @Lenses
 final case class SequenceView (
@@ -32,4 +33,7 @@ final case class SequenceView (
 object SequenceView {
   implicit val eq: Eq[SequenceView] =
     Eq.by(x => (x.id, x.metadata, x.status, x.steps, x.willStopIn))
+
+  val stepT: Traversal[SequenceView, Step] =
+    SequenceView.steps ^|->> each
 }

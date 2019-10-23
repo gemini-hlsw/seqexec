@@ -17,8 +17,7 @@ import seqexec.model.events._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.model.SoundSelection
-import seqexec.web.client.model.AlignAndCalibStep
+import seqexec.web.client.model.{AlignAndCalibStep, ResourceRunOperation, SoundSelection}
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
@@ -28,6 +27,8 @@ import seqexec.web.client.model.Pages.Root
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import web.client.Audio
+
+import scala.collection.immutable.SortedMap
 
 /**
   * Handles messages received over the WS channel
@@ -64,15 +65,14 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
   def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
 
-  // It is legal do put sequences of the other sites on the queue
+  // It is legal to put sequences of the other sites on the queue
   // but we don't know how to display them, so let's filter them out
   private def filterSequences(
     sequences: SequencesQueue[SequenceView]): SequencesQueue[SequenceView] =
     sequences.copy(sessionQueue = sequences.sessionQueue.filter {
       case SequenceView(_, metadata, _, _, _) =>
         value.site
-          .map(_.instruments.toList.contains(metadata.instrument))
-          .getOrElse(false)
+          .exists(_.instruments.toList.contains(metadata.instrument))
     })
 
   val soundCheck: PartialFunction[Any, ActionResult[M]] = {
@@ -223,7 +223,24 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
-      updated(value.copy(sequences = filterSequences(s.view)))
+      val sequences = filterSequences(s.view)
+      val resourceRunRequested =
+        SequencesQueue.sessionQueueT[SequenceView]
+          .getAll(sequences)
+          .collect{
+            case view if value.resourceRunRequested.keySet.contains(view.id) =>
+              view.id ->
+                (for {
+                  step <- SequenceView.stepT.getAll(view)
+                  (resource, status) <- Step.configStatus.getOption(step).orEmpty
+                                          if status =!= ActionStatus.Pending
+                } yield {
+                  ResourceRunOperation
+                    .fromActionStatus(step.id)(status)
+                    .map((resource, _))
+                }).flatten
+              }.toMap.mapValues(SortedMap(_:_*))
+      updated(value.copy(sequences = sequences, resourceRunRequested = resourceRunRequested))
   }
 
   val sequenceRefreshedMessage: PartialFunction[Any, ActionResult[M]] = {
