@@ -178,8 +178,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   private def handleError: Either[Throwable, Unit] => executeEngine.EventType = {
     case Left(e: SeqexecFailure) => Event.logErrorMsg(SeqexecFailure.explain(e))
-    case Left(e: Throwable) => Event.logErrorMsg(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
-    case _       => Event.nullEvent
+    case Left(e: Throwable)      => Event.logErrorMsg(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+    case _                       => Event.nullEvent
   }
 
   def stopObserve(seqId: Observation.Id, graceful: Boolean)(
