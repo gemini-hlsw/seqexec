@@ -11,7 +11,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutM
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{Progress, ProgressUtil, RemainingTime}
+import seqexec.server.{Progress, ObsProgress, ProgressUtil, RemainingTime}
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server.EpicsCodex._
 import squants.{Seconds, Time}
@@ -151,7 +151,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
           dummy = obst // Hack to avoid scala/bug#11175
           if obst.isBusy
           rem <- OptionT.liftF(sys.countdown)
-        } yield Progress(m, RemainingTime(rem.seconds))
+        } yield ObsProgress(m, RemainingTime(rem.seconds))
         p.value.map(p => (m, p))
       })
       s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros

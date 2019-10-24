@@ -7,6 +7,7 @@ import cats._
 import cats.data.Nested
 import cats.effect.Sync
 import cats.effect.Async
+import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
 import java.lang.{ Double => JDouble }
@@ -14,7 +15,7 @@ import java.lang.{ Integer => JInt }
 import java.lang.{ Float => JFloat }
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.Timer
+import java.util.{Timer => JTimer}
 import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -191,7 +192,7 @@ object EpicsUtil {
         // channel. The timer and the listener can both complete the IO. The
         // first one to do it cancels the other.The use of `resultGuard`
         // guarantees that only one of them will complete the IO.
-        val timer = new Timer
+        val timer = new JTimer
         val statusListener = new CaAttributeListener[T] {
           override def onValueChange(newVals: util.List[T]): Unit = {
             if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1) {
@@ -345,17 +346,21 @@ object EpicsUtil {
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(areValuesDifferentEnough(relTolerance, _, v).option(set))
 
-  def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
-                              obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
+  def defaultProgress[F[_]: Applicative](time: Time, remaining: RemainingTime): F[Progress] =
+    ObsProgress(time, remaining).pure[F].widen[Progress]
+
+  def countdown[F[_]: Monad: Timer](total: Time, remT: F[Option[Time]],
+                              obsState: F[Option[CarStateGeneric]], p: (Time, RemainingTime) => F[Progress]): Stream[F, Progress] =
     ProgressUtil.fromFOption(_ => (remT, obsState).mapN { case (rem, st) =>
-      for{
-        c <- rem
-        s <- st
-        dummy = s // Hack to avoid scala/bug#11175
-        if s.isBusy
-      } yield Progress(if(total>c) total else c, RemainingTime(c))
-    }).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
-      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
+        for {
+          c <- rem
+          s <- st
+          dummy = s // Hack to avoid scala/bug#11175
+          if s.isBusy
+        } yield p(if(total>c) total else c, RemainingTime(c))
+      }.flatMap(_.sequence)
+    ).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+     .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
 
   // Component names read from instruments usually have a part name as suffix. For example, the
   // instrument may have had two K filters in its lifetime, one identified as K_G0804 and the

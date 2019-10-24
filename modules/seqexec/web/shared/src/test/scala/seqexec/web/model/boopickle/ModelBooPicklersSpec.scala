@@ -23,6 +23,7 @@ import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
 import seqexec.model.arb.ArbNSSubexposure._
 import seqexec.model.arb.ArbNSRunningState._
+import seqexec.model.arb.ArbObservationProgress._
 import seqexec.model.arb.ArbTime._
 import squants.time.Time
 

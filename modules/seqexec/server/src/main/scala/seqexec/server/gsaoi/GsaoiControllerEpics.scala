@@ -178,7 +178,7 @@ object GsaoiControllerEpics {
         expTime    <- epicsSys.requestedExposureTime.map(_.seconds)
       } yield (coaddsDone<coadds).fold(coadds-coaddsDone-1, 0)*expTime + remTime
 
-      EpicsUtil.countdown[F](total, rem.map(_.some), epicsSys.observeState.map(_.some))
+      EpicsUtil.countdown[F](total, rem.map(_.some), epicsSys.observeState.map(_.some), EpicsUtil.defaultProgress[F])
     }
 
     def calcObserveTimeout(cfg: DCConfig): Time = {

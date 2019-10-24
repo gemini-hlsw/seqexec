@@ -10,7 +10,7 @@ import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import seqexec.model.ObservationProgress
+import seqexec.model.Progress
 import seqexec.model.StepId
 import scala.collection.immutable.SortedMap
 
@@ -19,7 +19,7 @@ import scala.collection.immutable.SortedMap
   */
 @Lenses
 final case class AllObservationsProgressState(
-  obsProgress: SortedMap[(Observation.Id, StepId), ObservationProgress])
+  obsProgress: SortedMap[(Observation.Id, StepId), Progress])
 
 object AllObservationsProgressState {
   val Empty: AllObservationsProgressState =
@@ -31,7 +31,7 @@ object AllObservationsProgressState {
   def progressStateL(
     obsId:  Observation.Id,
     stepId: StepId
-  ): Lens[SeqexecAppRootModel, Option[ObservationProgress]] =
+  ): Lens[SeqexecAppRootModel, Option[Progress]] =
     SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.obsProgress ^|->
       progressByIdL(obsId, stepId)
@@ -39,7 +39,7 @@ object AllObservationsProgressState {
   def progressByIdL(
     obsId:  Observation.Id,
     stepId: StepId
-  ): Lens[AllObservationsProgressState, Option[ObservationProgress]] =
+  ): Lens[AllObservationsProgressState, Option[Progress]] =
     AllObservationsProgressState.obsProgress ^|-> at((obsId, stepId))
 
 }

@@ -26,7 +26,7 @@ object events {
     def clientId: ClientId
   }
 
-  final case class ObservationProgressEvent(progress: ObservationProgress)
+  final case class ObservationProgressEvent(progress: Progress)
       extends SeqexecEvent
 
   object ObservationProgressEvent {

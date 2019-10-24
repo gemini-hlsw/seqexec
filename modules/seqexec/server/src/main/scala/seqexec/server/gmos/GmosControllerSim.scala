@@ -9,9 +9,12 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import io.chrisdavenport.log4cats.Logger
+import fs2.Stream
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some
+import seqexec.model.NSSubexposure
+import seqexec.model.GmosParameters.NsCyclesI
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage._
@@ -24,6 +27,7 @@ import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.InstrumentControllerSim
 import seqexec.server.Progress
 import squants.Time
+import shapeless.tag
 
 /**
   * Keep track of the current execution state
@@ -39,6 +43,8 @@ final case class NSCurrent(
     (exposureCount + 1) === totalCycles * NsSequence.length
 
   val cycle = exposureCount / NsSequence.length
+
+  val stageIndex: Int = exposureCount % NsSequence.length
 }
 
 object NSCurrent {
@@ -142,8 +148,18 @@ object GmosControllerSim {
       override def observeProgress(
         total:   Time,
         elapsed: ElapsedTime
-      ): fs2.Stream[F, Progress] =
-        sim.observeCountdown(total, elapsed)
+      ): Stream[F, Progress] =
+          sim.observeCountdown(total, elapsed).flatMap { p =>
+            Stream.eval(nsConfig.get.map {
+              case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) =>
+               val sub = NSSubexposure(
+                  tag[NsCyclesI][Int](curr.totalCycles),
+                  tag[NsCyclesI][Int](curr.cycle),
+                  curr.stageIndex)
+               p.toNSProgress(sub.getOrElse(NSSubexposure.Zero))
+              case _ => p
+            })
+          }
 
       override def nsCount: F[Int] = nsConfig.get.map(_.current.foldMap(_.exposureCount))
     }

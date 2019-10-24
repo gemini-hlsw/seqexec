@@ -226,7 +226,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         .flatMap(_.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
           case (a, i) => a.state.runState match {
             case ActionState.Paused(c: ObserveContext[IO]) => (c, a.state.partials.collectFirst{
-              case x@Progress(_, _) => x.progress}, i).some
+              case x: Progress => x.progress}, i).some
             case _ => none
           }
         }
