@@ -628,18 +628,18 @@ object SeqexecEngine {
                   case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
               }
           }
-        ) *> IO.unit
+        ).void
 
       val tops = decodeTops(conf.tops)
 
       // Ensure there is a valid way to init CaService either from
       // the configuration file or from the environment
-      val caInit   = conf.epicsCaAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
-        IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+      val caInit   = conf.epicsCaAddrList.map(a => IO(CaService.setAddressList(a))).getOrElse {
+        IO(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
           case Some(_) => IO.unit
           case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
         }
-      } *> IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis)))
+      } *> IO(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis)))
 
       // More instruments to be added to the list here
       val epicsInstruments = site match {
@@ -660,7 +660,7 @@ object SeqexecEngine {
         (conf.systemControl.gcal, GcalEpics)
       ) ++ epicsGaos
       val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
-        .map(x => initEpicsSystem(x._2, tops)).parSequence
+        .parTraverse(x => initEpicsSystem(x._2, tops))
 
       epicsInit *> new SeqexecEngine(systems, conf, metrics, translator).pure[IO]
     }

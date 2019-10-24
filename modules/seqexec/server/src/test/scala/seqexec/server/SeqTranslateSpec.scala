@@ -99,7 +99,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
   )
 
-  val dhs = DhsClientSim.apply[IO].unsafeRunSync()
+  val dhs = DhsClientSim[IO].unsafeRunSync()
 
   private val systems =
     (
