@@ -47,23 +47,23 @@ class SeqTranslateSpec extends AnyFlatSpec {
     ))
   )
 
-  private val baseState: EngineState = (ODBSequencesLoader.loadSequenceEndo(seqId, seqg) >>>
-    (EngineState.sequenceStateIndex(seqId) ^|-> Sequence.State.status).set(
-      SequenceState.Running.init))(EngineState.default)
+  private val baseState: EngineState[IO] = (ODBSequencesLoader.loadSequenceEndo[IO](seqId, seqg, executeEngine) >>>
+    (EngineState.sequenceStateIndex[IO](seqId) ^|-> Sequence.State.status).set(
+      SequenceState.Running.init))(EngineState.default[IO])
 
   // Observe started
-  private val s0: EngineState = EngineState.sequenceStateIndex(seqId)
+  private val s0: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.start(0))(baseState)
   // Observe pending
-  private val s1: EngineState = baseState
+  private val s1: EngineState[IO] = baseState
   // Observe completed
-  private val s2: EngineState = EngineState.sequenceStateIndex(seqId)
+  private val s2: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.OK(Observed(toImageFileId(fileId)))))(baseState)
   // Observe started, but with file Id already allocated
-  private val s3: EngineState = EngineState.sequenceStateIndex(seqId)
+  private val s3: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(toImageFileId(fileId)))))(baseState)
   // Observe paused
-  private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
+  private val s4: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(
       Result.Paused(
         ObserveContext[IO](
@@ -72,7 +72,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
           Stream.eval(SeqexecFailure.Aborted(seqId).raiseError[IO, Result[IO]]),
           Seconds(1)))))(baseState)
   // Observe failed
-  private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
+  private val s5: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync

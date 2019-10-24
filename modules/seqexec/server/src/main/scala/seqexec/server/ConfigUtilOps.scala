@@ -14,6 +14,9 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
 import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
+
+import cats.ApplicativeError
+
 import scala.reflect.ClassTag
 import shapeless.tag
 import shapeless.tag.@@
@@ -48,6 +51,10 @@ object ConfigUtilOps {
 
   implicit class TrySeqed[A] private[server] (r: Either[ExtractFailure, A]) {
     def asTrySeq: TrySeq[A] = r.leftMap(explainExtractError)
+  }
+
+  implicit class ApplicativeErrored[A] private[server] (r:Either[ExtractFailure, A]) {
+    def asApplicativeError[F[_]: ApplicativeError[?[_], Throwable]]: F[A] = r.fold(explainExtractError(_).raiseError[F, A], _.pure[F])
   }
 
   implicit class EitherOptionOps[A] private[server] (r: Either[ExtractFailure, Option[A]]) {

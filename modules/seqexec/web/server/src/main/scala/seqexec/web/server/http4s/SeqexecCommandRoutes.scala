@@ -26,7 +26,7 @@ import seqexec.web.server.security.TokenRefresher
   */
 class SeqexecCommandRoutes(auth:       AuthenticationService[IO],
                            inputQueue: server.EventQueue[IO],
-                           se:         SeqexecEngine)
+                           se:         SeqexecEngine[IO])
     extends BooEncoders {
 
   // Handles authentication
@@ -65,7 +65,7 @@ class SeqexecCommandRoutes(auth:       AuthenticationService[IO],
 
     case POST -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
-        u <- se.sync(inputQueue, obsId)
+        u    <- se.sync(inputQueue, obsId).attempt
         resp <- u.fold(_ => NotFound(s"Not found sequence $obsId"),
                        _ => Ok(s"Sync requested for ${obsId.format}"))
       } yield resp

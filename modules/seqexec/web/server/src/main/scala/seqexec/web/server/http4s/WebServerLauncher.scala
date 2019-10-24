@@ -70,7 +70,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     as: AuthenticationService[IO],
     inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
-    se: SeqexecEngine,
+    se: SeqexecEngine[IO],
     cr: CollectorRegistry,
     bec: ExecutionContext
   ): Resource[IO, Server[IO]] = {
@@ -190,7 +190,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       conf: SeqexecConfiguration,
       httpClient: Client[IO],
       collector: CollectorRegistry
-    ): Resource[IO, SeqexecEngine] =
+    ): Resource[IO, SeqexecEngine[IO]] =
       for {
         met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
         caS  <- Resource.liftF(SeqexecEngine.caInit(conf.seqexecEngine.epicsCaAddrList,
@@ -203,7 +203,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       conf: SeqexecConfiguration,
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
-      en:  SeqexecEngine,
+      en:  SeqexecEngine[IO],
       cr:  CollectorRegistry,
       bec: ExecutionContext
     ): Resource[IO, Unit] =

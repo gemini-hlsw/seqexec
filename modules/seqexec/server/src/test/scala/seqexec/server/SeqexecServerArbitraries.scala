@@ -3,6 +3,7 @@
 
 package seqexec.server
 
+import cats.effect.IO
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.arb.ArbObservation._
@@ -17,13 +18,13 @@ trait SeqexecServerArbitraries {
 
   implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
     Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
-  implicit val engineStateArb: Arbitrary[EngineState] = Arbitrary {
+  implicit val engineStateArb: Arbitrary[EngineState[IO]] = Arbitrary {
     for {
       q <- arbitrary[ExecutionQueues]
       s <- arbitrary[Map[Instrument, Observation.Id]]
       c <- arbitrary[Conditions]
       o <- arbitrary[Option[Operator]]
-    } yield EngineState.default.copy(queues = q, selected = s, conditions = c, operator = o)
+    } yield EngineState.default[IO].copy(queues = q, selected = s, conditions = c, operator = o)
   }
 
   implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {

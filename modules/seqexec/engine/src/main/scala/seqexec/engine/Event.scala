@@ -27,7 +27,7 @@ object Event {
   def cancelPause[F[_], S, U](id: Observation.Id, user: UserDetails): Event[F, S, U] = EventUser[F, S, U](CancelPause(id, user.some))
   def breakpoint[F[_], S, U](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, S, U] = EventUser[F, S, U](Breakpoint(id, user.some, step, v))
   def skip[F[_], S, U](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, S, U] = EventUser[F, S, U](SkipMark(id, user.some, step, v))
-  def poll(clientId: ClientId): Event[Nothing, Nothing, Nothing] = EventUser[Nothing, Nothing, Nothing](Poll(clientId))
+  def poll[F[_]](clientId: ClientId): Event[F, Nothing, Nothing] = EventUser[F, Nothing, Nothing](Poll(clientId))
   def getState[F[_], S, U](f: S => Option[Stream[F, Event[F, S, U]]]): Event[F, S, U] = EventUser[F, S, U](GetState(f))
   def modifyState[F[_], S, U](f: Handle[F, S, Event[F, S, U], U]): Event[F, S, U] = EventUser[F, S, U](ModifyState(f))
   def actionStop[F[_], S, U](id: Observation.Id, f: S => Option[Stream[F, Event[F, S, U]]]): Event[F, S, U] = EventUser[F, S, U](ActionStop(id, f))

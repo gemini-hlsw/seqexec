@@ -13,6 +13,7 @@ import seqexec.model.enum.Instrument
 import seqexec.engine
 import seqexec.engine.{Action, ParallelActions}
 import SequenceGen._
+import cats.effect.IO
 
 /**
   * Tests SeqexecServer Lenses
@@ -42,16 +43,16 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
   implicit def seqgEq[F[_]]: Eq[SequenceGen[F]] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
   implicit def obsseqEq[F[_]]: Eq[SequenceData[F]] = Eq.by(x => (x.observer, x.seqGen))
   implicit def seqstateEq[F[_]]: Eq[engine.Sequence.State[F]] = Eq.fromUniversalEquals
-  implicit val stateEq: Eq[EngineState] = Eq.by(x =>
+  implicit val stateEq: Eq[EngineState[IO]] = Eq.by(x =>
     (x.queues, x.selected, x.conditions, x.operator, x.sequences))
 
   checkAll("selected optional",
-           LensTests(EngineState.instrumentLoadedL(Instrument.Gpi)))
+           LensTests(EngineState.instrumentLoadedL[IO](Instrument.Gpi)))
 
   private val seqId = Observation.Id.unsafeFromString("GS-2018B-Q-0-1")
   // Some sanity checks
   test("Support inserting new loaded sequences") {
-    val base = EngineState.default.copy(
+    val base = EngineState.default[IO].copy(
       selected =
         Map(Instrument.F2 -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1")))
     EngineState
@@ -61,7 +62,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
       selected = base.selected + (Instrument.Gpi -> seqId))
   }
   test("Support replacing loaded sequences") {
-    val base = EngineState.default.copy(
+    val base = EngineState.default[IO].copy(
       selected =
         Map(Instrument.Gpi -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1"),
             Instrument.F2  -> Observation.Id.unsafeFromString("GS-2018B-Q-2-1")))

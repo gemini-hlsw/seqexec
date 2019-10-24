@@ -35,7 +35,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
     modifyS(id)(Sequence.State.status.set(st))
 
-  def start(id: Observation.Id, clientId: ClientId, userCheck: S => Boolean): HandleType[Unit] =
+  def start(id: Observation.Id, clientId: ClientId, userCheck: S => Boolean): Handle[F, S, Event[F, S, U], Unit] =
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences
@@ -60,7 +60,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     getS(id).flatMap {
       case Some(seq) if (seq.status.isIdle || seq.status.isError) && seq.toSequence.steps.exists(_.id === step) =>
         val steps = seq.toSequence.steps.takeWhile(_.id =!= step).mapFilter(p => Step.status(p).canRunFrom.option(p.id))
-        val withSkips = steps.foldLeft[Sequence.State[F]](seq){ case (s, i) => s.setSkipMark(i, true) }
+        val withSkips = steps.foldLeft[Sequence.State[F]](seq){ case (s, i) => s.setSkipMark(i, v = true) }
         putS(id)(
           Sequence.State.status.set(SequenceState.Running.init)(withSkips.skips.getOrElse(withSkips).rollback)
         ) *> send(Event.executing(id))
@@ -391,7 +391,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   val unit: HandleType[Unit] =
     Handle.unit
 
-  val get: HandleType[S] =
+  val get: Handle[F, S, Event[F, S, U], S] =
     Handle.get
 
   private def inspect[A](f: S => A): HandleType[A] =

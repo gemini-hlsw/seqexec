@@ -3,16 +3,11 @@
 
 package seqexec
 
-import cats.ApplicativeError
-import cats.Functor
+import cats.{Applicative, ApplicativeError, Endo, Eq, Functor, MonadError, ~>}
 import cats.data._
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.implicits._
-import cats.Eq
-import cats.Endo
-import cats.MonadError
-import cats.~>
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue
@@ -37,32 +32,44 @@ import squants.Time
 
 package server {
   @Lenses
-  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData[IO]])
+  final case class EngineState[F[_]](
+    queues: ExecutionQueues,
+    selected: Map[Instrument, Observation.Id],
+    conditions: Conditions,
+    operator: Option[Operator],
+    sequences: Map[Observation.Id, SequenceData[F]]
+  )
 
-  // TODO EngineState extending Engine.State is problematic when trying to remove the strong IO dependency
-  object EngineState extends Engine.State[IO, EngineState]{
-    val default: EngineState =
-      EngineState(
+  object EngineState {
+    def default[F[_]]: EngineState[F] =
+      EngineState[F](
         Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
         Map.empty,
         Conditions.Default,
-        None, Map.empty)
+        None,
+        Map.empty
+      )
 
-    def instrumentLoadedL(
+    def instrumentLoadedL[F[_]](
       instrument: Instrument
-    ): Lens[EngineState, Option[Observation.Id]] =
-      GenLens[EngineState](_.selected) ^|-> at(instrument)
+    ): Lens[EngineState[F], Option[Observation.Id]] =
+      GenLens[EngineState[F]](_.selected) ^|-> at(instrument)
 
-    def atSequence(sid:Observation.Id): Optional[EngineState, SequenceData[IO]] =
+    def atSequence[F[_]](sid:Observation.Id): Optional[EngineState[F], SequenceData[F]] =
       EngineState.sequences ^|-? index(sid)
 
-    override def sequenceStateIndex(
-      sid: Observation.Id
-    ): Optional[EngineState, Sequence.State[IO]] =
-      atSequence(sid) ^|-> SequenceData.seq
+    def sequenceStateIndex[F[_]](sid: Observation.Id): Optional[EngineState[F], Sequence.State[F]] =
+      atSequence[F](sid) ^|-> SequenceData.seq
 
-    implicit final class WithEventOps(val f: Endo[EngineState]) extends AnyVal {
-      def withEvent(ev: SeqEvent): EngineState => (EngineState, SeqEvent) = f >>> {(_, ev)}
+    def engineState[F[_]]: Engine.State[F, EngineState[F]] = new Engine.State[F, EngineState[F]] {
+      override def sequenceStateIndex(
+                                       sid: Observation.Id
+                                     ): Optional[EngineState[F], Sequence.State[F]] =
+        EngineState.sequenceStateIndex(sid)
+    }
+
+    implicit final class WithEventOps[F[_]](val f: Endo[EngineState[F]]) extends AnyVal {
+      def withEvent(ev: SeqEvent): EngineState[F] => (EngineState[F], SeqEvent) = f >>> {(_, ev)}
     }
   }
 
@@ -100,9 +107,10 @@ package object server {
   private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 
   // TODO move this out of being a global. This act as an anchor to the rest of the code
-  val executeEngine: Engine[IO, EngineState, SeqEvent] = new Engine[IO, EngineState, SeqEvent](EngineState)
+  implicit val executeEngine: Engine[IO, EngineState[IO], SeqEvent] =
+    new Engine[IO, EngineState[IO], SeqEvent](EngineState.engineState[IO])
 
-  type EventQueue[F[_]] = Queue[F, executeEngine.EventType]
+  type EventQueue[F[_]] = Queue[F, EventType[F]]
 
   implicit class StreamIOOps[A](s: Stream[IO, A]) {
     def streamLiftIO[F[_]: LiftIO]: fs2.Stream[F, A] =
@@ -134,8 +142,8 @@ package object server {
     }
   }
 
-  implicit class ExecutionQueueOps(val q: ExecutionQueue) extends AnyVal {
-    def status(st: EngineState): BatchExecState = {
+  implicit class ExecutionQueueOps[F[_]](val q: ExecutionQueue) extends AnyVal {
+    def status(st: EngineState[F]): BatchExecState = {
       val statuses: Seq[SequenceState] = q.queue.map(sid => st.sequences.get(sid))
         .collect{ case Some(x) => x }
         .map(_.seq.status)
@@ -157,10 +165,10 @@ package object server {
     def clear: ExecutionQueue = q.copy(queue = List.empty)
   }
 
-  implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
+  implicit final class ToHandle[F[_]: Applicative, A](f: EngineState[F] => (EngineState[F], A)) {
     import Handle.StateToHandle
-    def toHandle: Handle[IO, EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
-      StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
+    def toHandle: HandleType[F, A] =
+      StateT[F, EngineState[F], A]{ st => f(st).pure[F] }.toHandle
   }
 
   def toStepList[F[_]](seq: SequenceGen[F], d: HeaderExtraData): List[engine.Step[F]] =
@@ -202,5 +210,10 @@ package object server {
   implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
+
+  // Some types defined to avoid repeating long type definitions everywhere
+  type EventType[F[_]] = Event[F, EngineState[F], SeqEvent]
+  type HandleType[F[_], A] = Handle[F, EngineState[F], EventType[F], A]
+  type ExecEngineType[F[_]] = Engine[F, EngineState[F], SeqEvent]
 
 }

@@ -9,6 +9,7 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.noop.NoOpLogger
+import io.chrisdavenport.log4cats.Logger
 import java.util.UUID
 
 import edu.gemini.spModel.core.Peer
@@ -47,13 +48,14 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 object TestCommon {
-  private implicit def logger = NoOpLogger.impl[IO]
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
+
+  implicit val logger: Logger[IO] = NoOpLogger.impl[IO]
 
   val defaultSettings: SeqexecEngineConfiguration = SeqexecEngineConfiguration(
     odb = uri("localhost"),
@@ -96,17 +98,17 @@ object TestCommon {
     engine.fromF[F](ActionType.Configure(resource), configure(resource))
 
   def running[F[_]: Applicative](resource: Resource): Action[F] =
-    Action.state.set(Action.State(Action.ActionState.Started, Nil))(pendingAction(resource))
+    Action.state[F].set(Action.State(Action.ActionState.Started, Nil))(pendingAction(resource))
 
   def done[F[_]: Applicative](resource: Resource): Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Completed(Response.Configured(resource)), Nil))(
         pendingAction(resource))
 
-  val fileId = toImageFileId("fileId")
+  private val fileId = toImageFileId("fileId")
 
   def observing[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Started, Nil))(
         engine.fromF[F](
         ActionType.Observe,
@@ -115,7 +117,7 @@ object TestCommon {
   final case class PartialValue(s: String) extends PartialVal
 
   def observingPartial[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Started, Nil))(
         engine.fromF[F](
         ActionType.Observe,
@@ -123,26 +125,26 @@ object TestCommon {
             Result.OK(Response.Ignored).pure[F].widen))
 
   def fileIdReady[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Started, List(FileIdAllocated(fileId))))(
         observing)
 
   def observed[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Completed(Response.Observed(fileId)), List(FileIdAllocated(fileId))))(
         observing)
 
   def observePartial[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Started, List(FileIdAllocated(fileId))))(
         observingPartial)
 
   def paused[F[_]: Applicative]: Action[F] =
-    Action.state.set(
+    Action.state[F].set(
       Action.State(Action.ActionState.Paused(new PauseContext[F]{}), List(FileIdAllocated(fileId))))(
         observing)
 
-  def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.sequences.get(oid)
+  def testCompleted(oid: Observation.Id)(st: EngineState[IO]): Boolean = st.sequences.get(oid)
     .exists(_.seq.status.isCompleted)
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
@@ -196,12 +198,12 @@ object TestCommon {
         DummyGwsKeywordsReader[IO]
       )}.unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync
+  val seqexecEngine: SeqexecEngine[IO] = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync
 
-  def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
+  def advanceOne(q: EventQueue[IO], s0: EngineState[IO], put: IO[Unit]): IO[Option[EngineState[IO]]] =
     advanceN(q, s0, put, 1L)
 
-  def advanceN(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
+  def advanceN(q: EventQueue[IO], s0: EngineState[IO], put: IO[Unit], n: Long): IO[Option[EngineState[IO]]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
 
   val seqId1: String = "GS-2018B-Q-0-1"
