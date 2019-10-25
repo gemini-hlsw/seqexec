@@ -735,19 +735,21 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
   implicit val arbWebSocketsFocus: Arbitrary[WebSocketsFocus] =
     Arbitrary {
       for {
-        navLocation <- arbitrary[Pages.SeqexecPages]
-        sequences   <- arbitrary[SequencesQueue[SequenceView]]
-        user        <- arbitrary[Option[UserDetails]]
-        observer    <- arbitrary[Observer]
-        clientId    <- arbitrary[Option[ClientId]]
-        site        <- arbitrary[Option[Site]]
-        sound       <- arbitrary[SoundSelection]
-        serverVer   <- arbitrary[Option[String]]
-        guideConf   <- arbitrary[TelescopeGuideConfig]
-        acStep      <- arbitrary[AlignAndCalibStep]
+        navLocation          <- arbitrary[Pages.SeqexecPages]
+        sequences            <- arbitrary[SequencesQueue[SequenceView]]
+        resourceRunRequested <- arbitrary[Map[Observation.Id, SortedMap[Resource, ResourceRunOperation]]]
+        user                 <- arbitrary[Option[UserDetails]]
+        observer             <- arbitrary[Observer]
+        clientId             <- arbitrary[Option[ClientId]]
+        site                 <- arbitrary[Option[Site]]
+        sound                <- arbitrary[SoundSelection]
+        serverVer            <- arbitrary[Option[String]]
+        guideConf            <- arbitrary[TelescopeGuideConfig]
+        acStep               <- arbitrary[AlignAndCalibStep]
       } yield
         WebSocketsFocus(navLocation,
                         sequences,
+                        resourceRunRequested,
                         user,
                         observer,
                         clientId,
