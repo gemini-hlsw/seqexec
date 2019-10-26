@@ -10,7 +10,6 @@ import cats.effect.Sync
 import edu.gemini.epics.acm._
 import java.lang.{Double => JDouble}
 import mouse.all._
-import org.log4s.{Logger, getLogger}
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
@@ -319,7 +318,6 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 object GmosEpics extends EpicsSystem[GmosEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gmos.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)

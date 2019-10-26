@@ -10,8 +10,6 @@ import edu.gemini.epics.acm.CaService
 import seqexec.server.EpicsHealth
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
-import org.log4s.Logger
-import org.log4s.getLogger
 import squants.MetricSystem.Milli
 import squants.motion.Bars
 import squants.motion.MetersPerSecond
@@ -52,7 +50,6 @@ final class GwsEpics[F[_]: Sync] private (epicsService: CaService) {
 
 object GwsEpics extends EpicsSystem[GwsEpics[IO]] {
   override val className: String      = getClass.getName
-  override val Log: Logger            = getLogger
   override val CA_CONFIG_FILE: String = "/Gws.xml"
 
   override def build(service: CaService, tops: Map[String, String]) =

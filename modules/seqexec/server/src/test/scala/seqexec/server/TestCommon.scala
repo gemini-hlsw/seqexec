@@ -10,8 +10,12 @@ import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.util.UUID
+
+import edu.gemini.spModel.core.Peer
 import gem.Observation
 import gem.enum.Site
+import giapi.client.ghost.GhostClient
+import giapi.client.gpi.GpiClient
 import org.http4s.Uri
 import org.http4s.Uri.uri
 import seqexec.engine
@@ -23,7 +27,22 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs._
 import seqexec.model.config._
 import seqexec.server.keywords.GdsClient
+import seqexec.server.altair.{AltairControllerSim, AltairKeywordReaderDummy}
+import seqexec.server.flamingos2.Flamingos2ControllerSim
+import seqexec.server.gcal.{DummyGcalKeywordsReader, GcalControllerSim}
+import seqexec.server.gems.{GemsControllerSim, GemsKeywordReaderDummy}
+import seqexec.server.ghost.GhostController
+import seqexec.server.gmos.{GmosControllerSim, GmosKeywordReaderDummy}
+import seqexec.server.gnirs.{GnirsControllerSim, GnirsKeywordReaderDummy}
+import seqexec.server.gpi.GpiController
+import seqexec.server.gsaoi.{GsaoiControllerSim, GsaoiKeywordReaderDummy}
+import seqexec.server.gws.DummyGwsKeywordsReader
+import seqexec.server.keywords.{DhsClientSim, GdsClient}
+import seqexec.server.nifs.{NifsControllerSim, NifsKeywordReaderDummy}
+import seqexec.server.niri.{NiriControllerSim, NiriKeywordReaderDummy}
+import seqexec.server.tcs.{DummyTcsKeywordsReader, GuideConfigDb, TcsNorthControllerSim, TcsSouthControllerSim}
 import shapeless.tag
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -128,7 +147,56 @@ object TestCommon {
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = Systems.build(Site.GS, GdsClient.alwaysOkClient, defaultSettings).use(x => SeqexecEngine.createTranslator(Site.GS, x, defaultSettings).map(y => new SeqexecEngine(x, defaultSettings, sm, y))).unsafeRunSync
+  private val gpiSim: IO[GpiController[IO]] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
+    new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
+
+  private val ghostSim : IO[GhostController[IO]] = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
+    new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
+
+  val defaultSystems: Systems[IO] = (
+    Flamingos2ControllerSim[IO],
+    GmosControllerSim.south[IO],
+    GmosControllerSim.north[IO],
+    GnirsControllerSim[IO],
+    GsaoiControllerSim[IO],
+    gpiSim,
+    ghostSim,
+    NiriControllerSim[IO],
+    NifsControllerSim[IO]).mapN{ (f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+      Systems[IO](
+        OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
+        DhsClientSim.unsafeApply(LocalDate.of(2016, 4, 15)),
+        TcsSouthControllerSim[IO],
+        TcsNorthControllerSim[IO],
+        GcalControllerSim[IO],
+        f2,
+        gmosS,
+        gmosN,
+        gnirs,
+        gsaoi,
+        gpi,
+        ghost,
+        niri,
+        nifs,
+        AltairControllerSim[IO],
+        GemsControllerSim[IO],
+        GuideConfigDb.constant[IO],
+        DummyTcsKeywordsReader[IO],
+        DummyGcalKeywordsReader[IO],
+        GmosKeywordReaderDummy[IO],
+        GnirsKeywordReaderDummy[IO],
+        NiriKeywordReaderDummy[IO],
+        NifsKeywordReaderDummy[IO],
+        GsaoiKeywordReaderDummy[IO],
+        AltairKeywordReaderDummy[IO],
+        GemsKeywordReaderDummy[IO],
+        DummyGwsKeywordsReader[IO]
+      )}.unsafeRunSync
+
+  val seqexecEngine: SeqexecEngine = SeqexecEngine(defaultSystems, defaultSettings, sm).unsafeRunSync
+
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     advanceN(q, s0, put, 1L)

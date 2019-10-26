@@ -9,7 +9,6 @@ import cats.effect.Sync
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
 import java.lang.{Double => JDouble}
-import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
@@ -218,7 +217,6 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gnirs.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GnirsEpics(service, tops)

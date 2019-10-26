@@ -7,7 +7,6 @@ import cats.effect.{IO, Async}
 import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
-import org.log4s.{Logger, getLogger}
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
 import cats.implicits._
@@ -176,7 +175,6 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 object AltairEpics extends EpicsSystem[AltairEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Altair.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new AltairEpics(service, tops)

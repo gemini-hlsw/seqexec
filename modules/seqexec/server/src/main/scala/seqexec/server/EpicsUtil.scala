@@ -21,7 +21,7 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import edu.gemini.epics.acm._
 import mouse.boolean._
-import org.log4s._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.SeqexecException
@@ -61,30 +61,31 @@ trait EpicsCommand {
 trait EpicsSystem[T] {
 
   val className: String
-  val Log: Logger
   val CA_CONFIG_FILE: String
 
   def build(service: CaService, tops: Map[String, String]): T
 
-  // Still using a var, but at least now it's hidden. Attempts to access the single instance will
-  // now result in an Exception with a meaningful message, instead of a NullPointerException
+  // Still using a var, but at least now it's hidden.
   private var instanceInternal = Option.empty[T]
-  lazy val instance: T = instanceInternal.getOrElse(
-    sys.error(s"Attempt to reference $className single instance before initialization."))
+  def instance[F[_]: ApplicativeError[?[_], Throwable]: Logger](service: CaService, tops: Map[String, String]): F[T] =
+    instanceInternal.map(_.pure[F])
+      .getOrElse(init[F](service, tops))
 
-  def init(service: CaService, tops: Map[String, String]): TrySeq[Unit] = {
+  def init[F[_]: ApplicativeError[?[_], Throwable]: Logger](service: CaService, tops: Map[String, String]): F[T] = {
     try {
       tops.foldLeft((new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
         .withCaService(service))((b, a) => b.withTop(a._1, a._2)).buildAll()
 
-        instanceInternal = Some(build(service, tops))
+      val r = build(service, tops)
 
-        TrySeq(())
+      instanceInternal = r.some
+
+      r.pure[F]
 
     } catch {
       case c: Throwable =>
-        Log.warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}")
-        TrySeq.fail(SeqexecFailure.SeqexecException(c))
+        Logger[F].warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}") *>
+          SeqexecFailure.SeqexecException(c).raiseError[F, T]
     }
   }
 }

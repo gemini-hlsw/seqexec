@@ -6,8 +6,6 @@ package seqexec.server
 import cats._
 import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, IO, Timer}
-import cats.effect.Sync
-import cats.effect.LiftIO
 import cats.effect.concurrent.Ref
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
@@ -33,8 +31,8 @@ import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosEpics, GmosHeader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosObsKeywordsReader, GmosSouth}
-import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsHeader, GwsKeywordsReaderEpics}
+import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosObsKeywordsReader, GmosSouth}
+import seqexec.server.gws.GwsHeader
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.{LightPath, LightSource}
 import seqexec.server.gnirs._
@@ -42,18 +40,15 @@ import seqexec.server.niri._
 import seqexec.server.nifs._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairHeader
-import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
-import seqexec.server.altair.AltairKeywordReaderEpics
-import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.gems.{Gems, GemsEpics, GemsHeader, GemsKeywordReaderDummy, GemsKeywordReaderEpics}
+import seqexec.server.gems.{Gems, GemsHeader}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.NSObserveCommand
 import squants.Time
 import squants.time.TimeConversions._
 
-class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings, gmosNsCmd: Ref[IO, Option[NSObserveCommand]])(implicit L: Logger[IO]) extends ObserveActions {
+class SeqTranslate(site: Site, systems: Systems[IO], gmosNsCmd: Ref[IO, Option[NSObserveCommand]])(implicit L: Logger[IO]) extends ObserveActions {
   import SeqTranslate._
 
   private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
@@ -365,75 +360,63 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     config: CleanConfig,
     sys: InstrumentSystem[IO]
   ): TrySeq[Header[IO]] = {
-    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
     sys.resource match {
       case Instrument.F2     =>
-        Flamingos2Header.header[IO](sys, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader).asRight
+        Flamingos2Header.header[IO](sys, Flamingos2Header.ObsKeywordsReaderODB(config), systems.tcsKeywordReader).asRight
       case Instrument.GmosS |
            Instrument.GmosN  =>
-        val gmosInstReader = if (settings.gmosKeywords) GmosKeywordReaderEpics[IO](GmosEpics.instance) else GmosKeywordReaderDummy[IO]
-        GmosHeader.header[IO](sys, GmosObsKeywordsReader(config), gmosInstReader, tcsKReader).asRight
+        GmosHeader.header[IO](sys, GmosObsKeywordsReader(config), systems.gmosKeywordReader, systems.tcsKeywordReader).asRight
       case Instrument.Gnirs  =>
-        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO](GnirsEpics.instance) else GnirsKeywordReaderDummy[IO]
-        GnirsHeader.header[IO](sys, gnirsReader, tcsKReader).asRight
+        GnirsHeader.header[IO](sys, systems.gnirsKeywordReader, systems.tcsKeywordReader).asRight
       case Instrument.Gpi    =>
-        GpiHeader.header[IO](systems.gpi.gdsClient, tcsKReader, ObsKeywordReader[IO](config, site)).asRight
+        GpiHeader.header[IO](systems.gpi.gdsClient, systems.tcsKeywordReader, ObsKeywordReader[IO](config, site)).asRight
       case Instrument.Ghost  =>
         GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
-        val niriReader = if(settings.niriKeywords) NiriKeywordReaderEpics[IO](NiriEpics.instance)
-                          else NiriKeywordReaderDummy[IO]
-        NiriHeader.header[IO](sys, niriReader, tcsKReader).asRight
+        NiriHeader.header[IO](sys, systems.niriKeywordReader, systems.tcsKeywordReader).asRight
       case Instrument.Nifs   =>
-        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderEpics[IO](NifsEpics.instance) else NifsKeywordReaderDummy[IO]
-        NifsHeader.header[IO](sys, nifsReader, tcsKReader).asRight
+        NifsHeader.header[IO](sys, systems.nifsKeywordReader, systems.tcsKeywordReader).asRight
       case Instrument.Gsaoi   =>
-        val gsaoiReader = if (settings.gsaoiKeywords) GsaoiKeywordReaderEpics[IO](GsaoiEpics.instance) else GsaoiKeywordReaderDummy[IO]
-        GsaoiHeader.header[IO](sys, tcsKReader, gsaoiReader).asRight
+        GsaoiHeader.header[IO](sys, systems.tcsKeywordReader, systems.gsaoiKeywordReader).asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument ${sys.resource} not supported."))
     }
   }
 
-  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: CleanConfig, tcsSubsystems: List[TcsController.Subsystem],
-                            inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
+  private def commonHeaders(config: CleanConfig, tcsSubsystems: List[TcsController.Subsystem],
+                            inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header[IO] =
     new StandardHeader(
       inst,
-      ObsKeywordReader[F](config, site),
-      if (settings.tcsKeywords) TcsKeywordsReaderEpics[F](epics) else DummyTcsKeywordsReader[F],
-      StateKeywordsReader[F](ctx.conditions, ctx.operator, ctx.observer),
+      ObsKeywordReader[IO](config, site),
+      systems.tcsKeywordReader,
+      StateKeywordsReader[IO](ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems
     )
 
-  private def gwsHeaders[F[_]: Sync](epics: => GwsEpics[F], i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
-    if (settings.gwsKeywords) GwsKeywordsReaderEpics[F](epics) else DummyGwsKeywordsReader[F])
+  private def gwsHeaders(i: InstrumentSystem[IO]): Header[IO] = GwsHeader.header(i, systems.gwsKeywordReader)
 
-  private def gcalHeader[F[_]: Sync](epics: => GcalEpics[F], i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
-    if (settings.gcalKeywords) GcalKeywordsReaderEpics[F](epics) else DummyGcalKeywordsReader[F] )
+  private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] =
+    GcalHeader.header(i, systems.gcalKeywordReader)
 
-  private def altairHeader[F[_]: Sync: LiftIO](epics: => AltairEpics[F], instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
-    AltairHeader.header[F](
+  private def altairHeader(instrument: InstrumentSystem[IO], tcsKReader: TcsKeywordsReader[IO]): Header[IO] =
+    AltairHeader.header[IO](
       instrument,
-      if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F],
+      systems.altairKeywordReader,
       tcsKReader)
 
-  private def altairLgsHeader[F[_]: Sync](epics: => AltairEpics[F], guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
+  private def altairLgsHeader(guideStar: GuideStarType, instrument: InstrumentSystem[IO]): Header[IO] =
     if (guideStar === GuideStarType.LGS) {
-      AltairLgsHeader.header(instrument,
-        if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F])
+      AltairLgsHeader.header(instrument, systems.altairKeywordReader)
     } else {
-      dummyHeader[F]
+      dummyHeader[IO]
     }
 
-  private def gemsHeaders[F[_]: Sync](epics: => GemsEpics[F],
-                                      gsaoiEpics: => GsaoiEpics[F],
-                                      instrument: InstrumentSystem[F],
-                                      obsKReader: ObsKeywordsReader[F],
-                                      tcsKReader: TcsKeywordsReader[F])
-  : Header[F] = GemsHeader.header[F](
+  private def gemsHeaders(instrument: InstrumentSystem[IO],
+                          obsKReader: ObsKeywordsReader[IO],
+                          tcsKReader: TcsKeywordsReader[IO])
+  : Header[IO] = GemsHeader.header[IO](
     instrument,
-    if(settings.gemsKeywords && settings.gsaoiKeywords) GemsKeywordReaderEpics[F](epics, gsaoiEpics)
-    else GemsKeywordReaderDummy[F],
+    systems.gemsKeywordsReader,
     obsKReader,
     tcsKReader
   )
@@ -446,37 +429,35 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     stepType match {
       case StepType.CelestialObject(_) | StepType.NodAndShuffle(_) =>
           calcInstHeader(config, sys).map(h => ctx =>
-            List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h))
+            List(commonHeaders(config, allButGaos.toList, sys)(ctx), gwsHeaders(sys), h))
 
       case StepType.AltairObs(_)    =>
-        val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         for {
           gst  <- Altair.guideStarType(config)
           read <- calcInstHeader(config, sys).map(h => (ctx: HeaderExtraData) =>
                     // Order is important
                     List(
-                      commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
-                      altairHeader(AltairEpics.instance, sys, tcsKReader),
-                      altairLgsHeader(AltairEpics.instance, gst, sys),
-                      gwsHeaders(GwsEpics.instance, sys), h))
+                      commonHeaders(config, allButGaos.toList, sys)(ctx),
+                      altairHeader(sys, systems.tcsKeywordReader),
+                      altairLgsHeader(gst, sys),
+                      gwsHeaders(sys), h))
         } yield read
 
       case StepType.FlatOrArc(inst) =>
           calcInstHeader(config, sys).map(h => ctx =>
-            List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h))
+            List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h))
 
       case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) | StepType.ExclusiveDarkOrBias(_) =>
-          calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
+          calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
 
       case StepType.AlignAndCalib   => TrySeq(_ => Nil) // No headers for A&C
 
       case StepType.Gems(_)         =>
-        val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
         val obsKReader = ObsKeywordReader[IO](config, site)
         calcInstHeader(config, sys).map(h => ctx =>
-          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
-            gwsHeaders(GwsEpics.instance, sys),
-            gemsHeaders(GemsEpics.instance, GsaoiEpics.instance, sys, obsKReader, tcsKReader),h
+          List(commonHeaders(config, allButGaos.toList, sys)(ctx),
+            gwsHeaders(sys),
+            gemsHeaders(sys, obsKReader, systems.tcsKeywordReader), h
           )
         )
 
@@ -487,8 +468,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings)(implicit L: Logger[IO]): IO[SeqTranslate] =
-    Ref.of[IO, Option[NSObserveCommand]](none).map((new SeqTranslate(site, systems, settings, _)))
+  def apply(site: Site, systems: Systems[IO])(implicit L: Logger[IO]): IO[SeqTranslate] =
+    Ref.of[IO, Option[NSObserveCommand]](none).map((new SeqTranslate(site, systems, _)))
 
   def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT

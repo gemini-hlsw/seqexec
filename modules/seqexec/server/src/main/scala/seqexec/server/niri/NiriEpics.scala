@@ -18,7 +18,6 @@ import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand}
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
-import org.log4s.{Logger, getLogger}
 
 class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
 
@@ -205,7 +204,6 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 object NiriEpics extends EpicsSystem[NiriEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Niri.xml"
 
   override def build(service: CaService, tops: Map[String, String]) =

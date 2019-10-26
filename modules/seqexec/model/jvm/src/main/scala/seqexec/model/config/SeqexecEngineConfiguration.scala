@@ -26,7 +26,7 @@ trait GhostSettings
  * @param ghostUrl URL for GHOST GMP
  * @param ghostGDS URL for GHOST's GDS
  * @param tops Used to select the top component for epics subsystems
- * @param caAddrList List of IPs for the epics subsystem
+ * @param epicsCaAddrList List of IPs for the epics subsystem
  * @param ioTimeout Timeout to listen for EPICS events
  */
 final case class SeqexecEngineConfiguration(

@@ -7,7 +7,6 @@ import cats.effect.{IO, Async}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
-import org.log4s.{Logger, getLogger}
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSIntF, safeAttributeSListSFloatF}
@@ -167,7 +166,6 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 object GemsEpics extends EpicsSystem[GemsEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gems.xml"
 
   override def build(service: CaService, tops: Map[String, String]) =

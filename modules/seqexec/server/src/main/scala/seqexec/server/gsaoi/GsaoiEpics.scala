@@ -13,7 +13,6 @@ import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttr
 import java.lang.{Double => JDouble}
 
 import squants.time.TimeConversions._
-import org.log4s.{Logger, getLogger}
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -245,7 +244,6 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gsaoi.xml"
 
   override def build(service: CaService, tops: Map[String, String]) = new GsaoiEpics[IO](service, tops)

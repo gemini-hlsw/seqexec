@@ -193,7 +193,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
     ): Resource[IO, SeqexecEngine] =
       for {
         met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
-        sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine)
+        caS  <- Resource.liftF(SeqexecEngine.caInit(conf.seqexecEngine.epicsCaAddrList,
+          conf.seqexecEngine.ioTimeout))
+        sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine, caS)
         seqE <- Resource.liftF(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
       } yield seqE
 

@@ -10,7 +10,6 @@ import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.{EpicsCommand, EpicsSystem}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil._
-import org.log4s.{Logger, getLogger}
 
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -137,7 +136,6 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 object Flamingos2Epics extends EpicsSystem[Flamingos2Epics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Flamingos2.xml"
 
   override def build(service: CaService, tops: Map[String, String]) =
