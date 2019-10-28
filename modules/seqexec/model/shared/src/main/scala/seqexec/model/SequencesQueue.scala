@@ -6,8 +6,10 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import gem.Observation
-import monocle.Getter
+import monocle.{Getter, Traversal}
+import monocle.function.Each._
 import monocle.macros.Lenses
+
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 
@@ -28,6 +30,9 @@ object SequencesQueue {
 
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
     Eq.by(x => (x.loaded, x.conditions, x.operator, x.queues, x.sessionQueue))
+
+  def sessionQueueT[T]: Traversal[SequencesQueue[T], T] =
+    SequencesQueue.sessionQueue[T] ^|->> each
 
   def queueItemG[T](pred: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
     SequencesQueue.sessionQueue

@@ -10,8 +10,9 @@ import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import seqexec.model.enum.Resource
+import seqexec.model.enum.{ActionStatus, Resource}
 import seqexec.model.StepId
+
 import scala.collection.immutable.SortedMap
 
 sealed trait RunOperation extends Product with Serializable
@@ -101,6 +102,14 @@ object ResourceRunOperation {
   final case class ResourceRunInFlight(stepId: StepId) extends ResourceRunRequested
   final case class ResourceRunCompleted(stepId: StepId) extends ResourceRunRequested
   final case class ResourceRunFailed(stepId: StepId) extends ResourceRunRequested
+
+  def fromActionStatus(stepId: StepId): ActionStatus => Option[ResourceRunOperation] = {
+      case ActionStatus.Running   => ResourceRunOperation.ResourceRunInFlight(stepId).some
+      case ActionStatus.Paused    => ResourceRunOperation.ResourceRunInFlight(stepId).some
+      case ActionStatus.Completed => ResourceRunOperation.ResourceRunCompleted(stepId).some
+      case ActionStatus.Failed    => ResourceRunOperation.ResourceRunFailed(stepId).some
+      case _                      => none
+    }
 
   implicit val eqResourceRunOperation: Eq[ResourceRunOperation] = Eq.instance {
     case (ResourceRunIdle, ResourceRunIdle)                 => true
