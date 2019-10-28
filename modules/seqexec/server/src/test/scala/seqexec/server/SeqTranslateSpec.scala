@@ -13,7 +13,6 @@ import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
-import java.time.LocalDate
 import org.http4s.Uri._
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
@@ -100,6 +99,8 @@ class SeqTranslateSpec extends AnyFlatSpec {
     new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
   )
 
+  val dhs = DhsClientSim[IO].unsafeRunSync()
+
   private val systems =
     (
     Flamingos2ControllerSim[IO],
@@ -113,7 +114,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     NifsControllerSim[IO]).mapN{ (f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
       Systems[IO](
         OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
-        DhsClientSim.unsafeApply(LocalDate.of(2016, 4, 15)),
+        dhs,
         TcsSouthControllerSim[IO],
         TcsNorthControllerSim[IO],
         GcalControllerSim[IO],

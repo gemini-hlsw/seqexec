@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{Kleisli, StateT}
+import cats.data.StateT
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
@@ -15,13 +15,10 @@ import gem.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger
-import java.time.LocalDate
 import java.util.concurrent.TimeUnit
-import knobs.Config
 import mouse.all._
 import monocle.Monocle._
 import monocle.Optional
-import org.http4s.Uri
 import seqexec.engine.Result.Partial
 import seqexec.engine.EventResult._
 import seqexec.engine.{Step => _, _}
@@ -32,6 +29,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
+import seqexec.model.config._
 import seqexec.server.flamingos2.Flamingos2Epics
 import seqexec.server.gcal.GcalEpics
 import seqexec.server.gmos.GmosEpics
@@ -47,11 +45,10 @@ import seqexec.server.SeqEvent._
 import seqexec.server.altair.AltairEpics
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-import shapeless.tag
 
-class SeqexecEngine(
+class SeqexecEngine private [server] (
   val systems: Systems[IO],
-  settings: Settings,
+  settings: SeqexecEngineConfiguration,
   sm: SeqexecMetrics,
   translator: SeqTranslate
 )(
@@ -475,34 +472,25 @@ class SeqexecEngine(
   }
 }
 
-object SeqexecEngine extends SeqexecConfiguration {
+object SeqexecEngine {
 
-  def apply(systems: Systems[IO],
-            settings: Settings,
-            c: SeqexecMetrics)(
-           implicit ceio: ConcurrentEffect[IO],
-                    tio: Timer[IO],
-                    L: Logger[IO]
-  ): IO[SeqexecEngine] = createTranslator(systems, settings).map(new SeqexecEngine(systems, settings, c, _))
-
-  def createTranslator(systems: Systems[IO], settings: Settings)(implicit L: Logger[IO]): IO[SeqTranslate] = {
+  def createTranslator(site: Site, systems: Systems[IO], settings: SeqexecEngineConfiguration)(implicit L: Logger[IO]): IO[SeqTranslate] = {
 
     val translatorSettings = TranslateSettings(
-      tcsKeywords = settings.tcsControl.realKeywords,
-      f2Keywords = settings.f2Control.realKeywords,
-      gwsKeywords = settings.gwsControl.realKeywords,
-      gcalKeywords = settings.gcalControl.realKeywords,
-      gmosKeywords = settings.gmosControl.realKeywords,
-      gnirsKeywords = settings.gnirsControl.realKeywords,
-      niriKeywords = settings.niriControl.realKeywords,
-      nifsKeywords = settings.nifsControl.realKeywords,
-      altairKeywords = settings.altairControl.realKeywords,
-      gsaoiKeywords = settings.gsaoiControl.realKeywords,
-      gemsKeywords = settings.gemsControl.realKeywords
+      tcsKeywords    = settings.systemControl.tcs.realKeywords,
+      f2Keywords     = settings.systemControl.f2.realKeywords,
+      gwsKeywords    = settings.systemControl.gws.realKeywords,
+      gcalKeywords   = settings.systemControl.gcal.realKeywords,
+      gmosKeywords   = settings.systemControl.gmos.realKeywords,
+      gnirsKeywords  = settings.systemControl.gnirs.realKeywords,
+      niriKeywords   = settings.systemControl.niri.realKeywords,
+      nifsKeywords   = settings.systemControl.nifs.realKeywords,
+      altairKeywords = settings.systemControl.altair.realKeywords,
+      gsaoiKeywords  = settings.systemControl.gsaoi.realKeywords,
+      gemsKeywords   = settings.systemControl.gems.realKeywords
     )
 
-    SeqTranslate(settings.site, systems, translatorSettings)
-
+    SeqTranslate(site, systems, translatorSettings)
   }
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
@@ -617,117 +605,65 @@ object SeqexecEngine extends SeqexecConfiguration {
       case Array(k, v) => k.trim -> v.trim
     }.toMap
 
-  def seqexecConfiguration(
-    implicit cs: ContextShift[IO]
-  ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
-    // TODO replace with pure-config
-    val site                    = cfg.require[Site]("seqexec-engine.site")
-    val odbHost                 = cfg.require[String]("seqexec-engine.odb")
-    val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
-    val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
-    val altairControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.altair")
-    val gemsControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gems")
-    val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
-    val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
-    val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
-    val ghostGdsControl         = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghostGds")
-    val gmosControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gmos")
-    val gnirsControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gnirs")
-    val gpiControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
-    val gpiGdsControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpiGds")
-    val gsaoiControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gsaoi")
-    val gwsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gws")
-    val nifsControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.nifs")
-    val niriControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.niri")
-    val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
-    val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-    val gpiUrl                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiUrl"))
-    val ghostUrl                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostUrl"))
-    val gpiGDS                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiGDS"))
-    val ghostGDS                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostGDS"))
-    val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
-    val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
-    val odbQueuePollingInterval = cfg.require[Duration]("seqexec-engine.odbQueuePollingInterval")
-    val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
-    val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
-    val ioTimeout               = cfg.require[Duration]("seqexec-engine.ioTimeout")
+  /**
+   * Build the seqexec and setup epics
+   */
+  def build(
+    site: Site,
+    systems: Systems[IO],
+    conf: SeqexecEngineConfiguration,
+    metrics: SeqexecMetrics)(
+    implicit cs: ContextShift[IO],
+             tio: Timer[IO],
+             L: Logger[IO]
+  ): IO[SeqexecEngine] = createTranslator(site, systems, conf).flatMap{ translator =>
+      // TODO: Review initialization of EPICS systems
+      def initEpicsSystem(sys: EpicsSystem[_], tops: Map[String, String]): IO[Unit] =
+        IO.apply(
+          Option(CaService.getInstance()) match {
+            case None => throw new Exception("Unable to start EPICS service.")
+            case Some(s) =>
+              sys.init(s, tops).leftMap {
+                  case SeqexecFailure.SeqexecException(ex) => throw ex
+                  case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
+              }
+          }
+        ).void
 
-    // TODO: Review initialization of EPICS systems
-    def initEpicsSystem(sys: EpicsSystem[_], tops: Map[String, String]): IO[Unit] =
-      IO.apply(
-        Option(CaService.getInstance()) match {
-          case None => throw new Exception("Unable to start EPICS service.")
-          case Some(s) =>
-            sys.init(s, tops).leftMap {
-                case SeqexecFailure.SeqexecException(ex) => throw ex
-                case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
-            }
+      val tops = decodeTops(conf.tops)
+
+      // Ensure there is a valid way to init CaService either from
+      // the configuration file or from the environment
+      val caInit   = conf.epicsCaAddrList.map(a => IO(CaService.setAddressList(a))).getOrElse {
+        IO(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+          case Some(_) => IO.unit
+          case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
         }
-      ) *> IO.unit
+      } *> IO(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis)))
 
-    // Ensure there is a valid way to init CaService either from
-    // the configuration file or from the environment
-    val caInit   = caAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
-      IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => IO.unit
-        case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
+      // More instruments to be added to the list here
+      val epicsInstruments = site match {
+        case Site.GS => List((conf.systemControl.f2, Flamingos2Epics), (conf.systemControl.gmos, GmosEpics), (conf.systemControl.gsaoi, GsaoiEpics))
+        case Site.GN => List((conf.systemControl.gmos, GmosEpics), (conf.systemControl.gnirs, GnirsEpics),
+          (conf.systemControl.niri, NiriEpics), (conf.systemControl.nifs, NifsEpics)
+        )
       }
-    } *> IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
 
-    // More instruments to be added to the list here
-    val epicsInstruments = site match {
-      case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics), (gsaoiControl, GsaoiEpics))
-      case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics),
-        (niriControl, NiriEpics), (nifsControl, NifsEpics)
-      )
+      val epicsGaos = site match {
+        case Site.GS => List(conf.systemControl.gems -> GemsEpics)
+        case Site.GN => List(conf.systemControl.altair -> AltairEpics)
+      }
+
+      val epicsSystems = epicsInstruments ++ List(
+        (conf.systemControl.tcs, TcsEpics),
+        (conf.systemControl.gws, GwsEpics),
+        (conf.systemControl.gcal, GcalEpics)
+      ) ++ epicsGaos
+      val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
+        .parTraverse(x => initEpicsSystem(x._2, tops))
+
+      epicsInit *> new SeqexecEngine(systems, conf, metrics, translator).pure[IO]
     }
-    val epicsGaos = site match {
-      case Site.GS => List(gemsControl -> GemsEpics)
-      case Site.GN => List(altairControl -> AltairEpics)
-    }
-    val epicsSystems = epicsInstruments ++ List(
-      (tcsControl, TcsEpics),
-      (gwsControl, GwsEpics),
-      (gcalControl, GcalEpics)
-    ) ++ epicsGaos
-    val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
-      .map(x => initEpicsSystem(x._2, tops)).parSequence
-
-    def settings: IO[Settings] =
-        IO(LocalDate.now).map { now =>
-          Settings(site,
-                   odbHost,
-                   now,
-                   dhsServer,
-                   altairControl,
-                   gemsControl,
-                   dhsControl,
-                   f2Control,
-                   gcalControl,
-                   ghostControl,
-                   gmosControl,
-                   gnirsControl,
-                   gpiControl,
-                   gpiGdsControl,
-                   ghostGdsControl,
-                   gsaoiControl,
-                   gwsControl,
-                   nifsControl,
-                   niriControl,
-                   tcsControl,
-                   odbNotifications,
-                   instForceError,
-                   failAt,
-                   odbQueuePollingInterval,
-                   gpiUrl,
-                   ghostUrl,
-                   gpiGDS,
-                   ghostGDS)
-                 }
-
-    epicsInit *> settings
-
-  }
 
   private[server] def updateSequenceEndo(seqId: Observation.Id, obsseq: SequenceData[IO])
   : Endo[EngineState] = st =>

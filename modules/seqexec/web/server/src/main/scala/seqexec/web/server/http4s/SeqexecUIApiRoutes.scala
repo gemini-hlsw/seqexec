@@ -14,6 +14,7 @@ import fs2.Stream
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import gem.enum.GiapiStatus
+import gem.enum.Site
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
@@ -30,6 +31,7 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.model.boopickle._
+import seqexec.model.config._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.AuthenticationService
@@ -41,8 +43,8 @@ import seqexec.web.common.LogMessage
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(site: String,
-                         devMode: Boolean,
+class SeqexecUIApiRoutes(site: Site,
+                         mode: Mode,
                          auth: AuthenticationService,
                          guideConfigS: GuideConfigDb[IO],
                          giapiDB: GiapiStatusDb[IO],
@@ -114,7 +116,7 @@ class SeqexecUIApiRoutes(site: String,
   val protectedServices: AuthedRoutes[AuthResult, IO] =
     AuthedRoutes.of {
       // Route used for testing only
-      case GET  -> Root  / "log" / count as _ if devMode =>
+      case GET  -> Root  / "log" / count as _ if mode === Mode.Development =>
         for {_ <- 0 until min(1000, max(0, count.toInt))} {
           clientLog.info("info")
           clientLog.warn("warn")
@@ -135,7 +137,7 @@ class SeqexecUIApiRoutes(site: String,
         // Login start
         IO(clientLog.info(
           s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *>
-          Ok(site)
+          Ok(s"$site")
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // If the user didn't login, anonymize

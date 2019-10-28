@@ -55,7 +55,7 @@ object Settings {
     val logback                 = "1.2.3"
     val janino                  = "3.1.0"
     val logstash                = "6.2"
-    val knobs                   = "7.0.24"
+    val pureConfig              = "0.12.0"
     val monocleVersion          = "2.0.0"
     val circeVersion            = "0.12.1"
     val doobieVersion           = "0.6.0"
@@ -130,7 +130,12 @@ object Settings {
     val Log4s                  = Def.setting("org.log4s"              %%% "log4s"                    % LibraryVersions.log4s)
     val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
     val Logging                = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
-    val Knobs                  = "io.getnelson.knobs"                 %%  "core"                     % LibraryVersions.knobs
+    val PureConfig             = Seq(
+      "com.github.pureconfig" %% "pureconfig"             % LibraryVersions.pureConfig,
+      "com.github.pureconfig" %% "pureconfig-cats"        % LibraryVersions.pureConfig,
+      "com.github.pureconfig" %% "pureconfig-cats-effect" % LibraryVersions.pureConfig,
+      "com.github.pureconfig" %% "pureconfig-http4s"      % LibraryVersions.pureConfig
+    )
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
     val ScalaXml               = Def.setting("org.scala-lang.modules" %%% "scala-xml"                % LibraryVersions.scalaXmlVerson)

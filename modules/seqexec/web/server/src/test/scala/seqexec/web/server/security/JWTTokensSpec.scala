@@ -3,14 +3,14 @@
 
 package seqexec.web.server.security
 
-import seqexec.model.UserDetails
-import squants.time.Hours
 import cats.tests.CatsSuite
+import seqexec.model.config._
+import seqexec.model.UserDetails
+import scala.concurrent.duration._
 
 class JWTTokensSpec extends CatsSuite {
-  private val ldapConfig = LDAPConfig(Nil)
-  private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "key", useSSL = false, ldapConfig)
-  private val authService = AuthenticationService(config)
+  private val config = AuthenticationConfig(FiniteDuration(8, HOURS), "token", "key", useSSL = false, Nil)
+  private val authService = AuthenticationService(Mode.Production, config)
 
   test("JWT Tokens: encode/decode") {
     forAll { (u: String, p: String) =>

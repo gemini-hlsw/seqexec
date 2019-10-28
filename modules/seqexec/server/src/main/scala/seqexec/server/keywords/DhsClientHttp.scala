@@ -178,7 +178,10 @@ private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[
 }
 
 object DhsClientSim {
-  def unsafeApply[F[_]: Sync: Logger](date: LocalDate): DhsClient[F] = {
-    new DhsClientSim[F](date, Ref.unsafe(0))
-  }
+  def apply[F[_]: Sync: Logger]: F[DhsClient[F]] =
+    (Sync[F].delay(LocalDate.now), Ref.of[F, Int](0)).mapN(new DhsClientSim[F](_, _))
+
+  def apply[F[_]: Sync: Logger](date: LocalDate): F[DhsClient[F]] =
+    Ref.of[F, Int](0).map(new DhsClientSim[F](date, _))
+
 }
