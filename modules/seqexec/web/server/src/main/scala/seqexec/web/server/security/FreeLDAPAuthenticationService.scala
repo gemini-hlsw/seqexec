@@ -8,9 +8,9 @@ import cats.effect._
 import cats.free.Free
 import cats.implicits._
 import com.unboundid.ldap.sdk._
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
-import org.log4s.getLogger
 
 /**
   * Definition of LDAP as a free monad algebra/interpreters
@@ -39,19 +39,19 @@ object FreeLDAPAuthenticationService {
   def nameGroupsThumb(u: UID): LdapM[(DisplayName, Groups, Option[Thumbnail])] = Free.liftF(LdapOp.DisplayNameGrpThumbOp(u))
 
   // Natural transformation to IO
-  def toIO(c: LDAPConnection): LdapOp ~> IO =
-    new (LdapOp ~> IO) {
+  def toF[F[_]: Sync](c: LDAPConnection): LdapOp ~> F =
+    new (LdapOp ~> F) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p)       => IO(c.authenticate(u, p))
-          case LdapOp.UserDisplayNameOp(uid)     => IO(c.displayName(uid))
-          case LdapOp.DisplayNameGrpThumbOp(uid) => IO(c.nameGroupsThumb(uid))
+          case LdapOp.AuthenticateOp(u, p)       => Sync[F].delay(c.authenticate(u, p))
+          case LdapOp.UserDisplayNameOp(uid)     => Sync[F].delay(c.displayName(uid))
+          case LdapOp.DisplayNameGrpThumbOp(uid) => Sync[F].delay(c.nameGroupsThumb(uid))
       }
     }
 
   // Run on IO
-  def runIO[A](a: LdapM[A], c: LDAPConnection): IO[A] =
-    a.foldMap(toIO(c))
+  def runF[F[_]: Sync, A](a: LdapM[A], c: LDAPConnection): F[A] =
+    a.foldMap(toF(c))
 
   // Programs
   // Does simple user authentication
@@ -73,11 +73,9 @@ object FreeLDAPAuthenticationService {
 /**
   * Handles authentication against the AD/LDAP server
   */
-class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthService {
+class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int)]) extends AuthService[F] {
   import FreeLDAPAuthenticationService._
   private implicit val resultEqual: Eq[ResultCode] = Eq.fromUniversalEquals
-
-  private val Log = getLogger
 
   // Shorten the default timeout
   private val Timeout = 1000
@@ -92,30 +90,30 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
   // Will attempt several servers in case they fail
   lazy val failoverServerSet = new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray, ldapOptions)
 
-  override def authenticateUser(username: String, password: String): IO[AuthResult] = {
+  override def authenticateUser(username: String, password: String): F[AuthResult] = {
     // We should always return the domain
     val usernameWithDomain = if (username.endsWith(Domain)) username else s"$username$Domain"
 
     val rsrc =
       for {
-        c <- Resource.make(IO(failoverServerSet.getConnection))(c => IO(c.close()))
-        x <- Resource.liftF(runIO(authenticationAndName(usernameWithDomain, password), c).attempt)
+        c <- Resource.make(Sync[F].delay(failoverServerSet.getConnection))(c => Sync[F].delay(c.close()))
+        x <- Resource.liftF(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
       } yield x
 
     rsrc.use {
       case Left(e: LDAPException) if e.getResultCode === ResultCode.NO_SUCH_OBJECT      =>
-        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        BadCredentials(username).asLeft.pure[IO]
+        Logger[F].error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}") *>
+        BadCredentials(username).asLeft[UserDetails].pure[F].widen[AuthResult]
       case Left(e: LDAPException) if e.getResultCode === ResultCode.INVALID_CREDENTIALS =>
-        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        UserNotFound(username).asLeft.pure[IO]
+        Logger[F].error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}") *>
+        UserNotFound(username).asLeft[UserDetails].pure[F].widen[AuthResult]
       case Left(e: LDAPException)                                                       =>
-        Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        GenericFailure("LDAP Authentication error").asLeft.pure[IO]
+        Logger[F].error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}") *>
+        GenericFailure("LDAP Authentication error").asLeft[UserDetails].pure[F].widen[AuthResult]
       case Left(e: Throwable)                                                           =>
-        GenericFailure(e.getMessage).asLeft.pure[IO]
+        GenericFailure(e.getMessage).asLeft[UserDetails].pure[F].widen[AuthResult]
       case Right(u)                                                                     =>
-        u.asRight.pure[IO]
+        u.asRight.pure[F]
     }
   }
 

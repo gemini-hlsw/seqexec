@@ -9,6 +9,7 @@ import fs2.concurrent.Topic
 import fs2.Stream
 import gem.enum.Site
 import giapi.client.GiapiStatusDb
+import io.chrisdavenport.log4cats.noop.NoOpLogger
 import org.http4s._
 import org.http4s.Uri.uri
 import seqexec.model.events._
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class SeqexecUIApiRoutesSpec extends CatsSuite {
+  private implicit def logger = NoOpLogger.impl[IO]
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
@@ -29,7 +31,7 @@ class SeqexecUIApiRoutesSpec extends CatsSuite {
   val statusDb = GiapiStatusDb.simulatedDb[IO]
 
   private val config = AuthenticationConfig(FiniteDuration(8, HOURS), "token", "abc", useSSL = false, Nil)
-  private val authService = AuthenticationService(Mode.Production, config)
+  private val authService = AuthenticationService[IO](Mode.Production, config)
   val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(Topic[IO, SeqexecEvent](NullEvent))
 
   private val service =

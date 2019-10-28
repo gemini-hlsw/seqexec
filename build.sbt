@@ -281,8 +281,14 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Http4sPrometheus, Argonaut, CommonsHttp) ++
-      Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
+    libraryDependencies ++= Seq(
+      UnboundId,
+      JwtCore,
+      JwtCirce,
+      Http4sPrometheus,
+      CommonsHttp,
+      Log4CatsNoop.value) ++
+      Http4sClient ++ Http4s ++ PureConfig ++ Logging.value ,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),

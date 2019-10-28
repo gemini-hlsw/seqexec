@@ -3,17 +3,21 @@
 
 package seqexec.web.server.security
 
-import argonaut._
-import Argonaut._
-import cats.effect.IO
+import cats._
+import cats.effect._
 import cats.implicits._
 import com.unboundid.ldap.sdk.LDAPURL
-import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim}
+import io.chrisdavenport.log4cats.Logger
+import io.circe._
+import io.circe.syntax._
+import io.circe.jawn.decode
+import io.circe.generic.semiauto.deriveCodec
+import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtCirce}
 import seqexec.model.UserDetails
 import seqexec.model.config._
 import seqexec.web.server.security.AuthenticationService.AuthResult
 
-sealed trait AuthenticationFailure
+sealed trait AuthenticationFailure extends Product with Serializable
 final case class UserNotFound(user: String) extends AuthenticationFailure
 final case class BadCredentials(user: String) extends AuthenticationFailure
 case object NoAuthenticator extends AuthenticationFailure
@@ -24,8 +28,8 @@ case object MissingCookie extends AuthenticationFailure
 /**
   * Interface for implementations that can authenticate users from a username/pwd pair
   */
-trait AuthService {
-  def authenticateUser(username: String, password: String): IO[AuthResult]
+trait AuthService[F[_]] {
+  def authenticateUser(username: String, password: String): F[AuthResult]
 }
 
 // Intermediate class to decode the claim stored in the JWT token
@@ -33,26 +37,26 @@ final case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName:
   def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
-final case class AuthenticationService(mode: Mode, config: AuthenticationConfig) extends AuthService {
+final case class AuthenticationService[F[_]: Timer: Sync: Logger](mode: Mode, config: AuthenticationConfig) extends AuthService[F] {
   import AuthenticationService._
+  implicit val clock = java.time.Clock.systemUTC()
 
   private val hosts = config.ldapURLs.map(u => new LDAPURL(u.renderString)).map(u => (u.getHost, u.getPort))
 
-  val ldapService: AuthService = new FreeLDAPAuthenticationService(hosts)
+  val ldapService: AuthService[F] = new FreeLDAPAuthenticationService(hosts)
 
-  implicit def UserDetailsCodecJson: CodecJson[UserDetails] =
-    casecodec2(UserDetails.apply, UserDetails.unapply)("username", "displayName")
+  implicit val codecForUserDetails: Codec[UserDetails] = deriveCodec
 
   private val authServices =
-    if (mode === Mode.Development) List(TestAuthenticationService, ldapService)
+    if (mode === Mode.Development) List(new TestAuthenticationService[F], ldapService)
     else List(ldapService)
 
   /**
     * From the user details it creates a JSON Web Token
     */
-  def buildToken(u: UserDetails): IO[String] = IO.apply {
+  def buildToken(u: UserDetails): F[String] = Sync[F].delay {
     // Given that only this server will need the key we can just use HMAC. 512-bit is the max key size allowed
-    Jwt.encode(JwtClaim(u.asJson.nospaces).issuedNow.expiresIn(config.sessionLifeHrs.toSeconds.toLong), config.secretKey, JwtAlgorithm.HS512)
+    Jwt.encode(JwtClaim(u.asJson.noSpaces).issuedNow.expiresIn(config.sessionLifeHrs.toSeconds.toLong), config.secretKey, JwtAlgorithm.HS512)
   }
 
   /**
@@ -60,36 +64,36 @@ final case class AuthenticationService(mode: Mode, config: AuthenticationConfig)
     */
   def decodeToken(t: String): AuthResult =
     for {
-      claim       <- Jwt.decodeRaw(t, config.secretKey, Seq(JwtAlgorithm.HS512)).toEither.leftMap(t => DecodingFailure(t.getMessage))
-      userDetails <- claim.decodeEither[UserDetails].leftMap(DecodingFailure.apply)
+      claim       <- JwtCirce.decode(t, config.secretKey, Seq(JwtAlgorithm.HS512)).toEither.leftMap(t => DecodingFailure(t.getMessage))
+      userDetails <- decode[UserDetails](claim.content).leftMap(e => DecodingFailure(e.getMessage))
     } yield userDetails
 
   val sessionTimeout: Long = config.sessionLifeHrs.toSeconds
 
-  override def authenticateUser(username: String, password: String): IO[AuthResult] =
+  override def authenticateUser(username: String, password: String): F[AuthResult] =
     authServices.authenticateUser(username, password)
 }
 
 object AuthenticationService {
   type AuthResult = Either[AuthenticationFailure, UserDetails]
-  type AuthenticationServices = List[AuthService]
+  type AuthenticationServices[F[_]] = List[AuthService[F]]
 
   // Allows calling authenticate on a list of authenticator, stopping at the first
   // that succeeds
-  implicit class ComposedAuth(val s: AuthenticationServices) extends AnyVal {
+  implicit class ComposedAuth[F[_]: MonadError[?[_], Throwable]](val s: AuthenticationServices[F]) {
 
-    def authenticateUser(username: String, password: String): IO[AuthResult] = {
-      def go(l: List[AuthService]): IO[AuthResult] = l match {
-        case Nil      => IO(Left(NoAuthenticator))
+    def authenticateUser(username: String, password: String): F[AuthResult] = {
+      def go(l: List[AuthService[F]]): F[AuthResult] = l match {
+        case Nil      => NoAuthenticator.asLeft[UserDetails].pure[F].widen[AuthResult]
         case x :: Nil => x.authenticateUser(username, password)
         case x :: xs  => x.authenticateUser(username, password).attempt.flatMap {
-            case Right(u) => IO.pure(u)
-            case Left(_)      => go(xs)
+            case Right(u) => u.pure[F]
+            case Left(_)  => go(xs)
           }
       }
       // Discard empty values right away
       if (username.isEmpty || password.isEmpty) {
-        IO.pure(Left(BadCredentials(username)))
+        BadCredentials(username).asLeft[UserDetails].pure[F].widen[AuthResult]
       } else {
         go(s)
       }

@@ -47,12 +47,12 @@ object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: IO[FilePath] =
-    baseDir[IO].map(_.resolve("conf").resolve("app.conf"))
+  def configurationFile[F[_]: Sync]: F[FilePath] =
+    baseDir[F].map(_.resolve("conf").resolve("app.conf"))
 
   // Try to load config from the file and fall back to the common one in the class path
-  val config = {
-    val defaultConfig = ConfigSource.resources("app.conf").pure[IO]
+  def config[F[_]: Sync]: F[ConfigObjectSource] = {
+    val defaultConfig = ConfigSource.resources("app.conf").pure[F]
     val fileConfig = configurationFile.map(ConfigSource.file)
 
     // ConfigSource, first attempt the file or default to the classpath file
@@ -60,14 +60,14 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Configures the Authentication service */
-  def authService(mode: Mode, conf: AuthenticationConfig): IO[AuthenticationService] =
-    IO.apply(AuthenticationService(mode, conf))
+  def authService[F[_]: Sync: Timer: Logger](mode: Mode, conf: AuthenticationConfig): F[AuthenticationService[F]] =
+    Sync[F].delay(AuthenticationService[F](mode, conf))
 
   /** Resource that yields the running web server */
   def webServer(
     conf: SeqexecConfiguration,
     cal: SmartGcal,
-    as: AuthenticationService,
+    as: AuthenticationService[IO],
     inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
@@ -111,23 +111,23 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
   }
 
-  def redirectWebServer(
-    gcdb: GuideConfigDb[IO],
+  def redirectWebServer[F[_]: ConcurrentEffect: Logger: Timer](
+    gcdb: GuideConfigDb[F],
     cal: SmartGcal
-  )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
-    val router = Router[IO](
+  )(conf: WebServerConfiguration): Resource[F, Server[F]] = {
+    val router = Router[F](
       "/api/seqexec/guide" -> new GuideConfigDbRoutes(gcdb).service,
-      "/smartgcal"         -> new SmartGcalRoutes[IO](cal).service,
-      "/"                  -> new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service
+      "/smartgcal"         -> new SmartGcalRoutes[F](cal).service,
+      "/"                  -> new RedirectToHttpsRoutes[F](443, conf.externalBaseUrl).service
     )
 
-    BlazeServerBuilder[IO]
+    BlazeServerBuilder[F]
       .bindHttp(conf.insecurePort, conf.host)
       .withHttpApp(router.orNotFound)
       .resource
   }
 
-  def printBanner(conf: SeqexecConfiguration): IO[Unit] = {
+  def printBanner[F[_]: Logger](conf: SeqexecConfiguration): F[Unit] = {
     val banner = """
    _____
   / ___/___  ____ ____  _  _____  _____
@@ -137,7 +137,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
              /_/
 """
     val msg = s"""Start web server for site ${conf.site} on ${conf.mode} mode, version ${OcsBuildInfo.version}"""
-    L.info(banner + msg)
+    Logger[F].info(banner + msg)
   }
 
   // We need to manually update the configuration of the logging subsystem
@@ -167,9 +167,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   // Logger of error of last resort.
-  def logError: PartialFunction[Throwable, IO[Unit]] = {
-    case e: SeqexecFailure => L.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
-    case e: Exception      => L.error(e)("Seqexec global error handler")
+  def logError[F[_]: Logger]: PartialFunction[Throwable, F[Unit]] = {
+    case e: SeqexecFailure => Logger[F].error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
+    case e: Exception      => Logger[F].error(e)("Seqexec global error handler")
   }
 
   /** Reads the configuration and launches the seqexec engine and web server */
@@ -206,7 +206,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       bec: ExecutionContext
     ): Resource[IO, Unit] =
       for {
-        as <- Resource.liftF(authService(conf.mode, conf.authentication))
+        as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
         _  <- webServer(conf, ca, as, in, out, en, cr, bec)
@@ -215,7 +215,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     val seqexec: Resource[IO, ExitCode] =
       for {
         _      <- Resource.liftF(configLog[IO]) // Initialize log before the engine is setup
-        conf   <- Resource.liftF(config.flatMap(loadConfiguration[IO]))
+        conf   <- Resource.liftF(config[IO].flatMap(loadConfiguration[IO]))
         _      <- Resource.liftF(printBanner(conf))
         cli    <- AsyncHttpClient.resource[IO](clientConfig)
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
