@@ -45,10 +45,9 @@ object Settings {
 
     val http4sVersion           = "0.20.11"
     val squants                 = "1.5.0"
-    val argonaut                = "6.2.3"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
-    val jwt                     = "2.1.0"
+    val jwt                     = "4.1.0"
     val slf4j                   = "1.7.28"
     val log4s                   = "1.8.2"
     val log4cats                = "1.0.1"
@@ -112,10 +111,10 @@ object Settings {
     val Fs2IO                  = "co.fs2"                    %%  "fs2-io"                            % LibraryVersions.fs2Version % "test"
     val Mouse                  = Def.setting("org.typelevel" %%% "mouse"                             % LibraryVersions.mouseVersion)
     val Shapeless              = Def.setting("com.chuusai"   %%% "shapeless"                         % LibraryVersions.shapelessVersion)
-    val Argonaut               = "io.argonaut"               %%  "argonaut"                          % LibraryVersions.argonaut
     val CommonsHttp            = "commons-httpclient"        %   "commons-httpclient"                % LibraryVersions.commonsHttp
     val UnboundId              = "com.unboundid"             %   "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
     val JwtCore                = "com.pauldijou"             %%  "jwt-core"                          % LibraryVersions.jwt
+    val JwtCirce               = "com.pauldijou"             %%  "jwt-circe"                         % LibraryVersions.jwt
     val Slf4j                  = "org.slf4j"                 %   "slf4j-api"                         % LibraryVersions.slf4j
     val JuliSlf4j              = "org.slf4j"                 %   "jul-to-slf4j"                      % LibraryVersions.slf4j
     val NopSlf4j               = "org.slf4j"                 %   "slf4j-nop"                         % LibraryVersions.slf4j

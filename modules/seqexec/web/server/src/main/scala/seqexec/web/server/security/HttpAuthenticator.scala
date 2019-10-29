@@ -3,27 +3,28 @@
 
 package seqexec.web.server.security
 
+import cats._
 import cats.data.{Kleisli, OptionT}
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.Sync
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import org.http4s._
-import org.http4s.dsl.io._
+import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import java.time.Instant
 
 /**
   * Bridge between http4s authentication and the actual internal authenticator
   */
-class Http4sAuthentication(auth: AuthenticationService) {
+class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends Http4sDsl[F] {
   private val cookieService =
     CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout)
 
-  def loginCookie(user: UserDetails): IO[ResponseCookie] =
+  def loginCookie(user: UserDetails): F[ResponseCookie] =
     cookieService.loginCookie(auth, user)
 
-  private def authRequest(request: Request[IO]) = {
+  private def authRequest(request: Request[F]) = {
     val authResult = for {
       header <- headers.Cookie.from(request.headers).toRight(MissingCookie)
       cookie <- header.values.toList.find(_.name === auth.config.cookieName).toRight(MissingCookie)
@@ -32,18 +33,18 @@ class Http4sAuthentication(auth: AuthenticationService) {
     authResult
   }
 
-  val authUser: Kleisli[IO, Request[IO], AuthResult] = Kleisli( request =>
-    IO(authRequest(request))
+  val authUser: Kleisli[F, Request[F], AuthResult] = Kleisli( request =>
+    Sync[F].delay(authRequest(request))
   )
 
-  val optAuthUser: Kleisli[OptionT[IO, ?], Request[IO], AuthResult] = Kleisli( request =>
-    OptionT.liftF(IO(authRequest(request)))
+  val optAuthUser: Kleisli[OptionT[F, ?], Request[F], AuthResult] = Kleisli( request =>
+    OptionT.liftF(Sync[F].delay(authRequest(request)))
   )
 
-  val optAuth: AuthMiddleware[IO, AuthResult] = AuthMiddleware(optAuthUser)
+  val optAuth: AuthMiddleware[F, AuthResult] = AuthMiddleware(optAuthUser)
 
-  private val onFailure: AuthedRoutes[AuthenticationFailure, IO] = Kleisli(_ => OptionT.liftF(Forbidden()))
-  val reqAuth: AuthMiddleware[IO, UserDetails] = AuthMiddleware(authUser, onFailure)
+  private val onFailure: AuthedRoutes[AuthenticationFailure, F] = Kleisli(_ => OptionT.liftF(Forbidden()))
+  val reqAuth: AuthMiddleware[F, UserDetails] = AuthMiddleware(authUser, onFailure)
 
 }
 
@@ -52,12 +53,12 @@ class Http4sAuthentication(auth: AuthenticationService) {
   * It has some cost as it needs to decode/encode the cookie with JWT
   */
 object TokenRefresher {
-  private def replaceCookie(service: HttpRoutes[IO], auth: Http4sAuthentication)(result: AuthResult): Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] = Kleisli { request =>
+  private def replaceCookie[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F])(result: AuthResult): Kleisli[OptionT[F, ?], Request[F], Response[F]] = Kleisli { request =>
     result.fold(_ => service(request), u =>
       OptionT.liftF(auth.loginCookie(u)) >>= { c => service.map(_.addCookie(c)).apply(request) })
   }
 
-  def apply(service: HttpRoutes[IO], auth: Http4sAuthentication): HttpRoutes[IO] = auth.optAuthUser.flatMap(replaceCookie(service, auth))
+  def apply[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F]): HttpRoutes[F] = auth.optAuthUser.flatMap(replaceCookie[F](service, auth))
 }
 
 trait CookiesService {
@@ -65,13 +66,13 @@ trait CookiesService {
   def ssl: Boolean
   def ttl: Long
 
-  def buildCookie(token: String): IO[ResponseCookie] =
-    IO.apply {
+  def buildCookie[F[_]: Sync](token: String): F[ResponseCookie] =
+    Sync[F].delay {
       HttpDate.fromInstant(Instant.now().plusSeconds(ttl))
     }.map { exp => ResponseCookie(name, token, path = "/".some, expires = exp.toOption, secure = ssl, httpOnly = true) }
 
-  def loginCookie(auth: AuthenticationService, user: UserDetails): IO[ResponseCookie] =
-    auth.buildToken(user) >>= buildCookie
+  def loginCookie[F[_]: Sync](auth: AuthenticationService[F], user: UserDetails): F[ResponseCookie] =
+    auth.buildToken(user) >>= buildCookie[F]
 }
 
 object CookiesService {

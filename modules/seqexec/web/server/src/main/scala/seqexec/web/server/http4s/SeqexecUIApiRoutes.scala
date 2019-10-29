@@ -16,7 +16,7 @@ import giapi.client.StatusValue
 import gem.enum.GiapiStatus
 import gem.enum.Site
 import org.http4s._
-import org.http4s.dsl.io._
+import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
@@ -45,13 +45,13 @@ import seqexec.web.common.LogMessage
   */
 class SeqexecUIApiRoutes(site: Site,
                          mode: Mode,
-                         auth: AuthenticationService,
+                         auth: AuthenticationService[IO],
                          guideConfigS: GuideConfigDb[IO],
                          giapiDB: GiapiStatusDb[IO],
                          engineOutput: Topic[IO, SeqexecEvent])(
   implicit cio: Concurrent[IO],
            tio: Timer[IO]
-) extends BooEncoders with ModelLenses {
+) extends BooEncoders with ModelLenses with Http4sDsl[IO] {
 
   // Logger for client messages
   private val clientLog = getLogger
