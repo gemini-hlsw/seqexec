@@ -94,7 +94,7 @@ final case class ObservationProgressBar(
   @inline def render: VdomElement = ObservationProgressBar.component(this)
 
   protected[steps] val connect =
-    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
+    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader[ObservationProgress](obsId, stepId))
 }
 
 object ObservationProgressBar {
