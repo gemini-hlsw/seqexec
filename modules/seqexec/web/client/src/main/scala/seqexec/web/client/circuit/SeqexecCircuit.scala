@@ -137,7 +137,7 @@ object SeqexecCircuit
   def obsProgressReader(
     id:     Observation.Id,
     stepId: StepId
-  ): ModelR[SeqexecAppRootModel, Option[ObservationProgress]] =
+  ): ModelR[SeqexecAppRootModel, Option[Progress]] =
     this.zoomL(AllObservationsProgressState.progressStateL(id, stepId))
 
   def statusAndStepReader(

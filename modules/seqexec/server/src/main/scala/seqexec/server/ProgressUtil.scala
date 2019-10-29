@@ -9,7 +9,6 @@ import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
 import squants.time.{Milliseconds, Seconds, Time}
-
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
 object ProgressUtil {
@@ -36,7 +35,7 @@ object ProgressUtil {
           val progress = Milliseconds(t.toMillis) + elapsed
           val remaining = total - progress
           val clipped = if(remaining.value >= 0.0) remaining else Seconds(0.0)
-          Progress(total, RemainingTime(clipped)).pure[F]
+          ObsProgress(total, RemainingTime(clipped)).pure[F].widen[Progress]
         }
     }.takeThrough(_.remaining.self.value > 0.0)
 }

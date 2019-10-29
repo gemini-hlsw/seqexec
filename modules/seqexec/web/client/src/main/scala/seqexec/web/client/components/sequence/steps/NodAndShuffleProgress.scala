@@ -3,28 +3,27 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import react.common.implicits._
-import seqexec.web.client.model.StepItems.StepStateSummary
-import web.client.ReactProps
-import seqexec.model.enum.NodAndShuffleStage
-import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
 import cats.implicits._
 import diode.react.ReactConnectProxy
 import gem.Observation
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
+import react.common.implicits._
 import react.common.Css
+import seqexec.web.client.model.StepItems.StepStateSummary
+import seqexec.model.enum.NodAndShuffleStage
+import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{NodAndShuffleStatus, ObservationProgress, StepId}
+import seqexec.model.{NodAndShuffleStatus, Progress, StepId}
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
-
 import scala.math.max
+import web.client.ReactProps
 
 final case class NodAndShuffleProgressMessage(
                                                obsId : Observation.Id,
@@ -44,7 +43,7 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
   type Props = NodAndShuffleProgressMessage
 
   @Lenses
-  protected case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
+  protected case class State(progressConnect: ReactConnectProxy[Option[Progress]])
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.always
@@ -136,7 +135,7 @@ sealed trait NodAndShuffleProgress {
   // during your components lifecycle ensures that React will update your
   // component rather than unmounting and remounting it."
   @Lenses
-  protected case class State(progressConnect: ReactConnectProxy[Option[ObservationProgress]])
+  protected case class State(progressConnect: ReactConnectProxy[Option[Progress]])
 
   implicit val propsReuse: Reusability[Props]
   implicit val stateReuse: Reusability[State] = Reusability.always

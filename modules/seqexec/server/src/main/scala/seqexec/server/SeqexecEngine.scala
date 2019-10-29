@@ -781,8 +781,10 @@ object SeqexecEngine {
         case SystemEvent.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
         case SystemEvent.StopCompleted(id, _, _, _)                               => SequenceStopped(id, svs)
         case SystemEvent.PartialResult(_, _, _, Partial(_: InternalPartialVal))   => NullEvent
-        case SystemEvent.PartialResult(i, s, _, Partial(Progress(t, r)))          =>
+        case SystemEvent.PartialResult(i, s, _, Partial(ObsProgress(t, r)))          =>
           ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
+        case SystemEvent.PartialResult(i, s, _, Partial(NSProgress(t, r, u)))          =>
+          ObservationProgressEvent(NSObservationProgress(i, s, t, r.self, u))
         case SystemEvent.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>
           FileIdStepExecuted(fileId, svs)
         case SystemEvent.PartialResult(_, _, _, _)                                =>

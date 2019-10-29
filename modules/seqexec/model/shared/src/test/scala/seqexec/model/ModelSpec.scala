@@ -26,6 +26,7 @@ import seqexec.model.arb.ArbTime._
 import seqexec.model.arb.ArbNSSubexposure._
 import seqexec.model.arb.ArbGmosParameters._
 import seqexec.model.arb.ArbNSRunningState._
+import seqexec.model.arb.ArbObservationProgress._
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -75,6 +76,8 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[SubsystemBusy]", EqTests[SubsystemBusy].eqv)
   checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
   checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
+  checkAll("Eq[NSObservationProgress]", EqTests[NSObservationProgress].eqv)
+  checkAll("Eq[Progress]", EqTests[Progress].eqv)
   checkAll("Eq[TimeUnit]", EqTests[TimeUnit].eqv)
   checkAll("Eq[Time]", EqTests[Time].eqv)
   checkAll("Eq[SingleActionOp]", EqTests[SingleActionOp].eqv)

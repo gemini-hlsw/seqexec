@@ -14,27 +14,13 @@ import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 import seqexec.model.enum.BatchExecState
-import seqexec.model.QueueManipulationOp
-import seqexec.model.ClientId
-import seqexec.model.QueueId
-import seqexec.model.Observer
-import seqexec.model.TargetName
-import seqexec.model.SequenceState
-import seqexec.model.SequenceView
-import seqexec.model.SequencesQueue
-import seqexec.model.Notification
-import seqexec.model.Step
-import seqexec.model.StepId
-import seqexec.model.UserDetails
-import seqexec.model.ObservationProgress
-import seqexec.model.RunningStep
-import seqexec.model.ObservationProgress
-import seqexec.model.TelescopeGuideConfig
+import seqexec.model._
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.arb.ArbRunningStep._
 import seqexec.model.arb.ArbNotification._
 import seqexec.model.arb.ArbTelescopeGuideConfig._
 import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbObservationProgress._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
@@ -630,12 +616,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     : Arbitrary[AllObservationsProgressState] =
     Arbitrary {
       for {
-        ops <- arbitrary[SortedMap[(Observation.Id, StepId), ObservationProgress]]
+        ops <- arbitrary[SortedMap[(Observation.Id, StepId), Progress]]
       } yield AllObservationsProgressState(ops)
     }
 
   implicit val obsProgressCogen: Cogen[AllObservationsProgressState] =
-    Cogen[List[((Observation.Id, StepId), ObservationProgress)]]
+    Cogen[List[((Observation.Id, StepId), Progress)]]
       .contramap(_.obsProgress.toList)
 
   implicit val arbObsClass: Arbitrary[ObsClass] =

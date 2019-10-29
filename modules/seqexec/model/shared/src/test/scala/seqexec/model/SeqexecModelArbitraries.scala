@@ -17,7 +17,6 @@ import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbStep._
-import seqexec.model.arb.ArbTime._
 
 trait SeqexecModelArbitraries {
 
@@ -217,20 +216,6 @@ trait SeqexecModelArbitraries {
   implicit val timeUnitCogen: Cogen[TimeUnit] =
     Cogen[String]
       .contramap(_.symbol)
-
-  implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
-    Arbitrary {
-      for {
-        o <- arbitrary[Observation.Id]
-        s <- arbitrary[StepId]
-        t <- arbitrary[Time]
-        r <- arbitrary[Time]
-      } yield ObservationProgress(o, s, t, r)
-    }
-
-  implicit val observationInProgressCogen: Cogen[ObservationProgress] =
-    Cogen[(Observation.Id, StepId, Time, Time)]
-      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining))
 
   implicit val saoStartArb: Arbitrary[SingleActionOp.Started] =
     Arbitrary {

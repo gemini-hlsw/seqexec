@@ -19,6 +19,7 @@ import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.ArbNotification
 import seqexec.model.arb.ArbTelescopeGuideConfig._
 import seqexec.model.arb.ArbDhsTypes._
+import seqexec.model.arb.ArbObservationProgress._
 
 trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
@@ -313,7 +314,7 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
     Cogen[(Notification, ClientId)].contramap(x => (x.memo, x.clientId))
 
   implicit val oprCogen: Cogen[ObservationProgressEvent] =
-    Cogen[ObservationProgress].contramap(_.progress)
+    Cogen[Progress].contramap(_.progress)
 
   implicit val acpCogen: Cogen[AlignAndCalibEvent] =
     Cogen[Int].contramap(_.step)

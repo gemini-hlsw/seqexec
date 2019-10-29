@@ -8,14 +8,44 @@ import cats.implicits._
 import gem.Observation
 import squants.Time
 
+sealed trait Progress extends Product with Serializable {
+  val obsId:     Observation.Id
+  val stepId:    StepId
+  val total:     Time
+  val remaining: Time
+}
+
+object Progress {
+
+  implicit val equalProgress: Eq[Progress] =
+    Eq.instance {
+      case (a: ObservationProgress, b: ObservationProgress)     => a === b
+      case (a: NSObservationProgress, b: NSObservationProgress) => a === b
+      case _                                                    => false
+    }
+}
+
 final case class ObservationProgress(obsId:     Observation.Id,
                                      stepId:    StepId,
                                      total:     Time,
-                                     remaining: Time)
+                                     remaining: Time) extends Progress
 
 object ObservationProgress {
 
-  implicit val equal: Eq[ObservationProgress] =
+  implicit val equalObservationProgress: Eq[ObservationProgress] =
     Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining))
+
+}
+
+final case class NSObservationProgress(obsId:   Observation.Id,
+                                     stepId:    StepId,
+                                     total:     Time,
+                                     remaining: Time,
+                                     sub:       NSSubexposure) extends Progress
+
+object NSObservationProgress {
+
+  implicit val equalNSObservationProgress: Eq[NSObservationProgress] =
+    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining, x.sub))
 
 }
