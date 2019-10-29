@@ -26,10 +26,6 @@ class ObservationsProgressStateHandler[M](
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ObservationProgressEvent(e)) =>
-
-      println(s"ObservationProgressEvent Received: [$e]")
-
-
       updatedL(
         AllObservationsProgressState
           .progressByIdL(e.obsId, e.stepId)

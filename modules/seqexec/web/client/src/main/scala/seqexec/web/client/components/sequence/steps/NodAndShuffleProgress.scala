@@ -154,11 +154,6 @@ sealed trait NodAndShuffleProgress {
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
       s.progressConnect { proxy =>
-
-
-        println(s"N&S Progress received: [${proxy()}]")
-
-
         val (totalMillis, remainingMillis, cycleIndex, nodIndex) =
           proxy().foldMap(p =>
             (p.total.toMilliseconds.toInt, p.remaining.toMilliseconds.toInt, p.sub.cycle.toInt, p.sub.stageIndex))
@@ -172,8 +167,8 @@ sealed trait NodAndShuffleProgress {
           SmoothDividedProgressBar(
             sections = sections(nsStatus),
             sectionTotal = sectionTotal,
-            value = currentValue + elapsedMillis,
-            maxValue = currentValue + nodMillis,
+            value = nsStatus.state.map(_ => currentValue + elapsedMillis).orEmpty, // Only advance smooth bar if actually started
+            maxValue = nsStatus.state.map(_ => currentValue + nodMillis).orEmpty, // Only advance smooth bar if actually started
             completeSectionColor = if (isInError) "red".some else "green".some,
             ongoingSectionColor = if (isInError) "red".some else "blue".some,
             progressCls = List(SeqexecStyles.observationProgressBar),
