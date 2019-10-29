@@ -219,6 +219,7 @@ object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gnirs.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new GnirsEpics(service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GnirsEpics[IO]] =
+    Sync[F].delay(new GnirsEpics(service, tops))
 
 }

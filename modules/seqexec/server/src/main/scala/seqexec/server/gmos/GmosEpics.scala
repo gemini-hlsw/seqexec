@@ -320,7 +320,8 @@ object GmosEpics extends EpicsSystem[GmosEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gmos.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new GmosEpics(service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GmosEpics[IO]] =
+    Sync[F].delay(new GmosEpics(service, tops))
 
   final case class RoiParameters[F[_]: Sync](cs: Option[CaCommandSender], i: Int) {
     val ccdXstart: Option[CaParameter[Integer]] = cs.map(_.getInteger(s"ccdXstart$i"))

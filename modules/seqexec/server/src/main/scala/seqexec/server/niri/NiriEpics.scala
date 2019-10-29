@@ -206,7 +206,7 @@ object NiriEpics extends EpicsSystem[NiriEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Niri.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new NiriEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[NiriEpics[IO]] =
+    Sync[F].delay(new NiriEpics[IO](service, tops))
 
 }

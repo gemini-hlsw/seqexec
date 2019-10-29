@@ -52,6 +52,6 @@ object GwsEpics extends EpicsSystem[GwsEpics[IO]] {
   override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gws.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new GwsEpics(service)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GwsEpics[IO]] =
+    Sync[F].delay(new GwsEpics(service))
 }

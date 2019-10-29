@@ -156,6 +156,7 @@ object TestCommon {
   )
 
   val defaultSystems: Systems[IO] = (
+    DhsClientSim[IO],
     Flamingos2ControllerSim[IO],
     GmosControllerSim.south[IO],
     GmosControllerSim.north[IO],
@@ -164,10 +165,10 @@ object TestCommon {
     gpiSim,
     ghostSim,
     NiriControllerSim[IO],
-    NifsControllerSim[IO]).mapN{ (f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+    NifsControllerSim[IO]).mapN{ (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
       Systems[IO](
         OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
-        DhsClientSim.unsafeApply(LocalDate.of(2016, 4, 15)),
+        dhs,
         TcsSouthControllerSim[IO],
         TcsNorthControllerSim[IO],
         GcalControllerSim[IO],
@@ -195,8 +196,7 @@ object TestCommon {
         DummyGwsKeywordsReader[IO]
       )}.unsafeRunSync
 
-  val seqexecEngine: SeqexecEngine = SeqexecEngine(defaultSystems, defaultSettings, sm).unsafeRunSync
-
+  val seqexecEngine: SeqexecEngine = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync
 
   def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     advanceN(q, s0, put, 1L)

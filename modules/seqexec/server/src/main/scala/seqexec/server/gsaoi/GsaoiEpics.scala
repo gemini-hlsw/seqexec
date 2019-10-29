@@ -3,7 +3,7 @@
 
 package seqexec.server.gsaoi
 
-import cats.effect.{Async, IO}
+import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaParameter, CaService, CaStatusAcceptor, CaWindowStabilizer, CarState}
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
@@ -246,6 +246,7 @@ object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gsaoi.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new GsaoiEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GsaoiEpics[IO]] =
+    Sync[F].delay(new GsaoiEpics[IO](service, tops))
 
 }

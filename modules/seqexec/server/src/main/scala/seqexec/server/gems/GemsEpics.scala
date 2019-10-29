@@ -3,14 +3,14 @@
 
 package seqexec.server.gems
 
-import cats.effect.{IO, Async}
+import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSIntF, safeAttributeSListSFloatF}
-import seqexec.server.EpicsUtil.{safeAttributeSListSDoubleF, safeAttributeSIntF}
+import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
+import seqexec.server.EpicsUtil.{safeAttributeSIntF, safeAttributeSListSDoubleF}
 import squants.Time
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -168,8 +168,8 @@ object GemsEpics extends EpicsSystem[GemsEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gems.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new GemsEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GemsEpics[IO]] =
+    Sync[F].delay(new GemsEpics[IO](service, tops))
 
 }
 

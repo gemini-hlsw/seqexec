@@ -157,6 +157,13 @@ object Systems {
         (gemsCtr, gemsKR)   <- gems(gsaoiCtr, gsaoiEpicsO)
       } yield (gemsCtr, gemsKR, gsaoiCtr, gsaoiKR)
 
+
+    /*
+     * Type parameters are
+     * E: Instrument EPICS class
+     * C: Instrument controller class
+     * K: Instrument keyword reader class
+     */
     def instObjects[F[_]: Monad, E, C, K](
       ctrl: ControlStrategy,
       epicsBuilder: (CaService, Map[String, String]) => F[E],

@@ -3,7 +3,7 @@
 
 package seqexec.server.altair
 
-import cats.effect.{IO, Async}
+import cats.effect.{Async, IO, Sync}
 import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
@@ -177,6 +177,7 @@ object AltairEpics extends EpicsSystem[AltairEpics[IO]] {
   override val className: String = getClass.getName
   override val CA_CONFIG_FILE: String = "/Altair.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new AltairEpics(service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]):F[AltairEpics[IO]] =
+    Sync[F].delay(new AltairEpics(service, tops))
 
 }

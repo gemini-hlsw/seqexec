@@ -63,29 +63,29 @@ trait EpicsSystem[T] {
   val className: String
   val CA_CONFIG_FILE: String
 
-  def build(service: CaService, tops: Map[String, String]): T
+  def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[T]
 
   // Still using a var, but at least now it's hidden.
   private var instanceInternal = Option.empty[T]
-  def instance[F[_]: ApplicativeError[?[_], Throwable]: Logger](service: CaService, tops: Map[String, String]): F[T] =
+
+  def instance[F[_]: MonadError[?[_], Throwable]: Logger: Sync](service: CaService, tops: Map[String, String]): F[T] =
     instanceInternal.map(_.pure[F])
       .getOrElse(init[F](service, tops))
 
-  def init[F[_]: ApplicativeError[?[_], Throwable]: Logger](service: CaService, tops: Map[String, String]): F[T] = {
-    try {
+  def init[F[_]: MonadError[?[_], Throwable]: Logger: Sync](service: CaService, tops: Map[String, String]): F[T] = {
+    MonadError[F, Throwable].catchNonFatal[Unit](
       tops.foldLeft((new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
         .withCaService(service))((b, a) => b.withTop(a._1, a._2)).buildAll()
-
-      val r = build(service, tops)
-
-      instanceInternal = r.some
-
-      r.pure[F]
-
-    } catch {
+    ) *>
+    (for {
+      r <- build[F](service, tops)
+      _ <- Sync[F].delay {
+        instanceInternal = r.some
+      }
+    } yield r
+    ).onError {
       case c: Throwable =>
-        Logger[F].warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}") *>
-          SeqexecFailure.SeqexecException(c).raiseError[F, T]
+        Logger[F].warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}")
     }
   }
 }
