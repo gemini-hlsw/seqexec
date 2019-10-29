@@ -8,7 +8,6 @@ import cats.implicits._
 import squants.Angle
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
-import org.log4s.{Logger, getLogger}
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand._
 import seqexec.server.EpicsUtil._
@@ -732,10 +731,10 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Tcs.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new TcsEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[TcsEpics[IO]] =
+    Sync[F].delay(new TcsEpics[IO](service, tops))
 
   sealed class ProbeGuideCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))

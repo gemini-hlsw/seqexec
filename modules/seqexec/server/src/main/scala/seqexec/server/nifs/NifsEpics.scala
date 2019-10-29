@@ -10,7 +10,6 @@ import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
 import java.lang.{Double => JDouble}
-import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommand
 import seqexec.server.ObserveCommand
@@ -209,10 +208,9 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 object NifsEpics extends EpicsSystem[NifsEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Nifs.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new NifsEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[NifsEpics[IO]] =
+    Sync[F].delay(new NifsEpics[IO](service, tops))
 
 }

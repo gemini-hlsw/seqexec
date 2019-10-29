@@ -30,19 +30,8 @@ import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
 import seqexec.model.config._
-import seqexec.server.flamingos2.Flamingos2Epics
-import seqexec.server.gcal.GcalEpics
-import seqexec.server.gmos.GmosEpics
-import seqexec.server.gnirs.GnirsEpics
 import seqexec.server.gpi.GpiStatusApply
-import seqexec.server.gsaoi.GsaoiEpics
-import seqexec.server.niri.NiriEpics
-import seqexec.server.nifs.NifsEpics
-import seqexec.server.gws.GwsEpics
-import seqexec.server.gems.GemsEpics
-import seqexec.server.tcs.TcsEpics
 import seqexec.server.SeqEvent._
-import seqexec.server.altair.AltairEpics
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 
@@ -474,24 +463,8 @@ class SeqexecEngine private [server] (
 
 object SeqexecEngine {
 
-  def createTranslator(site: Site, systems: Systems[IO], settings: SeqexecEngineConfiguration)(implicit L: Logger[IO]): IO[SeqTranslate] = {
-
-    val translatorSettings = TranslateSettings(
-      tcsKeywords    = settings.systemControl.tcs.realKeywords,
-      f2Keywords     = settings.systemControl.f2.realKeywords,
-      gwsKeywords    = settings.systemControl.gws.realKeywords,
-      gcalKeywords   = settings.systemControl.gcal.realKeywords,
-      gmosKeywords   = settings.systemControl.gmos.realKeywords,
-      gnirsKeywords  = settings.systemControl.gnirs.realKeywords,
-      niriKeywords   = settings.systemControl.niri.realKeywords,
-      nifsKeywords   = settings.systemControl.nifs.realKeywords,
-      altairKeywords = settings.systemControl.altair.realKeywords,
-      gsaoiKeywords  = settings.systemControl.gsaoi.realKeywords,
-      gemsKeywords   = settings.systemControl.gems.realKeywords
-    )
-
-    SeqTranslate(site, systems, translatorSettings)
-  }
+  def createTranslator(site: Site, systems: Systems[IO])(implicit L: Logger[IO]): IO[SeqTranslate] =
+    SeqTranslate(site, systems)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -600,10 +573,20 @@ object SeqexecEngine {
       GhostClient.simulatedGhostClient
     }
 
-  private def decodeTops(s: String): Map[String, String] =
-    s.split("=|,").grouped(2).collect {
-      case Array(k, v) => k.trim -> v.trim
-    }.toMap
+  // Ensure there is a valid way to init CaService either from
+  // the configuration file or from the environment
+  def caInit(caAddrList: Option[String], ioTimeout: Duration): IO[CaService] =
+    caAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
+      IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+        case Some(_) => IO.unit
+        case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
+      }
+    } *>
+      IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis))) *>
+      IO.apply(Option(CaService.getInstance())).flatMap {
+        case None => (new Exception("Unable to start EPICS service.")).raiseError[IO, CaService]
+        case Some(s) => s.pure[IO]
+      }
 
   /**
    * Build the seqexec and setup epics
@@ -616,54 +599,9 @@ object SeqexecEngine {
     implicit cs: ContextShift[IO],
              tio: Timer[IO],
              L: Logger[IO]
-  ): IO[SeqexecEngine] = createTranslator(site, systems, conf).flatMap{ translator =>
-      // TODO: Review initialization of EPICS systems
-      def initEpicsSystem(sys: EpicsSystem[_], tops: Map[String, String]): IO[Unit] =
-        IO.apply(
-          Option(CaService.getInstance()) match {
-            case None => throw new Exception("Unable to start EPICS service.")
-            case Some(s) =>
-              sys.init(s, tops).leftMap {
-                  case SeqexecFailure.SeqexecException(ex) => throw ex
-                  case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
-              }
-          }
-        ).void
-
-      val tops = decodeTops(conf.tops)
-
-      // Ensure there is a valid way to init CaService either from
-      // the configuration file or from the environment
-      val caInit   = conf.epicsCaAddrList.map(a => IO(CaService.setAddressList(a))).getOrElse {
-        IO(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-          case Some(_) => IO.unit
-          case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
-        }
-      } *> IO(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis)))
-
-      // More instruments to be added to the list here
-      val epicsInstruments = site match {
-        case Site.GS => List((conf.systemControl.f2, Flamingos2Epics), (conf.systemControl.gmos, GmosEpics), (conf.systemControl.gsaoi, GsaoiEpics))
-        case Site.GN => List((conf.systemControl.gmos, GmosEpics), (conf.systemControl.gnirs, GnirsEpics),
-          (conf.systemControl.niri, NiriEpics), (conf.systemControl.nifs, NifsEpics)
-        )
-      }
-
-      val epicsGaos = site match {
-        case Site.GS => List(conf.systemControl.gems -> GemsEpics)
-        case Site.GN => List(conf.systemControl.altair -> AltairEpics)
-      }
-
-      val epicsSystems = epicsInstruments ++ List(
-        (conf.systemControl.tcs, TcsEpics),
-        (conf.systemControl.gws, GwsEpics),
-        (conf.systemControl.gcal, GcalEpics)
-      ) ++ epicsGaos
-      val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
-        .parTraverse(x => initEpicsSystem(x._2, tops))
-
-      epicsInit *> new SeqexecEngine(systems, conf, metrics, translator).pure[IO]
-    }
+  ): IO[SeqexecEngine] =
+    createTranslator(site, systems)
+      .map{ new SeqexecEngine(systems, conf, metrics, _) }
 
   private[server] def updateSequenceEndo(seqId: Observation.Id, obsseq: SequenceData[IO])
   : Endo[EngineState] = st =>

@@ -3,8 +3,7 @@
 
 package seqexec.server.gcal
 
-import cats.effect.IO
-import cats.effect.Async
+import cats.effect.{Async, IO, Sync}
 import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.model.enum.ApplyCommandResult
@@ -12,7 +11,6 @@ import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.safeAttributeF
-import org.log4s.{Logger, getLogger}
 
 /**
   * Created by jluhrs on 3/14/17.
@@ -123,9 +121,9 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 object GcalEpics extends EpicsSystem[GcalEpics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Gcal.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new GcalEpics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GcalEpics[IO]] =
+    Sync[F].delay(new GcalEpics[IO](service, tops))
 
 }

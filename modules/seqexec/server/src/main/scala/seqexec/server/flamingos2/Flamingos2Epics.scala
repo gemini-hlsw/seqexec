@@ -3,14 +3,12 @@
 
 package seqexec.server.flamingos2
 
-import cats.effect.IO
-import cats.effect.Async
+import cats.effect.{Async, IO, Sync}
 import edu.gemini.epics.acm._
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.{EpicsCommand, EpicsSystem}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil._
-import org.log4s.{Logger, getLogger}
 
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -137,9 +135,8 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 object Flamingos2Epics extends EpicsSystem[Flamingos2Epics[IO]] {
 
   override val className: String = getClass.getName
-  override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Flamingos2.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) =
-    new Flamingos2Epics[IO](service, tops)
+  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[Flamingos2Epics[IO]] =
+    Sync[F].delay(new Flamingos2Epics[IO](service, tops))
 }
