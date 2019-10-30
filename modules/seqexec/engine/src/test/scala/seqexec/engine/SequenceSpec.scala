@@ -79,11 +79,16 @@ class SequenceSpec extends AnyFlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: TestState): Option[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, executionEngine.ConcreteTypes](seqId, user, ClientId(UUID.randomUUID), always))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: TestState): Option[TestState] =
+    executionEngine.process(PartialFunction.empty)(
+      Stream.eval(
+        IO.pure(
+          Event.start[IO, TestUtil.TestState, Unit](seqId, user, ClientId(UUID.randomUUID), always)
+        )
+      )
+    )(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
-  }
 
   it should "stop on breakpoints" in {
 

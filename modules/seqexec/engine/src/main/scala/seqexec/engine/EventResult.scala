@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-sealed trait EventResult[D<:Engine.Types] extends Product with Serializable
+sealed trait EventResult[U] extends Product with Serializable
 
 object EventResult {
   sealed trait Outcome extends Product with Serializable
@@ -13,6 +13,6 @@ object EventResult {
     case object Failure extends Outcome
   }
 
-  final case class UserCommandResponse[F[_], D <: Engine.Types](ue: UserEvent[F, D], outcome: Outcome, ud: Option[D#EventData]) extends EventResult[D]
-  final case class SystemUpdate[F[_], D<:Engine.Types](se: SystemEvent[F], outcome: Outcome) extends EventResult[D]
+  final case class UserCommandResponse[F[_], U](ue: UserEvent[F, _, U], outcome: Outcome, ud: Option[U]) extends EventResult[U]
+  final case class SystemUpdate[F[_], U](se: SystemEvent[F], outcome: Outcome) extends EventResult[U]
 }

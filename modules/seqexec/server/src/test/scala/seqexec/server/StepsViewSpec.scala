@@ -128,7 +128,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setOperator" should "set operator's name" in {
     val operator = Operator("Joe")
-    val s0 = EngineState.default
+    val s0 = EngineState.default[IO]
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setOperator(q, UserDetails("", ""), operator), 2)
@@ -141,7 +141,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setImageQuality" should "set Image Quality condition" in {
     val iq = ImageQuality.Percent20
-    val s0 = EngineState.default
+    val s0 = EngineState.default[IO]
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -156,7 +156,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setWaterVapor" should "set Water Vapor condition" in {
     val wv = WaterVapor.Percent80
-    val s0 = EngineState.default
+    val s0 = EngineState.default[IO]
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
@@ -169,7 +169,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setCloudCover" should "set Cloud Cover condition" in {
     val cc = CloudCover.Percent70
-    val s0 = EngineState.default
+    val s0 = EngineState.default[IO]
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
@@ -182,7 +182,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setSkyBackground" should "set Sky Background condition" in {
     val sb = SkyBackground.Percent50
-    val s0 = EngineState.default
+    val s0 = EngineState.default[IO]
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
@@ -195,24 +195,24 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
   "StepsView setObserver" should "set observer's name" in {
     val observer = Observer("Joe")
-    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequence(seqObsId1), executeEngine).apply(EngineState.default[IO])
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield {
-      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
+      inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
         case Some(op) => op shouldBe observer
       }
     }).unsafeRunSync
   }
 
   "StepsView" should "not run 2nd sequence because it's using the same resource" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-        Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
-        Instrument.F2, Set(Instrument.F2))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS)), executeEngine) >>>
+      ODBSequencesLoader.loadSequenceEndo[IO](seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -226,12 +226,12 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-        Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
-        Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS)), executeEngine) >>>
+      ODBSequencesLoader.loadSequenceEndo[IO](seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.GmosS, Set(Instrument.GmosS)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -244,14 +244,14 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   "StepsView configSystem" should "run a system configuration" in {
-    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-      Instrument.F2, Set(Instrument.F2, TCS)))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+      Instrument.F2, Set(Instrument.F2, TCS)), executeEngine).apply(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
+      inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
         case Some(s) => assertResult(Some(Action.ActionState.Started))(
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
@@ -260,16 +260,16 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "not run a system configuration if sequence is running" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-        Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
+      inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
         case Some(s) => assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
@@ -278,18 +278,18 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "not run a system configuration if system is in use" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-        Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
-        Instrument.F2, Set(Instrument.F2))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS)), executeEngine) >>>
+      ODBSequencesLoader.loadSequenceEndo[IO](seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
+      inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
         case Some(s) => assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
@@ -298,27 +298,27 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "run a system configuration when other sequence is running with other systems" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-        Instrument.F2, Set(Instrument.GmosS, TCS))) >>>
-      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
-        Instrument.F2, Set(Instrument.F2))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.GmosS, TCS)), executeEngine) >>>
+      ODBSequencesLoader.loadSequenceEndo[IO](seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
+      inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
         case Some(s) => assertResult(Some(Action.ActionState.Started))(
-          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState(_))
+          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
     }).unsafeRunSync
   }
 
   "StepsView startFrom" should "start a sequence from an arbitrary step" in {
-    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceNSteps(seqObsId1, 5))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceNSteps(seqObsId1, 5), executeEngine).apply(EngineState.default[IO])
     val runStepId = 3
 
     (for {
@@ -337,12 +337,12 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   "StepsView startFrom" should "not start the sequence if there is a resource conflict" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
-      Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
-        Instrument.F2, Set(Instrument.F2))) >>>
-      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
-        SequenceState.Running.init))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, sequenceWithResources(seqObsId1,
+      Instrument.F2, Set(Instrument.F2, TCS)), executeEngine) >>>
+      ODBSequencesLoader.loadSequenceEndo[IO](seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2)), executeEngine) >>>
+      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default[IO])
 
     val runStepId = 2
 
