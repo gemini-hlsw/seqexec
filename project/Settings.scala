@@ -58,7 +58,7 @@ object Settings {
     val monocleVersion          = "2.0.0"
     val circeVersion            = "0.12.1"
     val doobieVersion           = "0.6.0"
-    val flywayVersion           = "6.0.4"
+    val flywayVersion           = "6.0.8"
 
     // test libraries
     val xmlUnit                 = "1.6"
