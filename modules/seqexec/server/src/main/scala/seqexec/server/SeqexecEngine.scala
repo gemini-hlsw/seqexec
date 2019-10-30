@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats._
 import cats.data.StateT
-import cats.effect.{ConcurrentEffect, IO, Sync, Timer}
+import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.epics.acm.CaService
@@ -674,17 +674,17 @@ object SeqexecEngine {
 
   // Ensure there is a valid way to init CaService either from
   // the configuration file or from the environment
-  def caInit(caAddrList: Option[String], ioTimeout: Duration): IO[CaService] =
-    caAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
-      IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => IO.unit
-        case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
+  def caInit[F[_]: MonadError[?[_], Throwable]: Sync](caAddrList: Option[String], ioTimeout: Duration): F[CaService] =
+    caAddrList.map(a => Sync[F].delay(CaService.setAddressList(a))).getOrElse {
+      Sync[F].delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+        case Some(_) => Sync[F].unit
+        case _       => Sync[F].raiseError[Unit](new RuntimeException("Cannot initialize EPICS subsystem"))
       }
     } *>
-      IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis))) *>
-      IO.apply(Option(CaService.getInstance())).flatMap {
-        case None => (new Exception("Unable to start EPICS service.")).raiseError[IO, CaService]
-        case Some(s) => s.pure[IO]
+      Sync[F].delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis))) *>
+      Sync[F].delay(Option(CaService.getInstance())).flatMap {
+        case None    => Sync[F].raiseError[CaService](new Exception("Unable to start EPICS service."))
+        case Some(s) => s.pure[F]
       }
 
   /**
