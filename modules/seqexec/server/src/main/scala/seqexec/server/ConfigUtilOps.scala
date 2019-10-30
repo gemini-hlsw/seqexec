@@ -54,7 +54,7 @@ object ConfigUtilOps {
   }
 
   implicit class ApplicativeErrored[A] private[server] (r:Either[ExtractFailure, A]) {
-    def asApplicativeError[F[_]: ApplicativeError[?[_], Throwable]]: F[A] = r.fold(explainExtractError(_).raiseError[F, A], _.pure[F])
+    def toF[F[_]: ApplicativeError[?[_], Throwable]]: F[A] = r.fold(explainExtractError(_).raiseError[F, A], _.pure[F])
   }
 
   implicit class EitherOptionOps[A] private[server] (r: Either[ExtractFailure, Option[A]]) {

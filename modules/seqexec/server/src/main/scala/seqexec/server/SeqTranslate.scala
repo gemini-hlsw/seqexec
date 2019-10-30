@@ -74,10 +74,10 @@ trait SeqTranslate[F[_]] extends ObserveActions {
 
 object SeqTranslate {
 
-  class SeqTranslateImpl[F[_]: MonadError[?[_], Throwable]: Sync](site: Site,
-                                                            systems: Systems[F],
-                                                            gmosNsCmd: Ref[F, Option[NSObserveCommand]]
-                                                           )(implicit L: Logger[F]) extends SeqTranslate[F] {
+  private class SeqTranslateImpl[F[_]: Sync: Logger](site: Site,
+                                                     systems: Systems[F],
+                                                     gmosNsCmd: Ref[F, Option[NSObserveCommand]]
+                                                    ) extends SeqTranslate[F] {
 
     private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
                      datasets: Map[Int, ExecutedDataset])(
@@ -133,7 +133,7 @@ object SeqTranslate {
       }
 
       for {
-        inst      <- extractInstrument(config).fold(_.raiseError[F, Instrument], _.pure[F])
+        inst      <- MonadError[F, Throwable].fromEither(extractInstrument(config))
         is        <- toInstrumentSys(inst)
         stepType  <- is.calcStepType(config).fold(_.raiseError[F, StepType], _.pure[F])
         systems   <- calcSystems(config, stepType, is)
@@ -265,7 +265,8 @@ object SeqTranslate {
                 seqId,
                 i,
                 ins.observeProgress(obCtx.expTime, ElapsedTime(t.getOrElse(0.0.seconds)))
-                  .map(Result.Partial(_):Result[F])
+                  .map(Result.Partial(_))
+                  .widen[Result[F]]
                   .mergeHaltR(obCtx.resumePaused(obCtx.expTime))
                   .handleErrorWith(catchObsErrors[F])
               )
@@ -507,7 +508,7 @@ object SeqTranslate {
 
   }
 
-  def apply[F[_]: MonadError[?[_], Throwable]: Sync: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
+  def apply[F[_]: Sync: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
     Ref.of[F, Option[NSObserveCommand]](none).map(new SeqTranslateImpl(site, systems, _))
 
   def dataIdFromConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[DataId] =

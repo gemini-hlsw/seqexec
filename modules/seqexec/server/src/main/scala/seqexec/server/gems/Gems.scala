@@ -96,7 +96,7 @@ object Gems {
       ),
       guideConfigDb
     )
-  }.asApplicativeError[F].widen[Gems[F]]
+  }.toF[F].widen[Gems[F]]
 
   trait DetectorStateOps[T] {
     val trueVal: T

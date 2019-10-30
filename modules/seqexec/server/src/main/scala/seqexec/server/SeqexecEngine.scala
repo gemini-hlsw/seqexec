@@ -120,13 +120,13 @@ trait SeqexecEngine[F[_]] {
 
 object SeqexecEngine {
 
-  class SeqexecEngineImpl[F[_]: MonadError[?[_], Throwable]](
+  private class SeqexecEngineImpl[F[_]: ConcurrentEffect: Timer: Logger](
     override val systems: Systems[F],
     settings: SeqexecEngineConfiguration,
     sm: SeqexecMetrics,
     translator: SeqTranslate[F]
   )(
-    implicit ceio: ConcurrentEffect[F], tio: Timer[F], L: Logger[F], executeEngine: seqexec.server.ExecEngineType[F]
+    implicit executeEngine: seqexec.server.ExecEngineType[F]
   ) extends SeqexecEngine[F] {
 
     private val odbLoader = new ODBSequencesLoader[F](systems.odb, translator)
@@ -403,10 +403,6 @@ object SeqexecEngine {
       )).fold(Handle.unit[F, EngineState[F], EventType[F]]){_ *> _}
 
     /**
-     * Most of the magic for the ExecutionQueue is done in the following functions.
-     */
-
-    /**
      * runQueue starts the queue. It founds the top eligible sequences in the queue, and runs them.
      */
     private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId)
@@ -561,7 +557,7 @@ object SeqexecEngine {
 
   }
 
-  def createTranslator[F[_]: MonadError[?[_], Throwable]: Sync](site: Site, systems: Systems[F])(implicit L: Logger[F])
+  def createTranslator[F[_]: Sync: Logger](site: Site, systems: Systems[F])
   : F[SeqTranslate[F]] =
     SeqTranslate(site, systems)
 
@@ -658,14 +654,14 @@ object SeqexecEngine {
   def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(st: EngineState[F]): Set[Observation.Id] =
     findRunnableObservations(qid)(st).intersect(sids)
 
-  def gpiClient[F[_]: ConcurrentEffect](control: ControlStrategy, gpiUrl: String)(implicit t: Timer[F]): cats.effect.Resource[F, GpiClient[F]] =
+  def gpiClient[F[_]: ConcurrentEffect: Timer](control: ControlStrategy, gpiUrl: String): cats.effect.Resource[F, GpiClient[F]] =
     if (control === ControlStrategy.FullControl) {
       GpiClient.gpiClient[F](gpiUrl, GpiStatusApply.statusesToMonitor)
     } else {
       GpiClient.simulatedGpiClient
     }
 
-  def ghostClient[F[_]: ConcurrentEffect](control: ControlStrategy, ghostUrl: String)(implicit t: Timer[F]): cats.effect.Resource[F, GhostClient[F]] =
+  def ghostClient[F[_]: ConcurrentEffect: Timer](control: ControlStrategy, ghostUrl: String): cats.effect.Resource[F, GhostClient[F]] =
     if (control === ControlStrategy.FullControl) {
       GhostClient.ghostClient[F](ghostUrl)
     } else {
@@ -690,15 +686,12 @@ object SeqexecEngine {
   /**
    * Build the seqexec and setup epics
    */
-  def build[F[_]: MonadError[?[_], Throwable]: Sync](
+  def build[F[_]: ConcurrentEffect: Timer: Logger](
     site: Site,
     systems: Systems[F],
     conf: SeqexecEngineConfiguration,
     metrics: SeqexecMetrics)(
-    implicit cs: ConcurrentEffect[F],
-             tio: Timer[F],
-             L: Logger[F],
-             executeEngine: ExecEngineType[F]
+    implicit executeEngine: ExecEngineType[F]
   ): F[SeqexecEngine[F]] =
     createTranslator(site, systems)
       .map{ new SeqexecEngineImpl[F](systems, conf, metrics, _) }

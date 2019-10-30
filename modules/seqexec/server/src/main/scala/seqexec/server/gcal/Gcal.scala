@@ -84,7 +84,7 @@ object Gcal {
         if(lamps.isEmpty && sht === Shutter.CLOSED ) GcalConfig.GcalOff
         else GcalConfig.GcalOn(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
       )
-    }.asApplicativeError[F]
+    }.toF[F]
 
   // GCAL that always turn off its lamps except for the IR lamp. Used to assure GCAL light does not interfere in a non
   // calibration step

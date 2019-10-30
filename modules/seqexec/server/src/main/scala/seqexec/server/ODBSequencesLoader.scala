@@ -45,7 +45,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
         val configObsId: F[String] =
           odbSeq
             .config
-            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP).asApplicativeError[F]
+            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP).toF[F]
 
         // Verify that the program id is valid
         configObsId

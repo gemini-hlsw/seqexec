@@ -77,9 +77,9 @@ object Altair {
   def fromConfig[F[_]: Sync](config: CleanConfig, controller: AltairController[F]): F[Altair[F]] =
     config.extractAOAs[FieldLens](FIELD_LENSE_PROP).map { fieldLens =>
       new AltairImpl[F](controller, fieldLens)
-    }.asApplicativeError[F].widen[Altair[F]]
+    }.toF[F].widen[Altair[F]]
 
   def guideStarType[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[GuideStarType] =
-    config.extractAOAs[GuideStarType](GUIDESTAR_TYPE_PROP).asApplicativeError[F]
+    config.extractAOAs[GuideStarType](GUIDESTAR_TYPE_PROP).toF[F]
 
 }
