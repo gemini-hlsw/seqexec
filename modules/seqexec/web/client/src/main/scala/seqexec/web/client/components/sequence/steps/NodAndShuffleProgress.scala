@@ -167,8 +167,8 @@ sealed trait NodAndShuffleProgress {
           SmoothDividedProgressBar(
             sections = sections(nsStatus),
             sectionTotal = sectionTotal,
-            value = nsStatus.state.map(_ => currentValue + elapsedMillis).orEmpty, // Only advance smooth bar if actually started
-            maxValue = nsStatus.state.map(_ => currentValue + nodMillis).orEmpty, // Only advance smooth bar if actually started
+            value = nsStatus.state.foldMap(_ => currentValue + elapsedMillis), // Only advance smooth bar if actually started
+            maxValue = nsStatus.state.foldMap(_ => currentValue + nodMillis), // Only advance smooth bar if actually started
             completeSectionColor = if (isInError) "red".some else "green".some,
             ongoingSectionColor = if (isInError) "red".some else "blue".some,
             progressCls = List(SeqexecStyles.observationProgressBar),
