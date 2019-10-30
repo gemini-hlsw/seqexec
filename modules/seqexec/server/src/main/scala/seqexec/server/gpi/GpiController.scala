@@ -3,8 +3,7 @@
 
 package seqexec.server.gpi
 
-import cats.Eq
-import cats.Show
+import cats._
 import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Apodizer => LegacyApodizer }
@@ -24,6 +23,7 @@ import giapi.client.commands.Configuration
 import giapi.client.commands.CommandResultException
 import giapi.client.gpi.GpiClient
 import giapi.client.GiapiStatusDb
+import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
 import org.log4s._
 import scala.concurrent.duration._
@@ -179,7 +179,6 @@ trait GpiConfigEq {
 }
 
 object GpiController extends GpiLookupTables with GpiConfigEq {
-  val logger: Logger = getLogger
 
   private def obsModeConfiguration(config: RegularGpiConfig): Configuration =
     config.mode.fold(
@@ -271,20 +270,18 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
        else Configuration.Zero) |+|
       obsModeConfiguration(config)
 
-  private def computeRegularConfig[F[_]: Sync](
+  private def computeRegularConfig[F[_]: Monad: Logger](
     client: GpiClient[F],
     config: RegularGpiConfig
   ): F[Configuration] =
     for {
-      b <- Sync[F].delay(gpiConfiguration(config))
+      b <- gpiConfiguration(config).pure[F]
       q <- GpiStatusApply.foldConfig(client.statusDb, b)
       p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
-      _ <- Sync[F]
-        .delay(logger.info(s"Applied GPI config ${p.config}"))
-        .unlessA(p.config.isEmpty)
+      _ <- Logger[F].info(s"Applied GPI config ${p.config}").unlessA(p.config.isEmpty)
     } yield p
 
-  def apply[F[_]: Sync](
+  def apply[F[_]: Sync: Logger](
     client: GpiClient[F],
     gds:    GdsClient[F]
   ): GpiController[F] =
