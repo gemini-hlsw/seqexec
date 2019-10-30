@@ -12,8 +12,6 @@ import edu.gemini.epics.acm.CaService
 import fs2.{Pure, Stream}
 import gem.Observation
 import gem.enum.Site
-import giapi.client.ghost.GhostClient
-import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger
 import java.util.concurrent.TimeUnit
 import mouse.all._
@@ -30,7 +28,6 @@ import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
 import seqexec.model.config._
-import seqexec.server.gpi.GpiStatusApply
 import seqexec.server.SeqEvent._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
@@ -192,7 +189,7 @@ object SeqexecEngine {
             ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.observer.set(name.some)) >>>
               refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle))
 
-    def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId)
+    private def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId)
     : EventType[F] = {
       val lens =
         (EngineState.sequences[F] ^|-? index(sid)).modify(SequenceData.observer.set(observer.some)) >>>
@@ -247,7 +244,7 @@ object SeqexecEngine {
 
     override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit] = q.enqueue1(Event.poll(clientId))
 
-    def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
+    private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
       Stream.fixedDelay[F](fd).evalMap(_ => systems.odb.queuedSequences).flatMap { x =>
         Stream.emit(Event.getState[F, EngineState[F], SeqEvent] { st =>
@@ -290,10 +287,10 @@ object SeqexecEngine {
       Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId))
     )
 
-    def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
+    private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
       EngineState.queues[F] ^|-? index(qid)
 
-    def cmdStateO(qid: QueueId): Optional[EngineState[F], BatchCommandState] =
+    private def cmdStateO(qid: QueueId): Optional[EngineState[F], BatchCommandState] =
       queueO(qid) ^|-> ExecutionQueue.cmdState
 
     private def addSeqs(qid: QueueId, seqIds: List[Observation.Id]): HandleType[F, Unit] =
@@ -561,7 +558,7 @@ object SeqexecEngine {
   : F[SeqTranslate[F]] =
     SeqTranslate(site, systems)
 
-  def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
+  private def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
 
   private def systemsBeingConfigured[F[_]](st: EngineState[F]): Set[Resource] =
@@ -627,7 +624,7 @@ object SeqexecEngine {
     * @return The set of all observations in the execution queue `qid` that can be started to run
     *         in parallel.
     */
-  def nextRunnableObservations[F[_]](qid: QueueId, freed: Set[Resource])(st: EngineState[F])
+  private def nextRunnableObservations[F[_]](qid: QueueId, freed: Set[Resource])(st: EngineState[F])
   : Set[Observation.Id] = {
     // Set of all resources in use
     val used = resourcesInUse(st)
@@ -651,22 +648,8 @@ object SeqexecEngine {
    * shouldSchedule checks if a set of sequences are candidates for been run in a queue.
    * It is used to check if sequences added to a queue should be started.
    */
-  def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(st: EngineState[F]): Set[Observation.Id] =
+  private def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(st: EngineState[F]): Set[Observation.Id] =
     findRunnableObservations(qid)(st).intersect(sids)
-
-  def gpiClient[F[_]: ConcurrentEffect: Timer](control: ControlStrategy, gpiUrl: String): cats.effect.Resource[F, GpiClient[F]] =
-    if (control === ControlStrategy.FullControl) {
-      GpiClient.gpiClient[F](gpiUrl, GpiStatusApply.statusesToMonitor)
-    } else {
-      GpiClient.simulatedGpiClient
-    }
-
-  def ghostClient[F[_]: ConcurrentEffect: Timer](control: ControlStrategy, ghostUrl: String): cats.effect.Resource[F, GhostClient[F]] =
-    if (control === ControlStrategy.FullControl) {
-      GhostClient.ghostClient[F](ghostUrl)
-    } else {
-      GhostClient.simulatedGhostClient
-    }
 
   // Ensure there is a valid way to init CaService either from
   // the configuration file or from the environment
@@ -763,7 +746,7 @@ object SeqexecEngine {
     SequenceView(seq.id, SequenceMetadata(instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
   }
 
-  def toSeqexecEvent[F[_]](ev: EventResult[SeqEvent], qState: EngineState[F]): SeqexecEvent = {
+  private def toSeqexecEvent[F[_]](ev: EventResult[SeqEvent], qState: EngineState[F]): SeqexecEvent = {
     val sequences = qState.sequences.values.map(viewSequence).toList
     // Building the view is a relatively expensive operation
     // By putting it into a def we only incur that cost if the message requires it
