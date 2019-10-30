@@ -3,10 +3,9 @@
 
 package seqexec
 
-import cats.{Applicative, ApplicativeError, Endo, Eq, Functor, MonadError, ~>}
+import cats.{Applicative, ApplicativeError, Endo, Eq, Functor, MonadError}
 import cats.data._
 import cats.effect.IO
-import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -111,11 +110,6 @@ package object server {
     new Engine[IO, EngineState[IO], SeqEvent](EngineState.engineState[IO])
 
   type EventQueue[F[_]] = Queue[F, EventType[F]]
-
-  implicit class StreamIOOps[A](s: Stream[IO, A]) {
-    def streamLiftIO[F[_]: LiftIO]: fs2.Stream[F, A] =
-      s.translate(λ[IO ~> F](_.to))
-  }
 
   implicit class EitherTFailureOps[F[_]: MonadError[?[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
     def liftF: F[A] =
