@@ -25,6 +25,7 @@ object EnumDef {
     implicit def caseBoolean[S] = at[(S, Boolean)] { _ => Option.empty[String] }
     implicit def caseDouble[S] = at[(S, Double)] { _ => Option.empty[String] }
     implicit def caseBigDecimal[S] = at[(S, BigDecimal)] { _ => Option.empty[String] }
+    implicit def caseOptionBigDecimal[S] = at[(S, Option[BigDecimal])] { _ => Option.empty[String] }
     implicit def caseArcseconds[S] = at[(S, Arcseconds)] { _ =>  Some("gsp.math.Angle") }
     implicit def caseDegrees[S] = at[(S, Degrees)] { _ =>  Some("gsp.math.Angle") }
     implicit def caseZoneId[S] = at[(S, ZoneId)] { _ =>  Some("java.time.ZoneId") }
@@ -57,6 +58,7 @@ object EnumDef {
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseBigDecimal  [S <: Symbol] = at[(S, BigDecimal)  ] { case (s, _) => "  val " + s.name + ": BigDecimal" }
+    implicit def caseOptionBigDecimal  [S <: Symbol] = at[(S, Option[BigDecimal])  ] { case (s, _) => "  val " + s.name + ": Option[BigDecimal]" }
     implicit def caseArcseconds [S <: Symbol] = at[(S, Arcseconds) ] { case (s, _) => "  val " + s.name + ": Angle"}
     implicit def caseDegrees [S <: Symbol] = at[(S, Degrees) ] { case (s, _) => "  val " + s.name + ": Angle"}
     implicit def caseZoneId  [S <: Symbol] = at[(S, ZoneId)  ] { case (s, _) => "  val " + s.name + ": ZoneId"}
@@ -95,6 +97,7 @@ object EnumDef {
     implicit val caseBoolean      = at[Boolean    ](a => a.toString)
     implicit val caseDouble       = at[Double     ](a => a.toString)
     implicit val caseBigDecimal   = at[BigDecimal ](a => a.toString)
+    implicit val caseOptionBigDecimal = at[Option[BigDecimal] ](a => a.fold("Option.empty[BigDecimal]")(aʹ => s"Some(${aʹ.toString})"))
     implicit val caseArcseconds   = at[Arcseconds ](a => s"Angle.fromDoubleArcseconds(${a.toArcsecs})")
     implicit val caseDegrees      = at[Degrees    ](a => s"Angle.fromDoubleDegrees(${a.toDegrees})")
     implicit val caseZoneId       = at[ZoneId     ](a => s"""ZoneId.of("${a.toString}")""")

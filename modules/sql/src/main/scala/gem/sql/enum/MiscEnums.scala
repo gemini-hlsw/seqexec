@@ -106,8 +106,8 @@ object MiscEnums {
         val (a, b) = (Witness('Instrument), Witness('GiapiType))
         type A = a.T
         type B = b.T
-        type R = Record.`'tag -> String, 'instrument -> EnumRef[A], 'statusType -> EnumRef[B], 'statusItem -> String, 'applyItem -> String`.T
-        val ret = sql"SELECT concat(instrument_id, id), concat(instrument_id, id) tag, instrument_id, type, status_item, apply_item FROM e_giapi_status_apply".query[(String, R)]
+        type R = Record.`'tag -> String, 'instrument -> EnumRef[A], 'statusType -> EnumRef[B], 'statusItem -> String, 'applyItem -> String, 'tolerance -> Option[BigDecimal]`.T
+        val ret = sql"SELECT concat(instrument_id, id), concat(instrument_id, id) tag, instrument_id, type, status_item, apply_item, tolerance FROM e_giapi_status_apply".query[(String, R)]
         (ret, a.value: A, b.value: B)._1 // suppress unused warnigs
       },
 

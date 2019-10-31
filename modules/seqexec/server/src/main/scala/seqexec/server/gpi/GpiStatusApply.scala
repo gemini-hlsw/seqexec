@@ -3,14 +3,15 @@
 
 package seqexec.server.gpi
 
+import cats._
 import cats.implicits._
-import cats.effect.Sync
 import gem.enum.GiapiStatusApply
 import gem.enum.GiapiStatusApply._
 import gem.enum.GiapiStatus
 import gem.enum.GiapiType
 import gem.enum.Instrument
 import gem.ocs2.Parsers
+import gsp.math.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
@@ -28,7 +29,7 @@ object GpiStatusApply extends GpiLookupTables {
   val statusesToMonitor = allGpiApply.map(_.statusItem) ++
     allGpiStatus.map(_.statusItem)
 
-  def foldConfigM[F[_]: Sync](
+  def foldConfigM[F[_]: Monad](
     items:  List[GiapiStatusApply],
     db:     GiapiStatusDb[F],
     config: Configuration
@@ -37,7 +38,7 @@ object GpiStatusApply extends GpiLookupTables {
       i.removeConfigItem(db, c)
     }
 
-  def foldConfig[F[_]: Sync](
+  def foldConfig[F[_]: Monad](
     db:     GiapiStatusDb[F],
     config: Configuration
   ): F[Configuration] =
@@ -49,7 +50,7 @@ object GpiStatusApply extends GpiLookupTables {
     * We need to check that each subsystem matches or we will
     * falsely not set the obs mode
     */
-  def overrideObsMode[F[_]: Sync](
+  def overrideObsMode[F[_]: Monad](
     db:        GiapiStatusDb[F],
     gpiConfig: RegularGpiConfig,
     config:    Configuration
@@ -100,27 +101,51 @@ object GpiStatusApply extends GpiLookupTables {
     }
 
   implicit class GiapiStatusApplyOps(val s: GiapiStatusApply) {
-    private def removeConfigIfPossible[F[_]: Sync](
+    private def removeConfig[F[_]: Monad](
+      statusDb: GiapiStatusDb[F],
+      config:   Configuration,
+      compare:  Option[StatusValue] => Boolean
+    ): F[Configuration] =
+      statusDb
+        .optional(s.statusItem)
+        .map(compare)
+        .ifM(config.remove(s.applyItem).pure[F], config.pure[F])
+
+    private def removeConfigIfPossible[F[_]: Monad](
       statusDb: GiapiStatusDb[F],
       config:   Configuration,
       compare:  Option[StatusValue] => Option[String]
     ): F[Configuration] =
-      statusDb
-        .optional(s.statusItem)
-        .map(v => compare(v) === config.value(s.applyItem))
-        .ifM(Sync[F].delay(config.remove(s.applyItem)), config.pure[F])
+      removeConfig(statusDb, config, x => compare(x) === config.value(s.applyItem))
 
-    def removeConfigItem[F[_]: Sync](
+    private def removeConfigIfPossible[F[_]: Monad, A: Numeric](
+      statusDb: GiapiStatusDb[F],
+      config:   Configuration,
+      compare:  Option[StatusValue] => Option[A],
+      toA: String => Option[A],
+      tolerance: A
+    ): F[Configuration] = {
+      val num = implicitly[Numeric[A]]
+      removeConfig(statusDb, config,
+        x => compare(x).exists{v =>
+          val configValue = config.value(s.applyItem).flatMap(toA)
+          configValue.exists{ c =>
+          val diff = num.abs(num.minus(v, c))
+          num.lt(diff, tolerance)
+        }})
+    }
+
+    def removeConfigItem[F[_]: Monad](
       statusDb: GiapiStatusDb[F],
       config:   Configuration
     ): F[Configuration] =
       s.statusType match {
         case GiapiType.Int =>
-          removeConfigIfPossible(statusDb, config, _.intCfg)
+          removeConfigIfPossible(statusDb, config, _.intCfg.flatMap(_.parseIntOption), _.parseIntOption, s.tolerance.foldMap(_.toInt))
         case GiapiType.Double =>
-          removeConfigIfPossible(statusDb, config, _.doubleCfg)
+          removeConfigIfPossible[F, Double](statusDb, config, _.doubleCfg.flatMap(_.parseDoubleOption), _.parseDoubleOption, s.tolerance.foldMap(_.toDouble))
         case GiapiType.Float =>
-          removeConfigIfPossible(statusDb, config, _.floatCfg)
+          removeConfigIfPossible[F, Float](statusDb, config, _.floatCfg.flatMap(_.parseDoubleOption.map(_.toFloat)), _.parseDoubleOption.map(_.toFloat), s.tolerance.foldMap(_.toFloat))
         case GiapiType.String =>
           removeConfigIfPossible(statusDb, config, _.stringCfg)
       }

@@ -238,7 +238,7 @@ object Systems {
       else if (settings.instForceError) Flamingos2ControllerSimBad[IO](settings.failAt)
       else Flamingos2ControllerSim[IO]
 
-    def gpi[F[_]: ConcurrentEffect : Timer](httpClient: Client[F]): Resource[F, GpiController[F]] = {
+    def gpi[F[_]: ConcurrentEffect: Timer: Logger](httpClient: Client[F]): Resource[F, GpiController[F]] = {
       def gpiClient: Resource[F, GpiClient[F]] =
         if (settings.systemControl.gpi.command) GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
         else GpiClient.simulatedGpiClient[F]
