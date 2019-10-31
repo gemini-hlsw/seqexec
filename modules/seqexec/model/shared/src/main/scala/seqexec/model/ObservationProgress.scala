@@ -6,6 +6,8 @@ package seqexec.model
 import cats.Eq
 import cats.implicits._
 import gem.Observation
+import monocle.Prism
+import monocle.macros.GenPrism
 import squants.Time
 
 sealed trait Progress extends Product with Serializable {
@@ -23,6 +25,12 @@ object Progress {
       case (a: NSObservationProgress, b: NSObservationProgress) => a === b
       case _                                                    => false
     }
+
+  implicit val obsProgressP: Prism[Progress, ObservationProgress] =
+    GenPrism[Progress, ObservationProgress]
+
+  implicit val nsProgressP: Prism[Progress, NSObservationProgress] =
+    GenPrism[Progress, NSObservationProgress]
 }
 
 final case class ObservationProgress(obsId:     Observation.Id,
@@ -37,11 +45,11 @@ object ObservationProgress {
 
 }
 
-final case class NSObservationProgress(obsId:   Observation.Id,
-                                     stepId:    StepId,
-                                     total:     Time,
-                                     remaining: Time,
-                                     sub:       NSSubexposure) extends Progress
+final case class NSObservationProgress(obsId:     Observation.Id,
+                                       stepId:    StepId,
+                                       total:     Time,
+                                       remaining: Time,
+                                       sub:       NSSubexposure) extends Progress
 
 object NSObservationProgress {
 

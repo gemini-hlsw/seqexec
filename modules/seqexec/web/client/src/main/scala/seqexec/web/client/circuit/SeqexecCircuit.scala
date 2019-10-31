@@ -3,12 +3,14 @@
 
 package seqexec.web.client.circuit
 
+import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
 import diode.react.ReactConnector
 import gem.Observation
 import japgolly.scalajs.react.Callback
+import monocle.Prism
 import org.log4s._
 import seqexec.model._
 import seqexec.model.events._
@@ -134,11 +136,11 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
-  def obsProgressReader(
+  def obsProgressReader[P <: Progress : Eq](
     id:     Observation.Id,
     stepId: StepId
-  ): ModelR[SeqexecAppRootModel, Option[Progress]] =
-    this.zoomL(AllObservationsProgressState.progressStateL(id, stepId))
+  )(implicit progressPrism: Prism[Progress, P]): ModelR[SeqexecAppRootModel, Option[P]] =
+    this.zoomO(AllObservationsProgressState.progressStateO[P](id, stepId))
 
   def statusAndStepReader(
     id: Observation.Id

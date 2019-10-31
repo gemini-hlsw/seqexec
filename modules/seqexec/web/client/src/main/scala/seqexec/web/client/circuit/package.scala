@@ -34,6 +34,8 @@ package object circuit {
 
 package circuit {
 
+  import monocle.Optional
+
   /**
     * This lets us use monocle lenses to create diode ModelRW instances
     */
@@ -43,6 +45,9 @@ package circuit {
 
     def zoomL[A: Eq](lens: Lens[M, A]): ModelR[M, A] =
       circuit.zoom[A](lens.get)(fastEq[A])
+
+    def zoomO[A: Eq](lens: Optional[M, A]): ModelR[M, Option[A]] =
+      circuit.zoom[Option[A]](lens.getOption)(fastEq[Option[A]])
 
     def zoomG[A: Eq](getter: Getter[M, A]): ModelR[M, A] =
       circuit.zoom[A](getter.get)(fastEq[A])
