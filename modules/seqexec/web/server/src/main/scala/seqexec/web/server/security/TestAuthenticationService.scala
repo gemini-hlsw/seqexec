@@ -7,7 +7,6 @@ import cats.Applicative
 import cats.implicits._
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
-import cats.implicits._
 
 /**
   * Authentication service for testing with a hardcoded list of users

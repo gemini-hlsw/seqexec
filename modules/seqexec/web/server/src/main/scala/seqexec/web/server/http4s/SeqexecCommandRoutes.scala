@@ -3,11 +3,11 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import gem.Observation
 import org.http4s._
-import org.http4s.dsl.io._
+import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 import seqexec.server.SeqexecEngine
 import seqexec.server
@@ -24,15 +24,15 @@ import seqexec.web.server.security.TokenRefresher
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth:       AuthenticationService[IO],
-                           inputQueue: server.EventQueue[IO],
-                           se:         SeqexecEngine[IO])
-    extends BooEncoders {
+class SeqexecCommandRoutes[F[_]: Sync](auth:       AuthenticationService[F],
+                           inputQueue: server.EventQueue[F],
+                           se:         SeqexecEngine[F])
+    extends BooEncoders with Http4sDsl[F] {
 
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
 
-  private val commandServices: AuthedRoutes[UserDetails, IO] = AuthedRoutes.of {
+  private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
     case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
       for {
         _    <- se.start(inputQueue, obsId, user, clientId)
@@ -70,10 +70,9 @@ class SeqexecCommandRoutes(auth:       AuthenticationService[IO],
                        _ => Ok(s"Sync requested for ${obsId.format}"))
       } yield resp
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / BooleanVar(bp) as user =>
       for {
-        newVal <- IO.fromEither(Either.catchNonFatal(bp.toBoolean))
-        _      <- se.setSkipMark(inputQueue, obsId, user, stepId, newVal)
+        _      <- se.setSkipMark(inputQueue, obsId, user, stepId, bp)
         resp   <- Ok(s"Set skip mark in step $stepId of sequence $obsId")
       } yield resp
 
@@ -200,10 +199,10 @@ class SeqexecCommandRoutes(auth:       AuthenticationService[IO],
 
   }
 
-  val refreshCommand: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  val refreshCommand: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / "refresh" / ClientIDVar(clientId) =>
       se.requestRefresh(inputQueue, clientId) *> NoContent()
   }
 
-  val service: HttpRoutes[IO] = refreshCommand <+> TokenRefresher(GZip(httpAuthentication.reqAuth(commandServices)), httpAuthentication)
+  val service: HttpRoutes[F] = refreshCommand <+> TokenRefresher(GZip(httpAuthentication.reqAuth(commandServices)), httpAuthentication)
 }
