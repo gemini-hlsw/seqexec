@@ -6,7 +6,8 @@ package seqexec.web.server.http4s
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import cats.effect.{ Concurrent, IO, Timer }
+import cats.effect.{ Concurrent, Timer }
+import cats.effect.Sync
 import cats.implicits._
 import fs2.concurrent.Topic
 import fs2.Pipe
@@ -15,6 +16,7 @@ import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import gem.enum.GiapiStatus
 import gem.enum.Site
+import io.chrisdavenport.log4cats.Logger
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
@@ -22,7 +24,6 @@ import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
 import org.http4s.headers.`WWW-Authenticate`
-import org.log4s._
 import scala.concurrent.duration._
 import scala.math._
 import scodec.bits.ByteVector
@@ -43,18 +44,14 @@ import seqexec.web.common.LogMessage
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(site: Site,
+class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
                          mode: Mode,
-                         auth: AuthenticationService[IO],
-                         guideConfigS: GuideConfigDb[IO],
-                         giapiDB: GiapiStatusDb[IO],
-                         engineOutput: Topic[IO, SeqexecEvent])(
-  implicit cio: Concurrent[IO],
-           tio: Timer[IO]
-) extends BooEncoders with ModelLenses with Http4sDsl[IO] {
-
-  // Logger for client messages
-  private val clientLog = getLogger
+                         auth: AuthenticationService[F],
+                         guideConfigS: GuideConfigDb[F],
+                         giapiDB: GiapiStatusDb[F],
+                         engineOutput: Topic[F, SeqexecEvent])(
+  implicit L: Logger[F]
+) extends BooEncoders with ModelLenses with Http4sDsl[F] {
 
   private val unauthorized =
     Unauthorized(
@@ -85,10 +82,10 @@ class SeqexecUIApiRoutes(site: Site,
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
-  private def pingStream: Stream[IO, Ping] =
-    Stream.fixedRate[IO](1.second).flatMap(_ => Stream.emit(Ping()))
+  private def pingStream: Stream[F, Ping] =
+    Stream.fixedRate[F](1.second).flatMap(_ => Stream.emit(Ping()))
 
-  val publicService: HttpRoutes[IO] = GZip { HttpRoutes.of {
+  val publicService: HttpRoutes[F] = GZip { HttpRoutes.of {
 
     case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
@@ -97,7 +94,7 @@ class SeqexecUIApiRoutes(site: Site,
           case Right(user) =>
             // Log who logged in
             // Note that the call to read a remoteAddr may do a DNS lookup
-            IO(clientLog.info(s"${user.displayName} logged in from ${req.remoteHost.getOrElse("Unknown")}")) *>
+            L.info(s"${user.displayName} logged in from ${req.remoteHost.getOrElse("Unknown")}") *>
             // if successful set a cookie
             httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).map(_.addCookie(cookie)) }
           case Left(_) =>
@@ -113,40 +110,38 @@ class SeqexecUIApiRoutes(site: Site,
 
     }}
 
-  val protectedServices: AuthedRoutes[AuthResult, IO] =
+  val protectedServices: AuthedRoutes[AuthResult, F] =
     AuthedRoutes.of {
       // Route used for testing only
-      case GET  -> Root  / "log" / count as _ if mode === Mode.Development =>
-        for {_ <- 0 until min(1000, max(0, count.toInt))} {
-          clientLog.info("info")
-          clientLog.warn("warn")
-          clientLog.error("error")
-        }
-        Ok("")
+      case GET  -> Root  / "log" / IntVar(count) as _ if mode === Mode.Development =>
+        (L.info("info") *>
+          L.warn("warn") *>
+          L.error("error")
+        ).replicateA(min(1000, max(0, count))) *> Ok("")
 
       case auth @ POST -> Root / "seqexec" / "log" as user =>
         auth.req.decode[LogMessage] { msg =>
           val userName = user.fold(_ => "Anonymous", _.displayName)
           // Always return ok
           // Use remoteAddr to avoid an expensive DNS lookup
-          IO(clientLog.info(s"$userName on ${auth.req.remoteAddr.getOrElse("Unknown")}: ${msg.msg}")) *> Ok("")
+          L.info(s"$userName on ${auth.req.remoteAddr.getOrElse("Unknown")}: ${msg.msg}") *> Ok("")
         }
 
       case auth @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Login start
-        IO(clientLog.info(
-          s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *>
+        L.info(
+          s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}") *>
           Ok(s"$site")
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
 
-        def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
+        def initialEvent(clientId: ClientId): Stream[F, WebSocketFrame] =
           Stream.emit(toFrame(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version)))
 
-        def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
+        def engineEvents(clientId: ClientId): Stream[F, WebSocketFrame]  =
           engineOutput
             .subscribe(1)
             .map(anonymizeF)
@@ -155,19 +150,19 @@ class SeqexecUIApiRoutes(site: Site,
             .map(toFrame)
 
         // We don't care about messages sent over ws by clients
-        val clientEventsSink: Pipe[IO, WebSocketFrame, Unit] = _.evalMap(_ => IO.unit)
+        val clientEventsSink: Pipe[F, WebSocketFrame, Unit] = _.map(_ => ())
 
         // Create a client specific websocket
         for {
-          clientId <- IO.apply(ClientId(UUID.randomUUID()))
+          clientId <- Sync[F].delay(ClientId(UUID.randomUUID()))
           initial  = initialEvent(clientId)
           streams  = Stream(pingStream, guideConfigEvents, giapiDBEvents, engineEvents(clientId)).parJoinUnbounded
-          ws       <- WebSocketBuilder[IO].build(initial ++ streams, clientEventsSink)
+          ws       <- WebSocketBuilder[F].build(initial ++ streams, clientEventsSink)
         } yield ws
 
     }
 
-  def service: HttpRoutes[IO] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)
+  def service: HttpRoutes[F] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)
 
   // Event to WebSocket frame
   private def toFrame(e: SeqexecEvent) =

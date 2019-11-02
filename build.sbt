@@ -269,9 +269,6 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   )
   .jvmSettings(commonSettings)
   .jsSettings(gspScalaJsSettings)
-  .jsSettings(
-    libraryDependencies += Log4s.value,
-  )
   .dependsOn(seqexec_model % "compile->compile;test->test")
 
 // Project for the server side application
@@ -406,7 +403,6 @@ lazy val seqexec_server = project
           SpModelCore,
           POT,
           OpenCSV,
-          Log4s.value,
           Http4sXml,
           Http4sBoopickle,
           PrometheusClient,

@@ -64,26 +64,26 @@ object WebServerLauncher extends IOApp with LogInitialization {
     Sync[F].delay(AuthenticationService[F](mode, conf))
 
   /** Resource that yields the running web server */
-  def webServer(
+  def webServer[F[_]: ContextShift: Logger: ConcurrentEffect: Timer](
     conf: SeqexecConfiguration,
     cal: SmartGcal,
-    as: AuthenticationService[IO],
-    inputs: server.EventQueue[IO],
-    outputs: Topic[IO, SeqexecEvent],
-    se: SeqexecEngine[IO],
+    as: AuthenticationService[F],
+    inputs: server.EventQueue[F],
+    outputs: Topic[F, SeqexecEvent],
+    se: SeqexecEngine[F],
     cr: CollectorRegistry,
     bec: ExecutionContext
-  ): Resource[IO, Server[IO]] = {
+  ): Resource[F, Server[F]] = {
 
     // The prometheus route does not get logged
-    val prRouter = Router[IO](
-      "/"                     -> PrometheusExportService[IO](cr).routes
+    val prRouter = Router[F](
+      "/"                     -> PrometheusExportService[F](cr).routes
     )
 
-    def build(all: IO[HttpRoutes[IO]]): Resource[IO, Server[IO]] = Resource.liftF(all).flatMap { all =>
+    def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] = Resource.liftF(all).flatMap { all =>
 
       val builder =
-        BlazeServerBuilder[IO]
+        BlazeServerBuilder[F]
           .bindHttp(conf.webServer.port, conf.webServer.host)
           .withWebSockets(true)
           .withHttpApp((prRouter <+> all).orNotFound)
@@ -95,17 +95,17 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     }
 
-    val router = Router[IO](
+    val router = Router[F](
       "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.mode, as, se.systems.guideDb, se.systems.gpi.statusDb, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
-      "/smartgcal"            -> new SmartGcalRoutes[IO](cal).service
+      "/smartgcal"            -> new SmartGcalRoutes[F](cal).service
     )
 
     val loggedRoutes = Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
-    val metricsMiddleware = Prometheus[IO](cr, "seqexec").map(
-      Metrics[IO](_)(loggedRoutes))
+    val metricsMiddleware = Prometheus[F](cr, "seqexec").map(
+      Metrics[F](_)(loggedRoutes))
 
     build(metricsMiddleware)
 
@@ -211,7 +211,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
         as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
-        _  <- webServer(conf, ca, as, in, out, en, cr, bec)
+        _  <- webServer[IO](conf, ca, as, in, out, en, cr, bec)
       } yield ()
 
     val seqexec: Resource[IO, ExitCode] =
