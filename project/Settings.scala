@@ -47,7 +47,7 @@ object Settings {
     val squants                 = "1.5.0"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
-    val jwt                     = "4.1.0"
+    val jwt                     = "4.2.0"
     val slf4j                   = "1.7.28"
     val log4s                   = "1.8.2"
     val log4cats                = "1.0.1"
