@@ -117,8 +117,7 @@ object SubsystemControlCell {
               icon        = buttonIcon,
               onClickE    = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
               extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
-            ),
-            r.show
+            )(r.show)
           )
         }.toTagMod
       )

@@ -7,6 +7,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.React
 import web.client.ReactPropsWithChildren
+import cats.implicits._
 
 /**
   * Produces a popup using javascript
@@ -28,19 +29,19 @@ object Popup {
     component.toElement.foreach { dom =>
       $(dom).popup(
         JsPopupOptions.content(props.content)
-        )
+      )
     }
   }
 
   private val component = ScalaComponent.builder[Props]("Popup")
     .stateless
-    .renderPC{($, _, _) =>
-      // This is in principle unsafe but we are only allowing Elements on the constructor
-      VdomElement($.propsChildren.only().asInstanceOf[React.Element])
+    .render_C{ children =>
+      if( children.count === 1)
+        VdomElement(children.only().asInstanceOf[React.Element])
+      else
+        <.span(children)
     }
     .componentDidMount(ctx => mountPopup(ctx.getDOMNode, ctx.props))
     .componentDidUpdate(ctx => mountPopup(ctx.getDOMNode, ctx.currentProps))
     .build
-
-//  def apply(p: Props, children: VdomElement): Unmounted[Props, Unit, Unit] = component(p)(children)
 }

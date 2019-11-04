@@ -5,7 +5,6 @@ package seqexec.web.client
 
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.CatsReact._
 import react.common.Css

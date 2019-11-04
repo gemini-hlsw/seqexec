@@ -157,10 +157,4 @@ object Button {
             )
         })
       .build
-
-//  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] =
-//    component(p)(children: _*)
-//
-//  def apply(text: String): Unmounted[Props, Unit, Unit] =
-//    component(Props())(text)
 }
