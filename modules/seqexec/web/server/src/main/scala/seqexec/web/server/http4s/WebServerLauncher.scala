@@ -37,6 +37,7 @@ import seqexec.web.server.config._
 import seqexec.server.{SeqexecEngine, SeqexecMetrics, executeEngine}
 import seqexec.server.SeqexecFailure
 import seqexec.server.Systems
+import seqexec.server.CaServiceInit
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.config._
 import seqexec.web.server.logging.AppenderForClients
@@ -193,8 +194,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     ): Resource[IO, SeqexecEngine[IO]] =
       for {
         met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
-        caS  <- Resource.liftF(SeqexecEngine.caInit[IO](conf.seqexecEngine.epicsCaAddrList,
-          conf.seqexecEngine.ioTimeout))
+        caS  <- Resource.liftF(CaServiceInit.caInit[IO](conf.seqexecEngine))
         sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine, caS)
         seqE <- Resource.liftF(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
       } yield seqE

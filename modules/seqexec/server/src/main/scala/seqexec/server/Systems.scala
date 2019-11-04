@@ -323,10 +323,10 @@ object Systems {
     }.toMap
 
   def build(
-             site: Site,
-             httpClient: Client[IO],
-             settings: SeqexecEngineConfiguration,
-             service: CaService
-           )(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] =
+     site: Site,
+     httpClient: Client[IO],
+     settings: SeqexecEngineConfiguration,
+     service: CaService
+   )(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] =
     Builder(settings, service, decodeTops(settings.tops)).build(site, httpClient)
 }
