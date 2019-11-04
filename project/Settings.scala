@@ -31,7 +31,6 @@ object Settings {
     val scalaJSReactClipboard   = "0.8.0"
     val scalaJSReactDraggable   = "0.6.0"
     val scalaJSReactSortable    = "0.2.1"
-    val reactSemanticUI         = "0.1.4"
 
     // Scala libraries
     val catsEffectVersion       = "2.0.0"
@@ -69,7 +68,6 @@ object Settings {
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
     val ocsVersion              = "2019101.1.4"
-    val uglifyJs                = "1.2.4"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
