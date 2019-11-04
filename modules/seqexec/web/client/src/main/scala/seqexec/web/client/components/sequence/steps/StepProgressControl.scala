@@ -38,6 +38,7 @@ final case class StepProgressCell(
   isPreview    : Boolean
 ) extends ReactProps {
   @inline def render: VdomElement = StepProgressCell.component(this)
+
   val step: Step = stateSummary.step
   val obsId: Observation.Id = stateSummary.obsId
   val instrument: Instrument = stateSummary.instrument
@@ -148,8 +149,7 @@ object StepProgressCell {
     )
 
   private def textWithPopup(text: String): VdomElement =
-    Popup(
-      Popup.Props("span", text),
+    Popup("span", text)(
       <.span(text)
     )
 

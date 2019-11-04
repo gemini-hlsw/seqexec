@@ -6,16 +6,45 @@ package seqexec.web.client.semanticui.elements.button
 import cats.Eq
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common.style._
 import react.common.implicits._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui._
+import seqexec.web.client.semanticui.elements.button.Button.{Animated, ButtonState, ButtonType, Emphasis, Inactive, Labeled, NoEmphasis, NotAnimated, NotLabeled, Type}
 import seqexec.web.client.semanticui.elements.icon.Icon
+import web.client.ReactPropsWithChildren
+
 import scala.scalajs.js
 
+final case class Button(
+  state: ButtonState = Inactive,
+  emphasis: Emphasis = NoEmphasis,
+  animated: Animated = NotAnimated,
+  icon: Option[Icon] = None,
+  size: Size = Size.NotSized,
+  buttonType: Type = ButtonType,
+  form: Option[String] = None,
+  basic: Boolean = false,
+  inverted: Boolean = false,
+  circular: Boolean = false,
+  labeled: Labeled = NotLabeled,
+  compact: Boolean = false,
+  disabled: Boolean = false,
+  loading: Boolean = false,
+  tabIndex: Option[Int] = None,
+  color: Option[String] = None,
+  onClickE: js.UndefOr[ReactEvent => Callback] = js.undefined,
+  onClick: Callback = Callback.empty,
+  dataTooltip: Option[String] = None,
+  extraStyles: List[Css] = Nil
+) extends ReactPropsWithChildren {
+  @inline def render: Seq[CtorType.ChildArg] => VdomElement = Button.component(this)
+}
+
 object Button {
+  type Props = Button
+
   sealed trait ButtonState
   case object Active   extends ButtonState
   case object Inactive extends ButtonState
@@ -60,27 +89,6 @@ object Button {
   object Type {
     implicit val equal: Eq[Type] = Eq.fromUniversalEquals
   }
-
-  final case class Props(state: ButtonState = Inactive,
-                         emphasis: Emphasis = NoEmphasis,
-                         animated: Animated = NotAnimated,
-                         icon: Option[Icon] = None,
-                         size: Size = Size.NotSized,
-                         buttonType: Type = ButtonType,
-                         form: Option[String] = None,
-                         basic: Boolean = false,
-                         inverted: Boolean = false,
-                         circular: Boolean = false,
-                         labeled: Labeled = NotLabeled,
-                         compact: Boolean = false,
-                         disabled: Boolean = false,
-                         loading: Boolean = false,
-                         tabIndex: Option[Int] = None,
-                         color: Option[String] = None,
-                         onClickE: js.UndefOr[ReactEvent => Callback] = js.undefined,
-                         onClick: Callback = Callback.empty,
-                         dataTooltip: Option[String] = None,
-                         extraStyles: List[Css] = Nil)
 
   private def classSet(p: Props): TagMod =
     ^.classSet(
@@ -150,9 +158,9 @@ object Button {
         })
       .build
 
-  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] =
-    component(p)(children: _*)
-
-  def apply(text: String): Unmounted[Props, Unit, Unit] =
-    component(Props())(text)
+//  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] =
+//    component(p)(children: _*)
+//
+//  def apply(text: String): Unmounted[Props, Unit, Unit] =
+//    component(Props())(text)
 }

@@ -32,15 +32,14 @@ package object semanticui {
                     onClick:  Callback,
                     disabled: Boolean,
                     tooltip:  String,
-                    text:     String): Unmounted[Popup.Props, Unit, Unit] =
-    Popup(Popup.Props("button", tooltip),
-          Button(
-            Button.Props(icon     = Some(icon),
-                         labeled  = LeftLabeled,
-                         onClick  = onClick,
-                         color    = Some(color),
-                         disabled = disabled),
-            text
-          ))
-
+                    text:     String): VdomElement =
+    Popup("button", tooltip)(
+      Button(
+        icon     = Some(icon),
+        labeled  = LeftLabeled,
+        onClick  = onClick,
+        color    = Some(color),
+        disabled = disabled
+      )(text)
+    )
 }

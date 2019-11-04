@@ -132,18 +132,15 @@ object SequenceTab {
         }
 
       val loadButton: TagMod =
-        (Popup(
-          Popup.Props("button", s"Load sequence ${sequenceId.format}"),
+        (Popup("button", s"Load sequence ${sequenceId.format}")(
           Button(
-            Button.Props(
-              size     = Size.Large,
-              compact  = true,
-              icon     = Some(IconUpload),
-              color    = "teal".some,
-              disabled = b.state.loading || running,
-              loading  = b.state.loading,
-              onClickE = load(b, instrument, sequenceId) _
-            )
+            size     = Size.Large,
+            compact  = true,
+            icon     = Some(IconUpload),
+            color    = "teal".some,
+            disabled = b.state.loading || running,
+            loading  = b.state.loading,
+            onClickE = load(b, instrument, sequenceId) _
           )
         ): VdomNode).when(isPreview && isLogged)
 
