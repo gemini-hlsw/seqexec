@@ -32,19 +32,17 @@ object ControlMenu {
     SeqexecCircuit.dispatchCB(Logout)
 
   private def loginButton(enabled: Boolean) =
-    Button(Button.Props(size     = Size.Medium,
-                        onClick  = openLogin,
-                        disabled = !enabled,
-                        inverted = true),
-           "Login")
+    Button(size     = Size.Medium,
+           onClick  = openLogin,
+           disabled = !enabled,
+           inverted = true)("Login")
 
   private def logoutButton(text: String, enabled: Boolean) =
-    Button(Button.Props(size     = Size.Medium,
-                        onClick  = logout,
-                        icon     = Some(IconSignOut),
-                        disabled = !enabled,
-                        inverted = true),
-           text)
+    Button(size     = Size.Medium,
+           onClick  = logout,
+           icon     = Some(IconSignOut),
+           disabled = !enabled,
+           inverted = true)(text)
 
   private val component = ScalaComponent
     .builder[Props]("SeqexecTopMenu")

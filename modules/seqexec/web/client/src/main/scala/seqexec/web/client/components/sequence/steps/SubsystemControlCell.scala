@@ -103,28 +103,24 @@ object SubsystemControlCell {
         p.resources.sorted.map { r =>
           val buttonIcon = determineIcon(p.resourcesCalls.get(r))
 
-          Popup(
-            Popup.Props("button", s"Configure ${r.show}"),
+          Popup("button", s"Configure ${r.show}")(
             Button(
-              Button.Props(
-                size        = Size.Small,
-                color       = buttonColor(p.resourcesCalls.get(r)),
-                disabled    = p.resourcesCalls.get(r).exists {
-                  case ResourceRunOperation.ResourceRunInFlight(_) => true
-                  case _                                           => false
-                },
-                labeled     = buttonIcon
-                  .as(Button.LeftLabeled)
-                  .getOrElse(Button.NotLabeled),
-                icon        = buttonIcon,
-                onClickE    = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
-                extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
-              ),
-              r.show
-              )
-            )
+              size        = Size.Small,
+              color       = buttonColor(p.resourcesCalls.get(r)),
+              disabled    = p.resourcesCalls.get(r).exists {
+                case ResourceRunOperation.ResourceRunInFlight(_) => true
+                case _                                           => false
+              },
+              labeled     = buttonIcon
+                .as(Button.LeftLabeled)
+                .getOrElse(Button.NotLabeled),
+              icon        = buttonIcon,
+              onClickE    = if(p.canOperate) (requestResourceCall(p.id, p.stepId, r) _) else js.undefined,
+              extraStyles = if(!p.canOperate) List(SeqexecStyles.defaultCursor) else List.empty
+            )(r.show)
+          )
         }.toTagMod
-        )
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

@@ -267,23 +267,22 @@ object CalQueueTable {
         SeqexecStyles.centeredCell,
         SeqexecStyles.fullCell,
         Button(
-          Button.Props(
-            size        = SSize.Mini,
-            basic       = false,
-            color       = "brown".some,
-            disabled    = !p.data.canOperate,
-            compact     = true,
-            onClick     = removeSeq(p.queueId, r.obsId),
-            extraStyles = List(SeqexecStyles.autoMargin),
-            icon = p
-              .seqState(r.obsId)
-              .filter(
-                _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
-              .fold(IconTimes.copyIcon(
-                onClick                      = removeSeq(p.queueId, r.obsId)))(_ =>
-                IconRefresh.copyIcon(loading = true))
-              .some
-          ))
+          size        = SSize.Mini,
+          basic       = false,
+          color       = "brown".some,
+          disabled    = !p.data.canOperate,
+          compact     = true,
+          onClick     = removeSeq(p.queueId, r.obsId),
+          extraStyles = List(SeqexecStyles.autoMargin),
+          icon = p
+            .seqState(r.obsId)
+            .filter(
+              _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+            .fold(IconTimes.copyIcon(
+              onClick                      = removeSeq(p.queueId, r.obsId)))(_ =>
+              IconRefresh.copyIcon(loading = true))
+            .some
+        )
     )
 
   private def statusIconRenderer

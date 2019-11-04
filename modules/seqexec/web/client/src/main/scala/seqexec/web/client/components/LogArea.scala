@@ -349,13 +349,11 @@ object LogArea {
               SeqexecStyles.logControlRow,
               <.div(
                 ^.cls := "ui six wide column",
-                Button(Button.Props(icon    = Option(toggleIcon),
-                                    labeled = LeftLabeled,
-                                    compact = true,
-                                    size    = SSize.Small,
-                                    onClick =
-                                      SeqexecCircuit.dispatchCB(ToggleLogArea)),
-                       toggleText)
+                Button(icon    = Option(toggleIcon),
+                       labeled = LeftLabeled,
+                       compact = true,
+                       size    = SSize.Small,
+                       onClick = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleText)
               ),
               <.div(
                 ^.cls := "ui ten wide column",

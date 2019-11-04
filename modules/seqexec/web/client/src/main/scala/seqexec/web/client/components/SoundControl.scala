@@ -45,10 +45,10 @@ object SoundControl {
         case SoundSelection.SoundOff => Callback(SoundOn.play())
       }
       Button(
-        Button.Props(icon     = icon.some,
-                     inverted = true,
-                     size     = Size.Medium,
-                     onClick  = soundClick *> flipSound))
+        icon     = icon.some,
+        inverted = true,
+        size     = Size.Medium,
+        onClick  = soundClick *> flipSound)
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

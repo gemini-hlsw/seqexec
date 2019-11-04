@@ -46,15 +46,12 @@ object RunFromStep {
       <.div(
         SeqexecStyles.runFrom,
         SeqexecStyles.notInMobile,
-        Popup(
-          Popup.Props("button", s"Run from step ${p.stepId + 1}"),
+        Popup("button", s"Run from step ${p.stepId + 1}")(
           Button(
-            Button.Props(
-              icon     = Some(IconPlay),
-              color    = Some("blue"),
-              onClick  = requestRunFrom(p.id, p.stepId),
-              disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
-            )
+            icon     = Some(IconPlay),
+            color    = Some("blue"),
+            onClick  = requestRunFrom(p.id, p.stepId),
+            disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
           )
         )
       )
