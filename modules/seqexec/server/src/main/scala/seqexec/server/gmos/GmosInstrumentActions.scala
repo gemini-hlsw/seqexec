@@ -252,7 +252,6 @@ class GmosInstrumentActions[F[_]: Concurrent: Logger, A <: GmosController.SiteDe
           .lastOption
           .getOrElse(NSSubexposure.Zero)
 
-
       Stream.eval(inst.nsCount).flatMap { cnt =>
         Stream.eval(inst.nsCmdRef.set(none)) *>
         NSSubexposure

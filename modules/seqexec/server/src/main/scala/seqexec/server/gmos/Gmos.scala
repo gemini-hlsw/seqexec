@@ -60,7 +60,7 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
   val nsCount: F[Int] = controller.nsCount
 
   override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F] =
-    if(isNodAndShuffle(config))
+    if (isNodAndShuffle(config))
       CompleteControl(
         StopObserveCmd(stopNS),
         AbortObserveCmd(abortNS),
@@ -79,23 +79,23 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
         AbortPausedCmd(controller.abortPaused)
       )
 
-  def stopNS(gracefully: Boolean): F[Unit] =
-    if(gracefully)
+  private def stopNS(gracefully: Boolean): F[Unit] =
+    if (gracefully)
       nsCmdRef.set(NSObserveCommand.StopGracefully.some)
     else
       nsCmdRef.set(NSObserveCommand.StopImmediately.some) *> controller.stopObserve
 
-  def abortNS(gracefully: Boolean): F[Unit] =
-    if(gracefully)
+  private def abortNS(gracefully: Boolean): F[Unit] =
+    if (gracefully)
       nsCmdRef.set(NSObserveCommand.AbortGracefully.some)
     else
       nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
 
-  def pauseNS(gracefully: Boolean): F[Unit] =
-    if(gracefully)
+  private def pauseNS(gracefully: Boolean): F[Unit] =
+    if (gracefully)
       nsCmdRef.set(NSObserveCommand.PauseGracefully.some)
     else
-      nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.stopObserve
+      nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.pauseObserve
 
   protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
     case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
