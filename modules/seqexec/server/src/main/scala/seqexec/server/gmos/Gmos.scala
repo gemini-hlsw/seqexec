@@ -72,7 +72,7 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
     else
       CompleteControl(
         StopObserveCmd(_ => controller.stopObserve),
-        AbortObserveCmd(_ => controller.abortObserve),
+        AbortObserveCmd(controller.abortObserve),
         PauseObserveCmd(_ => controller.pauseObserve),
         ContinuePausedCmd(controller.resumePaused),
         StopPausedCmd(controller.stopPaused),
@@ -85,11 +85,8 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
     else
       nsCmdRef.set(NSObserveCommand.StopImmediately.some) *> controller.stopObserve
 
-  private def abortNS(gracefully: Boolean): F[Unit] =
-    if (gracefully)
-      nsCmdRef.set(NSObserveCommand.AbortGracefully.some)
-    else
-      nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
+  private def abortNS: F[Unit] =
+    nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
 
   private def pauseNS(gracefully: Boolean): F[Unit] =
     if (gracefully)

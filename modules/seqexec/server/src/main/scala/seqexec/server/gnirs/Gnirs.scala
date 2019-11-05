@@ -40,7 +40,7 @@ final case class Gnirs[F[_]: Logger: Concurrent](controller: GnirsController[F],
   override def observeControl(config: CleanConfig): ObserveControl[F] =
     UnpausableControl(
       StopObserveCmd(_ => controller.stopObserve),
-      AbortObserveCmd(_ => controller.abortObserve)
+      AbortObserveCmd(controller.abortObserve)
     )
 
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =

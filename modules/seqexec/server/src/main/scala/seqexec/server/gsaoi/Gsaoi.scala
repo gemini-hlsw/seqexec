@@ -46,9 +46,9 @@ final case class Gsaoi[F[_]: Logger: Concurrent](
   override val contributorName: String = "GSAOI"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
-    UnpausableControl[F](
-      StopObserveCmd[F](_ => controller.stopObserve),
-      AbortObserveCmd[F](_ => controller.abortObserve)
+    UnpausableControl(
+      StopObserveCmd(_ => controller.stopObserve),
+      AbortObserveCmd(controller.abortObserve)
     )
 
   override def observe(

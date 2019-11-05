@@ -224,8 +224,8 @@ object SeqTranslate {
                tio: Timer[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
-        case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort(graceful)
-        case UnpausableControl(_, AbortObserveCmd(abort))           => abort(graceful)
+        case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
+        case UnpausableControl(_, AbortObserveCmd(abort))           => abort
         case _                                                      => Applicative[F].unit
       }
 
