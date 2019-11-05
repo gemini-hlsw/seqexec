@@ -63,7 +63,7 @@ object SmoothObservationProgressBar
     .render_PS { (p, s) =>
       val remainingMillis = s.maxValue - s.value
 
-      Progress(Progress.Props(
+      Progress(
         label       = label(p.fileId, remainingMillis, p.stopping, p.paused),
         total       = p.total,
         value       = s.value,
@@ -71,7 +71,7 @@ object SmoothObservationProgressBar
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
-      ))
+      )
     }
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps(x =>
@@ -120,7 +120,7 @@ object ObservationProgressBar {
             case _ =>
               val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
 
-              Progress(Progress.Props(
+              Progress(
                 msg,
                 total       = 100,
                 value       = 0,
@@ -128,7 +128,7 @@ object ObservationProgressBar {
                 progressCls = List(SeqexecStyles.observationProgressBar),
                 barCls      = List(SeqexecStyles.observationBar),
                 labelCls    = List(SeqexecStyles.observationLabel)
-              ))
+              )
         })
     ))
     .configure(Reusability.shouldComponentUpdate)
