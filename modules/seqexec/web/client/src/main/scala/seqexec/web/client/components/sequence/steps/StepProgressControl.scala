@@ -119,21 +119,25 @@ object StepProgressCell {
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      props.stateSummary.nsStatus.fold[VdomElement] {
+      if(props.stateSummary.isBias) {
+        BiasStatus(fileId)
+      } else {
+        props.stateSummary.nsStatus.fold[VdomElement] {
           ObservationProgressBar(
             props.obsId,
             props.step.id,
             fileId,
             stopping = !paused && props.isStopping,
             paused)
-      } { nsStatus =>
-        NodAndShuffleProgressMessage(
-          props.obsId,
-          props.step.id,
-          fileId,
-          props.isStopping,
-          paused,
-          nsStatus)
+        } { nsStatus =>
+          NodAndShuffleProgressMessage(
+            props.obsId,
+            props.step.id,
+            fileId,
+            props.isStopping,
+            paused,
+            nsStatus)
+        }
       },
       stepControlButtons(props)
     )
