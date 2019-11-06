@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.{SequenceState, StepId, StepState}
+import seqexec.model.{SequenceState, StepId}
 import gem.Observation
 import cats.implicits._
 import monocle.Lens
@@ -134,11 +134,11 @@ object Sequence {
 
       seq.steps.foldLeftM[Option, (List[Step[F]], List[Step[F]])]((Nil, Nil))(
         (acc, step) =>
-        if (Step.status(step) === StepState.Pending)
-          Some(acc.leftMap(_ :+ step))
-        else if (Step.status(step) === StepState.Completed || Step.status(step) === StepState.Skipped)
-          Some(acc.map(_ :+ step))
-        else None
+        if (step.status.isPending)
+          acc.leftMap(_ :+ step).some
+        else if (step.status.isFinished)
+          acc.map(_ :+ step).some
+        else none
       )
 
     }

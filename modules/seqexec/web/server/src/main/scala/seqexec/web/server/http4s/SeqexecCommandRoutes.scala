@@ -90,14 +90,8 @@ class SeqexecCommandRoutes[F[_]: Sync](auth:       AuthenticationService[F],
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
       for {
-        _    <- se.abortObserve(inputQueue, obsId, graceful = false)
+        _    <- se.abortObserve(inputQueue, obsId)
         resp <- Ok(s"Abort requested for $obsId on step $stepId")
-      } yield resp
-
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abortGracefully" as _ =>
-      for {
-        _    <- se.abortObserve(inputQueue, obsId, graceful = true)
-        resp <- Ok(s"Abort gracefully requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>

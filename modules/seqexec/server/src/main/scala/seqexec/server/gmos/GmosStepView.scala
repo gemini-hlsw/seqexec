@@ -8,6 +8,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.engine
 import seqexec.server._
+import seqexec.server.StepsView._
 import seqexec.server.gmos.GmosController.Config._
 import mouse.all._
 
@@ -19,10 +20,10 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
   ): Step =
     Gmos.nsConfig(stepg.config) match {
       case Right(e @ NSConfig.NodAndShuffle(c, _, _, _)) =>
-        val status = engine.Step.status(step)
+        val status = step.status
         val configStatus =
-          if (StepsView.runningOrComplete(status)) {
-            StepsView.stepConfigStatus(step)
+          if (status.runningOrComplete) {
+            stepConfigStatus(step)
           } else {
             altCfgStatus
           }
@@ -49,7 +50,7 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
           skip         = step.skipMark.self,
           configStatus = configStatus,
           nsStatus =
-            NodAndShuffleStatus(StepsView.observeStatus(step.executions),
+            NodAndShuffleStatus(observeStatus(step.executions),
                                 e.totalExposureTime,
                                 e.nodExposureTime,
                                 c,
@@ -61,7 +62,7 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
             }.flatten)
         )
       case _ =>
-        StepsView.defaultStepsView.stepView(stepg, step, altCfgStatus)
+        defaultStepsView.stepView(stepg, step, altCfgStatus)
     }
 
 }

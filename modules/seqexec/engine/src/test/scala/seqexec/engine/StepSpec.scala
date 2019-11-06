@@ -603,86 +603,76 @@ class StepSpec extends CatsSuite {
   }
 
   test("status should be completed when it doesn't have any executions") {
-    assert(Step.status(stepz0.toStep) === StepState.Completed)
+    assert(stepz0.toStep.status === StepState.Completed)
   }
 
   test("status should be Error when at least one Action failed") {
     assert(
-      Step.status(
-        Step.Zipper(
-          id = 1,
-          breakpoint = Step.BreakpointMark(false),
-          skipMark = Step.SkipMark(false),
-          pending = Nil,
-          focus = Execution(List(action, actionFailed, actionCompleted)),
-          done = Nil,
-          rolledback = (Execution(List(action, action, action)), Nil)
-        ).toStep
-      ) === StepState.Failed("Dummy error")
+      Step.Zipper(
+        id = 1,
+        breakpoint = Step.BreakpointMark(false),
+        skipMark = Step.SkipMark(false),
+        pending = Nil,
+        focus = Execution(List(action, actionFailed, actionCompleted)),
+        done = Nil,
+        rolledback = (Execution(List(action, action, action)), Nil)
+      ).toStep.status === StepState.Failed("Dummy error")
     )
   }
 
   test("status should be Completed when all actions succeeded") {
     assert(
-      Step.status(
-        Step.Zipper(
-          id = 1,
-          breakpoint = Step.BreakpointMark(false),
-          skipMark = Step.SkipMark(false),
-          pending = Nil,
-          focus = Execution(List(actionCompleted, actionCompleted, actionCompleted)),
-          done = Nil,
-          rolledback = (Execution(List(action, action, action)), Nil)
-        ).toStep
-      ) === StepState.Completed
+      Step.Zipper(
+        id = 1,
+        breakpoint = Step.BreakpointMark(false),
+        skipMark = Step.SkipMark(false),
+        pending = Nil,
+        focus = Execution(List(actionCompleted, actionCompleted, actionCompleted)),
+        done = Nil,
+        rolledback = (Execution(List(action, action, action)), Nil)
+      ).toStep.status === StepState.Completed
     )
   }
 
   test("status should be Running when there are both actions and results") {
     assert(
-      Step.status(
-        Step.Zipper(
-          id = 1,
-          breakpoint = Step.BreakpointMark(false),
-          skipMark = Step.SkipMark(false),
-          pending = Nil,
-          focus = Execution(List(actionCompleted, action, actionCompleted)),
-          done = Nil,
-          rolledback = (Execution(List(action, action, action)), Nil)
-        ).toStep
-      ) === StepState.Running
+      Step.Zipper(
+        id = 1,
+        breakpoint = Step.BreakpointMark(false),
+        skipMark = Step.SkipMark(false),
+        pending = Nil,
+        focus = Execution(List(actionCompleted, action, actionCompleted)),
+        done = Nil,
+        rolledback = (Execution(List(action, action, action)), Nil)
+      ).toStep.status === StepState.Running
     )
   }
 
   test("status should be Pending when there are only pending actions") {
     assert(
-      Step.status(
-        Step.Zipper(
-          id = 1,
-          breakpoint = Step.BreakpointMark(false),
-          skipMark = Step.SkipMark(false),
-          pending = Nil,
-          focus = Execution(List(action, action, action)),
-          done = Nil,
-          rolledback = (Execution(List(action, action, action)), Nil)
-        ).toStep
-      ) === StepState.Pending
+      Step.Zipper(
+        id = 1,
+        breakpoint = Step.BreakpointMark(false),
+        skipMark = Step.SkipMark(false),
+        pending = Nil,
+        focus = Execution(List(action, action, action)),
+        done = Nil,
+        rolledback = (Execution(List(action, action, action)), Nil)
+      ).toStep.status === StepState.Pending
     )
   }
 
   test("status should be Skipped if the Step was skipped") {
     assert(
-      Step.status(
-        Step.Zipper(
-          id = 1,
-          breakpoint = Step.BreakpointMark(false),
-          skipMark = Step.SkipMark(false),
-          pending = Nil,
-          focus = Execution(List(action, action, action)),
-          done = Nil,
-          rolledback = (Execution(List(action, action, action)), Nil)
-        ).toStep.copy(skipped = Step.Skipped(true))
-      ) === StepState.Skipped
+      Step.Zipper(
+        id = 1,
+        breakpoint = Step.BreakpointMark(false),
+        skipMark = Step.SkipMark(false),
+        pending = Nil,
+        focus = Execution(List(action, action, action)),
+        done = Nil,
+        rolledback = (Execution(List(action, action, action)), Nil)
+      ).toStep.copy(skipped = Step.Skipped(true)).status === StepState.Skipped
     )
   }
 

@@ -29,4 +29,49 @@ object StepState {
       case _                      => false
     }
 
+    implicit class StepStateOps(val s: StepState) extends AnyVal {
+      def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s match {
+        case StepState.Pending | StepState.Skipped | StepState.Paused |
+            StepState.Running => i > firstRunnable
+        case _ => false
+      }
+
+      def canSetSkipmark: Boolean = s match {
+        case StepState.Pending | StepState.Paused => true
+        case _ if hasError                        => true
+        case _                                    => false
+      }
+
+      def hasError: Boolean = s match {
+        case StepState.Failed(_) => true
+        case _                   => false
+      }
+
+      def isRunning: Boolean = s === StepState.Running
+
+      def isPending: Boolean = s === StepState.Pending
+
+      def runningOrComplete: Boolean = s match {
+        case StepState.Running | StepState.Completed => true
+        case _                                       => false
+      }
+
+      def isFinished: Boolean = s match {
+        case StepState.Completed | StepState.Skipped => true
+        case _                                       => false
+      }
+
+      def wasSkipped: Boolean = s === StepState.Skipped
+
+      def canRunFrom: Boolean = s match {
+        case StepState.Pending | StepState.Failed(_) => true
+        case _                                       => false
+      }
+
+      def canConfigure: Boolean = s match {
+        case StepState.Pending | StepState.Paused | StepState.Failed(_) => true
+        case _                                                          => false
+      }
+
+    }
 }
