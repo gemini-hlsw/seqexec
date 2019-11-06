@@ -509,7 +509,13 @@ object SeqexecEngine {
     def notifyODB(i: (EventResult[SeqEvent], EngineState[F])): F[(EventResult[SeqEvent], EngineState[F])] = {
       (i match {
         case (SystemUpdate(SystemEvent.Failed(id, _, e), _), _) =>
-          systems.odb.obsAbort(id, e.msg).void
+          Logger[F].error(s"Error executing ${id.format} due to $e") *>
+          systems.odb
+            .obsAbort(id, e.msg)
+            .ensure(
+              SeqexecFailure
+                .Unexpected("Unable to send ObservationAborted message to ODB.")
+            )(identity)
         case (SystemUpdate(SystemEvent.Executed(id), _), st) if EngineState.sequenceStateIndex(id).getOption(st)
           .exists(_.status === SequenceState.Idle) =>
           systems.odb.obsPause(id, "Sequence paused by user").void
