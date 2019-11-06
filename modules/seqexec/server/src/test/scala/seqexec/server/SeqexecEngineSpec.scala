@@ -222,9 +222,9 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         .compile.last
     } yield {
       inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.toSequence.steps)) {
-        case Some(steps) => assertResult(Some(StepState.Skipped))( steps.get(0).map(Step.status))
-                            assertResult(Some(StepState.Skipped))( steps.get(1).map(Step.status))
-                            assertResult(Some(StepState.Completed))( steps.get(2).map(Step.status))
+        case Some(steps) => assertResult(Some(StepState.Skipped))(steps.get(0).map(_.status))
+                            assertResult(Some(StepState.Skipped))(steps.get(1).map(_.status))
+                            assertResult(Some(StepState.Completed))(steps.get(2).map(_.status))
       }
     }).unsafeRunSync
   }

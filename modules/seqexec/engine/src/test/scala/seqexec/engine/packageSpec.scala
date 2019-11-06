@@ -254,7 +254,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Skipped, StepState.Completed, StepState.Completed))
     }
   }
@@ -273,7 +273,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped, StepState.Completed))
     }
   }
@@ -294,7 +294,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped, StepState.Skipped, StepState.Skipped, StepState.Completed))
     }
   }
@@ -315,7 +315,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     inside (sf.map(_.sequences(seqId))) {
       case Some(s @ Final(_, SequenceState.Completed)) =>
-        assert(s.done.map(Step.status) === List(StepState.Completed, StepState.Completed, StepState.Skipped))
+        assert(s.done.map(_.status) === List(StepState.Completed, StepState.Completed, StepState.Skipped))
     }
   }
 
@@ -331,7 +331,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Skipped))
     }
   }
@@ -351,7 +351,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Skipped, StepState.Skipped, StepState.Completed))
     }
   }
@@ -374,7 +374,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     inside (sf.map(_.sequences(seqId))) {
       case Some(s@Final(_, SequenceState.Completed)) =>
-        assert(s.done.map(Step.status) === List(StepState.Skipped, StepState.Skipped, StepState.Skipped))
+        assert(s.done.map(_.status) === List(StepState.Skipped, StepState.Skipped, StepState.Skipped))
     }
   }
 
@@ -394,7 +394,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = runToCompletion(s0)
 
-    inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
+    inside (sf.map(_.sequences(seqId).done.map(_.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped))
     }
   }
@@ -424,7 +424,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
       .map(_._2).take(2).compile.toList.unsafeRunSync
 
-    /*
+    /**
      * First state update must have the action started.
      * Second state update must have the action finished.
      * The value in `dummy` must change. That is prove that the `Action` run.
@@ -486,10 +486,10 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     ).compile.last.unsafeRunSync.map(_._2)
 
     inside (sf.flatMap(_.sequences.get(seqId).map(_.toSequence))) {
-      case Some(seq) => assertResult(Some(StepState.Completed))(seq.steps.get(0).map(Step.status))
-        assertResult(Some(StepState.Skipped))(seq.steps.get(1).map(Step.status))
-        assertResult(Some(StepState.Completed))(seq.steps.get(2).map(Step.status))
-        assertResult(Some(StepState.Completed))(seq.steps.get(3).map(Step.status))
+      case Some(seq) => assertResult(Some(StepState.Completed))(seq.steps.get(0).map(_.status))
+        assertResult(Some(StepState.Skipped))(seq.steps.get(1).map(_.status))
+        assertResult(Some(StepState.Completed))(seq.steps.get(2).map(_.status))
+        assertResult(Some(StepState.Completed))(seq.steps.get(3).map(_.status))
     }
 
   }

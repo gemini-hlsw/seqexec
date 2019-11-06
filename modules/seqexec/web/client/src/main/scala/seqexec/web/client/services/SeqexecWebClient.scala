@@ -113,16 +113,6 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Requests the backend to abort this sequenece gracefully
-    */
-  def abortGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
-    Ajax
-      .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abortGracefully"
-        )
-      .void
-
-  /**
     * Requests the backend to hold the current exposure immediately
     */
   def pauseObs(sid: Observation.Id, step: StepId): Future[Unit] =

@@ -82,7 +82,7 @@ trait SeqexecEngine[F[_]] {
 
   def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
 
-  def abortObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
+  def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit]
 
   def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
 
@@ -274,8 +274,8 @@ object SeqexecEngine {
       Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.stopObserve(seqId, graceful))
     )
 
-    override def abortObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
-      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId, graceful))
+    override def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
+      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
     )
 
     override def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(

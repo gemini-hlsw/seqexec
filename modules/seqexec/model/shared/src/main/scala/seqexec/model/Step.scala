@@ -130,32 +130,16 @@ object Step {
 
     def file: Option[String] = None
 
-    def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s.status match {
-      case StepState.Pending | StepState.Skipped | StepState.Paused |
-          StepState.Running => i > firstRunnable
-      case _ => false
-    }
+    def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean =
+      s.status.canSetBreakpoint(i, firstRunnable)
 
-    def canSetSkipmark: Boolean = s.status match {
-      case StepState.Pending | StepState.Paused => true
-      case _ if hasError                        => true
-      case _                                    => false
-    }
+    def canSetSkipmark: Boolean = s.status.canSetSkipmark
 
-    def hasError: Boolean = s.status match {
-      case StepState.Failed(_) => true
-      case _                   => false
-    }
+    def hasError: Boolean = s.status.hasError
 
-    def isRunning: Boolean = s.status match {
-      case StepState.Running => true
-      case _                 => false
-    }
+    def isRunning: Boolean = s.status.isRunning
 
-    def runningOrComplete: Boolean = s.status match {
-      case StepState.Running | StepState.Completed => true
-      case _                                       => false
-    }
+    def runningOrComplete: Boolean = s.status.runningOrComplete
 
     def isObserving: Boolean = s match {
       case StandardStep(_, _, _, _, _, _, _, o)      => o === ActionStatus.Running
@@ -177,20 +161,13 @@ object Step {
       case _ => false
     }
 
-    def isFinished: Boolean =
-      s.status === StepState.Completed || s.status === StepState.Skipped
+    def isFinished: Boolean = s.status.isFinished
 
-    def wasSkipped: Boolean = s.status === StepState.Skipped
+    def wasSkipped: Boolean = s.status.wasSkipped
 
-    def canRunFrom: Boolean = s.status match {
-      case StepState.Pending | StepState.Failed(_) => true
-      case _                                       => false
-    }
+    def canRunFrom: Boolean = s.status.canRunFrom
 
-    def canConfigure: Boolean = s.status match {
-      case StepState.Pending | StepState.Paused | StepState.Failed(_) => true
-      case _                                                          => false
-    }
+    def canConfigure: Boolean = s.status.canConfigure
 
     def isMultiLevel: Boolean = s match {
       case _: NodAndShuffleStep => true

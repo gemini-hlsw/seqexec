@@ -59,7 +59,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   def startFrom(id: Observation.Id, step: StepId): HandleType[Unit] =
     getS(id).flatMap {
       case Some(seq) if (seq.status.isIdle || seq.status.isError) && seq.toSequence.steps.exists(_.id === step) =>
-        val steps = seq.toSequence.steps.takeWhile(_.id =!= step).mapFilter(p => Step.status(p).canRunFrom.option(p.id))
+        val steps = seq.toSequence.steps.takeWhile(_.id =!= step).mapFilter(p => p.status.canRunFrom.option(p.id))
         val withSkips = steps.foldLeft[Sequence.State[F]](seq){ case (s, i) => s.setSkipMark(i, v = true) }
         putS(id)(
           Sequence.State.status.set(SequenceState.Running.init)(withSkips.skips.getOrElse(withSkips).rollback)

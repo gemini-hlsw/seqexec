@@ -87,12 +87,12 @@ class SeqTranslateSpec extends AnyFlatSpec {
   }
 
   "SeqTranslate" should "trigger abortObserve command only if exposure is in progress" in {
-    assert(translator.abortObserve(seqId, graceful = false).apply(s0).isDefined)
-    assert(translator.abortObserve(seqId, graceful = false).apply(s1).isEmpty)
-    assert(translator.abortObserve(seqId, graceful = false).apply(s2).isEmpty)
-    assert(translator.abortObserve(seqId, graceful = false).apply(s3).isDefined)
-    assert(translator.abortObserve(seqId, graceful = false).apply(s4).isDefined)
-    assert(translator.abortObserve(seqId, graceful = false).apply(s5).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s0).isDefined)
+    assert(translator.abortObserve(seqId).apply(s1).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s2).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s3).isDefined)
+    assert(translator.abortObserve(seqId).apply(s4).isDefined)
+    assert(translator.abortObserve(seqId).apply(s5).isEmpty)
   }
 
 }
