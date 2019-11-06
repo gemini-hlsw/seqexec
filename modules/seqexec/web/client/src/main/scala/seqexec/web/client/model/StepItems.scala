@@ -231,6 +231,9 @@ object StepItems {
     val isNSInError: Boolean =
       isNS && anyError
 
+    val isBias: Boolean =
+      step.stepType(instrument).exists(_ === StepType.Bias)
+
     def detailRows(selected: Option[StepId]): DetailRows =
       if( (isNS && selected.exists(_ === step.id)) || isNSRunning || isNSInError)
         DetailRows.TwoDetailRows
