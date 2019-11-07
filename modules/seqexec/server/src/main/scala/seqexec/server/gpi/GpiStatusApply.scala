@@ -176,7 +176,7 @@ object GpiStatusApply extends GpiLookupTables {
           // "normalized" difference
           val δʹ= abs(if (δ < - π) δ + 2*π else if (δ >= π) δ - 2*π else δ)
           val ε: Option[Double] = GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble).toSignedDoubleRadians)
-          ε.exists(abs(δʹ) <= _)
+          ε.exists(δʹ <= _)
         }.getOrElse(false)
       })
 
