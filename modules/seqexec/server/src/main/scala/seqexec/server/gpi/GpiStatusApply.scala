@@ -11,11 +11,13 @@ import gem.enum.GiapiStatus
 import gem.enum.GiapiType
 import gem.enum.Instrument
 import gem.ocs2.Parsers
+import gsp.math.Angle
 import gsp.math.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.syntax.status._
+import scala.math.abs
 
 object GpiStatusApply extends GpiLookupTables {
   val allGpiApply: List[GiapiStatusApply] = GiapiStatusApply.all.filter {
@@ -101,7 +103,7 @@ object GpiStatusApply extends GpiLookupTables {
     }
 
   implicit class GiapiStatusApplyOps(val s: GiapiStatusApply) {
-    private def removeConfig[F[_]: Monad](
+    def removeConfig[F[_]: Monad](
       statusDb: GiapiStatusDb[F],
       config:   Configuration,
       compare:  Option[StatusValue] => Boolean
@@ -122,7 +124,7 @@ object GpiStatusApply extends GpiLookupTables {
       statusDb: GiapiStatusDb[F],
       config:   Configuration,
       compare:  Option[StatusValue] => Option[A],
-      toA: String => Option[A],
+      toA:      String => Option[A],
       tolerance: A
     ): F[Configuration] = {
       val num = implicitly[Numeric[A]]
@@ -131,7 +133,7 @@ object GpiStatusApply extends GpiLookupTables {
           val configValue = config.value(s.applyItem).flatMap(toA)
           configValue.exists{ c =>
           val diff = num.abs(num.minus(v, c))
-          num.lt(diff, tolerance)
+          num.lteq(diff, tolerance)
         }})
     }
 
@@ -150,4 +152,33 @@ object GpiStatusApply extends GpiLookupTables {
           removeConfigIfPossible(statusDb, config, _.stringCfg)
       }
   }
+
+  /**
+    * polarizer angle needs a special treatment.
+    */
+  def overridePolAngle[F[_]: Monad](
+    db:        GiapiStatusDb[F],
+    config:    Configuration
+  ): F[Configuration] =
+    GpiPolarizerAngle.removeConfig[F](
+      db,
+      config,
+      value => {
+        val measuredAngle: Option[Angle] =
+          value.floatCfg.flatMap(_.parseDoubleOption).map(Angle.fromDoubleDegrees)
+        val requestedAngle: Option[Angle] =
+          config.value(GpiPolarizerAngle.applyItem).flatMap(_.parseDoubleOption).map(Angle.fromDoubleDegrees)
+        (measuredAngle, requestedAngle).mapN {(m, r) =>
+          // This calculates the minimal angle diference so that e.g. 359.9 and 0.1 have 0.2 diff
+          // This should probably be in the Angle class
+          val π = scala.math.Pi
+          val δ: Double = (m - r).toSignedDoubleRadians % 2*π
+          // "normalized" difference
+          val δʹ= abs(if (δ < - π) δ + 2*π else if (δ >= π) δ - 2*π else δ)
+          val ε: Option[Double] = GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble).toSignedDoubleRadians)
+          ε.exists(abs(δʹ) <= _)
+        }.getOrElse(false)
+      })
+
+
 }
