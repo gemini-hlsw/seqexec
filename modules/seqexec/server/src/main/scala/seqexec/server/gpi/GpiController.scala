@@ -276,7 +276,8 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
   ): F[Configuration] =
     for {
       b <- gpiConfiguration(config).pure[F]
-      q <- GpiStatusApply.foldConfig(client.statusDb, b)
+      c <- GpiStatusApply.overridePolAngle(client.statusDb, b)
+      q <- GpiStatusApply.foldConfig(client.statusDb, c)
       p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
       _ <- Logger[F].info(s"Applied GPI config ${p.config}").unlessA(p.config.isEmpty)
     } yield p
