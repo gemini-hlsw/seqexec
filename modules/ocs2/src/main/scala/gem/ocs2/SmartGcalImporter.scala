@@ -3,6 +3,7 @@
 
 package gem.ocs2
 
+import cats.effect.Blocker
 import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
@@ -204,14 +205,14 @@ object SmartGcalImporter extends DoobieClient {
                     indexer:        ConnectionIO[Int]): IO[Unit] = {
 
     def lines(l: GcalLampType): Stream[IO, SmartGcalLine[K]] =
-      Stream.resource(ExecutionContexts.cachedThreadPool[IO]).flatMap { bec =>
-        io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, bec, 4096)
+      Stream.eval(Blocker[IO].use { bec =>
+        IO(io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, bec, 4096)
             .through(text.utf8Decode)
             .through(text.lines)
             .filter(_.trim.nonEmpty)
             .map(_.split(',').map(_.trim).toList)
-            .map(parseLine(_, l, parser))
-      }
+            .map(parseLine(_, l, parser)))
+      }).flatten
 
     val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
       .chunkN(4096)

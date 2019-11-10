@@ -8,7 +8,7 @@ import gsp.math.{ Angle, Coordinates, Offset }
 import gsp.math.syntax.treemap._
 import gem.util.Timestamp
 
-import cats.effect.{ IO, ContextShift }
+import cats.effect.{ Blocker, IO, ContextShift }
 import fs2.Stream
 
 import java.io.InputStream
@@ -16,7 +16,6 @@ import java.time.{ LocalDateTime, ZoneOffset }
 import java.time.format.DateTimeFormatter
 
 import scala.collection.immutable.TreeMap
-import scala.concurrent.ExecutionContext
 import scala.io.Source
 
 
@@ -52,8 +51,8 @@ trait EphemerisTestSupport {
   def inputStream(n: String): InputStream =
     getClass.getResourceAsStream(s"$n.eph")
 
-  def stream(n: String): Stream[IO, String] =
-    fs2.io.readInputStream(IO(inputStream(n)), 128, ExecutionContext.global)
+  def stream(n: String, b: Blocker): Stream[IO, String] =
+    fs2.io.readInputStream(IO(inputStream(n)), 128, b)
           .through(fs2.text.utf8Decode)
 
   def load(n: String): String =

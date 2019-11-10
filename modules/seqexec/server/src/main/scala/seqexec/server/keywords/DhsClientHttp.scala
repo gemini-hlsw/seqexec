@@ -6,8 +6,8 @@ package seqexec.server.keywords
 import cats.FlatMap
 import cats.implicits._
 import cats.data.EitherT
+import cats.effect.Concurrent
 import cats.effect.Timer
-import cats.effect.Effect
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -33,7 +33,7 @@ import scala.concurrent.duration._
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
-class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
+class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
   import DhsClientHttp._
 
   private val client = {
@@ -155,7 +155,7 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply[F[_]: Effect](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] = new DhsClientHttp[F](client, uri)
+  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] = new DhsClientHttp[F](client, uri)
 }
 
 /**

@@ -11,6 +11,7 @@ import gem.test.Tags._
 
 import EphemerisCompression._
 
+import cats.effect.Blocker
 import cats.effect.IO
 import cats.implicits._
 import cats.tests.CatsSuite
@@ -24,15 +25,15 @@ final class EphemerisCompressionSpec extends CatsSuite with EphemerisTestSupport
   import EphemerisCompressionSpec._
 
   test("compresses") {
-    val a = stream("borrelly")
+    val a = Blocker[IO].use(stream("borrelly", _)
               .through(EphemerisParser.elements[IO])
-              .through(standardVelocityCompression)
+              .through(standardVelocityCompression).compile.toVector)
 
-    val e = stream("borrelly-compressed")
-              .through(EphemerisParser.elements[IO])
+    val e = Blocker[IO].use(stream("borrelly-compressed", _)
+              .through(EphemerisParser.elements[IO]).compile.toVector)
 
-    val actual   = a.compile.toVector.unsafeRunSync
-    val expected = e.compile.toVector.unsafeRunSync
+    val actual   = a.unsafeRunSync
+    val expected = e.unsafeRunSync
 
     assert(actual == expected)
   }
