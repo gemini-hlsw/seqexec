@@ -32,7 +32,7 @@ trait ProgressLabel {
     val durationStr = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
 
     if (paused) s"$fileId - Paused - $durationStr left"
-      else if (stopping) s"$fileId - Stopping - $durationStr left"
+      else if (stopping) s"$fileId - Stopping - Reading out..."
       else if (remainingSecs > 0) s"$fileId - $durationStr left"
       else s"$fileId - Reading out..."
   }

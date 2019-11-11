@@ -146,7 +146,7 @@ object ControlButtons {
                  icon     = Some(IconStop),
                  color    = Some("orange"),
                  onClick  = requestGracefulStop(p.id, p.stepId),
-                 disabled = p.requestInFlight
+                 disabled = p.requestInFlight || p.isObservePaused
                )
              )
          }
