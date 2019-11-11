@@ -48,7 +48,7 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     UnpausableControl(
       StopObserveCmd(_ => controller.stopObserve),
-      AbortObserveCmd(_ => controller.abortObserve)
+      AbortObserveCmd(controller.abortObserve)
     )
 
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =

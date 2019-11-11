@@ -105,11 +105,10 @@ object LoginBox {
               .whenDefined,
             <.div(
               ^.cls := "right floated right aligned ten wide column",
-              Button(Button.Props(onClick    = closeBox), "Cancel"),
-              Button(Button.Props(onClick    = attemptLogin,
-                                  buttonType = Button.SubmitType,
-                                  form       = Some(formId)),
-                     "Login")
+              Button(onClick    = closeBox)("Cancel"),
+              Button(onClick    = attemptLogin,
+                     buttonType = Button.SubmitType,
+                     form       = Some(formId))("Login")
             )
           )
         )

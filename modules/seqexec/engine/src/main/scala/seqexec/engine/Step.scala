@@ -46,7 +46,7 @@ object Step {
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
-  def status[F[_]](step: Step[F]): StepState = {
+  private def status[F[_]](step: Step[F]): StepState = {
 
     if(step.skipped.self) StepState.Skipped
     else
@@ -63,6 +63,10 @@ object Step {
         else StepState.Running
       )
 
+  }
+
+  implicit class StepOps[F[_]](val s: Step[F]) extends AnyVal {
+    def status: StepState = Step.status(s)
   }
 
   /**

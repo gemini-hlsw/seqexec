@@ -8,7 +8,6 @@ import cats.data.StateT
 import cats.effect.{ConcurrentEffect, Sync, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
-import edu.gemini.epics.acm.CaService
 import fs2.{Pure, Stream}
 import gem.Observation
 import gem.enum.Site
@@ -83,7 +82,7 @@ trait SeqexecEngine[F[_]] {
 
   def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
 
-  def abortObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
+  def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit]
 
   def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]
 
@@ -275,8 +274,8 @@ object SeqexecEngine {
       Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.stopObserve(seqId, graceful))
     )
 
-    override def abortObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
-      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId, graceful))
+    override def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
+      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
     )
 
     override def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
@@ -510,7 +509,13 @@ object SeqexecEngine {
     def notifyODB(i: (EventResult[SeqEvent], EngineState[F])): F[(EventResult[SeqEvent], EngineState[F])] = {
       (i match {
         case (SystemUpdate(SystemEvent.Failed(id, _, e), _), _) =>
-          systems.odb.obsAbort(id, e.msg).void
+          Logger[F].error(s"Error executing ${id.format} due to $e") *>
+          systems.odb
+            .obsAbort(id, e.msg)
+            .ensure(
+              SeqexecFailure
+                .Unexpected("Unable to send ObservationAborted message to ODB.")
+            )(identity)
         case (SystemUpdate(SystemEvent.Executed(id), _), st) if EngineState.sequenceStateIndex(id).getOption(st)
           .exists(_.status === SequenceState.Idle) =>
           systems.odb.obsPause(id, "Sequence paused by user").void
@@ -650,21 +655,6 @@ object SeqexecEngine {
    */
   private def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(st: EngineState[F]): Set[Observation.Id] =
     findRunnableObservations(qid)(st).intersect(sids)
-
-  // Ensure there is a valid way to init CaService either from
-  // the configuration file or from the environment
-  def caInit[F[_]: MonadError[?[_], Throwable]: Sync](caAddrList: Option[String], ioTimeout: Duration): F[CaService] =
-    caAddrList.map(a => Sync[F].delay(CaService.setAddressList(a))).getOrElse {
-      Sync[F].delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => Sync[F].unit
-        case _       => Sync[F].raiseError[Unit](new RuntimeException("Cannot initialize EPICS subsystem"))
-      }
-    } *>
-      Sync[F].delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis))) *>
-      Sync[F].delay(Option(CaService.getInstance())).flatMap {
-        case None    => Sync[F].raiseError[CaService](new Exception("Unable to start EPICS service."))
-        case Some(s) => s.pure[F]
-      }
 
   /**
    * Build the seqexec and setup epics

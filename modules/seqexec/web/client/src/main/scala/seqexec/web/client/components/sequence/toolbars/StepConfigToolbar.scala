@@ -72,11 +72,10 @@ object StepConfigToolbar {
             SeqexecStyles.shorterFields,
             // Back to sequence button
             p.router.link(sequencePage)(
-              Button(Button.Props(icon    = Some(IconChevronLeft),
-                                  labeled = LeftLabeled,
-                                  onClick =
-                                    p.router.setUrlAndDispatchCB(sequencePage)),
-                     "Back"))
+              Button(icon    = Some(IconChevronLeft),
+                     labeled = LeftLabeled,
+                     onClick = p.router.setUrlAndDispatchCB(sequencePage))("Back")
+            )
           ),
           <.div(
             ^.cls := "left floated six wide column bottom aligned computer only",
@@ -93,21 +92,24 @@ object StepConfigToolbar {
               // Previous step button
               (p.step > 0).option(
                 p.router.link(prevStepPage)(
-                  Button(Button.Props(icon    = Some(IconChevronLeft),
-                                      labeled = LeftLabeled,
-                                      onClick = p.router.setUrlAndDispatchCB(
-                                        prevStepPage)), "Prev"))),
+                  Button(icon    = Some(IconChevronLeft),
+                         labeled = LeftLabeled,
+                         onClick = p.router.setUrlAndDispatchCB(prevStepPage))("Prev")
+                )
+              ),
               Label(
                 Label.Props(RunningStep.fromInt(p.step, p.total).getOrElse(RunningStep.Zero).show,
                             size        = Size.Large,
-                            extraStyles = List(SeqexecStyles.labelAsButton))),
+                            extraStyles = List(SeqexecStyles.labelAsButton))
+              ),
               // Next step button
               (p.step < p.total - 1).option(
                 p.router.link(nextStepPage)(
-                  Button(Button.Props(icon    = Some(IconChevronRight),
-                                      labeled = RightLabeled,
-                                      onClick = p.router.setUrlAndDispatchCB(
-                                        nextStepPage)), "Next")))
+                  Button(icon    = Some(IconChevronRight),
+                         labeled = RightLabeled,
+                         onClick = p.router.setUrlAndDispatchCB(nextStepPage))("Next")
+                )
+              )
             )
           )
         )

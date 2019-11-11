@@ -92,7 +92,7 @@ object ACProgressBar {
     .render_PS { (p, s) =>
       val isInError = !p.state.isACRunning && p.state.isACInError
       val msg = if (isInError) "Error" else s.msg
-      Progress(Progress.Props(
+      Progress(
         s"Align and Calib: $msg",
         total       = acSteps.all.length - 1,
         value       = max(0, s.counter),
@@ -100,7 +100,7 @@ object ACProgressBar {
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
-        ))
+      )
     }
     .componentWillReceiveProps(x =>
       x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show))

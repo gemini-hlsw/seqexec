@@ -76,7 +76,7 @@ object DividedProgress {
           SeqexecStyles.dividedProgress,
           sectionInfo.toTagMod {
             case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
-              Progress(Progress.Props(
+              Progress(
                 label,
                 p.sectionTotal,
                 sectionValue,
@@ -86,7 +86,7 @@ object DividedProgress {
                 p.progressCls :+ sectionProgressStyle,
                 p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
                 p.labelCls
-                ))
+              )
           }
         )
     }

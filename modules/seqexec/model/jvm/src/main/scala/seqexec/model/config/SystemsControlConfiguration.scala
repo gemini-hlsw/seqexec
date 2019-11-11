@@ -26,7 +26,10 @@ final case class SystemsControlConfiguration(
   nifs:     ControlStrategy,
   niri:     ControlStrategy,
   tcs:      ControlStrategy
-)
+) {
+  def connectEpics: Boolean =
+    (altair.connect || gems.connect || f2.connect || gcal.connect || gmos.connect || gnirs.connect || gsaoi.connect || gws.connect || nifs.connect || niri.connect || tcs.connect)
+}
 
 object SystemsControlConfiguration {
   implicit val eqSystemsControl: Eq[SystemsControlConfiguration] =

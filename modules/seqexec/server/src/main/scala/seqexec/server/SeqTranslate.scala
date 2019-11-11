@@ -58,7 +58,7 @@ trait SeqTranslate[F[_]] extends ObserveActions {
     implicit cio: Concurrent[F], tio: Timer[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
-  def abortObserve(seqId: Observation.Id, graceful: Boolean)(
+  def abortObserve(seqId: Observation.Id)(
     implicit cio: Concurrent[F], tio: Timer[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
@@ -151,7 +151,7 @@ object SeqTranslate {
 
       val nextToRun = configs
         .map(extractStatus)
-        .lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
+        .lastIndexWhere(_.isFinished) + 1
 
       val steps = configs.zipWithIndex.map {
         case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets).attempt
@@ -219,13 +219,13 @@ object SeqTranslate {
       deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
     }
 
-    override def abortObserve(seqId: Observation.Id, graceful: Boolean)(
+    override def abortObserve(seqId: Observation.Id)(
       implicit cio: Concurrent[F],
                tio: Timer[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
-        case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort(graceful)
-        case UnpausableControl(_, AbortObserveCmd(abort))           => abort(graceful)
+        case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
+        case UnpausableControl(_, AbortObserveCmd(abort))           => abort
         case _                                                      => Applicative[F].unit
       }
 

@@ -3,37 +3,45 @@
 
 package seqexec.web.client.semanticui.elements.popup
 
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.React
+import web.client.ReactPropsWithChildren
+import cats.implicits._
 
 /**
   * Produces a popup using javascript
   * This is a barebones component waiting for the proper react component to be made available
   */
+
+final case class Popup(selector: String, content: String) extends ReactPropsWithChildren {
+  @inline def render: Seq[CtorType.ChildArg] => VdomElement = Popup.component(this)
+}
+
 object Popup {
-  final case class Props(selector: String, content: String)
+  type Props = Popup
+
+  private def mountPopup(component: ComponentDom.Mounted, props: Props): Callback = Callback {
+    // Enable menu on Semantic UI
+    import org.querki.jquery.$
+    import web.client.facades.semanticui.SemanticUIPopup._
+
+    component.toElement.foreach { dom =>
+      $(dom).popup(
+        JsPopupOptions.content(props.content)
+      )
+    }
+  }
 
   private val component = ScalaComponent.builder[Props]("Popup")
     .stateless
-    .renderPC{($, _, _) =>
-      // This is in principle unsafe but we are only allowing Elements on the constructor
-      VdomElement($.propsChildren.only().asInstanceOf[React.Element])
+    .render_C{ children =>
+      if( children.count === 1)
+        VdomElement(children.only().asInstanceOf[React.Element])
+      else
+        <.span(children)
     }
-    .componentDidMount(ctx =>
-      Callback {
-        // Enable menu on Semantic UI
-        import org.querki.jquery.$
-        import web.client.facades.semanticui.SemanticUIPopup._
-
-        ctx.getDOMNode.toElement.foreach { dom =>
-          $(dom).popup(
-            JsPopupOptions.content(ctx.props.content)
-          )
-        }
-      }
-    ).build
-
-  def apply(p: Props, children: VdomElement): Unmounted[Props, Unit, Unit] = component(p)(children)
+    .componentDidMount(ctx => mountPopup(ctx.getDOMNode, ctx.props))
+    .componentDidUpdate(ctx => mountPopup(ctx.getDOMNode, ctx.currentProps))
+    .build
 }

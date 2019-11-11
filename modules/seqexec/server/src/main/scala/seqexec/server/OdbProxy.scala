@@ -92,37 +92,43 @@ object OdbProxy {
       )
 
     override def obsAbort(obsId: Observation.Id, reason: String): F[Boolean] =
+      L.debug(s"Aborted: ${obsId.format} reason: $reason") *>
       F.delay(
         xmlrpcClient.observationAbort(sessionName, obsId.format, reason)
       )
 
     override def sequenceEnd(obsId: Observation.Id): F[Boolean] =
-      Sync[F].delay(
+      L.debug(s"${obsId.format} sequence ended") *>
+      F.delay(
         xmlrpcClient.sequenceEnd(sessionName, obsId.format)
       )
 
     override def sequenceStart(obsId: Observation.Id, dataId: DataId): F[Boolean] =
+      L.debug(s"${obsId.format} sequence started") *>
       F.delay(
         xmlrpcClient.sequenceStart(sessionName, obsId.format, dataId.toString)
       )
 
     override def obsContinue(obsId: Observation.Id): F[Boolean] =
-      Sync[F].delay(
+      L.debug(s"${obsId.format} sequence continues") *>
+      F.delay(
         xmlrpcClient.observationContinue(sessionName, obsId.format)
       )
 
     override def obsPause(obsId: Observation.Id, reason: String): F[Boolean] =
-      Sync[F].delay(
+      L.debug(s"${obsId.format} sequence paused: $reason") *>
+      F.delay(
         xmlrpcClient.observationPause(sessionName, obsId.format, reason)
       )
 
     override def obsStop(obsId: Observation.Id, reason: String): F[Boolean] =
-      Sync[F].delay(
+      L.debug(s"${obsId.format} sequence stopped: $reason") *>
+      F.delay(
         xmlrpcClient.observationStop(sessionName, obsId.format, reason)
       )
 
     override def queuedSequences: F[List[Observation.Id]] =
-      Sync[F].delay(
+      F.delay(
         xmlrpcClient.getObservations(sessionName).toList.flatMap(id => Observation.Id.fromString(id).toList)
       ).recoverWith {
         case e: ServiceException =>

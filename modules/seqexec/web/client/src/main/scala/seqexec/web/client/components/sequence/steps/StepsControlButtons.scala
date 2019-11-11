@@ -75,80 +75,79 @@ object ControlButtons {
         p.operations
          .map {
            case PauseObservation =>
-             Popup(
-               Popup.Props("button", "Pause the current exposure"),
+             Popup("button", "Pause the current exposure")(
                Button(
-                 Button.Props(icon  = Some(IconPause),
-                              color = Some("teal"),
-                              onClick = requestObsPause(p.id, p.stepId),
-                              disabled = p.requestInFlight || p.isObservePaused))
+                 icon     = Some(IconPause),
+                 color    = Some("teal"),
+                 onClick  = requestObsPause(p.id, p.stepId),
+                 disabled = p.requestInFlight || p.isObservePaused
                )
+             )
            case StopObservation =>
-             Popup(
-               Popup.Props("button", "Stop the current exposure early"),
+             Popup("button", "Stop the current exposure early")(
                Button(
-                 Button.Props(icon     = Some(IconStop),
-                              color    = Some("orange"),
-                              onClick  = requestStop(p.id, p.stepId),
-                              disabled = p.requestInFlight))
+                 icon     = Some(IconStop),
+                 color    = Some("orange"),
+                 onClick  = requestStop(p.id, p.stepId),
+                 disabled = p.requestInFlight
                )
+             )
            case AbortObservation =>
-             Popup(
-               Popup.Props("button", "Abort the current exposure"),
+             Popup("button", "Abort the current exposure")(
                Button(
-                 Button.Props(
-                   icon     = Some(IconTrash),
-                   color    = Some("red"),
-                   onClick  = requestAbort(p.id, p.stepId),
-                   disabled = p.requestInFlight))
+                 icon     = Some(IconTrash),
+                 color    = Some("red"),
+                 onClick  = requestAbort(p.id, p.stepId),
+                 disabled = p.requestInFlight
                )
+             )
            case ResumeObservation =>
-             Popup(
-               Popup.Props("button", "Resume the current exposure"),
+             Popup("button", "Resume the current exposure")(
                Button(
-                 Button.Props(icon     = Some(IconPlay),
-                              color    = Some("blue"),
-                              onClick  = requestObsResume(p.id, p.stepId),
-                              disabled = p.requestInFlight || !p.isObservePaused))
+                 icon     = Some(IconPlay),
+                 color    = Some("blue"),
+                 onClick  = requestObsResume(p.id, p.stepId),
+                 disabled = p.requestInFlight || !p.isObservePaused
                )
+             )
            // N&S operations
            case PauseImmediatelyObservation =>
-             Popup(
-               Popup.Props("button", "Pause the current exposure immediately"),
+             Popup("button", "Pause the current exposure immediately")(
                Button(
-                 Button.Props(icon     = Some(IconPause),
-                              color    = Some("teal"),
-                              basic    = true,
-                              onClick  = requestObsPause(p.id, p.stepId),
-                              disabled = p.requestInFlight || p.isObservePaused))
+                 icon     = Some(IconPause),
+                 color    = Some("teal"),
+                 basic    = true,
+                 onClick  = requestObsPause(p.id, p.stepId),
+                 disabled = p.requestInFlight || p.isObservePaused
+               )
              )
            case PauseGracefullyObservation =>
-             Popup(Popup.Props("button",
-                               "Pause the current exposure at the end of the cycle"),
-                   Button(
-                     Button.Props(icon     = Some(IconPause),
-                                  color    = Some("teal"),
-                                  onClick  = requestGracefulObsPause(p.id, p.stepId),
-                                  disabled = p.requestInFlight || p.isObservePaused))
+             Popup("button", "Pause the current exposure at the end of the cycle")(
+               Button(
+                 icon     = Some(IconPause),
+                 color    = Some("teal"),
+                 onClick  = requestGracefulObsPause(p.id, p.stepId),
+                 disabled = p.requestInFlight || p.isObservePaused
+               )
              )
            case StopImmediatelyObservation =>
-             Popup(
-               Popup.Props("button", "Stop the current exposure immediately"),
+             Popup("button", "Stop the current exposure immediately")(
                Button(
-                 Button.Props(icon     = Some(IconStop),
-                              color    = Some("orange"),
-                              basic    = true,
-                              onClick  = requestStop(p.id, p.stepId),
-                              disabled = p.requestInFlight))
+                 icon     = Some(IconStop),
+                 color    = Some("orange"),
+                 basic    = true,
+                 onClick  = requestStop(p.id, p.stepId),
+                 disabled = p.requestInFlight
+               )
              )
            case StopGracefullyObservation =>
-             Popup(Popup.Props("button",
-                               "Stop the current exposure at the end of the cycle"),
-                   Button(
-                     Button.Props(icon  = Some(IconStop),
-                                  color = Some("orange"),
-                                  onClick  = requestGracefulStop(p.id, p.stepId),
-                                  disabled = p.requestInFlight))
+             Popup("button", "Stop the current exposure at the end of the cycle")(
+               Button(
+                 icon     = Some(IconStop),
+                 color    = Some("orange"),
+                 onClick  = requestGracefulStop(p.id, p.stepId),
+                 disabled = p.requestInFlight
+               )
              )
          }
          .toTagMod

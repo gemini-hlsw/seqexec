@@ -43,7 +43,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 object InstrumentSystem {
 
   final case class StopObserveCmd[F[_]](self: Boolean => F[Unit])
-  final case class AbortObserveCmd[F[_]](self: Boolean => F[Unit])
+  final case class AbortObserveCmd[F[_]](self: F[Unit])
   final case class PauseObserveCmd[F[_]](self: Boolean => F[Unit])
 
   final case class ContinuePausedCmd[F[_]](self: Time => F[ObserveCommandResult])

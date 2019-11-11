@@ -94,7 +94,7 @@ object StepsView {
    * Overall pending status for a step
    */
   def stepConfigStatus[F[_]](step: engine.Step[F]): List[(Resource, ActionStatus)] =
-    engine.Step.status(step) match {
+    step.status match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)
     }
@@ -113,21 +113,15 @@ object StepsView {
       case FileIdAllocated(fid) => fid
     })
 
-  def runningOrComplete[F[_]](status: StepState): Boolean =
-    status match {
-      case StepState.Completed | StepState.Running => true
-      case _                                       => false
-    }
-
   def defaultStepsView[F[_]]: StepsView[F] = new StepsView[F] {
     def stepView(
       stepg: SequenceGen.StepGen[F],
       step: engine.Step[F],
       altCfgStatus: List[(Resource, ActionStatus)]
     ): Step = {
-      val status = engine.Step.status(step)
+      val status = step.status
       val configStatus =
-        if (runningOrComplete(status)) {
+        if (status.runningOrComplete) {
           stepConfigStatus(step)
         } else {
           altCfgStatus
@@ -150,6 +144,6 @@ object StepsView {
 
   def stepsView[F[_]](instrument: Instrument): StepsView[F] = instrument match {
     case GmosN | GmosS => GmosStepsView.stepsView[F]
-    case _ => defaultStepsView[F]
+    case _             => defaultStepsView[F]
   }
 }
