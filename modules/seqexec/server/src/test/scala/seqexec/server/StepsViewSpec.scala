@@ -235,7 +235,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
+      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId), 2)
     } yield {
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)

@@ -5,9 +5,11 @@ package seqexec.server
 
 import monocle.macros.Lenses
 import seqexec.engine.Sequence
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.Observer
 
 @Lenses
 final case class SequenceData[F[_]](observer: Option[Observer],
-                              seqGen: SequenceGen[F],
-                              seq: Sequence.State[F])
+                                    seqGen: SequenceGen[F],
+                                    seq: Sequence.State[F],
+                                    pendingObsCmd: Option[PendingObserveCmd])

@@ -11,9 +11,11 @@ import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
 import java.time.Instant
+
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.GmosParameters._
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.events._
 import seqexec.model.dhs._
 import shapeless.tag
@@ -136,6 +138,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
         }((ns: NSSubexposure) => (ns.totalCycles, ns.cycle, ns.stageIndex))
   implicit val nsRunningStatePickler = generatePickler[NSRunningState]
   implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
+  implicit val nsPendObsCmdPickler: Pickler[PendingObserveCmd] = enumeratedPickler[PendingObserveCmd]
   implicit val nsStepPickler = generatePickler[NodAndShuffleStep]
 
   implicit val stepPickler = compositePickler[Step]

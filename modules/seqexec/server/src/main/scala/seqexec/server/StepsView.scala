@@ -18,6 +18,7 @@ import seqexec.engine
 import seqexec.engine.Action.ActionState
 import seqexec.engine.Action
 import seqexec.engine.ParallelActions
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.server.gmos.GmosStepsView
 
 trait StepsView[F[_]] {
@@ -28,7 +29,8 @@ trait StepsView[F[_]] {
   def stepView(
     stepg: SequenceGen.StepGen[F],
     step: engine.Step[F],
-    altCfgStatus: List[(Resource, ActionStatus)]
+    altCfgStatus: List[(Resource, ActionStatus)],
+    pendingObsCmd: Option[PendingObserveCmd]
   ): Step
 }
 
@@ -101,7 +103,7 @@ object StepsView {
 
   private def observeAction[F[_]](executions: List[ParallelActions[F]]): Option[Action[F]] =
     // FIXME This is too naive and doesn't work properly for N&S
-    executions.flatMap(_.toList).filter(_.kind === ActionType.Observe).headOption
+    executions.flatMap(_.toList).find(_.kind === ActionType.Observe)
 
   def observeStatus[F[_]](executions: List[ParallelActions[F]]): ActionStatus =
     observeAction(executions)
@@ -117,7 +119,8 @@ object StepsView {
     def stepView(
       stepg: SequenceGen.StepGen[F],
       step: engine.Step[F],
-      altCfgStatus: List[(Resource, ActionStatus)]
+      altCfgStatus: List[(Resource, ActionStatus)],
+      pendingObsCmd: Option[PendingObserveCmd]
     ): Step = {
       val status = step.status
       val configStatus =

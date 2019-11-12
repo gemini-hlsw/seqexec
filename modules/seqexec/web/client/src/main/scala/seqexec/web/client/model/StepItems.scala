@@ -243,8 +243,8 @@ object StepItems {
         DetailRows.NoDetailRows
 
     val nsStatus: Option[NodAndShuffleStatus] = step match {
-      case NodAndShuffleStep(_, _ , _, _, _, _, _, nsStatus) => Some(nsStatus)
-      case _                                                 => None
+      case x:NodAndShuffleStep => Some(x.nsStatus)
+      case _                   => None
     }
   }
 
