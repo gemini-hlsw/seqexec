@@ -24,18 +24,20 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.elements.icon.Icon
 import web.client.ReactProps
 
 /**
   * Contains a set of control buttons like stop/abort
   */
 final case class ControlButtons(
-  id:              Observation.Id,
-  operations:      List[Operations[_]],
-  sequenceState:   SequenceState,
-  stepId:          Int,
-  isObservePaused: Boolean,
-  tabOperations:   TabOperations
+  id:                   Observation.Id,
+  operations:           List[Operations[_]],
+  sequenceState:        SequenceState,
+  stepId:               Int,
+  isObservePaused:      Boolean,
+  tabOperations:        TabOperations,
+  nsPendingObserveCmd:  Option[NodAndShuffleStep.PendingObserveCmd] = None
 ) extends ReactProps {
   @inline def render: VdomElement = ControlButtons.component(this)
 
@@ -48,27 +50,43 @@ object ControlButtons {
   implicit val operationsReuse: Reusability[Operations[_]] = Reusability.derive[Operations[_]]
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  def requestStop(id: Observation.Id, stepId: Int): Callback =
+  private def requestStop(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
 
-  def requestGracefulStop(id: Observation.Id, stepId: Int): Callback =
+  private def requestGracefulStop(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestGracefulStop(id, stepId))
 
-  def requestAbort(id: Observation.Id, stepId: Int): Callback =
+  private def requestAbort(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestAbort(id, stepId))
 
-  def requestObsPause(id: Observation.Id, stepId: Int): Callback =
+  private def requestObsPause(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsPause(id, stepId))
 
-  def requestGracefulObsPause(id: Observation.Id, stepId: Int): Callback =
+  private def requestGracefulObsPause(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestGracefulObsPause(id, stepId))
 
-  def requestObsResume(id: Observation.Id, stepId: Int): Callback =
+  private def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
+
+  private def requestedIcon(icon: Icon): VdomElement = // I think we need an "Icons" ins the Semantic UI facade
+    <.i(^.cls := "icons")(
+      icon.copyIcon(key = "main"),
+      Icon.IconCircleNotched.copyIcon(key = "requested", loading = true, color = Some("yellow"))
+    )
 
   protected val component = ScalaComponent
     .builder[Props]("ControlButtons")
     .render_P { p =>
+      val pauseGracefullyIcon: VdomElement =
+        p.nsPendingObserveCmd.collect{
+          case NodAndShuffleStep.PauseGracefully => requestedIcon(IconPause)
+        }.getOrElse(IconPause)
+
+      val stopGracefullyIcon: VdomElement =
+        p.nsPendingObserveCmd.collect{
+          case NodAndShuffleStep.StopGracefully => requestedIcon(IconStop)
+        }.getOrElse(IconStop)
+
       <.div(
         ^.cls := "ui icon buttons",
         SeqexecStyles.notInMobile,
@@ -124,11 +142,10 @@ object ControlButtons {
            case PauseGracefullyObservation =>
              Popup("button", "Pause the current exposure at the end of the cycle")(
                Button(
-                 icon     = Some(IconPause),
                  color    = Some("teal"),
                  onClick  = requestGracefulObsPause(p.id, p.stepId),
-                 disabled = p.requestInFlight || p.isObservePaused
-               )
+                 disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined
+               )(pauseGracefullyIcon)
              )
            case StopImmediatelyObservation =>
              Popup("button", "Stop the current exposure immediately")(
@@ -143,11 +160,10 @@ object ControlButtons {
            case StopGracefullyObservation =>
              Popup("button", "Stop the current exposure at the end of the cycle")(
                Button(
-                 icon     = Some(IconStop),
                  color    = Some("orange"),
                  onClick  = requestGracefulStop(p.id, p.stepId),
-                 disabled = p.requestInFlight || p.isObservePaused
-               )
+                 disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined
+               )(stopGracefullyIcon),
              )
          }
          .toTagMod
@@ -162,13 +178,13 @@ object ControlButtons {
   * Contains the control buttons like stop/abort at the row level
   */
 final case class StepsControlButtons(
-  id:              Observation.Id,
-  instrument:      Instrument,
-  sequenceState:   SequenceState,
-  stepId:          Int,
-  isObservePaused: Boolean,
-  isMultiLevel:    Boolean,
-  tabOperations:   TabOperations
+  id:                   Observation.Id,
+  instrument:           Instrument,
+  sequenceState:        SequenceState,
+  stepId:               Int,
+  isObservePaused:      Boolean,
+  isMultiLevel:         Boolean,
+  tabOperations:        TabOperations
 ) extends ReactProps {
   @inline def render: VdomElement = StepsControlButtons.component(this)
 

@@ -264,7 +264,8 @@ sealed trait NodAndShuffleRow[L <: OperationLevel] {
             p.stateSummary.state,
             p.stateSummary.step.id,
             p.stateSummary.step.isObservePaused,
-            p.stateSummary.tabOperations
+            p.stateSummary.tabOperations,
+            p.stateSummary.nsPendingObserveCmd
             )
           ).when(p.controlButtonsActive)
         )

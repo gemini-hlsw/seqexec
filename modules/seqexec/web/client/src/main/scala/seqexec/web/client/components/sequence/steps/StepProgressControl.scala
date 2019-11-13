@@ -110,7 +110,7 @@ object StepProgressCell {
       props.step.isObservePaused,
       props.step.isMultiLevel,
       props.tabOperations
-      ).when(props.controlButtonsActive)
+    ).when(props.controlButtonsActive)
 
   def stepObservationStatusAndFile(
     props:   Props,
