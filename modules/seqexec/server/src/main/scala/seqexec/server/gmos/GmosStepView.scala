@@ -11,12 +11,14 @@ import seqexec.server._
 import seqexec.server.StepsView._
 import seqexec.server.gmos.GmosController.Config._
 import mouse.all._
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 
 final class GmosStepsView[F[_]] extends StepsView[F] {
-  def stepView(
+  override def stepView(
     stepg:        SequenceGen.StepGen[F],
     step:         engine.Step[F],
-    altCfgStatus: List[(Resource, ActionStatus)]
+    altCfgStatus: List[(Resource, ActionStatus)],
+    pendingObsCmd: Option[PendingObserveCmd]
   ): Step =
     Gmos.nsConfig(stepg.config) match {
       case Right(e @ NSConfig.NodAndShuffle(c, _, _, _)) =>
@@ -59,10 +61,11 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
             .fileId(step.executions)
             .orElse(stepg.some.collect {
               case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
-            }.flatten)
+            }.flatten),
+          pendingObserveCmd = (observeStatus(step.executions) === ActionStatus.Running).option(pendingObsCmd).flatten
         )
       case _ =>
-        defaultStepsView.stepView(stepg, step, altCfgStatus)
+        defaultStepsView.stepView(stepg, step, altCfgStatus, none)
     }
 
 }

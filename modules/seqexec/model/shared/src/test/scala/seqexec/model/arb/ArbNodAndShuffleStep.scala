@@ -3,12 +3,12 @@
 
 package seqexec.model.arb
 
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Cogen
 import gem.arb.ArbEnumerated._
 import seqexec.model._
 import seqexec.model.GmosParameters._
+import seqexec.model.NodAndShuffleStep.{PauseGracefully, PendingObserveCmd, StopGracefully}
 import seqexec.model.enum._
 import seqexec.model.arb.ArbStepConfig._
 import seqexec.model.arb.ArbStepState._
@@ -34,6 +34,10 @@ trait ArbNodAndShuffleStep {
       (x.observing, x.totalExposureTime, x.nodExposureTime, x.cycles)
     }
 
+  implicit val nodAndShufflePendingCmdArb: Arbitrary[PendingObserveCmd] = Arbitrary[PendingObserveCmd](
+    Gen.oneOf(List(PauseGracefully, StopGracefully))
+  )
+
   implicit val nodShuffleStepArb = Arbitrary[NodAndShuffleStep] {
     for {
       id <- arbitrary[StepId]
@@ -44,6 +48,7 @@ trait ArbNodAndShuffleStep {
       f  <- arbitrary[Option[dhs.ImageFileId]]
       cs <- arbitrary[List[(Resource, ActionStatus)]]
       os <- arbitrary[NodAndShuffleStatus]
+      oc <- arbitrary[Option[PendingObserveCmd]]
     } yield
       new NodAndShuffleStep(id           = id,
                             config       = c,
@@ -52,7 +57,9 @@ trait ArbNodAndShuffleStep {
                             skip         = k,
                             fileId       = f,
                             configStatus = cs,
-                            nsStatus     = os)
+                            nsStatus     = os,
+                            pendingObserveCmd = oc
+      )
   }
 
   implicit val nodShuffleStepCogen: Cogen[NodAndShuffleStep] =

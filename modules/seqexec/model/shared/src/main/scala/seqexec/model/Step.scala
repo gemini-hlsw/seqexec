@@ -5,6 +5,7 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
+import gem.util.Enumerated
 import seqexec.model.enum._
 import seqexec.model.dhs._
 import monocle.Prism
@@ -142,23 +143,21 @@ object Step {
     def runningOrComplete: Boolean = s.status.runningOrComplete
 
     def isObserving: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, _, o)      => o === ActionStatus.Running
-      case NodAndShuffleStep(_, _, _, _, _, _, _, o) => o.observing === ActionStatus.Running
-      case _                                         => false
+      case x: StandardStep      => x.observeStatus === ActionStatus.Running
+      case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Running
+      case _                    => false
     }
 
     def isObservePaused: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, _, o)      => o === ActionStatus.Paused
-      case NodAndShuffleStep(_, _, _, _, _, _, _, o) => o.observing === ActionStatus.Paused
-      case _                                         => false
+      case x: StandardStep      => x.observeStatus === ActionStatus.Paused
+      case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Paused
+      case _                    => false
     }
 
     def isConfiguring: Boolean = s match {
-      case StandardStep(_, _, _, _, _, _, c, _) =>
-        c.count(_._2 === ActionStatus.Running) > 0
-      case NodAndShuffleStep(_, _, _, _, _, _, c, _) =>
-        c.count(_._2 === ActionStatus.Running) > 0
-      case _ => false
+      case x: StandardStep      => x.configStatus.count(_._2 === ActionStatus.Running) > 0
+      case x: NodAndShuffleStep => x.configStatus.count(_._2 === ActionStatus.Running) > 0
+      case _                    => false
     }
 
     def isFinished: Boolean = s.status.isFinished
@@ -212,7 +211,8 @@ final case class NodAndShuffleStep(
   override val skip:       Boolean,
   override val fileId:     Option[ImageFileId],
   configStatus:            List[(Resource, ActionStatus)],
-  nsStatus:                NodAndShuffleStatus
+  nsStatus:                NodAndShuffleStatus,
+  pendingObserveCmd:       Option[NodAndShuffleStep.PendingObserveCmd]
 ) extends Step
 
 object NodAndShuffleStep {
@@ -227,4 +227,11 @@ object NodAndShuffleStep {
        x.configStatus,
        x.nsStatus)
   )
+
+  sealed trait PendingObserveCmd extends Product with Serializable
+  case object PauseGracefully extends PendingObserveCmd
+  case object StopGracefully extends PendingObserveCmd
+
+  implicit val enumPendingObserveCmd: Enumerated[PendingObserveCmd] = Enumerated.of(PauseGracefully, StopGracefully)
+
 }

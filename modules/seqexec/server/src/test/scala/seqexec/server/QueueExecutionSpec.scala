@@ -386,7 +386,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId))
+      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId), 2)
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status.isRunning)
     } ).unsafeRunSync
@@ -423,7 +423,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId)
-      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
@@ -445,7 +445,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId)
-      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
@@ -465,7 +465,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId)
-      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s))
@@ -486,7 +486,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
       _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId)
-      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s))

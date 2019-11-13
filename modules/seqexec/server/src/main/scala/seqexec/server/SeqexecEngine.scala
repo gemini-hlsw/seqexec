@@ -13,6 +13,7 @@ import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
 import java.util.concurrent.TimeUnit
+
 import mouse.all._
 import monocle.Monocle._
 import monocle.Optional
@@ -22,12 +23,14 @@ import seqexec.engine.{Step => _, _}
 import seqexec.engine.Handle
 import seqexec.engine.SystemEvent
 import seqexec.engine.UserEvent
+import seqexec.model.NodAndShuffleStep.{PauseGracefully, PendingObserveCmd, StopGracefully}
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
 import seqexec.model.config._
 import seqexec.server.SeqEvent._
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 
@@ -149,11 +152,21 @@ object SeqexecEngine {
       )
     }
 
+    private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
+      ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
+    }.toHandle
+
+    private def setObsCmd(id: Observation.Id, cmd: PendingObserveCmd): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
+      ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(cmd.some)(s), SeqEvent.NullSeqEvent:SeqEvent)
+    }.toHandle
+
     override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit] =
-      q.enqueue1(Event.start[F, EngineState[F], SeqEvent](id, user, clientId, checkResources(id))).map(_.asRight)
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(id))) *>
+        q.enqueue1(Event.start[F, EngineState[F], SeqEvent](id, user, clientId, checkResources(id))).map(_.asRight)
 
     override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+        clearObsCmd(id) *>
         executeEngine.get.flatMap(st => checkResources(id)(st).fold(
           executeEngine.startFrom(id, stp).as(SequenceStart(id, stp)),
           executeEngine.unit.as(Busy(id, clientId))
@@ -270,21 +283,21 @@ object SeqexecEngine {
     : Stream[F, (EventResult[SeqEvent], EngineState[F])] =
       executeEngine.process(iterateQueues)(p)(s0)
 
-    override def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
-      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.stopObserve(seqId, graceful))
-    )
+    override def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] =
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, StopGracefully))).whenA(graceful) *>
+        q.enqueue1(Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.stopObserve(seqId, graceful)))
 
     override def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
       Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
     )
 
-    override def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] = q.enqueue1(
-      Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.pauseObserve(seqId, graceful))
-    )
+    override def pauseObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] =
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, PauseGracefully))).whenA(graceful) *>
+        q.enqueue1(Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.pauseObserve(seqId, graceful)))
 
-    override def resumeObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
-      Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId))
-    )
+    override def resumeObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] =
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(seqId))) *>
+        q.enqueue1(Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId)))
 
     private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
       EngineState.queues[F] ^|-? index(qid)
@@ -716,7 +729,7 @@ object SeqexecEngine {
         case (a, b) => StepsView.stepsView(instrument).stepView(a, b, resources(a).mapFilter(x =>
           obsSeq.seqGen.configActionCoord(a.id, x)
             .map(i => (x, obsSeq.seq.getSingleState(i).actionStatus))
-        ))
+        ), obsSeq.pendingObsCmd)
       }
       match {
         // The sequence could be empty

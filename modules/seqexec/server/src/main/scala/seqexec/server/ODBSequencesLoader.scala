@@ -116,7 +116,12 @@ object ODBSequencesLoader {
               toEngineSequence(
                 seqId,
                 seqg,
-                HeaderExtraData(st.conditions, st.operator, None))))))(st)
+                HeaderExtraData(st.conditions, st.operator, None)
+              )
+            ),
+            none
+          ))
+      )(st)
 
   private[server] def reloadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
     seqId: Observation.Id,
