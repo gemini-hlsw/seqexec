@@ -222,6 +222,21 @@
             <type>DOUBLE</type>
             <description>Detector temperature</description>
         </attribute>
+        <attribute name="prepObs">
+            <channel>sad:dc:prep</channel>
+            <type>INTEGER</type>
+            <description>Preparing observation</description>
+        </attribute>
+        <attribute name="acqObs">
+            <channel>sad:dc:acq</channel>
+            <type>INTEGER</type>
+            <description>Acquiring observation</description>
+        </attribute>
+        <attribute name="readingOut">
+            <channel>sad:dc:rdout</channel>
+            <type>INTEGER</type>
+            <description>Reading out observation</description>
+        </attribute>
     </Status>
     <Status name="nirs::status">
         <top>nirs</top>

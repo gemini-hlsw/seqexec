@@ -469,10 +469,20 @@
             <type>STRING</type>
             <description>GMOS detector controller s/w</description>
         </attribute>
+        <attribute name="obsPrep">
+            <channel>sad:dc:prep.VAL</channel>
+            <type>INTEGER</type>
+            <description>Observation is preparing</description>
+        </attribute>
         <attribute name="obsAcq">
             <channel>sad:dc:acq.VAL</channel>
             <type>INTEGER</type>
-            <description>Observation is aquiring</description>
+            <description>Observation is acquiring</description>
+        </attribute>
+        <attribute name="readingOut">
+            <channel>sad:dc:rdout.VAL</channel>
+            <type>INTEGER</type>
+            <description>Observation is reading out</description>
         </attribute>
     </Status>
     <Status name="gmos::status">

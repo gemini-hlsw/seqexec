@@ -217,7 +217,11 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def dcName: F[String] = dcRead("gmosdc")
 
+  def dcIsPreparing: F[Boolean] = dcReadI("obsPrep").map(_ =!= 0)
+
   def dcIsAcquiring: F[Boolean] = dcReadI("obsAcq").map(_ =!= 0)
+
+  def dcIsReadingOut: F[Boolean] = dcReadI("readingOut").map(_ =!= 0)
 
   private val observeCAttr: CaAttribute[CarState] = dcState.addEnum("observeC",
     s"${GmosTop}dc:observeC", classOf[CarState])

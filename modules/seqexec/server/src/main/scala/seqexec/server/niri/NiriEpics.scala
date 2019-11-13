@@ -199,6 +199,11 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   def mode: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("MODE"))
 
+  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("prepObs")).map(_ =!= 0)
+
+  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("acqObs")).map(_ =!= 0)
+
+  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("readingOut")).map(_ =!= 0)
 }
 
 object NiriEpics extends EpicsSystem[NiriEpics[IO]] {

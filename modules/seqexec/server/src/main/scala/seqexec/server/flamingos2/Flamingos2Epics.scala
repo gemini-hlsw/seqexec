@@ -4,6 +4,7 @@
 package seqexec.server.flamingos2
 
 import cats.effect.{Async, IO, Sync}
+import cats.implicits._
 import edu.gemini.epics.acm._
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.{EpicsCommand, EpicsSystem}
@@ -129,6 +130,12 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 
   def state: F[String] =
     read("INSTATE")
+
+  def dcIsPreparing: F[Boolean] = readI(name = "prepObs").map(_ =!= 0)
+
+  def dcIsAcquiring: F[Boolean] = readI(name = "acqObs").map(_ =!= 0)
+
+  def dcIsReadingOut: F[Boolean] = readI(name = "readingOut").map(_ =!= 0)
 
 }
 

@@ -487,5 +487,20 @@
             <description>Reference pixel for wavelength scale</description>
         </attribute>
         -->
+        <attribute name="prepObs">
+            <channel>prep</channel>
+            <type>INTEGER</type>
+            <description>Preparing observation</description>
+        </attribute>
+        <attribute name="acqObs">
+            <channel>acq</channel>
+            <type>INTEGER</type>
+            <description>Acquiring observation</description>
+        </attribute>
+        <attribute name="readingOut">
+            <channel>rdout</channel>
+            <type>INTEGER</type>
+            <description>Reading out observation</description>
+        </attribute>
     </Status>
 </Records>

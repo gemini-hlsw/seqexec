@@ -297,5 +297,20 @@
             <type>INTEGER</type>
             <description>niri keyword</description>
         </attribute>
+        <attribute name="prepObs">
+            <channel>dc:sad:prep</channel>
+            <type>INTEGER</type>
+            <description>Preparing observation</description>
+        </attribute>
+        <attribute name="acqObs">
+            <channel>dc:sad:acq</channel>
+            <type>INTEGER</type>
+            <description>Acquiring observation</description>
+        </attribute>
+        <attribute name="readingOut">
+            <channel>dc:sad:rdout</channel>
+            <type>INTEGER</type>
+            <description>Reading out observation</description>
+        </attribute>
     </Status>
 </Records>
