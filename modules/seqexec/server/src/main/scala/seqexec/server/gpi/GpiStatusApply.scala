@@ -17,7 +17,6 @@ import giapi.client.commands.Configuration
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.syntax.status._
-import scala.math.abs
 
 object GpiStatusApply extends GpiLookupTables {
   val allGpiApply: List[GiapiStatusApply] = GiapiStatusApply.all.filter {
@@ -169,14 +168,10 @@ object GpiStatusApply extends GpiLookupTables {
         val requestedAngle: Option[Angle] =
           config.value(GpiPolarizerAngle.applyItem).flatMap(_.parseDoubleOption).map(Angle.fromDoubleDegrees)
         (measuredAngle, requestedAngle).mapN {(m, r) =>
-          // This calculates the minimal angle diference so that e.g. 359.9 and 0.1 have 0.2 diff
-          // This should probably be in the Angle class
-          val π = scala.math.Pi
-          val δ: Double = (m - r).toSignedDoubleRadians % 2*π
-          // "normalized" difference
-          val δʹ= abs(if (δ < - π) δ + 2*π else if (δ >= π) δ - 2*π else δ)
-          val ε: Option[Double] = GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble).toSignedDoubleRadians)
-          ε.exists(δʹ <= _)
+          implicit val order: Order[Angle] = Angle.AngleOrder
+          val δ: Angle = m.difference(r)
+          val ε: Option[Angle] = GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble))
+          ε.exists(δ <= _)
         }.getOrElse(false)
       })
 
