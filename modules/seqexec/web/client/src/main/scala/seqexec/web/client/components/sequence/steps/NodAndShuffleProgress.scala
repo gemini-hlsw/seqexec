@@ -16,7 +16,7 @@ import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{NSObservationProgress, NodAndShuffleStatus, StepId}
+import seqexec.model.{NSObservationProgress, NodAndShuffleStatus, ObserveStage, StepId}
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
@@ -65,7 +65,8 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
             val remainingNods = nodCount - nsState.sub.stageIndex - 1
             val remainingNodMillis = proxy().foldMap(_.remaining.toMilliseconds.toInt)
             val remainingMillis = remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
-            <.span(label(p.fileId, remainingMillis, p.stopping, p.paused))
+            val stage = proxy().map(_.stage).getOrElse(ObserveStage.Idle)
+            <.span(label(p.fileId, remainingMillis, p.stopping, p.paused, stage))
           }
         } getOrElse <.span(p.fileId)
         )
