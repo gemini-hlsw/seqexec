@@ -225,7 +225,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val observeCAttr: CaAttribute[CarState] = dcState.addEnum("observeC",
     s"${GmosTop}dc:observeC", classOf[CarState])
-  def observeState: Option[CarState] = Option(observeCAttr.value)
+  def observeState: F[CarState] = safeAttributeF(observeCAttr)
 
   // CC status values
   val state: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::status")

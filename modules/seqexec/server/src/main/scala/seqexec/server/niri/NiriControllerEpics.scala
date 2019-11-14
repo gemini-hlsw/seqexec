@@ -3,7 +3,7 @@
 
 package seqexec.server.niri
 
-import cats.effect.{ IO, Timer }
+import cats.effect.{IO, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
@@ -17,6 +17,8 @@ import edu.gemini.spModel.gemini.niri.Niri.Camera
 import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import org.log4s.getLogger
+import seqexec.model.ObserveStage
+
 import scala.concurrent.ExecutionContext
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -338,7 +340,9 @@ object NiriControllerEpics extends NiriEncoders {
         epicsSys.abortCmd.post[IO].void
 
     override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-      ProgressUtil.countdown[IO](total, 0.seconds)
+      ProgressUtil.countdownWithObsStage[IO](total, 0.seconds,
+        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+      )
 
     override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
       epicsSys.minIntegration.map { f =>

@@ -6,6 +6,7 @@ package seqexec.model
 import cats.Eq
 import cats.implicits._
 import gem.Observation
+import gem.util.Enumerated
 import monocle.Prism
 import monocle.macros.GenPrism
 import squants.Time
@@ -15,6 +16,7 @@ sealed trait Progress extends Product with Serializable {
   val stepId:    StepId
   val total:     Time
   val remaining: Time
+  val stage:     ObserveStage
 }
 
 object Progress {
@@ -36,12 +38,13 @@ object Progress {
 final case class ObservationProgress(obsId:     Observation.Id,
                                      stepId:    StepId,
                                      total:     Time,
-                                     remaining: Time) extends Progress
+                                     remaining: Time,
+                                     stage:     ObserveStage) extends Progress
 
 object ObservationProgress {
 
   implicit val equalObservationProgress: Eq[ObservationProgress] =
-    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining))
+    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage))
 
 }
 
@@ -49,11 +52,31 @@ final case class NSObservationProgress(obsId:     Observation.Id,
                                        stepId:    StepId,
                                        total:     Time,
                                        remaining: Time,
+                                       stage:     ObserveStage,
                                        sub:       NSSubexposure) extends Progress
 
 object NSObservationProgress {
 
   implicit val equalNSObservationProgress: Eq[NSObservationProgress] =
-    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining, x.sub))
+    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage, x.sub))
+
+}
+
+sealed trait ObserveStage extends Product with Serializable
+
+object ObserveStage {
+
+  case object Idle extends ObserveStage
+  case object Preparing extends ObserveStage
+  case object Acquiring extends ObserveStage
+  case object ReadingOut extends ObserveStage
+
+  implicit val observeStageEnum: Enumerated[ObserveStage] = Enumerated.of(Idle, Preparing, Acquiring, ReadingOut)
+
+  def fromBooleans(prep: Boolean, acq: Boolean, rdout: Boolean): ObserveStage =
+    if(prep) Preparing
+    else if(acq) Acquiring
+    else if(rdout) ReadingOut
+    else Idle
 
 }

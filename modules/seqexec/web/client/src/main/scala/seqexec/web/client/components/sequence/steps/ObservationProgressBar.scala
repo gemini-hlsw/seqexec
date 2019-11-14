@@ -110,7 +110,7 @@ object ObservationProgressBar {
         SeqexecStyles.observationProgressRow,
         p.connect(proxy =>
           proxy() match {
-            case Some(ObservationProgress(_, _, total, remaining)) =>
+            case Some(ObservationProgress(_, _, total, remaining, _)) =>
               SmoothObservationProgressBar(
                 p.fileId,
                 total.toMilliseconds.toInt,

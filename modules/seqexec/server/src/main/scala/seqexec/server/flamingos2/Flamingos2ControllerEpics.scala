@@ -4,14 +4,14 @@
 package seqexec.server.flamingos2
 
 import cats.data.StateT
-import cats.data.OptionT
-import cats.effect.{ Async, Timer }
+import cats.effect.{Async, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
+import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{Progress, ObsProgress, ProgressUtil, RemainingTime}
+import seqexec.server.{ObsProgress, Progress, ProgressUtil, RemainingTime}
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server.EpicsCodex._
 import squants.{Seconds, Time}
@@ -147,12 +147,11 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       val s = ProgressUtil.fromStateTOption[F, Time](_ => StateT[F, Time, Option[Progress]] { st =>
         val m = if (total >= st) total else st
         val p = for {
-          obst <- OptionT.liftF(sys.observeState)
-          dummy = obst // Hack to avoid scala/bug#11175
-          if obst.isBusy
-          rem <- OptionT.liftF(sys.countdown)
-        } yield ObsProgress(m, RemainingTime(rem.seconds))
-        p.value.map(p => (m, p))
+          obst <- sys.observeState
+          rem <- sys.countdown
+          v <- (sys.dcIsPreparing, sys.dcIsAcquiring, sys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+        } yield if(obst.isBusy) ObsProgress(m, RemainingTime(rem.seconds), v).some else none
+        p.map(p => (m, p))
       })
       s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
         .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one

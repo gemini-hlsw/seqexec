@@ -5,7 +5,7 @@ package seqexec.server
 
 import seqexec.engine.Result.PartialVal
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.NSSubexposure
+import seqexec.model.{NSSubexposure, ObserveStage}
 import squants.Time
 
 // Marker trait for partials that won't result on a client message
@@ -18,6 +18,7 @@ sealed trait Progress extends PartialVal with Product with Serializable {
   val total: Time
   val remaining: RemainingTime
   def progress: Time
+  val stage: ObserveStage
 }
 
 object Progress {
@@ -27,15 +28,15 @@ object Progress {
   }
 }
 
-final case class ObsProgress(total: Time, remaining: RemainingTime) extends Progress {
+final case class ObsProgress(total: Time, remaining: RemainingTime, stage: ObserveStage) extends Progress {
   val progress: Time = total - remaining.self
 }
 
-final case class NSProgress(total: Time, remaining: RemainingTime, sub: NSSubexposure) extends Progress {
+final case class NSProgress(total: Time, remaining: RemainingTime, stage: ObserveStage, sub: NSSubexposure) extends Progress {
   val progress: Time = total - remaining.self
 }
 
 object NSProgress {
   def fromObsProgress(progress: Progress, sub: NSSubexposure): NSProgress =
-    NSProgress(progress.total, progress.remaining, sub)
+    NSProgress(progress.total, progress.remaining, progress.stage, sub)
 }
