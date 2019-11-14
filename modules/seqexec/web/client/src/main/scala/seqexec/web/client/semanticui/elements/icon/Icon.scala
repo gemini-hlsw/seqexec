@@ -18,7 +18,8 @@ import scala.scalajs.js
 /**
   * Semantic UI Icon component
   */
-final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
+final case class Icon(p: Icon.Props, children: Seq[Icon]) {
+
   import Icon._
 
   // Custom copy constructor to avoid passing the id again
@@ -67,9 +68,11 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
     ScalaComponent
       .builder[Props]("Icon")
       .stateless
-      .renderPC((_, p, c) =>
+      .renderPC { (_, p, c) =>
+        val cls = if (c.isEmpty) "icon" else "icons"
+
         <.i(
-          ^.cls := s"${p.id} icon",
+          ^.cls := s"${p.id} $cls",
           p.extraStyles,
           ^.cls :=? p.color,
           ^.classSet(
@@ -102,11 +105,12 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
           ^.onMouseEnter --> p.onMouseEnter,
           ^.onMouseLeave --> p.onMouseLeave,
           c
-      ))
+          )
+      }
       .configure(Reusability.shouldComponentUpdate)
       .build
       .withKey(p.key)
-      .apply(p)(children: _*)
+      .apply(p)(children.map(Icon.icon2TagMod): _*)
 }
 
 object Icon {
@@ -116,6 +120,9 @@ object Icon {
                                  'onMouseEnter,
                                  'onMouseLeave)
   implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
+
+  def IconGroup(children: Icon*): Icon  = Icon("", children: _*)
+
   val IconBrowser: Icon                 = Icon("browser")
   val IconDropdown: Icon                = Icon("dropdown")
   val IconInbox: Icon                   = Icon("inbox")
@@ -206,6 +213,6 @@ object Icon {
   // Used to call Icon directly on a jsx component declaration
   implicit def icon2TagMod(i: Icon): VdomElement = i.component
 
-  def apply(s: String, children: VdomNode*): Icon = Icon(Props(s), children)
+  def apply(s: String, children: Icon*): Icon = Icon(Props(s), children)
 
 }
