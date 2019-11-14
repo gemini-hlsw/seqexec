@@ -181,13 +181,13 @@ object ControlButtons {
   * Contains the control buttons like stop/abort at the row level
   */
 final case class StepsControlButtons(
-  id:                   Observation.Id,
-  instrument:           Instrument,
-  sequenceState:        SequenceState,
-  stepId:               Int,
-  isObservePaused:      Boolean,
-  isMultiLevel:         Boolean,
-  tabOperations:        TabOperations
+  id:              Observation.Id,
+  instrument:      Instrument,
+  sequenceState:   SequenceState,
+  stepId:          Int,
+  isObservePaused: Boolean,
+  isMultiLevel:    Boolean,
+  tabOperations:   TabOperations
 ) extends ReactProps {
   @inline def render: VdomElement = StepsControlButtons.component(this)
 
