@@ -19,6 +19,7 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
+import seqexec.web.client.semanticui.elements.icon.Icon.IconGroup
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
@@ -68,8 +69,8 @@ object ControlButtons {
   private def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
 
-  private def requestedIcon(icon: Icon): VdomElement = // I think we need an "Icons" ins the Semantic UI facade
-    <.i(^.cls := "icons")(
+  private def requestedIcon(icon: Icon): Icon =
+    IconGroup(
       icon.copyIcon(key = "main"),
       Icon.IconCircleNotched.copyIcon(key = "requested", loading = true, color = Some("yellow"))
     )
@@ -77,12 +78,12 @@ object ControlButtons {
   protected val component = ScalaComponent
     .builder[Props]("ControlButtons")
     .render_P { p =>
-      val pauseGracefullyIcon: VdomElement =
+      val pauseGracefullyIcon: Icon =
         p.nsPendingObserveCmd.collect{
           case NodAndShuffleStep.PauseGracefully => requestedIcon(IconPause)
         }.getOrElse(IconPause)
 
-      val stopGracefullyIcon: VdomElement =
+      val stopGracefullyIcon: Icon =
         p.nsPendingObserveCmd.collect{
           case NodAndShuffleStep.StopGracefully => requestedIcon(IconStop)
         }.getOrElse(IconStop)
@@ -142,10 +143,11 @@ object ControlButtons {
            case PauseGracefullyObservation =>
              Popup("button", "Pause the current exposure at the end of the cycle")(
                Button(
+                 icon     = Some(pauseGracefullyIcon),
                  color    = Some("teal"),
                  onClick  = requestGracefulObsPause(p.id, p.stepId),
                  disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined
-               )(pauseGracefullyIcon)
+               )
              )
            case StopImmediatelyObservation =>
              Popup("button", "Stop the current exposure immediately")(
@@ -160,10 +162,11 @@ object ControlButtons {
            case StopGracefullyObservation =>
              Popup("button", "Stop the current exposure at the end of the cycle")(
                Button(
+                 icon     = Some(stopGracefullyIcon),
                  color    = Some("orange"),
                  onClick  = requestGracefulStop(p.id, p.stepId),
                  disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined
-               )(stopGracefullyIcon),
+               )
              )
          }
          .toTagMod
