@@ -33,7 +33,7 @@ object ProgressUtil {
       .collect{ case Some(p) => p }
 
   def countdown[F[_]: Applicative: Timer](total: Time, elapsed: Time): Stream[F, Progress] =
-    Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)).covary[F] ++
+    Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)) ++
       ProgressUtil.fromF[F] {
         t: FiniteDuration => {
             val progress = Milliseconds(t.toMillis) + elapsed
