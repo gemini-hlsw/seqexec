@@ -307,7 +307,7 @@ object GnirsControllerEpics extends GnirsEncoders {
           epicsSys.abortCmd.post[F].void
 
       override def observeProgress(total: Time): Stream[F, Progress] =
-        ProgressUtil.countdownWithObsStage[F](total, 0.seconds,
+        ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
           (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
         )
 

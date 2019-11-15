@@ -106,7 +106,7 @@ final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
-    ProgressUtil.countdown[F](total, elapsed.self)
+    ProgressUtil.obsCountdown[F](total, elapsed.self)
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     new GpiInstrumentActions[F]

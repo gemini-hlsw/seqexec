@@ -340,7 +340,7 @@ object NiriControllerEpics extends NiriEncoders {
         epicsSys.abortCmd.post[IO].void
 
     override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-      ProgressUtil.countdownWithObsStage[IO](total, 0.seconds,
+      ProgressUtil.obsCountdownWithObsStage[IO](total, 0.seconds,
         (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
       )
 
