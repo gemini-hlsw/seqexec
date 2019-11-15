@@ -239,6 +239,13 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   def odgw4X: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw4x"))
 
   def odgw4Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw4y"))
+
+  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notPrepObs")).map(_ === 0)
+
+  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notAcqObs")).map(_ === 0)
+
+  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notReadingOut")).map(_ === 0)
+
 }
 
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {

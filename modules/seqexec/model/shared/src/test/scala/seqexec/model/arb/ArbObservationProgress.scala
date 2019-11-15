@@ -4,6 +4,7 @@
 package seqexec.model.arb
 
 import gem.Observation
+import gem.arb.ArbEnumerated._
 import gem.arb.ArbObservation._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
@@ -12,6 +13,7 @@ import org.scalacheck.Gen
 import seqexec.model.arb.ArbTime._
 import seqexec.model.arb.ArbNSSubexposure._
 import seqexec.model._
+import seqexec.model.ObserveStage.observeStageEnum
 import squants.time._
 
 trait ArbObservationProgress {
@@ -22,12 +24,13 @@ trait ArbObservationProgress {
         s <- arbitrary[StepId]
         t <- arbitrary[Time]
         r <- arbitrary[Time]
-      } yield ObservationProgress(o, s, t, r)
+        v <- arbitrary[ObserveStage]
+      } yield ObservationProgress(o, s, t, r, v)
     }
 
   implicit val observationInProgressCogen: Cogen[ObservationProgress] =
-    Cogen[(Observation.Id, StepId, Time, Time)]
-      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining))
+    Cogen[(Observation.Id, StepId, Time, Time, ObserveStage)]
+      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage))
 
   implicit val arbNSObservationProgress: Arbitrary[NSObservationProgress] =
     Arbitrary {
@@ -36,13 +39,14 @@ trait ArbObservationProgress {
         s <- arbitrary[StepId]
         t <- arbitrary[Time]
         r <- arbitrary[Time]
+        v <- arbitrary[ObserveStage]
         u <- arbitrary[NSSubexposure]
-      } yield NSObservationProgress(o, s, t, r, u)
+      } yield NSObservationProgress(o, s, t, r, v, u)
     }
 
   implicit val nsObservationInProgressCogen: Cogen[NSObservationProgress] =
-    Cogen[(Observation.Id, StepId, Time, Time, NSSubexposure)]
-      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining, x.sub))
+    Cogen[(Observation.Id, StepId, Time, Time, ObserveStage, NSSubexposure)]
+      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage, x.sub))
 
   implicit val arbProgress: Arbitrary[Progress] =
     Arbitrary {

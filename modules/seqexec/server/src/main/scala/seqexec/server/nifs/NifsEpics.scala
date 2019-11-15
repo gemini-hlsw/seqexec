@@ -5,11 +5,13 @@ package seqexec.server.nifs
 
 import cats.effect.IO
 import cats.effect.Sync
+import cats.implicits._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
 import java.lang.{Double => JDouble}
+
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommand
 import seqexec.server.ObserveCommand
@@ -202,6 +204,12 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   def windowCover: F[String] =
     safeAttributeF(ccStatus.getStringAttribute("windowCover"))
+
+  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notPrepObs")).map(_ === 0)
+
+  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notAcqObs")).map(_ === 0)
+
+  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notReadingOut")).map(_ === 0)
 
 }
 

@@ -4,12 +4,13 @@
 package seqexec.server.gnirs
 
 import cats.implicits._
-import cats.effect.{ Async, Sync, Timer }
+import cats.effect.{Async, Sync, Timer}
 import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsUtil._
@@ -306,7 +307,9 @@ object GnirsControllerEpics extends GnirsEncoders {
           epicsSys.abortCmd.post[F].void
 
       override def observeProgress(total: Time): Stream[F, Progress] =
-        ProgressUtil.countdown[F](total, 0.seconds)
+        ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
+          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+        )
 
       override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time] =
         GnirsController.calcTotalExposureTime[F](cfg)

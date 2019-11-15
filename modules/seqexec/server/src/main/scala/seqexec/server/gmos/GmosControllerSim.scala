@@ -13,20 +13,21 @@ import fs2.Stream
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some
-import seqexec.model.NSSubexposure
+import seqexec.model.{NSSubexposure, ObserveStage}
 import seqexec.model.GmosParameters.NsCyclesI
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.ProgressUtil.countdown
 import seqexec.server.gmos.GmosController.GmosConfig
 import seqexec.server.gmos.GmosController.NorthTypes
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.gmos.GmosController.SouthTypes
 import seqexec.server.gmos.GmosController.Config.NSConfig
-import seqexec.server.InstrumentControllerSim
-import seqexec.server.Progress
+import seqexec.server.{InstrumentControllerSim, ObsProgress, Progress, RemainingTime}
 import squants.Time
+import squants.time.TimeConversions._
 import shapeless.tag
 
 /**
@@ -41,6 +42,8 @@ final case class NSCurrent(
 ) {
   def lastSubexposure: Boolean =
     (exposureCount + 1) === totalCycles * NsSequence.length
+
+  def firstSubexposure: Boolean = exposureCount === 0
 
   val cycle = exposureCount / NsSequence.length
 
@@ -79,7 +82,7 @@ object NSObsState {
 }
 
 object GmosControllerSim {
-  def apply[F[_]: FlatMap, T <: SiteDependentTypes](
+  def apply[F[_]: Monad: Timer, T <: SiteDependentTypes](
     sim:      InstrumentControllerSim[F],
     nsConfig: Ref[F, NSObsState]
   ): GmosController[F, T] =
@@ -145,21 +148,37 @@ object GmosControllerSim {
 
       override def abortPaused: F[ObserveCommandResult] = sim.abortPaused
 
+      private def classicObserveProgress(
+        total:   Time,
+        elapsed: ElapsedTime
+      ): Stream[F, Progress] = sim.observeCountdown(total, elapsed)
+
+      private def nsObserveProgress(
+        total:   Time,
+        elapsed: ElapsedTime,
+        curr: NSCurrent
+      ): Stream[F, Progress] = (
+        if(curr.firstSubexposure) Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)) ++
+              countdown[F](total, elapsed.self)
+        else if(curr.lastSubexposure) countdown[F](total, elapsed.self) ++
+          Stream.emit(ObsProgress(total, RemainingTime(0.0.seconds), ObserveStage.ReadingOut))
+        else countdown[F](total, elapsed.self)
+      ).map{ p =>
+        val sub = NSSubexposure(
+          tag[NsCyclesI][Int](curr.totalCycles),
+          tag[NsCyclesI][Int](curr.cycle),
+          curr.stageIndex)
+        p.toNSProgress(sub.getOrElse(NSSubexposure.Zero))
+      }
+
       override def observeProgress(
         total:   Time,
         elapsed: ElapsedTime
       ): Stream[F, Progress] =
-          sim.observeCountdown(total, elapsed).flatMap { p =>
-            Stream.eval(nsConfig.get.map {
-              case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) =>
-               val sub = NSSubexposure(
-                  tag[NsCyclesI][Int](curr.totalCycles),
-                  tag[NsCyclesI][Int](curr.cycle),
-                  curr.stageIndex)
-               p.toNSProgress(sub.getOrElse(NSSubexposure.Zero))
-              case _ => p
-            })
-          }
+        Stream.eval(nsConfig.get).flatMap{
+          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) => nsObserveProgress(total, elapsed, curr)
+          case _ => classicObserveProgress(total, elapsed)
+        }
 
       override def nsCount: F[Int] = nsConfig.get.map(_.current.foldMap(_.exposureCount))
     }

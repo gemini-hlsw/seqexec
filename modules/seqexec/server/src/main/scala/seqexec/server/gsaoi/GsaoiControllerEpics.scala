@@ -6,10 +6,12 @@ package seqexec.server.gsaoi
 import cats.effect.Timer
 import cats.effect.Async
 import cats.implicits._
+import edu.gemini.epics.acm.CarStateGeneric
 import mouse.boolean._
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi.{Filter, ReadMode, Roi, UtilityWheel}
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsCodex._
@@ -178,7 +180,12 @@ object GsaoiControllerEpics {
         expTime    <- epicsSys.requestedExposureTime.map(_.seconds)
       } yield (coaddsDone<coadds).fold(coadds-coaddsDone-1, 0)*expTime + remTime
 
-      EpicsUtil.countdown[F](total, rem.map(_.some), epicsSys.observeState.map(_.some), EpicsUtil.defaultProgress[F])
+      EpicsUtil.countdown[F](
+        total,
+        rem,
+        epicsSys.observeState.widen[CarStateGeneric],
+        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans),
+        EpicsUtil.defaultProgress[F])
     }
 
     def calcObserveTimeout(cfg: DCConfig): Time = {

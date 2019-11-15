@@ -267,6 +267,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val userNotificationPickler    = generatePickler[UserNotification]
   implicit val guideConfigPickler         = generatePickler[GuideConfigUpdate]
   implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
+  implicit val observationStagePickler    = enumeratedPickler[ObserveStage]
   implicit val observationProgressPickler = generatePickler[ObservationProgress]
   implicit val nsobseProgressPickler      = generatePickler[NSObservationProgress]
   implicit val progressPickler            = compositePickler[Progress]

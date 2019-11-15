@@ -6,8 +6,8 @@ package seqexec.server.gmos
 import cats.Applicative
 import cats.ApplicativeError
 import cats.effect.{Async, Timer}
-import cats.effect.Sync
 import cats.implicits._
+import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import io.chrisdavenport.log4cats.Logger
 import fs2.Stream
@@ -15,7 +15,7 @@ import mouse.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.GmosParameters._
-import seqexec.model.NSSubexposure
+import seqexec.model.{NSSubexposure, ObserveStage}
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.EpicsUtil._
@@ -458,15 +458,19 @@ object GmosControllerEpics extends GmosEncoders {
         }
 
       // Different progress results for classic and NS
-      def gmosProgress: (Time, RemainingTime) => F[Progress] =
-        (time, remaining) => sys.nsState.flatMap {
-          case "CLASSIC" => EpicsUtil.defaultProgress[F](time, remaining)
-          case _         => nsSubExposure.map(s => NSProgress(time, remaining, s))
+      def gmosProgress: (Time, RemainingTime, ObserveStage) => F[Progress] =
+        (time, remaining, stage) => sys.nsState.flatMap {
+          case "CLASSIC" => EpicsUtil.defaultProgress[F](time, remaining, stage)
+          case _         => nsSubExposure.map(s => NSProgress(time, remaining, stage, s))
         }
 
       override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[F, Progress] =
-        EpicsUtil.countdown[F](total, sys.countdown.map(_.seconds.some),
-          Sync[F].delay(sys.observeState), gmosProgress)
+        EpicsUtil.countdown[F](
+          total, sys.countdown.map(_.seconds),
+          sys.observeState.widen[CarStateGeneric],
+          (sys.dcIsPreparing, sys.dcIsAcquiring, sys.dcIsReadingOut).mapN(ObserveStage.fromBooleans),
+          gmosProgress
+        )
 
       override def nsCount: F[Int] = for{
         a <- sys.aExpCount

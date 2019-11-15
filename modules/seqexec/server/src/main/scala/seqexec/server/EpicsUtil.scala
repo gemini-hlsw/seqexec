@@ -9,24 +9,27 @@ import cats.effect.Sync
 import cats.effect.Async
 import cats.effect.Timer
 import cats.implicits._
+import mouse.boolean._
 import fs2.Stream
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
-import java.lang.{ Float => JFloat }
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+import java.lang.{Float => JFloat}
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Timer => JTimer}
 import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
+
 import edu.gemini.epics.acm._
-import mouse.boolean._
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.ObserveStage
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.NullEpicsError
 import squants.Time
+
 import scala.math.abs
 import scala.collection.JavaConverters._
 
@@ -347,21 +350,25 @@ object EpicsUtil {
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(areValuesDifferentEnough(relTolerance, _, v).option(set))
 
-  def defaultProgress[F[_]: Applicative](time: Time, remaining: RemainingTime): F[Progress] =
-    ObsProgress(time, remaining).pure[F].widen[Progress]
+  def defaultProgress[F[_]: Applicative](time: Time, remaining: RemainingTime, stage: ObserveStage): F[Progress] =
+    ObsProgress(time, remaining, stage).pure[F].widen[Progress]
 
-  def countdown[F[_]: Monad: Timer](total: Time, remT: F[Option[Time]],
-                              obsState: F[Option[CarStateGeneric]], p: (Time, RemainingTime) => F[Progress]): Stream[F, Progress] =
-    ProgressUtil.fromFOption(_ => (remT, obsState).mapN { case (rem, st) =>
+  def countdown[F[_]: Monad: Timer](
+                                     total: Time,
+                                     rem: F[Time],
+                                     obsState: F[CarStateGeneric],
+                                     obsStage: F[ObserveStage],
+                                     p: (Time, RemainingTime, ObserveStage) => F[Progress]
+                                   ): Stream[F, Progress] =
+    ProgressUtil.fromFOption[F](_ =>
         for {
           c <- rem
-          s <- st
-          dummy = s // Hack to avoid scala/bug#11175
-          if s.isBusy
-        } yield p(if(total>c) total else c, RemainingTime(c))
-      }.flatMap(_.sequence)
+          s <- obsState
+          v <- obsStage
+          r <- p(if(total>c) total else c, RemainingTime(c), v)
+        } yield if(s.isBusy) r.some else none
     ).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
-     .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
+      .takeThrough(x => x.remaining.self.value > 0.0 || x.stage === ObserveStage.Acquiring ) // drop all tailing zeros but the first one, unless it is still acquiring
 
   // Component names read from instruments usually have a part name as suffix. For example, the
   // instrument may have had two K filters in its lifetime, one identified as K_G0804 and the

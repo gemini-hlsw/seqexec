@@ -212,6 +212,11 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def focusEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fcs_eng")).map(_.toInt)
 
+  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(state.getIntegerAttribute("prepObs")).map(_ =!= 0)
+
+  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(state.getIntegerAttribute("acqObs")).map(_ =!= 0)
+
+  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(state.getIntegerAttribute("readingOut")).map(_ =!= 0)
 }
 
 object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {

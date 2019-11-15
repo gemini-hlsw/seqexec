@@ -423,5 +423,20 @@
             <channel>sad:dc:d_gdr_winYo4.VAL</channel>
             <type>INTEGER</type>
         </attribute>
+        <attribute name="notPrepObs">
+            <channel>sad:dc:prep</channel>
+            <type>INTEGER</type>
+            <description>Preparing observation</description>
+        </attribute>
+        <attribute name="notAcqObs">
+            <channel>sad:dc:acq</channel>
+            <type>INTEGER</type>
+            <description>Acquiring observation</description>
+        </attribute>
+        <attribute name="notReadingOut">
+            <channel>sad:dc:rdout</channel>
+            <type>INTEGER</type>
+            <description>Reading out observation</description>
+        </attribute>
     </Status>
 </Records>

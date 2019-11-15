@@ -8,16 +8,18 @@ import cats.data.OptionT
 import cats.effect.Async
 import cats.effect.Timer
 import cats.implicits._
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ EngReadMode => LegacyEngReadMode }
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Disperser => LegacyDisperser }
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ReadMode => LegacyReadMode}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{EngReadMode => LegacyEngReadMode}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Filter => LegacyFilter}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Disperser => LegacyDisperser}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Mask => LegacyMask}
 import edu.gemini.seqexec.server.nifs.DhsConnected
-import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
-import edu.gemini.seqexec.server.nifs.{ TimeMode => ETimeMode }
+import edu.gemini.seqexec.server.nifs.{ReadMode => EReadMode}
+import edu.gemini.seqexec.server.nifs.{TimeMode => ETimeMode}
 import mouse.boolean._
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.ObserveStage
+
 import scala.math.abs
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -382,7 +384,9 @@ object NifsControllerEpics extends NifsEncoders {
         epicsSys.abortCmd.post[F].void
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-      ProgressUtil.countdown[F](total, 0.seconds)
+      ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
+        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+      )
 
     def calcObserveTimeout(cfg: DCConfig): Time = {
       val CoaddOverhead = 2.2

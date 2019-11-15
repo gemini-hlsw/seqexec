@@ -16,8 +16,8 @@ final case class NSSubexposure private (
   stageIndex:  Int,      // Nod or stage index (between 0 and 3)
   stage:       NodAndShuffleStage // Subexposure stage
 ) {
-  val firstSubexposure = (cycle: Int) === 0 && stageIndex === 0
-  val lastSubexposure  = (cycle: Int) === (totalCycles: Int) - 1 && stageIndex === NsSequence.length - 1
+  val firstSubexposure: Boolean = (cycle: Int) === 0 && stageIndex === 0
+  val lastSubexposure: Boolean  = (cycle: Int) === (totalCycles: Int) - 1 && stageIndex === NsSequence.length - 1
 }
 
 object NSSubexposure {
