@@ -11,8 +11,7 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
 import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.ObservationProgress
-import seqexec.model.StepId
+import seqexec.model.{ObservationProgress, ObserveStage, StepId}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
@@ -26,15 +25,25 @@ trait ProgressLabel {
     fileId:          String,
     remainingMillis: Int,
     stopping:        Boolean,
-    paused:          Boolean
+    paused:          Boolean,
+    stage:           ObserveStage
   ): String = {
     val remainingSecs = remainingMillis / 1000
     val durationStr = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
+    val stageStr =
+      stage match {
+        case ObserveStage.Preparing   => "Preparing".some
+        case ObserveStage.ReadingOut  => "Reading out...".some
+        case _                        => None
+      }
 
     if (paused) s"$fileId - Paused - $durationStr left"
       else if (stopping) s"$fileId - Stopping - Reading out..."
-      else if (remainingSecs > 0) s"$fileId - $durationStr left"
-      else s"$fileId - Reading out..."
+      else stageStr match {
+        case Some(stage) => s"$fileId - $stage"
+        case _           =>
+          if (remainingSecs > 0) s"$fileId - $durationStr left" else s"$fileId - Reading out..."
+    }
   }
 }
 
@@ -43,7 +52,8 @@ final case class SmoothObservationProgressBar(
   total:    Int,
   value:    Int,
   stopping: Boolean,
-  paused:   Boolean
+  paused:   Boolean,
+  stage:    ObserveStage
 ) extends SmoothProgressBarProps {
   @inline def render: VdomElement = SmoothObservationProgressBar.component(this)
 
@@ -64,7 +74,7 @@ object SmoothObservationProgressBar
       val remainingMillis = s.maxValue - s.value
 
       Progress(
-        label       = label(p.fileId, remainingMillis, p.stopping, p.paused),
+        label       = label(p.fileId, remainingMillis, p.stopping, p.paused, p.stage),
         total       = p.total,
         value       = s.value,
         color       = "blue".some,
@@ -110,13 +120,14 @@ object ObservationProgressBar {
         SeqexecStyles.observationProgressRow,
         p.connect(proxy =>
           proxy() match {
-            case Some(ObservationProgress(_, _, total, remaining, _)) =>
+            case Some(ObservationProgress(_, _, total, remaining, stage)) =>
               SmoothObservationProgressBar(
                 p.fileId,
                 total.toMilliseconds.toInt,
                 total.toMilliseconds.toInt - max(0, remaining.toMilliseconds.toInt),
                 p.stopping,
-                p.paused)
+                p.paused,
+                stage)
             case _ =>
               val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
 

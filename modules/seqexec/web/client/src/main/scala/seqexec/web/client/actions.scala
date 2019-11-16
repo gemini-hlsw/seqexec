@@ -214,7 +214,7 @@ object actions {
 
   private val stepInfo: PartialFunction[Step, Product] = {
     case i: StandardStep => (i.id, i.status, i.configStatus)
-    case i: NodAndShuffleStep => (i.id, i.status, i.configStatus, i.nsStatus)
+    case i: NodAndShuffleStep => (i.id, i.status, i.configStatus, i.nsStatus, i.pendingObserveCmd)
   }
 
   implicit val show: Show[Action] = Show.show {
