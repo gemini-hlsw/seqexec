@@ -261,12 +261,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     Arbitrary {
       for {
         u <- arbitrary[Option[UserDetails]]
+        o <- arbitrary[Observer]
         w <- arbitrary[WebSocketConnection]
-      } yield ClientStatus(u, w)
+      } yield ClientStatus(u, o, w)
     }
 
   implicit val cssCogen: Cogen[ClientStatus] =
-    Cogen[(Option[UserDetails], WebSocketConnection)].contramap(x => (x.u, x.w))
+    Cogen[(Option[UserDetails], Observer, WebSocketConnection)].contramap(x => (x.userDetails, x.defaultObserver, x.webSocket))
 
   implicit val arbTableType: Arbitrary[StepsTableTypeSelection] =
     Arbitrary(
