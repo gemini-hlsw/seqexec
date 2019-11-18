@@ -99,11 +99,14 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     generatePickler[SequenceState.Running]
   implicit val sequenceStateFailedPickler =
     generatePickler[SequenceState.Failed]
+  implicit val sequenceStateAbortedPickler =
+    generatePickler[SequenceState.Aborted.type]
 
   implicit val sequenceStatePickler = compositePickler[SequenceState]
     .addConcreteType[SequenceState.Completed.type]
     .addConcreteType[SequenceState.Running]
     .addConcreteType[SequenceState.Failed]
+    .addConcreteType[SequenceState.Aborted.type]
     .addConcreteType[SequenceState.Idle.type]
 
   implicit val actionStatusPickler = enumeratedPickler[ActionStatus]
@@ -115,12 +118,14 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val stepStateFailedPickler  = generatePickler[StepState.Failed]
   implicit val stepStateRunningPickler = generatePickler[StepState.Running.type]
   implicit val stepStatePausedPickler  = generatePickler[StepState.Paused.type]
+  implicit val stepStateAbortedPickler = generatePickler[StepState.Aborted.type]
 
   implicit val stepStatePickler = compositePickler[StepState]
     .addConcreteType[StepState.Pending.type]
     .addConcreteType[StepState.Completed.type]
     .addConcreteType[StepState.Skipped.type]
     .addConcreteType[StepState.Failed]
+    .addConcreteType[StepState.Aborted.type]
     .addConcreteType[StepState.Running.type]
     .addConcreteType[StepState.Paused.type]
 
@@ -259,6 +264,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceRefreshedPickler   = generatePickler[SequenceRefreshed]
   implicit val actionStopRequestedPickler = generatePickler[ActionStopRequested]
   implicit val sequenceStoppedPickler     = generatePickler[SequenceStopped]
+  implicit val sequenceAbortedPickler     = generatePickler[SequenceAborted]
   implicit val sequenceUpdatedPickler     = generatePickler[SequenceUpdated]
   implicit val sequenceErrorPickler       = generatePickler[SequenceError]
   implicit val sequencePausedPickler      = generatePickler[SequencePaused]
@@ -299,6 +305,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SequenceRefreshed]
     .addConcreteType[ActionStopRequested]
     .addConcreteType[SequenceStopped]
+    .addConcreteType[SequenceAborted]
     .addConcreteType[SequenceUpdated]
     .addConcreteType[SequenceError]
     .addConcreteType[SequencePaused]

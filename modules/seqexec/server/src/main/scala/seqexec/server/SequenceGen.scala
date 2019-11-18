@@ -78,7 +78,6 @@ object SequenceGen {
                                   generator: StepActionsGen[F]
                              ) extends StepGen[F]
 
-
   final case class SkippedStepGen(override val id: StepId,
                                   override val config: CleanConfig
                               ) extends StepGen[Nothing]

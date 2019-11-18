@@ -68,6 +68,7 @@ object StepProgressCell {
     case ActionStatus.Completed => "green"
     case ActionStatus.Paused    => "orange"
     case ActionStatus.Failed    => "red"
+    case ActionStatus.Aborted   => "red"
   }
 
   def labelIcon(status: ActionStatus): Option[Icon] = status match {
@@ -76,6 +77,7 @@ object StepProgressCell {
     case ActionStatus.Completed => IconCheckmark.some
     case ActionStatus.Paused    => IconPause.some
     case ActionStatus.Failed    => IconStopCircle.some
+    case ActionStatus.Aborted   => IconStopCircle.some
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =

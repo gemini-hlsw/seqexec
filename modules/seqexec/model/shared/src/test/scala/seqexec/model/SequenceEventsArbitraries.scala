@@ -70,6 +70,12 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
       s <- arbitrary[SequencesQueue[SequenceView]]
     } yield SequenceStopped(i, s)
   }
+  implicit val ssaArb = Arbitrary[SequenceAborted] {
+    for {
+      i <- arbitrary[Observation.Id]
+      s <- arbitrary[SequencesQueue[SequenceView]]
+    } yield SequenceAborted(i, s)
+  }
   implicit val sbeArb = Arbitrary[StepBreakpointChanged] {
     arbitrary[SequencesQueue[SequenceView]].map(StepBreakpointChanged.apply)
   }
@@ -303,6 +309,10 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
       .contramap(x => (x.obsId, x.view))
 
   implicit val sstCogen: Cogen[SequenceStopped] =
+    Cogen[(Observation.Id, SequencesQueue[SequenceView])]
+      .contramap(x => (x.obsId, x.view))
+
+  implicit val ssaCogen: Cogen[SequenceAborted] =
     Cogen[(Observation.Id, SequencesQueue[SequenceView])]
       .contramap(x => (x.obsId, x.view))
 

@@ -85,6 +85,7 @@ object Execution {
     s => r match {
       case Result.OK(x)         => s.copy(runState = ActionState.Completed(x))
       case Result.OKStopped(x)  => s.copy(runState = ActionState.Completed(x))
+      case Result.OKAborted(_)  => s.copy(runState = ActionState.Aborted)
       case Result.Partial(x)    => s.copy(partials = x :: s.partials)
       case e@Result.Error(_)    => s.copy(runState = ActionState.Failed(e))
       case c: Result.Paused[F]  => s.copy(runState = ActionState.Paused(c.ctx))

@@ -42,6 +42,7 @@ object Action {
     def finished: Boolean = this match {
       case ActionState.Failed(_)    => true
       case ActionState.Completed(_) => true
+      case ActionState.Aborted      => true
       case _                        => false
     }
 
@@ -65,6 +66,11 @@ object Action {
       case _                   => false
     }
 
+    def aborted: Boolean = this match {
+      case ActionState.Aborted => true
+      case _                   => false
+    }
+
     def actionStatus: ActionStatus = ActionState.actionStateToStatus(this)
 
   }
@@ -78,7 +84,9 @@ object Action {
     final case class Paused[F[_]](ctx:         PauseContext[F]) extends ActionState[F]
     final case class Completed[V <: RetVal](r: V) extends ActionState[Nothing]
     final case class Failed(e:                 Error) extends ActionState[Nothing]
-
+    case object Aborted extends ActionState[Nothing] {
+      override val isIdle: Boolean = true
+    }
     private def actionStateToStatus[F[_]](s: ActionState[F]): ActionStatus =
       s match {
         case Idle         => ActionStatus.Pending
@@ -86,6 +94,7 @@ object Action {
         case Started      => ActionStatus.Running
         case Failed(_)    => ActionStatus.Failed
         case _: Paused[F] => ActionStatus.Paused
+        case Aborted      => ActionStatus.Aborted
       }
 
   }
@@ -99,4 +108,6 @@ object Action {
   def paused[F[_]](ar: Action[F]): Boolean = ar.state.runState.paused
 
   def active[F[_]](ar: Action[F]): Boolean = ar.state.runState.active
+
+  def aborted[F[_]](ar: Action[F]): Boolean = ar.state.runState.aborted
 }

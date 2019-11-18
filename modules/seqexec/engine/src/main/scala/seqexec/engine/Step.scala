@@ -57,7 +57,8 @@ object Step {
         // Return error or continue with the rest of the checks
       }}.map[StepState](StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.
-        if (step.executions.flatMap(_.toList).forall(Action.completed)) StepState.Completed
+        if (step.executions.flatMap(_.toList).exists(Action.aborted)) StepState.Aborted
+        else if (step.executions.flatMap(_.toList).forall(Action.completed)) StepState.Completed
         else if (step.executions.flatMap(_.toList).forall(_.state.runState.isIdle)) StepState.Pending
         // Not all actions are completed or pending.
         else StepState.Running

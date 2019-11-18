@@ -43,6 +43,8 @@ object Event {
   : Event[F, Nothing, Nothing] = EventSystem[F](Completed(id, stepId, i, r))
   def stopCompleted[F[_], R <: Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OKStopped[R])
   : Event[F, Nothing, Nothing] = EventSystem[F](StopCompleted(id, stepId, i, r))
+  def aborted[F[_], R <: Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OKAborted[R])
+  : Event[F, Nothing, Nothing] = EventSystem[F](Aborted(id, stepId, i, r))
   def partial[F[_], R <: Result.PartialVal](id: Observation.Id, stepId: StepId, i: Int,
                                     r: Result.Partial[R]): Event[F, Nothing, Nothing] =
     EventSystem[F](PartialResult(id, stepId, i, r))

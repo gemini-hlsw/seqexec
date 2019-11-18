@@ -43,6 +43,8 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
            PicklerTests[SequenceCompleted].pickler)
   checkAll("Pickler[SequenceLoaded]", PicklerTests[SequenceLoaded].pickler)
   checkAll("Pickler[SequenceUnloaded]", PicklerTests[SequenceUnloaded].pickler)
+  checkAll("Pickler[SequenceStopped]", PicklerTests[SequenceStopped].pickler)
+  checkAll("Pickler[SequenceAborted]", PicklerTests[SequenceAborted].pickler)
   checkAll("Pickler[StepBreakpointChanged]",
            PicklerTests[StepBreakpointChanged].pickler)
   checkAll("Pickler[StepSkipMarkChanged]",

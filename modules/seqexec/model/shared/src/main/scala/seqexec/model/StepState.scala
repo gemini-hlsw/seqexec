@@ -14,6 +14,7 @@ object StepState {
         case object Pending             extends StepState(true)
         case object Completed           extends StepState(false)
         case object Skipped             extends StepState(false)
+        case object Aborted             extends StepState(true)
   final case class  Failed(msg: String) extends StepState(true)
         case object Running             extends StepState(false)
         case object Paused              extends StepState(true)
@@ -26,20 +27,21 @@ object StepState {
       case (Failed(a), Failed(b)) => a === b
       case (Running, Running)     => true
       case (Paused, Paused)       => true
+      case (Aborted, Aborted)     => true
       case _                      => false
     }
 
     implicit class StepStateOps(val s: StepState) extends AnyVal {
       def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s match {
         case StepState.Pending | StepState.Skipped | StepState.Paused |
-            StepState.Running => i > firstRunnable
+            StepState.Running | StepState.Aborted => i > firstRunnable
         case _ => false
       }
 
       def canSetSkipmark: Boolean = s match {
-        case StepState.Pending | StepState.Paused => true
-        case _ if hasError                        => true
-        case _                                    => false
+        case StepState.Pending | StepState.Paused | StepState.Aborted => true
+        case _ if hasError                                            => true
+        case _                                                        => false
       }
 
       def hasError: Boolean = s match {
@@ -63,14 +65,9 @@ object StepState {
 
       def wasSkipped: Boolean = s === StepState.Skipped
 
-      def canRunFrom: Boolean = s match {
-        case StepState.Pending | StepState.Failed(_) => true
-        case _                                       => false
-      }
-
       def canConfigure: Boolean = s match {
-        case StepState.Pending | StepState.Paused | StepState.Failed(_) => true
-        case _                                                          => false
+        case StepState.Pending | StepState.Paused | StepState.Failed(_) | StepState.Aborted => true
+        case _                                                                              => false
       }
 
     }
