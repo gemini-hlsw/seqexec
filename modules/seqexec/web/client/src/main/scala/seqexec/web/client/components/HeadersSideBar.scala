@@ -153,6 +153,7 @@ object HeadersSideBar {
       val obsCompleted =
         p.selectedObserver.map(_.fold(_ => false, _.completed)).getOrElse(false)
       val observerField = s"Observer - $instrument"
+      val isDefaultObserver =  p.selectedObserver.isLeft
       <.div(
         ^.cls := "ui secondary segment",
         SeqexecStyles.headerSideBarStyle,
@@ -181,7 +182,7 @@ object HeadersSideBar {
                               "observer",
                               observerEV,
                               placeholder = "Observer...",
-                              disabled    = !enabled || obsCompleted,
+                              disabled    = !enabled || obsCompleted || isDefaultObserver,
                               onBlur      = _ => submitIfChangedOb)
               )
             )
