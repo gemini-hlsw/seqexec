@@ -330,7 +330,7 @@ final case class StepsTable(
     (obsId, instrument, sequenceState).mapN(StepStateSummary(step, _, _, tabOperations, _))
 
   def detailRowCount(step: Step, selected: Option[StepId]): Option[Int] =
-    stepSummary(step).map(_.detailRows(selected.filter(_ => stepSelectionAllowed(step.id))).rows)
+    stepSummary(step).map(_.detailRows(selected, hasControls).rows)
 
   def showRowDetails(step: Step, selected: Option[StepId]): Boolean =
     detailRowCount(step, selected).forall(_ > 0)
