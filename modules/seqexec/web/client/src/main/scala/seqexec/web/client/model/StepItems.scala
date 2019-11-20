@@ -222,6 +222,9 @@ object StepItems {
     val isNSRunning: Boolean =
       isNS && isRunning
 
+    val isNSObserving: Boolean =
+      isNS && step.isRunning
+
     val anyError: Boolean =
       tabOperations.resourceInError(step.id) || step.hasError
 
@@ -234,8 +237,11 @@ object StepItems {
     val isBias: Boolean =
       step.stepType(instrument).exists(_ === StepType.Bias)
 
-    def detailRows(selected: Option[StepId]): DetailRows =
-      if( (isNS && selected.exists(_ === step.id)) || isNSRunning || isNSInError)
+    def canControlThisStep(selected: Option[StepId], hasControls: Boolean): Boolean =
+      hasControls && selected.exists(_ === step.id)
+
+    def detailRows(selected: Option[StepId], hasControls: Boolean): DetailRows =
+      if( ((isNS || isNSInError) && canControlThisStep(selected, hasControls)) || isNSObserving)
         DetailRows.TwoDetailRows
       else if (isACRunning || isACInError)
         DetailRows.OneDetailRow
