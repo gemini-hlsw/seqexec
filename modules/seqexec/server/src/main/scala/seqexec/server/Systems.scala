@@ -67,7 +67,7 @@ object Systems {
       if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[F](new Peer(settings.odb.renderString, 8442, null))
       else new OdbProxy.DummyOdbCommands[F])
 
-    def dhs[F[_] : Effect : Timer : Logger](httpClient: Client[F]): F[DhsClient[F]] =
+    def dhs[F[_]: Concurrent : Timer : Logger](httpClient: Client[F]): F[DhsClient[F]] =
       if (settings.systemControl.dhs.command)
         DhsClientHttp[F](httpClient, settings.dhsServer).pure[F]
       else

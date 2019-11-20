@@ -7,6 +7,7 @@ import gem.math.{ Ephemeris, EphemerisCoordinates }
 import gsp.math.syntax.treemap._
 import gem.util.Timestamp
 
+import cats.effect.Blocker
 import cats.effect.IO
 import cats.tests.CatsSuite
 
@@ -61,18 +62,18 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
       "2017-Aug-15 00:57:33.600" -> (("14 50 13.7794 -02 58 57.693", "9.375816", "-12.4855"))
     )
 
-    val s = stream("borrelly").through(EphemerisParser.elements[IO])
-    val m = TreeMap.fromFoldable(s.take(head.size.toLong).compile.toVector.unsafeRunSync)
+    val s = Blocker[IO].use(stream("borrelly", _).through(EphemerisParser.elements[IO]).take(head.size.toLong).compile.toVector)
+    val m = TreeMap.fromFoldable(s.unsafeRunSync)
 
     assert(m == head)
   }
 
   test("Must handle errors") {
     val z = Timestamp.Min -> EphemerisCoordinates.Zero
-    val s = stream("borrelly-error")
+    val s = Blocker[IO].use(stream("borrelly-error", _)
              .through(EphemerisParser.elements[IO])
-             .handleErrorWith(_ => Stream(z))
-    assert(Vector(Some(z)) == s.last.compile.toVector.unsafeRunSync)
+             .handleErrorWith(_ => Stream(z)).last.compile.toVector)
+    assert(Vector(Some(z)) == s.unsafeRunSync)
   }
 
   test("Must stream eitherElements") {
@@ -82,8 +83,8 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
       Left("Failure reading:solarPresence")
     )
 
-    val s = stream("borrelly-error").through(EphemerisParser.eitherElements[IO])
-    val m = s.take(head.size.toLong).compile.toVector.unsafeRunSync()
+    val s = Blocker[IO].use(stream("borrelly-error", _).through(EphemerisParser.eitherElements[IO]).take(head.size.toLong).compile.toVector)
+    val m = s.unsafeRunSync()
 
     assert(m == head)
   }
@@ -95,8 +96,8 @@ final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
       "2017-Aug-15 01:26:20.400" -> (("14 50 14.0798 -02 59 03.686", "9.417733", "-12.4845"))  // 3 (skipping 2)
     )
 
-    val s = stream("borrelly-error").through(EphemerisParser.validElements[IO])
-    val m = TreeMap.fromFoldable(s.take(head.size.toLong).compile.toVector.unsafeRunSync)
+    val s = Blocker[IO].use(stream("borrelly-error", _).through(EphemerisParser.validElements[IO]).take(head.size.toLong).compile.toVector)
+    val m = TreeMap.fromFoldable(s.unsafeRunSync)
 
     assert(m == head)
   }

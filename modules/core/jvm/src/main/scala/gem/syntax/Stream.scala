@@ -37,11 +37,11 @@ final class StreamOps[F[_], O](val self: Stream[F, O]) {
     */
   def filterOnFold[A](z: A)(f: (A, O) => A, p: A => Boolean): Stream[F, O] = {
 
-    def go(a: A, s: Stream[F,O]): Pull[F,O,Option[Unit]] =
+    def go(a: A, s: Stream[F,O]): Pull[F,O,Unit] =
 
       s.pull.uncons.flatMap {
         case None           =>
-          Pull.pure(None)
+          Pull.pure(())
 
         case Some((hd: Chunk[O], tl: Stream[F, O])) =>
           hd.foldLeft((Vector.empty[O], a)) { case ((matching, a), o) =>

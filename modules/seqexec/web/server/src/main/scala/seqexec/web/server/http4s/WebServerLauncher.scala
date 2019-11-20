@@ -13,7 +13,6 @@ import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.nio.file.{Path => FilePath}
-import java.util.concurrent.{ExecutorService, Executors}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
@@ -28,7 +27,6 @@ import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
 import pureconfig._
-import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
@@ -73,7 +71,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     outputs: Topic[F, SeqexecEvent],
     se: SeqexecEngine[F],
     cr: CollectorRegistry,
-    bec: ExecutionContext
+    bec: Blocker
   ): Resource[F, Server[F]] = {
 
     // The prometheus route does not get logged
@@ -176,12 +174,6 @@ object WebServerLauncher extends IOApp with LogInitialization {
   /** Reads the configuration and launches the seqexec engine and web server */
   def seqexec: IO[ExitCode] = {
 
-    def blockingExecutionContext: Resource[IO, ExecutionContext] = {
-      val alloc = IO(Executors.newCachedThreadPool)
-      val free  = (es: ExecutorService) => IO(es.shutdown())
-      Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
-    }
-
     // Override the default client config
     val clientConfig = new DefaultAsyncHttpClientConfig.Builder(AsyncHttpClient.defaultConfig)
       .setRequestTimeout(5000) // Change the timeout to 5 seconds
@@ -204,14 +196,14 @@ object WebServerLauncher extends IOApp with LogInitialization {
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
       en:  SeqexecEngine[IO],
-      cr:  CollectorRegistry,
-      bec: ExecutionContext
+      cr:  CollectorRegistry
     ): Resource[IO, Unit] =
       for {
+        b  <- Blocker[IO]
         as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
-        _  <- webServer[IO](conf, ca, as, in, out, en, cr, bec)
+        _  <- webServer[IO](conf, ca, as, in, out, en, cr, b)
       } yield ()
 
     val seqexec: Resource[IO, ExitCode] =
@@ -224,9 +216,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         _      <- Resource.liftF(logToClients(out))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
-        bec    <- blockingExecutionContext
         engine <- engineIO(conf, cli, cr)
-        _      <- webServerIO(conf, inq, out, engine, cr, bec)
+        _      <- webServerIO(conf, inq, out, engine, cr)
         f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success

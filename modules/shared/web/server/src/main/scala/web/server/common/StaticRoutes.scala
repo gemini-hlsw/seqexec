@@ -4,7 +4,7 @@
 package web.server.common
 
 import cats.data.{ NonEmptyList, OptionT }
-import cats.effect.{ Sync, ContextShift }
+import cats.effect.{ Blocker, Sync, ContextShift }
 import cats.instances.string._
 import cats.syntax.eq._
 import org.http4s.CacheDirective._
@@ -12,20 +12,19 @@ import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
 import org.http4s.{ HttpRoutes, Request, Response, StaticFile }
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 
-class StaticRoutes[F[_]: Sync: ContextShift](devMode: Boolean, builtAtMillis: Long, blockingExecutionContext: ExecutionContext) {
-  val oneYear: Int = 365 * 24 * 60 * 60
+class StaticRoutes[F[_]: Sync: ContextShift](devMode: Boolean, builtAtMillis: Long, blocker: Blocker) {
+  val oneYear: Int = 365 * 24 * 60 * 60 // One year in seconds
 
   private val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList.of(`no-cache`()))) else List(`Cache-Control`(NonEmptyList.of(`max-age`(oneYear.seconds))))
 
   // Get a resource from a local file, useful for development
   def localResource(path: String, req: Request[F]): OptionT[F, Response[F]] =
-    StaticFile.fromResource(path, blockingExecutionContext, Some(req)).map(_.putHeaders())
+    StaticFile.fromResource(path, blocker, Some(req)).map(_.putHeaders())
 
   // Get a resource from a local file, used in production
   def embeddedResource(path: String, req: Request[F]): OptionT[F, Response[F]] = {
-    OptionT.fromOption(Option(getClass.getResource(path))).flatMap(StaticFile.fromURL(_, blockingExecutionContext, Some(req)))
+    OptionT.fromOption(Option(getClass.getResource(path))).flatMap(StaticFile.fromURL(_, blocker, Some(req)))
   }
 
   implicit class ReqOps(req: Request[F]) {

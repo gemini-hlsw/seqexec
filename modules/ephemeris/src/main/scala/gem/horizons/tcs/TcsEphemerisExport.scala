@@ -20,8 +20,6 @@ import fs2.io.file
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
 
-import scala.concurrent.ExecutionContext
-
 /** Provides support for exporting ephemeris data to files that may be read by
   * the TCS.
   *
@@ -56,7 +54,7 @@ final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
     *              exactly this time it will be the last element (otherwise,
     *              the element immediately following this time is included)
     */
-  def exportOne(key: EphemerisKey, site: Site, start: Timestamp, end: Timestamp, dir: Path): M[Unit] = {
+  def exportOne(key: EphemerisKey, site: Site, start: Timestamp, end: Timestamp, dir: Path)(blocker: Blocker): M[Unit] = {
     import EphemerisDao.{ bracketRange, streamRange }
 
     Stream.eval(bracketRange(key, site, start, end))
@@ -67,7 +65,7 @@ final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
       .intersperse("\n")
       .append(Stream.emit("\n"))
       .through(text.utf8Encode)
-      .through(file.writeAll(resolve(key, dir), ExecutionContext.global /** ok here? **/, List(CREATE, TRUNCATE_EXISTING)))
+      .through(file.writeAll(resolve(key, dir), blocker, List(CREATE, TRUNCATE_EXISTING)))
       .compile
       .drain
   }
@@ -81,10 +79,10 @@ final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
     * @param start start time for the ephemeris data, inclusive
     * @param end   end time for the ephemeirs day, exclusive
     */
-  def exportAll(site: Site, start: Timestamp, end: Timestamp, dir: Path): M[Unit] =
+  def exportAll(site: Site, start: Timestamp, end: Timestamp, dir: Path)(blocker: Blocker): M[Unit] =
     for {
       ks <- EphemerisDao.selectKeys(site).transact(xa)
-      _  <- ks.toList.traverse_(k => exportOne(k, site, start, end, resolve(k, dir)))
+      _  <- ks.toList.traverse_(k => exportOne(k, site, start, end, resolve(k, dir))(blocker))
     } yield ()
 }
 
