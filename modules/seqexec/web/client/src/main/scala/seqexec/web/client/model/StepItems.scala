@@ -237,8 +237,11 @@ object StepItems {
     val isBias: Boolean =
       step.stepType(instrument).exists(_ === StepType.Bias)
 
+    def canControlThisStep(selected: Option[StepId], hasControls: Boolean): Boolean =
+      hasControls && selected.exists(_ === step.id)
+
     def detailRows(selected: Option[StepId], hasControls: Boolean): DetailRows =
-      if( hasControls && ((isNS || isNSInError) && selected.exists(_ === step.id)) || isNSObserving)
+      if( ((isNS || isNSInError) && canControlThisStep(selected, hasControls)) || isNSObserving)
         DetailRows.TwoDetailRows
       else if (isACRunning || isACInError)
         DetailRows.OneDetailRow
