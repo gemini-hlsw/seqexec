@@ -604,6 +604,7 @@ object StepsTable extends Columns {
     case s if s.status === StepState.Paused    => SeqexecStyles.rowWarning
     case s if s.status === StepState.Completed => SeqexecStyles.rowDone
     case s if s.status === StepState.Skipped   => SeqexecStyles.rowActive
+    case s if s.status === StepState.Aborted   => SeqexecStyles.rowError
     case s if s.isFinished                     => SeqexecStyles.rowDone
     case _                                     => SeqexecStyles.stepRow
   }
@@ -966,7 +967,7 @@ object StepsTable extends Columns {
             ^.onMouseDown ==> allowedClick(p, index, onRowClick),
             ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
             columns.toTagMod
-            )
+          )
       }
     }
 

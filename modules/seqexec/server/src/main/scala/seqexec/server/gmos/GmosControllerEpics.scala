@@ -249,10 +249,11 @@ object GmosControllerEpics extends GmosEncoders {
       def setWavelength(state: GmosCCEpicsState, w: Length): Option[F[Unit]] =
         applyParam(state.disperserWavel, encode(w), CC.setDisperserLambda)
 
-      def setDisperserParams(state: GmosCCEpicsState,
-                                                                               cfg: GmosController.Config[T],
-                                                                               d: GmosController.Config[T]#GmosDisperser)
-      : List[Option[F[Unit]]] = {
+      def setDisperserParams(
+        state: GmosCCEpicsState,
+        cfg: GmosController.Config[T],
+        d: GmosController.Config[T]#GmosDisperser
+      ): List[Option[F[Unit]]] = {
         val params: List[Option[F[Unit]]] = d match {
           case cfg.GmosDisperser.Mirror => List(setDisperser(state, cfg.mirror))
           case cfg.GmosDisperser.Order0(d) =>

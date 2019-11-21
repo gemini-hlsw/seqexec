@@ -62,6 +62,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     new Audio(ObservationStoppedMP3.resource),
     new Audio(ObservationStoppedWebM.resource))
 
+  private val ObservationAbortedAudio = Audio.selectPlayable(
+    new Audio(ObservationAbortedMP3.resource),
+    new Audio(ObservationAbortedWebM.resource))
+
   def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
   def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
 
@@ -196,6 +200,14 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(sv)), stopProgress + stopAudio)
   }
 
+  val stepAbortedMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SequenceAborted(id, sv)) =>
+      // A step completed with an abort which in practical term is like a stop
+      val abortProgress = Effect(Future(RunStopCompleted(id)))
+      val abortAudio = Effect(Future(ObservationAbortedAudio.play()).as(NoAction))
+      updated(value.copy(sequences = filterSequences(sv)), abortProgress + abortAudio)
+  }
+
   val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ExposurePaused(_, sv)) =>
       // Play audio when the sequence gets paused
@@ -302,6 +314,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       stopCompletedMessage,
+      stepAbortedMessage,
       sequenceStartMessage,
       sequenceRefreshedMessage,
       sequencePauseCancelMessage,

@@ -784,6 +784,7 @@ object SeqexecEngine {
         // TODO: Sequence completed event not emitted by engine.
         case SystemEvent.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
         case SystemEvent.StopCompleted(id, _, _, _)                               => SequenceStopped(id, svs)
+        case SystemEvent.Aborted(id, _, _, _)                                     => SequenceAborted(id, svs)
         case SystemEvent.PartialResult(_, _, _, Partial(_: InternalPartialVal))   => NullEvent
         case SystemEvent.PartialResult(i, s, _, Partial(ObsProgress(t, r, v)))    =>
           ObservationProgressEvent(ObservationProgress(i, s, t, r.self, v))

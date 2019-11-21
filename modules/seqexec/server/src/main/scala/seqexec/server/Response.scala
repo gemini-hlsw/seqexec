@@ -15,6 +15,8 @@ object Response {
 
   final case class Observed(fileId: ImageFileId) extends Response
 
+  final case class Aborted(fileId: ImageFileId) extends Response
+
   case object Ignored extends Response
 
 }

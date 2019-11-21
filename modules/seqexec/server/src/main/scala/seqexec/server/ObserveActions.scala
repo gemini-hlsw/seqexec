@@ -27,9 +27,16 @@ trait ObserveActions {
     * Actions to perform when an observe is aborted
     */
   def abortTail[F[_]: MonadError[?[_], Throwable]](
-    obsId:       Observation.Id
+    systems:     Systems[F],
+    obsId:       Observation.Id,
+    imageFileId: ImageFileId
   ): F[Result[F]] =
-    MonadError[F, Throwable].raiseError(SeqexecFailure.Aborted(obsId))
+    systems.odb
+      .obsAbort(obsId, imageFileId)
+      .ensure(
+        SeqexecFailure
+          .Unexpected("Unable to send ObservationAborted message to ODB.")
+      )(identity).as(Result.OKAborted(Response.Aborted(imageFileId)))
 
   /**
     * Send the datasetStart command to the odb
@@ -155,7 +162,7 @@ trait ObserveActions {
       case ObserveCommandResult.Stopped =>
         okTail(fileId, dataId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
-        abortTail[F](env.obsId)
+        abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
         env.inst.calcObserveTime(env.config)
           .flatMap(totalTime => env.inst.observeControl(env.config) match {

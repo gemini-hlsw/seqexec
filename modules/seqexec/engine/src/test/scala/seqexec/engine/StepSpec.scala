@@ -125,6 +125,11 @@ class StepSpec extends CatsSuite {
       Result.Error(errMsg).pure[IO]
   )
 
+  def aborted: Action[IO] = fromF[IO](ActionType.Undefined,
+    IO.sleep(new FiniteDuration(200, MILLISECONDS)) *>
+      Result.OKAborted(DummyResult).pure[IO]
+  )
+
   def errorSet1(errMsg: String): (Ref[IO, Int], Action[IO]) = {
     val ref = Ref.unsafe[IO, Int](0)
     val action = fromF[IO](ActionType.Undefined,
@@ -160,6 +165,7 @@ class StepSpec extends CatsSuite {
     case SequenceState.Idle      => true
     case SequenceState.Completed => true
     case SequenceState.Failed(_) => true
+    case SequenceState.Aborted   => true
     case _                       => false
   }
 
@@ -453,6 +459,37 @@ class StepSpec extends CatsSuite {
         ref.get.unsafeRunSync() shouldBe(1)
         // And that it ended in error
         status shouldBe SequenceState.Completed
+    }
+  }
+
+  test("engine should mark a step as aborted if the action ends as aborted") {
+    val qs0: TestState =
+      TestState(
+        sequences = Map(
+          (seqId,
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    executions = List(
+                      NonEmptyList.one(aborted)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    val qs1 = runToCompletion(qs0)
+
+    inside (qs1.flatMap(_.sequences.get(seqId))) {
+      case Some(Sequence.State.Zipper(_, status, _)) =>
+        // And that it ended in aborted
+        status shouldBe SequenceState.Aborted
     }
   }
 

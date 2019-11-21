@@ -74,6 +74,9 @@ class SeqTranslateSpec extends AnyFlatSpec {
   // Observe failed
   private val s5: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
+  // Observe aborted
+  private val s6: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
+    .modify(_.mark(0)(Result.OKAborted(Response.Aborted(toImageFileId(fileId)))))(baseState)
 
   private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync
 
@@ -84,6 +87,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     assert(translator.stopObserve(seqId, graceful = false).apply(s3).isDefined)
     assert(translator.stopObserve(seqId, graceful = false).apply(s4).isDefined)
     assert(translator.stopObserve(seqId, graceful = false).apply(s5).isEmpty)
+    assert(translator.stopObserve(seqId, graceful = false).apply(s6).isEmpty)
   }
 
   "SeqTranslate" should "trigger abortObserve command only if exposure is in progress" in {
@@ -93,6 +97,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     assert(translator.abortObserve(seqId).apply(s3).isDefined)
     assert(translator.abortObserve(seqId).apply(s4).isDefined)
     assert(translator.abortObserve(seqId).apply(s5).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s6).isEmpty)
   }
 
 }

@@ -182,6 +182,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
       }.attempt.flatMap {
         case Right(r@Result.OK(_))        => Stream.emit(completed(id, stepId, i, r))
         case Right(r@Result.OKStopped(_)) => Stream.emit(stopCompleted(id, stepId, i, r))
+        case Right(r@Result.OKAborted(_)) => Stream.emit(aborted(id, stepId, i, r))
         case Right(r@Result.Partial(_))   => Stream.emit(partial(id, stepId, i, r))
         case Right(e@Result.Error(_))     => Stream.emit(failed(id, i, e))
         case Right(r@Result.Paused(_))    => Stream.emit(paused[F](id, i, r))
@@ -239,6 +240,10 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     getS(id).flatMap(_.flatMap(
       _.current.execution.forall(Action.completed).option(Handle.fromStream[F, S, EventType](Stream(executed(id))))
     ).getOrElse(unit))
+
+  private def abort[R <: RetVal](id: Observation.Id, i: Int, r: Result.OKAborted[R]): HandleType[Unit] =
+    modifyS(id)(_.mark(i)(r)) *>
+      switch(id)(SequenceState.Aborted)
 
   private def partialResult[R <: PartialVal](id: Observation.Id, i: Int, p: Result.Partial[R]): HandleType[Unit] =
     modifyS(id)(_.mark(i)(p))
@@ -314,6 +319,9 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
       pure(SystemUpdate(se, Outcome.Ok))
     case StopCompleted(id, _, i, r)    => debug(
       s"Engine: From sequence ${id.format}: Action completed with stop ($r)") *> stopComplete(id, i, r) *>
+      pure(SystemUpdate(se, Outcome.Ok))
+    case Aborted(id, _, i, r)    => debug(
+      s"Engine: From sequence ${id.format}: Action completed with abort ($r)") *> abort(id, i, r) *>
       pure(SystemUpdate(se, Outcome.Ok))
     case PartialResult(id, _, i, r) => debug(
       s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>

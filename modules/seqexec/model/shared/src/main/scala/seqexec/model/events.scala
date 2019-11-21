@@ -84,6 +84,7 @@ object events {
         case (a: ClearLoadedSequencesUpdated, b: ClearLoadedSequencesUpdated) => a === b
         case (a: QueueUpdated,                b: QueueUpdated)                => a === b
         case (a: SequenceStopped,             b: SequenceStopped)             => a === b
+        case (a: SequenceAborted,             b: SequenceAborted)             => a === b
         case _                                                                => false
       }
 
@@ -260,6 +261,15 @@ object events {
 
   object SequenceStopped {
     implicit lazy val equal: Eq[SequenceStopped] =
+      Eq.by(x => (x.obsId, x.view))
+  }
+
+  final case class SequenceAborted(obsId: Observation.Id,
+                                   view:  SequencesQueue[SequenceView])
+      extends SeqexecModelUpdate
+
+  object SequenceAborted {
+    implicit lazy val equal: Eq[SequenceAborted] =
       Eq.by(x => (x.obsId, x.view))
   }
 

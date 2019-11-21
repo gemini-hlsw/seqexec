@@ -24,7 +24,10 @@ object ActionStatus {
   /** Action run but failed to complete. */
   case object Failed extends ActionStatus
 
+  /** Action was aborted by the user */
+  case object Aborted extends ActionStatus
+
   /** @group Typeclass Instances */
   implicit val ActionStatusEnumerated: Enumerated[ActionStatus] =
-    Enumerated.of(Pending, Completed, Running, Paused, Failed)
+    Enumerated.of(Pending, Completed, Running, Paused, Failed, Aborted)
 }

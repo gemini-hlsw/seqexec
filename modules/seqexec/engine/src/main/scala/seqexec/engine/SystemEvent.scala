@@ -17,6 +17,8 @@ object SystemEvent {
     extends SystemEvent[Nothing]
   final case class StopCompleted[R<:RetVal](id: Observation.Id, stepId: StepId, i: Int, r: OKStopped[R])
     extends SystemEvent[Nothing]
+  final case class Aborted[R<:RetVal](id: Observation.Id, stepId: StepId, i: Int, r: OKAborted[R])
+    extends SystemEvent[Nothing]
   final case class PartialResult[R<:PartialVal](sid: Observation.Id, stepId: StepId, i: Int,
                                                 r: Partial[R]) extends SystemEvent[Nothing]
   final case class Paused[F[_]](id: Observation.Id, i: Int, r: Result.Paused[F])
