@@ -85,6 +85,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
         BlazeServerBuilder[F]
           .bindHttp(conf.webServer.port, conf.webServer.host)
           .withWebSockets(true)
+          .withNio2(true)
           .withHttpApp((prRouter <+> all).orNotFound)
 
       conf.webServer.tls.fold(builder) { tls =>
@@ -123,6 +124,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     BlazeServerBuilder[F]
       .bindHttp(conf.insecurePort, conf.host)
       .withHttpApp(router.orNotFound)
+      .withNio2(true)
       .resource
   }
 
@@ -227,8 +229,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Reads the configuration and launches the seqexec */
-  override def run(args: List[String]): IO[ExitCode] = {
-    seqexec
-  }
+  override def run(args: List[String]): IO[ExitCode] =
+    seqexec.guaranteeCase {
+      case ExitCode.Success => IO.unit
+      case e                => IO(Console.println(s"Exit code $e")) // scalastyle:off console.io
+    }
 
 }

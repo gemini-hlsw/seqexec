@@ -543,23 +543,17 @@ lazy val seqexecCommonSettings = Seq(
 ) ++ commonSettings
 
 /**
-  * Settings for Seqexec RPMs
+  * Settings for Seqexec in Linux
   */
-lazy val seqexecRPMSettings = Seq(
-  // RPM properties
-  rpmVendor := "Gemini",
-  rpmLicense := Some("BSD-3"),
-  rpmGroup := Some("Gemini"),
-  rpmChangelogFile := None,
-  packageDescription in Rpm := "Seqexec Server",
-  rpmPrefix in Rpm := Some("/gemsoft/opt"),
-  packageName in Rpm := "seqexec-server",
+lazy val seqexecLinux = Seq(
   // User/Group for execution
-  daemonUser in Linux := "telops",
-  daemonGroup in Linux := "telops",
+  daemonUser in Linux := "software",
+  daemonGroup in Linux := "software",
+  maintainer in Universal := "Software Group <software@gemini.edu>",
   // This lets us build RPMs from snapshot versions
-  version in Rpm := {
-    (version in ThisBuild).value.replace("-SNAPSHOT", "")
+  name in Linux := "Seqexec Server",
+  version in Linux := {
+    (version in ThisBuild).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
   }
 )
 
@@ -590,6 +584,14 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
     mappings in Universal += {
       val f = (resourceDirectory in Compile).value / "update_smartgcal"
       f -> ("bin/" + f.getName)
+    },
+    mappings in Universal += {
+      val f = (resourceDirectory in Compile).value / "seqexec-server.env"
+      f -> ("systemd/" + f.getName)
+    },
+    mappings in Universal += {
+      val f = (resourceDirectory in Compile).value / "seqexec-server.service"
+      f -> ("systemd/" + f.getName)
     }
   )
 
@@ -599,11 +601,12 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
 lazy val app_seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
   .dependsOn(seqexec_web_server, seqexec_web_client)
   .aggregate(seqexec_web_server, seqexec_web_client)
-  .enablePlugins(LinuxPlugin, RpmPlugin)
+  .enablePlugins(LinuxPlugin)
   .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(SystemdPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
-  .settings(seqexecRPMSettings: _*)
+  .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
     description := "Seqexec GS test deployment",
@@ -631,7 +634,7 @@ lazy val app_seqexec_server_gn_test = preventPublication(project.in(file("app/se
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
-  .settings(seqexecRPMSettings: _*)
+  .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
     description := "Seqexec GN test deployment",
@@ -659,7 +662,7 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
-  .settings(seqexecRPMSettings: _*)
+  .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
     description := "Seqexec Gemini South server production",
@@ -687,7 +690,7 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
-  .settings(seqexecRPMSettings: _*)
+  .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
     description := "Seqexec Gemini North server production",

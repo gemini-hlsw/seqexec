@@ -1,0 +1,23 @@
+[Unit]
+Description=Seqexec Server
+Requires=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/software/seqexec_server/
+EnvironmentFile=/etc/default/seqexec-server.env
+ExecStart=/home/software/seqexec_server/bin/seqexec-server
+Restart=always
+RestartSec=60
+# IOApp returns 128+15 on a regular cancellation, 15 being SIGTERM
+SuccessExitStatus=143
+TimeoutStopSec=5
+User=software
+ExecStartPre=/bin/mkdir -p /run/seqexec_server
+ExecStartPre=/bin/chown software:software /run/seqexec_server
+ExecStartPre=/bin/chmod 755 /run/seqexec_server
+PermissionsStartOnly=true
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target
