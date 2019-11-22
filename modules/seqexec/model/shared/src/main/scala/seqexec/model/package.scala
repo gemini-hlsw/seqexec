@@ -57,6 +57,7 @@ package object model {
       case Instrument.GmosN => true
       case Instrument.Nifs  => true
       case Instrument.Niri  => true
+      case Instrument.Gnirs => true
       case Instrument.Gsaoi => false
       case Instrument.Gpi   => true
       case Instrument.Ghost => false

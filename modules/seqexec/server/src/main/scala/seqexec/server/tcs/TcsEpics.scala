@@ -3,7 +3,9 @@
 
 package seqexec.server.tcs
 
-import cats.effect.{Async, IO, LiftIO, Sync}
+import java.util.concurrent.TimeUnit
+
+import cats.effect.{Async, IO, LiftIO, Sync, Timer}
 import cats.implicits._
 import squants.Angle
 import edu.gemini.epics.acm._
@@ -16,6 +18,8 @@ import seqexec.server.{EpicsCommand, EpicsSystem}
 import squants.Time
 import squants.space.Degrees
 import squants.time.TimeConversions._
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
@@ -380,19 +384,27 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("oi", tcsState)
 
-  private val tcsStabilizeTime = 1.seconds
+  private val defaultTcsStabilizeTime = 1.seconds
 
-  private val filteredInPositionAttr: CaWindowStabilizer[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
-  def filteredInPosition:F[String] = safeAttributeF(filteredInPositionAttr)
+  private val filteredInPositionAttr: CaWindowStabilizer[String] =
+    new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(defaultTcsStabilizeTime.toMillis))
 
-  // This functions returns a SeqAction that, when run, will wait up to `timeout`
-  // seconds for the TCS in-position flag to set to TRUE
-  def waitInPosition(timeout: Time): F[Unit] = Sync[F].delay(filteredInPositionAttr.reset)
-    .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
+  // Tcs fudge1 (time to wait for in-position to change to false)
+  private val tcsSettleTime = 2.8.seconds
+
+  // This functions returns a F that, when run, first waits tcsSettleTime to absorb in-position transients, then waits
+  // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
+  // seconds for that to happen.
+  def waitInPosition(stabilizationTime: Time, timeout: Time)(implicit T: Timer[F]): F[Unit] =
+    T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *>
+      Sync[F].delay(filteredInPositionAttr.restart(java.time.Duration.ofMillis(stabilizationTime.toMillis)))
+        .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
 
   private val agStabilizeTime = 1.seconds
 
-  private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+  private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] =
+    new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+
   def filteredAGInPosition: F[Double] = safeAttributeSDoubleF(filteredAGInPositionAttr)
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
@@ -400,9 +412,10 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
   private val AGSettleTime = 1100.milliseconds
-  def waitAGInPosition(timeout: Time): F[Unit] = Sync[F].delay(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
-    Sync[F].delay(filteredAGInPositionAttr.reset).flatMap(
-      waitForValueF[java.lang.Double, F](_, 1.0, timeout, "AG inposition flag"))
+  def waitAGInPosition(timeout: Time)(implicit T: Timer[F]): F[Unit] =
+    T.sleep(FiniteDuration(AGSettleTime.toMillis, TimeUnit.MILLISECONDS)) *>
+      Sync[F].delay(filteredAGInPositionAttr.restart).flatMap(
+        waitForValueF[java.lang.Double, F](_, 1.0, timeout, "AG inposition flag"))
 
   def hourAngle: F[String] = safeAttributeF(tcsState.getStringAttribute("ha"))
 

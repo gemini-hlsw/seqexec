@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats._
 import cats.data._
-import cats.effect.{Async, Sync}
+import cats.effect.{Async, Sync, Timer}
 import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import io.chrisdavenport.log4cats.Logger
@@ -19,6 +19,7 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.tcs.TcsController._
 import seqexec.server.{EpicsCommand, SeqexecFailure}
+import squants.time.TimeConversions._
 
 /**
  * Base implementation of an Epics TcsController
@@ -205,7 +206,7 @@ object TcsControllerEpicsCommon {
   ): Option[C => F[C]] =
     (used && current =!= demand).option(c => act(demand) *> lens.set(demand)(c).pure[F])
 
-  private class TcsControllerEpicsCommonImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsControllerEpicsCommon[F] with TcsControllerEncoders with ScienceFoldPositionCodex {
+  private class TcsControllerEpicsCommonImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsControllerEpicsCommon[F] with TcsControllerEncoders with ScienceFoldPositionCodex {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
 
     override def setMountGuide[C](l: Lens[C, BaseEpicsTcsConfig])(
@@ -487,6 +488,10 @@ object TcsControllerEpicsCommon {
     override def applyBasicConfig(subsystems: NonEmptySet[Subsystem], tcs: BasicTcsConfig): F[Unit] = {
       def sysConfig(current: BaseEpicsTcsConfig): F[BaseEpicsTcsConfig] = {
         val params = configBaseParams(subsystems, current, tcs)
+        val stabilizationTime = tcs.tc.offsetA
+          .map(TcsSettleTimeCalculator.calc(current.instrumentOffset, _, subsystems, tcs.inst.instrument))
+          .getOrElse(0.seconds)
+
 
         if(params.nonEmpty)
           for {
@@ -494,7 +499,7 @@ object TcsControllerEpicsCommon {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Sync[F].unit
@@ -545,7 +550,7 @@ object TcsControllerEpicsCommon {
 
   }
 
-  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
+  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
     new TcsControllerEpicsCommonImpl(epicsSys)
 
 }

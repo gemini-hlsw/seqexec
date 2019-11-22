@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats.data._
-import cats.effect.Async
+import cats.effect.{Async, Timer}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
@@ -13,7 +13,7 @@ import seqexec.server.tcs.TcsController._
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsNorthController.{TcsNorthAoConfig, TcsNorthConfig}
 
-final case class TcsNorthControllerEpics[F[_]: Async: Logger](epicsSys: TcsEpics[F]) extends TcsNorthController[F] {
+final case class TcsNorthControllerEpics[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]) extends TcsNorthController[F] {
   private val commonController = TcsControllerEpicsCommon(epicsSys)
   private val aoController = TcsNorthControllerEpicsAo(epicsSys)
 

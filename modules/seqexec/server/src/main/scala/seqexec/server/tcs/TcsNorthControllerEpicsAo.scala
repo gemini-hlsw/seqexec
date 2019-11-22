@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats._
 import cats.data._
-import cats.effect.Async
+import cats.effect.{Async, Timer}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
@@ -28,6 +28,7 @@ import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import shapeless.tag.@@
 import squants.space.Arcseconds
+import squants.time.TimeConversions._
 
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(subsystems: NonEmptySet[Subsystem],
@@ -62,7 +63,7 @@ object TcsNorthControllerEpicsAo {
       distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
     }
 
-  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
+  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
     private val commonController = TcsControllerEpicsCommon[F](epicsSys)
 
@@ -100,6 +101,10 @@ object TcsNorthControllerEpicsAo {
 
       def sysConfig(current: EpicsTcsAoConfig): F[EpicsTcsAoConfig] = {
         val params = configParams(current)
+        val stabilizationTime = tcs.tc.offsetA
+          .map(TcsSettleTimeCalculator.calc(current.base.instrumentOffset, _, subsystems, tcs.inst.instrument))
+          .getOrElse(0.seconds)
+
 
         if(params.nonEmpty)
           for {
@@ -107,7 +112,7 @@ object TcsNorthControllerEpicsAo {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit
@@ -260,7 +265,7 @@ object TcsNorthControllerEpicsAo {
 
   }
 
-  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
     new TcsNorthControllerEpicsAoImpl(epicsSys)
 
   @Lenses
