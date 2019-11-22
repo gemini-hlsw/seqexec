@@ -7,7 +7,7 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import seqexec.model.{NSObservationProgress, ObserveStage, Progress, Step}
+import seqexec.model.{NSObservationProgress, ObservationProgress, ObserveStage, Progress, Step}
 import seqexec.model.enum.ActionStatus
 import seqexec.model.events.ObservationProgressEvent
 import seqexec.model.events.StepExecuted
@@ -33,10 +33,15 @@ class ObservationsProgressStateHandler[M](
         case ObserveStage.ReadingOut =>
           oldProgress match {
             case oldNSProgress: NSObservationProgress => nsProgress.copy(remaining = Time (Duration.Zero), sub = oldNSProgress.sub)
-            case _                                    => nsProgress
+            case _                                    => nsProgress // This would be an odd case
           }
         case ObserveStage.Idle       => oldProgress
-        case _                       => newProgress
+        case ObserveStage.Preparing  =>
+          oldProgress match {
+            case oldNSProgress: NSObservationProgress => oldNSProgress.copy(stage = ObserveStage.Preparing)
+            case oldProgress: ObservationProgress     => oldProgress.copy(stage = ObserveStage.Preparing)
+          }
+        case _                       => newProgress // Only advance when Acquiring.
       }
     case _                                 => newProgress
   }
