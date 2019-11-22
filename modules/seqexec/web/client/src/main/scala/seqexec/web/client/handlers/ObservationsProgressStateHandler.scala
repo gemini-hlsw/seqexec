@@ -7,7 +7,7 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import seqexec.model.Step
+import seqexec.model.{NSObservationProgress, ObserveStage, Progress, Step}
 import seqexec.model.enum.ActionStatus
 import seqexec.model.events.ObservationProgressEvent
 import seqexec.model.events.StepExecuted
@@ -15,6 +15,9 @@ import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
+import squants.time.Time
+
+import scala.concurrent.duration.Duration
 
 /**
   * Handles updates to obs progress
@@ -24,12 +27,26 @@ class ObservationsProgressStateHandler[M](
     extends ActionHandler(modelRW)
     with Handlers[M, AllObservationsProgressState] {
 
+  private def adjustProgress(newProgress: Progress)(oldProgress: Progress): Progress = newProgress match {
+    case nsProgress : NSObservationProgress =>
+      nsProgress.stage match {
+        case ObserveStage.ReadingOut =>
+          oldProgress match {
+            case oldNSProgress: NSObservationProgress => nsProgress.copy(remaining = Time (Duration.Zero), sub = oldNSProgress.sub)
+            case _                                    => nsProgress
+          }
+        case ObserveStage.Idle       => oldProgress
+        case _                       => newProgress
+      }
+    case _                                 => newProgress
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ObservationProgressEvent(e)) =>
       updatedL(
         AllObservationsProgressState
           .progressByIdL(e.obsId, e.stepId)
-          .set(e.some))
+          .modify(_.map(adjustProgress(e)).orElse(e.some)))
 
     // Remove the progress once the step completes
     case ServerMessage(e @ StepExecuted(obsId, _)) =>
