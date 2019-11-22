@@ -3,7 +3,8 @@
 
 package seqexec.web.client.components
 
-import seqexec.web.client.actions.{Logout, OpenLoginBox, UpdateDefaultObserver}
+import seqexec.web.client.actions.Logout
+import seqexec.web.client.actions.OpenLoginBox
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui.Size
@@ -13,11 +14,7 @@ import react.common.implicits._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.vdom.html_<^._
-import seqexec.model.Observer
-import seqexec.web.client.semanticui.elements.input.InputEV
-import seqexec.web.client.semanticui.elements.label.FormLabel
 
 /**
   * Menu with options
@@ -47,31 +44,14 @@ object ControlMenu {
            disabled = !enabled,
            inverted = true)(text)
 
-
-  // Ideally we'd do this with css text-overflow but it is not
-  // working properly inside a header item, let's abbreviate in code
-  private def overflowText(text: String): String =
-    text
-      .split("\\s")
-      .headOption
-      .map(_.substring(0, 10) + "...")
-      .getOrElse[String]("")
-
   private val component = ScalaComponent
     .builder[Props]("SeqexecTopMenu")
     .stateless
     .render_P { p =>
       val status = p.status
-
-      val enabled = p.status.canOperate
-      def updateStateOb(value: Option[String], cb: Callback): Callback =
-        SeqexecCircuit.dispatchCB(UpdateDefaultObserver(value.fold(Observer.Zero)(Observer.apply))) >> cb
-      val observerEV =
-        StateSnapshot(p.status.defaultObserver.value)(updateStateOb)
-
       <.div(
         ^.cls := "ui secondary right menu",
-        status.userDetails.fold(
+        status.u.fold(
           <.div(
             ^.cls := "ui item",
             soundConnect(x => SoundControl(SoundControl.Props(x()))),
@@ -82,35 +62,20 @@ object ControlMenu {
             <.div(
               ^.cls := "ui secondary right menu",
               <.div(
-                ^.cls := "ui form item",
-                SeqexecStyles.notInMobile,
-                FormLabel(FormLabel.Props("Observer:", Some("observer"))),
-                <.div(
-                  ^.cls := "ui input",
-                  SeqexecStyles.defaultObserverEditField,
-                  InputEV(
-                    InputEV.Props("observer",
-                                  "observer",
-                                  observerEV,
-                                  placeholder = "Observer...",
-                                  disabled    = !enabled)
-                  )
-                )
-              ),
-              <.div(
-                ^.cls := "ui item",
-                SeqexecStyles.onlyMobile,
-                s"Observer: ${overflowText(status.defaultObserver.value)}"
-              ),
-              <.div(
                 ^.cls := "ui header item",
                 SeqexecStyles.notInMobile,
-                s"User: ${u.displayName}"
+                u.displayName
               ),
               <.div(
                 ^.cls := "ui header item",
                 SeqexecStyles.onlyMobile,
-                s"User: ${overflowText(u.displayName)}"
+                // Ideally we'd do this with css text-overflow but it is not
+                // working properly inside a header item, let's abbreviate in code
+                u.displayName
+                  .split("\\s")
+                  .headOption
+                  .map(_.substring(0, 10) + "...")
+                  .getOrElse[String]("")
               ),
               <.div(
                 ^.cls := "ui item",

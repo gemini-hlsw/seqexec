@@ -26,7 +26,8 @@ class SequenceExecutionHandler[M](
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
       val updateObserverE = Effect(
-        SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction))
+        SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction)
+        ) + Effect.action(UpdateDefaultObserver(name))
       val updatedSequences =
         value.copy(sessionQueue = value.sessionQueue.collect {
           case s if s.id === sequenceId =>

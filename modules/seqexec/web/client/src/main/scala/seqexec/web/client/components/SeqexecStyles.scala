@@ -166,8 +166,6 @@ object SeqexecStyles {
 
   val observerField: Css = Css("SeqexecStyles-observerField")
 
-  val defaultObserverEditField: Css = Css("SeqexecStyles-defaultObserverEditField")
-
   val shorterFields: Css = Css("SeqexecStyles-shorterFields")
 
   val configLabel: Css = Css("SeqexecStyles-configLabel")

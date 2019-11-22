@@ -212,7 +212,7 @@ object SessionQueueTable extends Columns {
 
     val loggedIn: Boolean = sequences.status.isLogged
 
-    val user: Option[UserDetails] = sequences.status.userDetails
+    val user: Option[UserDetails] = sequences.status.u
 
     val extractors = List[(TableColumn, SequenceInSessionQueue => String)](
       (ObsIdColumn, _.id.format),
