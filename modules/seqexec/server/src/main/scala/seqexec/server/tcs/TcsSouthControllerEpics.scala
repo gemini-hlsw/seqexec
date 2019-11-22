@@ -14,7 +14,7 @@ import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsSouthController._
 
-final case class TcsSouthControllerEpics[F[_]: Async: Logger](epicsSys: TcsEpics[F], guideConfigDb: GuideConfigDb[F]) extends TcsSouthController[F] {
+final case class TcsSouthControllerEpics[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F], guideConfigDb: GuideConfigDb[F]) extends TcsSouthController[F] {
   private val commonController = TcsControllerEpicsCommon(epicsSys)
   private val aoController = TcsSouthControllerEpicsAo(epicsSys)
 

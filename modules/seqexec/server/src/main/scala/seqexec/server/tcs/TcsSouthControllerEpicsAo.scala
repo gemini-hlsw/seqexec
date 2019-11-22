@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats._
 import cats.implicits._
 import cats.data.NonEmptySet
-import cats.effect.{Async, Sync}
+import cats.effect.{Async, Sync, Timer}
 import io.chrisdavenport.log4cats.Logger
 import monocle.Lens
 import mouse.boolean._
@@ -51,7 +51,7 @@ object TcsSouthControllerEpicsAo {
     odgw4: GuiderConfig
   )
 
-  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(
+  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(
     implicit L: Logger[F]) extends TcsSouthControllerEpicsAo[F] with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
     private val commonController = TcsControllerEpicsCommon[F](epicsSys)
@@ -396,7 +396,7 @@ object TcsSouthControllerEpicsAo {
       case _                                                              => MountGuideOption.MountGuideOff
     } }(cfg)
 
-  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
     new TcsSouthControllerEpicsAoImpl(epicsSys)
 
 }

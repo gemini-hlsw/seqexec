@@ -34,19 +34,20 @@ object TcsSettleTimeCalculator {
     def *(a: Angle): Time = times(a)
   }
 
-  // TODO: Fill with measured values
+  // We are using constant values for now. Values are taken from old Seqexec
   val settleTimeCalculators: Map[Subsystem, SettleTimeCalculator] = Map(
-    Subsystem.Mount -> linearSettleTime(SettleTimeScale(6.seconds, 1.arcminutes)),
-    Subsystem.PWFS1 -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes)),
-    Subsystem.PWFS2 -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes))
+    Subsystem.Mount -> constantSettleTime(1.seconds),
+    Subsystem.PWFS1 -> constantSettleTime(1.seconds),
+    Subsystem.PWFS2 -> constantSettleTime(1.seconds)
   )
 
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
-    Instrument.GmosN -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes)),
-    Instrument.GmosS -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes)),
-    Instrument.F2 -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes)),
-    Instrument.Nifs -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes)),
-    Instrument.Niri -> linearSettleTime(SettleTimeScale(1.seconds, 1.arcminutes))
+    Instrument.GmosN -> constantSettleTime(500.milliseconds),
+    Instrument.GmosS -> constantSettleTime(500.milliseconds),
+    Instrument.F2 -> constantSettleTime(500.milliseconds),
+    Instrument.Nifs -> constantSettleTime(4.seconds),
+    Instrument.Niri -> constantSettleTime(4.seconds),
+    Instrument.Gnirs -> constantSettleTime(4.seconds)
   )
 
   def calcDisplacement(startOffset: InstrumentOffset, endOffset: InstrumentOffset): Angle =
