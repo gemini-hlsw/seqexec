@@ -7,29 +7,25 @@ import cats.Eq
 import cats.implicits._
 import monocle.Getter
 import monocle.Lens
-import seqexec.model.{Observer, UserDetails}
+import seqexec.model.UserDetails
 
 /**
   * Utility class to let components more easily switch parts of the UI depending on the user and connection state
   */
-final case class ClientStatus(
-  userDetails: Option[UserDetails],
-  defaultObserver: Observer,
-  webSocket: WebSocketConnection
-) {
-  def isLogged: Boolean    = userDetails.isDefined
-  def isConnected: Boolean = webSocket.ws.isReady
+final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
+  def isLogged: Boolean    = u.isDefined
+  def isConnected: Boolean = w.ws.isReady
   def canOperate: Boolean  = isLogged && isConnected
 }
 
 object ClientStatus {
   implicit val eq: Eq[ClientStatus] =
-    Eq.by(x => (x.userDetails, x.defaultObserver, x.webSocket))
+    Eq.by(x => (x.u, x.w))
 
   val clientStatusFocusL: Lens[SeqexecAppRootModel, ClientStatus] =
     Lens[SeqexecAppRootModel, ClientStatus](m =>
-      ClientStatus(m.uiModel.user, m.uiModel.defaultObserver, m.ws))(v =>
-      m => m.copy(ws = v.webSocket, uiModel = m.uiModel.copy(user = v.userDetails, defaultObserver = v.defaultObserver)))
+      ClientStatus(m.uiModel.user, m.ws))(v =>
+      m => m.copy(ws = v.w, uiModel = m.uiModel.copy(user = v.u)))
 
   val canOperateG: Getter[SeqexecAppRootModel, Boolean] =
     clientStatusFocusL.composeGetter(

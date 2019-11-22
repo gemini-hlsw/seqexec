@@ -45,7 +45,7 @@ object HeaderSideBarFocus {
 
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
-      val clientStatus = ClientStatus(c.uiModel.user, c.uiModel.defaultObserver, c.ws)
+      val clientStatus = ClientStatus(c.uiModel.user, c.ws)
       val obs = c.uiModel.sequencesOnDisplay.selectedObserver
         .toRight(c.uiModel.defaultObserver)
       HeaderSideBarFocus(clientStatus,
