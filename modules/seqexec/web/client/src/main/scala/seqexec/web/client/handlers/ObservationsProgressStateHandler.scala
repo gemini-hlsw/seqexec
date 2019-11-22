@@ -27,6 +27,19 @@ class ObservationsProgressStateHandler[M](
     extends ActionHandler(modelRW)
     with Handlers[M, AllObservationsProgressState] {
 
+  // In N&S, whenever a nod finishes (and the observation continues), the instruments show:
+  // 1) Remaining time reaches 0.
+  // 2) Acquiring channel is set to 0. (Which means we now receive stage === Idle.
+  // 3) Stage index increases.
+  // 4) Remaining time resets.
+  // 5) Preparing channel is set to 1.
+  // 6) Preparing channel is set to 0.
+  // 7) Acquiring channel is set to 1.
+  // 8) Remaning time continues.
+  //
+  // Therefore, we should not adjust the current stage index while Acquiring is off (we receive Idle).
+  // Furthermore, when we have a stage === ReadingOut, we force progress variable to complete
+  //   (by setting remaining = 0 and copying subexposure variables from previous progress).
   private def adjustProgress(newProgress: Progress)(oldProgress: Progress): Progress = newProgress match {
     case nsProgress : NSObservationProgress =>
       nsProgress.stage match {
@@ -41,7 +54,7 @@ class ObservationsProgressStateHandler[M](
             case oldNSProgress: NSObservationProgress => oldNSProgress.copy(stage = ObserveStage.Preparing)
             case oldProgress: ObservationProgress     => oldProgress.copy(stage = ObserveStage.Preparing)
           }
-        case _                       => newProgress // Only advance when Acquiring.
+        case _                       => newProgress // Only advance progress when stage === Acquiring.
       }
     case _                                 => newProgress
   }
