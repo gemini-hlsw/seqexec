@@ -229,7 +229,7 @@ object actions {
            s"steps: ${s.steps.length}",
            s"state: ${s.status}",
            s.steps
-            .filter(x => List(StepState.Pending, StepState.Running).exists(_ === x.status))
+            .filter(x => List(StepState.Pending, StepState.Running, StepState.Aborted).exists(_ === x.status))
             .slice(0, scala.math.min(s.steps.length, 20))
             .collect(stepInfo)
           )
