@@ -56,11 +56,11 @@ final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[
 
   override val contributorName: String = "gpi"
 
-  override def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] =
+  override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
     if (Gpi.isAlignAndCalib(config)) {
       StepType.AlignAndCalib.asRight
     } else {
-      SequenceConfiguration.calcStepType(config)
+      SequenceConfiguration.calcStepType(config, isNightSeq)
     }
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =

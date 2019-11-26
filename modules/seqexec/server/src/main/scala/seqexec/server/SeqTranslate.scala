@@ -10,7 +10,7 @@ import cats.effect.concurrent.Ref
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
-import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
+import edu.gemini.spModel.obscomp.InstConstants.{DATA_LABEL_PROP, OBSERVE_TYPE_PROP, SCIENCE_OBSERVE_TYPE}
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
@@ -80,7 +80,7 @@ object SeqTranslate {
                                                     ) extends SeqTranslate[F] {
 
     private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
-                     datasets: Map[Int, ExecutedDataset])(
+                     datasets: Map[Int, ExecutedDataset], isNightSeq: Boolean)(
                        implicit cio: Concurrent[F],
                                 tio: Timer[F]
                      ): F[SequenceGen.StepGen[F]] = {
@@ -135,7 +135,7 @@ object SeqTranslate {
       for {
         inst      <- MonadError[F, Throwable].fromEither(extractInstrument(config))
         is        <- toInstrumentSys(inst)
-        stepType  <- is.calcStepType(config).fold(_.raiseError[F, StepType], _.pure[F])
+        stepType  <- is.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
         systems   <- calcSystems(config, stepType, is)
         headers   <- calcHeaders(config, stepType, is)
       } yield buildStep(is, systems, headers, stepType)
@@ -149,19 +149,23 @@ object SeqTranslate {
       // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
       val configs = sequence.config.getAllSteps.toList.map(CleanConfig(_))
 
+      val isNightSeq: Boolean = configs.exists(
+        _.extractObsAs[String](OBSERVE_TYPE_PROP).exists(_ === SCIENCE_OBSERVE_TYPE)
+      )
+
       val nextToRun = configs
         .map(extractStatus)
         .lastIndexWhere(_.isFinished) + 1
 
       val steps = configs.zipWithIndex.map {
-        case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets).attempt
+        case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets, isNightSeq).attempt
       }.sequence.map(_.separate)
 
       val instName = configs
         .headOption
         .map(extractInstrument)
         .getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
-
+// scalastyle:off console.io
       steps.map { sts =>
         instName.fold(e => (List(e), none), i =>
           sts match {
@@ -367,6 +371,13 @@ object SeqTranslate {
           gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
         } yield List(sys, tcs, gcal)
 
+        case StepType.NightFlatOrArc(_)   => for {
+          tcs  <- getTcs(NonEmptySet.of(AGUnit, OIWFS, M2, M1, Mount), useGaos = false, sys,
+            TcsController.LightSource.GCAL, config
+          )
+          gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+        } yield List(sys, tcs, gcal)
+
         case StepType.DarkOrBias(_) => List(sys:System[F]).pure[F]
 
         case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) =>
@@ -486,6 +497,10 @@ object SeqTranslate {
         case StepType.FlatOrArc(inst) =>
             calcInstHeader(config, sys).map(h => ctx =>
               List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h))
+
+        case StepType.NightFlatOrArc(_) =>
+            calcInstHeader(config, sys).map(h => ctx =>
+              List(commonHeaders(config, List(AGUnit, OIWFS, M2, M1, Mount), sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h))
 
         case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) | StepType.ExclusiveDarkOrBias(_) =>
             calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
