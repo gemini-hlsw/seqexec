@@ -3,7 +3,19 @@
 
 package seqexec.web.model.boopickle
 
-import boopickle.DefaultBasic._
+import boopickle.Default.Pickler
+import boopickle.Default.generatePickler
+import boopickle.Default.transformPickler
+import boopickle.Default.compositePickler
+import boopickle.Default.intPickler
+import boopickle.Default.doublePickler
+import boopickle.Default.stringPickler
+import boopickle.Default.longPickler
+import boopickle.Default.booleanPickler
+import boopickle.Default.UUIDPickler
+import boopickle.Default.optionPickler
+import boopickle.DefaultBasic.iterablePickler
+import boopickle.DefaultBasic.mapPickler
 import cats.Eq
 import cats.Traverse
 import cats.Monoid
@@ -11,7 +23,6 @@ import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
 import java.time.Instant
-
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.GmosParameters._
@@ -35,36 +46,27 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
   // scalastyle:off
-  def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](valuesMap: Map[B, A]) =
+  def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](valuesMap: Map[B, A]): Pickler[A] =
     transformPickler(
       (t: B) =>
         valuesMap
           .get(t)
           .getOrElse(throw new RuntimeException(s"Failed to decode value")))(
       t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
-
-  def enumeratedPickler[A: Eq: Enumerated] = {
-    valuesMapPickler[A, Int](sourceIndex[A])
-  }
   // scalastyle:on
+
+  def enumeratedPickler[A: Eq: Enumerated] =
+    valuesMapPickler[A, Int](sourceIndex[A])
 
   implicit val timeProgressPickler =
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
 
-  val instrumentIdx = valuesMap(Instrument.all, (x: Instrument) => x.ordinal)
-
-  implicit val instrumentPickler = valuesMapPickler(instrumentIdx)
-
-  val resourceIdx =
-    valuesMap(Instrument.allResources, (x: Resource) => x.ordinal)
-
-  implicit val resourcePickler = valuesMapPickler(resourceIdx)
+  implicit val instrumentPickler = enumeratedPickler[Instrument]
+  implicit val resourcePickler = enumeratedPickler[Resource]
 
   implicit val operatorPickler = generatePickler[Operator]
 
-  val sysNameIdx = valuesMap(SystemName.SystemNameEnumerated.all, (x: SystemName) => x.system)
-
-  implicit val systemNamePickler = valuesMapPickler(sysNameIdx)
+  implicit val systemNamePickler = enumeratedPickler[SystemName]
 
   implicit val observerPickler = generatePickler[Observer]
 
@@ -73,23 +75,11 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val instantPickler =
     transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
 
-  val cloudCoverIdx = valuesMap(CloudCover.CloudCoverEnumerated.all, (x: CloudCover) => x.toInt)
-
-  implicit val cloudCoverPickler = valuesMapPickler(cloudCoverIdx)
-
-  val imageQualityIdx =
-    valuesMap(ImageQuality.ImageQualityEnumerated.all, (x: ImageQuality) => x.toInt)
-
-  implicit val imageQualityPickler = valuesMapPickler(imageQualityIdx)
-
-  val skyBackgroundIdx =
-    valuesMap(SkyBackground.SkyBackgroundEnumerated.all, (x: SkyBackground) => x.toInt)
-
-  implicit val skyBackgroundPickler = valuesMapPickler(skyBackgroundIdx)
-
-  val waterVaporIdx = valuesMap(WaterVapor.WaterVaporEnumerated.all, (x: WaterVapor) => x.toInt)
-
-  implicit val waterVaporPickler = valuesMapPickler(waterVaporIdx)
+  implicit val cloudCoverPickler = enumeratedPickler[CloudCover]
+  implicit val imageQualityPickler = enumeratedPickler[ImageQuality]
+  implicit val skyBackgroundPickler = enumeratedPickler[SkyBackground]
+  implicit val waterVaporPickler = enumeratedPickler[WaterVapor]
+  implicit val conditionsPickler = generatePickler[Conditions]
 
   implicit val sequenceStateCompletedPickler =
     generatePickler[SequenceState.Completed.type]
@@ -197,8 +187,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val batchExecStatePickler = enumeratedPickler[BatchExecState]
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
-
-  implicit val conditionsPickler = generatePickler[Conditions]
 
   implicit val sequenceQueueIdPickler =
     generatePickler[SequencesQueue[Observation.Id]]

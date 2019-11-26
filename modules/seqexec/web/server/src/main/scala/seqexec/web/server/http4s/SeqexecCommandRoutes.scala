@@ -122,12 +122,6 @@ class SeqexecCommandRoutes[F[_]: Sync](auth:       AuthenticationService[F],
         resp <- Ok(s"Set observer name to '${obs.value}' for sequence $obsId")
       } yield resp
 
-    case req @ POST -> Root / "conditions" as user =>
-      req.req.decode[Conditions](
-        conditions =>
-          se.setConditions(inputQueue, conditions, user) *>
-            Ok(s"Set conditions to $conditions"))
-
     case req @ POST -> Root / "iq" as user =>
       req.req.decode[ImageQuality](
         iq =>

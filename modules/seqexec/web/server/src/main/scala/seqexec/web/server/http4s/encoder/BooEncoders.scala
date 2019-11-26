@@ -3,7 +3,6 @@
 
 package seqexec.web.server.http4s.encoder
 
-import _root_.boopickle.Default._
 import cats.effect.Sync
 import gem.Observation
 import org.http4s.EntityDecoder
@@ -16,14 +15,12 @@ import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.model.Conditions
 import seqexec.model.Operator
-import seqexec.web.common.LogMessage
-import seqexec.web.common.LogMessage._
-import seqexec.web.model.boopickle.GemModelBooPicklers
+import seqexec.web.model.boopickle.ModelBooPicklers
 
 /**
   * Contains http4s implicit encoders of model objects
   */
-trait BooEncoders extends GemModelBooPicklers {
+trait BooEncoders extends ModelBooPicklers with BooPickleInstances {
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s
   implicit def usrLoginDecoder[F[_]: Sync]: EntityDecoder[F, UserLoginRequest] =
@@ -32,8 +29,6 @@ trait BooEncoders extends GemModelBooPicklers {
     booEncoderOf[F, UserDetails]
   implicit def operatorEncoder[F[_]: Sync]: EntityEncoder[F, Operator] =
     booEncoderOf[F, Operator]
-  implicit def logMessageDecoder[F[_]: Sync]: EntityDecoder[F, LogMessage] =
-    booOf[F, LogMessage]
   implicit def idEncoder[F[_]: Sync]: EntityDecoder[F, Observation.Id] =
     booOf[F, Observation.Id]
   implicit def lidEncoder[F[_]: Sync]: EntityDecoder[F, List[Observation.Id]] =

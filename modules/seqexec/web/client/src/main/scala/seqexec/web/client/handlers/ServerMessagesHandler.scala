@@ -23,12 +23,10 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
-
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import web.client.Audio
-
 import scala.collection.immutable.SortedMap
+import web.client.Audio
 
 /**
   * Handles messages received over the WS channel
