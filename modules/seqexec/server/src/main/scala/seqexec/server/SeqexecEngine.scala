@@ -113,7 +113,7 @@ trait SeqexecEngine[F[_]] {
   def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent]
 
   // Used by tests
-  private[server] def stream(p: Stream[F, EventType[F]])(s0: EngineState[F])
+  def stream(p: Stream[F, EventType[F]])(s0: EngineState[F])
       : Stream[F, (EventResult[SeqEvent], EngineState[F])]
 }
 
@@ -279,7 +279,7 @@ object SeqexecEngine {
             Stream.eval(updateMetrics(ev, sequences).as(event))
       }
 
-    override private[server] def stream(p: Stream[F, EventType[F]])(s0: EngineState[F])
+    override def stream(p: Stream[F, EventType[F]])(s0: EngineState[F])
     : Stream[F, (EventResult[SeqEvent], EngineState[F])] =
       executeEngine.process(iterateQueues)(p)(s0)
 

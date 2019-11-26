@@ -3,56 +3,53 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.{ ContextShift, IO, Timer }
+import cats.effect.IO
+import cats.data.Nested
 import cats.tests.CatsSuite
-import fs2.concurrent.Topic
-import fs2.Stream
-import gem.enum.Site
-import giapi.client.GiapiStatusDb
-import io.chrisdavenport.log4cats.noop.NoOpLogger
 import org.http4s._
 import org.http4s.Uri.uri
-import seqexec.model.events._
-import seqexec.server.tcs.GuideConfigDb
-import seqexec.model.config._
-import seqexec.web.server.security.AuthenticationService
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import seqexec.model.UserLoginRequest
+import seqexec.web.server.http4s.encoder._
 
-class SeqexecUIApiRoutesSpec extends CatsSuite {
-  private implicit def logger = NoOpLogger.impl[IO]
-
-  implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
-  implicit val ioTimer: Timer[IO] =
-    IO.timer(ExecutionContext.global)
-
-  val statusDb = GiapiStatusDb.simulatedDb[IO]
-
-  private val config = AuthenticationConfig(FiniteDuration(8, HOURS), "token", "abc", useSSL = false, Nil)
-  private val authService = AuthenticationService[IO](Mode.Production, config)
-  val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(Topic[IO, SeqexecEvent](NullEvent))
-
-  private val service =
-    for {
-      o <- out
-    } yield new SeqexecUIApiRoutes(Site.GS, Mode.Development, authService, GuideConfigDb.constant[IO], statusDb, o).service
-
+class SeqexecUIApiRoutesSpec
+    extends CatsSuite
+    with ClientBooEncoders
+    with TestRoutes {
   test("SeqexecUIApiRoutes login: reject requests without body") {
-    for {
-      s <- service
-    } yield {
-      s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.FailedDependency)
-    }
+    (for {
+      s <- uiRoutes
+      r <- Nested(
+        s.apply(Request(method = Method.POST, uri = uri("/seqexec/login")))
+          .value
+      ).map(_.status).value
+    } yield assert(r === Some(Status.BadRequest))).unsafeRunSync
   }
 
   test("SeqexecUIApiRoutes login: reject GET requests") {
     // This should in principle return a 405
     // see https://github.com/http4s/http4s/issues/234
-    for {
-      s <- service
-    } yield s.apply(Request(uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.NotFound)
+    val r = (for {
+      s <- uiRoutes
+      r <- Nested(
+        s.apply(Request(method = Method.GET, uri = uri("/seqexec/login"))).value
+      ).map(_.status).value
+    } yield r).unsafeRunSync
+    assert(r === Some(Status.NotFound))
+  }
+
+  test("SeqexecUIApiRoutes login: successful login gives a cookie") {
+    (for {
+      s <- uiRoutes
+      r <- s
+        .apply(
+          Request(method = Method.POST, uri = uri("/seqexec/login"))
+            .withEntity(UserLoginRequest("telops", "pwd"))
+        )
+        .value
+      s <- r.map(_.status).pure[IO]
+      k <- r.map(_.cookies).orEmpty.pure[IO]
+      t = k.find(_.name === "token")
+    } yield assert(t.isDefined && s === Some(Status.Ok))).unsafeRunSync
   }
 
 }

@@ -24,10 +24,11 @@ import seqexec.web.server.security.TokenRefresher
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes[F[_]: Sync](auth:       AuthenticationService[F],
-                           inputQueue: server.EventQueue[F],
-                           se:         SeqexecEngine[F])
-    extends BooEncoders with Http4sDsl[F] {
+class SeqexecCommandRoutes[F[_]: Sync](
+  auth:       AuthenticationService[F],
+  inputQueue: server.EventQueue[F],
+  se:         SeqexecEngine[F]
+) extends BooEncoders with Http4sDsl[F] {
 
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)

@@ -46,3 +46,19 @@ trait BooEncoders extends ModelBooPicklers with BooPickleInstances {
   implicit def ccEncoder[F[_]: Sync]: EntityDecoder[F, CloudCover] =
     booOf[F, CloudCover]
 }
+
+/**
+  * Contains http4s implicit encoders of model objects, from the point of view of a client
+  */
+trait ClientBooEncoders extends ModelBooPicklers with BooPickleInstances {
+  implicit def usrLoginEncoder[F[_]: Sync]: EntityEncoder[F, UserLoginRequest] =
+    booEncoderOf[F, UserLoginRequest]
+  implicit def wvEncoder[F[_]: Sync]: EntityEncoder[F, WaterVapor] =
+    booEncoderOf[F, WaterVapor]
+  implicit def iqEncoder[F[_]: Sync]: EntityEncoder[F, ImageQuality] =
+    booEncoderOf[F, ImageQuality]
+  implicit def sbEncoder[F[_]: Sync]: EntityEncoder[F, SkyBackground] =
+    booEncoderOf[F, SkyBackground]
+  implicit def ccEncoder[F[_]: Sync]: EntityEncoder[F, CloudCover] =
+    booEncoderOf[F, CloudCover]
+}
