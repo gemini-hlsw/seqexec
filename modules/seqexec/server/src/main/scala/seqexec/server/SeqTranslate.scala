@@ -165,7 +165,7 @@ object SeqTranslate {
         .headOption
         .map(extractInstrument)
         .getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
-// scalastyle:off console.io
+
       steps.map { sts =>
         instName.fold(e => (List(e), none), i =>
           sts match {
