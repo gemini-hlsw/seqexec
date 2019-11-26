@@ -59,7 +59,8 @@ final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps {
 object ExposureTimeCell {
   type Props = ExposureTimeCell
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.s.config, p.i))
 
   protected val component = ScalaComponent
     .builder[Props]("ExposureTimeCell")
@@ -167,7 +168,8 @@ final case class ObjectTypeCell(
 object ObjectTypeCell {
   type Props = ObjectTypeCell
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.instrument, p.step.config, p.step.status, p.size))
 
   protected val component = ScalaComponent
     .builder[Props]("ObjectTypeCell")

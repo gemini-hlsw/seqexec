@@ -33,7 +33,8 @@ object OffsetsDisplayCell {
 
   implicit val doubleReuse: Reusability[Double] = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.offsetsDisplay, p.step.config))
 
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
