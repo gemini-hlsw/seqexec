@@ -284,11 +284,12 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
       JwtCirce,
       Http4sPrometheus,
       CommonsHttp,
+      ScalaMock,
       Log4CatsNoop.value) ++
       Http4sClient ++ Http4s ++ PureConfig ++ Logging.value ,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
-    mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
+    mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher")
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -297,7 +298,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_web_shared.jvm, seqexec_server, web_server_common)
+  .dependsOn(seqexec_web_shared.jvm, seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)

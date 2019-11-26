@@ -3,15 +3,15 @@
 
 package seqexec.web.client.services
 
-import boopickle.Default._
+import boopickle.Default.Pickle
+import boopickle.Default.Pickler
+import boopickle.Default.Unpickle
 import cats.implicits._
 import gem.Observation
-import java.util.logging.LogRecord
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
 import seqexec.model.ClientId
 import seqexec.model.QueueId
-import seqexec.model.Conditions
 import seqexec.model.UserDetails
 import seqexec.model.UserLoginRequest
 import seqexec.model.Observer
@@ -25,8 +25,6 @@ import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.model.enum.Resource
 import seqexec.web.model.boopickle._
-import seqexec.web.common.LogMessage
-import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -163,24 +161,13 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Requests the backend to set the Conditions globally
-    */
-  def setConditions(conditions: Conditions): Future[Unit] =
-    Ajax
-      .post(
-        url          = s"$baseUrl/commands/conditions",
-        data         = Pickle.intoBytes(conditions)
-      )
-      .void
-
-  /**
     * Requests the backend to set the ImageQuality
     */
   def setImageQuality(iq: ImageQuality): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/iq",
-        data         = Pickle.intoBytes[ImageQuality](iq)
+        url  = s"$baseUrl/commands/iq",
+        data = Pickle.intoBytes[ImageQuality](iq)
       )
       .void
 
@@ -190,8 +177,8 @@ object SeqexecWebClient extends ModelBooPicklers {
   def setCloudCover(cc: CloudCover): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/cc",
-        data         = Pickle.intoBytes[CloudCover](cc)
+        url  = s"$baseUrl/commands/cc",
+        data = Pickle.intoBytes[CloudCover](cc)
       )
       .void
 
@@ -201,8 +188,8 @@ object SeqexecWebClient extends ModelBooPicklers {
   def setWaterVapor(wv: WaterVapor): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/wv",
-        data         = Pickle.intoBytes[WaterVapor](wv)
+        url  = s"$baseUrl/commands/wv",
+        data = Pickle.intoBytes[WaterVapor](wv)
       )
       .void
 
@@ -212,8 +199,8 @@ object SeqexecWebClient extends ModelBooPicklers {
   def setSkyBackground(sb: SkyBackground): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/sb",
-        data         = Pickle.intoBytes[SkyBackground](sb)
+        url  = s"$baseUrl/commands/sb",
+        data = Pickle.intoBytes[SkyBackground](sb)
       )
       .void
 
@@ -283,17 +270,6 @@ object SeqexecWebClient extends ModelBooPicklers {
       .void
 
   /**
-    * Log record
-    */
-  def log(record: LogRecord): Future[String] =
-    Ajax
-      .post(
-        url  = s"$baseUrl/log",
-        data = Pickle.intoBytes(LogMessage.fromLogRecord(record))
-      )
-      .map(_.responseText)
-
-  /**
     * Read the site of the server
     */
   def site(): Future[String] =
@@ -355,8 +331,8 @@ object SeqexecWebClient extends ModelBooPicklers {
                           qid: QueueId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/queue/${encodeURI(qid.self.show)}/add",
-        data         = Pickle.intoBytes(ids)
+        url  = s"$baseUrl/commands/queue/${encodeURI(qid.self.show)}/add",
+        data = Pickle.intoBytes(ids)
       )
       .void
 

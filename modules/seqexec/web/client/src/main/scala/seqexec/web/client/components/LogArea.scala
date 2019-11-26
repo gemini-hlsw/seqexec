@@ -7,7 +7,6 @@ import cats.Eq
 import cats.Show
 import cats.data.NonEmptyList
 import cats.implicits._
-import mouse.all._
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -18,6 +17,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import mouse.all._
 import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At.at
