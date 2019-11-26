@@ -7,8 +7,10 @@ import cats.implicits._
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
-import edu.gemini.spModel.obscomp.InstConstants.{ARC_OBSERVE_TYPE, FLAT_OBSERVE_TYPE, OBSERVE_TYPE_PROP, BIAS_OBSERVE_TYPE}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import edu.gemini.spModel.guide.StandardGuideOptions
+import edu.gemini.spModel.obscomp.InstConstants.{ARC_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, FLAT_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, TELESCOPE_KEY}
 import seqexec.model.StepConfig
 import seqexec.model.enum.SystemName
 
@@ -19,11 +21,6 @@ import seqexec.model.enum.SystemName
  * now, but it allows for more to be added in the future.
  */
 final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
-  //Check that every value in overrides can be assigned instead of the value in config
-  private def checkTypes: Boolean =
-    overrides.forall{ case (k, v) => Option(config.getItemValue(k)).forall(_.getClass.isAssignableFrom(v.getClass))}
-  assert(checkTypes)
-
 
   def itemValue(k: ItemKey): Option[AnyRef] = overrides.get(k).orElse(Option(config.getItemValue(k)))
 
@@ -57,7 +54,7 @@ object CleanConfig {
   // We want a new one each time this is called as the underlying Config is mutable
   def empty: CleanConfig = apply(new DefaultConfig())
 
-  // The only check right now. GMOS arcs, flats and biases in a N&S sequence have shuffle parameters, even if that is
+  // GMOS arcs, flats and biases in a N&S sequence have shuffle parameters, even if that is
   // not supported. The shuffling is automatically disabled by setting the useNS flag to false.
   val nsWiper: ConfigWiper = cfg => (
     for {
@@ -70,9 +67,21 @@ object CleanConfig {
         Map.empty[ItemKey, AnyRef]
   ).getOrElse(Map.empty[ItemKey, AnyRef])
 
+  // OIWFS must never guide in a GCAL calibration
+  val oiCalWiper: ConfigWiper = cfg => (
+    for {
+      obsType <- cfg.extractObsAs[String](OBSERVE_TYPE_PROP)
+      oiGuide <- cfg.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP)
+    } yield
+      if(oiGuide.isActive && (obsType === ARC_OBSERVE_TYPE || obsType === FLAT_OBSERVE_TYPE))
+        Map(TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP -> StandardGuideOptions.Value.freeze)
+      else
+        Map.empty[ItemKey, AnyRef]
+  ).getOrElse(Map.empty[ItemKey, AnyRef])
+
   def createCleanConfig(config: Config, l: List[ConfigWiper]): CleanConfig =
     new CleanConfig(config, l.map(_(config)).reduce(_ ++ _))
 
   // New ConfigWiper must be added to the List
-  def apply(config: Config): CleanConfig = createCleanConfig(config, List(nsWiper))
+  def apply(config: Config): CleanConfig = createCleanConfig(config, List(nsWiper, oiCalWiper))
 }
