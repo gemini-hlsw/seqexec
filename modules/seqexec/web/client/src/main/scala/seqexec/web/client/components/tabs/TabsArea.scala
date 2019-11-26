@@ -7,7 +7,6 @@ import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.React
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.common.implicits._
@@ -17,23 +16,32 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.SequenceTabContent
 import seqexec.web.client.components.queue.CalQueueTabContent
 import seqexec.web.client.reusability._
+import web.client.ReactProps
 
 /**
   * Top level container of the tabs area
   */
+final case class TabsArea(
+  router: RouterCtl[SeqexecPages],
+  site: Site
+) extends ReactProps {
+  @inline def render: VdomElement = TabsArea.component(this)
+}
+
 object TabsArea {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+  type Props = TabsArea
+
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
   private val tabsConnect                     = SeqexecCircuit.connect(SeqexecCircuit.seqexecTabs)
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("TabsArea")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.sequencesArea,
-        SeqexecTabs(SeqexecTabs.Props(p.router)),
+        SeqexecTabs(p.router),
         tabsConnect(x =>
           React.Fragment(x().toList.collect {
             case t: SequenceTabContentFocus =>
@@ -47,6 +55,4 @@ object TabsArea {
     ))
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

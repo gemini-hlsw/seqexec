@@ -7,7 +7,6 @@ import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
@@ -26,19 +25,24 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import web.client.ReactProps
+
+final case class CalibrationQueueTab(
+  router: RouterCtl[SeqexecPages],
+  tab:    CalibrationQueueTabActive
+) extends ReactProps {
+  @inline def render: VdomElement = CalibrationQueueTab.component(this)
+}
 
 object CalibrationQueueTab {
-  type Backend = RenderScope[Props, State, Unit]
+  type Props = CalibrationQueueTab
 
-  final case class Props(router: RouterCtl[SeqexecPages],
-                         tab:    CalibrationQueueTabActive)
+  type Backend = RenderScope[Props, State, Unit]
 
   @Lenses
   final case class State(draggingOver: Option[String]) {
     val onDrag: Boolean = draggingOver.isDefined
   }
-
-  object State
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.tab.active, x.tab.calibrationTab.state))
@@ -102,7 +106,7 @@ object CalibrationQueueTab {
     )
   }
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("CalibrationQueueTab")
     .initialState(State(None))
     .render { b =>
@@ -135,6 +139,4 @@ object CalibrationQueueTab {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
