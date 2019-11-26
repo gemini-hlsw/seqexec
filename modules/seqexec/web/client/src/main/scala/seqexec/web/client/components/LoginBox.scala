@@ -6,10 +6,10 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.TagOf
 import monocle.macros.Lenses
 import org.scalajs.dom.html.Div
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -23,13 +23,20 @@ import seqexec.web.client.semanticui.elements.modal.Content
 import seqexec.web.client.semanticui.elements.modal.Header
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
+import web.client.ReactProps
+import seqexec.web.client.reusability._
 
 /**
   * UI for the login box
   */
-object LoginBox {
+final case class LoginBox(
+  visible: SectionVisibilityState
+) extends ReactProps {
+  @inline def render: VdomElement = LoginBox.component(this)
+}
 
-  final case class Props(visible: SectionVisibilityState)
+object LoginBox {
+  type Props = LoginBox
 
   @Lenses
   final case class State(username:    String,
@@ -40,6 +47,9 @@ object LoginBox {
   object State {
     val Empty: State = State("", "", None, None)
   }
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   private val formId = "login"
 
@@ -162,7 +172,7 @@ object LoginBox {
       )
   }
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("Login")
     .initialState(State.Empty)
     .renderBackend[Backend]
@@ -196,8 +206,6 @@ object LoginBox {
             }
         }
     })
+    .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(v: SectionVisibilityState): Unmounted[Props, State, Backend] =
-    component(Props(v))
 }
