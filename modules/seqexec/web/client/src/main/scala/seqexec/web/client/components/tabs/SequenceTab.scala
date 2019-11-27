@@ -6,11 +6,11 @@ package seqexec.web.client.components.tabs
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
+import react.common._
 import react.common.implicits._
 import seqexec.model.Observer
 import seqexec.model.SequenceState
@@ -30,12 +30,19 @@ import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 
+final case class SequenceTab(
+  router:             RouterCtl[SeqexecPages],
+  tab:                AvailableTab,
+  loggedIn:           Boolean,
+  defaultObserver:    Observer,
+  runningInstruments: List[Instrument]
+) extends ReactProps {
+  @inline def render: VdomElement = SequenceTab.component(this)
+}
+
 object SequenceTab {
-  final case class Props(router:             RouterCtl[SeqexecPages],
-                         tab:                AvailableTab,
-                         loggedIn:           Boolean,
-                         defaultObserver:    Observer,
-                         runningInstruments: List[Instrument])
+  type Props = SequenceTab
+
   final case class State(loading:            Boolean)
 
   implicit val propsReuse: Reusability[Props] =
@@ -85,7 +92,7 @@ object SequenceTab {
     )
   }
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("SequenceTab")
     .initialState(State(false))
     .render { b =>
@@ -242,6 +249,4 @@ object SequenceTab {
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
