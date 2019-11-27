@@ -12,7 +12,7 @@ import seqexec.model.SequenceState
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.circuit.SeqexecCircuit
-import web.client.ReactProps
+import react.common._
 
 /**
   * Menu with tabs

@@ -23,7 +23,7 @@ import seqexec.web.client.semanticui.elements.modal.Content
 import seqexec.web.client.semanticui.elements.modal.Header
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
-import web.client.ReactProps
+import react.common._
 import seqexec.web.client.reusability._
 
 /**

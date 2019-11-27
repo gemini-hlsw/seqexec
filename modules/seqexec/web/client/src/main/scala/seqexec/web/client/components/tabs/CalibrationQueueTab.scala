@@ -12,6 +12,7 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import monocle.macros.Lenses
+import react.common._
 import react.common.implicits._
 import seqexec.model.enum.BatchExecState
 import seqexec.model.CalibrationQueueId
@@ -25,7 +26,6 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 final case class CalibrationQueueTab(
   router: RouterCtl[SeqexecPages],
