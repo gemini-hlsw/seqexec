@@ -62,7 +62,7 @@ object Settings {
     // test libraries
     val xmlUnit                 = "1.6"
     val jUnitInterface          = "0.11"
-    val scalaMock               = "4.1.0"
+    val scalaMock               = "4.4.0"
 
     // Pure JS libraries
     val jQuery                  = "3.2.1"
