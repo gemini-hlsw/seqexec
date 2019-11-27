@@ -29,13 +29,10 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
     setLoggerThreshold("", AllThreshold)
   }
 
-  private implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
-  def serverSite: F[Site] =
+  def serverSite(implicit cs: ContextShift[IO]): F[Site] =
     L.liftIO(IO.fromFuture {
       IO {
-        import scala.concurrent.ExecutionContext.Implicits.global
+        import ExecutionContext.Implicits.global
 
         // Read the site from the webserver
         SeqexecWebClient.site().map(Site.fromTag(_).getOrElse(Site.GS))
@@ -73,7 +70,7 @@ object SeqexecApp extends IOApp {
       _           <- launcher.initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
-      _           <- IO(router().renderIntoDOM(node))
+      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(getLogger.error(p.toString)))
     } yield ExitCode.Success
   }
 
