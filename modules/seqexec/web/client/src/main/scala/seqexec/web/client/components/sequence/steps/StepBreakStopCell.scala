@@ -7,6 +7,7 @@ import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.common.implicits._
 import seqexec.model.Step
 import seqexec.web.client.actions.FlipSkipStep
@@ -17,7 +18,6 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Component to display an icon for the state

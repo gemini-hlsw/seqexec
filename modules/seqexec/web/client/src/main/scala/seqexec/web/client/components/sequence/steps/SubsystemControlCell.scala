@@ -11,9 +11,8 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.Reusability._
 import gem.Observation
+import react.common._
 import react.common.implicits._
-
-import scala.collection.immutable.SortedMap
 import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions.RequestResourceRun
@@ -26,8 +25,7 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
 import seqexec.web.client.semanticui.Size
-import web.client.ReactProps
-
+import scala.collection.immutable.SortedMap
 import scala.scalajs.js
 
 /**

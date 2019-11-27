@@ -7,14 +7,13 @@ import cats.Eq
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.common.style._
 import react.common.implicits._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.button.Button.{Animated, ButtonState, ButtonType, Emphasis, Inactive, Labeled, NoEmphasis, NotAnimated, NotLabeled, Type}
 import seqexec.web.client.semanticui.elements.icon.Icon
-import web.client.ReactPropsWithChildren
-
 import scala.scalajs.js
 
 final case class Button(
