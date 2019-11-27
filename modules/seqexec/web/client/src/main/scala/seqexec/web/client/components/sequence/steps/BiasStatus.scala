@@ -5,9 +5,9 @@ package seqexec.web.client.components.sequence.steps
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.common.implicits._
 import seqexec.web.client.components.SeqexecStyles
-import web.client.ReactProps
 
 case class BiasStatus(fileId: String) extends ReactProps {
   @inline def render: VdomElement = BiasStatus.component(this)

@@ -18,7 +18,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Component to display an icon for the state

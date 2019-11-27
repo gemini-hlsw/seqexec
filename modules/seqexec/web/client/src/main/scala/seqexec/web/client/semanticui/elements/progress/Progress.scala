@@ -9,7 +9,6 @@ import org.querki.jquery.$
 import react.common._
 import react.common.implicits._
 import seqexec.web.client.semanticui._
-import web.client.ReactPropsWithChildren
 import web.client.facades.semanticui.SemanticUIProgress._
 
 

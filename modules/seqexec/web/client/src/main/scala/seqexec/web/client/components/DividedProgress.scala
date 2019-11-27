@@ -6,11 +6,10 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.common.implicits._
-import react.common.Css
 import seqexec.web.client.semanticui.elements.progress.Progress
 import seqexec.web.client.semanticui._
-import web.client.ReactProps
 
 /**
   * Progress bar divided in steps
