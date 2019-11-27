@@ -358,7 +358,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       "uglifyjs-webpack-plugin"            -> "2.2.0",
       "html-webpack-plugin"                -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
-      "favicons-webpack-plugin"            -> "1.0.2",
+      "app-manifest-webpack-plugin"        -> "1.1.0",
       "why-did-you-update"                 -> "1.0.6"
     ),
     libraryDependencies ++= Seq(
