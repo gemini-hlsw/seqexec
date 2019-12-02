@@ -3,7 +3,7 @@ const Merge = require("webpack-merge");
 const Webpack = require("webpack");
 const parts = require("./webpack.parts");
 const ScalaJSConfig = require("./scalajs.webpack.config");
-const AppManifestWebpackPlugin = require("app-manifest-webpack-plugin");
+const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
@@ -51,9 +51,9 @@ const Web = Merge(
         filename: "index.html",
         chunks: ["seqexec"]
       }),
-      new AppManifestWebpackPlugin({
+      new FaviconsWebpackPlugin({
         logo: path.resolve(parts.resourcesDir, "images/launcher.png"),
-        output: "icons-[hash:8]/"
+        persistentCache: false
       })
     ]
   }
