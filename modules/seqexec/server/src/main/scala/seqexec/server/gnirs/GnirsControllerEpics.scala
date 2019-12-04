@@ -281,12 +281,14 @@ object GnirsControllerEpics extends GnirsEncoders {
           L.debug("Completed GNIRS configuration")
 
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
-        L.info("Start GNIRS observe") *>
+        L.debug(s"Start GNIRS observe, file id $fileId") *>
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
           epicsSys.observeCmd.setTimeout[F](expTime + ReadoutTimeout) *>
-          epicsSys.observeCmd.post[F]
+          epicsSys.observeCmd.post[F].flatMap{ r =>
+            L.debug("Completed GNITS observe").as(r)
+          }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
@@ -295,13 +297,13 @@ object GnirsControllerEpics extends GnirsEncoders {
           epicsSys.endObserveCmd.post[F].void
 
       override def stopObserve: F[Unit] =
-        L.info("Stop GNIRS exposure") *>
+        L.debug("Stop GNIRS exposure") *>
           epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
           epicsSys.stopCmd.mark[F] *>
           epicsSys.stopCmd.post[F].void
 
       override def abortObserve: F[Unit] =
-        L.info("Abort GNIRS exposure") *>
+        L.debug("Abort GNIRS exposure") *>
           epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
           epicsSys.abortCmd.mark[F] *>
           epicsSys.abortCmd.post[F].void

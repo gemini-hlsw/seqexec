@@ -194,7 +194,7 @@ object Systems {
       instObjects(
         settings.systemControl.niri,
         NiriEpics.instance[IO],
-        NiriControllerEpics.apply,
+        NiriControllerEpics.apply[IO],
         NiriControllerSim.apply[IO],
         NiriKeywordReaderEpics[IO],
         NiriKeywordReaderDummy[IO]
@@ -246,7 +246,7 @@ object Systems {
       (gpiClient, gpiGDS(httpClient)).mapN(GpiController(_, _))
     }
 
-    def ghost[F[_] : ConcurrentEffect : Timer](httpClient: Client[F]): Resource[F, GhostController[F]] = {
+    def ghost[F[_] : ConcurrentEffect : Timer: Logger](httpClient: Client[F]): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
         if (settings.systemControl.ghost.command) GhostClient.ghostClient[F](settings.ghostUrl.renderString)
         else GhostClient.simulatedGhostClient
