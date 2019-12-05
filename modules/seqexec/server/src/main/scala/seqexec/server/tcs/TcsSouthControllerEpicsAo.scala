@@ -280,10 +280,10 @@ object TcsSouthControllerEpicsAo {
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
           _ <- epicsSys.post
-          _ <- L.info("Turning guide off")
+          _ <- L.debug("Turning guide off")
         } yield s
       else
-        L.info("Skipping guide off") *> current.pure[F]
+        L.debug("Skipping guide off") *> current.pure[F]
 
     }
 
@@ -303,10 +303,10 @@ object TcsSouthControllerEpicsAo {
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
           _ <- epicsSys.post
-          _ <- L.info("Turning guide on")
+          _ <- L.debug("Turning guide on")
         } yield s
       else
-        L.info("Skipping guide on") *> current.pure[F]
+        L.debug("Skipping guide on") *> current.pure[F]
     }
 
     def applyAoConfig(
@@ -341,7 +341,7 @@ object TcsSouthControllerEpicsAo {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime , tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime , tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit

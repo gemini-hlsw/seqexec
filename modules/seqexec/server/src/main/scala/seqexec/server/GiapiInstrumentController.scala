@@ -11,11 +11,12 @@ import giapi.client.GiapiClient
 import giapi.client.commands.CommandResult
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.time.Time
+
 import scala.concurrent.duration._
 
 trait GiapiInstrumentController[F[_], CFG] {
@@ -27,8 +28,9 @@ trait GiapiInstrumentController[F[_], CFG] {
 /**
   * Superclass for all GIAPI instrument controllers.
   */
-private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C) extends GiapiInstrumentController[F, CFG] {
-  private val Log = getLogger
+private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C)(
+  implicit L: Logger[F]
+) extends GiapiInstrumentController[F, CFG] {
 
   def name: String
   def configuration(config: CFG): F[Configuration]
@@ -50,18 +52,18 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
   }.adaptError(adaptGiapiError)
 
   override def applyConfig(config: CFG): F[Unit] =
-    for {
-      _ <- Sync[F].delay(Log.debug(s"Start $name configuration"))
-      _ <- Sync[F].delay(Log.debug(s"$name configuration $config"))
-      _ <- configure(config)
-      _ <- Sync[F].delay(Log.debug(s"Completed $name configuration"))
-    } yield ()
+    L.debug(s"Start $name configuration") *>
+      L.debug(s"$name configuration $config") *>
+      configure(config) *>
+      L.debug(s"Completed $name configuration")
 
-  override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] =
-    client
-      .observe(fileId: String, expTime.toMilliseconds.milliseconds)
-      .as(fileId)
-      .adaptError(adaptGiapiError)
+  override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] = (
+    L.debug(s"Send observe to $name, file id $fileId") *>
+      client.observe(fileId: String, expTime.toMilliseconds.milliseconds) *>
+      L.debug(s"Completed $name observe")
+    )
+    .as(fileId)
+    .adaptError(adaptGiapiError)
 
   override def endObserve: F[Unit] =
     Applicative[F].unit
