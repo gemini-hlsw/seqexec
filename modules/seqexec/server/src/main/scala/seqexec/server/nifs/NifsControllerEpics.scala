@@ -364,9 +364,7 @@ object NifsControllerEpics extends NifsEncoders {
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
         epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F].flatMap{ r =>
-          L.debug("Completed NIFS observe").as(r)
-        }
+        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed NIFS observe") }
     }
 
     override def endObserve: F[Unit] =

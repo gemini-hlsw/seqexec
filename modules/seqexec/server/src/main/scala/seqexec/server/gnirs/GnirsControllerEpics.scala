@@ -286,9 +286,7 @@ object GnirsControllerEpics extends GnirsEncoders {
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
           epicsSys.observeCmd.setTimeout[F](expTime + ReadoutTimeout) *>
-          epicsSys.observeCmd.post[F].flatMap{ r =>
-            L.debug("Completed GNITS observe").as(r)
-          }
+          epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed GNITS observe") }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>

@@ -153,9 +153,7 @@ object GsaoiControllerEpics {
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
         epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F].flatMap{ r =>
-          L.debug("Completed GSAOI observe").as(r)
-        }
+        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed GSAOI observe") }
     }
 
     // GSAOI endObserve is a NOP with no CAR associated
