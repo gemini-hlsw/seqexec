@@ -352,7 +352,7 @@ object TcsSouthControllerEpicsAo {
 
       for {
         s0 <- tcsConfigRetriever.retrieveConfigurationSouth(gaos.stateGetter)
-        _  <- SeqexecFailure.Execution("Found useAo not set for GeMS step.").raiseError[F, Unit].whenA(s0.base.useAo)
+        _  <- SeqexecFailure.Execution("Found useAo not set for GeMS step.").raiseError[F, Unit].whenA(!s0.base.useAo)
         pr <- pauseResumeGaos(gaos, s0, baseAoConfig, tcs)
         _  <- pr.pause.getOrElse(Applicative[F].unit)
         s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
