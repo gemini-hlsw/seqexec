@@ -8,6 +8,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import gem.Observation
+import react.common._
 import react.common.implicits._
 import seqexec.model._
 import seqexec.model.enum._
@@ -26,7 +27,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.icon.Icon
-import web.client.ReactProps
 
 /**
   * Contains a set of control buttons like stop/abort

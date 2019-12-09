@@ -7,7 +7,6 @@ import cats.Eq
 import cats.Show
 import cats.data.NonEmptyList
 import cats.implicits._
-import mouse.all._
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -18,12 +17,14 @@ import japgolly.scalajs.react.vdom.html_<^._
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import mouse.all._
 import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import react.virtualized._
 import react.clipboard._
+import react.common._
 import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
@@ -53,8 +54,7 @@ object CopyLogToClipboard {
     .builder[String]("CopyLogToClipboard")
     .stateless
     .render_P { p =>
-      CopyToClipboard(
-        CopyToClipboard.props(p),
+      CopyToClipboard(p)(
         <.div(IconCopy.copyIcon(link        = true,
                                 extraStyles = List(SeqexecStyles.logIconRow))))
     }

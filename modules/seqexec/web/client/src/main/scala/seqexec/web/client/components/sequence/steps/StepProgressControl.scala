@@ -9,6 +9,7 @@ import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
+import react.common._
 import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
@@ -26,7 +27,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.popup.Popup
-import web.client.ReactProps
 
 /**
   * Component to display the step state and control

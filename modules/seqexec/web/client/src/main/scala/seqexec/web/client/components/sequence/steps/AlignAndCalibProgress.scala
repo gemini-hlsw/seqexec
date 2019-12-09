@@ -11,6 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import monocle.macros.Lenses
+import react.common._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
@@ -19,8 +20,6 @@ import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.reusability._
-import web.client.ReactProps
-
 import scala.math.max
 
 final case class ACProgressBar(

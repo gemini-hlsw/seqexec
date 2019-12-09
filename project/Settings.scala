@@ -19,16 +19,16 @@ object Settings {
     val scalaVersion = "2.12.9"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.7"
+    val scalaDom                = "0.9.8"
     val scalajsReact            = "1.4.2"
     val booPickle               = "1.3.1"
     val diode                   = "1.1.5"
     val diodeReact              = "1.1.5.142"
     val javaTimeJS              = "2.0.0-RC3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactCommon      = "0.3.0"
+    val scalaJSReactCommon      = "0.3.2"
     val scalaJSReactVirtualized = "0.7.0"
-    val scalaJSReactClipboard   = "0.8.0"
+    val scalaJSReactClipboard   = "0.9.0"
     val scalaJSReactDraggable   = "0.6.0"
     val scalaJSReactSortable    = "0.2.1"
 
@@ -52,7 +52,7 @@ object Settings {
     val log4cats                = "1.0.1"
     val logback                 = "1.2.3"
     val janino                  = "3.1.0"
-    val logstash                = "6.2"
+    val logstash                = "6.3"
     val pureConfig              = "0.12.1"
     val monocleVersion          = "2.0.0"
     val circeVersion            = "0.12.1"
@@ -62,7 +62,7 @@ object Settings {
     // test libraries
     val xmlUnit                 = "1.6"
     val jUnitInterface          = "0.11"
-    val scalaMock               = "4.1.0"
+    val scalaMock               = "4.4.0"
 
     // Pure JS libraries
     val jQuery                  = "3.2.1"

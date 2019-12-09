@@ -142,8 +142,8 @@ abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentT
       dc <- dcConfigFromSequenceConfig(config, ns)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
 
-  override def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] = {
-    val stdType = SequenceConfiguration.calcStepType(config)
+  override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
+    val stdType = SequenceConfiguration.calcStepType(config, isNightSeq)
     if (Gmos.isNodAndShuffle(config)) {
       stdType.flatMap {
         case StepType.ExclusiveDarkOrBias(_) => StepType.DarkOrBiasNS(instrument).asRight

@@ -7,8 +7,7 @@ import cats.implicits._
 import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.{BackendScope, Callback, Reusability}
 import monocle.macros.Lenses
-import web.client.ReactProps
-
+import react.common._
 import scala.concurrent.duration._
 import scala.math.max
 import scala.math.min

@@ -6,11 +6,11 @@ package seqexec.server.gems
 import cats.ApplicativeError
 import cats.effect.Async
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gems.Gems._
-import org.log4s.getLogger
 import seqexec.server.gsaoi.GsaoiGuider
 import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, PauseResume, ResumeCondition, ResumeConditionSet}
 import squants.Time
@@ -18,7 +18,8 @@ import squants.time.TimeConversions._
 
 class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsSys: GemsEpics[F],
                                                                           gsaoiGuider: GsaoiGuider[F]
-                                                                         ) extends GemsController[F] {
+                                                                         )(implicit L: Logger[F])
+  extends GemsController[F] {
   import GemsControllerEpics._
 
   override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)
@@ -75,7 +76,8 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     val reasons = List(unguided, offset, instMove).flattenOption
 
     reasons.nonEmpty.option {
-      epicsSys.LoopControl.setCommand(PauseCmd) *>
+      L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
+        epicsSys.LoopControl.setCommand(PauseCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
         epicsSys.LoopControl.setTimeout(CmdTimeout) *>
         epicsSys.LoopControl.post.void
@@ -92,7 +94,8 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
     val reasons = List(unguided, offset, instMove).flattenOption
 
     reasons.nonEmpty.option {
-      epicsSys.LoopControl.setCommand(ResumeCmd) *>
+      L.debug(s"Send resume command to GeMS, reasons: $reasons") *>
+        epicsSys.LoopControl.setCommand(ResumeCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
         epicsSys.LoopControl.setTimeout(CmdTimeout) *>
         epicsSys.LoopControl.post *>
@@ -150,9 +153,8 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
 }
 
 object GemsControllerEpics {
-  val Log = getLogger
 
-  def apply[F[_]: Async](epicsSys: => GemsEpics[F],
+  def apply[F[_]: Async: Logger](epicsSys: => GemsEpics[F],
                          gsaoiGuider: GsaoiGuider[F]
                         )
   : GemsController[F] = new GemsControllerEpics[F](epicsSys, gsaoiGuider)

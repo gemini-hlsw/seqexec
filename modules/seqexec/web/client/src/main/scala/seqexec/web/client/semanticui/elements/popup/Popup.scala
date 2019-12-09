@@ -3,11 +3,11 @@
 
 package seqexec.web.client.semanticui.elements.popup
 
+import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.React
-import web.client.ReactPropsWithChildren
-import cats.implicits._
+import react.common._
 
 /**
   * Produces a popup using javascript

@@ -3,7 +3,8 @@
 
 package seqexec.server.niri
 
-import cats.effect.{IO, Timer}
+import cats.Applicative
+import cats.effect.{Async, Timer}
 import cats.implicits._
 import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
@@ -16,10 +17,9 @@ import edu.gemini.spModel.gemini.niri.Niri.Filter
 import edu.gemini.spModel.gemini.niri.Niri.Camera
 import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
 
-import scala.concurrent.ExecutionContext
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.ApplyCommandResult
@@ -129,11 +129,6 @@ trait NiriEncoders {
 }
 
 object NiriControllerEpics extends NiriEncoders {
-  private val Log = getLogger
-
-  implicit val ioTimer: Timer[IO] =
-    IO.timer(ExecutionContext.global)
-
   import EpicsCodex._
 
   val WindowOpen = "open"
@@ -142,214 +137,215 @@ object NiriControllerEpics extends NiriEncoders {
   private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
-  def apply(epicsSys: => NiriEpics[IO]): NiriController[IO] = new NiriController[IO] {
-    /**
-     * The instrument has three filter wheels with a status channel for each one. But it does not have
-     * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
-     * one wheel can be in a not open position at a given time.
-     */
-    private def currentFilter: IO[Option[String]] = {
-      val filter1 = epicsSys.filter1
-      val filter2 = epicsSys.filter2
-      val filter3 = epicsSys.filter3
-      val Open = "open"
+  def apply[F[_]: Timer: Async](epicsSys: => NiriEpics[F])(implicit L: Logger[F]): NiriController[F] =
+      new NiriController[F] {
+      /**
+       * The instrument has three filter wheels with a status channel for each one. But it does not have
+       * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
+       * one wheel can be in a not open position at a given time.
+       */
+      private def currentFilter: F[Option[String]] = {
+        val filter1 = epicsSys.filter1
+        val filter2 = epicsSys.filter2
+        val filter3 = epicsSys.filter3
+        val Open = "open"
 
-      for {
-        iof1 <- filter1
-        iof2 <- filter2
-        iof3 <- filter3
-      } yield {
-        val l = List(iof1, iof2, iof3).filterNot(_ === Open)
-        if(l.length === 1) l.headOption
-        else none
-      }.map(removePartName)
-    }
-
-    private def setFocus(f: Focus): IO[Option[IO[Unit]]] = {
-      val encoded = encode(f)
-      smartSetParamF(encoded, epicsSys.focus, epicsSys.configCmd.setFocus(encoded))
-    }
-
-    private def setCamera(c: Camera): IO[Option[IO[Unit]]] = {
-      val encoded = encode(c)
-      smartSetParamF(encoded.toString, epicsSys.camera, epicsSys.configCmd.setCamera(encoded))
-    }
-
-    private def setBeamSplitter(b: BeamSplitter): IO[Option[IO[Unit]]] = {
-      val encoded = encode(b)
-      smartSetParamF(encoded.toString, epicsSys.beamSplitter,
-        epicsSys.configCmd.setBeamSplitter(encoded))
-    }
-
-    private def setFilter(f: Filter): IO[Option[IO[Unit]]] = {
-      val encoded = encode(f)
-
-      smartSetParamF(encoded.some, currentFilter, epicsSys.configCmd.setFilter(encoded))
-    }
-
-    private def setBlankFilter: IO[Option[IO[Unit]]] = {
-      val BlankFilter = "blank"
-
-      smartSetParamF(BlankFilter.some, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
-    }
-
-    private def setMask(m: Mask): IO[Option[IO[Unit]]] = {
-      val encoded = encode(m)
-
-      smartSetParamF(encoded.toString, epicsSys.mask, epicsSys.configCmd.setMask(encoded))
-    }
-
-    private def setDisperser(d: Disperser): IO[Unit] = {
-      val encoded = encode(d)
-
-      // There is no status for the disperser
-      epicsSys.configCmd.setDisperser(encoded)
-    }
-
-    private def configCommonCC(cfg: Common): List[IO[Option[IO[Unit]]]] =
-      List(
-        setBeamSplitter(cfg.beamSplitter),
-        setCamera(cfg.camera),
-        setDisperser(cfg.disperser).wrapped,
-        setFocus(cfg.focus),
-        setMask(cfg.mask))
-
-    private def configDarkCC(cfg: Dark): List[IO[Option[IO[Unit]]]] =
-      List(
-        setWindowCover(WindowClosed),
-        setBlankFilter) ++
-        configCommonCC(cfg.common)
-
-    private def configCC(cfg: CCConfig): List[IO[Option[IO[Unit]]]] = cfg match {
-      case d@Dark(_)           => configDarkCC(d)
-      case i@Illuminated(_, _) => configIlluminatedCC(i)
-    }
-
-    private def configIlluminatedCC(cfg: Illuminated): List[IO[Option[IO[Unit]]]] =
-      List(
-        setWindowCover(WindowOpen),
-        setFilter(cfg.filter)) ++
-        configCommonCC(cfg.common)
-
-    private def setWindowCover(pos: String): IO[Option[IO[Unit]]] =
-      smartSetParamF(pos, epicsSys.windowCover, epicsSys.windowCoverConfig.setWindowCover(pos))
-
-    private def setExposureTime(t: ExposureTime): IO[Option[IO[Unit]]] = {
-      val ExposureTimeTolerance = 0.001
-      smartSetDoubleParamF[IO](ExposureTimeTolerance)(t.toSeconds, epicsSys.integrationTime,
-        epicsSys.configCmd.setExposureTime(t.toSeconds)
-      )
-    }
-
-    private def configDC(cfg: DCConfig): List[IO[Option[IO[Unit]]]] =
-      List(
-        setExposureTime(cfg.exposureTime),
-          setCoadds(cfg.coadds),
-          setReadMode(cfg.readMode).wrapped,
-          setROI(cfg.builtInROI).wrapped)
-
-    private def setCoadds(n: Coadds): IO[Option[IO[Unit]]] =
-      smartSetParamF(n, epicsSys.coadds, epicsSys.configCmd.setCoadds(n))
-
-    private def setROI(r: BuiltInROI): IO[Unit] = {
-      val encoded = encode(r)
-
-      // There is no status for the builtin ROI
-      epicsSys.configCmd.setBuiltInROI(encoded)
-    }
-
-    // There is no status for the read mode
-    private def setReadMode(rm: ReadMode): IO[Unit] =
-      epicsSys.configCmd.setReadMode(rm)
-
-    private def calcObserveTimeout(cfg: DCConfig): IO[Time] = {
-      epicsSys.minIntegration.map { t =>
-        val MinIntTime = t.seconds
-        val CoaddOverhead = 2.5
-        val TotalOverhead = 30.seconds
-
-        (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+        for {
+          iof1 <- filter1
+          iof2 <- filter2
+          iof3 <- filter3
+        } yield {
+          val l = List(iof1, iof2, iof3).filterNot(_ === Open)
+          if(l.length === 1) l.headOption
+          else none
+        }.map(removePartName)
       }
-    }
 
-    private def actOnDHSNotConected(act: IO[Unit]): IO[Unit] =
-      epicsSys.dhsConnected.ifM(IO.unit, act)
-
-    private def actOnArrayNotActive(act: IO[Unit]): IO[Unit] =
-      epicsSys.arrayActive.ifM(IO.unit, act)
-
-    private def failOnDHSNotConected: IO[Unit] =
-      actOnDHSNotConected(IO.raiseError(SeqexecFailure.Execution("NIRI is not connected to DHS")))
-
-    private def failOnArrayNotActive: IO[Unit] =
-      actOnArrayNotActive(IO.raiseError(SeqexecFailure.Execution("NIRI detector array is not active")))
-
-    private def warnOnDHSNotConected: IO[Unit] =
-      actOnDHSNotConected(IO(Log.warn("NIRI is not connected to DHS")))
-
-    private def warnOnArrayNotActive: IO[Unit] =
-      actOnArrayNotActive(IO(Log.warn("NIRI detector array is not active")))
-
-    override def applyConfig(config: NiriController.NiriConfig): IO[Unit] = {
-      val paramsDC = configDC(config.dc)
-      val params =  paramsDC ++ configCC(config.cc)
-
-      val cfgActions1 = if(params.isEmpty) IO.pure(ApplyCommandResult.Completed)
-                        else executeIfNeeded(params,
-                          epicsSys.configCmd.setTimeout[IO](ConfigTimeout) *>
-                          epicsSys.configCmd.post[IO])
-      // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
-      // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
-      // in the IS, trigger the IS apply, and then trigger the DC apply.
-      val cfgActions = if(paramsDC.isEmpty) cfgActions1
-                       else cfgActions1 *>
-                         epicsSys.configDCCmd.setTimeout[IO](DefaultTimeout) *>
-                         epicsSys.configDCCmd.post[IO]
-
-      IO(Log.debug("Starting NIRI configuration")) *>
-        warnOnDHSNotConected *>
-        warnOnArrayNotActive *>
-        cfgActions *>
-        IO(Log.debug("Completed NIRI configuration"))
-    }
-
-    override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommandResult] =
-      IO(Log.info("Start NIRI observe")) *>
-        failOnDHSNotConected *>
-        failOnArrayNotActive *>
-        epicsSys.observeCmd.setLabel(fileId) *>
-        calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.setTimeout[IO]) *>
-        epicsSys.observeCmd.post[IO]
-
-    override def endObserve: IO[Unit] =
-      IO(Log.debug("Send endObserve to NIRI")) *>
-        epicsSys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
-        epicsSys.endObserveCmd.mark[IO] *>
-        epicsSys.endObserveCmd.post[IO].void
-
-    override def stopObserve: IO[Unit] =
-      IO(Log.info("Stop NIRI exposure")) *>
-        epicsSys.stopCmd.setTimeout[IO](DefaultTimeout) *>
-        epicsSys.stopCmd.mark[IO] *>
-        epicsSys.stopCmd.post[IO].void
-
-    override def abortObserve: IO[Unit] =
-      IO(Log.info("Abort NIRI exposure")) *>
-        epicsSys.abortCmd.setTimeout[IO](DefaultTimeout) *>
-        epicsSys.abortCmd.mark[IO] *>
-        epicsSys.abortCmd.post[IO].void
-
-    override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-      ProgressUtil.obsCountdownWithObsStage[IO](total, 0.seconds,
-        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
-      )
-
-    override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
-      epicsSys.minIntegration.map { f =>
-        val MinIntTime = f.seconds
-
-        (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
+      private def setFocus(f: Focus): F[Option[F[Unit]]] = {
+        val encoded = encode(f)
+        smartSetParamF(encoded, epicsSys.focus, epicsSys.configCmd.setFocus(encoded))
       }
+
+      private def setCamera(c: Camera): F[Option[F[Unit]]] = {
+        val encoded = encode(c)
+        smartSetParamF(encoded.toString, epicsSys.camera, epicsSys.configCmd.setCamera(encoded))
+      }
+
+      private def setBeamSplitter(b: BeamSplitter): F[Option[F[Unit]]] = {
+        val encoded = encode(b)
+        smartSetParamF(encoded.toString, epicsSys.beamSplitter,
+          epicsSys.configCmd.setBeamSplitter(encoded))
+      }
+
+      private def setFilter(f: Filter): F[Option[F[Unit]]] = {
+        val encoded = encode(f)
+
+        smartSetParamF(encoded.some, currentFilter, epicsSys.configCmd.setFilter(encoded))
+      }
+
+      private def setBlankFilter: F[Option[F[Unit]]] = {
+        val BlankFilter = "blank"
+
+        smartSetParamF(BlankFilter.some, currentFilter, epicsSys.configCmd.setFilter(BlankFilter))
+      }
+
+      private def setMask(m: Mask): F[Option[F[Unit]]] = {
+        val encoded = encode(m)
+
+        smartSetParamF(encoded.toString, epicsSys.mask, epicsSys.configCmd.setMask(encoded))
+      }
+
+      private def setDisperser(d: Disperser): F[Unit] = {
+        val encoded = encode(d)
+
+        // There is no status for the disperser
+        epicsSys.configCmd.setDisperser(encoded)
+      }
+
+      private def configCommonCC(cfg: Common): List[F[Option[F[Unit]]]] =
+        List(
+          setBeamSplitter(cfg.beamSplitter),
+          setCamera(cfg.camera),
+          setDisperser(cfg.disperser).wrapped,
+          setFocus(cfg.focus),
+          setMask(cfg.mask))
+
+      private def configDarkCC(cfg: Dark): List[F[Option[F[Unit]]]] =
+        List(
+          setWindowCover(WindowClosed),
+          setBlankFilter) ++
+          configCommonCC(cfg.common)
+
+      private def configCC(cfg: CCConfig): List[F[Option[F[Unit]]]] = cfg match {
+        case d@Dark(_)           => configDarkCC(d)
+        case i@Illuminated(_, _) => configIlluminatedCC(i)
+      }
+
+      private def configIlluminatedCC(cfg: Illuminated): List[F[Option[F[Unit]]]] =
+        List(
+          setWindowCover(WindowOpen),
+          setFilter(cfg.filter)) ++
+          configCommonCC(cfg.common)
+
+      private def setWindowCover(pos: String): F[Option[F[Unit]]] =
+        smartSetParamF(pos, epicsSys.windowCover, epicsSys.windowCoverConfig.setWindowCover(pos))
+
+      private def setExposureTime(t: ExposureTime): F[Option[F[Unit]]] = {
+        val ExposureTimeTolerance = 0.001
+        smartSetDoubleParamF[F](ExposureTimeTolerance)(t.toSeconds, epicsSys.integrationTime,
+          epicsSys.configCmd.setExposureTime(t.toSeconds)
+        )
+      }
+
+      private def configDC(cfg: DCConfig): List[F[Option[F[Unit]]]] =
+        List(
+          setExposureTime(cfg.exposureTime),
+            setCoadds(cfg.coadds),
+            setReadMode(cfg.readMode).wrapped,
+            setROI(cfg.builtInROI).wrapped)
+
+      private def setCoadds(n: Coadds): F[Option[F[Unit]]] =
+        smartSetParamF(n, epicsSys.coadds, epicsSys.configCmd.setCoadds(n))
+
+      private def setROI(r: BuiltInROI): F[Unit] = {
+        val encoded = encode(r)
+
+        // There is no status for the builtin ROI
+        epicsSys.configCmd.setBuiltInROI(encoded)
+      }
+
+      // There is no status for the read mode
+      private def setReadMode(rm: ReadMode): F[Unit] =
+        epicsSys.configCmd.setReadMode(rm)
+
+      private def calcObserveTimeout(cfg: DCConfig): F[Time] = {
+        epicsSys.minIntegration.map { t =>
+          val MinIntTime = t.seconds
+          val CoaddOverhead = 2.5
+          val TotalOverhead = 30.seconds
+
+          (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+        }
+      }
+
+      private def actOnDHSNotConected(act: F[Unit]): F[Unit] =
+        epicsSys.dhsConnected.ifM(Applicative[F].unit, act)
+
+      private def actOnArrayNotActive(act: F[Unit]): F[Unit] =
+        epicsSys.arrayActive.ifM(Applicative[F].unit, act)
+
+      private def failOnDHSNotConected: F[Unit] =
+        actOnDHSNotConected(SeqexecFailure.Execution("NIRI is not connected to DHS").raiseError[F, Unit])
+
+      private def failOnArrayNotActive: F[Unit] =
+        actOnArrayNotActive(SeqexecFailure.Execution("NIRI detector array is not active").raiseError[F, Unit])
+
+      private def warnOnDHSNotConected: F[Unit] =
+        actOnDHSNotConected(L.warn("NIRI is not connected to DHS"))
+
+      private def warnOnArrayNotActive: F[Unit] =
+        actOnArrayNotActive(L.warn("NIRI detector array is not active"))
+
+      override def applyConfig(config: NiriController.NiriConfig): F[Unit] = {
+        val paramsDC = configDC(config.dc)
+        val params =  paramsDC ++ configCC(config.cc)
+
+        val cfgActions1 = if(params.isEmpty) ApplyCommandResult.Completed.pure[F]
+                          else executeIfNeeded(params,
+                            epicsSys.configCmd.setTimeout[F](ConfigTimeout) *>
+                            epicsSys.configCmd.post[F])
+        // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
+        // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
+        // in the IS, trigger the IS apply, and then trigger the DC apply.
+        val cfgActions = if(paramsDC.isEmpty) cfgActions1
+                         else cfgActions1 *>
+                           epicsSys.configDCCmd.setTimeout[F](DefaultTimeout) *>
+                           epicsSys.configDCCmd.post[F]
+
+        L.debug("Starting NIRI configuration") *>
+          warnOnDHSNotConected *>
+          warnOnArrayNotActive *>
+          cfgActions *>
+          L.debug("Completed NIRI configuration")
+      }
+
+      override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
+        L.debug(s"Start NIRI observe, file id $fileId") *>
+          failOnDHSNotConected *>
+          failOnArrayNotActive *>
+          epicsSys.observeCmd.setLabel(fileId) *>
+          calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.setTimeout[F]) *>
+          epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed NIFS observe") }
+
+      override def endObserve: F[Unit] =
+        L.debug("Send endObserve to NIRI") *>
+          epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.endObserveCmd.mark[F] *>
+          epicsSys.endObserveCmd.post[F].void
+
+      override def stopObserve: F[Unit] =
+        L.debug("Stop NIRI exposure") *>
+          epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.stopCmd.mark[F] *>
+          epicsSys.stopCmd.post[F].void
+
+      override def abortObserve: F[Unit] =
+        L.debug("Abort NIRI exposure") *>
+          epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
+          epicsSys.abortCmd.mark[F] *>
+          epicsSys.abortCmd.post[F].void
+
+      override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+        ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
+          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+        )
+
+      override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+        epicsSys.minIntegration.map { f =>
+          val MinIntTime = f.seconds
+
+          (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
+        }
 
   }
 }

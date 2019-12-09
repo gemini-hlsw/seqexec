@@ -95,19 +95,17 @@ trait EpicsSystem[T] {
 
 object EpicsCommand {
 
-  def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
+  def setParameter[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] = p.map { ch =>
     Sync[F].delay {
-      p.map(_.set(v))
+      ch.set(f(v))
     }.adaptError {
-      case _ => SeqexecFailure.Unexpected("Unable to set parameter.")
+      case e => SeqexecFailure.Unexpected(
+        s"Unable to set parameter on channel ${ch.channel}. Error was ${e.getMessage}"
+      )
     }.void
+  }.getOrElse{Sync[F].raiseError(SeqexecFailure.Unexpected("Attempt to write parameter to unconnected channel."))}
 
-  def setParameter[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] =
-    Sync[F].delay {
-      p.map(_.set(f(v)))
-    }.adaptError {
-      case _ => SeqexecFailure.Unexpected("Unable to set parameter.")
-    }.void
+  def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] = setParameter[F, T, T](p, v, x => x )
 
 }
 

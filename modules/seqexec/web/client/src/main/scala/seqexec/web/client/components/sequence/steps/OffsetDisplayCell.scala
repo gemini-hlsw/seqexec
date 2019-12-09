@@ -7,8 +7,9 @@ import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
-import react.common.implicits._
 import gsp.math.Axis
+import react.common._
+import react.common.implicits._
 import seqexec.model.{NodAndShuffleStep, OffsetType, StandardStep, Step}
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.Formatting._
@@ -16,7 +17,6 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Component to display the offsets
@@ -33,7 +33,8 @@ object OffsetsDisplayCell {
 
   implicit val doubleReuse: Reusability[Double] = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.offsetsDisplay, p.step.config))
 
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)

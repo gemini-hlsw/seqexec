@@ -6,7 +6,6 @@ package web.client.table
 import cats.Eq
 import cats.implicits._
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.CatsReact._
 import mouse.boolean._
 
 sealed trait ColumnWidth
@@ -31,7 +30,13 @@ object ColumnWidth {
       case x: VariableColumnWidth => x.asRight
     }
 
-  implicit val reuse: Reusability[ColumnWidth] = Reusability.byEq
+  implicit val columnWidthReuse: Reusability[ColumnWidth] = Reusability {
+    case (a: FixedColumnWidth, b: FixedColumnWidth) =>
+      !FixedColumnWidth.fixedColWidthReuse.testNot(a, b)
+    case (a: VariableColumnWidth, b: VariableColumnWidth) =>
+      !VariableColumnWidth.variableColWidthReuse.testNot(a, b)
+    case _ => false
+  }
 }
 
 object FixedColumnWidth {
@@ -46,6 +51,11 @@ object FixedColumnWidth {
 
   def unapply(fc: FixedColumnWidth): Option[Double] =
     Some(fc.width)
+
+  private implicit val doubleReuse: Reusability[Double] =
+    Reusability.double(0.1)
+  implicit val fixedColWidthReuse: Reusability[FixedColumnWidth] =
+    Reusability.by(_.width)
 }
 
 object VariableColumnWidth {
@@ -81,4 +91,10 @@ object VariableColumnWidth {
 
   val Full: VariableColumnWidth = VariableColumnWidth(1, 1)
   val Half: VariableColumnWidth = VariableColumnWidth(0.5, 1)
+
+  // Deltas are very small when resizing a col
+  private implicit val doubleReuse: Reusability[Double] =
+    Reusability.double(0.0001)
+  implicit val variableColWidthReuse: Reusability[VariableColumnWidth] =
+    Reusability.by(x => (x.percentage, x.minWidth))
 }

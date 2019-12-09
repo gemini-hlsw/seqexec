@@ -128,7 +128,7 @@ object GsaoiControllerEpics {
           epicsSys.waitForGuideOn
       ).whenA(current.guiding)
 
-      L.info("Start Gsaoi configuration") *>
+      L.debug("Start Gsaoi configuration") *>
         L.debug(s"Gsaoi configuration: ${config.show}") *>
         guideOff.whenA(ccParams.nonEmpty || dcParams.nonEmpty) *>
         ( ccParams.sequence *>
@@ -140,7 +140,7 @@ object GsaoiControllerEpics {
           epicsSys.dcConfigCmd.post[F].void
         ).unlessA(dcParams.isEmpty) *>
         guideOn.whenA(ccParams.nonEmpty || dcParams.nonEmpty) *>
-        L.info("Completed Gsaoi configuration")
+        L.debug("Completed Gsaoi configuration")
     }
 
     override def observe(fileId: ImageFileId, cfg: GsaoiController.DCConfig): F[ObserveCommandResult] = {
@@ -149,25 +149,25 @@ object GsaoiControllerEpics {
         SeqexecFailure.Execution("GSAOI is not connected to DHS")
       )
 
-      L.info("Start GSAOI observe") *>
+      L.debug(s"Start GSAOI observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
         epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F]
+        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed GSAOI observe") }
     }
 
     // GSAOI endObserve is a NOP with no CAR associated
     override def endObserve: F[Unit] =
-      L.info("endObserve for GSAOI skipped")
+      L.debug("endObserve for GSAOI skipped")
 
     override def stopObserve: F[Unit] =
-      L.info("Stop GSAOI exposure") *>
+      L.debug("Stop GSAOI exposure") *>
         epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
         epicsSys.stopCmd.mark[F] *>
         epicsSys.stopCmd.post[F].void
 
     override def abortObserve: F[Unit] =
-      L.info("Stop GSAOI exposure") *>
+      L.debug("Abort GSAOI exposure") *>
         epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
         epicsSys.abortCmd.mark[F] *>
         epicsSys.abortCmd.post[F].void

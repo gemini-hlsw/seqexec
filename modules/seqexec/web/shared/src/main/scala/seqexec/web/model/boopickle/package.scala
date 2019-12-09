@@ -3,7 +3,10 @@
 
 package seqexec.web.model
 
-import _root_.boopickle.Default._
+import _root_.boopickle.Default.Pickler
+import _root_.boopickle.Default.Pickle
+import _root_.boopickle.Default.PickleState
+import _root_.boopickle.Default.UnpickleState
 import monocle.Prism
 import seqexec.model.events.SeqexecEvent
 

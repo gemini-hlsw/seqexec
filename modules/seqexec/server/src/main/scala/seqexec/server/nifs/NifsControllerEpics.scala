@@ -349,7 +349,9 @@ object NifsControllerEpics extends NifsEncoders {
         secondCCPass(cfg)
 
     override def applyConfig(config: NifsController.NifsConfig): F[Unit] =
-      configCC(config.cc) *> configDC(config.dc)
+      L.debug("Start NIFS configuration") *>
+        configCC(config.cc) *> configDC(config.dc) *>
+        L.debug("Completed NIFS configuration")
 
     private val checkDhs =
       failUnlessM(
@@ -358,27 +360,27 @@ object NifsControllerEpics extends NifsEncoders {
 
     override def observe(fileId: ImageFileId,
                          cfg:    DCConfig): F[ObserveCommandResult] = {
-      L.info("Start NIFS observe") *>
+      L.debug(s"Start NIFS observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
         epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F]
+        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed NIFS observe") }
     }
 
     override def endObserve: F[Unit] =
-      L.info("Send endObserve to NIFS") *>
+      L.debug("Send endObserve to NIFS") *>
         epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
         epicsSys.endObserveCmd.mark[F] *>
         epicsSys.endObserveCmd.post[F].void
 
     override def stopObserve: F[Unit] =
-      L.info("Stop NIFS exposure") *>
+      L.debug("Stop NIFS exposure") *>
         epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
         epicsSys.stopCmd.mark[F] *>
         epicsSys.stopCmd.post[F].void
 
     override def abortObserve: F[Unit] =
-      L.info("Abort NIFS exposure") *>
+      L.debug("Abort NIFS exposure") *>
         epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
         epicsSys.abortCmd.mark[F] *>
         epicsSys.abortCmd.post[F].void

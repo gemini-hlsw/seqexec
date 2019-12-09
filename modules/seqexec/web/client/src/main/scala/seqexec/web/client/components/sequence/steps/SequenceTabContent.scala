@@ -9,6 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import react.common._
 import react.common.implicits._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
@@ -19,7 +20,6 @@ import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Content of a single tab with a sequence

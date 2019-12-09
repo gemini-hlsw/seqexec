@@ -26,6 +26,7 @@ final case class SequenceView (
   def runningStep: Option[RunningStep] = status match {
     case SequenceState.Running(_, _) => progress
     case SequenceState.Failed(_)     => progress
+    case SequenceState.Aborted       => progress
     case _                           => none
   }
 }

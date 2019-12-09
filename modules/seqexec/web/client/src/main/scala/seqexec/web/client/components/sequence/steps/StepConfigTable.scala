@@ -12,8 +12,8 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.Reusability
 import react.virtualized._
+import react.common._
 import react.common.implicits._
-
 import scala.scalajs.js
 import scala.math.max
 import seqexec.model.Step
@@ -23,7 +23,6 @@ import seqexec.web.client.components.TableContainer
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 import web.client.table._
 
 final case class StepConfigTable(

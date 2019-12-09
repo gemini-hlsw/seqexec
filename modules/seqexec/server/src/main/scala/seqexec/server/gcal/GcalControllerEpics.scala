@@ -8,6 +8,7 @@ import cats.implicits._
 import squants.Time
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
+import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex._
 import seqexec.server.gcal.GcalController.{Diffuser, Filter, Shutter, _}
 import seqexec.server.EpicsUtil.applyParam
@@ -70,7 +71,7 @@ object GcalControllerEpics {
     sys.lampsCmd.setIRLampName("IR") *>
       sys.lampsCmd.setIRLampOn(v)
 
-  def apply[F[_]: Async](epics: => GcalEpics[F]): GcalController[F] = new GcalController[F] {
+  def apply[F[_]: Async: Logger](epics: => GcalEpics[F]): GcalController[F] = new GcalController[F] {
     override def applyConfig(config: GcalConfig): F[Unit] =
       retrieveConfig(epics).flatMap(configure(epics, _, config))
   }
@@ -109,7 +110,8 @@ object GcalControllerEpics {
     diff
   )
 
-  def configure[F[_]: Async](epics: GcalEpics[F], current: EpicsGcalConfig, demand: GcalConfig): F[Unit] = {
+  def configure[F[_]: Async](epics: GcalEpics[F], current: EpicsGcalConfig, demand: GcalConfig)(implicit L: Logger[F])
+  : F[Unit] = {
     val params: List[F[Unit]] = List(
       applyParam(current.lampAr, encode(demand.lampAr.self), setArLampParams(epics)),
       applyParam(current.lampCuAr, encode(demand.lampCuAr.self), setCuArLampParams(epics)),
@@ -122,10 +124,13 @@ object GcalControllerEpics {
       demand.diffuserO.flatMap(d => applyParam(current.diffuser, encode(d), epics.diffuserCmd.setName))
     ).flattenOption
 
-    (
-      params.sequence *>
-        epics.lampsCmd.setTimeout[F](SetupTimeout) *>
-        epics.post
+    (for {
+      _ <- L.debug("Send configuration to GCAL")
+      _ <- params.sequence
+      _ <- epics.lampsCmd.setTimeout[F](SetupTimeout)
+      r <- epics.post
+      _ <- L.debug("Completed GCAL configuration")
+    } yield r
     ).whenA(params.nonEmpty)
 
   }

@@ -39,7 +39,6 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
 import seqexec.web.server.OcsBuildInfo
-import seqexec.web.common.LogMessage
 
 /**
   * Rest Endpoints under the /api route
@@ -118,14 +117,6 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
           L.warn("warn") *>
           L.error("error")
         ).replicateA(min(1000, max(0, count))) *> Ok("")
-
-      case auth @ POST -> Root / "seqexec" / "log" as user =>
-        auth.req.decode[LogMessage] { msg =>
-          val userName = user.fold(_ => "Anonymous", _.displayName)
-          // Always return ok
-          // Use remoteAddr to avoid an expensive DNS lookup
-          L.info(s"$userName on ${auth.req.remoteAddr.getOrElse("Unknown")}: ${msg.msg}") *> Ok("")
-        }
 
       case auth @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
