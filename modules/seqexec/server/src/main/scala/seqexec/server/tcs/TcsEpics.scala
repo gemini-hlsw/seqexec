@@ -821,15 +821,10 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
   }
 
   class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
-    def nodachopa: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodachopa"))
-    def nodachopb: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodachopb"))
-    def nodachopc: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodachopc"))
-    def nodbchopa: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodbchopa"))
-    def nodbchopb: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodbchopb"))
-    def nodbchopc: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodbchopc"))
-    def nodcchopa: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodcchopa"))
-    def nodcchopb: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodcchopb"))
-    def nodcchopc: F[String] = safeAttributeF(tcsState.getStringAttribute(prefix + "nodcchopc"))
+    def nodachopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopa"))
+    def nodachopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopb"))
+    def nodbchopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopa"))
+    def nodbchopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopb"))
   }
 
   sealed trait Target[F[_]] {

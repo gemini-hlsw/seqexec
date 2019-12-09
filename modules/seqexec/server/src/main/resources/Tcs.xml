@@ -1033,319 +1033,144 @@
         </attribute>
         -->
         <attribute name="p1nodachopa">
-            <channel>configPwfs1.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs1nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>P1 nodachopa</description>
         </attribute>
         <attribute name="p1nodachopb">
-            <channel>configPwfs1.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs1nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>P1 nodachopb</description>
         </attribute>
-        <attribute name="p1nodachopc">
-            <channel>configPwfs1.VALC</channel>
-            <type>STRING</type>
-            <description>P1 nodachopc</description>
-        </attribute>
         <attribute name="p1nodbchopa">
-            <channel>configPwfs1.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs1nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>P1 nodbchopa</description>
         </attribute>
         <attribute name="p1nodbchopb">
-            <channel>configPwfs1.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs1nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>P1 nodbchopb</description>
         </attribute>
-        <attribute name="p1nodbchopc">
-            <channel>configPwfs1.VALF</channel>
-            <type>STRING</type>
-            <description>P1 nodbchopc</description>
-        </attribute>
-        <attribute name="p1nodcchopa">
-            <channel>configPwfs1.VALG</channel>
-            <type>STRING</type>
-            <description>P1 nodcchopa</description>
-        </attribute>
-        <attribute name="p1nodcchopb">
-            <channel>configPwfs1.VALH</channel>
-            <type>STRING</type>
-            <description>P1 nodcchopb</description>
-        </attribute>
-        <attribute name="p1nodcchopc">
-            <channel>configPwfs1.VALI</channel>
-            <type>STRING</type>
-            <description>P1 nodcchopc</description>
-        </attribute>
         <attribute name="p2nodachopa">
-            <channel>configPwfs2.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs2nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>P2 nodachopa</description>
         </attribute>
         <attribute name="p2nodachopb">
-            <channel>configPwfs2.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs2nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>P2 nodachopb</description>
         </attribute>
-        <attribute name="p2nodachopc">
-            <channel>configPwfs2.VALC</channel>
-            <type>STRING</type>
-            <description>P2 nodachopc</description>
-        </attribute>
         <attribute name="p2nodbchopa">
-            <channel>configPwfs2.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs2nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>P2 nodbchopa</description>
         </attribute>
         <attribute name="p2nodbchopb">
-            <channel>configPwfs2.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:pwfs2nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>P2 nodbchopb</description>
         </attribute>
-        <attribute name="p2nodbchopc">
-            <channel>configPwfs2.VALF</channel>
-            <type>STRING</type>
-            <description>P2 nodbchopc</description>
-        </attribute>
-        <attribute name="p2nodcchopa">
-            <channel>configPwfs2.VALG</channel>
-            <type>STRING</type>
-            <description>P2 nodcchopa</description>
-        </attribute>
-        <attribute name="p2nodcchopb">
-            <channel>configPwfs2.VALH</channel>
-            <type>STRING</type>
-            <description>P2 nodcchopb</description>
-        </attribute>
-        <attribute name="p2nodcchopc">
-            <channel>configPwfs2.VALI</channel>
-            <type>STRING</type>
-            <description>P2 nodcchopc</description>
-        </attribute>
         <attribute name="oinodachopa">
-            <channel>configOiwfs.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:oiwfsnodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>OI nodachopa</description>
         </attribute>
         <attribute name="oinodachopb">
-            <channel>configOiwfs.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:oiwfsnodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>OI nodachopb</description>
         </attribute>
-        <attribute name="oinodachopc">
-            <channel>configOiwfs.VALC</channel>
-            <type>STRING</type>
-            <description>OI nodachopc</description>
-        </attribute>
         <attribute name="oinodbchopa">
-            <channel>configOiwfs.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:oiwfsnodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>OI nodbchopa</description>
         </attribute>
         <attribute name="oinodbchopb">
-            <channel>configOiwfs.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:oiwfsnodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>OI nodbchopb</description>
         </attribute>
-        <attribute name="oinodbchopc">
-            <channel>configOiwfs.VALF</channel>
-            <type>STRING</type>
-            <description>OI nodbchopc</description>
-        </attribute>
-        <attribute name="oinodcchopa">
-            <channel>configOiwfs.VALG</channel>
-            <type>STRING</type>
-            <description>OI nodcchopa</description>
-        </attribute>
-        <attribute name="oinodcchopb">
-            <channel>configOiwfs.VALH</channel>
-            <type>STRING</type>
-            <description>OI nodcchopb</description>
-        </attribute>
-        <attribute name="oinodcchopc">
-            <channel>configOiwfs.VALI</channel>
-            <type>STRING</type>
-            <description>OI nodcchopc</description>
-        </attribute>
         <attribute name="g1nodachopa">
-            <channel>configG1.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:g1nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G1 Nod A Chop A</description>
         </attribute>
         <attribute name="g1nodachopb">
-            <channel>configG1.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:g1nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G1 Nod A Chop B</description>
         </attribute>
-        <attribute name="g1nodachopc">
-            <channel>configG1.VALC</channel>
-            <type>STRING</type>
-            <description>G1 Nod A Chop C</description>
-        </attribute>
         <attribute name="g1nodbchopa">
-            <channel>configG1.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:g1nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G1 Nod B Chop A</description>
         </attribute>
         <attribute name="g1nodbchopb">
-            <channel>configG1.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:g1nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G1 Nod B Chop B</description>
         </attribute>
-        <attribute name="g1nodbchopc">
-            <channel>configG1.VALF</channel>
-            <type>STRING</type>
-            <description>G1 Nod B Chop C</description>
-        </attribute>
-        <attribute name="g1nodcchopa">
-            <channel>configG1.VALG</channel>
-            <type>STRING</type>
-            <description>G1 Nod C Chop A</description>
-        </attribute>
-        <attribute name="g1nodcchopb">
-            <channel>configG1.VALH</channel>
-            <type>STRING</type>
-            <description>G1 Nod C Chop B</description>
-        </attribute>
-        <attribute name="g1nodcchopc">
-            <channel>configG1.VALI</channel>
-            <type>STRING</type>
-            <description>G1 Nod C Chop C</description>
-        </attribute>
         <attribute name="g2nodachopa">
-            <channel>configG2.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:g2nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G2 Nod A Chop A</description>
         </attribute>
         <attribute name="g2nodachopb">
-            <channel>configG2.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:g2nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G2 Nod A Chop B</description>
         </attribute>
-        <attribute name="g2nodachopc">
-            <channel>configG2.VALC</channel>
-            <type>STRING</type>
-            <description>G2 Nod A Chop C</description>
-        </attribute>
         <attribute name="g2nodbchopa">
-            <channel>configG2.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:g2nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G2 Nod B Chop A</description>
         </attribute>
         <attribute name="g2nodbchopb">
-            <channel>configG2.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:g2nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G2 Nod B Chop B</description>
         </attribute>
-        <attribute name="g2nodbchopc">
-            <channel>configG2.VALF</channel>
-            <type>STRING</type>
-            <description>G2 Nod B Chop C</description>
-        </attribute>
-        <attribute name="g2nodcchopa">
-            <channel>configG2.VALG</channel>
-            <type>STRING</type>
-            <description>G2 Nod C Chop A</description>
-        </attribute>
-        <attribute name="g2nodcchopb">
-            <channel>configG2.VALH</channel>
-            <type>STRING</type>
-            <description>G2 Nod C Chop B</description>
-        </attribute>
-        <attribute name="g2nodcchopc">
-            <channel>configG2.VALI</channel>
-            <type>STRING</type>
-            <description>G2 Nod C Chop C</description>
-        </attribute>
         <attribute name="g3nodachopa">
-            <channel>configG3.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:g3nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G3 Nod A Chop A</description>
         </attribute>
         <attribute name="g3nodachopb">
-            <channel>configG3.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:g3nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G3 Nod A Chop B</description>
         </attribute>
-        <attribute name="g3nodachopc">
-            <channel>configG3.VALC</channel>
-            <type>STRING</type>
-            <description>G3 Nod A Chop C</description>
-        </attribute>
         <attribute name="g3nodbchopa">
-            <channel>configG3.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:g3nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G3 Nod B Chop A</description>
         </attribute>
         <attribute name="g3nodbchopb">
-            <channel>configG3.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:g3nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G3 Nod B Chop B</description>
         </attribute>
-        <attribute name="g3nodbchopc">
-            <channel>configG3.VALF</channel>
-            <type>STRING</type>
-            <description>G3 Nod B Chop C</description>
-        </attribute>
-        <attribute name="g3nodcchopa">
-            <channel>configG3.VALG</channel>
-            <type>STRING</type>
-            <description>G3 Nod C Chop A</description>
-        </attribute>
-        <attribute name="g3nodcchopb">
-            <channel>configG3.VALH</channel>
-            <type>STRING</type>
-            <description>G3 Nod C Chop B</description>
-        </attribute>
-        <attribute name="g3nodcchopc">
-            <channel>configG3.VALI</channel>
-            <type>STRING</type>
-            <description>G3 Nod C Chop C</description>
-        </attribute>
         <attribute name="g4nodachopa">
-            <channel>configG4.VALA</channel>
-            <type>STRING</type>
+            <channel>drives:g4nodAchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G4 Nod A Chop A</description>
         </attribute>
         <attribute name="g4nodachopb">
-            <channel>configG4.VALB</channel>
-            <type>STRING</type>
+            <channel>drives:g4nodAchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G4 Nod A Chop B</description>
         </attribute>
-        <attribute name="g4nodachopc">
-            <channel>configG4.VALC</channel>
-            <type>STRING</type>
-            <description>G4 Nod A Chop C</description>
-        </attribute>
         <attribute name="g4nodbchopa">
-            <channel>configG4.VALD</channel>
-            <type>STRING</type>
+            <channel>drives:g4nodBchopA.VAL</channel>
+            <type>INTEGER</type>
             <description>G4 Nod B Chop A</description>
         </attribute>
         <attribute name="g4nodbchopb">
-            <channel>configG4.VALE</channel>
-            <type>STRING</type>
+            <channel>drives:g4nodBchopB.VAL</channel>
+            <type>INTEGER</type>
             <description>G4 Nod B Chop B</description>
-        </attribute>
-        <attribute name="g4nodbchopc">
-            <channel>configG4.VALF</channel>
-            <type>STRING</type>
-            <description>G4 Nod B Chop C</description>
-        </attribute>
-        <attribute name="g4nodcchopa">
-            <channel>configG4.VALG</channel>
-            <type>STRING</type>
-            <description>G4 Nod C Chop A</description>
-        </attribute>
-        <attribute name="g4nodcchopb">
-            <channel>configG4.VALH</channel>
-            <type>STRING</type>
-            <description>G4 Nod C Chop B</description>
-        </attribute>
-        <attribute name="g4nodcchopc">
-            <channel>configG4.VALI</channel>
-            <type>STRING</type>
-            <description>G4 Nod C Chop C</description>
         </attribute>
         <attribute name="chopon">
             <channel>chopControl.VALA</channel>
