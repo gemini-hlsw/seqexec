@@ -4,7 +4,6 @@ const Webpack = require("webpack");
 const parts = require("./webpack.parts");
 const ScalaJSConfig = require("./scalajs.webpack.config");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
-
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const ci = process.env.CI; // When on CI don't add hashes

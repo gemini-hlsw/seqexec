@@ -1,0 +1,26 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Scala
+        uses: olafurpg/setup-scala@v2
+        with:
+          java-version: 1.8
+      - name: Run tests
+        #run: sbt headerCheck test:headerCheck scalastyle compile seqexec_modelJVM/test seqexec_modelJS/test seqexec_engine/test seqexec_server/test seqexec_web_sharedJVM/test seqexec_web_sharedJS/test seqexec_web_server/test seqexec_web_client/test seqexec_web_client/fullOptJS::webpack
+        run: |
+          sbt seqexec_web_client/fullOptJS::webpack
+          cd modules/seqexec/web/client/target/scala-2.12/scalajs-bundler/main/
+          echo $GITHUB_REF
+          CI_BRANCH=${GITHUB_REF##*/}
+          echo $PT_PROJECT_TOKEN
+          node node_modules/webpack/bin/webpack --bail --profile --json --config packtracker.webpack.config.js
+        env:
+          SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
+          PT_PROJECT_TOKEN: ${{ secrets.PT_PROJECT_TOKEN }}
