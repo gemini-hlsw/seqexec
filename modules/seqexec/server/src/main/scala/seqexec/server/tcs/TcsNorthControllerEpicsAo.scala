@@ -123,7 +123,7 @@ object TcsNorthControllerEpicsAo {
 
       for {
         s0 <- tcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
-        _  <- SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[F, Unit].whenA(s0.base.useAo)
+        _  <- SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[F, Unit].whenA(!s0.base.useAo)
         pr <- pauseResumeGaos(gaos, s0, tcs)
         _  <- pr.pause.getOrElse(Applicative[F].unit)
         s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
