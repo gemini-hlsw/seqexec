@@ -9,6 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import gem.Observation
+import react.common._
 import react.common.implicits._
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.actions.RequestRunFrom
@@ -18,7 +19,6 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Contains the control to start a step from an arbitrary point

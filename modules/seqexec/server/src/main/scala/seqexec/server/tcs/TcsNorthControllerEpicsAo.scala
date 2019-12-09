@@ -112,7 +112,7 @@ object TcsNorthControllerEpicsAo {
             _ <- epicsSys.post
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit
@@ -123,7 +123,7 @@ object TcsNorthControllerEpicsAo {
 
       for {
         s0 <- tcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
-        _  <- SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[F, Unit].whenA(s0.base.useAo)
+        _  <- SeqexecFailure.Execution("Found useAo not set for AO step.").raiseError[F, Unit].whenA(!s0.base.useAo)
         pr <- pauseResumeGaos(gaos, s0, tcs)
         _  <- pr.pause.getOrElse(Applicative[F].unit)
         s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
@@ -204,10 +204,10 @@ object TcsNorthControllerEpicsAo {
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
           _ <- epicsSys.post
-          _ <- L.info("Turning guide off")
+          _ <- L.debug("Turning guide off")
         } yield s
       else
-        L.info("Skipping guide off") *> current.pure[F]
+        L.debug("Skipping guide off") *> current.pure[F]
     }
 
     def guideOn(subsystems: NonEmptySet[Subsystem], current: EpicsTcsAoConfig, demand: TcsNorthAoConfig,
@@ -222,10 +222,10 @@ object TcsNorthControllerEpicsAo {
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
           _ <- epicsSys.post
-          _ <- L.info("Turning guide on")
+          _ <- L.debug("Turning guide on")
         } yield s
       else
-        L.info("Skipping guide on") *> current.pure[F]
+        L.debug("Skipping guide on") *> current.pure[F]
     }
 
     // Disable M1 guiding if source is off

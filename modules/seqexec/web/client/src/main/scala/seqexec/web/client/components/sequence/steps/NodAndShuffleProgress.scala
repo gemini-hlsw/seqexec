@@ -10,8 +10,8 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
+import react.common._
 import react.common.implicits._
-import react.common.Css
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
@@ -22,9 +22,7 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
-
 import scala.math.max
-import web.client.ReactProps
 
 final case class NodAndShuffleProgressMessage(
                                                obsId : Observation.Id,

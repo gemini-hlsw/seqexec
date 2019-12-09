@@ -65,28 +65,22 @@ object TcsConfigRetriever {
 
     private def getAoFold: F[AoFold] = epicsSys.aoFoldPosition.map(decode[String, AoFold])
 
-    private def decodeNodChopOption(s: String): Boolean = s.trim === "On"
+    private def decodeNodChopOption(s: Int): Boolean = s =!= 0
 
     private def getNodChopTrackingConfig(g: TcsEpics.ProbeGuideConfig[F]): F[NodChopTrackingConfig] =
       for {
         aa <- g.nodachopa.map(decodeNodChopOption)
         ab <- g.nodachopb.map(decodeNodChopOption)
-        ac <- g.nodachopc.map(decodeNodChopOption)
         ba <- g.nodbchopa.map(decodeNodChopOption)
         bb <- g.nodbchopb.map(decodeNodChopOption)
-        bc <- g.nodbchopc.map(decodeNodChopOption)
-        ca <- g.nodcchopa.map(decodeNodChopOption)
-        cb <- g.nodcchopb.map(decodeNodChopOption)
-        cc <- g.nodcchopc.map(decodeNodChopOption)
       } yield
-        if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).contains(true)) {
-          if (List(aa, bb).forall(_ === true) && List(ab, ac, ba, bc, ca, cb, cc).forall(_ === false)) {
+        if (List(aa, ab, ba, bb).contains(true)) {
+          if (List(aa, bb).forall(_ === true) && List(ab, ba).forall(_ === false)) {
             NodChopTrackingConfig.Normal
           } else {
             List(
-              (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)),
-              (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)),
-              (ca, NodChop(Beam.C, Beam.A)), (cb, NodChop(Beam.C, Beam.B)), (cc, NodChop(Beam.C, Beam.C))
+              (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)),
+              (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B))
             ) collect {
               case (true, a) => a
             } match {

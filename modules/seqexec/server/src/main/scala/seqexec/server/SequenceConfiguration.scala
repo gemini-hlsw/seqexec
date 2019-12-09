@@ -53,7 +53,7 @@ trait SequenceConfiguration {
   def extractWavelength(config: CleanConfig): Option[Wavelength] =
     config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
 
-  def calcStepType(config: CleanConfig): TrySeq[StepType] = {
+  def calcStepType(config: CleanConfig, isNightSeq: Boolean): TrySeq[StepType] = {
     def extractGaos(inst: Instrument): TrySeq[StepType] =
       config.extractAs[String](AO_SYSTEM_KEY) match {
         case Left(ConfigUtilOps.ConversionError(_, _)) =>
@@ -81,7 +81,8 @@ trait SequenceConfiguration {
           case _                                   => StepType.DarkOrBias(inst).asRight
         }
         case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE =>
-          StepType.FlatOrArc(inst).asRight
+          if(isNightSeq && inst.hasOI) StepType.NightFlatOrArc(inst).asRight
+          else StepType.FlatOrArc(inst).asRight
         case _ => Unexpected("Unknown step type " + obsType).asLeft
       }
     }.flatten

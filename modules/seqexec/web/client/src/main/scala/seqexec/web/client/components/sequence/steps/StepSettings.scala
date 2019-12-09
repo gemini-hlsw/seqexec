@@ -10,6 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
 import japgolly.scalajs.react.component.Scala.Unmounted
+import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
@@ -22,7 +23,6 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
-import web.client.ReactProps
 
 /**
   * Component to display an item of a sequence
@@ -59,7 +59,8 @@ final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps {
 object ExposureTimeCell {
   type Props = ExposureTimeCell
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.s.config, p.i))
 
   protected val component = ScalaComponent
     .builder[Props]("ExposureTimeCell")
@@ -167,7 +168,8 @@ final case class ObjectTypeCell(
 object ObjectTypeCell {
   type Props = ObjectTypeCell
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.instrument, p.step.config, p.step.status, p.size))
 
   protected val component = ScalaComponent
     .builder[Props]("ObjectTypeCell")

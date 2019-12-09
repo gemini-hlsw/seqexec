@@ -47,7 +47,6 @@ import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.reusability._
 import react.virtualized._
 import seqexec.web.client.components.sequence.steps.StepsTable.{State, StepRow}
-import web.client.ReactProps
 import web.client.table._
 
 trait Columns {

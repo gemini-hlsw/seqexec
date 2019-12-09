@@ -31,8 +31,8 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 
   def instrumentActions(config: CleanConfig): InstrumentActions[F]
 
-  def calcStepType(config: CleanConfig): Either[SeqexecFailure, StepType] =
-    SequenceConfiguration.calcStepType(config)
+  def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
+    SequenceConfiguration.calcStepType(config, isNightSeq)
 
   override val oiOffsetGuideThreshold: Option[Length] = None
 

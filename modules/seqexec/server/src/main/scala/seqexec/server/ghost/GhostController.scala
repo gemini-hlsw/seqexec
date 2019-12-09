@@ -11,6 +11,8 @@ import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.GiapiConfig
 import giapi.client.syntax.giapiconfig._
+import io.chrisdavenport.log4cats.Logger
+
 import scala.concurrent.duration._
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
@@ -292,7 +294,7 @@ trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
 }
 
 object GhostController {
-  def apply[F[_]: Sync](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
+  def apply[F[_]: Sync: Logger](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
     new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client) with GhostController[F] {
       override val gdsClient: GdsClient[F] = gds
 

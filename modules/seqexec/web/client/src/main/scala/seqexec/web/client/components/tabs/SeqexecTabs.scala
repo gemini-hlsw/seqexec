@@ -5,7 +5,6 @@ package seqexec.web.client.components.tabs
 
 import cats.implicits._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -13,17 +12,24 @@ import seqexec.model.SequenceState
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.circuit.SeqexecCircuit
+import react.common._
 
 /**
   * Menu with tabs
   */
+final case class SeqexecTabs(
+  router: RouterCtl[SeqexecPages]
+) extends ReactProps {
+  @inline def render: VdomElement = SeqexecTabs.component(this)
+}
+
 object SeqexecTabs {
-  final case class Props(router: RouterCtl[SeqexecPages])
+  type Props = SeqexecTabs
 
   implicit val propsReuse: Reusability[Props] = Reusability.always
   private val tabConnect                      = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
@@ -43,13 +49,13 @@ object SeqexecTabs {
           .map {
             case Right(t) =>
               SequenceTab(
-                SequenceTab.Props(p.router,
-                                  t,
-                                  x().canOperate,
-                                  x().defaultObserver,
-                                  runningInstruments)): VdomNode
+                p.router,
+                t,
+                x().canOperate,
+                x().defaultObserver,
+                runningInstruments): VdomNode
             case Left(t) =>
-              CalibrationQueueTab(CalibrationQueueTab.Props(p.router, t)): VdomNode
+              CalibrationQueueTab(p.router, t): VdomNode
           }
         if (tabs.nonEmpty) {
           <.div(
@@ -62,6 +68,4 @@ object SeqexecTabs {
     })
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

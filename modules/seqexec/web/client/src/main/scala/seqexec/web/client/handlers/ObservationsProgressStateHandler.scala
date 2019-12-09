@@ -7,10 +7,10 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
+import gem.Observation
 import seqexec.model.{NSObservationProgress, ObservationProgress, ObserveStage, Progress, Step}
 import seqexec.model.enum.ActionStatus
-import seqexec.model.events.ObservationProgressEvent
-import seqexec.model.events.StepExecuted
+import seqexec.model.events.{ObservationProgressEvent, SeqexecModelUpdate, SequenceAborted, SequenceError, StepExecuted}
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.lenses.sequenceStepT
@@ -41,22 +41,48 @@ class ObservationsProgressStateHandler[M](
   // Furthermore, when we have a stage === ReadingOut, we force progress variable to complete
   //   (by setting remaining = 0 and copying subexposure variables from previous progress).
   private def adjustProgress(newProgress: Progress)(oldProgress: Progress): Progress = newProgress match {
-    case nsProgress : NSObservationProgress =>
+    case nsProgress: NSObservationProgress =>
       nsProgress.stage match {
         case ObserveStage.ReadingOut =>
           oldProgress match {
-            case oldNSProgress: NSObservationProgress => nsProgress.copy(remaining = Time (Duration.Zero), sub = oldNSProgress.sub)
+            case oldNSProgress: NSObservationProgress =>
+              nsProgress.copy(remaining = Time(Duration.Zero), sub = oldNSProgress.sub)
             case _                                    => nsProgress // This would be an odd case
           }
         case ObserveStage.Idle       => oldProgress
         case ObserveStage.Preparing  =>
           oldProgress match {
-            case oldNSProgress: NSObservationProgress => oldNSProgress.copy(stage = ObserveStage.Preparing)
-            case oldProgress: ObservationProgress     => oldProgress.copy(stage = ObserveStage.Preparing)
+            case oldNSProgress: NSObservationProgress =>
+              oldNSProgress.copy(stage = ObserveStage.Preparing)
+            case oldProgress: ObservationProgress     =>
+              oldProgress.copy(stage = ObserveStage.Preparing)
           }
         case _                       => newProgress // Only advance progress when stage === Acquiring.
       }
     case _                                 => newProgress
+  }
+
+  private def resetStepProgress(
+    e                            : SeqexecModelUpdate,
+    obsId                        : Observation.Id,
+    condition                    : Step => Boolean = _ => true
+  ): ActionResult[M] = {
+    val upd =
+      for {
+        obs <- sequenceViewT.find(_.id === obsId)(e)
+        curSIdx <- obs.runningStep.map(_.last)
+        curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
+      } yield
+        if (condition(curStep)) {
+          updatedL(
+            AllObservationsProgressState
+              .progressByIdL(obsId, curSIdx)
+              .set(none))
+        } else {
+          noChange
+        }
+
+    upd.getOrElse(noChange)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
@@ -66,23 +92,20 @@ class ObservationsProgressStateHandler[M](
           .progressByIdL(e.obsId, e.stepId)
           .modify(_.map(adjustProgress(e)).orElse(e.some)))
 
-    // Remove the progress once the step completes
-    case ServerMessage(e @ StepExecuted(obsId, _)) =>
-      val upd =
-        for {
-          obs     <- sequenceViewT.find(_.id === obsId)(e)
-          curSIdx <- obs.runningStep.map(_.last)
-          curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
-        } yield
-          if (Step.observeStatus.getOption(curStep).exists(_ === ActionStatus.Completed) && !curStep.isObservePaused) {
-            updatedL(
-              AllObservationsProgressState
-                .progressByIdL(e.obsId, curSIdx)
-                .set(none))
-          } else {
-            noChange
-          }
+    case ServerMessage(e@SequenceAborted(obsId, _)) =>
+      resetStepProgress(e, obsId)
 
-      upd.getOrElse(noChange)
+    case ServerMessage(e@SequenceError(obsId, _)) =>
+      resetStepProgress(e, obsId)
+
+    // Remove the progress once the step completes
+    case ServerMessage(e@StepExecuted(obsId, _)) =>
+      resetStepProgress(
+        e, obsId, { curStep =>
+          Step.observeStatus
+              .getOption(curStep)
+              .exists(_ === ActionStatus.Completed) &&
+            !curStep.isObservePaused
+        })
   }
 }

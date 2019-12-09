@@ -332,10 +332,10 @@ object TcsControllerEpicsCommon {
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
           _ <- epicsSys.post
-          _ <- L.info("Turning guide off")
+          _ <- L.debug("Turning guide off")
         } yield s
       else
-        L.info("Skipping guide off") *> current.pure[F]
+        L.debug("Skipping guide off") *> current.pure[F]
     }
 
     override def setNodChopProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd[F])(c: NodChopTrackingConfig): F[Unit] =
@@ -478,10 +478,10 @@ object TcsControllerEpicsCommon {
       for {
         s <- params.foldLeft(Sync[F].delay(current)){ case (c, p) => c.flatMap(p)}
         _ <- epicsSys.post
-        _ <- L.info("Turning guide on")
+        _ <- L.debug("Turning guide on")
       } yield s
     else
-      L.info("Skipping guide on") *> Sync[F].delay(current)
+      L.debug("Skipping guide on") *> Sync[F].delay(current)
   }
 
 
@@ -495,14 +495,15 @@ object TcsControllerEpicsCommon {
 
         if(params.nonEmpty)
           for {
+            _ <- L.debug("Start TCS configuration")
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post
-            _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.info("TCS inposition")
+              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Sync[F].unit
+            _ <- L.debug("Completed TCS configuration")
           } yield s
         else
           L.debug("Skipping TCS configuration") *> current.pure[F]
@@ -517,11 +518,13 @@ object TcsControllerEpicsCommon {
       } yield ()
     }
     override def notifyObserveStart: F[Unit] =
-      epicsSys.observe.mark[F] *>
+      L.debug("Send observe to TCS") *>
+        epicsSys.observe.mark[F] *>
         epicsSys.post.void
 
     override def notifyObserveEnd: F[Unit] =
-      epicsSys.endObserve.mark[F] *>
+      L.debug("Send endObserve to TCS") *>
+        epicsSys.endObserve.mark[F] *>
         epicsSys.post.void
 
     // To nod the telescope is just like applying a TCS configuration, but always with an offset

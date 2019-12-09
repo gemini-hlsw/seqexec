@@ -3,7 +3,6 @@
 
 package seqexec.web.model.boopickle
 
-import _root_.boopickle.DefaultBasic._
 import cats.tests.CatsSuite
 import gem.Observation
 import gem.arb.ArbEnumerated._

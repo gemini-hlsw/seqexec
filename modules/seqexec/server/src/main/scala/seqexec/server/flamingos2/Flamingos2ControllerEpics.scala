@@ -7,7 +7,7 @@ import cats.data.StateT
 import cats.effect.{Async, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
-import org.log4s.getLogger
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -97,8 +97,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val DefaultTimeout: Time = Seconds(60)
   val ConfigTimeout: Time = Seconds(400)
 
-  def apply[F[_]: Async](sys: => Flamingos2Epics[F])(implicit tio: Timer[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
-    private val Log = getLogger
+  def apply[F[_]: Async](sys: => Flamingos2Epics[F])(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
@@ -122,22 +121,24 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
     }
 
     override def applyConfig(config: Flamingos2Config): F[Unit] = for {
-      _ <- Async[F].delay(Log.debug("Start Flamingos2 configuration"))
+      _ <- L.debug("Start Flamingos2 configuration")
       _ <- setDCConfig(config.dc)
       _ <- setCCConfig(config.cc)
       _ <- sys.configCmd.setTimeout[F](ConfigTimeout)
       _ <- sys.post
-      _ <- Async[F].delay(Log.debug("Completed Flamingos2 configuration"))
+      _ <- L.debug("Completed Flamingos2 configuration")
     } yield ()
 
     override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = for {
+      _ <- L.debug(s"Send observe to Flamingos2, file id $fileId")
       _ <- sys.observeCmd.setLabel(fileId)
       _ <- sys.observeCmd.setTimeout[F](expTime + ReadoutTimeout)
       _ <- sys.observeCmd.post[F]
+      _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 
     override def endObserve: F[Unit] = for {
-      _ <- Async[F].delay(Log.debug("Send endObserve to Flamingos2"))
+      _ <- L.debug("Send endObserve to Flamingos2")
       _ <- sys.endObserveCmd.setTimeout[F](DefaultTimeout)
       _ <- sys.endObserveCmd.mark[F]
       _ <- sys.endObserveCmd.post[F]

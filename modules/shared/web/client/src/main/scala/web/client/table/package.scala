@@ -26,7 +26,7 @@ import web.client.utils._
 package object table {
   val DragHandleWidth: Int = 12
 
-  private implicit val doubleReuse: Reusability[Double] =
+  private[table] implicit val doubleReuse: Reusability[Double] =
     Reusability.double(0.01)
 
   implicit val sizeReuse: Reusability[Size] =

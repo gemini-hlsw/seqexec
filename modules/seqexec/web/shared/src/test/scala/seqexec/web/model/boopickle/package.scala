@@ -3,7 +3,9 @@
 
 package seqexec.web.model
 
-import _root_.boopickle.Default._
+import _root_.boopickle.Default.Pickler
+import _root_.boopickle.Default.Pickle
+import _root_.boopickle.Default.Unpickle
 import cats.laws._
 import cats.laws.discipline._
 import cats.kernel.Eq
@@ -17,6 +19,7 @@ package boopickle {
 
     def picklerRoundTrip(a: A): IsEq[A] =
       Unpickle[A].fromBytes(Pickle.intoBytes(a)) <-> a
+
   }
 
   object PicklerLaws {
