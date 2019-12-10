@@ -359,7 +359,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       "html-webpack-plugin"                -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
       "favicons-webpack-plugin"            -> "1.0.2",
-      "why-did-you-update"                 -> "1.0.6"
+      "why-did-you-update"                 -> "1.0.6",
+      "@packtracker/webpack-plugin"        -> "2.2.0"
     ),
     libraryDependencies ++= Seq(
       JQuery.value,
