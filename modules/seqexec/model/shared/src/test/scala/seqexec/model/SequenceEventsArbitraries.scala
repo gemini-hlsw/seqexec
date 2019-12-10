@@ -16,12 +16,9 @@ import seqexec.model.enum._
 import seqexec.model.dhs._
 import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
-import seqexec.model.arb.ArbNotification
-import seqexec.model.arb.ArbTelescopeGuideConfig._
-import seqexec.model.arb.ArbDhsTypes._
-import seqexec.model.arb.ArbObservationProgress._
+import seqexec.model.arb.all._
 
-trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
+trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val gcuArb = Arbitrary[GuideConfigUpdate] {
     arbitrary[TelescopeGuideConfig].map(GuideConfigUpdate.apply)

@@ -299,6 +299,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoPackage := "seqexec.web.server"
   )
   .dependsOn(seqexec_web_shared.jvm, seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
+  .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)

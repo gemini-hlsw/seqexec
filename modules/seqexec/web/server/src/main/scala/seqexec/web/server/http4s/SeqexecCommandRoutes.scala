@@ -35,34 +35,24 @@ class SeqexecCommandRoutes[F[_]: Sync](
 
   private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
     case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
-      for {
-        _    <- se.start(inputQueue, obsId, user, clientId)
-        resp <- Ok(s"Started sequence $obsId")
-      } yield resp
+        se.start(inputQueue, obsId, user, clientId) *>
+          Ok(s"Started sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId) as _ =>
-      for {
-        _    <- se.startFrom(inputQueue, obsId, stepId, clientId)
-        resp <- Ok(s"Started sequence $obsId from step $stepId")
-      } yield resp
+        se.startFrom(inputQueue, obsId, stepId, clientId) *>
+          Ok(s"Started sequence ${obsId.format} from step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
-      for {
-        _    <- se.requestPause(inputQueue, obsId, user)
-        resp <- Ok(s"Pause sequence $obsId")
-      } yield resp
+        se.requestPause(inputQueue, obsId, user) *>
+          Ok(s"Pause sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "cancelpause" as user =>
-      for {
-        _    <- se.requestCancelPause(inputQueue, obsId, user)
-        resp <- Ok(s"Cancel Pause sequence $obsId")
-      } yield resp
+        se.requestCancelPause(inputQueue, obsId, user) *>
+          Ok(s"Cancel Pause sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / BooleanVar(bp) as user =>
-      for {
-        _    <- se.setBreakpoint(inputQueue, obsId, user, stepId, bp)
-        resp <- Ok(s"Set breakpoint in step $stepId of sequence $obsId")
-      } yield resp
+        se.setBreakpoint(inputQueue, obsId, user, stepId, bp) *>
+          Ok(s"Set breakpoint in step $stepId of sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
@@ -72,56 +62,40 @@ class SeqexecCommandRoutes[F[_]: Sync](
       } yield resp
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / BooleanVar(bp) as user =>
-      for {
-        _      <- se.setSkipMark(inputQueue, obsId, user, stepId, bp)
-        resp   <- Ok(s"Set skip mark in step $stepId of sequence $obsId")
-      } yield resp
+        se.setSkipMark(inputQueue, obsId, user, stepId, bp) *>
+          Ok(s"Set skip mark in step $stepId of sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>
-      for {
-        _    <- se.stopObserve(inputQueue, obsId, graceful = false)
-        resp <- Ok(s"Stop requested for $obsId on step $stepId")
-      } yield resp
+        se.stopObserve(inputQueue, obsId, graceful = false) *>
+          Ok(s"Stop requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" as _ =>
-      for {
-        _    <- se.stopObserve(inputQueue, obsId, graceful = true)
-        resp <- Ok(s"Stop gracefully requested for $obsId on step $stepId")
-      } yield resp
+        se.stopObserve(inputQueue, obsId, graceful = true) *>
+          Ok(s"Stop gracefully requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
-      for {
-        _    <- se.abortObserve(inputQueue, obsId)
-        resp <- Ok(s"Abort requested for $obsId on step $stepId")
-      } yield resp
+        se.abortObserve(inputQueue, obsId) *>
+          Ok(s"Abort requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>
-      for {
-        _    <- se.pauseObserve(inputQueue, obsId, graceful = false)
-        resp <- Ok(s"Pause observation requested for $obsId on step $stepId")
-      } yield resp
+        se.pauseObserve(inputQueue, obsId, graceful = false) *>
+          Ok(s"Pause observation requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" as _ =>
-      for {
-        _    <- se.pauseObserve(inputQueue, obsId, graceful = true)
-        resp <- Ok(s"Pause observation gracefully requested for $obsId on step $stepId")
-      } yield resp
+        se.pauseObserve(inputQueue, obsId, graceful = true) *>
+          Ok(s"Pause observation gracefully requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>
-      for {
-        _    <- se.resumeObserve(inputQueue, obsId)
-        resp <- Ok(s"Resume observation requested for $obsId on step $stepId")
-      } yield resp
+        se.resumeObserve(inputQueue, obsId) *>
+          Ok(s"Resume observation requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / "operator" / OperatorVar(op) as user =>
       se.setOperator(inputQueue, user, op) *> Ok(
         s"Set operator name to '${op.value}'")
 
     case POST -> Root / ObsIdVar(obsId) / "observer" / ObserverVar(obs) as user =>
-      for {
-        _    <- se.setObserver(inputQueue, obsId, user, obs)
-        resp <- Ok(s"Set observer name to '${obs.value}' for sequence $obsId")
-      } yield resp
+      se.setObserver(inputQueue, obsId, user, obs) *>
+        Ok(s"Set observer name to '${obs.value}' for sequence ${obsId.format}")
 
     case req @ POST -> Root / "iq" as user =>
       req.req.decode[ImageQuality](

@@ -104,10 +104,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
     )
 
     val loggedRoutes = Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
-    val metricsMiddleware = Prometheus[F](cr, "seqexec").map(
-      Metrics[F](_)(loggedRoutes))
+    val metricsMiddleware: Resource[F, HttpRoutes[F]] = Prometheus.metricsOps[F](cr, "seqexec").map(Metrics[F](_)(loggedRoutes))
 
-    build(metricsMiddleware)
+    metricsMiddleware.flatMap(x => build(x.pure[F]))
 
   }
 
