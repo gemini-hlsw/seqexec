@@ -17,6 +17,7 @@ import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbStep._
+import seqexec.model.arb.ArbClientId._
 
 trait SeqexecModelArbitraries {
 
@@ -43,14 +44,6 @@ trait SeqexecModelArbitraries {
       // We are already testing serialization of conditions and Strings
       // Let's reduce the test space by only testing the list of items
     } yield SequencesQueue(Map.empty, c, o, SortedMap.empty, b)
-  }
-
-  implicit val cogenUUID: Cogen[UUID] =
-    Cogen[(Long, Long)].contramap(u =>
-      (u.getMostSignificantBits, u.getLeastSignificantBits))
-
-  implicit val clientIdArb: Arbitrary[ClientId] = Arbitrary {
-    arbitrary[UUID].map(ClientId)
   }
 
   implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary {
@@ -146,9 +139,6 @@ trait SeqexecModelArbitraries {
   implicit val conCogen: Cogen[Conditions] =
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>
       (c.cc, c.iq, c.sb, c.wv))
-
-  implicit val cidCogen: Cogen[ClientId] =
-    Cogen[UUID].contramap(_.self)
 
   implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {

@@ -52,4 +52,31 @@ class SeqexecUIApiRoutesSpec
     } yield assert(t.isDefined && s === Some(Status.Ok))).unsafeRunSync
   }
 
+  test("SeqexecUIApiRoutes logout: successful logout clears the cookie") {
+    (for {
+      s <- uiRoutes
+      t <- newLoginToken
+      r <- s(
+        Request[IO](method = Method.POST, uri = uri("/seqexec/logout"))
+          .addCookie("token", t)
+      ).value
+      s <- r.map(_.status).pure[IO]
+      k <- r.map(_.cookies).orEmpty.pure[IO]
+      t = k.find(_.name === "token")
+      c = t.map(_.content).exists(_ === "") // Cleared cookie
+    } yield assert(c && s === Some(Status.Ok))).unsafeRunSync
+  }
+
+  test("SeqexecUIApiRoutes site") {
+    (for {
+      s <- uiRoutes
+      t <- newLoginToken
+      r <- s(
+        Request[IO](method = Method.POST, uri = uri("/seqexec/site"))
+          .addCookie("token", t)
+      ).value
+      s <- r.map(_.as[String]).sequence
+    } yield assert(s === Some("GS"))).unsafeRunSync
+  }
+
 }

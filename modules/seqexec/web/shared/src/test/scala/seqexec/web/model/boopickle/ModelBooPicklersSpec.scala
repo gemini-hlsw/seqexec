@@ -13,17 +13,7 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
-import seqexec.model.arb.ArbM1GuideConfig._
-import seqexec.model.arb.ArbM2GuideConfig._
-import seqexec.model.arb.ArbTelescopeGuideConfig._
-import seqexec.model.arb.ArbStep._
-import seqexec.model.arb.ArbStepState._
-import seqexec.model.arb.ArbStandardStep._
-import seqexec.model.arb.ArbNodAndShuffleStep._
-import seqexec.model.arb.ArbNSSubexposure._
-import seqexec.model.arb.ArbNSRunningState._
-import seqexec.model.arb.ArbObservationProgress._
-import seqexec.model.arb.ArbTime._
+import seqexec.model.arb.all._
 import squants.time.Time
 
 /**
