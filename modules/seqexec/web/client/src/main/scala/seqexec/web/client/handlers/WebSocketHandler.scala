@@ -25,11 +25,11 @@ import scala.scalajs.js.typedarray.ArrayBuffer
 import scala.scalajs.js.typedarray.TypedArrayBuffer
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.enum.ServerLogLevel
+import seqexec.model.boopickle.ModelBooPicklers
 import seqexec.model.events._
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
-import seqexec.web.model.boopickle.ModelBooPicklers
 
 /**
   * Handles the WebSocket connection and performs reconnection if needed

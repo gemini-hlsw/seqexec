@@ -24,7 +24,7 @@ import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.model.enum.Resource
-import seqexec.web.model.boopickle._
+import seqexec.model.boopickle._
 import scala.scalajs.js.URIUtils._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global

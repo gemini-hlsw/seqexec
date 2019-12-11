@@ -15,7 +15,7 @@ import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.model.Conditions
 import seqexec.model.Operator
-import seqexec.web.model.boopickle.ModelBooPicklers
+import seqexec.model.boopickle.ModelBooPicklers
 
 /**
   * Contains http4s implicit encoders of model objects
