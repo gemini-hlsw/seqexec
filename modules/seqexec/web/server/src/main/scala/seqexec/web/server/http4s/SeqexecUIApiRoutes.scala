@@ -31,7 +31,7 @@ import seqexec.model.ClientId
 import seqexec.model._
 import seqexec.model.events._
 import seqexec.server.tcs.GuideConfigDb
-import seqexec.web.model.boopickle._
+import seqexec.model.boopickle._
 import seqexec.model.config._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult

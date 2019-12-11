@@ -21,9 +21,9 @@ import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
 import seqexec.model.SequenceEventsArbitraries.qmArb
-import seqexec.web.common.FixedLengthBuffer
-import seqexec.web.common.Zipper
-import seqexec.web.common.ArbitrariesWebCommon._
+import seqexec.common.FixedLengthBuffer
+import seqexec.common.Zipper
+import seqexec.common.ArbitrariesCommon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit._

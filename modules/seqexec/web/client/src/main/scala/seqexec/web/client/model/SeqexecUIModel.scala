@@ -7,9 +7,9 @@ import cats.Eq
 import cats.implicits._
 import gem.util.Enumerated
 import monocle.macros.Lenses
+import seqexec.common.FixedLengthBuffer
 import seqexec.model.Observer
 import seqexec.model.UserDetails
-import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 
 sealed trait SoundSelection extends Product with Serializable

@@ -1,13 +1,13 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.common
+package seqexec.common
 
+import cats.data.NonEmptyList
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
-import cats.data.NonEmptyList
 
-object ArbitrariesWebCommon {
+trait ArbitrariesCommon {
 
   implicit def arbFixedLengthBuffer[A: Arbitrary]: Arbitrary[FixedLengthBuffer[A]] =
     Arbitrary {
@@ -36,3 +36,5 @@ object ArbitrariesWebCommon {
     Cogen[List[A]].contramap(_.toList)
 
 }
+
+object ArbitrariesCommon extends ArbitrariesCommon

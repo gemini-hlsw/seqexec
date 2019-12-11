@@ -1,19 +1,18 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.common
+package seqexec.common
 
+import cats.tests.CatsSuite
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.{ FunctorTests, TraverseTests }
 import monocle.law.discipline.TraversalTests
-import cats.tests.CatsSuite
+import seqexec.common.ArbitrariesCommon._
 
 /**
   * Tests the Zipper typeclasses
   */
 final class ZipperSpec extends CatsSuite {
-  import ArbitrariesWebCommon.arbZipper
-  import ArbitrariesWebCommon.zipperCogen
 
   test("support modify") {
     forAll { (l: List[Int], r: List[Int]) =>

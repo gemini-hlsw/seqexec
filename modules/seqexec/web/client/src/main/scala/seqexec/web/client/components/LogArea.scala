@@ -29,6 +29,7 @@ import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
 import scala.collection.immutable.SortedMap
+import seqexec.common.FixedLengthBuffer
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
 import seqexec.web.client.semanticui.elements.checkbox.Checkbox
@@ -41,7 +42,6 @@ import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.actions.ToggleLogArea
-import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.reusability._
 import seqexec.web.client.circuit.SeqexecCircuit
 import web.client.table._

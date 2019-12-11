@@ -108,8 +108,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     seqexec_model.jvm,
     seqexec_engine,
     seqexec_server,
-    seqexec_web_shared.js,
-    seqexec_web_shared.jvm,
     seqexec_web_server,
     seqexec_web_client)
 
@@ -258,19 +256,6 @@ lazy val web_client_common = project
       ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value ++ TestLibs.value
   )
 
-// a special crossProject for configuring a JS/JVM/shared structure
-lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("modules/seqexec/web/shared"))
-  .enablePlugins(GitBranchPrompt)
-  .disablePlugins(RevolverPlugin)
-  .settings(
-    addCompilerPlugin(Plugins.paradisePlugin)
-  )
-  .jvmSettings(commonSettings)
-  .jsSettings(gspScalaJsSettings)
-  .dependsOn(seqexec_model % "compile->compile;test->test")
-
 // Project for the server side application
 lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .enablePlugins(BuildInfoPlugin)
@@ -298,7 +283,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_web_shared.jvm, seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
+  .dependsOn(seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
@@ -385,7 +370,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   )
   .dependsOn(
     web_client_common % "compile->compile;test->test",
-    seqexec_web_shared.js % "compile->compile;test->test",
     seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
