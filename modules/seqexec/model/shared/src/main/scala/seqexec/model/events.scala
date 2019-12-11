@@ -4,6 +4,7 @@
 package seqexec.model
 
 import cats.Eq
+import cats.Order
 import cats.implicits._
 import dhs.ImageFileId
 import gem.Observation
@@ -38,8 +39,10 @@ object events {
                                     msg:       String)
       extends SeqexecEvent
   object ServerLogMessage {
-    implicit lazy val equal: Eq[ServerLogMessage] =
-      Eq.by(x => (x.level, x.timestamp, x.msg))
+    private implicit val instantOrder: Order[Instant] =
+      Order.by(_.getNano)
+    implicit val serverLogMessageOrder: Order[ServerLogMessage] =
+      Order.by(x => (x.level, x.timestamp, x.msg))
   }
 
   case object NullEvent extends SeqexecEvent
