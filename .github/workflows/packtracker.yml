@@ -17,16 +17,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2-beta
       - name: Set up Scala
         uses: olafurpg/setup-scala@v2
         with:
           java-version: 1.8
       - name: Export assets to packtracker
+        if: github.event_name == 'pull_request'
         run: |
           sbt seqexec_web_client/fullOptJS::webpack
           cd modules/seqexec/web/client/target/scala-2.12/scalajs-bundler/main/
           node node_modules/webpack/bin/webpack --bail --profile --json --config packtracker.webpack.config.js
         env:
           SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
-          PT_PROJECT_TOKEN: ${{ secrets.PT_PROJECT_TOKEN }}
+          PT_COMMIT: ${{ github.event.pull_request.head.sha }}
+          PT_PRIOR_COMMIT: ${{ github.event.pull_request.base.sha }}
+      - name: Export assets to packtracker
+        if: github.event_name == 'push'
+        run: |
+          sbt seqexec_web_client/fullOptJS::webpack
+          cd modules/seqexec/web/client/target/scala-2.12/scalajs-bundler/main/
+          node node_modules/webpack/bin/webpack --bail --profile --json --config packtracker.webpack.config.js
+        env:
+          SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
