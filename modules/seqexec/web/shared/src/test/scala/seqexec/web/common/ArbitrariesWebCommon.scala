@@ -7,6 +7,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
 import cats.data.NonEmptyList
 
+
 object ArbitrariesWebCommon {
 
   implicit def arbFixedLengthBuffer[A: Arbitrary]: Arbitrary[FixedLengthBuffer[A]] =
