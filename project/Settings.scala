@@ -87,7 +87,7 @@ object Settings {
     val pprint                  = "0.5.6"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.9"
+    val gspMath                 = "0.1.10"
   }
 
   /**
