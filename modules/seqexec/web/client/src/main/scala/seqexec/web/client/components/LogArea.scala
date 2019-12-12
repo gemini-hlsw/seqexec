@@ -169,7 +169,7 @@ object LogArea {
       State(SortedMap(ServerLogLevel.ServerLogLevelEnumerated.all.map(_ -> true): _*), DefaultTableState)
   }
 
-  private val ClipboardWidth    = 37.0
+  private val ClipboardWidth    = 41.0
   private val TimestampMinWidth = 90.1667 + SeqexecStyles.TableBorderWidth
   private val LevelMinWidth     = 59.3333 + SeqexecStyles.TableBorderWidth
   private val MessageMinWidth   = 89.35 + SeqexecStyles.TableBorderWidth

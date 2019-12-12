@@ -17,18 +17,12 @@ import seqexec.model.dhs._
 import seqexec.model.{M1GuideConfig, M2GuideConfig, NSRunningState, NSSubexposure, NodAndShuffleStatus, NodAndShuffleStep, Observer, QueueId, SequenceState, StandardStep, Step, StepConfig, StepState, TelescopeGuideConfig, UserDetails}
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.UserNotificationState
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.QueueOperations
-import seqexec.web.client.model.RunOperation
-import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.ResourceRunOperation
-import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.model.TabSelected
-import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.StepItems.StepStateSummary
@@ -74,18 +68,10 @@ package object reusability {
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
     Reusability.byEq
   implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
-  implicit val sectReuse: Reusability[SectionVisibilityState] =
-    Reusability.byRef
   implicit val potStateReuse: Reusability[PotState] = Reusability.byRef
   implicit val webSCeuse: Reusability[WebSocketConnection] =
     Reusability.by(_.ws.state)
-  implicit val runOperationReuse: Reusability[RunOperation] = Reusability.byRef
-  implicit val syncOperationReuse: Reusability[SyncOperation] =
-    Reusability.byRef
-  implicit val psOperationReuse: Reusability[PauseOperation] = Reusability.byRef
   implicit val rrOperationReuse: Reusability[ResourceRunOperation] =
-    Reusability.byRef
-  implicit val rfOperationReuse: Reusability[StartFromOperation] =
     Reusability.byRef
   implicit val availableTabsReuse: Reusability[AvailableTab] = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq
@@ -95,7 +81,6 @@ package object reusability {
   implicit val qfReuse: Reusability[CalQueueControlFocus]  = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]        = Reusability.byEq
   implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
-  implicit val soundReuse: Reusability[SoundSelection]     = Reusability.byRef
   implicit val globalLogReuse: Reusability[GlobalLog]      = Reusability.byEq
   implicit val resMap: Reusability[Map[Resource, ResourceRunOperation]] =
     Reusability.map

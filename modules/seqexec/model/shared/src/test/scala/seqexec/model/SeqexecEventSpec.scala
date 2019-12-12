@@ -36,4 +36,5 @@ final class SeqexecEventSpec extends CatsSuite with SequenceEventsArbitraries {
   checkAll("Eq[SequenceStopped]", EqTests[SequenceStopped].eqv)
   checkAll("Eq[SequenceAborted]", EqTests[SequenceAborted].eqv)
   checkAll("Eq[GuideConfigUpdate]", EqTests[GuideConfigUpdate].eqv)
+  checkAll("Order[ServerLogMessage]", OrderTests[ServerLogMessage].order)
 }
