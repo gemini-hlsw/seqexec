@@ -28,7 +28,413 @@ import scala.concurrent.duration.FiniteDuration
  * Created by jluhrs on 10/1/15.
  */
 
-final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
+trait TcsEpics[F[_]] {
+
+  import TcsEpics._
+
+  def post: F[ApplyCommandResult]
+
+  val m1GuideCmd: M1GuideCmd[F]
+
+  val m2GuideCmd: M2GuideCmd[F]
+
+  val m2GuideModeCmd: M2GuideModeCmd[F]
+
+  val m2GuideConfigCmd: M2GuideConfigCmd[F]
+
+  val mountGuideCmd: MountGuideCmd[F]
+
+  val offsetACmd: OffsetACmd[F]
+
+  val offsetBCmd: OffsetBCmd[F]
+
+  val offsetCCmd: OffsetCCmd[F]
+
+  val wavelSourceA: TargetWavelengthCmd[F]
+
+  val wavelSourceB: TargetWavelengthCmd[F]
+
+  val wavelSourceC: TargetWavelengthCmd[F]
+
+  val m2Beam: M2Beam[F]
+
+  val pwfs1ProbeGuideCmd: ProbeGuideCmd[F]
+
+  val pwfs2ProbeGuideCmd: ProbeGuideCmd[F]
+
+  val oiwfsProbeGuideCmd: ProbeGuideCmd[F]
+
+  val pwfs1ProbeFollowCmd: ProbeFollowCmd[F]
+
+  val pwfs2ProbeFollowCmd: ProbeFollowCmd[F]
+
+  val oiwfsProbeFollowCmd: ProbeFollowCmd[F]
+
+  val aoProbeFollowCmd: ProbeFollowCmd[F]
+
+  val pwfs1Park: EpicsCommand
+
+  val pwfs2Park: EpicsCommand
+
+  val oiwfsPark: EpicsCommand
+
+  val pwfs1StopObserveCmd: EpicsCommand
+
+  val pwfs2StopObserveCmd: EpicsCommand
+
+  val oiwfsStopObserveCmd: EpicsCommand
+
+  val pwfs1ObserveCmd: WfsObserveCmd[F]
+
+  val pwfs2ObserveCmd: WfsObserveCmd[F]
+
+  val oiwfsObserveCmd: WfsObserveCmd[F]
+
+  val hrwfsParkCmd: EpicsCommand
+
+  val hrwfsPosCmd: HrwfsPosCmd[F]
+
+  val scienceFoldParkCmd: EpicsCommand
+
+  val scienceFoldPosCmd: ScienceFoldPosCmd[F]
+
+  val observe: EpicsCommand
+
+  val endObserve: EpicsCommand
+
+  val aoCorrect: AoCorrect[F]
+
+  val aoPrepareControlMatrix: AoPrepareControlMatrix[F]
+
+  val aoFlatten: EpicsCommand
+
+  val aoStatistics: AoStatistics[F]
+
+  val targetFilter: TargetFilter[F]
+
+  def absorbTipTilt: F[Int]
+
+  def m1GuideSource: F[String]
+
+  def m1Guide: F[BinaryOnOff]
+
+  def m2p1Guide: F[String]
+
+  def m2p2Guide: F[String]
+
+  def m2oiGuide: F[String]
+
+  def m2aoGuide: F[String]
+
+  def comaCorrect: F[String]
+
+  def m2GuideState: F[BinaryOnOff]
+
+  def xoffsetPoA1: F[Double]
+
+  def yoffsetPoA1: F[Double]
+
+  def xoffsetPoB1: F[Double]
+
+  def yoffsetPoB1: F[Double]
+
+  def xoffsetPoC1: F[Double]
+
+  def yoffsetPoC1: F[Double]
+
+  def sourceAWavelength: F[Double]
+
+  def sourceBWavelength: F[Double]
+
+  def sourceCWavelength: F[Double]
+
+  def chopBeam: F[String]
+
+  def p1FollowS: F[String]
+
+  def p2FollowS: F[String]
+
+  def oiFollowS: F[String]
+
+  def aoFollowS: F[String]
+
+  def p1Parked: F[Boolean]
+
+  def p2Parked: F[Boolean]
+
+  def oiParked: F[Boolean]
+
+  def pwfs1On: F[BinaryYesNo]
+
+  def pwfs2On:F[BinaryYesNo]
+
+  def oiwfsOn: F[BinaryYesNo]
+
+  def sfName: F[String]
+
+  def sfParked: F[Int]
+
+  def agHwName: F[String]
+
+  def agHwParked: F[Int]
+
+  def instrAA: F[Double]
+
+  def inPosition:F[String]
+
+  def agInPosition:F[Double]
+
+  val pwfs1ProbeGuideConfig: ProbeGuideConfig[F]
+
+  val pwfs2ProbeGuideConfig: ProbeGuideConfig[F]
+
+  val oiwfsProbeGuideConfig: ProbeGuideConfig[F]
+
+  // This functions returns a F that, when run, first waits tcsSettleTime to absorb in-position transients, then waits
+  // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
+  // seconds for that to happen.
+  def waitInPosition(stabilizationTime: Time, timeout: Time)(implicit T: Timer[F]): F[Unit]
+
+  // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
+  /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
+   * an error. A better solution is to detect the edge, from not in position to in-position.
+   */
+  def waitAGInPosition(timeout: Time)(implicit T: Timer[F]): F[Unit]
+
+  def hourAngle: F[String]
+
+  def localTime: F[String]
+
+  def trackingFrame: F[String]
+
+  def trackingEpoch: F[Double]
+
+  def equinox: F[Double]
+
+  def trackingEquinox: F[String]
+
+  def trackingDec: F[Double]
+
+  def trackingRA: F[Double]
+
+  def elevation: F[Double]
+
+  def azimuth: F[Double]
+
+  def crPositionAngle: F[Double]
+
+  def ut: F[String]
+
+  def date: F[String]
+
+  def m2Baffle: F[String]
+
+  def m2CentralBaffle: F[String]
+
+  def st: F[String]
+
+  def sfRotation: F[Double]
+
+  def sfTilt: F[Double]
+
+  def sfLinear: F[Double]
+
+  def instrPA: F[Double]
+
+  def targetA: F[List[Double]]
+
+  def aoFoldPosition: F[String]
+
+  def useAo: F[BinaryYesNo]
+
+  def airmass: F[Double]
+
+  def airmassStart: F[Double]
+
+  def airmassEnd: F[Double]
+
+  def carouselMode: F[String]
+
+  def crFollow: F[Int]
+
+  def sourceATarget: Target[F]
+
+  val pwfs1Target: Target[F]
+
+  val pwfs2Target: Target[F]
+
+  val oiwfsTarget: Target[F]
+
+  def parallacticAngle: F[Angle]
+
+  def m2UserFocusOffset: F[Double]
+
+  def pwfs1IntegrationTime: F[Double]
+
+  def pwfs2IntegrationTime: F[Double]
+
+  // Attribute must be changed back to Double after EPICS channel is fixed.
+  def oiwfsIntegrationTime:F[Double]
+
+  def gsaoiPort: F[Int]
+
+  def gpiPort: F[Int]
+
+  def f2Port: F[Int]
+
+  def niriPort: F[Int]
+
+  def gnirsPort: F[Int]
+
+  def nifsPort: F[Int]
+
+  def gmosPort: F[Int]
+
+  def ghostPort: F[Int]
+
+  def aoGuideStarX: F[Double]
+
+  def aoGuideStarY: F[Double]
+
+  def aoPreparedCMX: F[Double]
+
+  def aoPreparedCMY: F[Double]
+
+  // GeMS Commands
+  import VirtualGemsTelescope._
+
+  val g1ProbeGuideCmd: ProbeGuideCmd[F]
+
+  val g2ProbeGuideCmd: ProbeGuideCmd[F]
+
+  val g3ProbeGuideCmd: ProbeGuideCmd[F]
+
+  val g4ProbeGuideCmd: ProbeGuideCmd[F]
+
+  def gemsProbeGuideCmd(g: VirtualGemsTelescope): ProbeGuideCmd[F] = g match {
+    case G1 => g1ProbeGuideCmd
+    case G2 => g2ProbeGuideCmd
+    case G3 => g3ProbeGuideCmd
+    case G4 => g4ProbeGuideCmd
+  }
+
+  val wavelG1: TargetWavelengthCmd[F]
+
+  val wavelG2: TargetWavelengthCmd[F]
+
+  val wavelG3: TargetWavelengthCmd[F]
+
+  val wavelG4: TargetWavelengthCmd[F]
+
+  def gemsWavelengthCmd(g: VirtualGemsTelescope): TargetWavelengthCmd[F] = g match {
+    case G1 => wavelG1
+    case G2 => wavelG2
+    case G3 => wavelG3
+    case G4 => wavelG4
+  }
+
+  def gwfs1Target: Target[F]
+
+  def gwfs2Target: Target[F]
+
+  def gwfs3Target: Target[F]
+
+  def gwfs4Target: Target[F]
+
+  def gemsTarget(g: VirtualGemsTelescope): Target[F] = g match {
+    case G1 => gwfs1Target
+    case G2 => gwfs2Target
+    case G3 => gwfs3Target
+    case G4 => gwfs4Target
+  }
+
+  val cwfs1ProbeFollowCmd: ProbeFollowCmd[F]
+
+  val cwfs2ProbeFollowCmd: ProbeFollowCmd[F]
+
+  val cwfs3ProbeFollowCmd: ProbeFollowCmd[F]
+
+  val odgw1FollowCmd: ProbeFollowCmd[F]
+
+  val odgw2FollowCmd: ProbeFollowCmd[F]
+
+  val odgw3FollowCmd: ProbeFollowCmd[F]
+
+  val odgw4FollowCmd: ProbeFollowCmd[F]
+
+  val odgw1ParkCmd: EpicsCommand
+
+  val odgw2ParkCmd: EpicsCommand
+
+  val odgw3ParkCmd: EpicsCommand
+
+  val odgw4ParkCmd: EpicsCommand
+
+  // GeMS statuses
+
+  def cwfs1Follow: F[Boolean]
+
+  def cwfs2Follow: F[Boolean]
+
+  def cwfs3Follow: F[Boolean]
+
+  def odgw1Follow: F[Boolean]
+
+  def odgw2Follow: F[Boolean]
+
+  def odgw3Follow: F[Boolean]
+
+  def odgw4Follow: F[Boolean]
+
+  def odgw1Parked: F[Boolean]
+
+  def odgw2Parked: F[Boolean]
+
+  def odgw3Parked: F[Boolean]
+
+  def odgw4Parked: F[Boolean]
+
+  def g1MapName: F[Option[GemsSource]]
+
+  def g2MapName: F[Option[GemsSource]]
+
+  def g3MapName: F[Option[GemsSource]]
+
+  def g4MapName: F[Option[GemsSource]]
+
+  def g1Wavelength: F[Double]
+
+  def g2Wavelength: F[Double]
+
+  def g3Wavelength: F[Double]
+
+  def g4Wavelength: F[Double]
+
+  def gemsWavelength(g: VirtualGemsTelescope): F[Double] = g match {
+    case G1 => g1Wavelength
+    case G2 => g2Wavelength
+    case G3 => g3Wavelength
+    case G4 => g4Wavelength
+  }
+
+  val g1GuideConfig: ProbeGuideConfig[F]
+
+  val g2GuideConfig: ProbeGuideConfig[F]
+
+  val g3GuideConfig: ProbeGuideConfig[F]
+
+  val g4GuideConfig: ProbeGuideConfig[F]
+
+  def gemsGuideConfig(g: VirtualGemsTelescope): ProbeGuideConfig[F] = g match {
+    case G1 => g1GuideConfig
+    case G2 => g2GuideConfig
+    case G3 => g3GuideConfig
+    case G4 => g4GuideConfig
+  }
+
+}
+
+final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String, String]) extends TcsEpics[F] {
 
   import TcsEpics._
 
@@ -36,353 +442,353 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
-  def post: F[ApplyCommandResult] = m1GuideCmd.post
+  override def post: F[ApplyCommandResult] = m1GuideCmd.post
 
-  object m1GuideCmd extends EpicsCommand {
+  override val m1GuideCmd: M1GuideCmd[F] = new M1GuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m1Guide"))
     private val state = cs.map(_.getString("state"))
 
-    def setState(v: String): F[Unit] = setParameter(state, v)
+    override def setState(v: String): F[Unit] = setParameter(state, v)
   }
 
-  object m2GuideCmd extends EpicsCommand {
+  override val m2GuideCmd: M2GuideCmd[F] = new M2GuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2Guide"))
     private val state = cs.map(_.getString("state"))
 
-    def setState(v: String): F[Unit] = setParameter(state, v)
+    override def setState(v: String): F[Unit] = setParameter(state, v)
   }
 
-  object m2GuideModeCmd extends EpicsCommand {
+  override val m2GuideModeCmd: M2GuideModeCmd[F] = new M2GuideModeCmd[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideMode"))
 
     private val coma = cs.map(_.getString("coma"))
-    def setComa(v: String): F[Unit] = setParameter(coma, v)
+    override def setComa(v: String): F[Unit] = setParameter(coma, v)
   }
 
-  object m2GuideConfigCmd extends EpicsCommand {
+  override val m2GuideConfigCmd: M2GuideConfigCmd[F] = new M2GuideConfigCmd[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideConfig"))
 
     private val source = cs.map(_.getString("source"))
-    def setSource(v: String): F[Unit] = setParameter(source, v)
+    override def setSource(v: String): F[Unit] = setParameter(source, v)
 
     private val beam = cs.map(_.getString("beam"))
-    def setBeam(v: String): F[Unit] = setParameter(beam, v)
+    override def setBeam(v: String): F[Unit] = setParameter(beam, v)
 
     private val reset = cs.map(_.getString("reset"))
-    def setReset(v: String): F[Unit] = setParameter(reset, v)
+    override def setReset(v: String): F[Unit] = setParameter(reset, v)
   }
 
-  object mountGuideCmd extends EpicsCommand {
+  override val mountGuideCmd: MountGuideCmd[F] = new MountGuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("mountGuide"))
 
     private val source = cs.map(_.getString("source"))
 
-    def setSource(v: String): F[Unit] = setParameter(source, v)
+    override def setSource(v: String): F[Unit] = setParameter(source, v)
 
     private val p1weight = cs.map(_.getDouble("p1weight"))
 
-    def setP1Weight(v: Double): F[Unit] = setParameter[F, java.lang.Double](p1weight, v)
+    override def setP1Weight(v: Double): F[Unit] = setParameter[F, java.lang.Double](p1weight, v)
 
     private val p2weight = cs.map(_.getDouble("p2weight"))
 
-    def setP2Weight(v: Double): F[Unit] = setParameter[F, java.lang.Double](p2weight, v)
+    override def setP2Weight(v: Double): F[Unit] = setParameter[F, java.lang.Double](p2weight, v)
 
     private val mode = cs.map(_.getString("mode"))
 
-    def setMode(v: String): F[Unit] = setParameter(mode, v)
+    override def setMode(v: String): F[Unit] = setParameter(mode, v)
   }
 
-  object offsetACmd extends EpicsCommand {
+  override val offsetACmd: OffsetACmd[F] = new OffsetACmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoA1"))
 
     private val x = cs.map(_.getDouble("x"))
 
-    def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
+    override def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
 
     private val y = cs.map(_.getDouble("y"))
 
-    def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
+    override def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
   }
 
-  object offsetBCmd extends EpicsCommand {
+  override val offsetBCmd: OffsetBCmd[F] = new OffsetBCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoB1"))
 
     private val x = cs.map(_.getDouble("x"))
 
-    def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
+    override def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
 
     private val y = cs.map(_.getDouble("y"))
 
-    def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
+    override def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
   }
 
-  object offsetCCmd extends EpicsCommand {
+  override val offsetCCmd: OffsetCCmd[F] = new OffsetCCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("offsetPoC1"))
 
     private val x = cs.map(_.getDouble("x"))
 
-    def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
+    override def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
 
     private val y = cs.map(_.getDouble("y"))
 
-    def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
+    override def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
   }
 
-  val wavelSourceA: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceA", epicsService)
+  override val wavelSourceA: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelSourceA", epicsService)
 
-  val wavelSourceB: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceB", epicsService)
+  override val wavelSourceB: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelSourceB", epicsService)
 
-  val wavelSourceC: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelSourceC", epicsService)
+  override val wavelSourceC: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelSourceC", epicsService)
 
-  object m2Beam extends EpicsCommand {
+  override val m2Beam: M2Beam[F] = new M2Beam[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2Beam"))
 
     private val beam = cs.map(_.getString("beam"))
 
-    def setBeam(v: String): F[Unit] = setParameter(beam, v)
+    override def setBeam(v: String): F[Unit] = setParameter(beam, v)
   }
 
-  val pwfs1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("pwfs1Guide", epicsService)
+  override val pwfs1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("pwfs1Guide", epicsService)
 
-  val pwfs2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("pwfs2Guide", epicsService)
+  override val pwfs2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("pwfs2Guide", epicsService)
 
-  val oiwfsProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("oiwfsGuide", epicsService)
+  override val oiwfsProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("oiwfsGuide", epicsService)
 
-  val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("p1Follow", epicsService)
+  override val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("p1Follow", epicsService)
 
-  val pwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("p2Follow", epicsService)
+  override val pwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("p2Follow", epicsService)
 
-  val oiwfsProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("oiFollow", epicsService)
+  override val oiwfsProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("oiFollow", epicsService)
 
-  val aoProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("aoFollow", epicsService)
+  override val aoProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("aoFollow", epicsService)
 
-  object pwfs1Park extends EpicsCommand {
+  override val pwfs1Park: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1Park"))
   }
 
-  object pwfs2Park extends EpicsCommand {
+  override val pwfs2Park: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs2Park"))
   }
 
-  object oiwfsPark extends EpicsCommand {
+  override val oiwfsPark: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsPark"))
   }
 
-  object pwfs1StopObserveCmd extends EpicsCommand {
+  override val pwfs1StopObserveCmd: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1StopObserve"))
   }
 
-  object pwfs2StopObserveCmd extends EpicsCommand {
+  override val pwfs2StopObserveCmd: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs2StopObserve"))
   }
 
-  object oiwfsStopObserveCmd extends EpicsCommand {
+  override val oiwfsStopObserveCmd: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsStopObserve"))
   }
 
-  val pwfs1ObserveCmd: WfsObserveCmd[F] = new WfsObserveCmd("pwfs1Observe", epicsService)
+  override val pwfs1ObserveCmd: WfsObserveCmd[F] = new WfsObserveCmdImpl("pwfs1Observe", epicsService)
 
-  val pwfs2ObserveCmd: WfsObserveCmd[F] = new WfsObserveCmd("pwfs2Observe", epicsService)
+  override val pwfs2ObserveCmd: WfsObserveCmd[F] = new WfsObserveCmdImpl("pwfs2Observe", epicsService)
 
-  val oiwfsObserveCmd: WfsObserveCmd[F] = new WfsObserveCmd("oiwfsObserve", epicsService)
+  override val oiwfsObserveCmd: WfsObserveCmd[F] = new WfsObserveCmdImpl("oiwfsObserve", epicsService)
 
-  object hrwfsParkCmd extends EpicsCommand {
+  override val hrwfsParkCmd: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfsPark"))
   }
 
-  object hrwfsPosCmd extends EpicsCommand {
+  override val hrwfsPosCmd: HrwfsPosCmd[F] = new HrwfsPosCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfs"))
 
     private val hrwfsPos = cs.map(_.getString("hrwfsPos"))
 
-    def setHrwfsPos(v: String): F[Unit] = setParameter(hrwfsPos, v)
+    override def setHrwfsPos(v: String): F[Unit] = setParameter(hrwfsPos, v)
   }
 
-  object scienceFoldParkCmd extends EpicsCommand {
+  override val scienceFoldParkCmd: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("scienceFoldPark"))
   }
 
-  object scienceFoldPosCmd extends EpicsCommand {
+  override val scienceFoldPosCmd: ScienceFoldPosCmd[F] = new ScienceFoldPosCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("scienceFold"))
 
     private val scfold = cs.map(_.getString("scfold"))
 
-    def setScfold(v: String): F[Unit] = setParameter(scfold, v)
+    override def setScfold(v: String): F[Unit] = setParameter(scfold, v)
   }
 
-  object observe extends EpicsCommand {
+  override val observe: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("tcs::observe"))
   }
 
-  object endObserve extends EpicsCommand {
+  override val endObserve: EpicsCommand = new EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("tcs::endObserve"))
   }
 
-  object aoCorrect extends EpicsCommand {
+  override val aoCorrect: AoCorrect[F] = new AoCorrect[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoCorrect"))
 
     private val correct = cs.map(_.getString("correct"))
-    def setCorrections(v: String): F[Unit] = setParameter(correct, v)
+    override def setCorrections(v: String): F[Unit] = setParameter(correct, v)
 
     private val gains = cs.map(_.getInteger("gains"))
-    def setGains(v: Int): F[Unit] = setParameter[F, java.lang.Integer](gains, v)
+    override def setGains(v: Int): F[Unit] = setParameter[F, java.lang.Integer](gains, v)
 
     private val matrix = cs.map(_.getInteger("matrix"))
-    def setMatrix(v: Int): F[Unit] = setParameter[F, java.lang.Integer](matrix, v)
+    override def setMatrix(v: Int): F[Unit] = setParameter[F, java.lang.Integer](matrix, v)
   }
 
-  object aoPrepareControlMatrix extends EpicsCommand {
+  override val aoPrepareControlMatrix: AoPrepareControlMatrix[F] = new AoPrepareControlMatrix[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoPrepareCm"))
 
     private val x = cs.map(_.getDouble("x"))
-    def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
+    override def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
 
     private val y = cs.map(_.getDouble("y"))
-    def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
+    override def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
 
     private val seeing = cs.map(_.getDouble("seeing"))
-    def setSeeing(v: Double): F[Unit] = setParameter[F, java.lang.Double](seeing, v)
+    override def setSeeing(v: Double): F[Unit] = setParameter[F, java.lang.Double](seeing, v)
 
     private val starMagnitude = cs.map(_.getDouble("gsmag"))
-    def setStarMagnitude(v: Double): F[Unit] = setParameter[F, java.lang.Double](starMagnitude, v)
+    override def setStarMagnitude(v: Double): F[Unit] = setParameter[F, java.lang.Double](starMagnitude, v)
 
     private val windSpeed = cs.map(_.getDouble("windspeed"))
-    def setWindSpeed(v: Double): F[Unit] = setParameter[F, java.lang.Double](windSpeed, v)
+    override def setWindSpeed(v: Double): F[Unit] = setParameter[F, java.lang.Double](windSpeed, v)
   }
 
-  object aoFlatten extends EpicsCommand {
+  override val aoFlatten: EpicsCommand = new EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoFlatten"))
   }
 
-  object aoStatistics extends EpicsCommand {
+  override val aoStatistics: AoStatistics[F] = new AoStatistics[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoStats"))
 
     private val fileName = cs.map(_.getString("filename"))
-    def setFileName(v: String): F[Unit] = setParameter(fileName, v)
+    override def setFileName(v: String): F[Unit] = setParameter(fileName, v)
 
     private val samples = cs.map(_.getInteger("samples"))
-    def setSamples(v: Int): F[Unit] = setParameter[F, java.lang.Integer](samples, v)
+    override def setSamples(v: Int): F[Unit] = setParameter[F, java.lang.Integer](samples, v)
 
     private val interval = cs.map(_.getDouble("interval"))
-    def setInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](interval, v)
+    override def setInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](interval, v)
 
     private val triggerTime = cs.map(_.getDouble("trigtime"))
-    def setTriggerTimeInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](triggerTime, v)
+    override def setTriggerTimeInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](triggerTime, v)
   }
 
-  object targetFilter extends EpicsCommand {
+  override val targetFilter: TargetFilter[F] = new TargetFilter[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("filter1"))
 
     private val bandwidth = cs.map(_.getDouble("bandwidth"))
-    def setBandwidth(v: Double): F[Unit] = setParameter[F, java.lang.Double](bandwidth, v)
+    override def setBandwidth(v: Double): F[Unit] = setParameter[F, java.lang.Double](bandwidth, v)
 
     private val maxVelocity = cs.map(_.getDouble("maxv"))
-    def setMaxVelocity(v: Double): F[Unit] = setParameter[F, java.lang.Double](maxVelocity, v)
+    override def setMaxVelocity(v: Double): F[Unit] = setParameter[F, java.lang.Double](maxVelocity, v)
 
     private val grabRadius = cs.map(_.getDouble("grab"))
-    def setGrabRadius(v: Double): F[Unit] = setParameter[F, java.lang.Double](grabRadius, v)
+    override def setGrabRadius(v: Double): F[Unit] = setParameter[F, java.lang.Double](grabRadius, v)
 
     private val shortCircuit = cs.map(_.getString("shortCircuit"))
-    def setShortCircuit(v: String): F[Unit] = setParameter(shortCircuit, v)
+    override def setShortCircuit(v: String): F[Unit] = setParameter(shortCircuit, v)
   }
 
   private val tcsState = epicsService.getStatusAcceptor("tcsstate")
 
-  def absorbTipTilt: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("absorbTipTilt"))
+  override def absorbTipTilt: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("absorbTipTilt"))
 
-  def m1GuideSource: F[String] = safeAttributeF(tcsState.getStringAttribute("m1GuideSource"))
+  override def m1GuideSource: F[String] = safeAttributeF(tcsState.getStringAttribute("m1GuideSource"))
 
   private val m1GuideAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m1Guide",
     s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide")
-  def m1Guide: F[BinaryOnOff] = safeAttributeF(m1GuideAttr)
+  override def m1Guide: F[BinaryOnOff] = safeAttributeF(m1GuideAttr)
 
-  def m2p1Guide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2p1Guide"))
+  override def m2p1Guide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2p1Guide"))
 
-  def m2p2Guide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2p2Guide"))
+  override def m2p2Guide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2p2Guide"))
 
-  def m2oiGuide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2oiGuide"))
+  override def m2oiGuide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2oiGuide"))
 
-  def m2aoGuide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2aoGuide"))
+  override def m2aoGuide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2aoGuide"))
 
-  def comaCorrect: F[String] = safeAttributeF(tcsState.getStringAttribute("comaCorrect"))
+  override def comaCorrect: F[String] = safeAttributeF(tcsState.getStringAttribute("comaCorrect"))
 
   private val m2GuideStateAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m2GuideState",
     s"${TcsTop}om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state")
-  def m2GuideState: F[BinaryOnOff] = safeAttributeF(m2GuideStateAttr)
+  override def m2GuideState: F[BinaryOnOff] = safeAttributeF(m2GuideStateAttr)
 
-  def xoffsetPoA1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoA1"))
+  override def xoffsetPoA1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoA1"))
 
-  def yoffsetPoA1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoA1"))
+  override def yoffsetPoA1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoA1"))
 
-  def xoffsetPoB1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoB1"))
+  override def xoffsetPoB1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoB1"))
 
-  def yoffsetPoB1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoB1"))
+  override def yoffsetPoB1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoB1"))
 
-  def xoffsetPoC1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoC1"))
+  override def xoffsetPoC1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoC1"))
 
-  def yoffsetPoC1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoC1"))
+  override def yoffsetPoC1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("yoffsetPoC1"))
 
-  def sourceAWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceAWavelength"))
+  override def sourceAWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceAWavelength"))
 
-  def sourceBWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceBWavelength"))
+  override def sourceBWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceBWavelength"))
 
-  def sourceCWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceCWavelength"))
+  override def sourceCWavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceCWavelength"))
 
-  def chopBeam: F[String] = safeAttributeF(tcsState.getStringAttribute("chopBeam"))
+  override def chopBeam: F[String] = safeAttributeF(tcsState.getStringAttribute("chopBeam"))
 
-  def p1FollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("p1FollowS"))
+  override def p1FollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("p1FollowS"))
 
-  def p2FollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("p2FollowS"))
+  override def p2FollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("p2FollowS"))
 
-  def oiFollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("oiFollowS"))
+  override def oiFollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("oiFollowS"))
 
-  def aoFollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("aoFollowS"))
+  override def aoFollowS: F[String] = safeAttributeF(tcsState.getStringAttribute("aoFollowS"))
 
-  def p1Parked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("p1Parked"))
+  override def p1Parked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("p1Parked"))
     .map(_ =!= 0)
 
-  def p2Parked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("p2Parked"))
+  override def p2Parked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("p2Parked"))
     .map(_ =!= 0)
 
-  def oiParked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("oiParked"))
+  override def oiParked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("oiParked"))
     .map(_ =!= 0)
 
   private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs1On",
     s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating")
-  def pwfs1On: F[BinaryYesNo] = safeAttributeF(pwfs1OnAttr)
+  override def pwfs1On: F[BinaryYesNo] = safeAttributeF(pwfs1OnAttr)
 
   private val pwfs2OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs2On",
     s"${TcsTop}drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating")
 
-  def pwfs2On:F[BinaryYesNo] = safeAttributeF(pwfs2OnAttr)
+  override def pwfs2On:F[BinaryYesNo] = safeAttributeF(pwfs2OnAttr)
 
   private val oiwfsOnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("oiwfsOn",
     s"${TcsTop}drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating")
 
-  def oiwfsOn: F[BinaryYesNo] = safeAttributeF(oiwfsOnAttr)
+  override def oiwfsOn: F[BinaryYesNo] = safeAttributeF(oiwfsOnAttr)
 
-  def sfName: F[String] = safeAttributeF(tcsState.getStringAttribute("sfName"))
+  override def sfName: F[String] = safeAttributeF(tcsState.getStringAttribute("sfName"))
 
-  def sfParked: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("sfParked"))
+  override def sfParked: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("sfParked"))
 
-  def agHwName: F[String] = safeAttributeF(tcsState.getStringAttribute("agHwName"))
+  override def agHwName: F[String] = safeAttributeF(tcsState.getStringAttribute("agHwName"))
 
-  def agHwParked: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("agHwParked"))
+  override def agHwParked: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("agHwParked"))
 
-  def instrAA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("instrAA"))
+  override def instrAA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("instrAA"))
 
   private val inPositionAttr: CaAttribute[String] = tcsState.getStringAttribute("inPosition")
 
-  def inPosition:F[String] = safeAttributeF(inPositionAttr)
+  override def inPosition:F[String] = safeAttributeF(inPositionAttr)
 
   private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
-  def agInPosition:F[Double] = safeAttributeSDoubleF(agInPositionAttr)
+  override def agInPosition:F[Double] = safeAttributeSDoubleF(agInPositionAttr)
 
-  val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p1", tcsState)
+  override val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("p1", tcsState)
 
-  val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p2", tcsState)
+  override val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("p2", tcsState)
 
-  val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("oi", tcsState)
+  override val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("oi", tcsState)
 
   private val defaultTcsStabilizeTime = 1.seconds
 
@@ -395,7 +801,7 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
   // This functions returns a F that, when run, first waits tcsSettleTime to absorb in-position transients, then waits
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
-  def waitInPosition(stabilizationTime: Time, timeout: Time)(implicit T: Timer[F]): F[Unit] =
+  override def waitInPosition(stabilizationTime: Time, timeout: Time)(implicit T: Timer[F]): F[Unit] =
     T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *>
       Sync[F].delay(filteredInPositionAttr.restart(java.time.Duration.ofMillis(stabilizationTime.toMillis)))
         .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
@@ -412,70 +818,70 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
   private val AGSettleTime = 1100.milliseconds
-  def waitAGInPosition(timeout: Time)(implicit T: Timer[F]): F[Unit] =
+  override def waitAGInPosition(timeout: Time)(implicit T: Timer[F]): F[Unit] =
     T.sleep(FiniteDuration(AGSettleTime.toMillis, TimeUnit.MILLISECONDS)) *>
       Sync[F].delay(filteredAGInPositionAttr.restart).flatMap(
         waitForValueF[java.lang.Double, F](_, 1.0, timeout, "AG inposition flag"))
 
-  def hourAngle: F[String] = safeAttributeF(tcsState.getStringAttribute("ha"))
+  override def hourAngle: F[String] = safeAttributeF(tcsState.getStringAttribute("ha"))
 
-  def localTime: F[String] = safeAttributeF(tcsState.getStringAttribute("lt"))
+  override def localTime: F[String] = safeAttributeF(tcsState.getStringAttribute("lt"))
 
-  def trackingFrame: F[String] = safeAttributeF(tcsState.getStringAttribute("trkframe"))
+  override def trackingFrame: F[String] = safeAttributeF(tcsState.getStringAttribute("trkframe"))
 
-  def trackingEpoch: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("trkepoch"))
+  override def trackingEpoch: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("trkepoch"))
 
-  def equinox: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceAEquinox"))
+  override def equinox: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sourceAEquinox"))
 
-  def trackingEquinox: F[String] = safeAttributeF(tcsState.getStringAttribute("sourceATrackEq"))
+  override def trackingEquinox: F[String] = safeAttributeF(tcsState.getStringAttribute("sourceATrackEq"))
 
-  def trackingDec: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("dectrack"))
+  override def trackingDec: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("dectrack"))
 
-  def trackingRA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("ratrack"))
+  override def trackingRA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("ratrack"))
 
-  def elevation: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("elevatio"))
+  override def elevation: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("elevatio"))
 
-  def azimuth: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("azimuth"))
+  override def azimuth: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("azimuth"))
 
-  def crPositionAngle: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("crpa"))
+  override def crPositionAngle: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("crpa"))
 
-  def ut: F[String] = safeAttributeF(tcsState.getStringAttribute("ut"))
+  override def ut: F[String] = safeAttributeF(tcsState.getStringAttribute("ut"))
 
-  def date: F[String] = safeAttributeF(tcsState.getStringAttribute("date"))
+  override def date: F[String] = safeAttributeF(tcsState.getStringAttribute("date"))
 
-  def m2Baffle: F[String] = safeAttributeF(tcsState.getStringAttribute("m2baffle"))
+  override def m2Baffle: F[String] = safeAttributeF(tcsState.getStringAttribute("m2baffle"))
 
-  def m2CentralBaffle: F[String] = safeAttributeF(tcsState.getStringAttribute("m2cenbaff"))
+  override def m2CentralBaffle: F[String] = safeAttributeF(tcsState.getStringAttribute("m2cenbaff"))
 
-  def st: F[String] = safeAttributeF(tcsState.getStringAttribute("st"))
+  override def st: F[String] = safeAttributeF(tcsState.getStringAttribute("st"))
 
-  def sfRotation: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sfrt2"))
+  override def sfRotation: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sfrt2"))
 
-  def sfTilt: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sftilt"))
+  override def sfTilt: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sftilt"))
 
-  def sfLinear: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sflinear"))
+  override def sfLinear: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("sflinear"))
 
-  def instrPA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("instrPA"))
+  override def instrPA: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("instrPA"))
 
-  def targetA: F[List[Double]] = safeAttributeSListSDoubleF(tcsState.getDoubleAttribute("targetA"))
+  override def targetA: F[List[Double]] = safeAttributeSListSDoubleF(tcsState.getDoubleAttribute("targetA"))
 
-  def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
+  override def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
 
   private val useAoAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("useAo",
     s"${TcsTop}im:AOConfigFlag.VAL", classOf[BinaryYesNo], "Using AO flag")
-  def useAo: F[BinaryYesNo] = safeAttributeF(useAoAttr)
+  override def useAo: F[BinaryYesNo] = safeAttributeF(useAoAttr)
 
-  def airmass: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("airmass"))
+  override def airmass: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("airmass"))
 
-  def airmassStart: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("amstart"))
+  override def airmassStart: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("amstart"))
 
-  def airmassEnd: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("amend"))
+  override def airmassEnd: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("amend"))
 
-  def carouselMode: F[String] = safeAttributeF(tcsState.getStringAttribute("cguidmod"))
+  override def carouselMode: F[String] = safeAttributeF(tcsState.getStringAttribute("cguidmod"))
 
-  def crFollow: F[Int]  = safeAttributeSIntF(tcsState.getIntegerAttribute("crfollow"))
+  override def crFollow: F[Int]  = safeAttributeSIntF(tcsState.getIntegerAttribute("crfollow"))
 
-  def sourceATarget: Target[F] = new Target[F] {
+  override def sourceATarget: Target[F] = new Target[F] {
     override def epoch: F[String] = safeAttributeF(tcsState.getStringAttribute("sourceAEpoch"))
 
     override def equinox: F[String] = safeAttributeF(tcsState.getStringAttribute("sourceAEquinox"))
@@ -515,130 +921,106 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
         safeAttributeSDoubleF(tcsState.getDoubleAttribute(base + "apmdec"))
     }
 
-  val pwfs1Target: Target[F] = target("p1")
+  override val pwfs1Target: Target[F] = target("p1")
 
-  val pwfs2Target: Target[F] = target("p2")
+  override val pwfs2Target: Target[F] = target("p2")
 
-  val oiwfsTarget: Target[F] = target("oi")
+  override val oiwfsTarget: Target[F] = target("oi")
 
-  def parallacticAngle: F[Angle] =
+  override def parallacticAngle: F[Angle] =
     safeAttributeSDoubleF(tcsState.getDoubleAttribute("parangle")).map(Degrees(_))
 
-  def m2UserFocusOffset: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("m2ZUserOffset"))
+  override def m2UserFocusOffset: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("m2ZUserOffset"))
 
   private val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
 
-  def pwfs1IntegrationTime: F[Double] = safeAttributeSDoubleF(pwfs1Status.getDoubleAttribute("intTime"))
+  override def pwfs1IntegrationTime: F[Double] = safeAttributeSDoubleF(pwfs1Status.getDoubleAttribute("intTime"))
 
   private val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
 
-  def pwfs2IntegrationTime: F[Double] = safeAttributeSDoubleF(pwfs2Status.getDoubleAttribute("intTime"))
+  override def pwfs2IntegrationTime: F[Double] = safeAttributeSDoubleF(pwfs2Status.getDoubleAttribute("intTime"))
 
   private val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
   // Attribute must be changed back to Double after EPICS channel is fixed.
-  def oiwfsIntegrationTime:F[Double]  = safeAttributeSDoubleF(oiwfsStatus.getDoubleAttribute("intTime"))
+  override def oiwfsIntegrationTime:F[Double]  = safeAttributeSDoubleF(oiwfsStatus.getDoubleAttribute("intTime"))
 
 
   private def instPort(name: String): F[Int] =
     safeAttributeSIntF(tcsState.getIntegerAttribute(s"${name}Port"))
 
-  def gsaoiPort: F[Int] = instPort("gsaoi")
-  def gpiPort: F[Int]= instPort("gpi")
-  def f2Port: F[Int] = instPort("f2")
-  def niriPort: F[Int] = instPort("niri")
-  def gnirsPort: F[Int] = instPort("nirs")
-  def nifsPort: F[Int] = instPort("nifs")
-  def gmosPort: F[Int] = instPort("gmos")
-  def ghostPort: F[Int] = instPort("ghost")
+  override def gsaoiPort: F[Int] = instPort("gsaoi")
+  override def gpiPort: F[Int]= instPort("gpi")
+  override def f2Port: F[Int] = instPort("f2")
+  override def niriPort: F[Int] = instPort("niri")
+  override def gnirsPort: F[Int] = instPort("nirs")
+  override def nifsPort: F[Int] = instPort("nifs")
+  override def gmosPort: F[Int] = instPort("gmos")
+  override def ghostPort: F[Int] = instPort("ghost")
 
-  def aoGuideStarX: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("aogsx"))
+  override def aoGuideStarX: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("aogsx"))
 
-  def aoGuideStarY: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("aogsy"))
+  override def aoGuideStarY: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("aogsy"))
 
-  def aoPreparedCMX: F[Double] = safeAttributeF(tcsState.getStringAttribute("cmprepx"))
+  override def aoPreparedCMX: F[Double] = safeAttributeF(tcsState.getStringAttribute("cmprepx"))
     .map(_.toDouble)
     .adaptError{case e => SeqexecException(e)}
 
-  def aoPreparedCMY: F[Double] = safeAttributeF(tcsState.getStringAttribute("cmprepy"))
+  override def aoPreparedCMY: F[Double] = safeAttributeF(tcsState.getStringAttribute("cmprepy"))
     .map(_.toDouble)
     .adaptError{case e => SeqexecException(e)}
 
-  // GeMS Commands
-  import VirtualGemsTelescope._
+  override val g1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("g1Guide", epicsService)
 
-  val g1ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g1Guide", epicsService)
+  override val g2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("g2Guide", epicsService)
 
-  val g2ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g2Guide", epicsService)
+  override val g3ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("g3Guide", epicsService)
 
-  val g3ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g3Guide", epicsService)
+  override val g4ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmdImpl("g4Guide", epicsService)
 
-  val g4ProbeGuideCmd: ProbeGuideCmd[F] = new ProbeGuideCmd("g4Guide", epicsService)
+  override val wavelG1: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelG1", epicsService)
 
-  def gemsProbeGuideCmd(g: VirtualGemsTelescope): ProbeGuideCmd[F] = g match {
-    case G1 => g1ProbeGuideCmd
-    case G2 => g2ProbeGuideCmd
-    case G3 => g3ProbeGuideCmd
-    case G4 => g4ProbeGuideCmd
-  }
+  override val wavelG2: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelG2", epicsService)
 
-  val wavelG1: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG1", epicsService)
+  override val wavelG3: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelG3", epicsService)
 
-  val wavelG2: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG2", epicsService)
+  override val wavelG4: TargetWavelengthCmd[F] = new TargetWavelengthCmdImpl[F]("wavelG4", epicsService)
 
-  val wavelG3: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG3", epicsService)
+  override def gwfs1Target: Target[F] = target("g1")
 
-  val wavelG4: TargetWavelengthCmd[F] = new TargetWavelengthCmd[F]("wavelG4", epicsService)
+  override def gwfs2Target: Target[F] = target("g2")
 
-  def gemsWavelengthCmd(g: VirtualGemsTelescope): TargetWavelengthCmd[F] = g match {
-    case G1 => wavelG1
-    case G2 => wavelG2
-    case G3 => wavelG3
-    case G4 => wavelG4
-  }
+  override def gwfs3Target: Target[F] = target("g3")
 
-  def gwfs1Target: Target[F] = target("g1")
+  override def gwfs4Target: Target[F] = target("g4")
 
-  def gwfs2Target: Target[F] = target("g2")
+  override val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("ngsPr1Follow", epicsService)
 
-  def gwfs3Target: Target[F] = target("g3")
+  override val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("ngsPr2Follow", epicsService)
 
-  def gwfs4Target: Target[F] = target("g4")
+  override val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("ngsPr3Follow", epicsService)
 
-  def gemsTarget(g: VirtualGemsTelescope): Target[F] = g match {
-    case G1 => gwfs1Target
-    case G2 => gwfs2Target
-    case G3 => gwfs3Target
-    case G4 => gwfs4Target
-  }
+  override val odgw1FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("odgw1Follow", epicsService)
 
-  val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr1Follow", epicsService)
+  override val odgw2FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("odgw2Follow", epicsService)
 
-  val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr2Follow", epicsService)
+  override val odgw3FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("odgw3Follow", epicsService)
 
-  val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("ngsPr3Follow", epicsService)
+  override val odgw4FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmdImpl("odgw4Follow", epicsService)
 
-  val odgw1FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw1Follow", epicsService)
-
-  val odgw2FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw2Follow", epicsService)
-
-  val odgw3FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw3Follow", epicsService)
-
-  val odgw4FollowCmd: ProbeFollowCmd[F] = new ProbeFollowCmd("odgw4Follow", epicsService)
-
-  object odgw1ParkCmd extends EpicsCommand {
+  override val odgw1ParkCmd: EpicsCommand = new EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw1Parked"))
   }
 
-  object odgw2ParkCmd extends EpicsCommand {
+  override val odgw2ParkCmd: EpicsCommand = new EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw2Parked"))
   }
 
-  object odgw3ParkCmd extends EpicsCommand {
+  override val odgw3ParkCmd: EpicsCommand = new EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw3Parked"))
   }
 
-  object odgw4ParkCmd extends EpicsCommand {
+  override val odgw4ParkCmd: EpicsCommand = new EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("odgw4Parked"))
   }
 
@@ -646,98 +1028,84 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   val cwfs1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs1Follow",
     s"${TcsTop}ngsPr1FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def cwfs1Follow: F[Boolean] =
+  override def cwfs1Follow: F[Boolean] =
     safeAttributeF(cwfs1FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val cwfs2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs2Follow",
     s"${TcsTop}ngsPr2FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def cwfs2Follow: F[Boolean] =
+  override def cwfs2Follow: F[Boolean] =
     safeAttributeF(cwfs2FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val cwfs3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("ngs3Follow",
     s"${TcsTop}ngsPr3FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def cwfs3Follow: F[Boolean] =
+  override def cwfs3Follow: F[Boolean] =
     safeAttributeF(cwfs3FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val odgw1FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw1Follow",
     s"${TcsTop}odgw1FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def odgw1Follow: F[Boolean] =
+  override def odgw1Follow: F[Boolean] =
     safeAttributeF(odgw1FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val odgw2FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw2Follow",
     s"${TcsTop}odgw2FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def odgw2Follow: F[Boolean] =
+  override def odgw2Follow: F[Boolean] =
     safeAttributeF(odgw2FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val odgw3FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw3Follow",
     s"${TcsTop}odgw3FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def odgw3Follow: F[Boolean] =
+  override def odgw3Follow: F[Boolean] =
     safeAttributeF(odgw3FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val odgw4FollowAttr: CaAttribute[BinaryEnabledDisabled] = tcsState.addEnum("odgw4Follow",
     s"${TcsTop}odgw4FollowStat.VAL", classOf[BinaryEnabledDisabled])
-  def odgw4Follow: F[Boolean] =
+  override def odgw4Follow: F[Boolean] =
     safeAttributeF(odgw4FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
   val OdgwParkedState: String = "Parked"
 
-  def odgw1Parked: F[Boolean] =
+  override def odgw1Parked: F[Boolean] =
     safeAttributeF(tcsState.getStringAttribute("odgw1Parked")).map(_ === OdgwParkedState)
 
-  def odgw2Parked: F[Boolean] =
+  override def odgw2Parked: F[Boolean] =
     safeAttributeF(tcsState.getStringAttribute("odgw2Parked")).map(_ === OdgwParkedState)
 
-  def odgw3Parked: F[Boolean] =
+  override def odgw3Parked: F[Boolean] =
     safeAttributeF(tcsState.getStringAttribute("odgw3Parked")).map(_ === OdgwParkedState)
 
-  def odgw4Parked: F[Boolean] =
+  override def odgw4Parked: F[Boolean] =
     safeAttributeF(tcsState.getStringAttribute("odgw4Parked")).map(_ === OdgwParkedState)
 
-  def g1MapName: F[Option[GemsSource]] =
+  override def g1MapName: F[Option[GemsSource]] =
     safeAttributeF(tcsState.getStringAttribute("g1MapName"))
       .map(x => GemsSource.all.find(_.epicsVal === x))
 
-  def g2MapName: F[Option[GemsSource]] =
+  override def g2MapName: F[Option[GemsSource]] =
     safeAttributeF(tcsState.getStringAttribute("g2MapName"))
       .map(x => GemsSource.all.find(_.epicsVal === x))
 
-  def g3MapName: F[Option[GemsSource]] =
+  override def g3MapName: F[Option[GemsSource]] =
     safeAttributeF(tcsState.getStringAttribute("g3MapName"))
       .map(x => GemsSource.all.find(_.epicsVal === x))
 
-  def g4MapName: F[Option[GemsSource]] =
+  override def g4MapName: F[Option[GemsSource]] =
     safeAttributeF(tcsState.getStringAttribute("g4MapName"))
       .map(x => GemsSource.all.find(_.epicsVal === x))
 
-  def g1Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g1Wavelength"))
+  override def g1Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g1Wavelength"))
 
-  def g2Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g2Wavelength"))
+  override def g2Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g2Wavelength"))
 
-  def g3Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g3Wavelength"))
+  override def g3Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g3Wavelength"))
 
-  def g4Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g4Wavelength"))
+  override def g4Wavelength: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("g4Wavelength"))
 
-  def gemsWavelength(g: VirtualGemsTelescope): F[Double] = g match {
-    case G1 => g1Wavelength
-    case G2 => g2Wavelength
-    case G3 => g3Wavelength
-    case G4 => g4Wavelength
-  }
+  override val g1GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g1", tcsState)
 
-  val g1GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g1", tcsState)
+  override val g2GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g2", tcsState)
 
-  val g2GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g2", tcsState)
+  override val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g3", tcsState)
 
-  val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g3", tcsState)
-
-  val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("g4", tcsState)
-
-  def gemsGuideConfig(g: VirtualGemsTelescope): ProbeGuideConfig[F] = g match {
-    case G1 => g1GuideConfig
-    case G2 => g2GuideConfig
-    case G3 => g3GuideConfig
-    case G4 => g4GuideConfig
-  }
+  override val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g4", tcsState)
 
 }
 
@@ -747,84 +1115,123 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
   override val CA_CONFIG_FILE: String = "/Tcs.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[TcsEpics[IO]] =
-    Sync[F].delay(new TcsEpics[IO](service, tops))
+    Sync[F].delay(new TcsEpicsImpl[IO](service, tops))
 
-  sealed class ProbeGuideCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
+  trait ProbeGuideCmd[F[_]] extends EpicsCommand {
+    def setNodachopa(v: String): F[Unit]
+    def setNodachopb(v: String): F[Unit]
+    def setNodachopc(v: String): F[Unit]
+    def setNodbchopa(v: String): F[Unit]
+    def setNodbchopb(v: String): F[Unit]
+    def setNodbchopc(v: String): F[Unit]
+    def setNodcchopa(v: String): F[Unit]
+    def setNodcchopb(v: String): F[Unit]
+    def setNodcchopc(v: String): F[Unit]
+  }
+
+  final class ProbeGuideCmdImpl[F[_]: Async](csName: String, epicsService: CaService) extends ProbeGuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
     private val nodachopa = cs.map(_.getString("nodachopa"))
-    def setNodachopa(v: String): F[Unit] = setParameter(nodachopa, v)
+    override def setNodachopa(v: String): F[Unit] = setParameter(nodachopa, v)
 
     private val nodachopb = cs.map(_.getString("nodachopb"))
-    def setNodachopb(v: String): F[Unit] = setParameter(nodachopb, v)
+    override def setNodachopb(v: String): F[Unit] = setParameter(nodachopb, v)
 
     private val nodachopc = cs.map(_.getString("nodachopc"))
-    def setNodachopc(v: String): F[Unit] = setParameter(nodachopc, v)
+    override def setNodachopc(v: String): F[Unit] = setParameter(nodachopc, v)
 
     private val nodbchopa = cs.map(_.getString("nodbchopa"))
-    def setNodbchopa(v: String): F[Unit] = setParameter(nodbchopa, v)
+    override def setNodbchopa(v: String): F[Unit] = setParameter(nodbchopa, v)
 
     private val nodbchopb = cs.map(_.getString("nodbchopb"))
-    def setNodbchopb(v: String): F[Unit] = setParameter(nodbchopb, v)
+    override def setNodbchopb(v: String): F[Unit] = setParameter(nodbchopb, v)
 
     private val nodbchopc = cs.map(_.getString("nodbchopc"))
-    def setNodbchopc(v: String): F[Unit] = setParameter(nodbchopc, v)
+    override def setNodbchopc(v: String): F[Unit] = setParameter(nodbchopc, v)
 
     private val nodcchopa = cs.map(_.getString("nodcchopa"))
-    def setNodcchopa(v: String): F[Unit] = setParameter(nodcchopa, v)
+    override def setNodcchopa(v: String): F[Unit] = setParameter(nodcchopa, v)
 
     private val nodcchopb = cs.map(_.getString("nodcchopb"))
-    def setNodcchopb(v: String): F[Unit] = setParameter(nodcchopb, v)
+    override def setNodcchopb(v: String): F[Unit] = setParameter(nodcchopb, v)
 
     private val nodcchopc = cs.map(_.getString("nodcchopc"))
-    def setNodcchopc(v: String): F[Unit] = setParameter(nodcchopc, v)
+    override def setNodcchopc(v: String): F[Unit] = setParameter(nodcchopc, v)
   }
 
-  sealed class WfsObserveCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
+  trait WfsObserveCmd[F[_]] extends EpicsCommand {
+    def setNoexp(v: Integer): F[Unit]
+    def setInt(v: Double): F[Unit]
+    def setOutopt(v: String): F[Unit]
+    def setLabel(v: String): F[Unit]
+    def setOutput(v: String): F[Unit]
+    def setPath(v: String): F[Unit]
+    def setName(v: String): F[Unit]
+  }
+
+  final class WfsObserveCmdImpl[F[_]: Async](csName: String, epicsService: CaService) extends WfsObserveCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
     private val noexp = cs.map(_.getInteger("noexp"))
-    def setNoexp(v: Integer): F[Unit] = setParameter(noexp, v)
+    override def setNoexp(v: Integer): F[Unit] = setParameter(noexp, v)
 
     private val int = cs.map(_.getDouble("int"))
-    def setInt(v: Double): F[Unit] = setParameter[F, java.lang.Double](int, v)
+    override def setInt(v: Double): F[Unit] = setParameter[F, java.lang.Double](int, v)
 
     private val outopt = cs.map(_.getString("outopt"))
-    def setOutopt(v: String): F[Unit] = setParameter(outopt, v)
+    override def setOutopt(v: String): F[Unit] = setParameter(outopt, v)
 
     private val label = cs.map(_.getString("label"))
-    def setLabel(v: String): F[Unit] = setParameter(label, v)
+    override def setLabel(v: String): F[Unit] = setParameter(label, v)
 
     private val output = cs.map(_.getString("output"))
-    def setOutput(v: String): F[Unit] = setParameter(output, v)
+    override def setOutput(v: String): F[Unit] = setParameter(output, v)
 
     private val path = cs.map(_.getString("path"))
-    def setPath(v: String): F[Unit] = setParameter(path, v)
+    override def setPath(v: String): F[Unit] = setParameter(path, v)
 
     private val name = cs.map(_.getString("name"))
-    def setName(v: String): F[Unit] = setParameter(name, v)
+    override def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
-  final class ProbeFollowCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
+  trait ProbeFollowCmd[F[_]] extends EpicsCommand {
+    def setFollowState(v: String): F[Unit]
+  }
+
+  final class ProbeFollowCmdImpl[F[_]: Async](csName: String, epicsService: CaService) extends ProbeFollowCmd[F] {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
     private val follow = cs.map(_.getString("followState"))
-    def setFollowState(v: String): F[Unit] = setParameter(follow, v)
+    override def setFollowState(v: String): F[Unit] = setParameter(follow, v)
   }
 
-  final class TargetWavelengthCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommand {
+  trait TargetWavelengthCmd[F[_]] extends EpicsCommand {
+    def setWavel(v: Double): F[Unit]
+  }
+
+  final class TargetWavelengthCmdImpl[F[_]: Async](csName: String, epicsService: CaService)
+    extends TargetWavelengthCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
     private val wavel = cs.map(_.getDouble("wavel"))
 
-    def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
+    override def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
   }
 
-  class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
-    def nodachopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopa"))
-    def nodachopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopb"))
-    def nodbchopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopa"))
-    def nodbchopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopb"))
+  trait ProbeGuideConfig[F[_]] {
+    def nodachopa: F[Int]
+    def nodachopb: F[Int]
+    def nodbchopa: F[Int]
+    def nodbchopb: F[Int]
+  }
+
+  final class ProbeGuideConfigImpl[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor)
+    extends ProbeGuideConfig[F] {
+    override def nodachopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopa"))
+    override def nodachopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodachopb"))
+    override def nodbchopa: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopa"))
+    override def nodbchopb: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute(prefix + "nodbchopb"))
   }
 
   sealed trait Target[F[_]] {
@@ -864,6 +1271,86 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     case object G2 extends VirtualGemsTelescope
     case object G3 extends VirtualGemsTelescope
     case object G4 extends VirtualGemsTelescope
+  }
+
+  trait M1GuideCmd[F[_]] extends EpicsCommand {
+    def setState(v: String): F[Unit]
+  }
+
+  trait M2GuideCmd[F[_]] extends EpicsCommand {
+    def setState(v: String): F[Unit]
+  }
+
+  trait M2GuideModeCmd[F[_]] extends EpicsCommand {
+    def setComa(v: String): F[Unit]
+  }
+
+  trait M2GuideConfigCmd[F[_]] extends EpicsCommand {
+    def setSource(v: String): F[Unit]
+    def setBeam(v: String): F[Unit]
+    def setReset(v: String): F[Unit]
+  }
+
+  trait MountGuideCmd[F[_]] extends EpicsCommand {
+    def setSource(v: String): F[Unit]
+    def setP1Weight(v: Double): F[Unit]
+    def setP2Weight(v: Double): F[Unit]
+    def setMode(v: String): F[Unit]
+  }
+
+  trait OffsetACmd[F[_]] extends EpicsCommand {
+    def setX(v: Double): F[Unit]
+    def setY(v: Double): F[Unit]
+  }
+
+  trait OffsetBCmd[F[_]] extends EpicsCommand {
+    def setX(v: Double): F[Unit]
+    def setY(v: Double): F[Unit]
+  }
+
+  trait OffsetCCmd[F[_]] extends EpicsCommand {
+    def setX(v: Double): F[Unit]
+    def setY(v: Double): F[Unit]
+  }
+
+  trait M2Beam[F[_]] extends EpicsCommand {
+    def setBeam(v: String): F[Unit]
+  }
+
+  trait HrwfsPosCmd[F[_]] extends EpicsCommand {
+    def setHrwfsPos(v: String): F[Unit]
+  }
+
+  trait ScienceFoldPosCmd[F[_]] extends EpicsCommand {
+    def setScfold(v: String): F[Unit]
+  }
+
+  trait AoCorrect[F[_]] extends EpicsCommand {
+    def setCorrections(v: String): F[Unit]
+    def setGains(v: Int): F[Unit]
+    def setMatrix(v: Int): F[Unit]
+  }
+
+  trait AoPrepareControlMatrix[F[_]] extends EpicsCommand {
+    def setX(v: Double): F[Unit]
+    def setY(v: Double): F[Unit]
+    def setSeeing(v: Double): F[Unit]
+    def setStarMagnitude(v: Double): F[Unit]
+    def setWindSpeed(v: Double): F[Unit]
+  }
+
+  trait AoStatistics[F[_]] extends EpicsCommand {
+    def setFileName(v: String): F[Unit]
+    def setSamples(v: Int): F[Unit]
+    def setInterval(v: Double): F[Unit]
+    def setTriggerTimeInterval(v: Double): F[Unit]
+  }
+
+  trait TargetFilter[F[_]] extends EpicsCommand {
+    def setBandwidth(v: Double): F[Unit]
+    def setMaxVelocity(v: Double): F[Unit]
+    def setGrabRadius(v: Double): F[Unit]
+    def setShortCircuit(v: String): F[Unit]
   }
 
 }
