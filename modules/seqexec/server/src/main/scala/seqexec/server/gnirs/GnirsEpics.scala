@@ -4,23 +4,23 @@
 package seqexec.server.gnirs
 
 import cats.implicits._
-import cats.effect.IO
-import cats.effect.Sync
+import cats.effect.{Async, IO, Sync}
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
 import java.lang.{Double => JDouble}
-import seqexec.server.EpicsCommand.setParameter
+
+import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
 import seqexec.server.{EpicsSystem, ObserveCommand}
-import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
 
-class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
+class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val GnirsTop: String = tops.getOrElse("nirs", "nirs:")
 
-  object configCCCmd extends EpicsCommand {
+  object configCCCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::config"))
 
     private val cover: Option[CaParameter[String]] = cs.map(_.getString("cover"))
@@ -70,7 +70,7 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   }
 
-  object configDCCmd extends EpicsCommand {
+  object configDCCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::dcconfig"))
 
     private val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
@@ -93,7 +93,7 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandBase {
     override protected val cs:Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::endObserve"))
   }
 
@@ -102,7 +102,7 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
     "nirs::observeCmd", s"${GnirsTop}dc:apply", s"${GnirsTop}dc:applyC", s"${GnirsTop}dc:observeC",
     true, s"${GnirsTop}dc:stop", s"${GnirsTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -113,7 +113,7 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -137,24 +137,23 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def arrayType: F[String] = safeAttributeF(dcState.getStringAttribute("arraytyp"))
 
-  def obsEpoch: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("OBSEPOCH")).map(_.toDouble)
+  def obsEpoch: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("OBSEPOCH"))
 
-  def detBias: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("detBias")).map(_.toDouble)
+  def detBias: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("detBias"))
 
   def countDown: F[String] = safeAttributeF(dcState.getStringAttribute("countdown"))
 
-  def numCoadds: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("numCoAdds")).map(_.toInt)
+  def numCoadds: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("numCoAdds"))
 
   def wcs: F[String] = safeAttributeF(dcState.getStringAttribute("wcs"))
 
-  def exposureTime: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("exposureTime")).map(_.toDouble)
+  def exposureTime: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("exposureTime"))
 
-  def digitalAvgs: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("digitalAvgs")).map(_.toInt)
+  def digitalAvgs: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("digitalAvgs"))
 
-  def lowNoise: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("lowNoise")).map(_.toInt)
+  def lowNoise: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("lowNoise"))
 
-  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("dhsConnected"))
-    .map(_.toInt =!= 0)
+  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("dhsConnected")).map(_ =!= 0)
 
   val arrayActiveAttr: CaAttribute[JDetectorState] = dcState.addEnum(
     "arrayState", s"${GnirsTop}dc:activate", classOf[JDetectorState]
@@ -162,9 +161,9 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def arrayActive: F[Boolean] = safeAttributeF(arrayActiveAttr).map(_.getActive)
 
-  def minInt: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("minInt")).map(_.toDouble)
+  def minInt: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("minInt"))
 
-  def dettemp: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("dettemp")).map(_.toDouble)
+  def dettemp: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("dettemp"))
 
   def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("prepObs")).map(_ =!= 0)
 
@@ -194,29 +193,29 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def decker: F[String] = safeAttributeF(state.getStringAttribute("decker"))
 
-  def centralWavelength: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("centralWavelength")).map(_.toDouble)
+  def centralWavelength: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("centralWavelength"))
 
-  def gratingTilt: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("grattilt")).map(_.toDouble)
+  def gratingTilt: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("grattilt"))
 
   def nirscc: F[String] = safeAttributeF(state.getStringAttribute("nirscc"))
 
-  def gratingOrder: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gratord")).map(_.toInt)
+  def gratingOrder: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gratord"))
 
-  def filter1Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw1_eng")).map(_.toInt)
+  def filter1Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw1_eng"))
 
-  def filter2Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw2_eng")).map(_.toInt)
+  def filter2Eng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fw2_eng"))
 
-  def deckerEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("dkr_eng")).map(_.toInt)
+  def deckerEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("dkr_eng"))
 
-  def gratingEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gr_eng")).map(_.toInt)
+  def gratingEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("gr_eng"))
 
-  def prismEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("prsm_eng")).map(_.toInt)
+  def prismEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("prsm_eng"))
 
-  def cameraEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("cam_eng")).map(_.toInt)
+  def cameraEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("cam_eng"))
 
-  def slitEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("slit_eng")).map(_.toInt)
+  def slitEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("slit_eng"))
 
-  def focusEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fcs_eng")).map(_.toInt)
+  def focusEng: F[Int] = safeAttributeSIntF(state.getIntegerAttribute("fcs_eng"))
 }
 
 object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {

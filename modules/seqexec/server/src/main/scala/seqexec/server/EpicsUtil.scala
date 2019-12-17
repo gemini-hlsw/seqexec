@@ -33,10 +33,16 @@ import squants.Time
 import scala.math.abs
 import scala.collection.JavaConverters._
 
-trait EpicsCommand {
+trait EpicsCommand[F[_]] {
+  def post: F[ApplyCommandResult]
+  def mark: F[Unit]
+  def setTimeout(t: Time): F[Unit]
+}
+
+abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
   protected val cs: Option[CaCommandSender]
 
-  def post[F[_]: Async]: F[ApplyCommandResult] =
+  def post: F[ApplyCommandResult] =
     Async[F].async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
       cs.map { ccs =>
         ccs.postCallback {
@@ -50,11 +56,11 @@ trait EpicsCommand {
       }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
     }
 
-  def mark[F[_]: Sync]: F[Unit] = Sync[F].delay {
+  def mark: F[Unit] = Sync[F].delay {
       cs.map(_.mark())
     }.void
 
-  def setTimeout[F[_]: Sync](t: Time): F[Unit] =
+  def setTimeout(t: Time): F[Unit] =
     Sync[F].delay {
       cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
     }.void
@@ -93,7 +99,7 @@ trait EpicsSystem[T] {
   }
 }
 
-object EpicsCommand {
+object EpicsCommandBase {
 
   def setParameter[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] = p.map { ch =>
     Sync[F].delay {

@@ -292,15 +292,15 @@ object NiriControllerEpics extends NiriEncoders {
 
         val cfgActions1 = if(params.isEmpty) ApplyCommandResult.Completed.pure[F]
                           else executeIfNeeded(params,
-                            epicsSys.configCmd.setTimeout[F](ConfigTimeout) *>
-                            epicsSys.configCmd.post[F])
+                            epicsSys.configCmd.setTimeout(ConfigTimeout) *>
+                            epicsSys.configCmd.post)
         // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
         // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
         // in the IS, trigger the IS apply, and then trigger the DC apply.
         val cfgActions = if(paramsDC.isEmpty) cfgActions1
                          else cfgActions1 *>
-                           epicsSys.configDCCmd.setTimeout[F](DefaultTimeout) *>
-                           epicsSys.configDCCmd.post[F]
+                           epicsSys.configDCCmd.setTimeout(DefaultTimeout) *>
+                           epicsSys.configDCCmd.post
 
         L.debug("Starting NIRI configuration") *>
           warnOnDHSNotConected *>
@@ -315,25 +315,25 @@ object NiriControllerEpics extends NiriEncoders {
           failOnArrayNotActive *>
           epicsSys.observeCmd.setLabel(fileId) *>
           calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.setTimeout[F]) *>
-          epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed NIFS observe") }
+          epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed NIFS observe") }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to NIRI") *>
-          epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.endObserveCmd.mark[F] *>
-          epicsSys.endObserveCmd.post[F].void
+          epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.endObserveCmd.mark *>
+          epicsSys.endObserveCmd.post.void
 
       override def stopObserve: F[Unit] =
         L.debug("Stop NIRI exposure") *>
-          epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.stopCmd.mark[F] *>
-          epicsSys.stopCmd.post[F].void
+          epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.stopCmd.mark *>
+          epicsSys.stopCmd.post.void
 
       override def abortObserve: F[Unit] =
         L.debug("Abort NIRI exposure") *>
-          epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.abortCmd.mark[F] *>
-          epicsSys.abortCmd.post[F].void
+          epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.abortCmd.mark *>
+          epicsSys.abortCmd.post.void
 
       override def observeProgress(total: Time): fs2.Stream[F, Progress] =
         ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,

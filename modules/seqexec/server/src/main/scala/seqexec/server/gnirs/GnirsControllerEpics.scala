@@ -237,8 +237,8 @@ object GnirsControllerEpics extends GnirsEncoders {
         }
         executeIfNeeded(
           params,
-          ccCmd.setTimeout[F](ConfigTimeout) *>
-          ccCmd.post[F])
+          ccCmd.setTimeout(ConfigTimeout) *>
+          ccCmd.post)
       }
 
       private def setDCParams(config: DCConfig): F[Unit] = {
@@ -268,8 +268,8 @@ object GnirsControllerEpics extends GnirsEncoders {
         val params = List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
 
         executeIfNeeded(params,
-          dcCmd.setTimeout[F](DefaultTimeout) *>
-          dcCmd.post[F])
+          dcCmd.setTimeout(DefaultTimeout) *>
+          dcCmd.post)
       }
 
       override def applyConfig(config: GnirsConfig): F[Unit] =
@@ -285,26 +285,26 @@ object GnirsControllerEpics extends GnirsEncoders {
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          epicsSys.observeCmd.setTimeout[F](expTime + ReadoutTimeout) *>
-          epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed GNITS observe") }
+          epicsSys.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
+          epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed GNITS observe") }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
-          epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.endObserveCmd.mark[F] *>
-          epicsSys.endObserveCmd.post[F].void
+          epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.endObserveCmd.mark *>
+          epicsSys.endObserveCmd.post.void
 
       override def stopObserve: F[Unit] =
         L.debug("Stop GNIRS exposure") *>
-          epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.stopCmd.mark[F] *>
-          epicsSys.stopCmd.post[F].void
+          epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.stopCmd.mark *>
+          epicsSys.stopCmd.post.void
 
       override def abortObserve: F[Unit] =
         L.debug("Abort GNIRS exposure") *>
-          epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.abortCmd.mark[F] *>
-          epicsSys.abortCmd.post[F].void
+          epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.abortCmd.mark *>
+          epicsSys.abortCmd.post.void
 
       override def observeProgress(total: Time): Stream[F, Progress] =
         ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
