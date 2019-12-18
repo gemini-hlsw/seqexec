@@ -9,7 +9,7 @@ val scalaJSVersion =
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql"  % "42.2.9", // needed by flyway
   "org.slf4j"      % "slf4j-nop"   % "1.7.29", // to silence some log messages
-  "org.typelevel" %% "cats-core"   % "2.0.0",
+  "org.typelevel" %% "cats-core"   % "2.1.0",
   "org.typelevel" %% "cats-effect" % "2.0.0"
 )
 
