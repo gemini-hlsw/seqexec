@@ -181,7 +181,7 @@ object TcsControllerEpicsCommon {
       (BasicGuidersConfig.pwfs1 ^<-> tagIso ^|-> GuiderConfig.detector)
         .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
         (BasicGuidersConfig.pwfs2 ^<-> tagIso ^|-> GuiderConfig.detector)
-          .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+          .set(calc(current.pwfs2.detector, demand.gds.pwfs2.detector)) >>>
         (BasicGuidersConfig.oiwfs ^<-> tagIso ^|-> GuiderConfig.detector)
           .set(calc(current.oiwfs.detector, demand.gds.oiwfs.detector))
     ) >>> BasicTcsConfig.gc.modify(
@@ -276,10 +276,7 @@ object TcsControllerEpicsCommon {
     : List[BaseEpicsTcsConfig => F[BaseEpicsTcsConfig]] = List(
       setMountGuide(Lens.id)(subsystems, current.telescopeGuideConfig.mountGuide, demand.gc.mountGuide),
       setM1Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m1Guide, demand.gc.m1Guide),
-      setM2Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
-      setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, demand.gds.pwfs1.detector),
-      setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, demand.gds.pwfs2.detector),
-      setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, demand.gds.oiwfs.detector)
+      setM2Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m2Guide, demand.gc.m2Guide)
     ).flattenOption
 
     def setHRPickupConfig(hrwfsPos: HrwfsPickupPosition): F[Unit] = hrwfsPos match {
@@ -447,6 +444,9 @@ object TcsControllerEpicsCommon {
       setPwfs1Probe(Lens.id)(subsystems, current.pwfs1.tracking, tcs.gds.pwfs1.tracking),
       setPwfs2Probe(Lens.id)(subsystems, current.pwfs2.tracking, tcs.gds.pwfs2.tracking),
       setOiwfsProbe(Lens.id)(subsystems, current.oiwfs.tracking, tcs.gds.oiwfs.tracking),
+      setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, tcs.gds.pwfs1.detector),
+      setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
+      setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
       tcs.tc.offsetA.flatMap(o => applyParam(subsystems.contains(Subsystem.Mount), current.offset,
         o.toFocalPlaneOffset(current.iaa), setTelescopeOffset, BaseEpicsTcsConfig.offset
       )),
