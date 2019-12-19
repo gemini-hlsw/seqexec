@@ -23,7 +23,6 @@ import org.http4s.dsl.io._
 import org.http4s.circe._
 import org.http4s.client.middleware.{Retry, RetryPolicy}
 import org.http4s.client.dsl.Http4sClientDsl
-import org.log4s._
 import seqexec.model.dhs._
 import seqexec.server.{SeqexecFailure, TrySeq}
 import seqexec.server.keywords.DhsClient.ImageParameters

@@ -12,8 +12,8 @@ import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
-import org.log4s.getLogger
 import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.altair.Altair
@@ -26,13 +26,14 @@ import shapeless.tag.@@
 import squants.Angle
 import squants.space.Arcseconds
 
-class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private(tcsController: TcsNorthController[F],
+class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]: Logger] private(tcsController: TcsNorthController[F],
                                                                         subsystems: NonEmptySet[Subsystem],
                                                                         gaos: Option[Altair[F]],
                                                                         guideDb: GuideConfigDb[F]
                                    )(config: TcsNorth.TcsSeqConfig[F]) extends Tcs[F] {
-  import TcsNorth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
+
+  val Log: Logger[F] = Logger[F]
 
   override val resource: Resource = Resource.TCS
 
@@ -53,7 +54,7 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private(tcsController: T
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
+      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}") *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
@@ -134,16 +135,14 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]] private(tcsController: T
 
   override def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Moving to nod ${stage.symbol}")
-      tcsController.nod(subsystems, cfg)(stage, offset, guided)
+      Log.debug(s"Moving to nod ${stage.symbol}") *>
+        tcsController.nod(subsystems, cfg)(stage, offset, guided)
     }.as(ConfigResult(this))
 }
 
 object TcsNorth {
 
   import Tcs._
-
-  private val Log = getLogger
 
   @Lenses
   final case class TcsSeqConfig[F[_]](
@@ -157,7 +156,7 @@ object TcsNorth {
                                        instrument: InstrumentSystem[F]
                                      )
 
-  def fromConfig[F[_]: Sync](controller: TcsNorthController[F],
+  def fromConfig[F[_]: Sync: Logger](controller: TcsNorthController[F],
                              subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Altair[F]],
                              instrument: InstrumentSystem[F],

@@ -10,7 +10,7 @@ import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Lamp, Shutter}
 import java.util.{Set => JSet}
 
-import org.log4s.{Logger, getLogger}
+import io.chrisdavenport.log4cats.Logger
 
 import scala.Function.const
 import scala.collection.JavaConverters._
@@ -23,9 +23,9 @@ import seqexec.server.CleanConfig.extractItem
 /**
   * Created by jluhrs on 3/21/17.
   */
-final case class Gcal[F[_]] private (controller: GcalController[F], cfg: GcalConfig)(implicit val F: Sync[F]) extends System[F] {
+final case class Gcal[F[_]: Logger] private (controller: GcalController[F], cfg: GcalConfig)(implicit val F: Sync[F]) extends System[F] {
 
-  private val Log: Logger = getLogger
+  private val Log: Logger[F] = Logger[F]
 
   override val resource: Resource = Resource.Gcal
 
@@ -34,10 +34,10 @@ final case class Gcal[F[_]] private (controller: GcalController[F], cfg: GcalCon
     */
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     for{
-      _       <- F.delay(Log.info("Start GCAL configuration"))
-      _       <- F.delay(Log.debug(s"GCAL configuration: ${cfg.show}"))
+      _       <- Log.info("Start GCAL configuration")
+      _       <- Log.debug(s"GCAL configuration: ${cfg.show}")
       ret     <- controller.applyConfig(cfg).map(const(ConfigResult(this)))
-      _       <- F.delay(Log.info("Completed GCAL configuration"))
+      _       <- Log.info("Completed GCAL configuration")
     } yield ret
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
@@ -52,7 +52,7 @@ object Gcal {
 
   implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
 
-  def fromConfig[F[_]: Sync](controller: GcalController[F], isCP: Boolean)(config: CleanConfig): F[Gcal[F]] = {
+  def fromConfig[F[_]: Sync: Logger](controller: GcalController[F], isCP: Boolean)(config: CleanConfig): F[Gcal[F]] = {
       val lamps: Either[ConfigUtilOps.ExtractFailure, List[Lamp]] = config.extractCalibrationAs[JSet[Lamp]](LAMP_PROP)
         .map(_.asScala.toList)
         .recover{ case ConfigUtilOps.KeyNotFound(_) => List.empty[Lamp] }
@@ -88,6 +88,6 @@ object Gcal {
 
   // GCAL that always turn off its lamps except for the IR lamp. Used to assure GCAL light does not interfere in a non
   // calibration step
-  def defaultGcal[F[_]: Sync](controller: GcalController[F]): Gcal[F] =
+  def defaultGcal[F[_]: Sync: Logger](controller: GcalController[F]): Gcal[F] =
     new Gcal[F](controller, GcalConfig.GcalOffIgnoringIr)
 }

@@ -12,8 +12,8 @@ import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
-import org.log4s.getLogger
 import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
 import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
@@ -26,13 +26,14 @@ import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
 
-case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
-                                          subsystems: NonEmptySet[Subsystem],
-                                          gaos: Option[Gems[F]],
-                                          guideDb: GuideConfigDb[F]
+case class TcsSouth [F[_]: Sync: Logger] private(tcsController: TcsSouthController[F],
+                                                 subsystems: NonEmptySet[Subsystem],
+                                                 gaos: Option[Gems[F]],
+                                                 guideDb: GuideConfigDb[F]
                                          )(config: TcsSouth.TcsSeqConfig[F]) extends Tcs[F] {
-  import TcsSouth._
   import Tcs.{GuideWithOps, calcGuiderInUse}
+
+  val Log: Logger[F] = Logger[F]
 
   override val resource: Resource = Resource.TCS
 
@@ -51,7 +52,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
+      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}") *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
@@ -61,7 +62,7 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
 
   override def nod(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Moving to nod ${stage.symbol}")
+      Log.debug(s"Moving to nod ${stage.symbol}") *>
       tcsController.nod(subsystems, cfg)(stage, offset, guided)
     }.as(ConfigResult(this))
 
@@ -141,8 +142,6 @@ object TcsSouth {
 
   import Tcs._
 
-  private val Log = getLogger
-
   @Lenses
   final case class TcsSeqConfig[F[_]](
     guideWithP1: Option[StandardGuideOptions.Value],
@@ -162,7 +161,7 @@ object TcsSouth {
     instrument: InstrumentSystem[F]
   )
 
-  def fromConfig[F[_]: Sync](controller: TcsSouthController[F], subsystems: NonEmptySet[Subsystem],
+  def fromConfig[F[_]: Sync: Logger](controller: TcsSouthController[F], subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Gems[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
     config: CleanConfig, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsSouth[F] = {
