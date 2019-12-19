@@ -174,8 +174,8 @@ object NifsControllerEpics extends NifsEncoders {
         setCoadds(cfg.coadds) *>
         setNumberOfResets(cfg.numberOfResets) *>
         setNumberOfPeriods(cfg.numberOfPeriods) *>
-        epicsSys.dcConfigCmd.setTimeout[F](ConfigTimeout) *>
-        epicsSys.dcConfigCmd.post[F].void
+        epicsSys.dcConfigCmd.setTimeout(ConfigTimeout) *>
+        epicsSys.dcConfigCmd.post.void
 
     private def setFilter(cfg: CCConfig): F[Option[F[Unit]]] = {
       val actualFilter: F[LegacyFilter] = cfg match {
@@ -321,8 +321,8 @@ object NifsControllerEpics extends NifsEncoders {
       }
 
     private val postCcConfig =
-      epicsSys.ccConfigCmd.setTimeout[F](ConfigTimeout) *>
-        epicsSys.ccConfigCmd.post[F]
+      epicsSys.ccConfigCmd.setTimeout(ConfigTimeout) *>
+        epicsSys.ccConfigCmd.post
 
     private def firstCCPass(cfg: CCConfig): F[Unit] =
       executeIfNeeded(List(setFilter(cfg),
@@ -363,27 +363,27 @@ object NifsControllerEpics extends NifsEncoders {
       L.debug(s"Start NIFS observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
-        epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed NIFS observe") }
+        epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)) *>
+        epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed NIFS observe") }
     }
 
     override def endObserve: F[Unit] =
       L.debug("Send endObserve to NIFS") *>
-        epicsSys.endObserveCmd.setTimeout[F](DefaultTimeout) *>
-        epicsSys.endObserveCmd.mark[F] *>
-        epicsSys.endObserveCmd.post[F].void
+        epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
+        epicsSys.endObserveCmd.mark *>
+        epicsSys.endObserveCmd.post.void
 
     override def stopObserve: F[Unit] =
       L.debug("Stop NIFS exposure") *>
-        epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
-        epicsSys.stopCmd.mark[F] *>
-        epicsSys.stopCmd.post[F].void
+        epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
+        epicsSys.stopCmd.mark *>
+        epicsSys.stopCmd.post.void
 
     override def abortObserve: F[Unit] =
       L.debug("Abort NIFS exposure") *>
-        epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
-        epicsSys.abortCmd.mark[F] *>
-        epicsSys.abortCmd.post[F].void
+        epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
+        epicsSys.abortCmd.mark *>
+        epicsSys.abortCmd.post.void
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] =
       ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,

@@ -181,7 +181,7 @@ object TcsControllerEpicsCommon {
       (BasicGuidersConfig.pwfs1 ^<-> tagIso ^|-> GuiderConfig.detector)
         .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
         (BasicGuidersConfig.pwfs2 ^<-> tagIso ^|-> GuiderConfig.detector)
-          .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+          .set(calc(current.pwfs2.detector, demand.gds.pwfs2.detector)) >>>
         (BasicGuidersConfig.oiwfs ^<-> tagIso ^|-> GuiderConfig.detector)
           .set(calc(current.oiwfs.detector, demand.gds.oiwfs.detector))
     ) >>> BasicTcsConfig.gc.modify(
@@ -242,12 +242,12 @@ object TcsControllerEpicsCommon {
       )
     }
 
-    val NonStopExposures = -1
+    val NonStopExposures: Int = -1
 
-    private def setGuiderWfs(on: TcsEpics.WfsObserveCmd[F], off: EpicsCommand)(c: GuiderSensorOption)
+    private def setGuiderWfs(on: TcsEpics.WfsObserveCmd[F], off: EpicsCommand[F])(c: GuiderSensorOption)
     : F[Unit] =
       c match {
-        case GuiderSensorOff => off.mark[F]
+        case GuiderSensorOff => off.mark
         case GuiderSensorOn  => on.setNoexp(NonStopExposures) // Set number of exposures to non-stop (-1)
       }
 
@@ -276,14 +276,11 @@ object TcsControllerEpicsCommon {
     : List[BaseEpicsTcsConfig => F[BaseEpicsTcsConfig]] = List(
       setMountGuide(Lens.id)(subsystems, current.telescopeGuideConfig.mountGuide, demand.gc.mountGuide),
       setM1Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m1Guide, demand.gc.m1Guide),
-      setM2Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m2Guide, demand.gc.m2Guide),
-      setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, demand.gds.pwfs1.detector),
-      setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, demand.gds.pwfs2.detector),
-      setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, demand.gds.oiwfs.detector)
+      setM2Guide(Lens.id)(subsystems, current.telescopeGuideConfig.m2Guide, demand.gc.m2Guide)
     ).flattenOption
 
     def setHRPickupConfig(hrwfsPos: HrwfsPickupPosition): F[Unit] = hrwfsPos match {
-      case HrwfsPickupPosition.Parked => epicsSys.hrwfsParkCmd.mark[F]
+      case HrwfsPickupPosition.Parked => epicsSys.hrwfsParkCmd.mark
       case _                          => epicsSys.hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
     }
 
@@ -341,13 +338,8 @@ object TcsControllerEpicsCommon {
     override def setNodChopProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd[F])(c: NodChopTrackingConfig): F[Unit] =
       s.setNodachopa(encode(c.get(NodChop(Beam.A, Beam.A)))) *>
         s.setNodachopb(encode(c.get(NodChop(Beam.A, Beam.B)))) *>
-        s.setNodachopc(encode(c.get(NodChop(Beam.A, Beam.C)))) *>
         s.setNodbchopa(encode(c.get(NodChop(Beam.B, Beam.A)))) *>
-        s.setNodbchopb(encode(c.get(NodChop(Beam.B, Beam.B)))) *>
-        s.setNodbchopc(encode(c.get(NodChop(Beam.B, Beam.C)))) *>
-        s.setNodcchopa(encode(c.get(NodChop(Beam.C, Beam.A)))) *>
-        s.setNodcchopb(encode(c.get(NodChop(Beam.C, Beam.B)))) *>
-        s.setNodcchopc(encode(c.get(NodChop(Beam.C, Beam.C))))
+        s.setNodbchopb(encode(c.get(NodChop(Beam.B, Beam.B))))
 
     private def portFromSinkName(ports: InstrumentPorts)(n: LightSinkName): Option[Int] = {
       import LightSinkName._
@@ -382,7 +374,7 @@ object TcsControllerEpicsCommon {
           (c.getNodChop =!= d.getNodChop)
             .option(setNodChopProbeTrackingConfig(guideControl.nodChopGuideCmd)(d.getNodChop)),
           d match {
-            case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(guideControl.parkCmd.mark[F])
+            case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(guideControl.parkCmd.mark)
             case ProbeTrackingConfig.On(_) |
                  ProbeTrackingConfig.Off |
                  ProbeTrackingConfig.Frozen => (c.follow =!= d.follow)
@@ -429,15 +421,12 @@ object TcsControllerEpicsCommon {
       epicsSys.offsetACmd.setX(c.x.toMillimeters) *>
         epicsSys.offsetACmd.setY(c.y.toMillimeters) *>
         epicsSys.offsetBCmd.setX(c.x.toMillimeters) *>
-        epicsSys.offsetBCmd.setY(c.y.toMillimeters) *>
-        epicsSys.offsetCCmd.setX(c.x.toMillimeters) *>
-        epicsSys.offsetCCmd.setY(c.y.toMillimeters)
+        epicsSys.offsetBCmd.setY(c.y.toMillimeters)
 
     // Same wavelength is applied to all the beams
     override def setWavelength(w: Wavelength): F[Unit] =
       epicsSys.wavelSourceA.setWavel(w.toMicrons) *>
-        epicsSys.wavelSourceB.setWavel(w.toMicrons) *>
-        epicsSys.wavelSourceC.setWavel(w.toMicrons)
+        epicsSys.wavelSourceB.setWavel(w.toMicrons)
 
     def scienceFoldFromRequested(ports: InstrumentPorts)(r: LightPath): Option[ScienceFold] =
       portFromSinkName(ports)(r.sink).map { p =>
@@ -446,7 +435,7 @@ object TcsControllerEpicsCommon {
       }
 
     def setScienceFoldConfig(sfPos: ScienceFold): F[Unit] = sfPos match {
-      case ScienceFold.Parked => epicsSys.scienceFoldParkCmd.mark[F]
+      case ScienceFold.Parked => epicsSys.scienceFoldParkCmd.mark
       case p: ScienceFold.Position => epicsSys.scienceFoldPosCmd.setScfold(encode(p))
     }
 
@@ -455,6 +444,9 @@ object TcsControllerEpicsCommon {
       setPwfs1Probe(Lens.id)(subsystems, current.pwfs1.tracking, tcs.gds.pwfs1.tracking),
       setPwfs2Probe(Lens.id)(subsystems, current.pwfs2.tracking, tcs.gds.pwfs2.tracking),
       setOiwfsProbe(Lens.id)(subsystems, current.oiwfs.tracking, tcs.gds.oiwfs.tracking),
+      setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, tcs.gds.pwfs1.detector),
+      setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
+      setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
       tcs.tc.offsetA.flatMap(o => applyParam(subsystems.contains(Subsystem.Mount), current.offset,
         o.toFocalPlaneOffset(current.iaa), setTelescopeOffset, BaseEpicsTcsConfig.offset
       )),
@@ -519,12 +511,12 @@ object TcsControllerEpicsCommon {
     }
     override def notifyObserveStart: F[Unit] =
       L.debug("Send observe to TCS") *>
-        epicsSys.observe.mark[F] *>
+        epicsSys.observe.mark *>
         epicsSys.post.void
 
     override def notifyObserveEnd: F[Unit] =
       L.debug("Send endObserve to TCS") *>
-        epicsSys.endObserve.mark[F] *>
+        epicsSys.endObserve.mark *>
         epicsSys.post.void
 
     // To nod the telescope is just like applying a TCS configuration, but always with an offset

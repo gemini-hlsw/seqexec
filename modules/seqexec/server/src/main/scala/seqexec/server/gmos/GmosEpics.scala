@@ -11,12 +11,12 @@ import edu.gemini.epics.acm._
 import java.lang.{Double => JDouble}
 import mouse.all._
 import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
-import seqexec.server.{EpicsCommand, EpicsSystem}
+import seqexec.server.{EpicsCommandBase, EpicsSystem}
 import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure._
-import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
 import seqexec.server.ObserveCommand
 import scala.collection.breakOut
 import scala.concurrent.duration._
@@ -25,9 +25,9 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GmosTop: String = tops.getOrElse("gm", "gm:")
 
-  def post: F[ApplyCommandResult] = configCmd.post[F]
+  def post: F[ApplyCommandResult] = configCmd.post
 
-  object configCmd extends EpicsCommand {
+  object configCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))
 
     val disperserMode: Option[CaParameter[String]] = cs.map(_.getString("disperserMode"))
@@ -66,11 +66,11 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandBase {
     override protected val cs:Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::endObserve"))
   }
 
-  object pauseCmd extends EpicsCommand {
+  object pauseCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::pause"))
   }
 
@@ -83,7 +83,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     override protected val os: Option[CaApplySender] = observeAS
   }
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -94,7 +94,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -111,7 +111,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object configDCCmd extends EpicsCommand {
+  object configDCCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
 
     private val roiNumUsed: Option[CaParameter[JDouble]] =

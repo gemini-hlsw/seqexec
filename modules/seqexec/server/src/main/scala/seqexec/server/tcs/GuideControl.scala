@@ -8,6 +8,6 @@ import seqexec.server.EpicsCommand
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 
 final case class GuideControl[F[_]](subs: Subsystem,
-                                    parkCmd: EpicsCommand,
+                                    parkCmd: EpicsCommand[F],
                                     nodChopGuideCmd: ProbeGuideCmd[F],
                                     followCmd: ProbeFollowCmd[F])

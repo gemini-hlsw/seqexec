@@ -3,10 +3,10 @@
 
 package seqexec.server.niri
 
-import cats.effect.IO
-import cats.effect.Sync
+import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import java.lang.{Double => JDouble}
+
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
 import edu.gemini.seqexec.server.niri.{ReadMode => JReadMode}
@@ -15,16 +15,16 @@ import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
 import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
 import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
-import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand}
+import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.{EpicsCommandBase, EpicsSystem, ObserveCommand}
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
 
-class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
+class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val NiriTop = tops.getOrElse("niri", "niri:")
   val NisTop = tops.getOrElse("nis", "NIS:")
 
-  object configCmd extends EpicsCommand {
+  object configCmd extends EpicsCommandBase[F]{
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nis::config"))
 
@@ -72,7 +72,7 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
    * For some reason the window cover is not include in the IS configuration parameters. It is
    * applied by the IS apply command, nevertheless. This command exists only to set the parameter.
    */
-  object windowCoverConfig extends EpicsCommand {
+  object windowCoverConfig extends EpicsCommandBase[F]{
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri:config"))
 
     private val windowCover: Option[CaParameter[String]] = cs.flatMap(cmd =>
@@ -80,12 +80,12 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandBase[F]{
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("niri::endObserve"))
   }
 
-  object configDCCmd extends EpicsCommand {
+  object configDCCmd extends EpicsCommandBase[F]{
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("niri::obsSetup"))
   }
@@ -95,7 +95,7 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     "niri::observeCmd", s"${NiriTop}dc:apply", s"${NiriTop}dc:applyC", s"${NiriTop}dc:observeC",
     true, s"${NiriTop}dc:stop", s"${NiriTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandBase[F]{
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -106,7 +106,7 @@ class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandBase[F]{
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
