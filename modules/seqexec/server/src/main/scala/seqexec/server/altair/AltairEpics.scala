@@ -7,8 +7,8 @@ import cats.effect.{Async, IO, Sync}
 import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
-import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
+import seqexec.server.EpicsCommandBase.setParameter
 import cats.implicits._
 import seqexec.server.EpicsUtil._
 import squants.Time
@@ -16,7 +16,7 @@ import squants.Time
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")
 
-  object strapGateControl extends EpicsCommand {
+  object strapGateControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("aoStrap",
       s"${AltairTop}wfcs:strapGtCtl", "ALTAIR STRAP"))
 
@@ -25,7 +25,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     def setGate(v: Int): F[Unit] = setParameter(gate, Integer.valueOf(v))
   }
 
-  object strapControl extends EpicsCommand {
+  object strapControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("strapCorrCtl",
       s"${AltairTop}wfcs:strapCorrCtl", "ALTAIR SFO"))
 
@@ -35,7 +35,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
-  object sfoControl extends EpicsCommand {
+  object sfoControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
 
@@ -44,7 +44,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     def setActive(v: LgsSfoControl): F[Unit] = setParameter(active, v)
   }
 
-  object btoLoopControl extends EpicsCommand {
+  object btoLoopControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 

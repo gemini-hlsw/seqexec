@@ -7,17 +7,17 @@ import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import edu.gemini.epics.acm._
 import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.{EpicsCommand, EpicsSystem}
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.{EpicsCommandBase, EpicsSystem}
+import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil._
 
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val F2Top: String = tops.getOrElse("f2", "f2:")
 
-  def post: F[ApplyCommandResult] = configCmd.post[F]
+  def post: F[ApplyCommandResult] = configCmd.post
 
-  object dcConfigCmd extends EpicsCommand {
+  object dcConfigCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::dcconfig"))
 
     private val biasMode = cs.map(_.getString("biasMode"))
@@ -34,26 +34,26 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 
   }
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::abort"))
   }
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::stop"))
   }
 
-  object observeCmd extends EpicsCommand {
+  object observeCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::observe"))
 
     private val label = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::endObserve"))
   }
 
-  object configCmd extends EpicsCommand {
+  object configCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::config"))
 
     private val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting",

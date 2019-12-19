@@ -7,8 +7,8 @@ import cats.effect.{Async, IO, Sync}
 import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
-import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
+import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
 import seqexec.server.EpicsUtil.{safeAttributeSIntF, safeAttributeSListSDoubleF}
 import squants.Time
@@ -18,7 +18,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   private val MystTop = tops.getOrElse("myst", "myst:")
   private val RtcTop = tops.getOrElse("rtc", "rtc:")
 
-  object LoopControl extends EpicsCommand {
+  object LoopControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::seqLoopCtrl"))
 
     def setCommand(v: String): F[Unit] = setParameter(cs.map(_.getString("cmd")), v)
@@ -26,7 +26,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setReasons(v: String): F[Unit] = setParameter(cs.map(_.getString("reasons")), v)
   }
 
-  object ApdControl extends EpicsCommand {
+  object ApdControl extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::ttApdCtrl"))
 
     def setApd1Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd1Cmd")), v)

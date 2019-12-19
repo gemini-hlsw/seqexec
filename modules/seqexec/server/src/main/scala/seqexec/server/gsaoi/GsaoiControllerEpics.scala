@@ -115,16 +115,16 @@ object GsaoiControllerEpics {
       ).flattenOption
 
       val guideOff: F[Unit] = (
-        epicsSys.endGuideCmd.mark[F] *>
-          epicsSys.endGuideCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.endGuideCmd.post[F].void *>
+        epicsSys.endGuideCmd.mark *>
+          epicsSys.endGuideCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.endGuideCmd.post.void *>
           epicsSys.waitForGuideOff
       ).whenA(current.guiding)
 
       val guideOn: F[Unit] = (
-        epicsSys.guideCmd.mark[F] *>
-          epicsSys.guideCmd.setTimeout[F](DefaultTimeout) *>
-          epicsSys.guideCmd.post[F] *>
+        epicsSys.guideCmd.mark *>
+          epicsSys.guideCmd.setTimeout(DefaultTimeout) *>
+          epicsSys.guideCmd.post *>
           epicsSys.waitForGuideOn
       ).whenA(current.guiding)
 
@@ -132,12 +132,12 @@ object GsaoiControllerEpics {
         L.debug(s"Gsaoi configuration: ${config.show}") *>
         guideOff.whenA(ccParams.nonEmpty || dcParams.nonEmpty) *>
         ( ccParams.sequence *>
-          epicsSys.ccConfigCmd.setTimeout[F](ConfigTimeout) *>
-          epicsSys.ccConfigCmd.post[F].void
+          epicsSys.ccConfigCmd.setTimeout(ConfigTimeout) *>
+          epicsSys.ccConfigCmd.post.void
         ).unlessA(ccParams.isEmpty) *>
         ( dcParams.sequence *>
-          epicsSys.dcConfigCmd.setTimeout[F](ConfigTimeout) *>
-          epicsSys.dcConfigCmd.post[F].void
+          epicsSys.dcConfigCmd.setTimeout(ConfigTimeout) *>
+          epicsSys.dcConfigCmd.post.void
         ).unlessA(dcParams.isEmpty) *>
         guideOn.whenA(ccParams.nonEmpty || dcParams.nonEmpty) *>
         L.debug("Completed Gsaoi configuration")
@@ -152,8 +152,8 @@ object GsaoiControllerEpics {
       L.debug(s"Start GSAOI observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
-        epicsSys.observeCmd.setTimeout[F](calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post[F].flatTap{ _ => L.debug("Completed GSAOI observe") }
+        epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)) *>
+        epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed GSAOI observe") }
     }
 
     // GSAOI endObserve is a NOP with no CAR associated
@@ -162,15 +162,15 @@ object GsaoiControllerEpics {
 
     override def stopObserve: F[Unit] =
       L.debug("Stop GSAOI exposure") *>
-        epicsSys.stopCmd.setTimeout[F](DefaultTimeout) *>
-        epicsSys.stopCmd.mark[F] *>
-        epicsSys.stopCmd.post[F].void
+        epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
+        epicsSys.stopCmd.mark *>
+        epicsSys.stopCmd.post.void
 
     override def abortObserve: F[Unit] =
       L.debug("Abort GSAOI exposure") *>
-        epicsSys.abortCmd.setTimeout[F](DefaultTimeout) *>
-        epicsSys.abortCmd.mark[F] *>
-        epicsSys.abortCmd.post[F].void
+        epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
+        epicsSys.abortCmd.mark *>
+        epicsSys.abortCmd.post.void
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] = {
       val rem = for {
@@ -227,8 +227,8 @@ object GsaoiControllerEpics {
       }
     }
 
-    override def guide: F[Unit] = epicsSys.guideCmd.mark[F] *> epicsSys.guideCmd.post[F].void
+    override def guide: F[Unit] = epicsSys.guideCmd.mark *> epicsSys.guideCmd.post.void
 
-    override def endGuide: F[Unit] = epicsSys.endGuideCmd.mark[F] *> epicsSys.guideCmd.post[F].void
+    override def endGuide: F[Unit] = epicsSys.endGuideCmd.mark *> epicsSys.guideCmd.post.void
   }
 }

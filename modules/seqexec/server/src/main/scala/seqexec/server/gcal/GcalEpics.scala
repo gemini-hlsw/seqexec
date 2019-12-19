@@ -8,8 +8,8 @@ import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsSystem
-import seqexec.server.EpicsCommand
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.EpicsCommandBase
+import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.safeAttributeF
 
 /**
@@ -21,21 +21,21 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def post: F[ApplyCommandResult] = lampsCmd.post
 
-  object shutterCmd extends EpicsCommand {
+  object shutterCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))
 
     private val position = cs.map(_.getString("position"))
     def setPosition(v: String): F[Unit] = setParameter(position, v)
   }
 
-  object filterCmd extends EpicsCommand {
+  object filterCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::filtSel"))
 
     private val name = cs.map(_.getString("name"))
     def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
-  object diffuserCmd extends EpicsCommand {
+  object diffuserCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::diffuseSel"))
 
     private val name = cs.map(_.getString("name"))
@@ -44,7 +44,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private def toLampState(v: BinaryOnOff): String = v.name
 
-  object lampsCmd extends EpicsCommand {
+  object lampsCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::lampSel"))
 
     private val nameAr = cs.map(_.getString("nameAr"))
