@@ -272,22 +272,22 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   /**
     * Log info lifted into Handle.
     */
-  private def info(msg: => String): HandleType[Unit] = pure((L.info(msg), None)).void
+  private def info(msg: => String): HandleType[Unit] = Handle.liftF(L.info(msg))
 
   /**
     * Log warning lifted into Handle.
     */
-  private def warning(msg: => String): HandleType[Unit] = pure((L.warn(msg), None)).void
+  private def warning(msg: => String): HandleType[Unit] = Handle.liftF(L.warn(msg))
 
   /**
     * Log debug lifted into Handle.
     */
-  private def debug(msg: => String): HandleType[Unit] = pure((L.debug(msg), None)).void
+  private def debug(msg: => String): HandleType[Unit] = Handle.liftF(L.debug(msg))
 
   /**
     * Log error lifted into Handle
     */
-  private def error(msg: => String): HandleType[Unit] = pure((L.error(msg), None)).void
+  private def error(msg: => String): HandleType[Unit] = Handle.liftF(L.error(msg))
 
   /**
     * Enqueue `Event` in the Handle.
