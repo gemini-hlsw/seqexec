@@ -5,6 +5,7 @@ package seqexec.server.gmos
 
 import cats.implicits._
 import cats.effect.Concurrent
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -31,7 +32,7 @@ import squants.space.AngleConversions._
 /**
   * Gmos needs different actions for N&S
   */
-class GmosInstrumentActions[F[_]: Concurrent: Logger, A <: GmosController.SiteDependentTypes](
+class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {

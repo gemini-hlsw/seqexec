@@ -40,4 +40,5 @@ object NiriControllerSim {
         }.pure[F]
       }
     }
+
 }

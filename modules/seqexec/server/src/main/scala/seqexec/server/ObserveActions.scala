@@ -5,6 +5,8 @@ package seqexec.server
 
 import cats._
 import cats.implicits._
+import cats.effect._
+import cats.effect.implicits._
 import fs2.Stream
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
@@ -15,6 +17,7 @@ import seqexec.server.InstrumentSystem.{CompleteControl, ElapsedTime}
 import squants.time.TimeConversions._
 import SeqTranslate.dataIdFromConfig
 import squants.time.Time
+import scala.concurrent.duration._
 
 /**
   * Methods usedd to generate observation related actions
@@ -114,7 +117,7 @@ trait ObserveActions {
     * Preamble for observations. It tells the odb, the subsystems
     * send the start headers and finally sends an observe
     */
-  def observePreamble[F[_]: MonadError[?[_], Throwable]: Logger](
+  def observePreamble[F[_]: Concurrent: Timer: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): F[(DataId, ObserveCommandResult)] =
@@ -124,7 +127,8 @@ trait ObserveActions {
       _ <- notifyObserveStart(env)
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
-      r <- env.inst.observe(env.config)(fileId)
+      t <- env.inst.calcObserveTime(env.config)
+      r <- env.inst.observe(env.config)(fileId).timeout((1.5 * t.toMilliseconds).milliseconds)
       _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
     } yield (d, r)
 
@@ -184,7 +188,7 @@ trait ObserveActions {
   /**
     * Observe for a typical instrument
     */
-  def stdObserve[F[_]: MonadError[?[_], Throwable]: Logger](
+  def stdObserve[F[_]: Concurrent: Timer: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =

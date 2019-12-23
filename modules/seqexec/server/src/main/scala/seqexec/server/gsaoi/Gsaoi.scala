@@ -5,7 +5,7 @@ package seqexec.server.gsaoi
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
@@ -33,7 +33,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: Logger: Concurrent](
+final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
   controller: GsaoiController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]

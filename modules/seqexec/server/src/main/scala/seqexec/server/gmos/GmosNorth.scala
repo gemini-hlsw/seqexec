@@ -5,6 +5,7 @@ package seqexec.server.gmos
 
 import cats.implicits._
 import cats.effect.Concurrent
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
@@ -22,7 +23,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosNorth[F[_]: Concurrent: Logger](
+final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
   c: GmosNorthController[F],
   dhsClient: DhsClient[F],
   nsCmdR: Ref[F, Option[NSObserveCommand]]
@@ -42,6 +43,7 @@ final case class GmosNorth[F[_]: Concurrent: Logger](
 )(northConfigTypes) {
   override val resource: Instrument = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
+
   // TODO Use different value if using electronic offsets
   override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
@@ -49,7 +51,7 @@ final case class GmosNorth[F[_]: Concurrent: Logger](
 object GmosNorth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: Concurrent: Logger](
+  def apply[F[_]: Concurrent: Timer: Logger](
     c: GmosController[F, NorthTypes],
     dhsClient: DhsClient[F],
     nsCmdR: Ref[F, Option[NSObserveCommand]]

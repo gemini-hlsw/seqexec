@@ -47,7 +47,8 @@ final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
 
 object CleanConfig {
 
-  implicit val extractItem: ExtractItem[CleanConfig] = (a: CleanConfig, key: ItemKey) => a.itemValue(key)
+  implicit val extractItem: ExtractItem[CleanConfig] =
+    (a: CleanConfig, key: ItemKey) => a.itemValue(key)
 
   type ConfigWiper = Config => Map[ItemKey, AnyRef]
 
