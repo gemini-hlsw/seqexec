@@ -270,8 +270,14 @@ object SeqexecEngine {
       }
     }
 
+    private val heartbeatPeriod: FiniteDuration = FiniteDuration(10, TimeUnit.SECONDS)
+
+    private def heartbeatStream: Stream[F, EventType[F]] =
+      Stream.awakeDelay[F](heartbeatPeriod)
+        .map(t => Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s"))
+
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
-      stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow))(EngineState.default[F]).flatMap(x =>
+      stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltBoth(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
         Stream.eval(notifyODB(x))).flatMap {
           case (ev, qState) =>
             val sequences = qState.sequences.values.map(viewSequence).toList

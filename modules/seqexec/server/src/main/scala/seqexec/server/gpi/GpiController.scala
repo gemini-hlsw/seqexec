@@ -25,7 +25,6 @@ import giapi.client.gpi.GpiClient
 import giapi.client.GiapiStatusDb
 import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
-import org.log4s._
 import scala.concurrent.duration._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.SeqexecFailure
