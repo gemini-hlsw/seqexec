@@ -14,7 +14,7 @@ import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
 import java.util.concurrent.TimeUnit
-
+import java.time.Instant
 import mouse.all._
 import monocle.Monocle._
 import monocle.Optional
@@ -31,7 +31,6 @@ import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
 import seqexec.model.config._
 import seqexec.server.SeqEvent._
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 
@@ -220,7 +219,11 @@ object SeqexecEngine {
     }
 
     override def selectSequence(q: EventQueue[F], i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): F[Unit] =
-      q.enqueue1(Event.logInfoMsg[F, EngineState[F], SeqEvent](s"User '${user.displayName}' sync and load sequence ${sid.format} on ${i.show}")) *>
+      Sync[F].delay(Instant.now)
+        .flatMap{ts =>
+          q.enqueue1(
+            Event.logInfoMsg[F, EngineState[F], SeqEvent](s"User '${user.displayName}' sync and load sequence ${sid.format} on ${i.show}", ts))
+          } *>
       sync(q, sid) *>
       q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId))
 
@@ -281,6 +284,15 @@ object SeqexecEngine {
         .as(Event.nullEvent: EventType[F])
         .through(noHeartbeatDetection.andThen(_.recoverWith { case _ => Stream.emit[F, EventType[F]](Event.logErrorMsg("Seqexec engine heartbeat undetected"))}))
     }
+
+
+        .map(t => Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s"))
+        .flatMap{t =>
+          Stream.eval(Sync[F].delay(Instant.now))
+            .flatMap{ts =>
+              Stream.emit(Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s", ts))
+          }
+        }
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
       stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
@@ -817,7 +829,7 @@ object SeqexecEngine {
         case UserEvent.ModifyState(_)         => modifyStateEvent(uev.getOrElse(NullSeqEvent), svs)
         case UserEvent.ActionStop(_, _)       => ActionStopRequested(svs)
         case UserEvent.LogDebug(_)            => NullEvent
-        case UserEvent.LogInfo(_)             => NullEvent
+        case UserEvent.LogInfo(m, ts)         => ServerLogMessage(ServerLogLevel.INFO, ts, m)
         case UserEvent.LogWarning(_)          => NullEvent
         case UserEvent.LogError(_)            => NullEvent
         case UserEvent.ActionResume(_, _, _)  => SequenceUpdated(svs)

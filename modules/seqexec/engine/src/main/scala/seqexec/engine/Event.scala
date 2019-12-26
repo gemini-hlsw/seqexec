@@ -6,6 +6,7 @@ package seqexec.engine
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
+import java.time.Instant
 import seqexec.model.ClientId
 import seqexec.model.UserDetails
 import seqexec.model.StepId
@@ -34,7 +35,7 @@ object Event {
   def actionResume[F[_], S, U](id: Observation.Id, i: Int, c: Stream[F, Result[F]]): Event[F, S, U] =
     EventUser[F, S, U](ActionResume(id, i, c))
   def logDebugMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogDebug(msg))
-  def logInfoMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogInfo(msg))
+  def logInfoMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U] = EventUser[F, S, U](LogInfo(msg, ts))
   def logWarningMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogWarning(msg))
   def logErrorMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogError(msg))
 

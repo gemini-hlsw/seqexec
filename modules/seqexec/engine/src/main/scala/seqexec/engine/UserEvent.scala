@@ -6,6 +6,7 @@ package seqexec.engine
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
+import java.time.Instant
 import seqexec.model.{ClientId, StepId, UserDetails}
 
 /**
@@ -52,7 +53,7 @@ object UserEvent {
     val user: Option[UserDetails] = None
   }
 
-  final case class LogInfo[S, U](msg: String) extends UserEvent[Nothing, S, U] {
+  final case class LogInfo[S, U](msg: String, timestamp: Instant) extends UserEvent[Nothing, S, U] {
     val user: Option[UserDetails] = None
   }
 

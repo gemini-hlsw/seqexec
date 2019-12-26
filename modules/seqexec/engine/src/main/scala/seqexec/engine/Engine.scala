@@ -308,7 +308,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     case ActionStop(id, f)             => debug("Engine: Action stop requested") *> actionStop(id, f) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case ActionResume(id, i, cont)     => debug("Engine: Action resume requested") *> actionResume(id, i, cont) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case LogDebug(msg)                 => debug(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
-    case LogInfo(msg)                  => info(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
+    case LogInfo(msg, _)               => info(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case LogWarning(msg)               => warning(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case LogError(msg)                 => error(msg) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
   }
