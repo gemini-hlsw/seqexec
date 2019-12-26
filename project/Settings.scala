@@ -16,17 +16,17 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaVersion = "2.12.9"
+    val scalaVersion = "2.12.10"
 
     // ScalaJS libraries
     val scalaDom                = "0.9.8"
     val scalajsReact            = "1.4.2"
     val booPickle               = "1.3.1"
-    val diode                   = "1.1.5"
-    val diodeReact              = "1.1.5.142"
+    val diode                   = "1.1.6"
+    val diodeReact              = "1.1.6.142"
     val javaTimeJS              = "2.0.0-RC3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactCommon      = "0.3.2"
+    val scalaJSReactCommon      = "0.3.4"
     val scalaJSReactVirtualized = "0.7.0"
     val scalaJSReactClipboard   = "0.9.0"
     val scalaJSReactDraggable   = "0.6.0"
@@ -34,7 +34,7 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion       = "2.0.0"
-    val catsVersion             = "2.0.0"
+    val catsVersion             = "2.1.0"
     val mouseVersion            = "0.24"
     val fs2Version              = "2.1.0"
     val shapelessVersion        = "2.3.3"
@@ -53,9 +53,9 @@ object Settings {
     val logback                 = "1.2.3"
     val janino                  = "3.1.0"
     val logstash                = "6.3"
-    val pureConfig              = "0.12.1"
+    val pureConfig              = "0.12.2"
     val monocleVersion          = "2.0.0"
-    val circeVersion            = "0.12.1"
+    val circeVersion            = "0.12.3"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.4"
 

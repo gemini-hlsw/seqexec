@@ -10,7 +10,7 @@ import org.http4s.Uri
 import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.error._
-import pureconfig.module.catseffect._
+import pureconfig.module.catseffect.syntax._
 import pureconfig.module.http4s._
 import pureconfig.generic.ProductHint
 import shapeless.tag
