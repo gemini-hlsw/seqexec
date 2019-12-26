@@ -11,6 +11,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.KeywordsClient
 import squants.{Length, Time}
+import scala.concurrent.duration._
 
 trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   override val resource: Instrument
@@ -24,6 +25,8 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: CleanConfig): F[Time]
+
+  def observeTimeout: FiniteDuration = 1.minute
 
   def keywordsClient: KeywordsClient[F]
 

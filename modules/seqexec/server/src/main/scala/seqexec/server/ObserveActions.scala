@@ -14,9 +14,9 @@ import seqexec.engine._
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.{CompleteControl, ElapsedTime}
-import squants.time.TimeConversions._
 import SeqTranslate.dataIdFromConfig
 import squants.time.Time
+import squants.time.TimeConversions._
 import scala.concurrent.duration._
 
 /**
@@ -127,8 +127,8 @@ trait ObserveActions {
       _ <- notifyObserveStart(env)
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
-      t <- env.inst.calcObserveTime(env.config)
-      r <- env.inst.observe(env.config)(fileId).timeout((1.5 * t.toMilliseconds).milliseconds)
+      t <- env.inst.calcObserveTime(env.config).map(t => t + env.inst.observeTimeout)
+      r <- env.inst.observe(env.config)(fileId).timeoutTo(new FiniteDuration(t.millis, MILLISECONDS), Concurrent[F].raiseError(SeqexecFailure.ObsTimeout(fileId)))
       _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
     } yield (d, r)
 

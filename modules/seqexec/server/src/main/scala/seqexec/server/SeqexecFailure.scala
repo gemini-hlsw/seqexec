@@ -6,6 +6,7 @@ package seqexec.server
 import edu.gemini.seqexec.odb.SeqFailure
 import gem.Observation
 import org.http4s.Uri
+import seqexec.model.dhs._
 
 sealed trait SeqexecFailure extends Exception with Product with Serializable
 
@@ -52,6 +53,9 @@ object SeqexecFailure {
   /** Null epics read */
   final case class NullEpicsError(channel: String) extends SeqexecFailure
 
+  /** Observation command timeout */
+  final case class ObsTimeout(fileId: ImageFileId) extends SeqexecFailure
+
   /** Failed simulation */
   case object FailedSimulation extends SeqexecFailure
 
@@ -73,6 +77,7 @@ object SeqexecFailure {
     case GdsXmlError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
     case FailedSimulation             => s"Failed to simulate"
     case NullEpicsError(channel)      => s"Failed to read epics channel: $channel"
+    case ObsTimeout(fileId)           => s"Observation of $fileId timed out"
   }
 
 }
