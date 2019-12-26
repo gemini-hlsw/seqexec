@@ -83,7 +83,6 @@ final class ObserveActionsSpec extends CatsSuite {
     config.putItem(INSTRUMENT_KEY / READ_MODE_PROP, ReadMode.DEFAULT)
     config.putItem(INSTRUMENT_KEY / WELL_DEPTH_PROP, WellDepth.DEFAULT)
     config.putItem(INSTRUMENT_KEY / BUILTIN_ROI_PROP, BuiltinROI.DEFAULT)
-    println(config)
     val httpClient: Client[IO] = GdsClient.alwaysOkClient[IO]
     val control = SystemsControlConfiguration(
       altair   = ControlStrategy.Simulated,
@@ -119,28 +118,26 @@ final class ObserveActionsSpec extends CatsSuite {
       None,
       30.seconds
     )
-    println(
-      Systems
-        .build(Site.GS, httpClient, conf, null)
-        .use { s =>
-          noObserve.flatMap { c =>
-            val niri = Niri(c, s.dhs)
-            val env = ObserveEnvironment[IO](
-              s,
-              CleanConfig(config),
-              StepType.CelestialObject(inst),
-              Observation.Id.unsafeFromString("GS-2019-Q-0-1"),
-              niri,
-              Nil,
-              _ => Nil,
-              null
-            )
-            ObserveActions.observePreamble[IO](toImageFileId("S001"), env)
-          }
+    Systems
+      .build(Site.GS, httpClient, conf, null)
+      .use { s =>
+        noObserve.flatMap { c =>
+          val niri = Niri(c, s.dhs)
+          val env = ObserveEnvironment[IO](
+            s,
+            CleanConfig(config),
+            StepType.CelestialObject(inst),
+            Observation.Id.unsafeFromString("GS-2019-Q-0-1"),
+            niri,
+            Nil,
+            _ => Nil,
+            null
+          )
+          ObserveActions.observePreamble[IO](toImageFileId("S001"), env)
         }
-        .attempt
-        .unsafeRunSync
-        .isLeft shouldBe true
-    )
+      }
+      .attempt
+      .unsafeRunSync
+      .isLeft shouldBe true
   }
 }

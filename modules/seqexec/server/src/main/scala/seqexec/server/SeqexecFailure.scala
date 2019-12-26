@@ -53,8 +53,14 @@ object SeqexecFailure {
   /** Null epics read */
   final case class NullEpicsError(channel: String) extends SeqexecFailure
 
-  /** Observation command timeout */
+  /** Observation command timeout on instrument */
   final case class ObsTimeout(fileId: ImageFileId) extends SeqexecFailure
+
+  /** Observation system timeout, e.g. TCS/GCAL */
+  final case class ObsSystemTimeout(fileId: ImageFileId) extends SeqexecFailure
+
+  /** Observation command timeout */
+  final case class ObsCommandTimeout(obsId: Observation.Id) extends SeqexecFailure
 
   /** Failed simulation */
   case object FailedSimulation extends SeqexecFailure
@@ -78,6 +84,8 @@ object SeqexecFailure {
     case FailedSimulation             => s"Failed to simulate"
     case NullEpicsError(channel)      => s"Failed to read epics channel: $channel"
     case ObsTimeout(fileId)           => s"Observation of $fileId timed out"
+    case ObsSystemTimeout(fileId)     => s"Observation of $fileId timed out on a subsystem"
+    case ObsCommandTimeout(obsId)     => s"Observation command on ${obsId.format} timed out"
   }
 
 }

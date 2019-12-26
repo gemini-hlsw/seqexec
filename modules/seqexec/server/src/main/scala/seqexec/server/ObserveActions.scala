@@ -13,7 +13,7 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.InstrumentSystem.{CompleteControl, ElapsedTime}
+import seqexec.server.InstrumentSystem._
 import SeqTranslate.dataIdFromConfig
 import squants.time.Time
 import squants.time.TimeConversions._
@@ -124,7 +124,7 @@ trait ObserveActions {
     for {
       d <- dataId(env)
       _ <- sendDataStart(env.systems, env.obsId, fileId, d)
-      _ <- notifyObserveStart(env)
+      _ <- notifyObserveStart(env).timeoutTo(env.inst.observeTimeout, Concurrent[F].raiseError(SeqexecFailure.ObsSystemTimeout(fileId)))
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
       t <- env.inst.calcObserveTime(env.config).map(t => t + env.inst.observeTimeout)
@@ -137,14 +137,14 @@ trait ObserveActions {
     * It tells the odb and each subsystem and also sends the end
     * observation keywords
     */
-  def okTail[F[_]: MonadError[?[_], Throwable]](
+  def okTail[F[_]: Concurrent: Timer](
     fileId:  ImageFileId,
     dataId:  DataId,
     stopped: Boolean,
     env:     ObserveEnvironment[F]
   ): F[Result[F]] =
     for {
-      _ <- notifyObserveEnd(env)
+      _ <- notifyObserveEnd(env).timeoutTo(env.inst.observeTimeout, Concurrent[F].raiseError(SeqexecFailure.ObsSystemTimeout(fileId)))
       _ <- env.headers(env.ctx).reverseMap(_.sendAfter(fileId)).sequence.void
       _ <- closeImage(fileId, env)
       _ <- sendDataEnd[F](env.systems, env.obsId, fileId, dataId)
@@ -155,11 +155,11 @@ trait ObserveActions {
   /**
     * Method to process observe results and act accordingly to the response
     */
-  private def observeTail[F[_]: MonadError[?[_], Throwable]](
+  private def observeTail[F[_]: Timer](
     fileId: ImageFileId,
     dataId: DataId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult): Stream[F, Result[F]] = {
+  )(r:      ObserveCommandResult)(implicit cio: Concurrent[F]): Stream[F, Result[F]] =
     Stream.eval(r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, dataId, stopped = false, env)
@@ -168,13 +168,35 @@ trait ObserveActions {
       case ObserveCommandResult.Aborted =>
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
+        val timeout = env.inst.observeTimeout
         env.inst.calcObserveTime(env.config)
           .flatMap(totalTime => env.inst.observeControl(env.config) match {
-            case c: CompleteControl[F] => Result.Paused(
+            case c: CompleteControl[F] =>
+            val resumePaused: Time => Stream[F, Result[F]] =
+                (elapsed: Time) => Stream.eval{
+                  val resumeTimeout: FiniteDuration = new FiniteDuration((elapsed + timeout).millis, MILLISECONDS)
+                  c.continue
+                    .self(elapsed)
+                    .timeoutTo(resumeTimeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
+                }.flatMap(observeTail(fileId, dataId, env))
+            val stopPaused: Stream[F, Result[F]] =
+                Stream.eval{
+                  c.stopPaused
+                    .self
+                    .timeoutTo(timeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
+                }.flatMap(observeTail(fileId, dataId, env))
+            val abortPaused: Stream[F, Result[F]] =
+                Stream.eval{
+                  c.abortPaused
+                    .self
+                    .timeoutTo(timeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
+                }.flatMap(observeTail(fileId, dataId, env))
+
+             Result.Paused(
               ObserveContext[F](
-                (elapsed: Time) => Stream.eval(c.continue.self(elapsed)).flatMap(observeTail(fileId, dataId, env)),
-                Stream.eval(c.stopPaused.self).flatMap(observeTail(fileId, dataId, env)),
-                Stream.eval(c.abortPaused.self).flatMap(observeTail(fileId, dataId, env)),
+                resumePaused,
+                stopPaused,
+                abortPaused,
                 totalTime
               )
             ).pure[F].widen[Result[F]]
@@ -183,7 +205,6 @@ trait ObserveActions {
                 .raiseError[F, Result[F]]
           })
     })
-  }
 
   /**
     * Observe for a typical instrument

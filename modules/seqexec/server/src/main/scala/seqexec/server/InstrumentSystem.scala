@@ -44,6 +44,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 }
 
 object InstrumentSystem {
+  val ObserveOperationsTimeout = 1.minute
 
   final case class StopObserveCmd[F[_]](self: Boolean => F[Unit])
   final case class AbortObserveCmd[F[_]](self: F[Unit])
