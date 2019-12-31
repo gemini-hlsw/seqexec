@@ -7,14 +7,16 @@ import cats._
 import cats.implicits._
 import diode.data.Pot
 import org.scalajs.dom.WebSocket
+import scala.scalajs.js.timers.SetIntervalHandle
 
 final case class WebSocketConnection(ws:            Pot[WebSocket],
                                      nextAttempt:   Int,
-                                     autoReconnect: Boolean)
+                                     autoReconnect: Boolean,
+                                     pingInterval:  Option[SetIntervalHandle])
 
 object WebSocketConnection {
   val Empty: WebSocketConnection =
-    WebSocketConnection(diode.data.Empty, 0, autoReconnect = true)
+    WebSocketConnection(diode.data.Empty, 0, autoReconnect = true, None)
 
   implicit val equal: Eq[WebSocketConnection] =
     Eq.by { x =>

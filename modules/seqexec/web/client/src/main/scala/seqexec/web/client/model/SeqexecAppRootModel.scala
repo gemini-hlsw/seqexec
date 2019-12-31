@@ -16,6 +16,7 @@ import monocle.function.At.atSortedMap
 import monocle.function.Each.each
 import monocle.function.FilterIndex.filterIndex
 import scala.collection.immutable.SortedMap
+import scala.scalajs.js.timers._
 import seqexec.model.enum.MountGuideOption._
 import seqexec.model.M1GuideConfig._
 import seqexec.model.M2GuideConfig._
@@ -44,7 +45,8 @@ final case class SeqexecAppRootModel(
   uiModel:       SeqexecUIModel,
   serverVersion: Option[String],
   guideConfig:   TelescopeGuideConfig,
-  alignAndCalib: AlignAndCalibStep
+  alignAndCalib: AlignAndCalibStep,
+  pingInterval:  Option[SetTimeoutHandle]
 )
 
 object SeqexecAppRootModel {
@@ -63,7 +65,8 @@ object SeqexecAppRootModel {
     SeqexecUIModel.Initial,
     none,
     TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff),
-    AlignAndCalibStep.NoAction
+    AlignAndCalibStep.NoAction,
+    None
   )
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =

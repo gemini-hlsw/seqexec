@@ -12,6 +12,7 @@ import diode.NoAction
 import seqexec.model.UserDetails
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
+import seqexec.common.HttpStatusCodes
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -28,6 +29,13 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]])
       // Close the websocket and reconnect
       val reconnect = Effect(Future(Reconnect))
       updated(Some(u), reconnect + effect)
+
+    case VerifyLoggedStatus =>
+      val effect    = Effect(SeqexecWebClient.ping().map{
+        case HttpStatusCodes.Unauthorized if value.isDefined => Logout
+        case _                                               => NoAction
+      })
+      effectOnly(effect)
 
     case Logout =>
       val effect    = Effect(SeqexecWebClient.logout().as(NoAction))

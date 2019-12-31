@@ -46,6 +46,9 @@ const Web = Merge(
           changeOrigin: true,
           ws: true
         },
+        "/ping": {
+          target: "http://localhost:7070"
+        },
         "/api/**": {
           target: "http://localhost:7070",
           logLevel: "debug",

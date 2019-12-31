@@ -19,6 +19,7 @@ import java.time.Instant
 import mouse.all._
 import org.log4s._
 import org.scalajs.dom._
+import scala.scalajs.js.timers._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.ArrayBuffer
@@ -115,12 +116,16 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
       // Forcefully close the websocket as requested when reloading the code via HMR
       val ws = value.ws
       val closeEffect = Effect(Future(ws.foreach(_.close())).as(NoAction))
-      updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeEffect)
+      // clear the timer
+      val timerEffect = Effect(Future(value.pingInterval.foreach(clearInterval(_))).as(NoAction))
+      updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false, None), closeEffect + timerEffect)
   }
 
   def connectedHandler: PartialFunction[Any, ActionResult[M]] = {
     case Connected(ws, delay) =>
-      updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true))
+      // setup a timer to ping every 5 min and detect if the session has expired
+      val handle = setInterval(5.minutes)(SeqexecCircuit.dispatch(VerifyLoggedStatus))
+      updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true, Some(handle)))
   }
 
   def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {

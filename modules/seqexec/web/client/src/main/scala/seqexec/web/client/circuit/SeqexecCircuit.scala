@@ -46,6 +46,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case UpdateStepTableState(_, _)                 =>
       case UpdateCalTableState(_, _)                  =>
       case UpdateSelectedStep(_, _)                   =>
+      case VerifyLoggedStatus                         =>
       case a: Action                                  =>
         if(LinkingInfo.developmentMode) logger.info(s"Action: ${a.show}")
       case _                                          =>
