@@ -10,6 +10,7 @@ import cats.implicits._
 import gem.Observation
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
+import seqexec.common.HttpStatusCodes
 import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.UserDetails
@@ -255,6 +256,17 @@ object SeqexecWebClient extends ModelBooPicklers {
         url = s"$baseUrl/logout"
       )
       .map(_.responseText)
+
+  /**
+    * Ping request
+    */
+  def ping(): Future[Int] =
+    Ajax
+      .get(
+        url = "/ping"
+      )
+      .map(_.status)
+      .handleError(_ => HttpStatusCodes.Unauthorized)
 
   /**
     * Load a sequence

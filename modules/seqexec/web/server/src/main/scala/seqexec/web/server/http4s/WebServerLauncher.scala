@@ -103,7 +103,11 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/smartgcal"            -> new SmartGcalRoutes[F](cal).service
     )
 
-    val loggedRoutes = Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
+    val pingRouter = Router[F](
+      "/ping" -> new PingRoutes(as).service
+    )
+
+    val loggedRoutes = pingRouter <+> Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
     val metricsMiddleware: Resource[F, HttpRoutes[F]] = Prometheus.metricsOps[F](cr, "seqexec").map(Metrics[F](_)(loggedRoutes))
 
     metricsMiddleware.flatMap(x => build(x.pure[F]))

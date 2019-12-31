@@ -246,7 +246,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         ws <- arbitrary[Pot[WebSocket]]
         a  <- arbitrary[Int]
         r  <- arbitrary[Boolean]
-      } yield WebSocketConnection(ws, a, r)
+      } yield WebSocketConnection(ws, a, r, None)
     }
 
   implicit val wssCogen: Cogen[WebSocketConnection] =
@@ -790,7 +790,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         version   <- arbitrary[Option[String]]
         guideConf <- arbitrary[TelescopeGuideConfig]
         acStep    <- arbitrary[AlignAndCalibStep]
-      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf, acStep)
+      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf, acStep, None)
     }
 
   implicit val seqexecAppRootModelCogen: Cogen[SeqexecAppRootModel] =

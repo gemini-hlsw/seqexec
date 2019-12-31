@@ -36,6 +36,7 @@ object actions {
 
   final case class LoggedIn(u: UserDetails) extends Action
   case object Logout extends Action
+  case object VerifyLoggedStatus extends Action
 
   // Action to select a sequence for display
   final case class SelectIdToDisplay(i:    Instrument,
