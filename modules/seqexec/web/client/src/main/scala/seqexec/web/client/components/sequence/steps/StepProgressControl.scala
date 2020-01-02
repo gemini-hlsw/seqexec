@@ -122,7 +122,13 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       if(props.stateSummary.isBias) {
-        BiasStatus(fileId)
+        BiasStatus(
+          props.obsId,
+          props.step.id,
+          fileId,
+          stopping = !paused && props.isStopping,
+          paused
+        )
       } else {
         props.stateSummary.nsStatus.fold[VdomElement] {
           ObservationProgressBar(

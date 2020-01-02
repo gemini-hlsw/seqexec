@@ -22,13 +22,16 @@ import scala.math.max
 trait ProgressLabel {
   def label(
     fileId:          String,
-    remainingMillis: Int,
+    remainingMillis: Option[Int],
     stopping:        Boolean,
     paused:          Boolean,
     stage:           ObserveStage
   ): String = {
-    val remainingSecs = remainingMillis / 1000
-    val durationStr = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
+    val durationStr = remainingMillis.foldMap { millis =>
+      val remainingSecs = millis / 1000
+      val remainingStr = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
+      s" - $remainingStr left"
+    }
     val stageStr =
       stage match {
         case ObserveStage.Preparing   => "Preparing".some
@@ -36,12 +39,14 @@ trait ProgressLabel {
         case _                        => None
       }
 
-    if (paused) s"$fileId - Paused - $durationStr left"
+    if (paused) s"$fileId - Paused$durationStr"
       else if (stopping) s"$fileId - Stopping - Reading out..."
       else stageStr match {
         case Some(stage) => s"$fileId - $stage"
         case _           =>
-          if (remainingSecs > 0) s"$fileId - $durationStr left" else s"$fileId - Reading out..."
+          remainingMillis.fold(fileId) { millis =>
+            if (millis > 0) s"$fileId$durationStr" else s"$fileId - Reading out..."
+          }
     }
   }
 }
@@ -73,7 +78,7 @@ object SmoothObservationProgressBar
       val remainingMillis = s.maxValue - s.value
 
       Progress(
-        label       = label(p.fileId, remainingMillis, p.stopping, p.paused, p.stage),
+        label       = label(p.fileId, remainingMillis.some, p.stopping, p.paused, p.stage),
         total       = p.total,
         value       = s.value,
         color       = "blue".some,

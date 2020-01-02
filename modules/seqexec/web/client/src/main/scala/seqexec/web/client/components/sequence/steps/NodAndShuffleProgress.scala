@@ -64,7 +64,7 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
             val remainingNodMillis = proxy().foldMap(_.remaining.toMilliseconds.toInt)
             val remainingMillis = remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
             val stage = proxy().map(_.stage).getOrElse(ObserveStage.Idle)
-            <.span(label(p.fileId, remainingMillis, p.stopping, p.paused, stage))
+            <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
           }
         } getOrElse <.span(p.fileId)
         )
