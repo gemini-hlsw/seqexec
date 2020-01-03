@@ -33,6 +33,9 @@ object Progress {
 
   implicit val nsProgressP: Prism[Progress, NSObservationProgress] =
     GenPrism[Progress, NSObservationProgress]
+
+  implicit val progressP: Prism[Progress, Progress] =
+    GenPrism[Progress, Progress]
 }
 
 final case class ObservationProgress(obsId:     Observation.Id,
