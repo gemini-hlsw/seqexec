@@ -7,7 +7,7 @@ import cats.Eq
 import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
-import monocle.Prism
+import monocle.{Iso, Prism}
 import monocle.macros.GenPrism
 import squants.Time
 
@@ -35,7 +35,7 @@ object Progress {
     GenPrism[Progress, NSObservationProgress]
 
   implicit val progressP: Prism[Progress, Progress] =
-    GenPrism[Progress, Progress]
+    Iso.id[Progress].asPrism
 }
 
 final case class ObservationProgress(obsId:     Observation.Id,
