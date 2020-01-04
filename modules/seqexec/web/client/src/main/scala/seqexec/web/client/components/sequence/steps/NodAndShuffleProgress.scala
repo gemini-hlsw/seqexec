@@ -54,20 +54,21 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
       <.div(
         SeqexecStyles.specialStateLabel,
         SeqexecStyles.progressMessage,
-        p.nsStatus.state.map[VdomElement] { nsState =>
+        p.nsStatus.state.map[VdomElement] { _ =>
           s.progressConnect { proxy =>
+            val nsProgress = proxy()
             val nodCount = NodAndShuffleStage.NsSequence.length
             val nodMillis = p.nsStatus.nodExposureTime.toMilliseconds.toInt
             val cycleMillis = nodMillis * nodCount
-            val remainingCycles = p.nsStatus.cycles - nsState.sub.cycle - 1
-            val remainingNods = nodCount - nsState.sub.stageIndex - 1
-            val remainingNodMillis = proxy().foldMap(_.remaining.toMilliseconds.toInt)
+            val remainingCycles = p.nsStatus.cycles - nsProgress.foldMap(_.sub.cycle - 1)
+            val remainingNods = nodCount - nsProgress.foldMap(_.sub.stageIndex - 1)
+            val remainingNodMillis = nsProgress.foldMap(_.remaining.toMilliseconds.toInt)
             val remainingMillis = remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
-            val stage = proxy().map(_.stage).getOrElse(ObserveStage.Idle)
-            <.span(label(p.fileId, remainingMillis, p.stopping, p.paused, stage))
+            val stage = nsProgress.map(_.stage).getOrElse(ObserveStage.Idle)
+            <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
           }
         } getOrElse <.span(p.fileId)
-        )
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
