@@ -193,7 +193,7 @@ object Settings {
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
     val SeqexecOdb  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion,
-                      "dom4j"             %  "dom4j"                          % "1.5.1"
+                      "dom4j"             %  "dom4j"                          % "1.5.2"
                         exclude("jaxen", "jaxen")
                         exclude("jaxme", "jaxme-api")
                         exclude("msv", "xsdlib")
