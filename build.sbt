@@ -196,7 +196,6 @@ lazy val ocs2 = project
     libraryDependencies ++= Seq(
       Fs2,
       ScalaXml.value,
-      ScalaParserCombinators.value,
       Http4sXml
     ) ++ Http4sClient ++ Http4s
   )
@@ -451,7 +450,6 @@ lazy val acm = project
       Guava,
       Slf4j,
       XmlUnit,
-      JUnitInterface,
       ScalaMock
     ) ++ Logback,
     libraryDependencies in Test ++= Logback,
