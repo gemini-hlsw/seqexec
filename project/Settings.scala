@@ -61,7 +61,6 @@ object Settings {
 
     // test libraries
     val xmlUnit                 = "1.6"
-    val jUnitInterface          = "0.11"
     val scalaMock               = "4.4.0"
 
     // Pure JS libraries
@@ -99,12 +98,10 @@ object Settings {
       "edu.gemini"              %%% "gsp-math-testkit"              % LibraryVersions.gspMath         % "test",
     ))
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
-    val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
     val ScalaMock              = "org.scalamock" %% "scalamock" % LibraryVersions.scalaMock % "test"
     // Server side libraries
     val Cats                   = Def.setting("org.typelevel" %%% "cats-core"                         % LibraryVersions.catsVersion)
     val CatsEffect             = Def.setting("org.typelevel" %%% "cats-effect"                       % LibraryVersions.catsEffectVersion)
-    val CatsFree               = Def.setting("org.typelevel" %%% "cats-free"                         % LibraryVersions.catsVersion)
     val Fs2                    = "co.fs2"                    %%  "fs2-core"                          % LibraryVersions.fs2Version
     val Fs2IO                  = "co.fs2"                    %%  "fs2-io"                            % LibraryVersions.fs2Version % "test"
     val Mouse                  = Def.setting("org.typelevel" %%% "mouse"                             % LibraryVersions.mouseVersion)
@@ -136,7 +133,6 @@ object Settings {
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
     val ScalaXml               = Def.setting("org.scala-lang.modules" %%% "scala-xml"                % LibraryVersions.scalaXmlVerson)
-    val ScalaParserCombinators = Def.setting("org.scala-lang.modules" %%  "scala-parser-combinators" % LibraryVersions.scalaParsersVersion)
     val Http4s                 = Seq(
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4sVersion)
