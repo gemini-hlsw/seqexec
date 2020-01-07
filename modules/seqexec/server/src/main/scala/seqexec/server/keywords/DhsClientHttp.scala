@@ -35,7 +35,7 @@ import scala.concurrent.duration._
 class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
   import DhsClientHttp._
 
-  private val client = {
+  private val clientWithRetry = {
     val max = 2
     var attemptsCounter = 1
     val policy = RetryPolicy[F] { attempts: Int =>
@@ -53,7 +53,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       Json.obj("createImage" := p.asJson),
       baseURI
     )
-    client.expect[TrySeq[ImageFileId]](req)(jsonOf[F, TrySeq[ImageFileId]])
+    clientWithRetry.expect[TrySeq[ImageFileId]](req)(jsonOf[F, TrySeq[ImageFileId]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
       .flatMap(EitherT.fromEither(_)).liftF
@@ -73,7 +73,8 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       ),
       baseURI / id / "keywords"
     )
-    client.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
+    val cl = if(finalFlag) base else clientWithRetry
+    cl.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
       .flatMap(EitherT.fromEither(_)).liftF
