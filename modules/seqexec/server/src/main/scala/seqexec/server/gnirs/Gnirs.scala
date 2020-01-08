@@ -6,7 +6,7 @@ package seqexec.server.gnirs
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Sync, Timer}
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
@@ -28,7 +28,7 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs[F[_]: Logger: Concurrent](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
+final case class Gnirs[F[_]: Logger: Concurrent: Timer](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
   override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"

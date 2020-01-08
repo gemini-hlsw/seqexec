@@ -4,6 +4,7 @@
 package seqexec.server.gpi
 
 import cats.effect.Concurrent
+import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -17,7 +18,7 @@ import seqexec.server.ObserveEnvironment
 /**
   * Gpi needs different actions for A&C
   */
-class GpiInstrumentActions[F[_]: Logger: Concurrent]
+class GpiInstrumentActions[F[_]: Logger: Concurrent: Timer]
     extends InstrumentActions[F] {
 
   override def observationProgressStream(

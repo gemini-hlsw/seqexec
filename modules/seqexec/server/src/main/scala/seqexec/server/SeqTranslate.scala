@@ -7,6 +7,7 @@ import cats._
 import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
+import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
@@ -47,6 +48,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.NSObserveCommand
 import squants.Time
 import squants.time.TimeConversions._
+import scala.concurrent.duration._
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 
@@ -73,7 +75,6 @@ trait SeqTranslate[F[_]] extends ObserveActions {
 }
 
 object SeqTranslate {
-
   private class SeqTranslateImpl[F[_]: Sync: Logger](site: Site,
                                                      systems: Systems[F],
                                                      gmosNsCmd: Ref[F, Option[NSObserveCommand]]
@@ -201,7 +202,11 @@ object SeqTranslate {
           .exists(isObserving)
       } yield Stream.eval(
         toInstrumentSys(obsSeq.seqGen.instrument)
-          .flatMap(i => f(i.observeControl(cfg)).attempt.map(handleError))
+          .flatMap{i =>
+            f(i.observeControl(cfg))
+              .attempt
+              .map(handleError)
+              .timeoutTo(ObserveOperationsTimeout, cio.raiseError(SeqexecFailure.ObsCommandTimeout(seqId)))}
       )
     }
 

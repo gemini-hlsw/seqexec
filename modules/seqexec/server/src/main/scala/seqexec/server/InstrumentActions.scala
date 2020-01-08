@@ -6,6 +6,7 @@ package seqexec.server
 import cats.MonadError
 import cats.data.NonEmptyList
 import cats.effect.Concurrent
+import cats.effect.Timer
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ActionType
@@ -78,7 +79,7 @@ object InstrumentActions {
   /**
     * Default Actions for most instruments it basically delegates to ObserveActions
     */
-  def defaultInstrumentActions[F[_]: Concurrent: Logger]
+  def defaultInstrumentActions[F[_]: Concurrent: Timer: Logger]
     : InstrumentActions[F] =
     new InstrumentActions[F] {
       def observationProgressStream(

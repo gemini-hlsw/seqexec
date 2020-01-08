@@ -7,7 +7,7 @@ import cats._
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.implicits._
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -43,7 +43,7 @@ import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 import shapeless.tag
 
-abstract class Gmos[F[_]: Concurrent: Logger, T <: GmosController.SiteDependentTypes]
+abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes]
 (val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._

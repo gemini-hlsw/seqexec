@@ -5,7 +5,7 @@ package seqexec.server.nifs
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Timer, Sync}
 import cats.implicits._
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
@@ -38,7 +38,7 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Nifs[F[_]: Logger: Concurrent](
+final case class Nifs[F[_]: Logger: Concurrent: Timer](
   controller: NifsController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]

@@ -5,7 +5,7 @@ package seqexec.server.ghost
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync}
+import cats.effect.{Concurrent, Sync, Timer}
 import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -30,7 +30,7 @@ import squants.time.Time
 
 import scala.reflect.ClassTag
 
-final case class Ghost[F[_]: Logger: Concurrent](controller: GhostController[F])
+final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
