@@ -142,9 +142,6 @@ trait ObserveCommand {
 
   def setTimeout[F[_]: Sync](t: Time): F[Unit] =
     Sync[F].delay {
-      cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
-    } *>
-    Sync[F].delay {
       os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
     }.void
 }
