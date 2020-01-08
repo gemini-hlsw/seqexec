@@ -5,10 +5,11 @@ package seqexec.server
 
 import cats._
 import cats.data.StateT
-import cats.effect.{ConcurrentEffect, Sync, Timer}
+import cats.effect.{Concurrent, ConcurrentEffect, Sync, Timer}
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import edu.gemini.seqexec.odb.SeqFailure
-import fs2.{Pure, Stream}
+import fs2.{Pure, Stream, Pipe}
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
@@ -272,12 +273,17 @@ object SeqexecEngine {
 
     private val heartbeatPeriod: FiniteDuration = FiniteDuration(10, TimeUnit.SECONDS)
 
-    private def heartbeatStream: Stream[F, EventType[F]] =
+    private def heartbeatStream: Stream[F, EventType[F]] = {
+      // If there is no heartbeat in 5 periods throw an error
+      val noHeartbeatDetection =
+        SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod)
       Stream.awakeDelay[F](heartbeatPeriod)
-        .map(t => Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s"))
+        .as(Event.nullEvent: EventType[F])
+        .through(noHeartbeatDetection.andThen(_.recoverWith { case _ => Stream.emit[F, EventType[F]](Event.logErrorMsg("Seqexec engine heartbeat undetected"))}))
+    }
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
-      stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltBoth(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
+      stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
         Stream.eval(notifyODB(x))).flatMap {
           case (ev, qState) =>
             val sequences = qState.sequences.values.map(viewSequence).toList
@@ -613,6 +619,36 @@ object SeqexecEngine {
 
   }
 
+  /**
+    * Creates a stream that will follow a heartbeat and raise an error if the heartbeat
+    * doesn't get emitted for timeout
+    *
+    * Credit: Fabio Labella
+    * https://gitter.im/functional-streams-for-scala/fs2?at=5e0a6efbfd580457e79aaf0a
+    */
+  def failIfNoEmitsWithin[F[_]: Concurrent: Timer, A](
+      timeout: FiniteDuration
+  ): Pipe[F, A, A] = in => {
+    import scala.concurrent.TimeoutException
+    def now = Timer[F].clock.monotonic(NANOSECONDS).map(_.nanos)
+
+    Stream.eval(now.flatMap(Ref[F].of)).flatMap { lastActivityAt =>
+      in.evalTap(_ => now.flatMap(lastActivityAt.set))
+        .concurrently {
+          Stream.repeatEval {
+            (now, lastActivityAt.get)
+              .mapN(_ - _)
+              .flatMap { elapsed =>
+                val t = timeout - elapsed
+
+                Sync[F]
+                  .raiseError[Unit](new TimeoutException)
+                  .whenA(t <= 0.nanos) >> Timer[F].sleep(t)
+              }
+          }
+        }
+    }
+  }
   /**
     * Find the observations in an execution queue that would be run next, taking into account the resources required by
     * each observation and the resources currently in use.
