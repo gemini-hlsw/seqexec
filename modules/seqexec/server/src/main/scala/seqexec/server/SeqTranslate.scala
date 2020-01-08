@@ -205,15 +205,15 @@ object SeqTranslate {
           .flatMap{i =>
             f(i.observeControl(cfg))
               .attempt
-              .map(handleError)
+              .flatMap(handleError)
               .timeoutTo(ObserveOperationsTimeout, cio.raiseError(SeqexecFailure.ObsCommandTimeout(seqId)))}
       )
     }
 
-    private def handleError: Either[Throwable, Unit] => EventType[F] = {
-      case Left(e: SeqexecFailure) => Event.logErrorMsg(SeqexecFailure.explain(e))
-      case Left(e: Throwable)      => Event.logErrorMsg(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
-      case _                       => Event.nullEvent[F]
+    private def handleError: Either[Throwable, Unit] => F[EventType[F]] = {
+      case Left(e: SeqexecFailure) => Event.logErrorMsgF(SeqexecFailure.explain(e))
+      case Left(e: Throwable)      => Event.logErrorMsgF(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+      case _                       => Event.nullEvent[F].pure[F].widen[EventType[F]]
     }
 
     override def stopObserve(seqId: Observation.Id, graceful: Boolean)(

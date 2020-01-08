@@ -49,7 +49,7 @@ object UserEvent {
     val user: Option[UserDetails] = None
   }
 
-  final case class LogDebug[S, U](msg: String) extends UserEvent[Nothing, S, U] {
+  final case class LogDebug[S, U](msg: String, timestamp: Instant) extends UserEvent[Nothing, S, U] {
     val user: Option[UserDetails] = None
   }
 
@@ -57,11 +57,11 @@ object UserEvent {
     val user: Option[UserDetails] = None
   }
 
-  final case class LogWarning[S, U](msg: String) extends UserEvent[Nothing, S, U] {
+  final case class LogWarning[S, U](msg: String, timestamp: Instant) extends UserEvent[Nothing, S, U] {
     val user: Option[UserDetails] = None
   }
 
-  final case class LogError[S, U](msg: String) extends UserEvent[Nothing, S, U] {
+  final case class LogError[S, U](msg: String, timestamp: Instant) extends UserEvent[Nothing, S, U] {
     val user: Option[UserDetails] = None
   }
 }

@@ -65,12 +65,13 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
 
     t.map {
       case (err :: _, None) =>
-        List(Event.logDebugMsg[F, EngineState[F], SeqEvent](explain(err)))
+        List(Event.logDebugMsgF[F, EngineState[F], SeqEvent](explain(err)))
       case (errs, Some(seq)) =>
-        loadSequenceEvent(seq) :: errs.map(e =>
-          Event.logDebugMsg[F, EngineState[F], SeqEvent](explain(e)))
+        loadSequenceEvent(seq).pure[F] :: errs.map(e =>
+          Event.logDebugMsgF[F, EngineState[F], SeqEvent](explain(e)))
       case _ => Nil
-    }.recover{ case e => List(Event.logDebugMsg(explain(e))) }
+    }.recover{ case e => List(Event.logDebugMsgF(explain(e)))
+    }.map { _.sequence}.flatten
   }
 
   private def explain(err: Throwable): String = err match {

@@ -187,8 +187,8 @@ object SeqexecEngine {
       q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v)).map(_.asRight)
 
     override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent](s"SeqexecEngine: Setting Operator name to '$name' by " +
-        s"${user.username}")) *> q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+      logDebugEvent(q, s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}") *>
+        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
         (EngineState.operator[F].set(name.some) >>> refreshSequences withEvent SetOperator(name,
           user.some)).toHandle))
 
@@ -196,7 +196,7 @@ object SeqexecEngine {
                     seqId: Observation.Id,
                     user: UserDetails,
                     name: Observer): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent](s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
+      logDebugEvent(q, s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}") *>
           q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
             ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.observer.set(name.some)) >>>
               refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle))
@@ -227,28 +227,31 @@ object SeqexecEngine {
       sync(q, sid) *>
       q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId))
 
+    private def logDebugEvent(q: EventQueue[F], msg: String): F[Unit] =
+      Event.logDebugMsgF[F, EngineState[F], SeqEvent](msg).flatMap(q.enqueue1(_))
+
     override def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Updating loaded sequences")) *>
+      logDebugEvent(q, "SeqexecEngine: Updating loaded sequences") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent]((EngineState.selected[F].set(Map.empty) withEvent ClearLoadedSequences(user.some)).toHandle))
 
     override def setConditions(q: EventQueue[F], conditions: Conditions, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Setting conditions")) *>
+      logDebugEvent(q, "SeqexecEngine: Setting conditions") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent]((EngineState.conditions[F].set(conditions) >>> refreshSequences withEvent SetConditions(conditions, user.some)).toHandle))
 
     override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Setting image quality")) *>
+      logDebugEvent(q, "SeqexecEngine: Setting image quality") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](((EngineState.conditions[F] ^|-> Conditions.iq).set(iq) >>> refreshSequences withEvent SetImageQuality(iq, user.some)).toHandle))
 
     override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Setting water vapor")) *>
+      logDebugEvent(q, "SeqexecEngine: Setting water vapor") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](((EngineState.conditions[F] ^|-> Conditions.wv).set(wv) >>> refreshSequences withEvent SetWaterVapor(wv, user.some)).toHandle))
 
     override def setSkyBackground(q: EventQueue[F], sb: SkyBackground, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Setting sky background")) *>
+      logDebugEvent(q, "SeqexecEngine: Setting sky background") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](((EngineState.conditions[F] ^|-> Conditions.sb).set(sb) >>> refreshSequences withEvent SetSkyBackground(sb, user.some)).toHandle))
 
     override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.logDebugMsg[F, EngineState[F], SeqEvent]("SeqexecEngine: Setting cloud cover")) *>
+      logDebugEvent(q, "SeqexecEngine: Setting cloud cover") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](((EngineState.conditions[F] ^|-> Conditions.cc).set(cc) >>> refreshSequences withEvent SetCloudCover(cc, user.some)).toHandle))
 
     override def setSkipMark(q: EventQueue[F],
@@ -282,17 +285,10 @@ object SeqexecEngine {
         SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod)
       Stream.awakeDelay[F](heartbeatPeriod)
         .as(Event.nullEvent: EventType[F])
-        .through(noHeartbeatDetection.andThen(_.recoverWith { case _ => Stream.emit[F, EventType[F]](Event.logErrorMsg("Seqexec engine heartbeat undetected"))}))
+        .through(noHeartbeatDetection.andThen(_.recoverWith { case _ =>
+            Stream.eval[F, EventType[F]](Event.logErrorMsgF("Seqexec engine heartbeat undetected"))
+        }))
     }
-
-
-        .map(t => Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s"))
-        .flatMap{t =>
-          Stream.eval(Sync[F].delay(Instant.now))
-            .flatMap{ts =>
-              Stream.emit(Event.logInfoMsg[F, EngineState[F], SeqEvent](s"Seqexec engine heartbeat ${t.toSeconds} s", ts))
-          }
-        }
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
       stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
@@ -828,10 +824,10 @@ object SeqexecEngine {
         case UserEvent.GetState(_)            => NullEvent
         case UserEvent.ModifyState(_)         => modifyStateEvent(uev.getOrElse(NullSeqEvent), svs)
         case UserEvent.ActionStop(_, _)       => ActionStopRequested(svs)
-        case UserEvent.LogDebug(_)            => NullEvent
+        case UserEvent.LogDebug(_, _)         => NullEvent
         case UserEvent.LogInfo(m, ts)         => ServerLogMessage(ServerLogLevel.INFO, ts, m)
-        case UserEvent.LogWarning(_)          => NullEvent
-        case UserEvent.LogError(_)            => NullEvent
+        case UserEvent.LogWarning(m, ts)      => ServerLogMessage(ServerLogLevel.WARN, ts, m)
+        case UserEvent.LogError(m, ts)        => ServerLogMessage(ServerLogLevel.ERROR, ts, m)
         case UserEvent.ActionResume(_, _, _)  => SequenceUpdated(svs)
       }
       case SystemUpdate(se, _)             => se match {

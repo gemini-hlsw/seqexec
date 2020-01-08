@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import cats.implicits._
+import cats.effect.Sync
 import fs2.Stream
 import gem.Observation
 import java.time.Instant
@@ -34,10 +35,12 @@ object Event {
   def actionStop[F[_], S, U](id: Observation.Id, f: S => Option[Stream[F, Event[F, S, U]]]): Event[F, S, U] = EventUser[F, S, U](ActionStop(id, f))
   def actionResume[F[_], S, U](id: Observation.Id, i: Int, c: Stream[F, Result[F]]): Event[F, S, U] =
     EventUser[F, S, U](ActionResume(id, i, c))
-  def logDebugMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogDebug(msg))
+  def logDebugMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U] = EventUser[F, S, U](LogDebug(msg, ts))
+  def logDebugMsgF[F[_]: Sync, S, U](msg: String): F[Event[F, S, U]] = Sync[F].delay(Instant.now).map(t => EventUser[F, S, U](LogDebug(msg, t)))
   def logInfoMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U] = EventUser[F, S, U](LogInfo(msg, ts))
-  def logWarningMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogWarning(msg))
-  def logErrorMsg[F[_], S, U](msg: String): Event[F, S, U] = EventUser[F, S, U](LogError(msg))
+  def logWarningMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U] = EventUser[F, S, U](LogWarning(msg, ts))
+  def logErrorMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U] = EventUser[F, S, U](LogError(msg, ts))
+  def logErrorMsgF[F[_]: Sync, S, U](msg: String): F[Event[F, S, U]] = Sync[F].delay(Instant.now).map(t => EventUser[F, S, U](LogError(msg, t)))
 
   def failed[F[_]](id: Observation.Id, i: Int, e: Result.Error): Event[F, Nothing, Nothing] = EventSystem[F](Failed(id, i, e))
   def completed[F[_], R <: Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OK[R])
