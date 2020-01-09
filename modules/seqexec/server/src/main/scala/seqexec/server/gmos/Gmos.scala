@@ -59,6 +59,8 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
 
   val nsCount: F[Int] = controller.nsCount
 
+  override def observeTimeout: FiniteDuration = 110.seconds
+
   override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F] =
     if (isNodAndShuffle(config))
       CompleteControl(
