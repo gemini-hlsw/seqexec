@@ -259,7 +259,7 @@ object SeqexecEngine {
 
     private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      Stream.fixedDelay[F](fd).evalMap(_ => systems.odb.queuedSequences).flatMap { x =>
+      Stream.fixedDelay[F](fd).evalMap(_ => Logger[F].debug("Refresh queue from the odb") *> systems.odb.queuedSequences).flatMap { x =>
         Stream.emit(Event.getState[F, EngineState[F], SeqEvent] { st =>
           Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
         }.asRight)
@@ -283,7 +283,8 @@ object SeqexecEngine {
     }
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
-      stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
+      stream(q.dequeue.evalMap(e => Logger[F].debug(s"Engine Event:  $e").as(e))
+        .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
         Stream.eval(notifyODB(x))).flatMap {
           case (ev, qState) =>
             val sequences = qState.sequences.values.map(viewSequence).toList
