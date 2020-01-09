@@ -7,6 +7,7 @@ import cats.effect._
 import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
+import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
 import io.prometheus.client.CollectorRegistry
@@ -217,12 +218,13 @@ object WebServerLauncher extends IOApp with LogInitialization {
         conf   <- Resource.liftF(config[IO].flatMap(loadConfiguration[IO]))
         _      <- Resource.liftF(printBanner(conf))
         cli    <- AsyncHttpClient.resource[IO](clientConfig)
-        inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
+        inq    <- Resource.liftF(InspectableQueue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         _      <- Resource.liftF(logToClients(out))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         engine <- engineIO(conf, cli, cr)
         _      <- webServerIO(conf, inq, out, engine, cr)
+        _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s" Queue length: $l")).compile.drain.start)
         f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
