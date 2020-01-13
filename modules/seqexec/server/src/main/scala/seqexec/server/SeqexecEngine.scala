@@ -293,11 +293,13 @@ object SeqexecEngine {
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
       stream(q.dequeue.evalMap(e => Logger[F].debug(s"Engine Event:  $e").as(e))
         .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
-        Stream.eval(notifyODB(x))).flatMap {
-          case (ev, qState) =>
+        Stream.eval(notifyODB(x).attempt)).flatMap {
+          case Right((ev, qState)) =>
             val sequences = qState.sequences.values.map(viewSequence).toList
             val event = toSeqexecEvent[F](ev, qState)
             Stream.eval(updateMetrics(ev, sequences).as(event))
+          case Left(x) =>
+            Stream.eval(Logger[F].error(x)("Error notifying the ODB").as(NullEvent))
       }
 
     override def stream(p: Stream[F, EventType[F]])(s0: EngineState[F])
