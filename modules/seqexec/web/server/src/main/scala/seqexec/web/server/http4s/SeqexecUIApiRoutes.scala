@@ -127,6 +127,8 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // If the user didn't login, anonymize
+        def debug(clientId: ClientId): SeqexecEvent => Stream[F, SeqexecEvent] = (e: SeqexecEvent) =>
+          Stream.eval(L.debug(s"${clientId.self} ${e.getClass.getName}") *> e.pure[F])
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
 
         def initialEvent(clientId: ClientId): Stream[F, WebSocketFrame] =
@@ -138,6 +140,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
             .map(anonymizeF)
             .filter(filterOutNull)
             .filter(filterOutOnClientId(clientId))
+            .flatMap(debug(clientId))
             .map(toFrame)
 
         // We don't care about messages sent over ws by clients
@@ -146,6 +149,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
         // Create a client specific websocket
         for {
           clientId <- Sync[F].delay(ClientId(UUID.randomUUID()))
+          _ <- L.info(s"New client ${clientId.self}")
           initial  = initialEvent(clientId)
           streams  = Stream(pingStream, guideConfigEvents, giapiDBEvents, engineEvents(clientId)).parJoinUnbounded
           ws       <- WebSocketBuilder[F].build(initial ++ streams, clientEventsSink)
