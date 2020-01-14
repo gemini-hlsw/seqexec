@@ -149,7 +149,7 @@ object Parsers {
       ).lift
 
       PioParse(lamps => {
-        val (continuum, arc) = ((List.empty[GcalContinuum], List.empty[GcalArc])/:lamps.split(',')) {
+        val (continuum, arc) = lamps.split(',').foldLeft((List.empty[GcalContinuum], List.empty[GcalArc])) {
           case ((cs,as), s) =>
             val cs2 = lampToContinuum(s).fold(cs) { _ :: cs }
             val as2 = lampToArc(s).fold(as) { _ :: as }
