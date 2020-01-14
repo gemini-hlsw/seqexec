@@ -11,7 +11,7 @@ object Common {
   lazy val commonSettings = Seq(
     // Workaround for https://github.com/sbt/sbt/issues/4109
     initialCommands += "jline.TerminalFactory.get.init\n",
-    scalaVersion := "2.12.8",
+    scalaVersion := Settings.LibraryVersions.scalaVersion,
     scalacOptions in (Compile, doc) ++= Seq(
       "-groups",
       "-sourcepath", (baseDirectory in LocalRootProject).value.getAbsolutePath,
