@@ -30,7 +30,7 @@ trait NifsController[F[_]] {
 
   def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig): F[Time]
+  def calcTotalExposureTime(cfg: DCConfig): Time
 }
 
 trait CentralWavelengthD
@@ -115,7 +115,7 @@ object NifsController {
 
   implicit val cfgShow: Show[NifsConfig] = Show.fromToString
 
-  def calcTotalExposureTime[F[_]: Applicative](cfg: DCConfig): F[Time] = {
+  def calcTotalExposureTime[F[_]: Applicative](cfg: DCConfig): Time = {
     val readOutTime = cfg.readMode match {
       case Right(LegacyReadMode.BRIGHT_OBJECT_SPEC) => 11.4
       case Right(LegacyReadMode.MEDIUM_OBJECT_SPEC) => 27.4
@@ -123,7 +123,7 @@ object NifsController {
       case Left(_)                                  => 1 // TBD What should this be?
     }
 
-    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds)).pure[F]
+    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds))
   }
 
 }

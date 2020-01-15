@@ -391,13 +391,12 @@ object NifsControllerEpics extends NifsEncoders {
       )
 
     def calcObserveTimeout(cfg: DCConfig): Time = {
-      val CoaddOverhead = 2.2
-      val TotalOverhead = 300.seconds
+      val SafetyPadding = 30.seconds
 
-      cfg.exposureTime * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+      calcTotalExposureTime(cfg) + SafetyPadding
     }
 
-    override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+    override def calcTotalExposureTime(cfg: DCConfig): Time =
       NifsController.calcTotalExposureTime[F](cfg)
   }
 }

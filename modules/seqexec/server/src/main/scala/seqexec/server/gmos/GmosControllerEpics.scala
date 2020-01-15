@@ -531,7 +531,7 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
   val DefaultTimeout: Time = Seconds(60)
-  val ReadoutTimeout: Time = Seconds(300)
+  val ReadoutTimeout: Time = Seconds(90)
   val ConfigTimeout: Time = Seconds(600)
 
 }
