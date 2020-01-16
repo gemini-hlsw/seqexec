@@ -316,6 +316,6 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
 
   private val DefaultTimeout: Time = Seconds(60)
-  private val ReadoutTimeout: Time = Seconds(300)
+  private val ReadoutTimeout: Time = Seconds(30)
   private val ConfigTimeout: Time = Seconds(240)
 }

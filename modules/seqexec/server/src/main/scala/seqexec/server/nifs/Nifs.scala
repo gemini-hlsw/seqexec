@@ -66,7 +66,7 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
   override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
-      .getOrElse(Sync[F].delay(60.seconds))
+      .getOrElse(60.seconds).pure[F]
 
   override def keywordsClient: KeywordsClient[F] = this
 

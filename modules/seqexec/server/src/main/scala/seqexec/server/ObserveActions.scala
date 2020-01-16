@@ -127,8 +127,7 @@ trait ObserveActions {
       _ <- notifyObserveStart(env).timeoutTo(env.inst.observeTimeout, Concurrent[F].raiseError(SeqexecFailure.ObsSystemTimeout(fileId)))
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
-      t <- env.inst.calcObserveTime(env.config).map(t => t + env.inst.observeTimeout)
-      r <- env.inst.observe(env.config)(fileId).timeoutTo(new FiniteDuration(t.millis, MILLISECONDS), Concurrent[F].raiseError(SeqexecFailure.ObsTimeout(fileId)))
+      r <- env.inst.observe(env.config)(fileId)
       _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
     } yield (d, r)
 
@@ -168,28 +167,23 @@ trait ObserveActions {
       case ObserveCommandResult.Aborted =>
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
-        val timeout = env.inst.observeTimeout
         env.inst.calcObserveTime(env.config)
           .flatMap(totalTime => env.inst.observeControl(env.config) match {
             case c: CompleteControl[F] =>
             val resumePaused: Time => Stream[F, Result[F]] =
                 (elapsed: Time) => Stream.eval{
-                  val resumeTimeout: FiniteDuration = new FiniteDuration((elapsed + timeout).millis, MILLISECONDS)
                   c.continue
                     .self(elapsed)
-                    .timeoutTo(resumeTimeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
                 }.flatMap(observeTail(fileId, dataId, env))
             val stopPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.stopPaused
                     .self
-                    .timeoutTo(timeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
                 }.flatMap(observeTail(fileId, dataId, env))
             val abortPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.abortPaused
                     .self
-                    .timeoutTo(timeout, cio.raiseError(SeqexecFailure.ObsTimeout(fileId)))
                 }.flatMap(observeTail(fileId, dataId, env))
 
              Result.Paused(

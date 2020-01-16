@@ -93,7 +93,7 @@ trait Flamingos2Encoders {
 
 object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
-  val ReadoutTimeout: Time = Seconds(300)
+  val ReadoutTimeout: Time = Seconds(30)
   val DefaultTimeout: Time = Seconds(60)
   val ConfigTimeout: Time = Seconds(400)
 
