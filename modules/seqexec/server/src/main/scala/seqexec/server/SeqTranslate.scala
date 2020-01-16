@@ -7,7 +7,6 @@ import cats._
 import cats.data.{EitherT, NonEmptyList, NonEmptySet}
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
-import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
@@ -202,11 +201,11 @@ object SeqTranslate {
           .exists(isObserving)
       } yield Stream.eval(
         toInstrumentSys(obsSeq.seqGen.instrument)
-          .flatMap{i =>
+          .flatMap{ i =>
             f(i.observeControl(cfg))
               .attempt
               .flatMap(handleError)
-              .timeoutTo(ObserveOperationsTimeout, cio.raiseError(SeqexecFailure.ObsCommandTimeout(seqId)))}
+          }
       )
     }
 
