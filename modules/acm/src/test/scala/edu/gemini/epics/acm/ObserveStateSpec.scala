@@ -846,6 +846,78 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
     assert(observeSuccessCount.get() === 1)
   }
 
+  test("GNIRS observation where CAR VAL changes before CLID") {
+    val (epicsReader, epicsWriter) = gnirsMocks
+
+    val observe = new CaObserveSenderImpl(
+      "nirs::observeCmd",
+      "nirs:dc:apply",
+      "nirs:dc:applyC",
+      "nirs:dc:observeC",
+      "nirs:dc:stop",
+      "nirs:dc:abort",
+      "GNIRS Observe",
+      classOf[CarState],
+      epicsReader,
+      epicsWriter)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
+    // Post an observe
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // VAL change
+    observe.onApplyValChange(208)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(208)
+    assert(!observe.applyState().isIdle)
+
+    // OBSERVE goes IDLE
+    // Observe CAR VAL change
+    // CAR CLID change
+    observe.onCarClidChange(208)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle)
+    observe.onObserveCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle)
+    l.waitDone(2, TimeUnit.SECONDS)
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
+  }
+
   test("GNIRS weird observation") {
     val (epicsReader, epicsWriter) = gnirsMocks
 
