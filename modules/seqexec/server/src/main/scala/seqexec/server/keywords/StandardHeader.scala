@@ -77,7 +77,7 @@ class StandardHeader[F[_]: Sync](
     buildDouble(mountTcsKeyword(tcsReader.sourceATarget.dec), KeywordName.DEC),
     buildDouble(tcsReader.elevation, KeywordName.ELEVATIO),
     buildDouble(tcsReader.azimuth, KeywordName.AZIMUTH),
-    buildDouble(mountTcsKeyword(tcsReader.crPositionAngle), KeywordName.CRPA),
+    buildDouble(tcsReader.crPositionAngle, KeywordName.CRPA),
     buildString(tcsReader.hourAngle, KeywordName.HA),
     buildString(tcsReader.localTime, KeywordName.LT),
     buildString(mountTcsKeyword(tcsReader.trackingFrame), KeywordName.TRKFRAME),
