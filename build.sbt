@@ -450,7 +450,8 @@ lazy val acm = project
       Guava,
       Slf4j,
       XmlUnit,
-      ScalaMock
+      ScalaMock,
+      JUnitInterface
     ) ++ Logback,
     libraryDependencies in Test ++= Logback,
     testOptions in Test := Seq(),

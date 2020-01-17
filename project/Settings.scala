@@ -61,6 +61,7 @@ object Settings {
 
     // test libraries
     val xmlUnit                 = "1.6"
+    val jUnitInterface          = "0.11"
     val scalaMock               = "4.4.0"
 
     // Pure JS libraries
@@ -98,6 +99,7 @@ object Settings {
       "edu.gemini"              %%% "gsp-math-testkit"              % LibraryVersions.gspMath         % "test",
     ))
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
+    val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
     val ScalaMock              = "org.scalamock" %% "scalamock" % LibraryVersions.scalaMock % "test"
     // Server side libraries
     val Cats                   = Def.setting("org.typelevel" %%% "cats-core"                         % LibraryVersions.catsVersion)
