@@ -22,7 +22,7 @@ object Settings {
     val scalaDom                = "0.9.8"
     val scalajsReact            = "1.4.2"
     val booPickle               = "1.3.1"
-    val diode                   = "1.1.6"
+    val diode                   = "1.1.7"
     val diodeReact              = "1.1.6.142"
     val javaTimeJS              = "2.0.0-RC3"
     val scalaJQuery             = "1.2"
