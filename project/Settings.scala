@@ -88,7 +88,7 @@ object Settings {
 
     // Gemini Libraries
     val gspMath                 = "0.1.10"
-    val gspCore                 = "0.1.2+8-5b1bf2db+20200117-1533-SNAPSHOT"
+    val gspCore                 = "0.1.2+9-6119449b+20200121-1225-SNAPSHOT"
   }
 
   /**
@@ -221,10 +221,11 @@ object Settings {
     val Guava               = "com.google.guava"     % "guava"                   % LibraryVersions.guava
 
     // Gemini Libraries
-    val GspMath             = Def.setting("edu.gemini" %%% "gsp-math"         % LibraryVersions.gspMath         )
-    val GspMathTestkit      = Def.setting("edu.gemini" %%% "gsp-math-testkit" % LibraryVersions.gspMath % "test")
-    val GspCoreModel        = Def.setting("edu.gemini" %%% "gsp-core-model"   % LibraryVersions.gspCore         )
-    val GspCoreTestkit      = Def.setting("edu.gemini" %%% "gsp-core-testkit" % LibraryVersions.gspCore % "test")
+    val GspMath             = Def.setting("edu.gemini" %%% "gsp-math"          % LibraryVersions.gspMath         )
+    val GspMathTestkit      = Def.setting("edu.gemini" %%% "gsp-math-testkit"  % LibraryVersions.gspMath % "test")
+    val GspCoreModel        = Def.setting("edu.gemini" %%% "gsp-core-model"    % LibraryVersions.gspCore         )
+    val GspCoreTestkit      = Def.setting("edu.gemini" %%% "gsp-core-testkit"  % LibraryVersions.gspCore % "test")
+    val GspCoreOcs2Api      = Def.setting("edu.gemini" %%% "gsp-core-ocs2-api" % LibraryVersions.gspCore)
   }
 
   object PluginVersions {

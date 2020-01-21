@@ -91,10 +91,6 @@ updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 lazy val ocs3 = preventPublication(project.in(file(".")))
   .settings(commonSettings)
   .aggregate(
-    ocs2_api.jvm,
-    ocs2_api.js,
-    // ocs2,
-    // ephemeris,
     giapi,
     web_server_common,
     web_client_common,
@@ -108,46 +104,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
 //////////////
 // Projects
 //////////////
-
-lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("modules/ocs2_api"))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      GspCoreModel.value
-    )
-  )
-  .jsSettings(gspScalaJsSettings)
-
-lazy val ocs2_api_JVM = ocs2_api.jvm
-
-// lazy val ocs2 = project
-//   .in(file("modules/ocs2"))
-//   .dependsOn(ocs2_api_JVM)
-//   .settings(commonSettings)
-//   .settings(
-//     addCompilerPlugin(Plugins.kindProjectorPlugin),
-//     libraryDependencies ++= Seq(
-//       GspCoreDb.value,
-//       Fs2,
-//       ScalaXml.value,
-//       Http4sXml
-//     ) ++ Http4sClient ++ Http4s
-//   )
-
-// lazy val ephemeris = project
-//   .in(file("modules/ephemeris"))
-//   .settings(commonSettings)
-//   .settings(
-//     addCompilerPlugin(Plugins.kindProjectorPlugin),
-//     libraryDependencies ++= Seq(
-//       GspCoreDb.value,
-//       GspCoreTestkit.value,
-//       Mouse.value,
-//       Fs2IO
-//     ) ++ Http4sClient
-//   )
 
 lazy val giapi = project
   .in(file("modules/giapi"))
@@ -322,7 +278,8 @@ lazy val seqexec_server = project
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
-      Seq(Http4sCirce,
+      Seq(GspCoreOcs2Api.value,
+          Http4sCirce,
           Squants.value,
           // OCS bundles
           SpModelCore,
@@ -342,7 +299,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine % "compile->compile;test->test", ocs2_api.jvm, giapi, seqexec_model.jvm % "compile->compile;test->test", acm)
+  .dependsOn(seqexec_engine % "compile->compile;test->test", giapi, seqexec_model.jvm % "compile->compile;test->test", acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
