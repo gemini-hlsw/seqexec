@@ -93,8 +93,8 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
   .aggregate(
     ocs2_api.jvm,
     ocs2_api.js,
-    ocs2,
-    ephemeris,
+    // ocs2,
+    // ephemeris,
     giapi,
     web_server_common,
     web_client_common,
@@ -122,32 +122,32 @@ lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
 
 lazy val ocs2_api_JVM = ocs2_api.jvm
 
-lazy val ocs2 = project
-  .in(file("modules/ocs2"))
-  .dependsOn(ocs2_api_JVM)
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      GspCoreDb.value,
-      Fs2,
-      ScalaXml.value,
-      Http4sXml
-    ) ++ Http4sClient ++ Http4s
-  )
+// lazy val ocs2 = project
+//   .in(file("modules/ocs2"))
+//   .dependsOn(ocs2_api_JVM)
+//   .settings(commonSettings)
+//   .settings(
+//     addCompilerPlugin(Plugins.kindProjectorPlugin),
+//     libraryDependencies ++= Seq(
+//       GspCoreDb.value,
+//       Fs2,
+//       ScalaXml.value,
+//       Http4sXml
+//     ) ++ Http4sClient ++ Http4s
+//   )
 
-lazy val ephemeris = project
-  .in(file("modules/ephemeris"))
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      GspCoreDb.value,
-      GspCoreTestkit.value,
-      Mouse.value,
-      Fs2IO
-    ) ++ Http4sClient
-  )
+// lazy val ephemeris = project
+//   .in(file("modules/ephemeris"))
+//   .settings(commonSettings)
+//   .settings(
+//     addCompilerPlugin(Plugins.kindProjectorPlugin),
+//     libraryDependencies ++= Seq(
+//       GspCoreDb.value,
+//       GspCoreTestkit.value,
+//       Mouse.value,
+//       Fs2IO
+//     ) ++ Http4sClient
+//   )
 
 lazy val giapi = project
   .in(file("modules/giapi"))
@@ -201,6 +201,8 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
+      GspCoreModel.value,
+      GspCoreTestkit.value,
       UnboundId,
       JwtCore,
       JwtCirce,
@@ -220,7 +222,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
+  .dependsOn(seqexec_server, web_server_common)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
