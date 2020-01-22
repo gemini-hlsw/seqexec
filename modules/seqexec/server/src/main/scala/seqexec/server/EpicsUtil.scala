@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Timer => JTimer}
 import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import edu.gemini.epics.acm._
 import io.chrisdavenport.log4cats.Logger
@@ -32,16 +31,17 @@ import squants.Time
 
 import scala.math.abs
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.FiniteDuration
 
 trait EpicsCommand[F[_]] {
-  def post(timeout: Time): F[ApplyCommandResult]
+  def post(timeout: FiniteDuration): F[ApplyCommandResult]
   def mark: F[Unit]
 }
 
 abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
   protected val cs: Option[CaCommandSender]
 
-  override def post(timeout: Time): F[ApplyCommandResult] = setTimeout(timeout) *>
+  override def post(timeout: FiniteDuration): F[ApplyCommandResult] = setTimeout(timeout) *>
     Async[F].async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
       cs.map { ccs =>
         ccs.postCallback {
@@ -59,9 +59,9 @@ abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
       cs.map(_.mark())
     }.void
 
-  protected def setTimeout(t: Time): F[Unit] =
+  protected def setTimeout(t: FiniteDuration): F[Unit] =
     Sync[F].delay {
-      cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
+      cs.map(_.getApplySender).map(_.setTimeout(t.length, t.unit))
     }.void
 
 }
@@ -118,7 +118,7 @@ trait ObserveCommand {
   protected val cs: Option[CaCommandSender]
   protected val os: Option[CaApplySender]
 
-  def post[F[_]: Async](timeout: Time): F[ObserveCommandResult] = setTimeout(timeout) *>
+  def post[F[_]: Async](timeout: FiniteDuration): F[ObserveCommandResult] = setTimeout(timeout) *>
     Async[F].async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
       os.map { oos =>
         oos.postCallback {
@@ -139,9 +139,9 @@ trait ObserveCommand {
     cs.map(_.mark())
   }.void
 
-  protected def setTimeout[F[_]: Sync](t: Time): F[Unit] =
+  protected def setTimeout[F[_]: Sync](t: FiniteDuration): F[Unit] =
     Sync[F].delay {
-      os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
+      os.map(_.setTimeout(t.length, t.unit))
     }.void
 }
 
@@ -182,7 +182,7 @@ object EpicsUtil {
     }
   }
 
-  def waitForValuesF[T, F[_]: Async](attr: CaAttribute[T], vv: Seq[T], timeout: Time, name: String): F[T] =
+  def waitForValuesF[T, F[_]: Async](attr: CaAttribute[T], vv: Seq[T], timeout: FiniteDuration, name: String): F[T] =
     Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
       //The task is created with async. So we do whatever we need to do,
       // and then call `f` to signal the completion of the task.
@@ -217,7 +217,7 @@ object EpicsUtil {
         }
 
         locked(lock) {
-          if (timeout.toMilliseconds.toLong > 0) {
+          if (timeout.toMillis > 0) {
             timer.schedule(new TimerTask {
               override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
                 locked(lock) {
@@ -225,14 +225,15 @@ object EpicsUtil {
                 }
                 f(SeqexecFailure.Timeout(name).asLeft)
               }
-            }, timeout.toMilliseconds.toLong)
+            }, timeout.toMillis)
           }
           attr.addListener(statusListener)
         }
       }
     }
 
-  def waitForValueF[T, F[_]: Async](attr: CaAttribute[T], v: T, timeout: Time, name: String): F[Unit] = waitForValuesF[T, F](attr, List(v), timeout, name).void
+  def waitForValueF[T, F[_]: Async](attr: CaAttribute[T], v: T, timeout: FiniteDuration, name: String): F[Unit] =
+    waitForValuesF[T, F](attr, List(v), timeout, name).void
 
   def safeAttribute[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[A]] =
     Sync[F].delay(Option(get.value))

@@ -19,7 +19,6 @@ import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure._
 import seqexec.server.EpicsCommandBase
 import seqexec.server.ObserveCommand
-import squants.Time
 
 import scala.collection.breakOut
 import scala.concurrent.duration._
@@ -28,7 +27,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GmosTop: String = tops.getOrElse("gm", "gm:")
 
-  def post(timeout: Time): F[ApplyCommandResult] = configCmd.post(timeout)
+  def post(timeout: FiniteDuration): F[ApplyCommandResult] = configCmd.post(timeout)
 
   object configCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))

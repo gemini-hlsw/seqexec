@@ -18,13 +18,17 @@ import seqexec.server.EpicsCodex._
 import seqexec.server.gsaoi.GsaoiController.{DCConfig, GsaoiConfig}
 import seqexec.server.{EpicsUtil, Progress, SeqexecFailure, failUnlessM}
 import seqexec.server.EpicsUtil.applyParam
-import squants.{Seconds, Time}
+import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 object GsaoiControllerEpics {
 
-  private val ConfigTimeout: Time  = Seconds(400)
-  private val DefaultTimeout: Time = Seconds(60)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
   implicit val filterEncoder: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
     case Filter.BLOCKED      => "Blocked"
@@ -181,11 +185,11 @@ object GsaoiControllerEpics {
         EpicsUtil.defaultProgress[F])
     }
 
-    def calcObserveTimeout(cfg: DCConfig): Time = {
+    def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
       val factor = 2.2
       val overhead = 300.seconds
 
-      cfg.exposureTime * cfg.coadds.toDouble * factor + overhead
+      FiniteDuration((cfg.exposureTime * cfg.coadds.toDouble * factor + overhead).toMillis, MILLISECONDS)
     }
 
     private def retrieveConfig: F[EpicsGsaoiConfig] = for{

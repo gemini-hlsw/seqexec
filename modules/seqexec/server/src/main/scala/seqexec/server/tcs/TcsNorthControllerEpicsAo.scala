@@ -30,6 +30,8 @@ import shapeless.tag.@@
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
 
+import java.time.Duration
+
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(subsystems: NonEmptySet[Subsystem],
                     gaos: Altair[F],
@@ -112,7 +114,7 @@ object TcsNorthControllerEpicsAo {
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.debug("TCS inposition")
+              epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis), tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Applicative[F].unit

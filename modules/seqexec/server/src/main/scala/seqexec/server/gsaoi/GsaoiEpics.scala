@@ -11,8 +11,9 @@ import seqexec.server.{EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil, O
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
 import java.lang.{Double => JDouble}
+import java.util.concurrent.TimeUnit.SECONDS
 
-import squants.time.TimeConversions._
+import scala.concurrent.duration.FiniteDuration
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -192,11 +193,11 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   private val notGuidingAttr = status.getIntegerAttribute("notGuiding")
   def guiding: F[Boolean] = safeAttributeSIntF(notGuidingAttr).map(_ === 0)
 
-  private val guideStabilizeTime = 1.seconds
+  private val guideStabilizeTime = FiniteDuration(1, SECONDS)
   private val filteredNotGuidingAttr: CaWindowStabilizer[Integer] =
     new CaWindowStabilizer[Integer](notGuidingAttr, java.time.Duration.ofMillis(guideStabilizeTime.toMillis))
 
-  private val guideTimeout = 5.seconds
+  private val guideTimeout = FiniteDuration(5, SECONDS)
   def waitForGuideOn: F[Unit] =
     Async[F].delay(filteredNotGuidingAttr.restart)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 0, guideTimeout, "ODGW guide flag"))

@@ -14,8 +14,12 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.{ObsProgress, Progress, ProgressUtil, RemainingTime}
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server.EpicsCodex._
-import squants.{Seconds, Time}
+import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
@@ -93,9 +97,9 @@ trait Flamingos2Encoders {
 
 object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
-  val ReadoutTimeout: Time = Seconds(30)
-  val DefaultTimeout: Time = Seconds(60)
-  val ConfigTimeout: Time = Seconds(400)
+  val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
+  val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](sys: => Flamingos2Epics[F])(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
@@ -131,7 +135,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
     override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = for {
       _ <- L.debug(s"Send observe to Flamingos2, file id $fileId")
       _ <- sys.observeCmd.setLabel(fileId)
-      _ <- sys.observeCmd.post(expTime + ReadoutTimeout)
+      _ <- sys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
       _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 

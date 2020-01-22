@@ -27,8 +27,12 @@ import seqexec.server.EpicsCodex._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
 import squants.time.TimeConversions._
-import squants.{Length, Seconds, Time}
+import squants.{Length, Time}
 import shapeless.tag
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
@@ -387,7 +391,7 @@ object GmosControllerEpics extends GmosEncoders {
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
-          sys.observeCmd.post(expTime + ReadoutTimeout)
+          sys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
 
       private def failOnDHSNotConected: F[Unit] =
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(Applicative[F].unit,
@@ -422,7 +426,7 @@ object GmosControllerEpics extends GmosEncoders {
       override def resumePaused(expTime: Time): F[ObserveCommandResult] = for {
         _   <- L.debug("Resume Gmos observation")
         _   <- sys.continueCmd.mark
-        ret <- sys.continueCmd.post(expTime + ReadoutTimeout)
+        ret <- sys.continueCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
         _   <- L.debug("Completed Gmos observation")
       } yield ret
 
@@ -523,8 +527,8 @@ object GmosControllerEpics extends GmosEncoders {
     def apply[A <: GmosController.SiteDependentTypes](implicit ev: Encoders[A]): Encoders[A] = ev
   }
 
-  val DefaultTimeout: Time = Seconds(60)
-  val ReadoutTimeout: Time = Seconds(90)
-  val ConfigTimeout: Time = Seconds(600)
+  val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
+  val ReadoutTimeout: FiniteDuration = FiniteDuration(90, SECONDS)
+  val ConfigTimeout: FiniteDuration = FiniteDuration(600, SECONDS)
 
 }

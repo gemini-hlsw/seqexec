@@ -19,15 +19,18 @@ import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
-
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.{EpicsCodex, Progress, ProgressUtil, SeqexecFailure}
 import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
 import seqexec.server.niri.NiriController._
-import squants.{Seconds, Time}
+import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 trait NiriEncoders {
 
@@ -133,8 +136,8 @@ object NiriControllerEpics extends NiriEncoders {
   val WindowOpen = "open"
   val WindowClosed = "closed"
 
-  private val ConfigTimeout: Time = Seconds(180)
-  private val DefaultTimeout: Time = Seconds(60)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(180, SECONDS)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
   def apply[F[_]: Timer: Async](epicsSys: => NiriEpics[F])(implicit L: Logger[F]): NiriController[F] =
       new NiriController[F] {
@@ -257,13 +260,16 @@ object NiriControllerEpics extends NiriEncoders {
       private def setReadMode(rm: ReadMode): F[Unit] =
         epicsSys.configCmd.setReadMode(rm)
 
-      private def calcObserveTimeout(cfg: DCConfig): F[Time] = {
+      private def calcObserveTimeout(cfg: DCConfig): F[FiniteDuration] = {
         epicsSys.minIntegration.map { t =>
           val MinIntTime = t.seconds
           val CoaddOverhead = 2.5
           val TotalOverhead = 30.seconds
 
-          (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+          FiniteDuration(
+            ((cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead).toMillis,
+            MILLISECONDS
+          )
         }
       }
 

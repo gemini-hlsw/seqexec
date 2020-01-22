@@ -19,8 +19,11 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.tcs.TcsController._
 import seqexec.server.{EpicsCommand, SeqexecFailure}
-import squants.time.Time
 import squants.time.TimeConversions._
+import java.util.concurrent.TimeUnit.SECONDS
+import java.time.Duration
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Base implementation of an Epics TcsController
@@ -491,7 +494,7 @@ object TcsControllerEpicsCommon {
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(ConfigTimeout)
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.debug("TCS inposition")
+              epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis), tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Sync[F].unit
@@ -548,7 +551,7 @@ object TcsControllerEpicsCommon {
   def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
     new TcsControllerEpicsCommonImpl(epicsSys)
 
-  val DefaultTimeout: Time = 10.seconds
-  val ConfigTimeout: Time = 60.seconds
+  val DefaultTimeout : FiniteDuration = FiniteDuration(10, SECONDS)
+  val ConfigTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
 
 }

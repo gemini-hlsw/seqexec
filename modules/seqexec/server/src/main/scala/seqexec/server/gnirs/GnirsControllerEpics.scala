@@ -19,7 +19,11 @@ import seqexec.server.gnirs.GnirsController._
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.{Length, Seconds, Time}
+import squants.{Length, Time}
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
@@ -286,7 +290,7 @@ object GnirsControllerEpics extends GnirsEncoders {
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          epicsSys.observeCmd.post(expTime + ReadoutTimeout).flatTap{ _ => L.debug("Completed GNITS observe") }
+          epicsSys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout).flatTap{ _ => L.debug("Completed GNITS observe") }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
@@ -312,7 +316,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         GnirsController.calcTotalExposureTime[F](cfg)
     }
 
-  private val DefaultTimeout: Time = Seconds(60)
-  private val ReadoutTimeout: Time = Seconds(30)
-  private val ConfigTimeout: Time = Seconds(240)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
+  private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(240, SECONDS)
 }

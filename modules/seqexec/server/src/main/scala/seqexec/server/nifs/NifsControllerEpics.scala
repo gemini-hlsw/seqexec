@@ -30,9 +30,12 @@ import seqexec.server.failUnlessM
 import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
 import shapeless.tag
-import squants.Seconds
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 object NifsLookupTables {
 
@@ -98,8 +101,8 @@ object NifsControllerEpics extends NifsEncoders {
   private implicit val filterEq: Eq[LegacyFilter]       = Eq.by(_.displayValue)
   private implicit val disperserEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
 
-  private val ConfigTimeout: Time  = Seconds(400)
-  private val DefaultTimeout: Time = Seconds(60)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
 
   import NifsController._
@@ -383,10 +386,10 @@ object NifsControllerEpics extends NifsEncoders {
         (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
       )
 
-    def calcObserveTimeout(cfg: DCConfig): Time = {
+    def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
       val SafetyPadding = 30.seconds
 
-      calcTotalExposureTime(cfg) + SafetyPadding
+      FiniteDuration((calcTotalExposureTime(cfg) + SafetyPadding).toMillis, MILLISECONDS)
     }
 
     override def calcTotalExposureTime(cfg: DCConfig): Time =
