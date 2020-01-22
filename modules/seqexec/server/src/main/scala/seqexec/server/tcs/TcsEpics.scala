@@ -32,7 +32,7 @@ trait TcsEpics[F[_]] {
 
   import TcsEpics._
 
-  def post: F[ApplyCommandResult]
+  def post(timeout: Time): F[ApplyCommandResult]
 
   val m1GuideCmd: M1GuideCmd[F]
 
@@ -438,7 +438,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
-  override def post: F[ApplyCommandResult] = m1GuideCmd.post
+  override def post(timeout: Time): F[ApplyCommandResult] = m1GuideCmd.post(timeout)
 
   override val m1GuideCmd: M1GuideCmd[F] = new EpicsCommandBase[F] with M1GuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m1Guide"))

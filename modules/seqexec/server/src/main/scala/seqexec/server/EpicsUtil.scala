@@ -34,15 +34,14 @@ import scala.math.abs
 import scala.collection.JavaConverters._
 
 trait EpicsCommand[F[_]] {
-  def post: F[ApplyCommandResult]
+  def post(timeout: Time): F[ApplyCommandResult]
   def mark: F[Unit]
-  def setTimeout(t: Time): F[Unit]
 }
 
 abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
   protected val cs: Option[CaCommandSender]
 
-  def post: F[ApplyCommandResult] =
+  override def post(timeout: Time): F[ApplyCommandResult] = setTimeout(timeout) *>
     Async[F].async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
       cs.map { ccs =>
         ccs.postCallback {
@@ -56,11 +55,11 @@ abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
       }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
     }
 
-  def mark: F[Unit] = Sync[F].delay {
+  override def mark: F[Unit] = Sync[F].delay {
       cs.map(_.mark())
     }.void
 
-  def setTimeout(t: Time): F[Unit] =
+  protected def setTimeout(t: Time): F[Unit] =
     Sync[F].delay {
       cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
     }.void
@@ -119,7 +118,7 @@ trait ObserveCommand {
   protected val cs: Option[CaCommandSender]
   protected val os: Option[CaApplySender]
 
-  def post[F[_]: Async]: F[ObserveCommandResult] =
+  def post[F[_]: Async](timeout: Time): F[ObserveCommandResult] = setTimeout(timeout) *>
     Async[F].async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
       os.map { oos =>
         oos.postCallback {
@@ -140,7 +139,7 @@ trait ObserveCommand {
     cs.map(_.mark())
   }.void
 
-  def setTimeout[F[_]: Sync](t: Time): F[Unit] =
+  protected def setTimeout[F[_]: Sync](t: Time): F[Unit] =
     Sync[F].delay {
       os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
     }.void

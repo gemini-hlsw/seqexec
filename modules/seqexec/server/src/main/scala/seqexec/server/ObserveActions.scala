@@ -6,7 +6,6 @@ package seqexec.server
 import cats._
 import cats.implicits._
 import cats.effect._
-import cats.effect.implicits._
 import fs2.Stream
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
@@ -124,7 +123,7 @@ trait ObserveActions {
     for {
       d <- dataId(env)
       _ <- sendDataStart(env.systems, env.obsId, fileId, d)
-      _ <- notifyObserveStart(env).timeoutTo(env.inst.observeTimeout, Concurrent[F].raiseError(SeqexecFailure.ObsSystemTimeout(fileId)))
+      _ <- notifyObserveStart(env)
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
       r <- env.inst.observe(env.config)(fileId)
@@ -143,7 +142,7 @@ trait ObserveActions {
     env:     ObserveEnvironment[F]
   ): F[Result[F]] =
     for {
-      _ <- notifyObserveEnd(env).timeoutTo(env.inst.observeTimeout, Concurrent[F].raiseError(SeqexecFailure.ObsSystemTimeout(fileId)))
+      _ <- notifyObserveEnd(env)
       _ <- env.headers(env.ctx).reverseMap(_.sendAfter(fileId)).sequence.void
       _ <- closeImage(fileId, env)
       _ <- sendDataEnd[F](env.systems, env.obsId, fileId, dataId)

@@ -9,6 +9,7 @@ import cats.effect.Async
 import cats.effect.Sync
 import edu.gemini.epics.acm._
 import java.lang.{Double => JDouble}
+
 import mouse.all._
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommandBase.setParameter
@@ -18,6 +19,8 @@ import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure._
 import seqexec.server.EpicsCommandBase
 import seqexec.server.ObserveCommand
+import squants.Time
+
 import scala.collection.breakOut
 import scala.concurrent.duration._
 
@@ -25,7 +28,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GmosTop: String = tops.getOrElse("gm", "gm:")
 
-  def post: F[ApplyCommandResult] = configCmd.post
+  def post(timeout: Time): F[ApplyCommandResult] = configCmd.post(timeout)
 
   object configCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))

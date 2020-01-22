@@ -124,24 +124,21 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- L.debug("Start Flamingos2 configuration")
       _ <- setDCConfig(config.dc)
       _ <- setCCConfig(config.cc)
-      _ <- sys.configCmd.setTimeout(ConfigTimeout)
-      _ <- sys.post
+      _ <- sys.post(ConfigTimeout)
       _ <- L.debug("Completed Flamingos2 configuration")
     } yield ()
 
     override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = for {
       _ <- L.debug(s"Send observe to Flamingos2, file id $fileId")
       _ <- sys.observeCmd.setLabel(fileId)
-      _ <- sys.observeCmd.setTimeout(expTime + ReadoutTimeout)
-      _ <- sys.observeCmd.post
+      _ <- sys.observeCmd.post(expTime + ReadoutTimeout)
       _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 
     override def endObserve: F[Unit] = for {
       _ <- L.debug("Send endObserve to Flamingos2")
-      _ <- sys.endObserveCmd.setTimeout(DefaultTimeout)
       _ <- sys.endObserveCmd.mark
-      _ <- sys.endObserveCmd.post
+      _ <- sys.endObserveCmd.post(DefaultTimeout)
     } yield ()
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] = {

@@ -127,8 +127,7 @@ object GcalControllerEpics {
     (for {
       _ <- L.debug("Send configuration to GCAL")
       _ <- params.sequence
-      _ <- epics.lampsCmd.setTimeout(SetupTimeout)
-      r <- epics.post
+      r <- epics.post(SetupTimeout)
       _ <- L.debug("Completed GCAL configuration")
     } yield r
     ).whenA(params.nonEmpty)

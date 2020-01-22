@@ -279,7 +279,7 @@ object TcsSouthControllerEpicsAo {
       if(params.nonEmpty)
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
-          _ <- epicsSys.post
+          _ <- epicsSys.post(TcsControllerEpicsCommon.DefaultTimeout)
           _ <- L.debug("Turning guide off")
         } yield s
       else
@@ -302,7 +302,7 @@ object TcsSouthControllerEpicsAo {
       if(params.nonEmpty)
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
-          _ <- epicsSys.post
+          _ <- epicsSys.post(TcsControllerEpicsCommon.DefaultTimeout)
           _ <- L.debug("Turning guide on")
         } yield s
       else
@@ -338,7 +338,7 @@ object TcsSouthControllerEpicsAo {
         if(params.nonEmpty)
           for {
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
-            _ <- epicsSys.post
+            _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
             _ <- L.debug("TCS configuration command post")
             _ <- if(subsystems.contains(Subsystem.Mount))
               epicsSys.waitInPosition(stabilizationTime , tcsTimeout) *> L.debug("TCS inposition")

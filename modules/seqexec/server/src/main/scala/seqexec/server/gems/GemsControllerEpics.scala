@@ -79,8 +79,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
         epicsSys.LoopControl.setCommand(PauseCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.setTimeout(CmdTimeout) *>
-        epicsSys.LoopControl.post.void
+        epicsSys.LoopControl.post(CmdTimeout).void
     }
 
   }
@@ -97,8 +96,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       L.debug(s"Send resume command to GeMS, reasons: $reasons") *>
         epicsSys.LoopControl.setCommand(ResumeCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.setTimeout(CmdTimeout) *>
-        epicsSys.LoopControl.post *>
+        epicsSys.LoopControl.post(CmdTimeout) *>
         epicsSys.waitForStableLoops(LoopStabilizationTimeout)
     }
   }
@@ -124,8 +122,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       p.map(_._1).foldLeft(current){case (a, b) => b(a)},
       p.nonEmpty.option{
         p.traverse(_._2) *>
-        epicsSys.ApdControl.setTimeout(CmdTimeout) *>
-        epicsSys.ApdControl.post.void
+        epicsSys.ApdControl.post(CmdTimeout).void
       }
     )
   }
@@ -145,8 +142,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
 
     p.nonEmpty.option{
       p.sequence *>
-        epicsSys.ApdControl.setTimeout(CmdTimeout) *>
-        epicsSys.ApdControl.post.void
+        epicsSys.ApdControl.post(CmdTimeout).void
     }
   }
 

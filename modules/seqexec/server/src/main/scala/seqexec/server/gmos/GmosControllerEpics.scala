@@ -379,8 +379,7 @@ object GmosControllerEpics extends GmosEncoders {
           L.debug(s"Gmos configuration: ${config.show}") *>
           warnOnDHSNotConected *>
           (params.sequence *>
-            sys.configCmd.setTimeout(ConfigTimeout) *>
-            sys.post
+            sys.post(ConfigTimeout)
           ).unlessA(params.isEmpty) *>
           L.debug("Completed Gmos configuration")
       }
@@ -388,8 +387,7 @@ object GmosControllerEpics extends GmosEncoders {
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
-          sys.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
-          sys.observeCmd.post
+          sys.observeCmd.post(expTime + ReadoutTimeout)
 
       private def failOnDHSNotConected: F[Unit] =
         sys.dhsConnected.map(_.trim === DhsConnected).ifM(Applicative[F].unit,
@@ -405,9 +403,8 @@ object GmosControllerEpics extends GmosEncoders {
             L.debug(s"Gmos $name Observe canceled because there is less than $safetyCutoffAsDouble seconds left.")
           else
             L.debug(s"$name Gmos exposure") *>
-              cmd.setTimeout(DefaultTimeout) *>
               cmd.mark *>
-              cmd.post.void
+              cmd.post(DefaultTimeout).void
         }.flatten
       }
 
@@ -417,33 +414,29 @@ object GmosControllerEpics extends GmosEncoders {
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to Gmos") *>
-          sys.endObserveCmd.setTimeout(DefaultTimeout) *>
           sys.endObserveCmd.mark *>
-          sys.endObserveCmd.post.void
+          sys.endObserveCmd.post(DefaultTimeout).void
 
       override def pauseObserve: F[Unit] = protectedObserveCommand("Pause", sys.pauseCmd)
 
       override def resumePaused(expTime: Time): F[ObserveCommandResult] = for {
         _   <- L.debug("Resume Gmos observation")
-        _   <- sys.continueCmd.setTimeout(expTime + ReadoutTimeout)
         _   <- sys.continueCmd.mark
-        ret <- sys.continueCmd.post
+        ret <- sys.continueCmd.post(expTime + ReadoutTimeout)
         _   <- L.debug("Completed Gmos observation")
       } yield ret
 
       override def stopPaused: F[ObserveCommandResult] = for {
         _   <- L.debug("Stop Gmos paused observation")
-        _   <- sys.pauseCmd.setTimeout(DefaultTimeout)
         _   <- sys.stopAndWaitCmd.mark
-        ret <- sys.stopAndWaitCmd.post
+        ret <- sys.stopAndWaitCmd.post(DefaultTimeout)
         _   <- L.debug("Completed stopping Gmos observation")
       } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Stopped else ret
 
       override def abortPaused: F[ObserveCommandResult] = for {
         _   <- L.debug("Abort Gmos paused observation")
-        _   <- sys.abortAndWait.setTimeout(DefaultTimeout)
         _   <- sys.abortAndWait.mark
-        ret <- sys.abortAndWait.post
+        ret <- sys.abortAndWait.post(DefaultTimeout)
         _   <- L.debug("Completed aborting Gmos observation")
       } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Aborted else ret
 

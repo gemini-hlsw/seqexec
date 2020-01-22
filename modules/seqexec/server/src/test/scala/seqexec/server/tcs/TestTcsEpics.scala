@@ -16,6 +16,7 @@ import seqexec.server.EpicsCommand
 import seqexec.server.tcs.TcsEpics._
 import squants.{Angle, Time}
 import squants.space.AngleConversions._
+import squants.time.TimeConversions._
 
 class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, List[TestTcsEpics.TestTcsEvent]])
   extends TcsEpics[F] {
@@ -23,7 +24,9 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
   val outputF: F[List[TestTcsEvent]] = out.get
 
-  override def post: F[ApplyCommandResult] =
+  val DefaultTimeout: Time = 1.seconds
+
+  override def post(timeout: Time): F[ApplyCommandResult] =
     List[EpicsCommand[F]](
       m1GuideCmd,
       m2GuideCmd,
@@ -49,7 +52,7 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
       oiwfsObserveCmd,
       oiwfsStopObserveCmd,
       offsetACmd
-    ).map(_.post)
+    ).map(_.post(DefaultTimeout))
       .sequence
       .map(_.find(_ =!= ApplyCommandResult.Completed).getOrElse(ApplyCommandResult.Completed))
 
