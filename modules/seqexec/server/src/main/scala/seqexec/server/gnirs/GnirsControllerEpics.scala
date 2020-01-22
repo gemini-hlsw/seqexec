@@ -19,7 +19,11 @@ import seqexec.server.gnirs.GnirsController._
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.{Length, Seconds, Time}
+import squants.{Length, Time}
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
@@ -237,8 +241,8 @@ object GnirsControllerEpics extends GnirsEncoders {
         }
         executeIfNeeded(
           params,
-          ccCmd.setTimeout(ConfigTimeout) *>
-          ccCmd.post)
+          ccCmd.post(ConfigTimeout)
+        )
       }
 
       private def setDCParams(config: DCConfig): F[Unit] = {
@@ -267,9 +271,10 @@ object GnirsControllerEpics extends GnirsEncoders {
 
         val params = List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
 
-        executeIfNeeded(params,
-          dcCmd.setTimeout(DefaultTimeout) *>
-          dcCmd.post)
+        executeIfNeeded(
+          params,
+          dcCmd.post(DefaultTimeout)
+        )
       }
 
       override def applyConfig(config: GnirsConfig): F[Unit] =
@@ -285,26 +290,22 @@ object GnirsControllerEpics extends GnirsEncoders {
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          epicsSys.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
-          epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed GNITS observe") }
+          epicsSys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout).flatTap{ _ => L.debug("Completed GNITS observe") }
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
-          epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
           epicsSys.endObserveCmd.mark *>
-          epicsSys.endObserveCmd.post.void
+          epicsSys.endObserveCmd.post(DefaultTimeout).void
 
       override def stopObserve: F[Unit] =
         L.debug("Stop GNIRS exposure") *>
-          epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
           epicsSys.stopCmd.mark *>
-          epicsSys.stopCmd.post.void
+          epicsSys.stopCmd.post(DefaultTimeout).void
 
       override def abortObserve: F[Unit] =
         L.debug("Abort GNIRS exposure") *>
-          epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
           epicsSys.abortCmd.mark *>
-          epicsSys.abortCmd.post.void
+          epicsSys.abortCmd.post(DefaultTimeout).void
 
       override def observeProgress(total: Time): Stream[F, Progress] =
         ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
@@ -315,7 +316,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         GnirsController.calcTotalExposureTime[F](cfg)
     }
 
-  private val DefaultTimeout: Time = Seconds(60)
-  private val ReadoutTimeout: Time = Seconds(30)
-  private val ConfigTimeout: Time = Seconds(240)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
+  private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(240, SECONDS)
 }

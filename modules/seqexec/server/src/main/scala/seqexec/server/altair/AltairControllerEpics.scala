@@ -13,6 +13,8 @@ import edu.gemini.seqexec.server.altair.LgsSfoControl
 import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit.SECONDS
+
 import mouse.boolean._
 import monocle.macros.Lenses
 import seqexec.server.{SeqexecFailure, TrySeq}
@@ -23,6 +25,8 @@ import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 import squants.space.{Arcseconds, Millimeters}
+
+import scala.concurrent.duration.FiniteDuration
 
 object AltairControllerEpics {
   @Lenses
@@ -108,7 +112,7 @@ object AltairControllerEpics {
         newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).map(prepareMatrix)
       ).collect { case Some(x) => x }
 
-      val pause = (actions.sequence *> epicsTcs.targetFilter.post.void).whenA(actions.nonEmpty)
+      val pause = (actions.sequence *> epicsTcs.targetFilter.post(DefaultTimeout).void).whenA(actions.nonEmpty)
 
       needsToStop.option((newCfg, pause))
     }
@@ -122,8 +126,8 @@ object AltairControllerEpics {
       PauseResume(pause.map(_._2), resume)
     }
 
-    val aoSettledTimeout: Time = 30.0.seconds
-    val matrixPrepTimeout: Time = 10.seconds
+    private val AoSettledTimeout = FiniteDuration(30, SECONDS)
+    private val MatrixPrepTimeout = FiniteDuration(10, SECONDS)
 
     private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
       reasons: ResumeConditionSet): Option[F[Unit]] = {
@@ -132,12 +136,12 @@ object AltairControllerEpics {
       val guideOk = reasons.contains(ResumeCondition.GaosGuideOn)
 
       (newPosOk && guideOk).option(
-        (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
+        (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout) *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-          epicsTcs.targetFilter.post *>
-          epicsAltair.waitAoSettled(aoSettledTimeout)
+          epicsTcs.targetFilter.post(DefaultTimeout) *>
+          epicsAltair.waitAoSettled(AoSettledTimeout)
         ).whenA(!currCfg.aoLoop)
       )
     }
@@ -153,32 +157,32 @@ object AltairControllerEpics {
           SeqexecFailure.Unexpected("Cannot start Altair STRAP loop, HVolt status is bad."), ()
         )
 
-    private val DefaultTimeout = 10.seconds
+    private val DefaultTimeout = FiniteDuration(10, SECONDS)
+
+    private val StrapGateTimeout = FiniteDuration(5, SECONDS)
 
     private def startStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
       epicsAltair.strapGateControl.setGate(1) *>
-        epicsAltair.strapGateControl.setTimeout(DefaultTimeout) *>
-        epicsAltair.strapGateControl.post *>
-        epicsAltair.waitForStrapGate(100, 5.seconds)
+        epicsAltair.strapGateControl.post(DefaultTimeout) *>
+        epicsAltair.waitForStrapGate(100, StrapGateTimeout)
       ).unlessA(currCfg.strapGate =!= 0)
 
     private def stopStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
       epicsAltair.strapGateControl.setGate(0) *>
-        epicsAltair.strapGateControl.setTimeout(DefaultTimeout) *>
-        epicsAltair.strapGateControl.post.void
+        epicsAltair.strapGateControl.post(DefaultTimeout).void
       ).whenA(currCfg.strapGate =!= 0)
+
+    private val StrapLoopSettleTimeout = FiniteDuration(10, SECONDS)
 
     private def startStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
       epicsAltair.strapControl.setActive(1) *>
-        epicsAltair.strapControl.setTimeout(DefaultTimeout) *>
-        epicsAltair.strapControl.post *>
-        epicsAltair.waitForStrapLoop(v = true, 10.seconds)
+        epicsAltair.strapControl.post(DefaultTimeout) *>
+        epicsAltair.waitForStrapLoop(v = true, StrapLoopSettleTimeout)
       ).unlessA(currCfg.strapLoop)
 
     private def stopStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
       epicsAltair.strapControl.setActive(0) *>
-        epicsAltair.strapControl.setTimeout(DefaultTimeout) *>
-        epicsAltair.strapControl.post.void
+        epicsAltair.strapControl.post(DefaultTimeout).void
       ).whenA(currCfg.strapLoop)
 
     implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
@@ -233,7 +237,7 @@ object AltairControllerEpics {
       val pause: Option[F[Unit]] = (pauseReasons.contains(PauseCondition.GaosGuideOff) && currCfg.aoLoop).option{
         epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed) *>
-          epicsTcs.targetFilter.post.void
+          epicsTcs.targetFilter.post(DefaultTimeout).void
       }
       val resume: Option[F[Unit]] = (resumeReasons.contains(ResumeCondition.GaosGuideOn) &&
         (pauseReasons.contains(PauseCondition.GaosGuideOff) || !currCfg.aoLoop)
@@ -241,8 +245,8 @@ object AltairControllerEpics {
         epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-          epicsTcs.targetFilter.post *>
-          epicsAltair.waitAoSettled(aoSettledTimeout)
+          epicsTcs.targetFilter.post(DefaultTimeout) *>
+          epicsAltair.waitAoSettled(AoSettledTimeout)
       }
 
       PauseResume(
@@ -253,7 +257,7 @@ object AltairControllerEpics {
 
     private def turnOff(c: EpicsAltairConfig): PauseResume[F] = PauseResume(
       (epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-        epicsTcs.targetFilter.post
+        epicsTcs.targetFilter.post(DefaultTimeout)
       ).whenA(c.aoLoop).some,
       None
     )

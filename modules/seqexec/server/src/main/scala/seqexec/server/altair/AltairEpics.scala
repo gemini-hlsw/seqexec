@@ -11,7 +11,8 @@ import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommandBase.setParameter
 import cats.implicits._
 import seqexec.server.EpicsUtil._
-import squants.Time
+
+import scala.concurrent.duration.FiniteDuration
 
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")
@@ -60,14 +61,14 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   private val strapGateAttr = status.getIntegerAttribute("strapgate")
   def strapGate: F[Int] = safeAttributeSIntF(strapGateAttr)
 
-  def waitForStrapGate(v: Int, timeout: Time): F[Unit] =
+  def waitForStrapGate(v: Int, timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(strapGateAttr, v:Integer, timeout, "Altair strap gate")
 
   private val strapLoopAttr = status.getIntegerAttribute("straploop")
   def strapLoop: F[Boolean] =
     safeAttributeSIntF(strapLoopAttr).map(_ =!= 0)
 
-  def waitForStrapLoop(v: Boolean, timeout: Time): F[Unit] =
+  def waitForStrapLoop(v: Boolean, timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(strapLoopAttr, v.fold(1, 0):Integer, timeout, "Altair strap loop")
 
   def strapRTStatus: F[Boolean] =
@@ -113,7 +114,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def aoSettled: F[Boolean] = safeAttributeSDoubleF(aoSettledAttr)
     .map(_ =!= 0.0)
 
-  def waitAoSettled(timeout: Time): F[Unit] =
+  def waitAoSettled(timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF[java.lang.Double, F](aoSettledAttr, 1.0, timeout, "AO settled flag")
 
   def matrixStartX: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("conmatx"))
@@ -123,7 +124,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   private val controlMatrixCalcAttr = status.addEnum[CarStateGEM5]("cmPrepBusy", s"${AltairTop}prepareCm.BUSY", classOf[CarStateGEM5])
   def controlMatrixCalc: F[CarStateGEM5] = safeAttributeF(controlMatrixCalcAttr)
 
-  def waitMatrixCalc(v: CarStateGEM5, timeout: Time): F[Unit] =
+  def waitMatrixCalc(v: CarStateGEM5, timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(controlMatrixCalcAttr, v, timeout, "Atair control matrix calculation")
 
   def lgsP1: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("lgsp1On"))

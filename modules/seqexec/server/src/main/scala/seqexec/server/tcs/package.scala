@@ -11,8 +11,10 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.{Angle, Length, Ratio}
 import squants.space.{Arcseconds, Millimeters}
-import squants.Time
-import squants.time._
+
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
 
 package tcs {
 
@@ -48,8 +50,8 @@ package object tcs {
   val BottomPort: Int = 1
   val InvalidPort: Int = 0
 
-  val tcsTimeout: Time = Seconds(60)
-  val agTimeout: Time = Seconds(60)
+  val tcsTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
+  val agTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
 
   val NonStopExposures = -1
 

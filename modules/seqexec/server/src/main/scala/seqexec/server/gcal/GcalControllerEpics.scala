@@ -5,18 +5,20 @@ package seqexec.server.gcal
 
 import cats.effect.Async
 import cats.implicits._
-import squants.Time
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex._
 import seqexec.server.gcal.GcalController.{Diffuser, Filter, Shutter, _}
 import seqexec.server.EpicsUtil.applyParam
-import squants.time.Seconds
+
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
 
 object GcalControllerEpics {
   // Default value from Tcl Seqexec
-  private val SetupTimeout: Time = Seconds(60)
+  private val SetupTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
   implicit private val encodeLampState: EncodeEpicsValue[LampState, BinaryOnOff] = EncodeEpicsValue {
     case LampState.Off => BinaryOnOff.OFF
@@ -127,8 +129,7 @@ object GcalControllerEpics {
     (for {
       _ <- L.debug("Send configuration to GCAL")
       _ <- params.sequence
-      _ <- epics.lampsCmd.setTimeout(SetupTimeout)
-      r <- epics.post
+      r <- epics.post(SetupTimeout)
       _ <- L.debug("Completed GCAL configuration")
     } yield r
     ).whenA(params.nonEmpty)

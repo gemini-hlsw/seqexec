@@ -20,6 +20,10 @@ import seqexec.server.EpicsCodex.encode
 import seqexec.server.tcs.TcsController._
 import seqexec.server.{EpicsCommand, SeqexecFailure}
 import squants.time.TimeConversions._
+import java.util.concurrent.TimeUnit.SECONDS
+import java.time.Duration
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Base implementation of an Epics TcsController
@@ -328,7 +332,7 @@ object TcsControllerEpicsCommon {
       if(params.nonEmpty)
         for {
           s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p)}
-          _ <- epicsSys.post
+          _ <- epicsSys.post(DefaultTimeout)
           _ <- L.debug("Turning guide off")
         } yield s
       else
@@ -469,7 +473,7 @@ object TcsControllerEpicsCommon {
     if(params.nonEmpty)
       for {
         s <- params.foldLeft(Sync[F].delay(current)){ case (c, p) => c.flatMap(p)}
-        _ <- epicsSys.post
+        _ <- epicsSys.post(DefaultTimeout)
         _ <- L.debug("Turning guide on")
       } yield s
     else
@@ -484,14 +488,13 @@ object TcsControllerEpicsCommon {
           .map(TcsSettleTimeCalculator.calc(current.instrumentOffset, _, subsystems, tcs.inst.instrument))
           .getOrElse(0.seconds)
 
-
         if(params.nonEmpty)
           for {
             _ <- L.debug("Start TCS configuration")
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
-            _ <- epicsSys.post
+            _ <- epicsSys.post(ConfigTimeout)
             _ <- if(subsystems.contains(Subsystem.Mount))
-              epicsSys.waitInPosition(stabilizationTime, tcsTimeout) *> L.debug("TCS inposition")
+              epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis), tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
             else Sync[F].unit
@@ -512,12 +515,12 @@ object TcsControllerEpicsCommon {
     override def notifyObserveStart: F[Unit] =
       L.debug("Send observe to TCS") *>
         epicsSys.observe.mark *>
-        epicsSys.post.void
+        epicsSys.post(DefaultTimeout).void
 
     override def notifyObserveEnd: F[Unit] =
       L.debug("Send endObserve to TCS") *>
         epicsSys.endObserve.mark *>
-        epicsSys.post.void
+        epicsSys.post(DefaultTimeout).void
 
     // To nod the telescope is just like applying a TCS configuration, but always with an offset
     override def nod(subsystems: NonEmptySet[Subsystem], offset: InstrumentOffset, guided: Boolean, tcs: BasicTcsConfig): F[Unit] = {
@@ -547,5 +550,8 @@ object TcsControllerEpicsCommon {
 
   def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
     new TcsControllerEpicsCommonImpl(epicsSys)
+
+  val DefaultTimeout : FiniteDuration = FiniteDuration(10, SECONDS)
+  val ConfigTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
 
 }

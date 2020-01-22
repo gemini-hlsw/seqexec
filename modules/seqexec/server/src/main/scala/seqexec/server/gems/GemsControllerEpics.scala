@@ -13,8 +13,10 @@ import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gems.Gems._
 import seqexec.server.gsaoi.GsaoiGuider
 import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, PauseResume, ResumeCondition, ResumeConditionSet}
-import squants.Time
-import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
 
 class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsSys: GemsEpics[F],
                                                                           gsaoiGuider: GsaoiGuider[F]
@@ -79,8 +81,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
         epicsSys.LoopControl.setCommand(PauseCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.setTimeout(CmdTimeout) *>
-        epicsSys.LoopControl.post.void
+        epicsSys.LoopControl.post(CmdTimeout).void
     }
 
   }
@@ -97,8 +98,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       L.debug(s"Send resume command to GeMS, reasons: $reasons") *>
         epicsSys.LoopControl.setCommand(ResumeCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.setTimeout(CmdTimeout) *>
-        epicsSys.LoopControl.post *>
+        epicsSys.LoopControl.post(CmdTimeout) *>
         epicsSys.waitForStableLoops(LoopStabilizationTimeout)
     }
   }
@@ -124,8 +124,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       p.map(_._1).foldLeft(current){case (a, b) => b(a)},
       p.nonEmpty.option{
         p.traverse(_._2) *>
-        epicsSys.ApdControl.setTimeout(CmdTimeout) *>
-        epicsSys.ApdControl.post.void
+        epicsSys.ApdControl.post(CmdTimeout).void
       }
     )
   }
@@ -145,8 +144,7 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
 
     p.nonEmpty.option{
       p.sequence *>
-        epicsSys.ApdControl.setTimeout(CmdTimeout) *>
-        epicsSys.ApdControl.post.void
+        epicsSys.ApdControl.post(CmdTimeout).void
     }
   }
 
@@ -177,8 +175,8 @@ object GemsControllerEpics {
   val PauseCmd: String = "PAUSE"
   val ResumeCmd: String = "RESUME"
 
-  val CmdTimeout: Time = 10.seconds
-  val LoopStabilizationTimeout: Time = 30.seconds
+  val CmdTimeout: FiniteDuration = FiniteDuration(10, SECONDS)
+  val LoopStabilizationTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
 
   val ApdStart: String = "START"
   val ApdStop: String = "STOP"

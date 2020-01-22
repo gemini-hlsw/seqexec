@@ -14,8 +14,13 @@ import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.TestEpicsCommand._
 import seqexec.server.EpicsCommand
 import seqexec.server.tcs.TcsEpics._
-import squants.{Angle, Time}
+import squants.Angle
 import squants.space.AngleConversions._
+
+import java.util.concurrent.TimeUnit.SECONDS
+import java.time.Duration
+
+import scala.concurrent.duration.FiniteDuration
 
 class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, List[TestTcsEpics.TestTcsEvent]])
   extends TcsEpics[F] {
@@ -23,7 +28,9 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
   val outputF: F[List[TestTcsEvent]] = out.get
 
-  override def post: F[ApplyCommandResult] =
+  val DefaultTimeout: FiniteDuration = FiniteDuration(1, SECONDS)
+
+  override def post(timeout: FiniteDuration): F[ApplyCommandResult] =
     List[EpicsCommand[F]](
       m1GuideCmd,
       m2GuideCmd,
@@ -49,7 +56,7 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
       oiwfsObserveCmd,
       oiwfsStopObserveCmd,
       offsetACmd
-    ).map(_.post)
+    ).map(_.post(DefaultTimeout))
       .sequence
       .map(_.find(_ =!= ApplyCommandResult.Completed).getOrElse(ApplyCommandResult.Completed))
 
@@ -356,10 +363,10 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
   override val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
 
-  override def waitInPosition(stabilizationTime: Time, timeout: Time)(implicit T: Timer[F]): F[Unit] =
+  override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
     Applicative[F].unit
 
-  override def waitAGInPosition(timeout: Time)(implicit T: Timer[F]): F[Unit] = Applicative[F].unit
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] = Applicative[F].unit
 
   override def hourAngle: F[String] = state.get.map(_.hourAngle)
 

@@ -12,6 +12,8 @@ import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.safeAttributeF
 
+import scala.concurrent.duration.FiniteDuration
+
 /**
   * Created by jluhrs on 3/14/17.
   */
@@ -19,7 +21,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GcalTop: String = tops.getOrElse("gc", "")
 
-  def post: F[ApplyCommandResult] = lampsCmd.post
+  def post(timeout: FiniteDuration): F[ApplyCommandResult] = lampsCmd.post(timeout)
 
   object shutterCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))

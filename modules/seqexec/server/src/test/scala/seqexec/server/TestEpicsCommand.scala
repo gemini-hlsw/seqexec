@@ -9,7 +9,8 @@ import cats.implicits._
 import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model.enum.ApplyCommandResult
-import squants.Time
+
+import scala.concurrent.duration.FiniteDuration
 
 
 object TestEpicsCommand {
@@ -27,7 +28,7 @@ object TestEpicsCommand {
    */
   abstract class TestEpicsCommand0[F[_]: Monad, S, A](markL: Lens[S, TestEpicsCommand0.State], st: Ref[F, S],
                                                       out: Ref[F, List[A]]) extends EpicsCommand[F] {
-    override def post: F[ApplyCommandResult] = st.get.flatMap{ s =>
+    override def post(timeout: FiniteDuration): F[ApplyCommandResult] = st.get.flatMap{ s =>
       if(markL.get(s))
         out.modify(x => (x :+ event(s), ())) *>
         st.modify(s => (markL.set(false)(cmd(s)), ApplyCommandResult.Completed))
@@ -36,8 +37,6 @@ object TestEpicsCommand {
     }
 
     override def mark: F[Unit] = st.modify(s => (markL.set(true)(s), ()))
-
-    override def setTimeout(t: Time): F[Unit] = Applicative[F].unit
 
     protected def event(st: S): A
 
@@ -101,9 +100,8 @@ object TestEpicsCommand {
   }
 
   class DummyCmd[F[_]: Applicative] extends EpicsCommand[F] {
-    override def post: F[ApplyCommandResult] = ApplyCommandResult.Completed.pure[F].widen[ApplyCommandResult]
+    override def post(timeout: FiniteDuration): F[ApplyCommandResult] = ApplyCommandResult.Completed.pure[F].widen[ApplyCommandResult]
     override def mark: F[Unit] = Applicative[F].unit
-    override def setTimeout(t: Time): F[Unit] = Applicative[F].unit
   }
 
 }

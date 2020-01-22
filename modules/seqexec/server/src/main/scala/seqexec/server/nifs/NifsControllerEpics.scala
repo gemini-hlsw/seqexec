@@ -30,9 +30,12 @@ import seqexec.server.failUnlessM
 import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
 import shapeless.tag
-import squants.Seconds
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
+
+import scala.concurrent.duration.FiniteDuration
 
 object NifsLookupTables {
 
@@ -98,8 +101,8 @@ object NifsControllerEpics extends NifsEncoders {
   private implicit val filterEq: Eq[LegacyFilter]       = Eq.by(_.displayValue)
   private implicit val disperserEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
 
-  private val ConfigTimeout: Time  = Seconds(400)
-  private val DefaultTimeout: Time = Seconds(60)
+  private val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
+  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
 
   import NifsController._
@@ -174,8 +177,7 @@ object NifsControllerEpics extends NifsEncoders {
         setCoadds(cfg.coadds) *>
         setNumberOfResets(cfg.numberOfResets) *>
         setNumberOfPeriods(cfg.numberOfPeriods) *>
-        epicsSys.dcConfigCmd.setTimeout(ConfigTimeout) *>
-        epicsSys.dcConfigCmd.post.void
+        epicsSys.dcConfigCmd.post(ConfigTimeout).void
 
     private def setFilter(cfg: CCConfig): F[Option[F[Unit]]] = {
       val actualFilter: F[LegacyFilter] = cfg match {
@@ -320,9 +322,7 @@ object NifsControllerEpics extends NifsEncoders {
           }
       }
 
-    private val postCcConfig =
-      epicsSys.ccConfigCmd.setTimeout(ConfigTimeout) *>
-        epicsSys.ccConfigCmd.post
+    private val postCcConfig = epicsSys.ccConfigCmd.post(ConfigTimeout)
 
     private def firstCCPass(cfg: CCConfig): F[Unit] =
       executeIfNeeded(List(setFilter(cfg),
@@ -363,37 +363,33 @@ object NifsControllerEpics extends NifsEncoders {
       L.debug(s"Start NIFS observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
-        epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)) *>
-        epicsSys.observeCmd.post.flatTap{ _ => L.debug("Completed NIFS observe") }
+        epicsSys.observeCmd.post(calcObserveTimeout(cfg)).flatTap{ _ => L.debug("Completed NIFS observe") }
     }
 
     override def endObserve: F[Unit] =
       L.debug("Send endObserve to NIFS") *>
-        epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
         epicsSys.endObserveCmd.mark *>
-        epicsSys.endObserveCmd.post.void
+        epicsSys.endObserveCmd.post(DefaultTimeout).void
 
     override def stopObserve: F[Unit] =
       L.debug("Stop NIFS exposure") *>
-        epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
         epicsSys.stopCmd.mark *>
-        epicsSys.stopCmd.post.void
+        epicsSys.stopCmd.post(DefaultTimeout).void
 
     override def abortObserve: F[Unit] =
       L.debug("Abort NIFS exposure") *>
-        epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
         epicsSys.abortCmd.mark *>
-        epicsSys.abortCmd.post.void
+        epicsSys.abortCmd.post(DefaultTimeout).void
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] =
       ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
         (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
       )
 
-    def calcObserveTimeout(cfg: DCConfig): Time = {
+    def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
       val SafetyPadding = 30.seconds
 
-      calcTotalExposureTime(cfg) + SafetyPadding
+      FiniteDuration((calcTotalExposureTime(cfg) + SafetyPadding).toMillis, MILLISECONDS)
     }
 
     override def calcTotalExposureTime(cfg: DCConfig): Time =

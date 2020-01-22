@@ -11,7 +11,8 @@ import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
 import seqexec.server.EpicsUtil.{safeAttributeSIntF, safeAttributeSListSDoubleF}
-import squants.Time
+
+import scala.concurrent.duration.FiniteDuration
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
@@ -124,7 +125,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   private val scienceStateAttr = mystStatus.addEnum("sciReady", s"${MystTop}sciReady.VAL", classOf[ReadyState])
   def scienceReady: F[Boolean] = safeAttributeF(scienceStateAttr).map(_ === ReadyState.Ready)
 
-  def waitForStableLoops(timeout: Time): F[Unit] =
+  def waitForStableLoops(timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(scienceStateAttr, ReadyState.Ready, timeout, "GeMS science ready flag")
 
   private val ttLoopAttr = mystStatus.addEnum("ttLoop", s"${MystTop}ttLoopStatus.VAL", classOf[LoopState],

@@ -11,11 +11,13 @@ import seqexec.server.{EpicsCommandBase, EpicsSystem}
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil._
 
+import scala.concurrent.duration.FiniteDuration
+
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val F2Top: String = tops.getOrElse("f2", "f2:")
 
-  def post: F[ApplyCommandResult] = configCmd.post
+  def post(timeout: FiniteDuration): F[ApplyCommandResult] = configCmd.post(timeout)
 
   object dcConfigCmd extends EpicsCommandBase {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::dcconfig"))
