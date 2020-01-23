@@ -2,7 +2,6 @@ import Settings.Libraries._
 import sbt.Keys._
 import sbt._
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
-import org.flywaydb.sbt.FlywayPlugin.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
@@ -39,14 +38,6 @@ object Common {
     dependencyUpdatesFilter -= moduleFilter(
       organization = "com.github.julien-truffaut",
       revision = sbt.io.GlobFilter(Settings.LibraryVersions.monocleVersion.replace("-cats", "*"))
-    )
-  )
-
-  lazy val flywaySettings = Seq(
-    flywayUrl  := sys.props.getOrElse("ocs3.databaseUrl", "jdbc:postgresql:gem"),
-    flywayUser := "postgres",
-    flywayLocations := Seq(
-      s"filesystem:${baseDirectory.value}/src/main/resources/db/migration"
     )
   )
 

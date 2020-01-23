@@ -38,7 +38,6 @@ object Settings {
     val mouseVersion            = "0.24"
     val fs2Version              = "2.2.1"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.7.2"
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
@@ -67,7 +66,7 @@ object Settings {
     // Pure JS libraries
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
-    val ocsVersion              = "2019101.1.4"
+    val ocsVersion              = "2020001.6.1"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
@@ -148,8 +147,6 @@ object Settings {
     val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"              % LibraryVersions.http4sVersion
     val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"          % LibraryVersions.http4sVersion
     val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-metrics" % LibraryVersions.http4sVersion
-    val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
-    val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)
     val Monocle                = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
@@ -160,10 +157,6 @@ object Settings {
       "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,
       "io.circe" %%% "circe-parser"  % LibraryVersions.circeVersion,
       "io.circe" %%% "circe-testing" % LibraryVersions.circeVersion % "test"))
-    val Doobie                 = Seq(
-      "org.tpolecat" %% "doobie-core"      % LibraryVersions.doobieVersion,
-      "org.tpolecat" %% "doobie-postgres"  % LibraryVersions.doobieVersion,
-      "org.tpolecat" %% "doobie-scalatest" % LibraryVersions.doobieVersion % "test")
 
     // Client Side JS libraries
     val ReactScalaJS            = Def.setting(Seq(
