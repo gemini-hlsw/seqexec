@@ -4,7 +4,7 @@ resolvers  ++= Seq(
 )
 // Gives support for Scala.js compilation
 val scalaJSVersion =
-  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.31")
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.32")
 
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql"  % "42.2.9", // needed by flyway
