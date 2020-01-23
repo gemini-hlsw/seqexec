@@ -1,67 +1,33 @@
 [![Build status](https://badge.buildkite.com/2d1ba8c871db19fd0a34289ae0b0f706ebbecc72e9ecf57dec.svg)](https://buildkite.com/gemini-hlsw-1/ocs3-ci-pipeline)
 
-# Gem Prototype
+# Remains of Gem Prototype
 
-This is the initial work on a Postgres-based back end, with an API based around recent work on the flat sequence model. It doesn't do very much yet.
+This is what remains of the initial work on a Postgres-based back end.
 
-### Setting Up
+The core model and database layer have been moved to their own repositories. See the repositories for more information on their associated artifacts.
 
-You need Postgres 9.5 or better. I **highly** recommend using [Postgres.app](http://postgresapp.com/) which is much much easier than dealing with a "real" installation. You need to add its binaries to your path, something along the lines of
+- [`gsp-math`](https://github.com/gemini-hlsw/gsp-math) provides fundamental mathematical data types and abstractions.
+- [`gsp-core`](https://github.com/gemini-hlsw/gsp-core) provides data types specific to Gemini, as well as a database schema and persistence layer.
 
-```
-export PATH=$PATH:/Applications/Postgres.app/Contents/Versions/latest/bin
-```
+Several remaining projects are likely candidates for removal to independent library repositories.
 
-Next you can run the following to create the database and user.
+- `acm` provides low-level EPICS support.
+- `giapi` providess low-level GIAPI support.
+- `ocs2-api` provides translations between OCS and gsp-core data types, and `ocs2` provides a service that can import OCS science programs into the GSP database.
 
-```
-psql -c 'create user postgres createdb'
-psql -c 'create database gem' -U postgres
-```
+The `ephemeris` project provides a service that maintains ephemerides for observing targets. This will likely become part of the target service which will have its own database.
 
-Now initialize the database by running the migration script.
+The `seqexec` projects are likely all that will remain here, at which point the project can be renamed.
 
-```
-sbt sql/flywayMigrate
-```
+___
 
-You can also just do `sql/flywayMigrate` from the sbt prompt if you already have sbt running. You will repeat this step each time the schema changes. It's not part of the build yet but probably will be soon.
+> ## The remainder of this document will move to `gsp-ocs2`.
 
-If you ever want to wipe out the database and start over, you can do
-
-```
-psql -c 'drop database gem' -U postgres
-```
-
-And then re-run steps 2 and 3 above. At any time you can say
-
-```
-psql -U postgres -d gem
-```
-
-to poke around with the database on the commandline. For real work I recommend a more full-featured front end. I use [Toad](https://www.toadworld.com/products/toad-mac-edition) but there are a lot of options.
-
-### Generating Enumerated Types
-
-There are many enumerated types in the database, represented by tables named `e_whatever`. The Scala equivalents are generated *on demand* by queries, then checked into source control like normal source files.
-This is only needed if you update the contents of an enum in the schema, or add/modify a the generation
-code in the `sql` project. In any case, you can [re]-generate the enumerated types thus:
-
-```
-sbt genEnums
-```
-
-The source files appear in `modules/core/shared/src/main/scala/gem/enum`.
-
-### Generating Schema Documentation
-
-You can do `sbt schemaSpy` to generate a little website about the database using [SchemaSpy](http://schemaspy.org/). It will appear in `modules/sql/target/schemaspy`.
-
-### Importing
+## Importing
 
 There are several options for importing existing OCS2 program and Smart Gcal data.
 
-#### Importing Old Programs
+### Importing Old Programs
 
 You can import old programs, but unfortunately not in the standard Phase 2 XML format exported from the ODB or OT. The importer works with a modified XML format which you can obtain via the `exportOcs3` OSGi shell command running in an ODB.  It works just like `exportXML` but writes the program with expanded sequence steps.  This is a big part of what enables the importer to work without ocs2 dependencies.
 
@@ -94,7 +60,7 @@ Right now just a sketch is imported:
 There are no other instrument-specific slices for science steps yet.
 
 
-#### Importing Smart Gcal Configuration
+### Importing Smart Gcal Configuration
 
 Smart Gcal configuration is stored in database tables instead of in `.csv` files downloaded from SVN as in OCS2.  The `.csv` files can be imported, though much like old program `.xml` files, we use a modified format.  To obtain compatible Smart Gcal `.csv` files from OCS2, start the ODB and use the `exportSmartGcal` shell command providing the name of a directory into which to write the files.
 
@@ -110,7 +76,7 @@ Having created the symlink, you can then import from the `sbt` prompt:
 sbt> ocs2/runMain gem.ocs2.SmartGcalImporter
 ```
 
-#### Import Server
+### Import Server
 
 You can run an import server which will import programs or observations on demand directly from a running OCS2 Observing Database.  You start it with
 
@@ -133,7 +99,7 @@ http://localhost:8989/import/obs/GS-2017A-Q-1-2
 When you re-import a program or observation, any existing data associated with it is first purged.
 
 
-#### Import Menu
+### Import Menu
 
 Another option for importing is to just type the following at the sbt prompt
 
@@ -149,24 +115,3 @@ Multiple main classes detected, select one to run:
 
 If you pick the program importer, it will import everything which is the same as explicitly passing in `Int.MaxValue`.
 
-
-### Schema Updates
-
-If you need to update the schema you can just make changes locally and then truncate user data and do a dump.
-
-```
-psql -c "truncate log; truncate program cascade; delete from gem_user where id != 'root'" -d gem -U postgres
-pg_dump -U postgres -d gem > create.sql
-```
-
-### Trouble shooting
-
-* If you see this message when setting up the db for the first time:
-```
-ERROR: must be owner of extension plpgsql
-```
-
-Assign super user privileges to postgres
-```
-alter role postgres superuser;
-```
