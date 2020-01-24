@@ -73,9 +73,6 @@ val stopSeqexecAllCommands = List(
 addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""))
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
-addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
-addCommandAlias("rebuildEnums", "; sql/flywayClean; sql/flywayMigrate; genEnums; coreJVM/compile")
-addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
 
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("public")
