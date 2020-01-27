@@ -73,9 +73,6 @@ val stopSeqexecAllCommands = List(
 addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""))
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
-addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
-addCommandAlias("rebuildEnums", "; sql/flywayClean; sql/flywayMigrate; genEnums; coreJVM/compile")
-addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
 
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("public")
@@ -91,16 +88,6 @@ updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 lazy val ocs3 = preventPublication(project.in(file(".")))
   .settings(commonSettings)
   .aggregate(
-    core.jvm,
-    core.js,
-    db,
-    json.jvm,
-    json.js,
-    ocs2_api.jvm,
-    ocs2_api.js,
-    ocs2,
-    ephemeris,
-    sql,
     giapi,
     web_server_common,
     web_client_common,
@@ -114,102 +101,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
 //////////////
 // Projects
 //////////////
-lazy val core = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Full)
-  .in(file("modules/core"))
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(
-      Cats.value,
-      CatsEffect.value,
-      Mouse.value,
-      Shapeless.value,
-      Atto.value,
-      GspMath.value,
-    ) ++ Monocle.value ++ TestLibs.value
-  ).jsSettings(
-    libraryDependencies ++=
-      Seq(JavaTimeJS.value, GeminiLocales.value)
-  )
-  .jsSettings(gspScalaJsSettings)
-  .jvmSettings(
-    libraryDependencies += Fs2
-  )
-
-lazy val db = project
-  .in(file("modules/db"))
-  .dependsOn(core.jvm % "compile->compile;test->test")
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Doobie,
-    initialCommands += """
-      |import cats._, cats.data._, cats.implicits._, cats.effect._
-      |import doobie._, doobie.implicits._
-      |import gem._, gem.enum._, gem.math._, gem.dao._, gem.dao.meta._, gem.dao.composite._
-      |val xa = Transactor.fromDriverManager[IO](
-      |  "org.postgresql.Driver",
-      |  "jdbc:postgresql:gem",
-      |  "postgres",
-      |  "")
-      |val y = xa.yolo
-      |import y._
-    """.stripMargin.trim
-  )
-
-lazy val json = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("modules/json"))
-  .dependsOn(core % "test->test;compile->compile")
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Circe.value
-  )
-  .jsSettings(gspScalaJsSettings)
-
-lazy val sql = project
-  .in(file("modules/sql"))
-  .settings(commonSettings ++ flywaySettings)
-  .settings(
-    libraryDependencies ++= Seq(
-      Flyway
-    ) ++ Doobie
-  )
-
-lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("modules/ocs2_api"))
-  .dependsOn(core)
-  .settings(commonSettings)
-  .jsSettings(gspScalaJsSettings)
-
-lazy val ocs2_api_JVM = ocs2_api.jvm
-
-lazy val ocs2 = project
-  .in(file("modules/ocs2"))
-  .dependsOn(core.jvm, db, sql, ocs2_api_JVM)
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      Fs2,
-      ScalaXml.value,
-      Http4sXml
-    ) ++ Http4sClient ++ Http4s
-  )
-
-lazy val ephemeris = project
-  .in(file("modules/ephemeris"))
-  .dependsOn(core.jvm % "compile->compile;test->test", db, sql)
-  .settings(commonSettings)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      Fs2IO
-    ) ++ Http4sClient
-  )
 
 lazy val giapi = project
   .in(file("modules/giapi"))
@@ -263,6 +154,8 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
+      GspCoreModel.value,
+      GspCoreTestkit.value,
       UnboundId,
       JwtCore,
       JwtCirce,
@@ -282,7 +175,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_server, web_server_common, core.jvm % "compile->compile;test->test")
+  .dependsOn(seqexec_server, web_server_common)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
@@ -382,7 +275,8 @@ lazy val seqexec_server = project
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
-      Seq(Http4sCirce,
+      Seq(GspCoreOcs2Api.value,
+          Http4sCirce,
           Squants.value,
           // OCS bundles
           SpModelCore,
@@ -402,7 +296,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine, ocs2_api.jvm, giapi, seqexec_model.jvm % "compile->compile;test->test", acm, core.jvm % "test->test")
+  .dependsOn(seqexec_engine % "compile->compile;test->test", giapi, seqexec_model.jvm % "compile->compile;test->test", acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
@@ -413,9 +307,12 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= Seq(
+      GspCoreModel.value,
+      GspCoreTestkit.value,
       Squants.value,
       Mouse.value,
-      BooPickle.value) ++ Monocle.value,
+      BooPickle.value
+      ) ++ Monocle.value,
     Test / libraryDependencies += GspMathTestkit.value
   )
   .jvmSettings(
@@ -427,7 +324,6 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
   )
-  .dependsOn(core % "compile->compile;test->test")
 
 lazy val seqexec_engine = project
   .in(file("modules/seqexec/engine"))

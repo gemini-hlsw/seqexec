@@ -1,1 +1,0 @@
-DROP TABLE e_gnirs_wavelength_suggestion;

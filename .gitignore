@@ -19,6 +19,7 @@ calibrations/
 .metals/
 .bloop/
 project/project/.bloop/
+project/metals.sbt
 
 # hydra
 .hydra/
