@@ -318,7 +318,7 @@ object NiriControllerEpics extends NiriEncoders {
           failOnDHSNotConected *>
           failOnArrayNotActive *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.post(_).flatTap{ _ => L.debug("Completed NIFS observe") })
+          calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.post(_).flatTap{ _ => L.debug("Completed NIRI observe") })
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to NIRI") *>
