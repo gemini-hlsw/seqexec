@@ -106,27 +106,29 @@ object Ghost {
     EitherT {
       Sync[F].delay {
         (for {
-          baseRAHMS     <- raExtractor(SPGhost.BaseRAHMS)
-          baseDecDMS    <- decExtractor(SPGhost.BaseDecDMS)
+          baseRAHMS     <- raExtractor(SPGhost.BASE_RA_HMS)
+          baseDecDMS    <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          srifu1Name    = extractor[String](SPGhost.SRIFU1Name)
-          srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1RAHMS)
-          srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1DecDMS)
+          fiberAgitator = extractor[Boolean](SPGhost.FIBER_AGITATOR)
+          srifu1Name    = extractor[String](SPGhost.SRIFU1_NAME)
+          srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
+          srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
 
-          srifu2Name    = extractor[String](SPGhost.SRIFU2Name)
-          srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2RAHMS)
-          srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2DecDMS)
+          srifu2Name    = extractor[String](SPGhost.SRIFU2_NAME)
+          srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
+          srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2_DEC_DMS)
 
-          hrifu1Name    = extractor[String](SPGhost.HRIFU1Name)
-          hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1RAHMS)
-          hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1DecDMS)
+          hrifu1Name    = extractor[String](SPGhost.HRIFU1_NAME)
+          hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
+          hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
 
-          hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2RAHMS)
-          hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2DecDMS)
+          hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
+          hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
 
           config <- GhostConfig(
             (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
             1.minute,
+            FiberAgitator.fromBoolean(fiberAgitator.getOrElse(false)),
             srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
             srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
             hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),

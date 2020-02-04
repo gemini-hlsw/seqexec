@@ -66,7 +66,7 @@ object Settings {
     // Pure JS libraries
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
-    val ocsVersion              = "2020001.6.1"
+    val ocsVersion              = "2020001.1.3"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
