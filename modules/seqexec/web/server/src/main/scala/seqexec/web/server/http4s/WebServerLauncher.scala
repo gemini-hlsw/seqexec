@@ -13,7 +13,10 @@ import fs2.concurrent.Topic
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import java.io.FileInputStream
 import java.nio.file.{Path => FilePath}
+import javax.net.ssl.{SSLContext, TrustManagerFactory, KeyManagerFactory}
+import java.security.{KeyStore, Security}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
@@ -63,6 +66,37 @@ object WebServerLauncher extends IOApp with LogInitialization {
   def authService[F[_]: Sync: Timer: Logger](mode: Mode, conf: AuthenticationConfig): F[AuthenticationService[F]] =
     Sync[F].delay(AuthenticationService[F](mode, conf))
 
+  def makeContext[F[_]: Sync](tls: TLSConfig): F[SSLContext] = Sync[F].delay {
+    val ksStream = new FileInputStream(tls.keyStore.toFile.getAbsolutePath)
+    val ks = KeyStore.getInstance("JKS")
+    ks.load(ksStream, tls.keyStorePwd.toCharArray)
+    ksStream.close()
+    val trustStore = StoreInfo(tls.keyStore.toFile.getAbsolutePath, tls.keyStorePwd)
+
+    val tmf = {
+      val ksStream = new FileInputStream(trustStore.path)
+
+      val ks = KeyStore.getInstance("JKS")
+      ks.load(ksStream, tls.keyStorePwd.toCharArray)
+      ksStream.close()
+
+      val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm)
+
+      tmf.init(ks)
+      tmf.getTrustManagers
+    }
+
+    val kmf = KeyManagerFactory.getInstance(
+      Option(Security.getProperty("ssl.KeyManagerFactory.algorithm"))
+        .getOrElse(KeyManagerFactory.getDefaultAlgorithm))
+
+    kmf.init(ks, tls.certPwd.toCharArray)
+
+    val context = SSLContext.getInstance("TLS")
+    context.init(kmf.getKeyManagers, tmf, null)
+    context
+  }
+
   /** Resource that yields the running web server */
   def webServer[F[_]: ContextShift: Logger: ConcurrentEffect: Timer](
     conf: SeqexecConfiguration,
@@ -80,7 +114,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/" -> PrometheusExportService[F](cr).routes
     )
 
-    def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] = Resource.liftF(all).flatMap { all =>
+    val ssl: F[Option[SSLContext]] = conf.webServer.tls.map(makeContext[F]).sequence
+
+    def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] = Resource.liftF(all.flatMap { all =>
 
       val builder =
         BlazeServerBuilder[F]
@@ -88,13 +124,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
           .withWebSockets(true)
           .withNio2(true)
           .withHttpApp((prRouter <+> all).orNotFound)
-
-      conf.webServer.tls.fold(builder) { tls =>
-        val storeInfo = StoreInfo(tls.keyStore.toFile.getAbsolutePath, tls.keyStorePwd)
-        builder.withSSL(storeInfo, tls.certPwd, "TLS")
-      }.resource
-
-    }
+       ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
+    }).flatten
 
     val router = Router[F](
       "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
