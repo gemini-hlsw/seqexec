@@ -239,7 +239,7 @@ object Systems {
         else GpiClient.simulatedGpiClient[F]
 
       def gpiGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
-        Resource.pure(GdsClient(
+        Resource.pure[F, GdsClient[F]](GdsClient(
           if (settings.systemControl.gpiGds.command) httpClient else GdsClient.alwaysOkClient[F],
           settings.gpiGDS))
 
@@ -252,7 +252,7 @@ object Systems {
         else GhostClient.simulatedGhostClient
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
-        Resource.pure(GdsClient(
+        Resource.pure[F, GdsClient[F]](GdsClient(
           if (settings.systemControl.ghostGds.command) httpClient else GdsClient.alwaysOkClient[F],
           settings.ghostGDS))
 
