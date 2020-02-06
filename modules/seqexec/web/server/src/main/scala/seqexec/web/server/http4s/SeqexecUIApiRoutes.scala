@@ -141,7 +141,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
 
         def engineEvents(clientId: ClientId): Stream[F, WebSocketFrame]  =
           engineOutput
-            .subscribe(1)
+            .subscribe(100)
             .map(anonymizeF)
             .filter(filterOutNull)
             .filter(filterOutOnClientId(clientId))
