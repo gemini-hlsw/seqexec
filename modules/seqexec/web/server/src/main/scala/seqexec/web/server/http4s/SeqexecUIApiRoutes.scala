@@ -22,8 +22,9 @@ import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
+import org.http4s.websocket.WebSocketFrame.{ Binary, Pong, Ping, Close }
 import org.http4s.headers.`WWW-Authenticate`
+import org.http4s.headers.`User-Agent`
 import scala.concurrent.duration._
 import scala.math._
 import scodec.bits.ByteVector
@@ -39,6 +40,7 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
 import seqexec.web.server.OcsBuildInfo
+import seqexec.server.SeqexecEngine
 
 /**
   * Rest Endpoints under the /api route
@@ -48,6 +50,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
                          auth: AuthenticationService[F],
                          guideConfigS: GuideConfigDb[F],
                          giapiDB: GiapiStatusDb[F],
+                         clientsDb: ClientsSetDb[F],
                          engineOutput: Topic[F, SeqexecEvent])(
   implicit L: Logger[F]
 ) extends BooEncoders with ModelLenses with Http4sDsl[F] {
@@ -78,11 +81,13 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
       }
       .map(toFrame)
 
+  val pingInterval = 10.second
+
   /**
     * Creates a process that sends a ping every second to keep the connection alive
     */
   private def pingStream: Stream[F, Ping] =
-    Stream.fixedRate[F](1.second).flatMap(_ => Stream.emit(Ping()))
+    Stream.fixedRate[F](pingInterval).flatMap(_ => Stream.emit(Ping()))
 
   val publicService: HttpRoutes[F] = GZip { HttpRoutes.of {
 
@@ -125,7 +130,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
           s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}") *>
           Ok(s"$site")
 
-      case GET -> Root / "seqexec" / "events" as user        =>
+      case ws @ GET -> Root / "seqexec" / "events" as user        =>
         // If the user didn't login, anonymize
         def debug(clientId: ClientId): SeqexecEvent => Stream[F, SeqexecEvent] = (e: SeqexecEvent) =>
           Stream.eval(L.debug(s"${clientId.self} ${e.getClass.getName}") *> e.pure[F])
@@ -142,17 +147,30 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
             .filter(filterOutOnClientId(clientId))
             .flatMap(debug(clientId))
             .map(toFrame)
+        val clientSocket = (ws.req.remoteAddr, ws.req.remotePort).mapN((a, p) => s"$a:$p").orEmpty
+        val userAgent = ws.req.headers.get(`User-Agent`)
 
-        // We don't care about messages sent over ws by clients
-        val clientEventsSink: Pipe[F, WebSocketFrame, Unit] = _.map(_ => ())
+        // We don't care about messages sent over ws by clients but we want to monitor
+        // control frames and track that pings arrive from clients
+        def clientEventsSink(clientId: ClientId): Pipe[F, WebSocketFrame, Unit] = _.flatTap{
+          case Close(_) => Stream.eval(clientsDb.removeClient(clientId) *> L.debug(s"Closed client $clientSocket"))
+          case Pong(_)  => Stream.eval(L.trace(s"Pong from $clientSocket"))
+          case _        => Stream.empty
+        }.filter {
+          case Pong(_) => true
+          case _       => false
+        }.void.through(SeqexecEngine.failIfNoEmitsWithin(5 * pingInterval, s"Lost ping on $clientSocket"))
 
         // Create a client specific websocket
         for {
           clientId <- Sync[F].delay(ClientId(UUID.randomUUID()))
-          _ <- L.info(s"New client ${clientId.self}")
+          _        <- clientsDb.newClient(clientId, clientSocket, userAgent)
+          _        <- L.info(s"New client $clientSocket => ${clientId.self}")
           initial  = initialEvent(clientId)
-          streams  = Stream(pingStream, guideConfigEvents, giapiDBEvents, engineEvents(clientId)).parJoinUnbounded
-          ws       <- WebSocketBuilder[F].build(initial ++ streams, clientEventsSink)
+          streams  = Stream(pingStream, guideConfigEvents, giapiDBEvents, engineEvents(clientId))
+                       .parJoinUnbounded
+                       .onFinalize[F](clientsDb.removeClient(clientId))
+          ws       <- WebSocketBuilder[F].build(initial ++ streams, clientEventsSink(clientId), filterPingPongs = false)
         } yield ws
 
     }

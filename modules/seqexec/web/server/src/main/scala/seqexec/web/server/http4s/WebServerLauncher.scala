@@ -4,12 +4,14 @@
 package seqexec.web.server.http4s
 
 import cats.effect._
+import cats.effect.concurrent.Ref
 import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
+import fs2.Stream
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -45,6 +47,7 @@ import seqexec.web.server.config._
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.AuthenticationService
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
+import scala.concurrent.duration._
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
@@ -106,6 +109,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     outputs: Topic[F, SeqexecEvent],
     se: SeqexecEngine[F],
     cr: CollectorRegistry,
+    clientsDb: ClientsSetDb[F],
     bec: Blocker
   ): Resource[F, Server[F]] = {
 
@@ -130,7 +134,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     val router = Router[F](
       "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.mode, as, se.systems.guideDb, se.systems.gpi.statusDb, outputs).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.mode, as, se.systems.guideDb, se.systems.gpi.statusDb, clientsDb, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
       "/smartgcal"            -> new SmartGcalRoutes[F](cal).service
     )
@@ -233,15 +237,19 @@ object WebServerLauncher extends IOApp with LogInitialization {
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
       en:  SeqexecEngine[IO],
-      cr:  CollectorRegistry
+      cr:  CollectorRegistry,
+      cs:  ClientsSetDb[IO]
     ): Resource[IO, Unit] =
       for {
         b  <- Blocker[IO]
         as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
-        _  <- webServer[IO](conf, ca, as, in, out, en, cr, b)
+        _  <- webServer[IO](conf, ca, as, in, out, en, cr, cs, b)
       } yield ()
+
+    def publishStats[F[_]: Timer](cs: ClientsSetDb[F]): Stream[F, Unit] =
+      Stream.fixedRate[F](1.minute).flatMap(_ => Stream.eval(cs.report))
 
     val seqexec: Resource[IO, ExitCode] =
       for {
@@ -253,8 +261,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         _      <- Resource.liftF(logToClients(out))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
+        cs     <- Resource.liftF(Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_)))
+        _      <- Resource.liftF(publishStats(cs).compile.drain.start)
         engine <- engineIO(conf, cli, cr)
-        _      <- webServerIO(conf, inq, out, engine, cr)
+        _      <- webServerIO(conf, inq, out, engine, cr, cs)
         _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s"Queue length: $l")).compile.drain.start)
         _      <- Resource.liftF(out.subscribers.evalMap(l => Logger[IO].debug(s"Subscribers amount: $l")).compile.drain.start)
         f      <- Resource.liftF(engine.eventStream(inq).flatMap(SeqexecEngine.logEvent[IO]("eventStream")).through(out.publish).compile.drain.onError(logError).start)

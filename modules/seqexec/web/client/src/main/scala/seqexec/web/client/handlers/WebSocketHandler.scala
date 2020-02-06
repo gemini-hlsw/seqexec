@@ -80,7 +80,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     def onClose(): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
       if (value.autoReconnect) {
-        SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(200, value.nextAttempt * 2))))
+        SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(1000, value.nextAttempt * 2))))
       }
 
     ws.binaryType = "arraybuffer"

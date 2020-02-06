@@ -6,6 +6,7 @@ package seqexec.web.server.http4s
 import cats.effect.ContextShift
 import cats.effect.IO
 import cats.effect.Timer
+import cats.effect.concurrent.Ref
 import cats.tests.CatsSuite
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
@@ -48,13 +49,15 @@ trait TestRoutes extends ClientBooEncoders with CatsSuite {
 
   val uiRoutes =
     for {
-      o <- Topic[IO, SeqexecEvent](NullEvent)
+      o  <- Topic[IO, SeqexecEvent](NullEvent)
+      cs <- Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_))
     } yield
       new SeqexecUIApiRoutes(Site.GS,
                              Mode.Development,
                              authService,
                              GuideConfigDb.constant[IO],
                              statusDb,
+                             cs,
                              o).service
 
   def newLoginToken: IO[String] =

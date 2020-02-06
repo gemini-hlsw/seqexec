@@ -283,7 +283,7 @@ object SeqexecEngine {
     private def heartbeatStream: Stream[F, EventType[F]] = {
       // If there is no heartbeat in 5 periods throw an error
       val noHeartbeatDetection =
-        SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod)
+        SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod, "Event stream timed out")
       Stream.awakeDelay[F](heartbeatPeriod)
         .as(Event.nullEvent: EventType[F])
         .through(noHeartbeatDetection.andThen(_.recoverWith { case _ =>
@@ -639,7 +639,8 @@ object SeqexecEngine {
     * https://gitter.im/functional-streams-for-scala/fs2?at=5e0a6efbfd580457e79aaf0a
     */
   def failIfNoEmitsWithin[F[_]: Concurrent: Timer, A](
-      timeout: FiniteDuration
+      timeout: FiniteDuration,
+      msg: String
   ): Pipe[F, A, A] = in => {
     import scala.concurrent.TimeoutException
     def now = Timer[F].clock.monotonic(NANOSECONDS).map(_.nanos)
@@ -654,7 +655,7 @@ object SeqexecEngine {
                 val t = timeout - elapsed
 
                 Sync[F]
-                  .raiseError[Unit](new TimeoutException)
+                  .raiseError[Unit](new TimeoutException(msg))
                   .whenA(t <= 0.nanos) >> Timer[F].sleep(t)
               }
           }
