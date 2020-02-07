@@ -78,7 +78,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     def onError(): Unit = logger.error("Error on websocket")
 
     def onClose(): Unit =
-      // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
+      // Increase the delay to get exponential backoff with a minimum of 1s and a max of 1m
       if (value.autoReconnect) {
         SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(1000, value.nextAttempt * 2))))
       }
