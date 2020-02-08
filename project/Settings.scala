@@ -54,7 +54,7 @@ object Settings {
     val logstash                = "6.3"
     val pureConfig              = "0.12.2"
     val monocleVersion          = "2.0.1"
-    val circeVersion            = "0.12.3"
+    val circeVersion            = "0.13.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.4"
 
