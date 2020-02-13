@@ -124,7 +124,7 @@
         </attribute>
         <attribute name="cnSquare">
             <channel>cn2.VAL</channel>
-            <type>DOUBLE</type>
+            <type>FLOAT</type>
         </attribute>
         <attribute name="ngs1">
             <channel>ngsConfig.VALA</channel>

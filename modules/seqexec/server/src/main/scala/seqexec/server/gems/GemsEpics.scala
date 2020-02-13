@@ -10,7 +10,7 @@ import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
-import seqexec.server.EpicsUtil.{safeAttributeSIntF, safeAttributeSListSDoubleF}
+import seqexec.server.EpicsUtil.safeAttributeSIntF
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -60,7 +60,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def rZero: F[Double] = safeAttributeSDoubleF(mystStatus.getDoubleAttribute("rZero"))
 
-  def cnSquare: F[List[Double]] = safeAttributeSListSDoubleF(mystStatus.getDoubleAttribute("cnSquare"))
+  def cnSquare: F[List[Float]] = safeAttributeSListSFloatF(mystStatus.getFloatAttribute("cnSquare"))
 
   def astroMode: F[String] = safeAttributeF(mystStatus.getStringAttribute("astroMode"))
 
