@@ -27,16 +27,6 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setReasons(v: String): F[Unit] = setParameter(cs.map(_.getString("reasons")), v)
   }
 
-  object ApdControl extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::ttApdCtrl"))
-
-    def setApd1Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd1Cmd")), v)
-
-    def setApd2Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd2Cmd")), v)
-
-    def setApd3Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd3Cmd")), v)
-  }
-
   val mystStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::status")
 
   private val aniLoopAttr = mystStatus.addEnum("aniLoop", s"${MystTop}aniLoopStatus.VAL", classOf[LoopState],
