@@ -100,7 +100,7 @@ object SeqexecUI {
       | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(previewConfigPageP(instrumentNames))) ~> dynRenderR((_: PreviewConfigPage, r) => SeqexecMain(site, r))
       )
-        .notFound(redirectToPage(Root)(Redirect.Push))
+        .notFound(redirectToPage(Root)(SetRouteVia.HistoryPush))
         // Runtime verification that all pages are routed
         .verify(Root, List(SoundTest, CalibrationQueuePage): _*)
         .onPostRender((_, next) =>
