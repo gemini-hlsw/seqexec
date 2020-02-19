@@ -7,9 +7,6 @@ import cats.MonadError
 import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
-import scala.math.cos
-import scala.math.sin
-import scala.math.toRadians
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
@@ -23,8 +20,6 @@ object NifsHeader {
     tcsKeywordsReader: TcsKeywordsReader[F]
   ): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
-      // position angle in radians
-      val φ = tcsKeywordsReader.instrumentPA.map(toRadians)
       sendKeywords(
         id,
         inst,
@@ -47,19 +42,7 @@ object NifsHeader {
           buildDouble(instReader.biasPwr, KeywordName.BIASPWR),
           buildInt32(instReader.numberOfFowSamples, KeywordName.LNRS),
           buildString("IFU".pure[F], KeywordName.OBSMODE),
-          buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS),
-          // Approximate WCS
-          buildString("RA---TAN".pure[F], KeywordName.CTYPE1),
-          buildDouble(15.0.pure[F], KeywordName.CRPIX1),
-          buildDouble(tcsKeywordsReader.sourceATarget.ra, KeywordName.CRVAL1),
-          buildString("DEC--TAN".pure[F], KeywordName.CTYPE2),
-          buildDouble(34.0.pure[F], KeywordName.CRPIX2),
-          buildDouble(tcsKeywordsReader.sourceATarget.dec, KeywordName.CRVAL2),
-          buildDouble(φ.map(φ => -4.7e-5 * sin(φ)), KeywordName.CD1_1),
-          buildDouble(φ.map(φ =>  1.9e-5 * cos(φ)), KeywordName.CD1_2),
-          buildDouble(φ.map(φ => -4.7e-5 * cos(φ)), KeywordName.CD2_1),
-          buildDouble(φ.map(φ => -1.9e-5 * sin(φ)), KeywordName.CD2_2),
-          buildString("FK5".pure[F], KeywordName.RADECSYS)
+          buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS)
         )
       )
     }
