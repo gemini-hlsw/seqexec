@@ -9,6 +9,7 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import react.virtualized._
+import react.common.Size
 import react.common.implicits._
 
 /**

@@ -12,7 +12,7 @@ import monocle.function.Each._
 import monocle.function.Index._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
-import react.common.syntax._
+import react.common._
 import react.virtualized._
 import scala.math.max
 import scala.math.min
@@ -49,7 +49,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     val cl      = columns.toList
     val indexOf = cl.indexWhere(_.column === column)
     val indexNx = cl.indexWhere((c: ColumnMeta[A]) => c.visible && c.isVariable, indexOf + 1)
-    val ω       = s.width - fixedWidth(calculatedWidth)
+    val ω       = s.width.toDouble - fixedWidth(calculatedWidth)
     val refCol  = cl.lift(indexOf)
     val refO    = (TableState.column[A](indexOf) ^|-> ColumnMeta.width)
     val nextCol = cl.lift(indexNx)
@@ -138,7 +138,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     s:               Size,
     calculatedWidth: A => Option[Double]
   ): TableState[A] =
-    if (s.width === 0) {
+    if (s.width.toDouble === 0) {
       // If we have been modified don't redistribute
       this
     } else {
@@ -152,7 +152,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
       }.sum
       val minWidth           = minVarWidth(calculatedWidth, visibleCols)
-      val totalVariableWidth = max(0.0, s.width - fixedWidth(calculatedWidth))
+      val totalVariableWidth = max(0.0, s.width.toDouble - fixedWidth(calculatedWidth))
       val cols =
         if (totalVariableWidth > requestedWidth) {
           // There is extra space on the table, lets distribute it among the cols
@@ -183,7 +183,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           // There is less space on the table, we need to shrink
           // Lets drop columns if needed
           val reducedVisibleCols =
-            if (totalVariableWidth < minWidth && s.width > 0) {
+            if (totalVariableWidth < minWidth && s.width.toDouble > 0) {
               discardUntilUnder(calculatedWidth,
                                 visibleCols,
                                 totalVariableWidth)
@@ -232,7 +232,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
         case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _),
               i) =>
           val beforeLast = i < (lf - 1)
-          val w          = max((s.width - fw) * p, mw)
+          val w          = max((s.width.toDouble - fw) * p, mw)
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
 
         case _ =>
@@ -259,7 +259,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
   // normalize the percentage widths, As they may be more or less than 100% we
   // scale them to fit 100%
   private def normalizeColumnWidths(s: Size): TableState[A] =
-    if (s.width > 0) {
+    if (s.width.toDouble > 0) {
       // sum of all percentages to redistribute
       val percentagesSum = columns.collect {
         case ColumnMeta(_, _, _, true, VariableColumnWidth(p, _), _, _) => p
@@ -282,7 +282,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     calculatedWidth: A => Option[Double] = TableState.NoInitialWidth
   ): (String, JsNumber) => Callback =
     (_, dx) => {
-      val deltaPct = dx.toDouble / (s.width - fixedWidth(calculatedWidth))
+      val deltaPct = dx.toDouble / (s.width.toDouble - fixedWidth(calculatedWidth))
       val st = withVisibleCols(visibleCols)
         .normalizeColumnWidths(s)
         .applyOffset(calculatedWidth, column, deltaPct, s)
@@ -300,7 +300,7 @@ object TableState {
     Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
 
   implicit val eqSize: Eq[Size] =
-    Eq.by(x => (x.width, x.height))
+    Eq.by(x => (x.width.toDouble, x.height.toDouble))
 
   def userModified[A: Eq]: Lens[TableState[A], UserModified] =
     Lens[TableState[A], UserModified](_.userModified)(n =>

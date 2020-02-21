@@ -24,7 +24,7 @@ import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import react.virtualized._
 import react.clipboard._
-import react.common._
+import react.common.Size
 import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
@@ -290,7 +290,7 @@ object LogArea {
     * Build the table log
     */
   private def table(b: Backend)(size: Size): VdomNode =
-    if (size.width > 0) {
+    if (size.width.toInt > 0) {
       Table(
         Table.props(
           disableHeader = false,
@@ -306,7 +306,7 @@ object LogArea {
           rowCount         = b.props.rowCount(b.state),
           rowHeight        = SeqexecStyles.rowHeight,
           rowClassName     = rowClassName(b) _,
-          width            = max(1, size.width),
+          width            = max(1, size.width.toInt),
           rowGetter        = b.props.rowGetter(b.state) _,
           headerClassName  = SeqexecStyles.tableHeader.htmlClass,
           headerHeight     = SeqexecStyles.headerHeight

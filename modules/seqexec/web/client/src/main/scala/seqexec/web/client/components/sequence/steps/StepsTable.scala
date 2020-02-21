@@ -20,7 +20,7 @@ import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.js
 import scala.math._
-import react.common._
+import react.common.{Css, ReactProps, Size, Style}
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
@@ -758,7 +758,7 @@ object StepsTable extends Columns {
     def updateState(s: TableState[TableColumn]): Callback =
       (b.modState(State.tableState.set(s)) *> b.props.obsId
         .map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s)))
-        .getOrEmpty).when_(size.width > 0)
+        .getOrEmpty).when_(size.width.toInt > 0)
 
     tb match {
       case ColumnRenderArgs(meta, _, width, true)  =>
@@ -857,7 +857,7 @@ object StepsTable extends Columns {
       noRowsRenderer = () =>
         <.div(
           ^.cls := "ui center aligned segment noRows",
-          ^.height := size.height.px,
+          ^.height := size.height.toInt.px,
           "No Steps"
         ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
@@ -1097,13 +1097,13 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
-          val areaSize = Size(size.height, size.width - b.state.scrollBarWidth)
+          val areaSize = Size(size.height, size.width.toInt - b.state.scrollBarWidth)
           val ts =
             b.state.tableState
               .columnBuilder(areaSize, colBuilder(b, areaSize), b.props.columnWidths)
               .map(_.vdomElement)
 
-          if (size.width > 0) {
+          if (size.width.toInt > 0) {
             ref
               .component(stepsTableProps(b)(size))(ts: _*)
               .vdomElement
