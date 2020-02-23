@@ -87,7 +87,7 @@ object Settings {
 
     // Gemini Libraries
     val gspMath                 = "0.1.10"
-    val gspCore                 = "0.1.3"
+    val gspCore                 = "0.1.4"
 
   }
 
