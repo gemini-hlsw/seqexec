@@ -8,24 +8,6 @@
         <apply>apply</apply>
         <car>applyC</car>
         <description>IS Primary Apply Record</description>
-        <command name="gems::ttApdCtrl">
-            <description>Canopus APDs control</description>
-            <parameter name="apd1Cmd">
-                <channel>ttApdCtrl.A</channel>
-                <type>STRING</type>
-                <description>APD1 command (START|STOP)</description>
-            </parameter>
-            <parameter name="apd2Cmd">
-                <channel>ttApdCtrl.B</channel>
-                <type>STRING</type>
-                <description>APD2 command (START|STOP)</description>
-            </parameter>
-            <parameter name="apd3Cmd">
-                <channel>ttApdCtrl.C</channel>
-                <type>STRING</type>
-                <description>APD3 command (START|STOP)</description>
-            </parameter>
-        </command>
         <command name="gems::seqLoopCtrl">
             <description>Loop control for Seqexec</description>
             <parameter name="cmd">
@@ -115,7 +97,7 @@
 <!--            <description>LGS matrix calculation status (Not Ready|Ready)</description>-->
 <!--        </attribute>-->
         <attribute name="lgsStrehl">
-            <channel></channel>
+            <channel>StrehlEstimate.VAL</channel>
             <type>DOUBLE</type>
         </attribute>
         <attribute name="rZero">
@@ -124,7 +106,7 @@
         </attribute>
         <attribute name="cnSquare">
             <channel>cn2.VAL</channel>
-            <type>DOUBLE</type>
+            <type>FLOAT</type>
         </attribute>
         <attribute name="ngs1">
             <channel>ngsConfig.VALA</channel>

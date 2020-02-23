@@ -26,18 +26,14 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
 
   override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)
                           (cfg: GemsConfig)
-  : F[PauseResume[F]] = retrieveConfig.map{ c =>
-
-    // For pausing, pause loops in GeMS and then stop sensors
-    val (s1, stop) = stopCwfs(c, cfg)
-    val r1 = List(pause(pauseReasons), stop).flattenOption
-    // And the other way around for resuming, passing s1 (the state after stopping detectors) to startTtsg
-    val r2 = List(startCwfs(s1, cfg), resume(resumeReasons)).flattenOption
+  : F[PauseResume[F]] = {
+    val r1 = pause(pauseReasons)
+    val r2 = resume(resumeReasons)
 
     PauseResume(
       r1.nonEmpty.option(r1.sequence.void),
       r2.nonEmpty.option(r2.sequence.void)
-    )
+    ).pure[F]
   }
 
   import GsaoiGuider.OdgwId._
@@ -50,24 +46,6 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
       gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw3DetectorState](x.isOdgwGuiding(Odgw3))),
       gsaoiGuider.currentState.map(x => DetectorStateOps.fromBoolean[Odgw4DetectorState](x.isOdgwGuiding(Odgw4)))
     )
-
-  private val retrieveConfig: F[EpicsGems] = for{
-    cwfs1 <- stateGetter.cwfs1
-    cwfs2 <- stateGetter.cwfs2
-    cwfs3 <- stateGetter.cwfs3
-    odgw1 <- stateGetter.odgw1
-    odgw2 <- stateGetter.odgw2
-    odgw3 <- stateGetter.odgw3
-    odgw4 <- stateGetter.odgw4
-  } yield EpicsGems(
-    cwfs1,
-    cwfs2,
-    cwfs3,
-    odgw1,
-    odgw2,
-    odgw3,
-    odgw4
-  )
 
   private def pause(pauseConditions: PauseConditionSet)
   : Option[F[Unit]] = {
@@ -100,51 +78,6 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsS
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
         epicsSys.LoopControl.post(CmdTimeout) *>
         epicsSys.waitForStableLoops(LoopStabilizationTimeout)
-    }
-  }
-
-  import Gems.Cwfs1DetectorState.cwfs1DetectorStateDetectorStateOps
-  import Gems.Cwfs2DetectorState.cwfs2DetectorStateDetectorStateOps
-  import Gems.Cwfs3DetectorState.cwfs3DetectorStateDetectorStateOps
-
-  private def stopCwfs(current: EpicsGems, demand: GemsConfig): (EpicsGems, Option[F[Unit]]) = {
-    val p = List(
-      (DetectorStateOps.isActive(current.cwfs1) && !demand.isCwfs1Used).option(
-        (EpicsGems.cwfs1.set(Cwfs1DetectorState.Off), epicsSys.ApdControl.setApd1Cmd(ApdStop))
-      ),
-      (DetectorStateOps.isActive(current.cwfs2) && !demand.isCwfs2Used).option(
-        (EpicsGems.cwfs2.set(Cwfs2DetectorState.Off), epicsSys.ApdControl.setApd2Cmd(ApdStop))
-      ),
-      (DetectorStateOps.isActive(current.cwfs3) && !demand.isCwfs3Used).option(
-        (EpicsGems.cwfs3.set(Cwfs3DetectorState.Off), epicsSys.ApdControl.setApd3Cmd(ApdStop))
-      )
-    ).flattenOption
-
-    (
-      p.map(_._1).foldLeft(current){case (a, b) => b(a)},
-      p.nonEmpty.option{
-        p.traverse(_._2) *>
-        epicsSys.ApdControl.post(CmdTimeout).void
-      }
-    )
-  }
-
-  private def startCwfs(current: EpicsGems, demand: GemsConfig): Option[F[Unit]] = {
-    val p = List(
-      (!DetectorStateOps.isActive(current.cwfs1) && demand.isCwfs1Used).option(
-        epicsSys.ApdControl.setApd1Cmd(ApdStart)
-      ),
-      (!DetectorStateOps.isActive(current.cwfs2) && demand.isCwfs2Used).option(
-        epicsSys.ApdControl.setApd2Cmd(ApdStart)
-      ),
-      (!DetectorStateOps.isActive(current.cwfs3) && demand.isCwfs3Used).option(
-        epicsSys.ApdControl.setApd3Cmd(ApdStart)
-      )
-    ).flattenOption
-
-    p.nonEmpty.option{
-      p.sequence *>
-        epicsSys.ApdControl.post(CmdTimeout).void
     }
   }
 
