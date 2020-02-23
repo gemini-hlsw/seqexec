@@ -138,6 +138,7 @@ object GemsKeywordReaderEpics {
     override def rZeroVal: F[Double] = epics.rZero.safeValOrDefault
 
     private def cnSum(idxs: List[Long]): F[Double] = epics.cnSquare.map{vs => idxs.map(vs.get).combineAll}
+      .map(_.map(_.toDouble))
       .safeValOrDefault
 
     override def cnSquare1: F[Double] = cnSum(List(16))
