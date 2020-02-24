@@ -54,7 +54,7 @@ object Settings {
     val logstash                = "6.3"
     val pureConfig              = "0.12.2"
     val monocleVersion          = "2.0.1"
-    val circeVersion            = "0.12.3"
+    val circeVersion            = "0.13.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.4"
 
@@ -96,9 +96,9 @@ object Settings {
     */
   object Libraries {
     // Test Libraries
-    val TestLibs               = Def.setting(Seq(
-      "edu.gemini"              %%% "gsp-math-testkit"              % LibraryVersions.gspMath         % "test",
-    ))
+    val TestLibs               = Def.setting(
+      "edu.gemini"              %%% "gsp-math-testkit"              % LibraryVersions.gspMath         % "test"
+    )
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
     val ScalaMock              = "org.scalamock" %% "scalamock" % LibraryVersions.scalaMock % "test"
