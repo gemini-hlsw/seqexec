@@ -19,7 +19,7 @@ object Settings {
     val scalaVersion = "2.12.10"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.8"
+    val scalaDom                = "1.0.0"
     val scalajsReact            = "1.4.2"
     val booPickle               = "1.3.1"
     val diode                   = "1.1.6"
@@ -33,7 +33,7 @@ object Settings {
     val scalaJSReactSortable    = "0.2.1"
 
     // Scala libraries
-    val catsEffectVersion       = "2.1.0"
+    val catsEffectVersion       = "2.1.1"
     val catsVersion             = "2.1.0"
     val mouseVersion            = "0.24"
     val fs2Version              = "2.2.2"
@@ -41,7 +41,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.2"
     val scalaXmlVerson          = "1.2.0"
 
-    val http4sVersion           = "0.21.0-RC4"
+    val http4sVersion           = "0.21.1"
     val squants                 = "1.6.0"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
@@ -70,7 +70,7 @@ object Settings {
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
-    val epicsService            = "1.0.2"
+    val epicsService            = "1.0.3-SNAPSHOT"
     val gmpCommandRecords       = "0.7.2"
     val giapi                   = "1.1.2"
     val giapiJmsUtil            = "0.5.2"
@@ -87,7 +87,7 @@ object Settings {
 
     // Gemini Libraries
     val gspMath                 = "0.1.10"
-    val gspCore                 = "0.1.3"
+    val gspCore                 = "0.1.4"
 
   }
 

@@ -10,7 +10,7 @@ import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
-import seqexec.server.EpicsUtil.{safeAttributeSIntF, safeAttributeSListSDoubleF}
+import seqexec.server.EpicsUtil.safeAttributeSIntF
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,16 +25,6 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setCommand(v: String): F[Unit] = setParameter(cs.map(_.getString("cmd")), v)
 
     def setReasons(v: String): F[Unit] = setParameter(cs.map(_.getString("reasons")), v)
-  }
-
-  object ApdControl extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::ttApdCtrl"))
-
-    def setApd1Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd1Cmd")), v)
-
-    def setApd2Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd2Cmd")), v)
-
-    def setApd3Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd3Cmd")), v)
   }
 
   val mystStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::status")
@@ -60,7 +50,7 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def rZero: F[Double] = safeAttributeSDoubleF(mystStatus.getDoubleAttribute("rZero"))
 
-  def cnSquare: F[List[Double]] = safeAttributeSListSDoubleF(mystStatus.getDoubleAttribute("cnSquare"))
+  def cnSquare: F[List[Float]] = safeAttributeSListSFloatF(mystStatus.getFloatAttribute("cnSquare"))
 
   def astroMode: F[String] = safeAttributeF(mystStatus.getStringAttribute("astroMode"))
 
