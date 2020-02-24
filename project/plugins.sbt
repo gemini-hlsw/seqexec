@@ -6,7 +6,7 @@ resolvers  ++= Seq(
 val scalaJSVersion =
   Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.32")
 
-addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.12")
+addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.13")
 
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % scalaJSVersion)
 
