@@ -252,7 +252,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value,
-      PPrint.value
+      PPrint.value,
+      TestLibs.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(

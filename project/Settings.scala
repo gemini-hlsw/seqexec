@@ -53,7 +53,7 @@ object Settings {
     val janino                  = "3.1.0"
     val logstash                = "6.3"
     val pureConfig              = "0.12.2"
-    val monocleVersion          = "2.0.1"
+    val monocleVersion          = "2.0.2"
     val circeVersion            = "0.13.0"
     val doobieVersion           = "0.6.0"
     val flywayVersion           = "6.0.4"
@@ -86,8 +86,8 @@ object Settings {
     val pprint                  = "0.5.9"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.10"
-    val gspCore                 = "0.1.4"
+    val gspMath                 = "0.1.15"
+    val gspCore                 = "0.1.5"
 
   }
 
