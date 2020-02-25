@@ -11,7 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import gem.Observation
 import mouse.all._
-import react.common.implicits._
+import react.common._
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause

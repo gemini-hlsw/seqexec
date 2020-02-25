@@ -290,7 +290,7 @@ object LogArea {
     * Build the table log
     */
   private def table(b: Backend)(size: Size): VdomNode =
-    if (size.width > 0) {
+    if (size.width.toInt > 0) {
       Table(
         Table.props(
           disableHeader = false,
@@ -306,7 +306,7 @@ object LogArea {
           rowCount         = b.props.rowCount(b.state),
           rowHeight        = SeqexecStyles.rowHeight,
           rowClassName     = rowClassName(b) _,
-          width            = max(1, size.width),
+          width            = max(1, size.width.toInt),
           rowGetter        = b.props.rowGetter(b.state) _,
           headerClassName  = SeqexecStyles.tableHeader.htmlClass,
           headerHeight     = SeqexecStyles.headerHeight

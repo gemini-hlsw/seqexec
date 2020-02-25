@@ -7,8 +7,8 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.common.style._
-import react.common.implicits._
 
 /**
   * Semantic UI checkbox componnet

@@ -11,7 +11,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common._
-import react.common.implicits._
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.web.client.components.{DividedProgress, SeqexecStyles}

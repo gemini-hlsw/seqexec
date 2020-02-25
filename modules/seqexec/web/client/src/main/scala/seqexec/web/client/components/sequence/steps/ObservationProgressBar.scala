@@ -10,7 +10,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
 import react.common._
-import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.{ObservationProgress, ObserveStage, StepId}
 import seqexec.web.client.components.SeqexecStyles

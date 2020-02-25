@@ -10,7 +10,6 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import gem.Observation
 import react.common._
-import react.common.implicits._
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.actions.RequestRunFrom
 import seqexec.web.client.circuit.SeqexecCircuit

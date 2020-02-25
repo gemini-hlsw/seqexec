@@ -10,7 +10,7 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._
-import react.common._
+import react.common.Css
 import react.common.syntax._
 import cats.kernel.Eq
 

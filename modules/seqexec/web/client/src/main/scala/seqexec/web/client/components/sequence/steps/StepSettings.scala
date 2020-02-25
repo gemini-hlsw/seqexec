@@ -11,7 +11,6 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
 import japgolly.scalajs.react.component.Scala.Unmounted
 import react.common._
-import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.Step

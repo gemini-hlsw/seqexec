@@ -13,7 +13,6 @@ import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import monocle.macros.Lenses
 import react.common._
-import react.common.implicits._
 import seqexec.model.enum.BatchExecState
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit.SeqexecCircuit

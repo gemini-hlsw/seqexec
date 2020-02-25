@@ -9,7 +9,6 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import gsp.math.Axis
 import react.common._
-import react.common.implicits._
 import seqexec.model.{NodAndShuffleStep, OffsetType, StandardStep, Step}
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.Formatting._

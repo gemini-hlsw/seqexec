@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
-import react.common.implicits._
+import react.common._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 

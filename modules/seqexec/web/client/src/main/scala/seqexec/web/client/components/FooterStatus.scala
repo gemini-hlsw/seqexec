@@ -8,7 +8,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
-import react.common.implicits._
+import react.common._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._

@@ -10,7 +10,6 @@ import japgolly.scalajs.react.ScalaComponent
 import gem.Observation
 import cats.implicits._
 import react.common._
-import react.common.implicits._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.operations.Operations._
