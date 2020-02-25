@@ -19,7 +19,7 @@ object Common {
       "-doc-version", version.value
     ),
     // Common libraries
-    libraryDependencies                    ++= TestLibs.value,
+    libraryDependencies                    += TestLibs.value,
     // Don't build javadoc when we're packaging the docker image.
     mappings in (Compile, packageDoc)       := Seq(),
     sources in (Compile,doc)                := Seq.empty,

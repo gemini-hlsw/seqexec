@@ -143,7 +143,8 @@ lazy val web_client_common = project
       ScalaJSReactCats.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
-      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value ++ TestLibs.value
+      ScalaJSReactDraggable.value,
+      TestLibs.value) ++ ReactScalaJS.value ++ Monocle.value
   )
 
 // Project for the server side application
@@ -251,7 +252,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value,
-      PPrint.value
+      PPrint.value,
+      TestLibs.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(
@@ -286,8 +288,9 @@ lazy val seqexec_server = project
           Http4sBoopickle,
           PrometheusClient,
           Log4Cats.value,
-          Log4CatsNoop.value
-      ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value ++
+          Log4CatsNoop.value,
+          TestLibs.value
+      ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
   .settings(
