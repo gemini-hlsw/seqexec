@@ -12,7 +12,7 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.Reusability
 import react.virtualized._
-import react.common.{ReactProps, Size}
+import react.common._
 import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max

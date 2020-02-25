@@ -9,7 +9,6 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.common.implicits._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 

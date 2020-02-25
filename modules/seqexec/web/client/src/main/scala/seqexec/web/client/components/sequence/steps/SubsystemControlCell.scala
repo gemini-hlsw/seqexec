@@ -12,7 +12,6 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.Reusability._
 import gem.Observation
 import react.common._
-import react.common.implicits._
 import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions.RequestResourceRun

@@ -11,8 +11,7 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import react.common.style._
-import react.common.implicits._
+import react.common._
 import seqexec.model.enum.Instrument
 import seqexec.model.RunningStep
 import seqexec.web.client.model.Pages._

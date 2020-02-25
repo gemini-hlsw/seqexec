@@ -11,8 +11,8 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
+import react.common.{ Size => _, _}
 import react.common.style._
-import react.common.implicits._
 import scala.scalajs.js
 
 /**
@@ -34,7 +34,7 @@ final case class Icon(p: Icon.Props, children: Seq[Icon]) {
                bordered:     Boolean                            = false,
                inverted:     Boolean                            = false,
                color:        Option[String]                     = None,
-               extraStyles:  List[Css]                       = Nil,
+               extraStyles:  List[Css]                          = Nil,
                key:          String                             = "",
                onClickE:     js.UndefOr[ReactEvent => Callback] = js.undefined,
                onClick:      Callback                           = Callback.empty,

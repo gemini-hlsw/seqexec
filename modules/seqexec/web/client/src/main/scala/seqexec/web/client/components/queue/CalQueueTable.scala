@@ -21,7 +21,7 @@ import monocle.Lens
 import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
-import react.common.{Css, Size, Style}
+import react.common._
 import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max

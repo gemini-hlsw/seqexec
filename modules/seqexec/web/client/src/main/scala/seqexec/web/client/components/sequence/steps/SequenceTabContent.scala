@@ -10,7 +10,6 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.common._
-import react.common.implicits._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed

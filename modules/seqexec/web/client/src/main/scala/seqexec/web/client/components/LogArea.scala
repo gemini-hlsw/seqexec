@@ -24,7 +24,7 @@ import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import react.virtualized._
 import react.clipboard._
-import react.common.Size
+import react.common._
 import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max

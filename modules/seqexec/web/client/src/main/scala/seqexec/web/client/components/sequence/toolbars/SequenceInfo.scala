@@ -10,7 +10,7 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
 import seqexec.model.SequenceState
 import seqexec.model.UnknownTargetName
-import react.common.implicits._
+import react.common._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted

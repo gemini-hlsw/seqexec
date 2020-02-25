@@ -21,7 +21,7 @@ import monocle.macros.Lenses
 import react.virtualized._
 import scala.scalajs.js
 import scala.math.max
-import react.common.{Css, Size, Style}
+import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.UserDetails

@@ -20,7 +20,7 @@ import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.js
 import scala.math._
-import react.common.{Css, ReactProps, Size, Style}
+import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType

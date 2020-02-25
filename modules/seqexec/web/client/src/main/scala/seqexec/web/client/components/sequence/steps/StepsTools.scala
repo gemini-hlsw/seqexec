@@ -9,7 +9,6 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import gem.Observation
 import react.common._
-import react.common.implicits._
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
