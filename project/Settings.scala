@@ -27,7 +27,7 @@ object Settings {
     val javaTimeJS              = "2.0.0-RC3"
     val scalaJQuery             = "1.2"
     val scalaJSReactCommon      = "0.3.4"
-    val scalaJSReactVirtualized = "0.7.0"
+    val scalaJSReactVirtualized = "0.7.2"
     val scalaJSReactClipboard   = "0.9.0"
     val scalaJSReactDraggable   = "0.6.0"
     val scalaJSReactSortable    = "0.2.1"
