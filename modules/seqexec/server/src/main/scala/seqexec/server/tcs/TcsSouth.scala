@@ -8,7 +8,7 @@ import cats.effect.Sync
 import cats.implicits._
 import mouse.all._
 import edu.gemini.spModel.core.Wavelength
-import edu.gemini.spModel.gemini.gems.Canopus
+import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
@@ -169,9 +169,9 @@ object TcsSouth {
     val gwp1 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
     val gwp2 = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS2_PROP).toOption
     val gwoi = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
-    val gwc1 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs1.getSequenceProp).toOption
-    val gwc2 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs2.getSequenceProp).toOption
-    val gwc3 = config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs3.getSequenceProp).toOption
+    val gwc1 = config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs1.getSequenceProp).toOption
+    val gwc2 = config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs2.getSequenceProp).toOption
+    val gwc3 = config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs3.getSequenceProp).toOption
     val gwod1 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp).toOption
     val gwod2 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp).toOption
     val gwod3 = config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp).toOption

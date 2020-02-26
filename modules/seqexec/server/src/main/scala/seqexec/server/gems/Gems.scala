@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.{Eq, MonadError}
 import cats.implicits._
-import edu.gemini.spModel.gemini.gems.Canopus
+import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
@@ -75,9 +75,9 @@ object Gems {
     for {
       p1    <- config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
       oi    =  config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
-      cwfs1 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs1.getSequenceProp)
-      cwfs2 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs2.getSequenceProp)
-      cwfs3 <- config.extractTelescopeAs[StandardGuideOptions.Value](Canopus.Wfs.cwfs3.getSequenceProp)
+      cwfs1 <- config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs1.getSequenceProp)
+      cwfs2 <- config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs2.getSequenceProp)
+      cwfs3 <- config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs3.getSequenceProp)
       odgw1 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
       odgw2 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
       odgw3 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)

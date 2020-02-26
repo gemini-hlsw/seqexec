@@ -30,7 +30,7 @@ import seqexec.server.SeqexecFailure.NullEpicsError
 import squants.Time
 
 import scala.math.abs
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
 
 trait EpicsCommand[F[_]] {

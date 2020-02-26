@@ -143,7 +143,7 @@ trait ObserveActions {
   ): F[Result[F]] =
     for {
       _ <- notifyObserveEnd(env)
-      _ <- env.headers(env.ctx).reverseMap(_.sendAfter(fileId)).sequence.void
+      _ <- env.headers(env.ctx).reverseIterator.map(_.sendAfter(fileId)).to(List).sequence.void
       _ <- closeImage(fileId, env)
       _ <- sendDataEnd[F](env.systems, env.obsId, fileId, dataId)
     } yield

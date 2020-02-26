@@ -28,8 +28,8 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
           (EngineState.sequences[F].modify(ss => ss - seqId) >>>
             EngineState.selected.modify(ss =>
               ss.toList.filter { case (_, x) => x =!= seqId }.toMap) >>>
-            EngineState.queues.modify(_.mapValues(
-              ExecutionQueue.queue.modify(_.filterNot(_ === seqId)))))(st)
+            EngineState.queues.modify(_.view.mapValues(
+              ExecutionQueue.queue.modify(_.filterNot(_ === seqId))).toMap))(st)
         } else st
       }.withEvent(UnloadSequence(seqId)).toHandle
     )

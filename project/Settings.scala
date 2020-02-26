@@ -16,7 +16,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaVersion = "2.12.10"
+    val scalaVersion = "2.13.1"
 
     // ScalaJS libraries
     val scalaDom                = "1.0.0"
@@ -25,12 +25,12 @@ object Settings {
     val diode                   = "1.1.7"
     val diodeReact              = "1.1.7.160"
     val javaTimeJS              = "2.0.0-RC3"
-    val scalaJQuery             = "1.2"
+    val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.5.2"
     val scalaJSReactVirtualized = "0.7.2"
-    val scalaJSReactClipboard   = "0.10.2"
+    val scalaJSReactClipboard   = "0.10.3"
     val scalaJSReactDraggable   = "0.7.2"
-    val scalaJSReactSortable    = "0.3.0"
+    val scalaJSReactSortable    = "0.3.1"
 
     // Scala libraries
     val catsEffectVersion       = "2.1.2"
@@ -224,14 +224,12 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val paradiseVersion  = "2.1.1"
-    val kpVersion        = "0.9.10"
+    val kpVersion        = "0.11.0"
     val betterMonadicFor = "0.3.1"
   }
 
   object Plugins {
-    val paradisePlugin = ("org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion) .cross(CrossVersion.patch)
-    val kindProjectorPlugin    = "org.spire-math" %% "kind-projector" % PluginVersions.kpVersion
+    val kindProjectorPlugin    = "org.typelevel" % "kind-projector" % PluginVersions.kpVersion cross CrossVersion.full
     val betterMonadicForPlugin = "com.olegpy" %% "better-monadic-for" % PluginVersions.betterMonadicFor
   }
 

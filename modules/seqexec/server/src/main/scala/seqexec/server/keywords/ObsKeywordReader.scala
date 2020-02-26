@@ -20,7 +20,7 @@ import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
-import edu.gemini.spModel.gemini.gems.Canopus
+import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
 import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
@@ -256,11 +256,11 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       aowfsGuide
         .map(decodeGuide)
 
-    override def cwfs1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs1.getSequenceProp)
+    override def cwfs1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(CanopusWfs.cwfs1.getSequenceProp)
 
-    override def cwfs2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs2.getSequenceProp)
+    override def cwfs2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(CanopusWfs.cwfs2.getSequenceProp)
 
-    override def cwfs3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs3.getSequenceProp)
+    override def cwfs3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(CanopusWfs.cwfs3.getSequenceProp)
 
     override def odgw1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw1.getSequenceProp)
 

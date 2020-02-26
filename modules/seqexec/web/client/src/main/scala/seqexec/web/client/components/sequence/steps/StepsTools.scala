@@ -41,9 +41,9 @@ object StepToolsCell {
   type Props = StepToolsCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]('heightChangeCB,
-                                       'breakPointEnterCB,
-                                       'breakPointLeaveCB)
+    Reusability.caseClassExcept[Props](Symbol("heightChangeCB"),
+                                       Symbol("breakPointEnterCB"),
+                                       Symbol("breakPointLeaveCB"))
 
   protected val component = ScalaComponent
     .builder[Props]("StepToolsCell")

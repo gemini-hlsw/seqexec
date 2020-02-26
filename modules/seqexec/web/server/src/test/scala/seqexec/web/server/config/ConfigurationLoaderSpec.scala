@@ -3,19 +3,17 @@
 
 package seqexec.web.server.config
 
-import cats.tests.CatsSuite
-import cats.effect.IO
-import cats.effect.Blocker
-import cats.effect.ContextShift
+import cats.effect.{Blocker, ContextShift, IO}
 import gem.enum.Site
 import java.nio.file.Paths
 import org.http4s.Uri
 import org.http4s.Uri._
 import pureconfig._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 import seqexec.model.config._
 import shapeless.tag
+import cats.tests.CatsSuite
+import scala.concurrent.ExecutionContext
 
 class ConfigurationLoaderSpec extends CatsSuite {
   val gcal =
@@ -63,5 +61,4 @@ class ConfigurationLoaderSpec extends CatsSuite {
       loadConfiguration[IO](ConfigSource.resources("app.conf"), blocker).unsafeRunSync === ref
     )
   }
-
 }
