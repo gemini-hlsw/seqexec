@@ -6,7 +6,6 @@ package seqexec.web.client.semanticui.elements.menu
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import react.common.implicits._
 import react.common._
 
 /**

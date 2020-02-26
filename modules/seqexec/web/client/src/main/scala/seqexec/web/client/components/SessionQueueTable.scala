@@ -643,7 +643,7 @@ object SessionQueueTable extends Columns {
   }
 
   def table(b: Backend)(size: Size): VdomNode =
-    if (size.width > 0) {
+    if (size.width.toInt > 0) {
       Table(
         Table.props(
           disableHeader = false,

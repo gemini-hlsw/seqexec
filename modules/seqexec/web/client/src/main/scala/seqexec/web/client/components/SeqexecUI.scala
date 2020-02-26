@@ -7,7 +7,6 @@ import diode.ModelRO
 import cats.implicits._
 import cats.effect.Sync
 import monocle.Prism
-import monocle.Iso
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.Callback
@@ -26,7 +25,7 @@ import seqexec.model.enum.Instrument
   * UI Router
   */
 object SeqexecUI {
-  def pageTitle(site: Site)(p: SeqexecPages): String = p match {
+  private def pageTitle(site: Site)(p: SeqexecPages): String = p match {
     case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
     case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
     case PreviewPage(_, id, _)        => s"Seqexec - ${id.format}"
@@ -36,41 +35,31 @@ object SeqexecUI {
   }
 
   // Prism from url params to config page
-  def configPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequenceConfigPage] =
+  private def configPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequenceConfigPage] =
     Prism[(String, String, Int), SequenceConfigPage] {
       case (i, s, step) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequenceConfigPage(_, _, step))
     } {
       p => (p.instrument.show, p.obsId.format, p.step)
     }
+
   // Prism from url params to sequence page
-  def sequencePageSP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequencePage] =
-    Prism[(String, String, Int), SequencePage] {
-      case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st - 1)))
+  private def sequencePageSP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Option[Int]), SequencePage] =
+    Prism[(String, String, Option[Int]), SequencePage] {
+      case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
     } {
-      p => (p.instrument.show, p.obsId.format, p.step.step + 1)
+      p => (p.instrument.show, p.obsId.format, (p.step.step + 1).some)
     }
-
-  private def defaultStepIso[A]: Iso[Tuple2[A, A], Tuple3[A, A, Int]] =
-    Iso[Tuple2[A, A], Tuple3[A, A, Int]](x => (x._1, x._2, 0))(x => (x._1, x._2))
-
-  // Prism from url params to sequence page
-  def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String), SequencePage] =
-    defaultStepIso[String] ^<-? sequencePageSP(instrumentNames)
 
   // Prism from url params to the preview page to a given step
-  def previewPageSP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewPage] =
-    Prism[(String, String, Int), PreviewPage] {
-      case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st - 1)))
+  private def previewPageSP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Option[Int]), PreviewPage] =
+    Prism[(String, String, Option[Int]), PreviewPage] {
+      case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
     } {
-      p => (p.instrument.show, p.obsId.format, p.step.step + 1)
+      p => (p.instrument.show, p.obsId.format, (p.step.step + 1).some)
     }
 
-  // Prism from url params to the preview page
-  def previewPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String), PreviewPage] =
-    defaultStepIso ^<-? previewPageSP(instrumentNames)
-
   // Prism from url params to the preview page with config
-  def previewConfigPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewConfigPage] =
+  private def previewConfigPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewConfigPage] =
     Prism[(String, String, Int), PreviewConfigPage] {
       case (i, s, step) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewConfigPage(_, _, step))
     } {
@@ -89,18 +78,14 @@ object SeqexecUI {
       | staticRoute("/daycal", CalibrationQueuePage) ~> renderR(r => SeqexecMain(site, r))
       | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(configPageP(instrumentNames))) ~> dynRenderR((_: SequenceConfigPage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/step/" ~ int)
+      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ ("/step/" ~ int).option)
         .pmapL(sequencePageSP(instrumentNames))) ~> dynRenderR((_: SequencePage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
-        .pmapL(sequencePageP(instrumentNames))) ~> dynRenderR((_: SequencePage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/step/" ~ int)
+      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ ("/step/" ~ int).option)
         .pmapL(previewPageSP(instrumentNames))) ~> dynRenderR((_: PreviewPage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
-        .pmapL(previewPageP(instrumentNames))) ~> dynRenderR((_: PreviewPage, r) => SeqexecMain(site, r))
       | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(previewConfigPageP(instrumentNames))) ~> dynRenderR((_: PreviewConfigPage, r) => SeqexecMain(site, r))
       )
-        .notFound(redirectToPage(Root)(Redirect.Push))
+        .notFound(redirectToPage(Root)(SetRouteVia.HistoryPush))
         // Runtime verification that all pages are routed
         .verify(Root, List(SoundTest, CalibrationQueuePage): _*)
         .onPostRender((_, next) =>

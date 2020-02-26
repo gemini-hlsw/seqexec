@@ -9,7 +9,7 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
-import react.common.implicits._
+import react.common._
 import seqexec.model.QueueId
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllSelectedSequences

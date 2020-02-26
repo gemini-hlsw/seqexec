@@ -16,7 +16,7 @@ import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
 import scala.concurrent.duration._
-import react.common.implicits._
+import react.common._
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground

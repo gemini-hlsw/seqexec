@@ -411,7 +411,7 @@ object CalQueueTable {
           <.div(
             ^.cls := "ui center aligned segment noRows",
             SeqexecStyles.noRowsSegment,
-            ^.height := size.height.px,
+            ^.height := size.height.toInt.px,
             "Cal queue empty"
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
@@ -470,7 +470,7 @@ object CalQueueTable {
         TableContainer.Props(
           p.canOperate,
           size => {
-            if (size.width > 0) {
+            if (size.width.toInt > 0) {
               val sortableList = SortableContainer.wrapC(
                 Table.component,
                 s.tableState

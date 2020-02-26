@@ -164,7 +164,7 @@ object StepConfigTable {
       noRowsRenderer = () =>
         <.div(
           ^.cls := "ui center aligned segment noRows",
-          ^.height := size.height.px,
+          ^.height := size.height.toInt.px,
           "No configuration for step"
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
@@ -185,7 +185,7 @@ object StepConfigTable {
     .initialStateFromProps(_.startState)
     .render ( b =>
       TableContainer(TableContainer.Props(true, size =>
-        if (size.width > 0) {
+        if (size.width.toInt > 0) {
           Table(settingsTableProps(b, size),
                 b.state.columnBuilder(size, colBuilder(b, size)): _*)
         } else {
