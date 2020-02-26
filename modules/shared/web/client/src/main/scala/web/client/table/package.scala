@@ -100,7 +100,7 @@ package object table {
     }
 
     def colWidths[A, B, G[_]: Foldable](items: G[A], cols: NonEmptyList[B], get: Map[B, A => String], minW: Map[B, Double], adj: Map[B, Double]): B => Option[Double] =
-      colWidthsO[A, B, G](items, cols, get.mapValues(f => (a: A) => f(a).some), minW, adj)
+      colWidthsO[A, B, G](items, cols, get.view.mapValues(f => (a: A) => f(a).some).toMap, minW, adj)
 
     /**
      * This methods traverses a whole set of data to find the widest value per

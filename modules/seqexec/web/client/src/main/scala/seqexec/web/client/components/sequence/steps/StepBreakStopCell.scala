@@ -38,9 +38,9 @@ object StepBreakStopCell {
   type Props = StepBreakStopCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]('heightChangeCB,
-                                       'breakPointEnterCB,
-                                       'breakPointLeaveCB)
+    Reusability.caseClassExcept[Props](Symbol("heightChangeCB"),
+                                       Symbol("breakPointEnterCB"),
+                                       Symbol("breakPointLeaveCB"))
 
   // Request a to flip the breakpoint
   def flipBreakpoint(p: Props)(e: ReactEvent): Callback =

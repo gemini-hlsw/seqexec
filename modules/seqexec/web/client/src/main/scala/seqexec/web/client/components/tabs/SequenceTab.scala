@@ -45,7 +45,7 @@ object SequenceTab {
   final case class State(loading:            Boolean)
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]('router)
+    Reusability.caseClassExcept[Props](Symbol("router"))
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]

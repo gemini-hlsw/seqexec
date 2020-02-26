@@ -9,8 +9,7 @@ import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 object Common {
   lazy val commonSettings = Seq(
     // Workaround for https://github.com/sbt/sbt/issues/4109
-    initialCommands += "jline.TerminalFactory.get.init\n",
-    scalaVersion := Settings.LibraryVersions.scalaVersion,
+    initialCommands += "jline.TerminalFactory.get.init\n",    
     scalacOptions in (Compile, doc) ++= Seq(
       "-groups",
       "-sourcepath", (baseDirectory in LocalRootProject).value.getAbsolutePath,

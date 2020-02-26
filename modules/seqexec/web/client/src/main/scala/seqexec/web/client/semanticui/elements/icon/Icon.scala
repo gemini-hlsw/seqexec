@@ -115,10 +115,10 @@ final case class Icon(p: Icon.Props, children: Seq[Icon]) {
 
 object Icon {
   implicit val iconProps: Reusability[Icon.Props] = Reusability
-    .caseClassExcept[Icon.Props]('onClick,
-                                 'onClickE,
-                                 'onMouseEnter,
-                                 'onMouseLeave)
+    .caseClassExcept[Icon.Props](Symbol("onClick"),
+                                 Symbol("onClickE"),
+                                 Symbol("onMouseEnter"),
+                                 Symbol("onMouseLeave"))
   implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
 
   def IconGroup(children: Icon*): Icon  = Icon("", children: _*)

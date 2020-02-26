@@ -7,9 +7,10 @@ import edu.gemini.spModel.gemini.flamingos2.{Flamingos2 => LegacyF2}
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
+import scala.collection.immutable.ArraySeq
 
 trait Flamingos2Arbitraries {
-  implicit val f2FPUArb: Arbitrary[LegacyF2.FPUnit] = Arbitrary(Gen.oneOf(LegacyF2.FPUnit.values()))
+  implicit val f2FPUArb: Arbitrary[LegacyF2.FPUnit] = Arbitrary(Gen.oneOf(ArraySeq.unsafeWrapArray(LegacyF2.FPUnit.values())))
   implicit val f2FPUCogen: Cogen[LegacyF2.FPUnit] =
     Cogen[String].contramap(_.displayValue())
   implicit val f2CFPUArb: Arbitrary[Flamingos2Controller.FocalPlaneUnit] = Arbitrary(Gen.oneOf(Flamingos2Controller.FocalPlaneUnit.Open, Flamingos2Controller.FocalPlaneUnit.GridSub1Pix,

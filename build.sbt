@@ -49,7 +49,8 @@ def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer times
 val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
 inThisBuild(List(
-  version := dateFormatter.format(dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value))
+  scalaVersion := Settings.LibraryVersions.scalaVersion,
+  version := dateFormatter.format(dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value))  
 ))
 
 enablePlugins(GitBranchPrompt)
@@ -113,8 +114,7 @@ lazy val giapi = project
   )
 
 // Common utilities for web server projects
-lazy val web_server_common = project
-  .in(file("modules/shared/web/server/"))
+lazy val web_server_common = project.in(file("modules/shared/web/server/"))
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
@@ -122,18 +122,17 @@ lazy val web_server_common = project
   )
 
 // Common utilities for web client projects
-lazy val web_client_common = project
-  .in(file("modules/shared/web/client"))
+lazy val web_client_common = project.in(file("modules/shared/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(gspScalaJsSettings: _*)
   .settings(
     scalacOptions ~= (_.filterNot(Set(
       // By necessity facades will have unused params
-      "-Ywarn-unused:params"
+      "-Wunused:params"
     ))),
     // Needed for Monocle macros
-    addCompilerPlugin(Plugins.paradisePlugin),
+    scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(
       Cats.value,
       Mouse.value,
@@ -188,7 +187,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .settings(gspScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
-    addCompilerPlugin(Plugins.paradisePlugin),
+    scalacOptions += "-Ymacro-annotations",
     // Configurations for webpack
     webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
@@ -273,7 +272,7 @@ lazy val seqexec_server = project
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
-    addCompilerPlugin(Plugins.paradisePlugin),
+    scalacOptions += "-Ymacro-annotations",
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
@@ -308,7 +307,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .in(file("modules/seqexec/model"))
   .enablePlugins(GitBranchPrompt)
   .settings(
-    addCompilerPlugin(Plugins.paradisePlugin),
+    scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(
       GspCoreModel.value,
       GspCoreTestkit.value,
@@ -335,7 +334,7 @@ lazy val seqexec_engine = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    addCompilerPlugin(Plugins.paradisePlugin),
+    scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s.value, Log4Cats.value) ++ Monocle.value
   )
 
