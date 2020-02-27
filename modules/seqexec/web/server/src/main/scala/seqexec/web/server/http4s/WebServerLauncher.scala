@@ -249,7 +249,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       } yield ()
 
     def publishStats[F[_]: Timer](cs: ClientsSetDb[F]): Stream[F, Unit] =
-      Stream.fixedRate[F](1.minute).flatMap(_ => Stream.eval(cs.report))
+      Stream.fixedRate[F](10.minute).flatMap(_ => Stream.eval(cs.report))
 
     val seqexec: Resource[IO, ExitCode] =
       for {
@@ -265,9 +265,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
         _      <- Resource.liftF(publishStats(cs).compile.drain.start)
         engine <- engineIO(conf, cli, cr)
         _      <- webServerIO(conf, inq, out, engine, cr, cs)
-        _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s"Queue length: $l")).compile.drain.start)
-        _      <- Resource.liftF(out.subscribers.evalMap(l => Logger[IO].debug(s"Subscribers amount: $l")).compile.drain.start)
-        f      <- Resource.liftF(engine.eventStream(inq).flatMap(SeqexecEngine.logEvent[IO]("eventStream")).through(out.publish).compile.drain.onError(logError).start)
+        _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1)).compile.drain.start)
+        _      <- Resource.liftF(out.subscribers.evalMap(l => Logger[IO].debug(s"Subscribers amount: $l").whenA(l > 1)).compile.drain.start)
+        f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
