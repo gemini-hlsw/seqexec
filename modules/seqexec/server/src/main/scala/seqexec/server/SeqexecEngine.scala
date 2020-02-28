@@ -266,7 +266,7 @@ object SeqexecEngine {
 
     private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      Stream.fixedDelay[F](fd).evalMap(_ => Logger[F].debug("Refresh queue from the odb") *> systems.odb.queuedSequences).flatMap { x =>
+      Stream.fixedDelay[F](fd).evalMap(_ => systems.odb.queuedSequences).flatMap { x =>
         Stream.emit(Event.getState[F, EngineState[F], SeqEvent] { st =>
           Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
         }.asRight)
@@ -292,9 +292,9 @@ object SeqexecEngine {
     }
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
-      stream(q.dequeue.evalMap(e => Logger[F].debug(s"User Event: $e").as(e))
+      stream(q.dequeue
         .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream)))(EngineState.default[F]).flatMap(x =>
-        Stream.eval(logEventResult(x._1) *> notifyODB(x).attempt)).flatMap {
+        Stream.eval(notifyODB(x).attempt)).flatMap {
           case Right((ev, qState)) =>
             val sequences = qState.sequences.values.map(viewSequence).toList
             val event = toSeqexecEvent[F](ev, qState)
@@ -803,17 +803,6 @@ object SeqexecEngine {
     // TODO: Implement willStopIn
     SequenceView(seq.id, SequenceMetadata(instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
   }
-
-  def logEventResult[F[_]: Logger: Applicative](ev: EventResult[SeqEvent]): F[Unit] =
-    ev match {
-      case UserCommandResponse(ue, _, _) =>
-        Logger[F].debug(s"User response event: ${ue.getClass.getName}")
-      case SystemUpdate(se, _)             =>
-        Logger[F].debug(s"System event event: ${se.getClass.getName}")
-    }
-
-  def logEvent[F[_]: Logger: Applicative](prefix: String)(v: SeqexecEvent): Stream[F, SeqexecEvent] =
-    Stream.eval(Logger[F].debug(s"$prefix: ${v.getClass.getName}") *> v.pure[F])
 
   private def toSeqexecEvent[F[_]](ev: EventResult[SeqEvent], qState: EngineState[F]): SeqexecEvent = {
     val sequences = qState.sequences.values.map(viewSequence).toList
