@@ -5,12 +5,15 @@ package seqexec.web.server.config
 
 import cats.tests.CatsSuite
 import cats.effect.IO
+import cats.effect.Blocker
+import cats.effect.ContextShift
 import gem.enum.Site
 import java.nio.file.Paths
 import org.http4s.Uri
 import org.http4s.Uri._
 import pureconfig._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import seqexec.model.config._
 import shapeless.tag
 
@@ -53,9 +56,11 @@ class ConfigurationLoaderSpec extends CatsSuite {
     5.seconds)
   val ref = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
 
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+  val blocker = Blocker.liftExecutionContext(ExecutionContext.global)
   test("read config") {
     assert(
-      loadConfiguration[IO](ConfigSource.resources("app.conf")).unsafeRunSync === ref
+      loadConfiguration[IO](ConfigSource.resources("app.conf"), blocker).unsafeRunSync === ref
     )
   }
 

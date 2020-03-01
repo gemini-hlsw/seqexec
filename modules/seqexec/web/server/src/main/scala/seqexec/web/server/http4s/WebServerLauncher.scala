@@ -238,10 +238,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
       out: Topic[IO, SeqexecEvent],
       en:  SeqexecEngine[IO],
       cr:  CollectorRegistry,
-      cs:  ClientsSetDb[IO]
+      cs:  ClientsSetDb[IO],
+      b:   Blocker
     ): Resource[IO, Unit] =
       for {
-        b  <- Blocker[IO]
         as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
@@ -253,8 +253,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     val seqexec: Resource[IO, ExitCode] =
       for {
+        b      <- Blocker[IO]
         _      <- Resource.liftF(configLog[IO]) // Initialize log before the engine is setup
-        conf   <- Resource.liftF(config[IO].flatMap(loadConfiguration[IO]))
+        conf   <- Resource.liftF(config[IO].flatMap(loadConfiguration[IO](_, b)))
         _      <- Resource.liftF(printBanner(conf))
         cli    <- AsyncHttpClient.resource[IO](clientConfig)
         inq    <- Resource.liftF(InspectableQueue.bounded[IO, executeEngine.EventType](10))
@@ -264,7 +265,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
         cs     <- Resource.liftF(Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_)))
         _      <- Resource.liftF(publishStats(cs).compile.drain.start)
         engine <- engineIO(conf, cli, cr)
-        _      <- webServerIO(conf, inq, out, engine, cr, cs)
+        _      <- webServerIO(conf, inq, out, engine, cr, cs, b)
         _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1)).compile.drain.start)
         _      <- Resource.liftF(out.subscribers.evalMap(l => Logger[IO].debug(s"Subscribers amount: $l").whenA(l > 1)).compile.drain.start)
         f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
