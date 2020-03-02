@@ -4,7 +4,9 @@
 package seqexec.web.server
 
 import cats.implicits._
+import cats.effect.Blocker
 import cats.effect.Sync
+import cats.effect.ContextShift
 import gem.enum.Site
 import org.http4s.Uri
 import pureconfig._
@@ -33,6 +35,7 @@ package config {
  * Settings and decoders to parse the configuration files
  */
 package object config {
+
   implicit val siteReader = ConfigReader.fromCursor[Site]{ cf =>
     cf.asString.flatMap {
       case "GS" => Site.GS.asRight
@@ -67,7 +70,7 @@ package object config {
   implicit val seqexecServerHint = ProductHint[SeqexecEngineConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
   implicit val systemsControlHint = ProductHint[SystemsControlConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
 
-  def loadConfiguration[F[_]: Sync](config: ConfigObjectSource): F[SeqexecConfiguration] =
-      config.loadF[F, SeqexecConfiguration]
+  def loadConfiguration[F[_]: Sync: ContextShift](config: ConfigObjectSource, blocker: Blocker): F[SeqexecConfiguration] =
+      config.loadF[F, SeqexecConfiguration](blocker)
 
 }
