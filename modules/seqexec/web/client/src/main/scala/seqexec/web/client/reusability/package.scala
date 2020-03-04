@@ -9,6 +9,8 @@ import gem.Observation
 import gem.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
+import react.common.Css
+import react.semanticui.SemanticColor
 
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Resource
@@ -30,6 +32,7 @@ import squants.Time
 import shapeless.tag.@@
 
 package object reusability {
+
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A] =
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A] =
@@ -96,4 +99,8 @@ package object reusability {
     Reusability.derive[M2GuideConfig]
   implicit val configReuse: Reusability[TelescopeGuideConfig] =
     Reusability.derive[TelescopeGuideConfig]
+  implicit val cssReuse: Reusability[Css] =
+    Reusability.derive[Css]
+  implicit val semanticColorReuse: Reusability[SemanticColor] =
+    Reusability.derive[SemanticColor]
 }

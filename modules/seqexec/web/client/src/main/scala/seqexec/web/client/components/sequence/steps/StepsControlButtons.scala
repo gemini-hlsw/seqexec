@@ -18,15 +18,15 @@ import seqexec.web.client.actions.{RequestAbort, RequestGracefulObsPause, Reques
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconGroup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
-import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
-import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.popup.Popup
+import react.semanticui.elements.icon.Icon.IconGroup
+import react.semanticui.elements.icon.Icon.IconPause
+import react.semanticui.elements.icon.Icon.IconPlay
+import react.semanticui.elements.icon.Icon.IconStop
+import react.semanticui.elements.icon.Icon.IconTrash
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.icon.Icon
+import react.semanticui.elements.icon.Icon
 
 /**
   * Contains a set of control buttons like stop/abort

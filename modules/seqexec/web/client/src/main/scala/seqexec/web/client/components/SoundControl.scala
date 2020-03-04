@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components
 
-import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -11,9 +10,9 @@ import japgolly.scalajs.react.Reusability
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.FlipSoundOnOff
 import seqexec.web.client.model.SoundSelection
-import seqexec.web.client.semanticui.Size
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import react.semanticui.sizes._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.reusability._
 import web.client.Audio
@@ -37,17 +36,17 @@ object SoundControl {
     .stateless
     .render_P { p =>
       val icon = p.sound match {
-        case SoundSelection.SoundOn  => IconVolumeUp
-        case SoundSelection.SoundOff => IconVolumeOff
+        case SoundSelection.SoundOn  => Icon("volume up")
+        case SoundSelection.SoundOff => Icon("volume off")
       }
       val soundClick = p.sound match {
         case SoundSelection.SoundOn  => Callback.empty
         case SoundSelection.SoundOff => Callback(SoundOn.play())
       }
       Button(
-        icon     = icon.some,
+        icon     = icon,
         inverted = true,
-        size     = Size.Medium,
+        size     = Medium,
         onClick  = soundClick *> flipSound)
     }
     .configure(Reusability.shouldComponentUpdate)

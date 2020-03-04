@@ -14,8 +14,8 @@ import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import react.semanticui.elements.icon.Icon
+import react.semanticui.elements.icon.Icon._
 import seqexec.web.client.reusability._
 
 /**

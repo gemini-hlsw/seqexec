@@ -137,9 +137,8 @@ lazy val web_client_common = project.in(file("modules/shared/web/client"))
       Cats.value,
       Mouse.value,
       ScalaJSDom.value,
-      JQuery.value,
       ScalaJSReactCommon.value,
-      ScalaJSReactCats.value,
+      ScalaJSReactCats.value,      
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
       ScalaJSReactDraggable.value,
@@ -208,7 +207,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     useYarn                                  := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "jquery"                  -> LibraryVersions.jQuery,
       "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
       "semantic-ui-modal"       -> LibraryVersions.semanticUI,
       "semantic-ui-progress"    -> LibraryVersions.semanticUI,
@@ -241,14 +239,13 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       "@packtracker/webpack-plugin"        -> "2.2.0"
     ),
     libraryDependencies ++= Seq(
-      JQuery.value,
       Cats.value,
       Mouse.value,
       CatsEffect.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
       Log4s.value,
-      ScalaJSReactVirtualized.value,
+      ScalaJSReactSemanticUI.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value,
       PPrint.value,

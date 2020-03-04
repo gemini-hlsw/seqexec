@@ -7,8 +7,12 @@ import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.web.client.semanticui.elements.progress.Progress
-import seqexec.web.client.semanticui._
+import react.common.implicits._
+import react.semanticui.modules.progress.Progress
+import react.semanticui.elements.label.Label
+import react.semanticui._
+import seqexec.web.client.reusability._
+import scala.scalajs.js.JSConverters._
 
 /**
   * Progress bar divided in steps
@@ -19,11 +23,11 @@ final case class DividedProgress(
                                   value               : DividedProgress.Quantity,
                                   indicating          : Boolean = false,
                                   progress            : Boolean = false,
-                                  completeSectionColor: Option[String] = None,
-                                  ongoingSectionColor : Option[String] = None,
-                                  progressCls         : List[Css] = Nil,
-                                  barCls              : List[Css],
-                                  labelCls            : List[Css] = Nil
+                                  completeSectionColor: Option[SemanticColor] = None,
+                                  ongoingSectionColor : Option[SemanticColor] = None,
+                                  progressCls         : Css = Css.Zero,
+                                  barCls              : Css,
+                                  labelCls            : Css = Css.Zero
                                 ) extends ReactProps {
   @inline def render: VdomElement = DividedProgress.component(this)
 }
@@ -50,7 +54,7 @@ object DividedProgress {
 
       val completeSections = p.value / p.sectionTotal
 
-      val sectionValuesAndColors: List[(Quantity, Option[String])] =
+      val sectionValuesAndColors: List[(Quantity, Option[SemanticColor])] =
       // Length is completeSections + 1 + (countSections - completeSections - 1) = countSections
         (List.fill(completeSections)((p.sectionTotal, p.completeSectionColor)) :+
           ((p.value % p.sectionTotal, p.ongoingSectionColor))) ++
@@ -75,15 +79,14 @@ object DividedProgress {
           sectionInfo.toTagMod {
             case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
               Progress(
-                label,
-                p.sectionTotal,
-                sectionValue,
-                p.indicating,
-                p.progress,
-                sectionColor,
-                p.progressCls :+ sectionProgressStyle,
-                p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
-                p.labelCls
+                label = Label(clazz = p.labelCls)(label).cprops,
+                total = p.sectionTotal,
+                value = sectionValue,
+                indicating = p.indicating,
+                progress = p.progress,
+                color = sectionColor.orUndefined,
+                clazz = p.progressCls |+| sectionProgressStyle,
+                // p.barCls |+| sectionBarStyle |+| SeqexecStyles.dividedProgressBar
               )
           }
         )

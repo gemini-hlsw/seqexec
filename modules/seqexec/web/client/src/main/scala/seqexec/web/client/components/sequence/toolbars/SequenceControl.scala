@@ -22,11 +22,11 @@ import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.CancelPauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.controlButton
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
-import seqexec.web.client.semanticui.elements.icon.Icon.IconBan
+import react.semanticui.controlButton
+import react.semanticui.elements.icon.Icon.IconRefresh
+import react.semanticui.elements.icon.Icon.IconPlay
+import react.semanticui.elements.icon.Icon.IconPause
+import react.semanticui.elements.icon.Icon.IconBan
 import seqexec.web.client.reusability._
 
 /**

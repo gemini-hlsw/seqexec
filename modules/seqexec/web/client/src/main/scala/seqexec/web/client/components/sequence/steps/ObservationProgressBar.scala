@@ -15,7 +15,7 @@ import seqexec.model.{ObservationProgress, ObserveStage, StepId}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.progress.Progress
+import react.semanticui.elements.progress.Progress
 import scala.math.max
 
 trait ProgressLabel {

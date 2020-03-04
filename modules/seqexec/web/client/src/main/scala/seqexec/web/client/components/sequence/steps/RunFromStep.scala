@@ -14,9 +14,9 @@ import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.actions.RequestRunFrom
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.popup.Popup
+import react.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.reusability._
 
 /**

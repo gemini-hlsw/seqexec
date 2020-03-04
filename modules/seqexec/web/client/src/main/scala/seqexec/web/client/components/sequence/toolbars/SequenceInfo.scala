@@ -5,9 +5,9 @@ package seqexec.web.client.components.sequence.toolbars
 
 import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.Size
+import react.semanticui.elements.label.Label
+import react.semanticui.elements.icon.Icon.IconCheckmark
+import react.semanticui.Size
 import seqexec.model.SequenceState
 import seqexec.model.UnknownTargetName
 import react.common._

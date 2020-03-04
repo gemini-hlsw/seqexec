@@ -20,7 +20,7 @@ import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.{ClientStatus, StopOperation}
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui._
+import react.semanticui._
 import scala.math.max
 
 final case class NodAndShuffleProgressMessage(

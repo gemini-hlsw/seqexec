@@ -40,14 +40,14 @@ import seqexec.web.client.actions.ClearLastQueueOp
 import seqexec.web.client.actions.RequestRemoveSeqCal
 import seqexec.web.client.actions.RequestMoveCal
 import seqexec.web.client.actions.UpdateCalTableState
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.{ Size => SSize }
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon.IconTimes
+import react.semanticui.elements.icon.Icon.IconRefresh
+import react.semanticui.elements.icon.Icon.IconAttention
+import react.semanticui.elements.icon.Icon.IconCheckmark
+import react.semanticui.elements.icon.Icon.IconCircleNotched
+import react.semanticui.elements.icon.Icon.IconRefresh
+import react.semanticui.{ Size => SSize }
 import web.client.table._
 
 /**

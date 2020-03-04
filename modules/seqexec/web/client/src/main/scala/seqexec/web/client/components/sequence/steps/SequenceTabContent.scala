@@ -14,7 +14,7 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
-import seqexec.web.client.semanticui.{Size => _, _}
+import react.semanticui.{Size => _, _}
 import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.components.SeqexecStyles
@@ -79,6 +79,8 @@ object SequenceTabContent {
           }.getOrElse(<.div())
         }
     }
+
+  private val dataTab: VdomAttr[String]      = VdomAttr("data-tab")
 
   protected val component = ScalaComponent
     .builder[Props]("SequenceTabContent")

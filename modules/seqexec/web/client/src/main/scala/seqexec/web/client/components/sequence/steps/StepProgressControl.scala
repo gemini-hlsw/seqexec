@@ -21,11 +21,11 @@ import seqexec.web.client.model.StopOperation
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.elements.label.Label
+import react.semanticui.elements.icon.Icon
+import react.semanticui.elements.icon.Icon._
+import react.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.popup.Popup
+import react.semanticui.elements.popup.Popup
 
 /**
   * Component to display the step state and control

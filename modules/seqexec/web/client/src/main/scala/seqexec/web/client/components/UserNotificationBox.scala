@@ -3,18 +3,23 @@
 
 package seqexec.web.client.components
 
+import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.Notification
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.elements.modal.{Content, Header}
+import react.semanticui.elements.icon.Icon
+import react.semanticui.modules.modal._
+import react.semanticui.colors._
+import react.semanticui.modules.modal.ModalSize
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.reusability._
+import react.semanticui.elements.button.Button
+import scala.scalajs.js.JSConverters._
 
 /**
   * UI for the model displaying resource conflicts
@@ -28,53 +33,26 @@ object UserNotificationBox {
   private val component = ScalaComponent.builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>
-      val UserNotificationState(_, not) = p.notification
-      <.div(
-        ^.cls := "ui tiny modal",
-        not.map(h => Header(Notification.header(h))),
-        not.map{h =>
-          Content(
+      val UserNotificationState(open, not) = p.notification
+      Modal(
+        size = ModalSize.Tiny,
+        open = open === SectionOpen,
+        header = not.map(h => ModalHeader(Notification.header(h)).cprops).orUndefined,
+        content = not.map{h =>
+          ModalContent(
             <.div(Notification.body(h).toTagMod(<.p(_)))
-          )
-        },
-        <.div(
-          ^.cls := "actions",
-          <.div(
-            ^.cls := "ui green ok inverted button",
-            IconCheckmark,
-            "Ok"
-          )
-        )
+          ).cprops
+        }.orUndefined,
+        actions = 
+          ModalActions(
+            Button(color = Green, positive = true, inverted = true)(
+              Icon("checkmark"),
+              "Ok"
+            )
+          ).cprops,
+        onClose = Callback(SeqexecCircuit.dispatch(CloseUserNotificationBox))
       )
     }
-    .componentDidUpdate(ctx =>
-      Callback {
-        // To properly handle the model we need to do updates with jQuery and
-        // the Semantic UI javascript library
-        // The calls below use a custom scala.js facade for SemanticUI
-        import org.querki.jquery.$
-        import web.client.facades.semanticui.SemanticUIModal._
-
-        // Close the modal box if the model changes
-        ctx.getDOMNode.toElement.foreach { dom =>
-          ctx.currentProps.notification match {
-            case UserNotificationState(SectionClosed, _) =>
-              $(dom).modal("hide")
-            case UserNotificationState(SectionOpen, _)   =>
-              // Configure the modal to autofocus and to act properly on closing
-              $(dom).modal(
-                JsModalOptions
-                  .onHidden { () =>
-                    // Need to call direct access as this is outside the event loop
-                    SeqexecCircuit.dispatch(CloseUserNotificationBox)
-                  }
-              )
-              // Show the modal box
-              $(dom).modal("show")
-          }
-        }
-      }
-    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 

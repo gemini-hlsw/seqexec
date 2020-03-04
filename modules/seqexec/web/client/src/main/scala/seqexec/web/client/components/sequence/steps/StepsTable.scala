@@ -42,8 +42,8 @@ import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{Size => SSize}
+import react.semanticui.elements.icon.Icon._
+import react.semanticui.{Size => SSize}
 import seqexec.web.client.reusability._
 import react.virtualized._
 import seqexec.web.client.components.sequence.steps.StepsTable.{State, StepRow}

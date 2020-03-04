@@ -13,8 +13,8 @@ import seqexec.model.{NodAndShuffleStep, OffsetType, StandardStep, Step}
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.Formatting._
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
-import seqexec.web.client.semanticui.Size
+import react.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
+import react.semanticui.Size
 import seqexec.web.client.reusability._
 
 /**

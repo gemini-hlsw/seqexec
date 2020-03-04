@@ -18,12 +18,12 @@ import seqexec.web.client.actions.RequestResourceRun
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ResourceRunOperation
-import seqexec.web.client.semanticui.elements.popup.Popup
+import react.semanticui.elements.popup.Popup
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
-import seqexec.web.client.semanticui.Size
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
+import react.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched}
+import react.semanticui.Size
 import scala.collection.immutable.SortedMap
 import scala.scalajs.js
 

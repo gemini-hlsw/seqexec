@@ -13,8 +13,8 @@ import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import react.semanticui.elements.icon.Icon
+import react.semanticui.elements.icon.Icon._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
 

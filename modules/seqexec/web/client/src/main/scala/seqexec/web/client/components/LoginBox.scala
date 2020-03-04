@@ -6,22 +6,26 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.vdom.TagOf
 import monocle.macros.Lenses
-import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
-import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.LoggedIn
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.modal.Content
-import seqexec.web.client.semanticui.elements.modal.Header
-import seqexec.web.client.semanticui.elements.label.FormLabel
+// import react.semanticui.collections.form._
+import react.semanticui.collections.grid._
+import react.semanticui.colors._
+import react.semanticui.floats
+import react.semanticui.textalignment._
+import react.semanticui.verticalalignment._
+import react.semanticui.widths._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
+import react.semanticui.modules.modal._
+import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
 import react.common._
 import seqexec.web.client.reusability._
@@ -88,47 +92,54 @@ object LoginBox {
         )
     }
 
-    private def toolbar(s: State) =
-      <.div(
-        ^.cls := "ui actions",
-        <.div(
-          ^.cls := "ui grid",
-          <.div(
-            ^.cls := "middle aligned row",
-            s.progressMsg
-              .map(
-                m =>
-                  <.div(
-                    ^.cls := "left floated left aligned six wide column",
-                    IconCircleNotched.copyIcon(loading = true),
+    private def toolbar(s: State): ModalActions =
+      ModalActions(
+        Grid(
+          GridRow(verticalAlign = Middle)(
+            List[Option[VdomNode]](
+              s.progressMsg.map(m =>
+                  GridColumn(
+                    textAlign = Left,
+                    floated   = floats.Left,
+                    width     = Six
+                  )(
+                    Icon(name = "circle notched", loading = true),
                     m
-                ))
-              .whenDefined,
-            s.errorMsg
-              .map(
-                m =>
-                  <.div(
-                    ^.cls := "left floated left aligned six wide column red",
-                    IconAttention,
+                )
+              ),
+              s.errorMsg.map(m =>
+                  GridColumn(
+                    textAlign = Left,
+                    floated   = floats.Left,
+                    width     = Six,
+                    color     = Red
+                  )(                
+                    Icon("attention"),
                     m
-                ))
-              .whenDefined,
-            <.div(
-              ^.cls := "right floated right aligned ten wide column",
-              Button(onClick    = closeBox)("Cancel"),
-              Button(onClick    = attemptLogin,
-                     buttonType = Button.SubmitType,
-                     form       = Some(formId))("Login")
-            )
+                )
+              ),
+              (
+                GridColumn(
+                  textAlign = Right,
+                  floated   = floats.Right,
+                  width     = Ten
+                )(
+                  Button(onClick    = closeBox)("Cancel"),
+                  Button(onClick    = attemptLogin,
+                          // buttonType = Button.SubmitType,
+                          // form       = Some(formId)
+                          )("Login")
+              ): VdomNode).some
+            ).flatten: _*
           )
         )
       )
 
-    def render(s: State): TagOf[Div] =
-      <.div(
-        ^.cls := "ui modal",
-        Header("Login"),
-        Content(
+    def render(p: Props, s: State) =
+      Modal(
+        open = p.visible === SectionOpen,
+        header = ModalHeader("Login").cprops,
+        content = ModalContent(
           <.form(
             ^.cls := "ui form",
             ^.id := formId,
@@ -136,7 +147,7 @@ object LoginBox {
             ^.action := "#",
             <.div(
               ^.cls := "required field",
-              FormLabel(FormLabel.Props("Username", Some("username"))),
+              FormLabel("Username", Some("username")),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
@@ -147,12 +158,12 @@ object LoginBox {
                   ^.value := s.username,
                   ^.onChange ==> userMod
                 ),
-                IconUser
+                Icon("user")
               )
             ),
             <.div(
               ^.cls := "required field",
-              FormLabel(FormLabel.Props("Password", Some("password"))),
+              FormLabel("Password", Some("password")),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
@@ -163,12 +174,12 @@ object LoginBox {
                   ^.value := s.password,
                   ^.onChange ==> pwdMod
                 ),
-                IconLock
+                Icon("lock")
               )
             )
           )
-        ),
-        toolbar(s)
+        ).cprops,
+        actions = toolbar(s).cprops
       )
   }
 
@@ -176,36 +187,6 @@ object LoginBox {
     .builder[Props]("Login")
     .initialState(State.Empty)
     .renderBackend[Backend]
-    .componentDidUpdate(ctx =>
-      Callback {
-        // To properly handle the model we need to do updates with jQuery and
-        // the Semantic UI javascript library
-        // The calls below use a custom scala.js facade for SemanticUI
-        import org.querki.jquery.$
-        import web.client.facades.semanticui.SemanticUIModal._
-
-        // Close the modal box if the model changes
-        ctx.getDOMNode.toElement.foreach {
-          dom =>
-            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionClosed) {
-              $(dom).modal("hide")
-            }
-            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionOpen) {
-              // Configure the modal to autofocus and to act properly on closing
-              $(dom).modal(
-                JsModalOptions
-                  .autofocus(true)
-                  .onHidden { () =>
-                    // Need to call direct access as this is outside the event loop
-                    (ctx.setState(State.Empty) *>
-                      SeqexecCircuit.dispatchCB(CloseLoginBox)).runNow
-                  }
-              )
-              // Show the modal box
-              $(dom).modal("show")
-            }
-        }
-    })
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

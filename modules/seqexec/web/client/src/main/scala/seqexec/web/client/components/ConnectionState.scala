@@ -10,7 +10,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import react.semanticui.colors._
+import react.semanticui.elements.icon.Icon
 import seqexec.web.client.reusability._
 
 /**
@@ -39,7 +40,7 @@ object ConnectionState {
           p.u.ws.renderPending(
             _ =>
               <.div(
-                IconAttention.copyIcon(color = Option("red")),
+                Icon("attention", color = Red),
                 <.span(
                   SeqexecStyles.errorText,
                   s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."

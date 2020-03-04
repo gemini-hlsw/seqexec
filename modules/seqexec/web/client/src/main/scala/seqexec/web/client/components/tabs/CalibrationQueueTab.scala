@@ -20,9 +20,9 @@ import seqexec.web.client.actions.RequestAddSeqCal
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.CalibrationQueueTabActive
 import seqexec.web.client.model.TabSelected
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import react.semanticui._
+import react.semanticui.elements.label.Label
+import react.semanticui.elements.icon.Icon._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 
@@ -75,6 +75,8 @@ object CalibrationQueueTab {
 
   private def onDragEnd(b: Backend) =
     b.setStateL(State.draggingOver)(none)
+
+  private val dataTab: VdomAttr[String]      = VdomAttr("data-tab")
 
   private def linkTo(b: Backend, page: SeqexecPages)(mod: TagMod*) = {
     val p      = b.props

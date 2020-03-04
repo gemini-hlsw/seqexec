@@ -21,11 +21,11 @@ import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.popup.Popup
+import react.semanticui._
+import react.semanticui.elements.icon.Icon._
+import react.semanticui.elements.label.Label
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 
@@ -66,6 +66,8 @@ object SequenceTab {
         .setUrlAndDispatchCB(page)
         .unless(p.tab.active === TabSelected.Selected) *>
       Callback.empty
+
+  private val dataTab: VdomAttr[String]      = VdomAttr("data-tab")
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) = {
     val active     = p.tab.active

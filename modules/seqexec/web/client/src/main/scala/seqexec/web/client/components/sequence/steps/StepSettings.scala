@@ -18,9 +18,9 @@ import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.StepItems._
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.Size
+import react.semanticui.elements.label.Label
+import react.semanticui.elements.icon.Icon._
+import react.semanticui.Size
 import seqexec.web.client.reusability._
 
 /**

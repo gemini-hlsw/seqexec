@@ -25,12 +25,13 @@ object Settings {
     val diode                   = "1.1.7"
     val diodeReact              = "1.1.7.160"
     val javaTimeJS              = "2.0.0-RC3"
-    val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.5.2"
+    val scalaJSSemanticUI       = "0.3.3"
     val scalaJSReactVirtualized = "0.7.2"
     val scalaJSReactClipboard   = "0.10.3"
     val scalaJSReactDraggable   = "0.7.2"
     val scalaJSReactSortable    = "0.3.1"
+    
 
     // Scala libraries
     val catsEffectVersion       = "2.1.2"
@@ -64,7 +65,6 @@ object Settings {
     val scalaMock               = "4.4.0"
 
     // Pure JS libraries
-    val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
     val ocsVersion              = "2020001.1.3"
 
@@ -172,11 +172,11 @@ object Settings {
     val ScalaJSDom              = Def.setting("org.scala-js"            %%% "scalajs-dom"        % LibraryVersions.scalaDom)
     val ScalaJSReactCommon      = Def.setting("io.github.cquiroz.react" %%% "common"             % LibraryVersions.scalaJSReactCommon)
     val ScalaJSReactCats        = Def.setting("io.github.cquiroz.react" %%% "cats"               % LibraryVersions.scalaJSReactCommon)
+    val ScalaJSReactSemanticUI  = Def.setting("io.github.cquiroz.react" %%% "react-semantic-ui"  % LibraryVersions.scalaJSSemanticUI)
     val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz.react" %%% "react-virtualized"  % LibraryVersions.scalaJSReactVirtualized)
     val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz.react" %%% "react-draggable"    % LibraryVersions.scalaJSReactDraggable)
     val ScalaJSReactSortable    = Def.setting("io.github.cquiroz.react" %%% "react-sortable-hoc" % LibraryVersions.scalaJSReactSortable)
     val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz.react" %%% "react-clipboard"    % LibraryVersions.scalaJSReactClipboard)
-    val JQuery                  = Def.setting("org.querki"              %%% "jquery-facade"      % LibraryVersions.scalaJQuery)
     val BooPickle               = Def.setting("io.suzaku"               %%% "boopickle"          % LibraryVersions.booPickle)
     val JavaTimeJS              = Def.setting("io.github.cquiroz"       %%% "scala-java-time"    % LibraryVersions.javaTimeJS)
     val GeminiLocales           = Def.setting("edu.gemini"              %%% "gemini-locales"     % LibraryVersions.geminiLocales)

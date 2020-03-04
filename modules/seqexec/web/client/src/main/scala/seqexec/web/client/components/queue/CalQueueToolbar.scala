@@ -21,12 +21,12 @@ import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCloneOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconTrashOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
-import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
-import seqexec.web.client.semanticui.controlButton
+import react.semanticui.elements.icon.Icon.IconRefresh
+import react.semanticui.elements.icon.Icon.IconCloneOutline
+import react.semanticui.elements.icon.Icon.IconTrashOutline
+import react.semanticui.elements.icon.Icon.IconPlay
+import react.semanticui.elements.icon.Icon.IconStop
+import react.semanticui.controlButton
 import seqexec.web.client.reusability._
 
 /**

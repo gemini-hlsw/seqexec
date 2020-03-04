@@ -18,13 +18,13 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.ButtonGroup
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.button.Button._
-import seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
-import seqexec.web.client.semanticui.elements.icon.Icon.IconChevronRight
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.Size
+import react.semanticui.elements.button.ButtonGroup
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.button.Button._
+import react.semanticui.elements.icon.Icon.IconChevronLeft
+import react.semanticui.elements.icon.Icon.IconChevronRight
+import react.semanticui.elements.label.Label
+import react.semanticui.Size
 import mouse.boolean._
 
 /**
