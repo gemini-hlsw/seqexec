@@ -24,7 +24,7 @@ object Settings {
     val booPickle               = "1.3.1"
     val diode                   = "1.1.7"
     val diodeReact              = "1.1.7.160"
-    val javaTimeJS              = "2.0.0-RC3"
+    val javaTimeJS              = "2.0.0-RC5"
     val scalaJQuery             = "1.2"
     val scalaJSReactCommon      = "0.5.2"
     val scalaJSReactVirtualized = "0.7.2"
@@ -82,12 +82,12 @@ object Settings {
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
     val prometheusClient        = "0.8.1"
-    val geminiLocales           = "0.2.0"
+    val geminiLocales           = "0.3.0"
     val pprint                  = "0.5.9"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.15"
-    val gspCore                 = "0.1.6"
+    val gspMath                 = "0.1.16"
+    val gspCore                 = "0.1.7"
 
   }
 
