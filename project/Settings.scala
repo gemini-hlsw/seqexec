@@ -24,7 +24,7 @@ object Settings {
     val booPickle               = "1.3.1"
     val diode                   = "1.1.7"
     val diodeReact              = "1.1.7.160"
-    val javaTimeJS              = "2.0.0-RC3"
+    val javaTimeJS              = "2.0.0-RC5"
     val scalaJQuery             = "1.2"
     val scalaJSReactCommon      = "0.5.2"
     val scalaJSReactVirtualized = "0.7.2"
