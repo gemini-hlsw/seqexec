@@ -27,6 +27,7 @@ object Settings {
     val javaTimeJS              = "2.0.0-RC5"
     val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.5.2"
+    val scalaJSSemanticUI       = "0.3.4"
     val scalaJSReactVirtualized = "0.7.2"
     val scalaJSReactClipboard   = "0.10.3"
     val scalaJSReactDraggable   = "0.7.2"
@@ -173,6 +174,7 @@ object Settings {
     val ScalaJSDom              = Def.setting("org.scala-js"            %%% "scalajs-dom"        % LibraryVersions.scalaDom)
     val ScalaJSReactCommon      = Def.setting("io.github.cquiroz.react" %%% "common"             % LibraryVersions.scalaJSReactCommon)
     val ScalaJSReactCats        = Def.setting("io.github.cquiroz.react" %%% "cats"               % LibraryVersions.scalaJSReactCommon)
+    val ScalaJSReactSemanticUI  = Def.setting("io.github.cquiroz.react" %%% "react-semantic-ui"  % LibraryVersions.scalaJSSemanticUI)
     val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz.react" %%% "react-virtualized"  % LibraryVersions.scalaJSReactVirtualized)
     val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz.react" %%% "react-draggable"    % LibraryVersions.scalaJSReactDraggable)
     val ScalaJSReactSortable    = Def.setting("io.github.cquiroz.react" %%% "react-sortable-hoc" % LibraryVersions.scalaJSReactSortable)

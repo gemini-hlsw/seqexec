@@ -32,13 +32,10 @@ import scala.collection.immutable.SortedMap
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
-import seqexec.web.client.semanticui.elements.checkbox.Checkbox
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCopy
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAngleDoubleDown
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAngleDoubleUp
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
-import seqexec.web.client.semanticui.{ Size => SSize }
+import react.semanticui.modules.checkbox.Checkbox
+import react.semanticui.elements.icon.Icon
+import react.semanticui.elements.button.Button
+import react.semanticui.sizes._
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.actions.ToggleLogArea
@@ -55,8 +52,8 @@ object CopyLogToClipboard {
     .stateless
     .render_P { p =>
       CopyToClipboard(p)(
-        <.div(IconCopy.copyIcon(link        = true,
-                                extraStyles = List(SeqexecStyles.logIconRow))))
+        <.div(Icon(name = "copy outline", link = true, clazz = SeqexecStyles.logIconRow))
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -225,7 +222,7 @@ object LogArea {
   // Custom renderers for the last column
   private val clipboardHeaderRenderer: HeaderRenderer[js.Object] =
     (_, _, _, _, _, _) =>
-      IconCopy.copyIcon(extraStyles = List(SeqexecStyles.logIconHeader))
+      Icon(name = "copy outline", clazz = SeqexecStyles.logIconHeader)
 
   private def colBuilder(b: Backend, size: Size)(
     r:                      ColumnRenderArgs[TableColumn]): Table.ColumnArg =
@@ -333,7 +330,7 @@ object LogArea {
       val p = b.props
       val s = b.state
       val toggleIcon = (p.log.display === SectionOpen)
-        .fold(IconAngleDoubleDown, IconAngleDoubleUp)
+        .fold(Icon("angle double down"), Icon("angle double up"))
       val toggleText =
         (p.log.display === SectionOpen).fold("Hide Log", "Show Log")
       <.div(
@@ -349,11 +346,11 @@ object LogArea {
               SeqexecStyles.logControlRow,
               <.div(
                 ^.cls := "ui six wide column",
-                Button(icon    = Option(toggleIcon),
-                       labeled = LeftLabeled,
-                       compact = true,
-                       size    = SSize.Small,
-                       onClick = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleText)
+                Button(icon          = true,
+                       labelPosition = "left",
+                       compact       = true,
+                       size          = Small,
+                       onClick       = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleIcon, toggleText)
               ),
               <.div(
                 ^.cls := "ui ten wide column",
@@ -367,7 +364,10 @@ object LogArea {
                         <.div(
                           ^.cls := "inline field",
                           Checkbox(
-                            Checkbox.Props(l.show, s, onLevelChange(b, l)))
+                            label = l.show: VdomNode,
+                            checked = s,
+                            onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) => (onLevelChange(b, l)(p.checked.getOrElse(false)))
+                          )
                         )
                     }
                   )

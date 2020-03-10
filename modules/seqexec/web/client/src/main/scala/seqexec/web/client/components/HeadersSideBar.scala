@@ -23,9 +23,9 @@ import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.model.Observer
 import seqexec.model.Operator
-import seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
-import seqexec.web.client.semanticui.elements.label.FormLabel
-import seqexec.web.client.semanticui.elements.input.InputEV
+import seqexec.web.client.components.forms.FormLabel
+import seqexec.web.client.components.forms.InputEV
+import seqexec.web.client.components.forms.EnumSelect
 import seqexec.web.client.circuit.HeaderSideBarFocus
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.SequenceObserverFocus
@@ -163,64 +163,60 @@ object HeadersSideBar {
             SeqexecStyles.fieldsNoBottom,
             <.div(
               ^.cls := "eight wide field",
-              FormLabel(FormLabel.Props("Operator", Some("operator"))),
+              FormLabel("Operator", Some("operator")),
               InputEV(
-                InputEV.Props("operator",
-                              "operator",
-                              operatorEV,
-                              placeholder = "Operator...",
-                              disabled    = !enabled,
-                              onBlur      = _ => submitIfChangedOp)
+                "operator",
+                "operator",
+                operatorEV,
+                placeholder = "Operator...",
+                disabled    = !enabled,
+                onBlur      = _ => submitIfChangedOp
               )
             ),
             <.div(
               ^.cls := "eight wide field",
-              FormLabel(FormLabel.Props(observerField, Some("observer"))),
+              FormLabel(observerField, Some("observer")),
               InputEV(
-                InputEV.Props("observer",
-                              "observer",
-                              observerEV,
-                              placeholder = "Observer...",
-                              disabled    = !enabled || obsCompleted,
-                              onBlur      = _ => submitIfChangedOb)
+                "observer",
+                "observer",
+                observerEV,
+                placeholder = "Observer...",
+                disabled    = !enabled || obsCompleted,
+                onBlur      = _ => submitIfChangedOb
               )
             )
           ),
           <.div(
             ^.cls := "two fields",
             SeqexecStyles.fieldsNoBottom,
-            DropdownMenu(
-              DropdownMenu.Props("Image Quality",
-                                 p.model().conditions.iq.some,
-                                 "Select",
-                                 ImageQuality.ImageQualityEnumerated.all,
-                                 disabled = !enabled,
-                                 iqChanged)),
-            DropdownMenu(
-              DropdownMenu.Props("Cloud Cover",
-                                 p.model().conditions.cc.some,
-                                 "Select",
-                                 CloudCover.CloudCoverEnumerated.all,
-                                 disabled = !enabled,
-                                 ccChanged))
+            EnumSelect[ImageQuality](
+              "Image Quality",
+              p.model().conditions.iq.some,
+              "Select",
+              disabled = !enabled,
+              iqChanged),
+            EnumSelect[CloudCover](
+              "Cloud Cover",
+              p.model().conditions.cc.some,
+              "Select",
+              disabled = !enabled,
+              ccChanged)
           ),
           <.div(
             ^.cls := "two fields",
             SeqexecStyles.fieldsNoBottom,
-            DropdownMenu(
-              DropdownMenu.Props("Water Vapor",
-                                 p.model().conditions.wv.some,
-                                 "Select",
-                                 WaterVapor.WaterVaporEnumerated.all,
-                                 disabled = !enabled,
-                                 wvChanged)),
-            DropdownMenu(
-              DropdownMenu.Props("Sky Background",
-                                 p.model().conditions.sb.some,
-                                 "Select",
-                                 SkyBackground.SkyBackgroundEnumerated.all,
-                                 disabled = !enabled,
-                                 sbChanged))
+            EnumSelect[WaterVapor](
+              "Water Vapor",
+              p.model().conditions.wv.some,
+              "Select",
+              disabled = !enabled,
+              wvChanged),
+            EnumSelect[SkyBackground](
+              "Sky Background",
+              p.model().conditions.sb.some,
+              "Select",
+              disabled = !enabled,
+              sbChanged)
           )
         )
       )

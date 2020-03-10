@@ -36,18 +36,9 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.ObsClass
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
-import seqexec.web.client.semanticui.elements.icon.Icon.IconSun
-import seqexec.web.client.semanticui.elements.icon.Icon.IconMoon
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckCircleOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCalendarOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconClockOutline
-import seqexec.web.client.semanticui.{ Size => SSize }
+import react.semanticui.elements.icon.Icon
+import react.semanticui.colors._
+import react.semanticui.sizes._
 import seqexec.web.client.reusability._
 import web.client.table._
 
@@ -403,22 +394,26 @@ object SessionQueueTable extends Columns {
       val icon: TagMod =
         row.status match {
           case SequenceState.Completed =>
-            IconCheckmark.copyIcon(extraStyles = List(selectedIconStyle))
+            Icon(name    = "checkmark", 
+                 clazz   = selectedIconStyle)
           case SequenceState.Running(_, _) =>
-            IconCircleNotched.copyIcon(fitted  = true,
-                                       loading = true,
-                                       extraStyles =
-                                         List(SeqexecStyles.runningIcon))
+            Icon(name    = "circle notched",
+                 fitted  = true,
+                 loading = true,
+                 clazz   = SeqexecStyles.runningIcon)
           case SequenceState.Failed(_) =>
-            IconAttention.copyIcon(color       = "red".some,
-                                   extraStyles = List(selectedIconStyle))
+            Icon(name    = "attention",
+                 color   = Red,
+                 clazz   = selectedIconStyle)
           case _ if b.state.rowLoading.exists(_ === index) =>
             // Spinning icon while loading
-            IconRefresh.copyIcon(fitted      = true,
-                                 loading     = true,
-                                 extraStyles = List(SeqexecStyles.runningIcon))
+            Icon(name    = "refresh",
+                 fitted  = true,
+                 loading = true,
+                 clazz   = SeqexecStyles.runningIcon)
           case _ if isFocused =>
-            IconSelectedRadio.copyIcon(extraStyles = List(selectedIconStyle))
+            Icon(name    = "dot circle outline",
+                 clazz   = selectedIconStyle)
           case _ =>
             <.div()
         }
@@ -450,18 +445,22 @@ object SessionQueueTable extends Columns {
         SeqexecStyles.queueIconColumn,
         ^.title := title,
         if (row.inDayCalQueue) {
-          IconCheckCircleOutline.copyIcon(size   = SSize.Large,
-                                          fitted = true,
-                                          extraStyles =
-                                            List(SeqexecStyles.selectedIcon),
-                                          onClickE =
-                                            removeFromQueueE(row.obsId) _)
+          <.span(
+            Icon(name   = "check circle outline",
+                size   = Large,
+                fitted = true,
+                clazz  = SeqexecStyles.selectedIcon),
+            ^.onClick ==> removeFromQueueE(row.obsId) _
+          )
         } else {
-          IconCircleOutline.copyIcon(size   = SSize.Large,
-                                     fitted = true,
-                                     extraStyles =
-                                       List(SeqexecStyles.selectedIcon),
-                                     onClickE = addToQueueE(row.obsId) _)
+          <.span(
+            Icon(name   = "circle outline",
+                size   = Large,
+                fitted = true,
+                clazz  = SeqexecStyles.selectedIcon
+            ),
+            ^.onClick ==> addToQueueE(row.obsId) _
+          )
         }
       )
     }
@@ -473,9 +472,9 @@ object SessionQueueTable extends Columns {
       val icon: TagMod =
         row.obsClass match {
           case ObsClass.Daytime =>
-            IconSun.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
+            Icon(name = "sun", clazz = SeqexecStyles.selectedIcon)
           case ObsClass.Nighttime =>
-            IconMoon.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
+            Icon(name = "moon", clazz =SeqexecStyles.selectedIcon)
           case _ =>
             <.div()
         }
@@ -507,9 +506,12 @@ object SessionQueueTable extends Columns {
         ^.width := (AddQueueColumnWidth - 1).px,
         SeqexecStyles.selectedIcon,
         SeqexecStyles.centeredCell,
-        IconCalendarOutline.copyIcon(fitted  = true,
-                                     link    = true,
-                                     onClick = addAll)
+        <.span(
+          Icon(name    = "calendar alternate outline",
+              fitted  = true,
+              link    = true),
+          ^.onClick --> addAll
+        )
     )
 
   private val timeHeaderRenderer: HeaderRenderer[js.Object] =
@@ -519,7 +521,7 @@ object SessionQueueTable extends Columns {
         ^.width := (ClassColumnWidth - 1).px,
         SeqexecStyles.selectedIcon,
         SeqexecStyles.centeredCell,
-        IconClockOutline.copyIcon(fitted = true)
+        Icon(name = "clock outline", fitted = true)
     )
 
   private val draggableRow =

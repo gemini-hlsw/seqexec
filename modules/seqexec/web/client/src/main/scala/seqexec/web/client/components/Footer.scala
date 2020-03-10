@@ -14,7 +14,7 @@ import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
-import seqexec.web.client.semanticui.elements.menu.HeaderItem
+import react.semanticui.collections.menu._
 import seqexec.web.client.reusability._
 
 /**
@@ -36,40 +36,34 @@ object Footer {
     .stateless
     .render_P(
       p =>
-        <.div(
-          ^.cls := "ui footer inverted menu",
-          <.a(
-            ^.cls := "header item",
-            ^.onClick ==> goHome(p),
-            SeqexecStyles.notInMobile,
+        Menu(
+          clazz    = Css("footer"),
+          inverted = true
+        )(  
+          MenuItem(
+            as       = "a",
+            header   = true,
+            clazz    = SeqexecStyles.notInMobile,
+            onClickE = goHome(p) _
+          )(
             s"Seqexec - ${p.site.shortName}"
           ),
-          <.a(
-            ^.cls := "header item",
-            ^.onClick ==> goHome(p),
-            SeqexecStyles.onlyMobile,
+          MenuItem(
+            as       = "a",
+            header   = true,
+            clazz    = SeqexecStyles.onlyMobile,
+            onClickE = goHome(p) _
+          )(
             p.site.shortName
           ),
-          HeaderItem(
-            HeaderItem.Props(OcsBuildInfo.version,
-                             sub         = true,
-                             extraStyles = List(SeqexecStyles.notInMobile))
+          MenuMenu(
+            MenuItem(
+              header = true,
+              clazz  = SeqexecStyles.notInMobile
+            )(OcsBuildInfo.version)
           ),
           userConnect(FooterStatus.apply)
         )
-    )
-    .componentDidMount(
-      ctx =>
-        Callback {
-          // Mount the Semantic component using jQuery
-          import org.querki.jquery.$
-          import web.client.facades.semanticui.SemanticUIVisibility._
-
-          // Pick the top bar and make it stay visible regardless of scrolling
-          val dom = ctx.getDOMNode.asMounted().asElement()
-          $(dom)
-            .visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
-        }
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

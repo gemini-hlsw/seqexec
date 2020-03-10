@@ -10,9 +10,9 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import react.common._
 import seqexec.model.CalibrationQueueId
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.message.IconMessage
-import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import seqexec.web.client.semanticui.dataTab
+import react.semanticui.collections.message.Message
+import react.semanticui.elements.icon.Icon
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
@@ -37,9 +37,11 @@ object CalQueueTabContent {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val defaultContent = IconMessage(
-    IconMessage
-      .Props(IconInbox, Some("Work in progress"), IconMessage.Style.Warning))
+  private val defaultContent = 
+    Message(
+      icon    = Icon("inbox"),
+      warning = true
+    )("Work in progress").render
 
   private val component = ScalaComponent
     .builder[Props]("CalQueueTabContent")

@@ -7,9 +7,9 @@ import seqexec.web.client.actions.Logout
 import seqexec.web.client.actions.OpenLoginBox
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.semanticui.Size
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut
+import react.semanticui.sizes._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
 import react.common._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Callback
@@ -32,15 +32,15 @@ object ControlMenu {
     SeqexecCircuit.dispatchCB(Logout)
 
   private def loginButton(enabled: Boolean) =
-    Button(size     = Size.Medium,
+    Button(size     = Medium,
            onClick  = openLogin,
            disabled = !enabled,
            inverted = true)("Login")
 
   private def logoutButton(text: String, enabled: Boolean) =
-    Button(size     = Size.Medium,
+    Button(size     = Medium,
            onClick  = logout,
-           icon     = Some(IconSignOut),
+           icon     = Icon("sign out"),
            disabled = !enabled,
            inverted = true)(text)
 
