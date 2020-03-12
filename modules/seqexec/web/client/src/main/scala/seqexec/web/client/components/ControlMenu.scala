@@ -3,25 +3,32 @@
 
 package seqexec.web.client.components
 
+import cats.implicits._
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.Reusability
 import seqexec.web.client.actions.Logout
 import seqexec.web.client.actions.OpenLoginBox
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.reusability._
 import react.semanticui.sizes._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon.Icon
+import react.semanticui.collections.menu._
+import react.common.implicits._
 import react.common._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.vdom.html_<^._
+
+final case class ControlMenu(status: ClientStatus) extends ReactProps {
+  @inline def render: VdomElement = ControlMenu.component(this)
+}
 
 /**
   * Menu with options
   */
 object ControlMenu {
-
-  final case class Props(status: ClientStatus)
+  implicit val cmReuse: Reusability[ControlMenu] = Reusability.derive
 
   private val soundConnect =
     SeqexecCircuit.connect(SeqexecCircuit.soundSettingReader)
@@ -32,43 +39,32 @@ object ControlMenu {
     SeqexecCircuit.dispatchCB(Logout)
 
   private def loginButton(enabled: Boolean) =
-    Button(size     = Medium,
-           onClick  = openLogin,
-           disabled = !enabled,
-           inverted = true)("Login")
+    Button(size = Medium, onClick = openLogin, disabled = !enabled, inverted = true)("Login")
 
   private def logoutButton(text: String, enabled: Boolean) =
-    Button(size     = Medium,
-           onClick  = logout,
-           icon     = Icon("sign out"),
-           disabled = !enabled,
-           inverted = true)(text)
+    Button(size = Medium, onClick = logout, icon = true, disabled = !enabled, inverted = true)(
+      Icon("sign out"),
+      text
+    )
 
   private val component = ScalaComponent
-    .builder[Props]("SeqexecTopMenu")
+    .builder[ControlMenu]("ControlMenu")
     .stateless
     .render_P { p =>
       val status = p.status
       <.div(
         ^.cls := "ui secondary right menu",
-        status.u.fold(
-          <.div(
-            ^.cls := "ui item",
-            soundConnect(x => SoundControl(SoundControl.Props(x()))),
-            loginButton(status.isConnected)
-          )
-        )(
-          u =>
-            <.div(
-              ^.cls := "ui secondary right menu",
-              <.div(
-                ^.cls := "ui header item",
-                SeqexecStyles.notInMobile,
+        status.u match {
+          case Some(u) =>
+            Menu(secondary = true, floated = MenuFloated.Right)(
+              MenuHeader(clazz =
+                SeqexecStyles.notInMobile |+| SeqexecStyles.ui |+| SeqexecStyles.item
+              )(
                 u.displayName
               ),
-              <.div(
-                ^.cls := "ui header item",
-                SeqexecStyles.onlyMobile,
+              MenuHeader(clazz =
+                SeqexecStyles.onlyMobile |+| SeqexecStyles.ui |+| SeqexecStyles.item
+              )(
                 // Ideally we'd do this with css text-overflow but it is not
                 // working properly inside a header item, let's abbreviate in code
                 u.displayName
@@ -77,23 +73,23 @@ object ControlMenu {
                   .map(_.substring(0, 10) + "...")
                   .getOrElse[String]("")
               ),
-              <.div(
-                ^.cls := "ui item",
-                SeqexecStyles.notInMobile,
-                soundConnect(x => SoundControl(SoundControl.Props(x()))),
+              MenuItem(clazz = SeqexecStyles.notInMobile)(
+                soundConnect(x => SoundControl(x())),
                 logoutButton("Logout", status.isConnected)
               ),
-              <.div(
-                ^.cls := "ui item",
-                SeqexecStyles.onlyMobile,
+              MenuItem(clazz = SeqexecStyles.onlyMobile)(
                 logoutButton("", status.isConnected)
               )
             )
-        )
+          case None =>
+            MenuItem()(
+              soundConnect(x => SoundControl(x())),
+              loginButton(status.isConnected)
+            )
+        }
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(u: ClientStatus): Unmounted[Props, Unit, Unit] =
-    component(Props(u))
 }

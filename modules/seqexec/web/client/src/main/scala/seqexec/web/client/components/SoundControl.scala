@@ -5,7 +5,6 @@ package seqexec.web.client.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.FlipSoundOnOff
@@ -16,23 +15,27 @@ import react.semanticui.elements.icon.Icon
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.reusability._
 import web.client.Audio
+import react.common.ReactProps
+
+final case class SoundControl(sound: SoundSelection) extends ReactProps {
+  @inline def render: VdomElement = SoundControl.component(this)
+
+}
 
 /**
   * Button to toggle sound on/off
   */
 object SoundControl {
-  private val SoundOn = Audio.selectPlayable(new Audio(SoundOnMP3.resource),
-                                             new Audio(SoundOnWebM.resource))
+  private val SoundOn =
+    Audio.selectPlayable(new Audio(SoundOnMP3.resource), new Audio(SoundOnWebM.resource))
 
-  final case class Props(sound: SoundSelection)
-
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[SoundControl] = Reusability.derive[SoundControl]
 
   private def flipSound: Callback =
     SeqexecCircuit.dispatchCB(FlipSoundOnOff)
 
   private val component = ScalaComponent
-    .builder[Props]("SoundControl")
+    .builder[SoundControl]("SoundControl")
     .stateless
     .render_P { p =>
       val icon = p.sound match {
@@ -43,14 +46,9 @@ object SoundControl {
         case SoundSelection.SoundOn  => Callback.empty
         case SoundSelection.SoundOff => Callback(SoundOn.play())
       }
-      Button(
-        icon     = icon,
-        inverted = true,
-        size     = Medium,
-        onClick  = soundClick *> flipSound)
+      Button(icon = icon, inverted = true, size = Medium, onClick = soundClick *> flipSound)
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
