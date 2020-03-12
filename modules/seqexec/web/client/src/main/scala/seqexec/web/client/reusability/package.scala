@@ -14,7 +14,7 @@ import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Resource
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.dhs._
-import seqexec.model.{M1GuideConfig, M2GuideConfig, NSRunningState, NSSubexposure, NodAndShuffleStatus, NodAndShuffleStep, Observer, QueueId, SequenceState, StandardStep, Step, StepConfig, StepState, TelescopeGuideConfig, UserDetails}
+import seqexec.model._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.UserNotificationState
@@ -34,12 +34,13 @@ package object reusability {
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A] =
     Reusability.by(x => x: Int)
-  implicit val timeReuse: Reusability[Time]                 = Reusability.by(_.toMilliseconds.toLong)
-  implicit val imageIdReuse: Reusability[ImageFileId]       = Reusability.byEq
-  implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
-  implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
-  implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
-  implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
+  implicit val timeReuse: Reusability[Time]             = Reusability.by(_.toMilliseconds.toLong)
+  implicit val imageIdReuse: Reusability[ImageFileId]   = Reusability.byEq
+  implicit val stepStateReuse: Reusability[StepState]   = Reusability.byEq
+  implicit val obsIdReuse: Reusability[Observation.Id]  = Reusability.byEq
+  implicit val observerReuse: Reusability[Observer]     = Reusability.byEq
+  implicit val operatorReuse: Reusability[Operator]     = Reusability.byEq
+  implicit val stepConfigReuse: Reusability[StepConfig] = Reusability.byEq
   val stdStepReuse: Reusability[StandardStep] =
     Reusability.caseClassExcept(Symbol("config"))
   implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
@@ -68,7 +69,7 @@ package object reusability {
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
     Reusability.byEq
   implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
-  implicit val potStateReuse: Reusability[PotState] = Reusability.byRef
+  implicit val potStateReuse: Reusability[PotState]  = Reusability.byRef
   implicit val webSCeuse: Reusability[WebSocketConnection] =
     Reusability.by(_.ws.state)
   implicit val rrOperationReuse: Reusability[ResourceRunOperation] =
@@ -77,11 +78,11 @@ package object reusability {
   implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq
   implicit val usrNotReuse: Reusability[UserNotificationState] =
     Reusability.byEq
-  implicit val qoReuse: Reusability[QueueOperations]       = Reusability.byEq
-  implicit val qfReuse: Reusability[CalQueueControlFocus]  = Reusability.byEq
-  implicit val cqfReuse: Reusability[CalQueueFocus]        = Reusability.byEq
-  implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
-  implicit val globalLogReuse: Reusability[GlobalLog]      = Reusability.byEq
+  implicit val qoReuse: Reusability[QueueOperations]      = Reusability.byEq
+  implicit val qfReuse: Reusability[CalQueueControlFocus] = Reusability.byEq
+  implicit val cqfReuse: Reusability[CalQueueFocus]       = Reusability.byEq
+  implicit val qidReuse: Reusability[QueueId]             = Reusability.byEq
+  implicit val globalLogReuse: Reusability[GlobalLog]     = Reusability.byEq
   implicit val resMap: Reusability[Map[Resource, ResourceRunOperation]] =
     Reusability.map
   implicit val sllbMap: Reusability[Map[ServerLogLevel, Boolean]] =

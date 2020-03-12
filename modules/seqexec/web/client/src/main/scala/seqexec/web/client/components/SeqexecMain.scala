@@ -85,7 +85,7 @@ object SeqexecMain {
               SessionQueueTableSection(p.ctl)
             ),
             GridColumn(tablet = Six, computer = Six, clazz = SeqexecStyles.headerSideBarArea)(
-              headerSideBarConnect(x => HeadersSideBar(x))
+              headerSideBarConnect(x => HeadersSideBar(x()))
             )
           ),
           GridRow(clazz = SeqexecStyles.shorterRow)(

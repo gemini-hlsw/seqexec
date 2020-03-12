@@ -4,7 +4,11 @@
 package seqexec.model
 
 import cats.{ Eq, Show }
+import cats.implicits._
+import monocle.Prism
+import monocle.macros.Lenses
 
+@Lenses
 final case class Operator(value: String)
 
 object Operator {
@@ -17,5 +21,7 @@ object Operator {
 
   implicit val shows: Show[Operator] =
     Show.show(_.value)
+
+  val valueP: Prism[Operator, String] = Prism[Operator, String](s => s.value.some)(Operator.apply)
 
 }

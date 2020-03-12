@@ -4,6 +4,8 @@
 package seqexec.model
 
 import cats.{ Eq, Show }
+import cats.implicits._
+import monocle.Prism
 
 final case class Observer(value: String)
 
@@ -18,5 +20,6 @@ object Observer {
   implicit val shows: Show[Observer] =
     Show.show(_.value)
 
+  val valueP: Prism[Observer, String] = Prism[Observer, String](s => s.value.some)(Observer.apply)
 }
 
