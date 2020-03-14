@@ -12,7 +12,6 @@ import react.common._
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.semanticui.dataTab
 import react.semanticui.collections.message.Message
-import react.semanticui.elements.icon.Icon
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
@@ -39,7 +38,7 @@ object CalQueueTabContent {
 
   private val defaultContent = 
     Message(
-      icon    = Icon("inbox"),
+      icon    = "inbox",
       warning = true
     )("Work in progress").render
 

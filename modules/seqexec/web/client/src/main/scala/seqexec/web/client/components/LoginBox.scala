@@ -15,7 +15,8 @@ import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.LoggedIn
 import seqexec.web.client.circuit.SeqexecCircuit
-// import react.semanticui.collections.form._
+import react.semanticui.As
+import react.semanticui.collections.form._
 import react.semanticui.collections.grid._
 import react.semanticui.colors._
 import react.semanticui.floats
@@ -78,19 +79,21 @@ object LoginBox {
     def closeBox: Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
-    def attemptLogin: Callback = b.state >>= { s =>
-      // Change the UI and call login on the remote backend
-      updateProgressMsg("Authenticating...") >>
-        Callback.future(
-          SeqexecWebClient
-            .login(s.username, s.password)
-            .map(loggedInEvent)
-            .recover {
-              case _: Exception =>
-                updateErrorMsg("Login failed, check username/password")
-            }
-        )
-    }
+    val attemptLogin = (e: ReactEvent, _: Form.FormProps) => 
+      e.preventDefaultCB *>
+        b.state >>= { s =>
+          // Change the UI and call login on the remote backend
+          updateProgressMsg("Authenticating...") >>
+            Callback.future(
+              SeqexecWebClient
+                .login(s.username, s.password)
+                .map(loggedInEvent)
+                .recover {
+                  case _: Exception =>
+                    updateErrorMsg("Login failed, check username/password")
+                }
+            )
+        }
 
     private def toolbar(s: State): ModalActions =
       ModalActions(
@@ -108,14 +111,14 @@ object LoginBox {
                 )
               ),
               s.errorMsg.map(m =>
-                  GridColumn(
-                    textAlign = Left,
-                    floated   = floats.Left,
-                    width     = Six,
-                    color     = Red
-                  )(                
-                    Icon("attention"),
-                    m
+                GridColumn(
+                  textAlign = Left,
+                  floated   = floats.Left,
+                  width     = Six,
+                  color     = Red
+                )(                
+                  Icon("attention"),
+                  m
                 )
               ),
               (
@@ -124,11 +127,8 @@ object LoginBox {
                   floated   = floats.Right,
                   width     = Ten
                 )(
-                  Button(onClick    = closeBox)("Cancel"),
-                  Button(onClick    = attemptLogin,
-                          // buttonType = Button.SubmitType,
-                          // form       = Some(formId)
-                          )("Login")
+                  Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
+                  Button(^.tpe := "submit")("Login")
               ): VdomNode).some
             ).flatten: _*
           )
@@ -136,14 +136,20 @@ object LoginBox {
       )
 
     def render(p: Props, s: State) =
-      Modal(open = p.visible === SectionOpen)(
+      Modal(
+        as      = As.Form(Form(
+                    action = "#",
+                    onSubmitE = attemptLogin
+                  )(
+                    ^.id := formId,
+                    ^.method := "post"
+                  )),
+        open    = p.visible === SectionOpen,
+        onClose = closeBox
+      )(
         ModalHeader("Login"),
         ModalContent(
-          <.form(
-            ^.cls := "ui form",
-            ^.id := formId,
-            ^.method := "post",
-            ^.action := "#",
+          <.div(
             <.div(
               ^.cls := "required field",
               FormLabel("Username", Some("username")),
@@ -155,7 +161,8 @@ object LoginBox {
                   ^.name := "username",
                   ^.id := "username",
                   ^.value := s.username,
-                  ^.onChange ==> userMod
+                  ^.onChange ==> userMod,
+                  ^.autoFocus := true
                 ),
                 Icon("user")
               )
