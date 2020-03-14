@@ -19,6 +19,7 @@ import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import react.semanticui.elements.icon.Icon
 
 /**
   * Content of the queue tab
@@ -38,9 +39,12 @@ object CalQueueTabContent {
 
   private val defaultContent = 
     Message(
-      icon    = "inbox",
+      icon    = true,
       warning = true
-    )("Work in progress").render
+    )(
+      Icon("inbox"),
+      "Work in progress"
+    ).render
 
   private val component = ScalaComponent
     .builder[Props]("CalQueueTabContent")

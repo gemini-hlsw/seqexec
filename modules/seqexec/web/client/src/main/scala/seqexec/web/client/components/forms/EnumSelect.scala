@@ -42,9 +42,9 @@ object EnumSelect {
           selection   = true,
           disabled    = p.disabled,
           value       = p.value.map(i => enum.tag(i)).orUndefined,
-          options     = enum.all.map(i => DropdownItem(text = i.show: VdomNode, value = enum.tag(i),
+          options     = enum.all.map(i => DropdownItem(/*key = i.show, */text = i.show: VdomNode, value = enum.tag(i),
             onClickE = (_: ReactMouseEvent, ep: DropdownItem.DropdownItemProps) => ep.value.toOption.flatMap(v => enum.fromTag(v.asInstanceOf[String])).map(v => p.onChange(v)).getOrEmpty
-          )(^.key := i.show).props),
+          ).props),
           // onChange    = (_: ReactEvent, ep: Dropdown.DropdownProps) => ep.value.toOption.flatMap(v => enum.fromTag(v.asInstanceOf[String])).map(v => p.onChange(v)).getOrEmpty
         )
       )
