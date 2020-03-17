@@ -40,24 +40,25 @@ object SeqexecTabs {
               AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
             i
         }
-        val tabs = tabsL
-          .sortBy {
-            case Left(_)                 => Int.MinValue
-            case Right(t) if t.isPreview => (Int.MinValue + 1)
-            case Right(t)                => t.instrument.ordinal
-          }
-          .map {
-            case Right(t) =>
-              SequenceTab(
-                p.router,
-                t,
-                x().canOperate,
-                x().defaultObserver,
-                runningInstruments): VdomNode
-            case Left(t) =>
-              CalibrationQueueTab(p.router, t): VdomNode
-          }
-        if (tabs.nonEmpty) {
+        val tabs: List[VdomNode] =
+          tabsL
+            .sortBy {
+              case Left(_)                 => Int.MinValue
+              case Right(t) if t.isPreview => (Int.MinValue + 1)
+              case Right(t)                => t.instrument.ordinal
+            }
+            .map {
+              case Right(t) =>
+                SequenceTab(
+                  p.router,
+                  t,
+                  x().canOperate,
+                  x().defaultObserver,
+                  runningInstruments)
+              case Left(t) =>
+                CalibrationQueueTab(p.router, t)
+            }
+          if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",
             React.Fragment(tabs: _*)

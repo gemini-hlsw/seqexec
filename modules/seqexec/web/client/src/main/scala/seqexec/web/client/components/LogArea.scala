@@ -364,7 +364,7 @@ object LogArea {
                         <.div(
                           ^.cls := "inline field",
                           Checkbox(
-                            label = l.show: VdomNode,
+                            label = l.show,
                             checked = s,
                             onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) => (onLevelChange(b, l)(p.checked.getOrElse(false)))
                           )

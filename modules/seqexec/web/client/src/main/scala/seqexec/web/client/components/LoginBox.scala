@@ -99,38 +99,37 @@ object LoginBox {
       ModalActions(
         Grid(
           GridRow(verticalAlign = Middle)(
-            List[Option[VdomNode]](
-              s.progressMsg.map(m =>
-                  GridColumn(
-                    textAlign = Left,
-                    floated   = floats.Left,
-                    width     = Six
-                  )(
-                    Icon(name = "circle notched", loading = true),
-                    m
-                )
-              ),
-              s.errorMsg.map(m =>
+            s.progressMsg.whenDefined(m =>
                 GridColumn(
                   textAlign = Left,
                   floated   = floats.Left,
-                  width     = Six,
-                  color     = Red
-                )(                
-                  Icon("attention"),
-                  m
-                )
-              ),
-              (
-                GridColumn(
-                  textAlign = Right,
-                  floated   = floats.Right,
-                  width     = Ten
+                  width     = Six
                 )(
-                  Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
-                  Button(^.tpe := "submit")("Login")
-              ): VdomNode).some
-            ).flatten: _*
+                  Icon(name = "circle notched", loading = true),
+                  m
+              )
+            ),
+            s.errorMsg.whenDefined(m =>
+              GridColumn(
+                textAlign = Left,
+                floated   = floats.Left,
+                width     = Six,
+                color     = Red
+              )(                
+                Icon("attention"),
+                m
+              )
+            ),
+            (
+              GridColumn(
+                textAlign = Right,
+                floated   = floats.Right,
+                width     = Ten
+              )(
+                Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
+                Button(^.tpe := "submit")("Login")
+              )
+            )
           )
         )
       )

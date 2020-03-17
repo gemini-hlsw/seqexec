@@ -138,7 +138,7 @@ object SequenceTab {
         }
 
       val loadButton: TagMod =
-        (Popup("button", s"Load sequence ${sequenceId.format}")(
+        Popup("button", s"Load sequence ${sequenceId.format}")(
           Button(
             size     = Size.Large,
             compact  = true,
@@ -148,7 +148,7 @@ object SequenceTab {
             loading  = b.state.loading,
             onClickE = load(b, instrument, sequenceId) _
           )
-        ): VdomNode).when(isPreview && isLogged)
+        ).when(isPreview && isLogged)
 
       val instrumentWithId =
         React.Fragment(

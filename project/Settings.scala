@@ -27,7 +27,7 @@ object Settings {
     val javaTimeJS              = "2.0.0-RC5"
     val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.5.2"
-    val scalaJSSemanticUI       = "0.3.7"
+    val scalaJSSemanticUI       = "0.3.7+8-799091c1-SNAPSHOT"
     val scalaJSReactVirtualized = "0.7.2"
     val scalaJSReactClipboard   = "0.10.3"
     val scalaJSReactDraggable   = "0.7.2"
