@@ -79,7 +79,7 @@ object LoginBox {
     def closeBox: Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
-    val attemptLogin = (e: ReactEvent, _: Form.FormProps) => 
+    val attemptLogin = (e: ReactEvent, _: Form.FormProps) =>
       e.preventDefaultCB *>
         b.state >>= { s =>
           // Change the UI and call login on the remote backend
@@ -134,15 +134,17 @@ object LoginBox {
         )
       )
 
-    def render(p: Props, s: State) =
+    def render(p: Props, s: State): VdomNode =
       Modal(
-        as      = As.Form(Form(
-                    action = "#",
-                    onSubmitE = attemptLogin
-                  )(
-                    ^.id := formId,
-                    ^.method := "post"
-                  )),
+        as = As.Form(
+          Form(
+            action    = "#",
+            onSubmitE = attemptLogin
+          )(
+            ^.id := formId,
+            ^.method := "post"
+          )
+        ),
         open    = p.visible === SectionOpen,
         onClose = closeBox
       )(

@@ -213,15 +213,11 @@ object SessionQueueTable extends Columns {
       (ObsNameColumn, _.name)
     ).toMap
 
-    private val columnAdjustmens = Map[TableColumn, Double](
-      ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
+    private val columnAdjustmens =
+      Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
 
     val columnWidths: TableColumn => Option[Double] =
-      colWidths(sequencesList,
-                allTC,
-                extractors,
-                columnsMinWidth,
-                columnAdjustmens)
+      colWidths(sequencesList, allTC, extractors, columnsMinWidth, columnAdjustmens)
 
     // Hide some columns depending on login state
     val visibleColumns: TableColumn => Boolean = {
@@ -318,18 +314,20 @@ object SessionQueueTable extends Columns {
       p
     }
 
-    def unapply(l: SessionQueueRow):
-      Option[(Observation.Id,
-       SequenceState,
-       Instrument,
-       Option[String],
-       String,
-       ObsClass,
-       Boolean,
-       Boolean,
-       Option[Int],
-       Option[RunningStep],
-       Boolean)] =
+    def unapply(l: SessionQueueRow): Option[(
+        Observation.Id,
+        SequenceState,
+        Instrument,
+        Option[String],
+        String,
+        ObsClass,
+        Boolean,
+        Boolean,
+        Option[Int],
+        Option[RunningStep],
+        Boolean
+      )
+    ] =
       Some(
         (l.obsId,
          l.status,
@@ -394,26 +392,19 @@ object SessionQueueTable extends Columns {
       val icon: TagMod =
         row.status match {
           case SequenceState.Completed =>
-            Icon(name    = "checkmark", 
-                 clazz   = selectedIconStyle)
+            Icon(name = "checkmark", clazz = selectedIconStyle)
           case SequenceState.Running(_, _) =>
             Icon(name    = "circle notched",
                  fitted  = true,
                  loading = true,
                  clazz   = SeqexecStyles.runningIcon)
           case SequenceState.Failed(_) =>
-            Icon(name    = "attention",
-                 color   = Red,
-                 clazz   = selectedIconStyle)
+            Icon(name = "attention", color = Red, clazz = selectedIconStyle)
           case _ if b.state.rowLoading.exists(_ === index) =>
             // Spinning icon while loading
-            Icon(name    = "refresh",
-                 fitted  = true,
-                 loading = true,
-                 clazz   = SeqexecStyles.runningIcon)
+            Icon(name = "refresh", fitted = true, loading = true, clazz = SeqexecStyles.runningIcon)
           case _ if isFocused =>
-            Icon(name    = "dot circle outline",
-                 clazz   = selectedIconStyle)
+            Icon(name = "dot circle outline", clazz = selectedIconStyle)
           case _ =>
             <.div()
         }
@@ -447,18 +438,17 @@ object SessionQueueTable extends Columns {
         if (row.inDayCalQueue) {
           <.span(
             Icon(name   = "check circle outline",
-                size   = Large,
-                fitted = true,
-                clazz  = SeqexecStyles.selectedIcon),
+                 size   = Large,
+                 fitted = true,
+                 clazz  = SeqexecStyles.selectedIcon),
             ^.onClick ==> removeFromQueueE(row.obsId) _
           )
         } else {
           <.span(
             Icon(name   = "circle outline",
-                size   = Large,
-                fitted = true,
-                clazz  = SeqexecStyles.selectedIcon
-            ),
+                 size   = Large,
+                 fitted = true,
+                 clazz  = SeqexecStyles.selectedIcon),
             ^.onClick ==> addToQueueE(row.obsId) _
           )
         }
@@ -474,7 +464,7 @@ object SessionQueueTable extends Columns {
           case ObsClass.Daytime =>
             Icon(name = "sun", clazz = SeqexecStyles.selectedIcon)
           case ObsClass.Nighttime =>
-            Icon(name = "moon", clazz =SeqexecStyles.selectedIcon)
+            Icon(name = "moon", clazz = SeqexecStyles.selectedIcon)
           case _ =>
             <.div()
         }
@@ -494,7 +484,7 @@ object SessionQueueTable extends Columns {
       <.div(
         ^.title := "Control",
         ^.width := IconColumnWidth.px
-    )
+      )
 
   private def addAll: Callback =
     SeqexecCircuit.dispatchCB(RequestAllSelectedSequences(CalibrationQueueId))
@@ -507,12 +497,10 @@ object SessionQueueTable extends Columns {
         SeqexecStyles.selectedIcon,
         SeqexecStyles.centeredCell,
         <.span(
-          Icon(name    = "calendar alternate outline",
-              fitted  = true,
-              link    = true),
+          Icon(name = "calendar alternate outline", fitted = true, link = true),
           ^.onClick --> addAll
         )
-    )
+      )
 
   private val timeHeaderRenderer: HeaderRenderer[js.Object] =
     (_, _, _, _, _, _) =>
@@ -522,7 +510,7 @@ object SessionQueueTable extends Columns {
         SeqexecStyles.selectedIcon,
         SeqexecStyles.centeredCell,
         Icon(name = "clock outline", fitted = true)
-    )
+      )
 
   private val draggableRow =
     SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
@@ -596,9 +584,11 @@ object SessionQueueTable extends Columns {
                   SeqexecCircuit.dispatchCB(UpdateSessionQueueTableState(x)),
               b.props.visibleColumns,
               b.props.columnWidths
-            )),
+            )
+          ),
           className = columnStyle(meta.column).foldMap(_.htmlClass)
-        ))
+        )
+      )
 
     case ColumnRenderArgs(meta, _, width, false) =>
       Column(
@@ -609,7 +599,8 @@ object SessionQueueTable extends Columns {
           headerRenderer = fixedHeaderRenderer(meta.column),
           cellRenderer   = renderer(meta.column, b),
           className      = columnStyle(meta.column).foldMap(_.htmlClass)
-        ))
+        )
+      )
   }
 
   // Single click puts in preview or go to tab
@@ -655,7 +646,7 @@ object SessionQueueTable extends Columns {
               SeqexecStyles.noRowsSegment,
               ^.height := 180.px,
               "Session queue empty"
-          ),
+            ),
           overscanRowCount = SeqexecStyles.overscanRowCount,
           height           = 180,
           rowCount         = b.props.rowCount,

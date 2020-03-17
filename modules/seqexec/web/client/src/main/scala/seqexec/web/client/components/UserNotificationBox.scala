@@ -51,7 +51,7 @@ object UserNotificationBox {
             Icon("checkmark"),
             "Ok"
           )
-        )        
+        )
       )
     }
     .configure(Reusability.shouldComponentUpdate)

@@ -37,7 +37,7 @@ object CalQueueTabContent {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val defaultContent = 
+  private val defaultContent =
     Message(
       icon    = true,
       warning = true

@@ -120,6 +120,8 @@ object SeqexecStyles {
 
   val ui: Css = Css("ui")
 
+  val header: Css = Css("header")
+
   // Media queries to hide/display items for mobile
   val notInMobile: Css = Css("SeqexecStyles-notInMobile")
 
