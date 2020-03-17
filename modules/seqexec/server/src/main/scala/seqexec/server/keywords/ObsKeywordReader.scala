@@ -4,7 +4,7 @@
 package seqexec.server.keywords
 
 import cats.implicits._
-import cats.{MonadError, Eq}
+import cats.{ Eq, MonadError }
 import cats.data.EitherT
 import cats.data.Nested
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
@@ -18,12 +18,12 @@ import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import gem.enum.Site
 import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
+import java.time.{ Instant, LocalDate, LocalDateTime, ZoneId }
 
 import edu.gemini.spModel.gemini.gems.Canopus
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
-import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
+import seqexec.server.{ CleanConfig, ConfigUtilOps, SeqexecFailure }
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.Tcs
@@ -66,10 +66,10 @@ sealed trait ObsKeywordsReader[F[_]] {
 trait ObsKeywordsReaderConstants {
   // Constants taken from SPSiteQualityCB
   // TODO Make them public in SPSiteQualityCB
-  val MIN_HOUR_ANGLE: String         = "MinHourAngle"
-  val MAX_HOUR_ANGLE: String         = "MaxHourAngle"
-  val MIN_AIRMASS: String            = "MinAirmass"
-  val MAX_AIRMASS: String            = "MaxAirmass"
+  val MIN_HOUR_ANGLE: String = "MinHourAngle"
+  val MAX_HOUR_ANGLE: String = "MaxHourAngle"
+  val MIN_AIRMASS: String    = "MinAirmass"
+  val MAX_AIRMASS: String    = "MaxAirmass"
 
   val TIMING_WINDOW_START: String    = "TimingWindowStart"
   val TIMING_WINDOW_DURATION: String = "TimingWindowDuration"
@@ -131,23 +131,27 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       val keys: F[List[Option[(String, Double)]]] =
         List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
           val value: F[Option[Double]] =
-            config.extractAs[String](OCS_KEY / ObsConditionsProp / key)
+            config
+              .extractAs[String](OCS_KEY / ObsConditionsProp / key)
               .toOption
               .flatMap(_.parseDoubleOption)
               .pure[F]
 
-          Nested(value).map(key -> _).value
-          .handleError(_ => none) // If there is an error ignore the key
+          Nested(value)
+            .map(key -> _)
+            .value
+            .handleError(_ => none) // If there is an error ignore the key
         }.sequence
-      keys.map {_.mapFilter(identity).toMap}
+      keys.map(_.mapFilter(identity).toMap)
     }
 
     override def requestedConditions: F[Map[String, String]] = {
       val keys: F[List[(String, String)]] =
         List(SB, CC, IQ, WV).map { key =>
           val value: F[String] =
-            config.extractAs[String](OCS_KEY / ObsConditionsProp / key)
-              .map { d => (d === "100").fold("Any", s"$d-percentile") }
+            config
+              .extractAs[String](OCS_KEY / ObsConditionsProp / key)
+              .map(d => (d === "100").fold("Any", s"$d-percentile"))
               .toOption
               .pure[F]
               .safeValOrDefault
@@ -196,11 +200,13 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       windows.flattenOption.pure[F]
     }
 
-    override def dataLabel: F[String] = EitherT(
-      config.extractObsAs[String](DATA_LABEL_PROP)
-        .leftMap(explainExtractError)
-        .pure[F]
-    ).widenRethrowT
+    override def dataLabel: F[String] =
+      EitherT(
+        config
+          .extractObsAs[String](DATA_LABEL_PROP)
+          .leftMap(explainExtractError)
+          .pure[F]
+      ).widenRethrowT
 
     override def observatory: F[String] = telescopeName.pure[F]
 
@@ -244,38 +250,48 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         .pure[F]
       ).widenRethrowT
 
-    override def oiwfsGuide: F[StandardGuideOptions.Value] = extractOptionalGuide(GUIDE_WITH_OIWFS_PROP)
+    override def oiwfsGuide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(GUIDE_WITH_OIWFS_PROP)
 
     override def oiwfsGuideS: F[String] =
       oiwfsGuide
         .map(decodeGuide)
 
-    override def aowfsGuide: F[StandardGuideOptions.Value] = extractOptionalGuide(Tcs.GUIDE_WITH_AOWFS_PROP)
+    override def aowfsGuide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(Tcs.GUIDE_WITH_AOWFS_PROP)
 
     override def aowfsGuideS: F[String] =
       aowfsGuide
         .map(decodeGuide)
 
-    override def cwfs1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs1.getSequenceProp)
+    override def cwfs1Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(Canopus.Wfs.cwfs1.getSequenceProp)
 
-    override def cwfs2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs2.getSequenceProp)
+    override def cwfs2Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(Canopus.Wfs.cwfs2.getSequenceProp)
 
-    override def cwfs3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(Canopus.Wfs.cwfs3.getSequenceProp)
+    override def cwfs3Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(Canopus.Wfs.cwfs3.getSequenceProp)
 
-    override def odgw1Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw1.getSequenceProp)
+    override def odgw1Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(GsaoiOdgw.odgw1.getSequenceProp)
 
-    override def odgw2Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw2.getSequenceProp)
+    override def odgw2Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(GsaoiOdgw.odgw2.getSequenceProp)
 
-    override def odgw3Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw3.getSequenceProp)
+    override def odgw3Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(GsaoiOdgw.odgw3.getSequenceProp)
 
-    override def odgw4Guide: F[StandardGuideOptions.Value] = extractOptionalGuide(GsaoiOdgw.odgw4.getSequenceProp)
+    override def odgw4Guide: F[StandardGuideOptions.Value] =
+      extractOptionalGuide(GsaoiOdgw.odgw4.getSequenceProp)
 
     private implicit val eqVisibility: Eq[Visibility] = Eq.by(_.ordinal())
 
     private val headerPrivacyF: F[Boolean] =
-      (config.extractAs[Visibility](HEADER_VISIBILITY_KEY).getOrElse(Visibility.PUBLIC) === Visibility.PRIVATE)
-      .pure[F]
-
+      (config
+        .extractAs[Visibility](HEADER_VISIBILITY_KEY)
+        .getOrElse(Visibility.PUBLIC) === Visibility.PRIVATE)
+        .pure[F]
 
     override def headerPrivacy: F[Boolean] = headerPrivacyF
 
@@ -286,21 +302,23 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       EitherT(
         config.extractAs[Integer](PROPRIETARY_MONTHS_KEY)
           .recoverWith {
-            case ConfigUtilOps.KeyNotFound(_) => new Integer(0).asRight
+            case ConfigUtilOps.KeyNotFound(_) => Integer.valueOf(0).asRight
           }
           .leftMap(explainExtractError)
           .map { v =>
-            LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)
+            LocalDate
+              .now(ZoneId.of("GMT"))
+              .plusMonths(v.toLong)
+              .format(DateTimeFormatter.ISO_LOCAL_DATE)
           }
           .pure[F]
-        )
-      .widenRethrowT
+      ).widenRethrowT
 
     override def proprietaryMonths: F[String] =
       headerPrivacyF
         .ifM(calcProprietaryMonths, noProprietaryMonths)
 
-    private val manualDarkValue = "Manual Dark"
+    private val manualDarkValue    = "Manual Dark"
     private val manualDarkOverride = "Dark"
 
     override def obsObject: F[String] =
@@ -315,17 +333,19 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def pIReq: F[String] = "UNKNOWN".pure[F]
 
     override def sciBand: F[Int] =
-      config.extractObsAs[Integer](SCI_BAND)
-      .map(_.toInt)
-      .toOption
-      .pure[F]
-      .safeValOrDefault
+      config
+        .extractObsAs[Integer](SCI_BAND)
+        .map(_.toInt)
+        .toOption
+        .pure[F]
+        .safeValOrDefault
 
     def astrometicField: F[Boolean] =
-      config.extractInstAs[java.lang.Boolean](ASTROMETRIC_FIELD_PROP)
-      .toOption
-      .exists(Boolean.unbox)
-      .pure[F]
+      config
+        .extractInstAs[java.lang.Boolean](ASTROMETRIC_FIELD_PROP)
+        .toOption
+        .exists(Boolean.unbox)
+        .pure[F]
 
   }
 }

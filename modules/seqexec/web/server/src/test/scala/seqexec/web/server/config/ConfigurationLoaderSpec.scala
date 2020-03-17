@@ -60,8 +60,96 @@ class ConfigurationLoaderSpec extends CatsSuite {
   val blocker = Blocker.liftExecutionContext(ExecutionContext.global)
   test("read config") {
     assert(
-      loadConfiguration[IO](ConfigSource.resources("app.conf"), blocker).unsafeRunSync === ref
+      loadConfiguration[IO](ConfigSource.string(conf), blocker).unsafeRunSync === ref
     )
   }
 
+  val conf = """
+#
+# Seqexec server configuration for development mode
+#
+
+# mode can be dev in which case fake authentication is supported and the UI provides some extra tools
+mode = dev
+site = GS
+
+# Authentication related settings
+authentication {
+    # Indicates how long a session is valid in hrs
+    sessionLifeHrs = 2 hours
+    # Name of the cookie to store the session
+    cookieName = "SeqexecToken"
+    # Secret key for JWT tokens
+    secretKey = "somekey"
+    # List of LDAP servers, the list is used in a failover fashion
+    ldapURLs = ["ldap://sbfdc-wv1.gemini.edu:3268"]
+}
+
+# Web server related configuration
+web-server {
+    # Interface to listen on, 0.0.0.0 listens in all interfaces, production instances should be more restrictive
+    host = "0.0.0.0"
+    # Port to serve https requests
+    port = 7070
+    # Port for redirects to https
+    insecurePort = 7071
+    # External url used for redirects
+    externalBaseUrl = "localhost"
+    tls {
+        keyStore = "file.jks"
+        keyStorePwd = "key"
+        certPwd = "cert"
+    }
+}
+
+smart-gcal {
+    # We normally always use GS for smartGCalDir
+    smartGCalHost = "gsodbtest.gemini.edu"
+    # Tmp file for development
+    smartGCalDir = "/tmp/smartgcal"
+}
+
+# Configuration of the seqexec engine
+seqexec-engine {
+    # host for the odb
+    odb = localhost
+    dhsServer = "http://cpodhsxx:9090/axis2/services/dhs/images"
+    # Tells Seqexec how to interact with a system:
+    #   full: connect and command the system
+    #   readOnly: connect, but only to read values
+    #   simulated: don't connect, simulate internally
+    systemControl {
+        dhs = simulated
+        f2 = simulated
+        gcal = simulated
+        ghost = simulated
+        ghostGds = simulated
+        gmos = simulated
+        gnirs = simulated
+        gpi = simulated
+        gpiGds = simulated
+        gsaoi = simulated
+        gws = simulated
+        nifs = simulated
+        niri = simulated
+        tcs = simulated
+        altair = simulated
+        gems = simulated
+    }
+    odbNotifications = true
+    # Set to true on development to simulate errors on f2
+    instForceError = false
+    # if instForceError is true fail at the given iteration
+    failAt = 2
+    odbQueuePollingInterval = 3 seconds
+    tops = "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:"
+    epicsCaAddrList = 127.0.0.1
+    ioTimeout = 5 seconds
+    gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"
+    gpiGDS = "http://localhost:8888/xmlrpc"
+    ghostUrl = "vm://ghost?marshal=false&broker.persistent=false"
+    ghostGDS = "http://localhost:8888/xmlrpc"
+}
+
+"""
 }

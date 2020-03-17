@@ -84,6 +84,7 @@ object Settings {
     val prometheusClient        = "0.8.1"
     val geminiLocales           = "0.3.0"
     val pprint                  = "0.5.9"
+    val jaxb                    = "2.3.1"
 
     // Gemini Libraries
     val gspMath                 = "0.1.16"
@@ -200,6 +201,9 @@ object Settings {
     val WDBAClient  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
                       "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC)
+
+    val JAXB  = Seq("javax.xml.bind"     % "jaxb-api"     % LibraryVersions.jaxb,
+                    "org.glassfish.jaxb" % "jaxb-runtime" % LibraryVersions.jaxb)
 
     // GIAPI Libraries
     val EpicsService        = "edu.gemini.epics"     % "epics-service"           % LibraryVersions.epicsService
