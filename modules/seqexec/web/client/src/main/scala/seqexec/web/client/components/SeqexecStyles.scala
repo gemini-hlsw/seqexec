@@ -235,7 +235,7 @@ object SeqexecStyles {
 
   val rowDone: Css = Css("SeqexecStyles-rowDone")
 
-  val rowNone: Css = Css.Zero
+  val rowNone: Css = Css.Empty
 
   val stepRowWithBreakpoint: Css =
     Css("SeqexecStyles-stepRowWithBreakpoint")

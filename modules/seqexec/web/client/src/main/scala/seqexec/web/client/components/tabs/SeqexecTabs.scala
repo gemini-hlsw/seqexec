@@ -13,6 +13,9 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.circuit.SeqexecCircuit
 import react.common._
+import react.semanticui.collections.menu.Menu
+import react.semanticui.collections.menu.MenuAttached
+import react.semanticui.collections.menu.MenuTabular
 
 /**
   * Menu with tabs
@@ -36,8 +39,7 @@ object SeqexecTabs {
       tabConnect { x =>
         val tabsL = x().tabs.toList
         val runningInstruments = tabsL.collect {
-          case Right(
-              AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
+          case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
             i
         }
         val tabs: List[VdomNode] =
@@ -49,24 +51,17 @@ object SeqexecTabs {
             }
             .map {
               case Right(t) =>
-                SequenceTab(
-                  p.router,
-                  t,
-                  x().canOperate,
-                  x().defaultObserver,
-                  runningInstruments)
+                SequenceTab(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)
               case Left(t) =>
                 CalibrationQueueTab(p.router, t)
             }
-          if (tabs.nonEmpty) {
-          <.div(
-            ^.cls := "ui attached tabular menu",
-            React.Fragment(tabs: _*)
+        React.Fragment(
+          Menu(tabular = MenuTabular.Tabular, attached = MenuAttached.Attached)(
+            tabs: _*
           )
-        } else {
-          <.div()
-        }
-    })
+        )
+      }
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

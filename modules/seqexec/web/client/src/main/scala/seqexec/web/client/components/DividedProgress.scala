@@ -14,24 +14,24 @@ import seqexec.web.client.semanticui._
   * Progress bar divided in steps
   */
 final case class DividedProgress(
-                                  sections            : List[DividedProgress.Label],
-                                  sectionTotal        : DividedProgress.Quantity,
-                                  value               : DividedProgress.Quantity,
-                                  indicating          : Boolean = false,
-                                  progress            : Boolean = false,
-                                  completeSectionColor: Option[String] = None,
-                                  ongoingSectionColor : Option[String] = None,
-                                  progressCls         : List[Css] = Nil,
-                                  barCls              : List[Css],
-                                  labelCls            : List[Css] = Nil
-                                ) extends ReactProps {
+  sections:             List[DividedProgress.Label],
+  sectionTotal:         DividedProgress.Quantity,
+  value:                DividedProgress.Quantity,
+  indicating:           Boolean = false,
+  progress:             Boolean = false,
+  completeSectionColor: Option[String] = None,
+  ongoingSectionColor:  Option[String] = None,
+  progressCls:          List[Css] = Nil,
+  barCls:               List[Css],
+  labelCls:             List[Css] = Nil
+) extends ReactProps {
   @inline def render: VdomElement = DividedProgress.component(this)
 }
 
 object DividedProgress {
   type Props = DividedProgress
 
-  type Label = String
+  type Label    = String
   type Quantity = Int
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[DividedProgress]
@@ -43,7 +43,7 @@ object DividedProgress {
       val countSections = p.sections.length
 
       val sectionProgressStyles: List[Css] =
-      // Length is 1 + (countSections - 2) + 1 = countSections
+        // Length is 1 + (countSections - 2) + 1 = countSections
         SeqexecStyles.dividedProgressSectionLeft +:
           List.fill(countSections - 2)(SeqexecStyles.dividedProgressSectionMiddle) :+
           SeqexecStyles.dividedProgressSectionRight
@@ -51,7 +51,7 @@ object DividedProgress {
       val completeSections = p.value / p.sectionTotal
 
       val sectionValuesAndColors: List[(Quantity, Option[String])] =
-      // Length is completeSections + 1 + (countSections - completeSections - 1) = countSections
+        // Length is completeSections + 1 + (countSections - completeSections - 1) = countSections
         (List.fill(completeSections)((p.sectionTotal, p.completeSectionColor)) :+
           ((p.value % p.sectionTotal, p.ongoingSectionColor))) ++
           List.fill(countSections - completeSections - 1)((0, None))
@@ -61,32 +61,36 @@ object DividedProgress {
           List.empty
         else
           SeqexecStyles.dividedProgressBarLeft +:
-            List.fill(completeSections - 1)(SeqexecStyles.dividedProgressBarMiddle).take(countSections - 2) :+
+            List
+              .fill(completeSections - 1)(SeqexecStyles.dividedProgressBarMiddle)
+              .take(countSections - 2) :+
             SeqexecStyles.dividedProgressBarRight
 
       val sectionInfo =
         p.sections
-         .zip(sectionValuesAndColors)
-         .zip(sectionProgressStyles)
-         .zip(sectionBarStyles.padTo(countSections, Css.Zero)) // Due to padding, length = countSections
+          .zip(sectionValuesAndColors)
+          .zip(sectionProgressStyles)
+          .zip(
+            sectionBarStyles.padTo(countSections, Css.Empty)
+          ) // Due to padding, length = countSections
 
-        <.span(
-          SeqexecStyles.dividedProgress,
-          sectionInfo.toTagMod {
-            case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
-              Progress(
-                label,
-                p.sectionTotal,
-                sectionValue,
-                p.indicating,
-                p.progress,
-                sectionColor,
-                p.progressCls :+ sectionProgressStyle,
-                p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
-                p.labelCls
-              )
-          }
-        )
+      <.span(
+        SeqexecStyles.dividedProgress,
+        sectionInfo.toTagMod {
+          case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
+            Progress(
+              label,
+              p.sectionTotal,
+              sectionValue,
+              p.indicating,
+              p.progress,
+              sectionColor,
+              p.progressCls :+ sectionProgressStyle,
+              p.barCls ++ List(sectionBarStyle, SeqexecStyles.dividedProgressBar),
+              p.labelCls
+            )
+        }
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

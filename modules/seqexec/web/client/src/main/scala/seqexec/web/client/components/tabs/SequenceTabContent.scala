@@ -1,24 +1,31 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.client.components.sequence.steps
+package seqexec.web.client.components.tabs
 
 import cats.implicits._
 import diode.react.ReactConnectProxy
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.common.implicits._
 import seqexec.web.client.circuit._
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
+import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
-import seqexec.web.client.semanticui.{Size => _, _}
-import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
-import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.{ Size => _, _ }
+import react.semanticui.modules.tab.TabPane
+import react.semanticui.As
+import react.semanticui.elements.segment.Segment
+import react.semanticui.elements.segment.SegmentAttached
 
 /**
   * Content of a single tab with a sequence
@@ -53,7 +60,8 @@ object SequenceTabContent {
                    p.content.id,
                    s,
                    p.content.totalSteps,
-                   p.content.isPreview)): TagMod
+                   p.content.isPreview)
+        ): TagMod
     }
 
   def stepsTable(p: Props): VdomElement =
@@ -70,13 +78,17 @@ object SequenceTabContent {
         p.stepsConnect { x =>
           val focus = x()
 
-          focus.stepsTable.foldMap(_.steps).lift(i).map { steps =>
-            val hs = focus.configTableState
-            <.div(
-              ^.height := "100%",
-              StepConfigTable(steps, hs)
-            )
-          }.getOrElse(<.div())
+          focus.stepsTable
+            .foldMap(_.steps)
+            .lift(i)
+            .map { steps =>
+              val hs = focus.configTableState
+              <.div(
+                ^.height := "100%",
+                StepConfigTable(steps, hs)
+              )
+            }
+            .getOrElse(<.div())
         }
     }
 
@@ -88,22 +100,24 @@ object SequenceTabContent {
       val instrument   = p.content.instrument
       val logDisplayed = p.content.logDisplayed
 
-      <.div(
-        ^.cls := "ui attached secondary segment tab",
-        ^.classSet(
-          "active" -> p.content.isActive
-        ),
+      val tabClazz =
+        List(
+          SeqexecStyles.tabSegment.when_(canOperate),
+          SeqexecStyles.tabSegmentLogShown
+            .when_(canOperate && logDisplayed === SectionOpen),
+          SeqexecStyles.tabSegmentLogHidden
+            .when_(canOperate && logDisplayed === SectionClosed),
+          SeqexecStyles.tabSegmentUnauth.when_(!canOperate),
+          SeqexecStyles.tabSegmentLogShownUnauth
+            .when_(!canOperate && logDisplayed === SectionOpen),
+          SeqexecStyles.tabSegmentLogHiddenUnauth
+            .when_(!canOperate && logDisplayed === SectionClosed)
+        ).combineAll
+
+      TabPane(active = p.content.isActive,
+              as     = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
+              clazz  = tabClazz)(
         dataTab := instrument.show,
-        SeqexecStyles.tabSegment.when(canOperate),
-        SeqexecStyles.tabSegmentLogShown
-          .when(canOperate && logDisplayed === SectionOpen),
-        SeqexecStyles.tabSegmentLogHidden
-          .when(canOperate && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegmentUnauth.when(!canOperate),
-        SeqexecStyles.tabSegmentLogShownUnauth
-          .when(!canOperate && logDisplayed === SectionOpen),
-        SeqexecStyles.tabSegmentLogHiddenUnauth
-          .when(!canOperate && logDisplayed === SectionClosed),
         <.div(
           ^.height := "100%",
           toolbar(p),

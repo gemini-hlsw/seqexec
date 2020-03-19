@@ -4,17 +4,18 @@
 package seqexec.web.client.components.tabs
 
 import gem.enum.Site
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.collections.grid.GridColumn
+import react.semanticui.widths._
 import seqexec.web.client.circuit._
-import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.components.sequence.steps.SequenceTabContent
 import seqexec.web.client.components.queue.CalQueueTabContent
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.reusability._
 
 /**
@@ -22,7 +23,7 @@ import seqexec.web.client.reusability._
   */
 final case class TabsArea(
   router: RouterCtl[SeqexecPages],
-  site: Site
+  site:   Site
 ) extends ReactProps {
   @inline def render: VdomElement = TabsArea.component(this)
 }
@@ -37,21 +38,23 @@ object TabsArea {
     .builder[Props]("TabsArea")
     .stateless
     .render_P(p =>
-      <.div(
-        ^.cls := "ui sixteen wide column",
-        SeqexecStyles.sequencesArea,
+      GridColumn(width = Sixteen, clazz = SeqexecStyles.sequencesArea)(
         SeqexecTabs(p.router),
         tabsConnect(x =>
-          React.Fragment(x().toList.collect {
-            case t: SequenceTabContentFocus =>
-              SequenceTabContent(p.router, t): VdomNode
-            case t =>
-              CalQueueTabContent(
-                CalQueueTabContent.Props(t.canOperate,
-                                         t.active,
-                                         t.logDisplayed)): VdomNode
-          }: _*))
-    ))
+          React
+            .Fragment(
+              x().toList.collect {
+                case t: SequenceTabContentFocus =>
+                  SequenceTabContent(p.router, t): VdomNode
+                case t =>
+                  CalQueueTabContent(
+                    CalQueueTabContent.Props(t.canOperate, t.active, t.logDisplayed)
+                  ): VdomNode
+              }: _*
+            )
+        )
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

@@ -5,26 +5,27 @@ package seqexec.web.client.components.tabs
 
 import cats.implicits._
 import gem.Observation
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
 import react.common._
-import seqexec.model.enum.BatchExecState
+import react.semanticui.colors._
+import react.semanticui.elements.label.Label
 import seqexec.model.CalibrationQueueId
-import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.model.enum.BatchExecState
 import seqexec.web.client.actions.RequestAddSeqCal
-import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.CalibrationQueueTabActive
-import seqexec.web.client.model.TabSelected
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon._
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
+import seqexec.web.client.model.CalibrationQueueTabActive
+import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.TabSelected
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui._
 
 final case class CalibrationQueueTab(
   router: RouterCtl[SeqexecPages],
@@ -47,23 +48,20 @@ object CalibrationQueueTab {
     Reusability.by(x => (x.tab.active, x.tab.calibrationTab.state))
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  def showCalibrationQueue(p: Props, page: SeqexecPages)(
-    e:                        ReactEvent): Callback =
+  def showCalibrationQueue(p: Props, page: SeqexecPages)(e: ReactEvent): Callback =
     // prevent default to avoid the link jumping
     e.preventDefaultCB *>
       // Request to display the selected sequence
       p.router
         .setUrlAndDispatchCB(page)
-        .unless(p.tab.active === TabSelected.Selected) *>
-      Callback.empty
+        .unless(p.tab.active === TabSelected.Selected)
+        .void
 
   def addToQueueE(e: ReactDragEvent): Callback =
     e.preventDefaultCB *>
       Option(e.dataTransfer.getData("text/plain"))
         .flatMap(Observation.Id.fromString)
-        .map { id =>
-          SeqexecCircuit.dispatchCB(RequestAddSeqCal(CalibrationQueueId, id))
-        }
+        .map(id => SeqexecCircuit.dispatchCB(RequestAddSeqCal(CalibrationQueueId, id)))
         .getOrEmpty
 
   private def onDragEnter(b: Backend)(e: ReactDragEvent) =
@@ -112,26 +110,24 @@ object CalibrationQueueTab {
       val tab = b.props.tab
       val icon = tab.calibrationTab.state match {
         case BatchExecState.Running =>
-          IconCircleNotched.copyIcon(loading = true)
+          IconCircleNotched.loading()
         case BatchExecState.Completed => IconCheckmark
         case _                        => IconSelectedRadio
       }
 
       val color = tab.calibrationTab.state match {
-        case BatchExecState.Running   => "orange"
-        case BatchExecState.Completed => "green"
-        case _                        => "grey"
+        case BatchExecState.Running   => Orange
+        case BatchExecState.Completed => Green
+        case _                        => Grey
       }
 
       val tabContent: VdomNode =
         <.div(
           SeqexecStyles.tabLabel,
           <.div(SeqexecStyles.activeInstrumentLabel, "Daytime Queue"),
-          Label(
-            Label.Props(tab.calibrationTab.state.show,
-                        color       = color.some,
-                        icon        = icon.some,
-                        extraStyles = List(SeqexecStyles.labelPointer)))
+          Label(color = color, icon = icon, clazz = SeqexecStyles.labelPointer)(
+            tab.calibrationTab.state.show
+          )
         )
 
       linkTo(b, CalibrationQueuePage)(tabContent)
