@@ -72,7 +72,7 @@ object Settings {
     val opencsv                 = "2.1"
     val epicsService            = "1.0.3-SNAPSHOT"
     val gmpCommandRecords       = "0.7.2"
-    val giapi                   = "1.1.2"
+    val giapi                   = "1.1.3"
     val giapiJmsUtil            = "0.5.2"
     val giapiJmsProvider        = "1.6.2"
     val giapiCommandsClient     = "0.2.2"
