@@ -73,7 +73,7 @@ object Settings {
     val epicsService            = "1.0.3-SNAPSHOT"
     val gmpCommandRecords       = "0.7.2"
     val giapi                   = "1.1.2"
-    val giapiJmsUtil            = "0.5.2"
+    val giapiJmsUtil            = "0.5.3"
     val giapiJmsProvider        = "1.6.2"
     val giapiCommandsClient     = "0.2.2"
     val giapiStatusService      = "0.6.2"
