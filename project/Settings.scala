@@ -27,10 +27,10 @@ object Settings {
     val javaTimeJS              = "2.0.0-RC5"
     val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.7.0"
-    val scalaJSSemanticUI       = "0.4.3"
-    val scalaJSReactVirtualized = "0.7.2"
-    val scalaJSReactClipboard   = "0.10.3"
-    val scalaJSReactDraggable   = "0.7.2"
+    val scalaJSSemanticUI       = "0.4.4"
+    val scalaJSReactVirtualized = "0.7.4"
+    val scalaJSReactClipboard   = "0.10.5"
+    val scalaJSReactDraggable   = "0.7.4"
     val scalaJSReactSortable    = "0.3.1"
 
     // Scala libraries
@@ -133,7 +133,7 @@ object Settings {
       "com.github.pureconfig" %% "pureconfig"             % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats"        % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats-effect" % LibraryVersions.pureConfig,
-      "com.github.pureconfig" %% "pureconfig-http4s"      % LibraryVersions.pureConfig
+      "com.github.pureconfig" %% "pureconfig-http4s" % LibraryVersions.pureConfig
     )
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)

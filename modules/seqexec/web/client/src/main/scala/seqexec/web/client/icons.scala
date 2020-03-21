@@ -8,4 +8,7 @@ object icons {
   val IconCircleNotched: Icon = Icon("circle notched")
   val IconSelectedRadio: Icon = Icon("dot circle outline")
   val IconAttention: Icon     = Icon("attention")
+  val IconCopyOutline: Icon   = Icon("copy outline")
+  val IconDoubleDown: Icon    = Icon("angle double down")
+  val IconDoubleUp: Icon      = Icon("angle double up")
 }

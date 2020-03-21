@@ -3,44 +3,53 @@
 
 package seqexec.web.client.components
 
-import cats.Eq
-import cats.Show
 import cats.data.NonEmptyList
+import cats.Eq
 import cats.implicits._
+import cats.Show
 import gem.enum.Site
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
+import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import mouse.all._
-import monocle.Lens
-import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import react.virtualized._
+import monocle.Lens
+import monocle.macros.Lenses
+import mouse.all._
 import react.clipboard._
 import react.common._
 import react.common.implicits._
-import scala.scalajs.js
-import scala.math.max
+import react.semanticui.collections.form.Form
+import react.semanticui.collections.form.FormField
+import react.semanticui.collections.form.FormGroup
+import react.semanticui.collections.grid.Grid
+import react.semanticui.collections.grid.GridColumn
+import react.semanticui.collections.grid.GridRow
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.segment.Segment
+import react.semanticui.modules.checkbox.Checkbox
+import react.semanticui.sizes._
+import react.semanticui.widths._
+import react.semanticui.textalignment._
+import react.virtualized._
 import scala.collection.immutable.SortedMap
+import scala.math.max
+import scala.scalajs.js
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
-import react.semanticui.modules.checkbox.Checkbox
-import react.semanticui.elements.icon.Icon
-import react.semanticui.elements.button.Button
-import react.semanticui.sizes._
+import seqexec.web.client.actions.ToggleLogArea
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.icons._
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
-import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.client.reusability._
-import seqexec.web.client.circuit.SeqexecCircuit
 import web.client.table._
 
 /**
@@ -52,7 +61,7 @@ object CopyLogToClipboard {
     .stateless
     .render_P { p =>
       CopyToClipboard(p)(
-        <.div(Icon(name = "copy outline", link = true, clazz = SeqexecStyles.logIconRow))
+        <.div(IconCopyOutline.link().clazz(SeqexecStyles.logIconRow))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -72,8 +81,8 @@ object LogArea {
 
   sealed trait TableColumn
   case object TimestampColumn extends TableColumn
-  case object LevelColumn     extends TableColumn
-  case object MsgColumn       extends TableColumn
+  case object LevelColumn extends TableColumn
+  case object MsgColumn extends TableColumn
   case object ClipboardColumn extends TableColumn
 
   object TableColumn {
@@ -95,10 +104,7 @@ object LogArea {
 
   object LogRow {
 
-    def apply(local:     String,
-              timestamp: Instant,
-              level:     ServerLogLevel,
-              msg:       String): LogRow = {
+    def apply(local: String, timestamp: Instant, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
       p.local     = local
       p.timestamp = timestamp
@@ -136,8 +142,10 @@ object LogArea {
   }
 
   @Lenses
-  final case class State(selectedLevels: SortedMap[ServerLogLevel, Boolean],
-                         tableState:     TableState[TableColumn]) {
+  final case class State(
+    selectedLevels: SortedMap[ServerLogLevel, Boolean],
+    tableState:     TableState[TableColumn]
+  ) {
 
     def allowedLevel(level: ServerLogLevel): Boolean =
       selectedLevels.getOrElse(level, false)
@@ -155,15 +163,16 @@ object LogArea {
       State.selectedLevels ^|-> at(l)
 
     private val DefaultTableState: TableState[TableColumn] =
-      TableState[TableColumn](userModified   = NotModified,
-                              scrollPosition = 0,
-                              columns = NonEmptyList.of(TimestampColumnMeta,
-                                                        LevelColumnMeta,
-                                                        MsgColumnMeta,
-                                                        ClipboardColumnMeta))
+      TableState[TableColumn](
+        userModified   = NotModified,
+        scrollPosition = 0,
+        columns =
+          NonEmptyList.of(TimestampColumnMeta, LevelColumnMeta, MsgColumnMeta, ClipboardColumnMeta)
+      )
 
     val Default: State =
-      State(SortedMap(ServerLogLevel.ServerLogLevelEnumerated.all.map(_ -> true): _*), DefaultTableState)
+      State(SortedMap(ServerLogLevel.ServerLogLevelEnumerated.all.map(_ -> true): _*),
+            DefaultTableState)
   }
 
   private val ClipboardWidth    = 41.0
@@ -221,11 +230,11 @@ object LogArea {
 
   // Custom renderers for the last column
   private val clipboardHeaderRenderer: HeaderRenderer[js.Object] =
-    (_, _, _, _, _, _) =>
-      Icon(name = "copy outline", clazz = SeqexecStyles.logIconHeader)
+    (_, _, _, _, _, _) => IconCopyOutline.clazz(SeqexecStyles.logIconHeader)
 
   private def colBuilder(b: Backend, size: Size)(
-    r:                      ColumnRenderArgs[TableColumn]): Table.ColumnArg =
+    r:                      ColumnRenderArgs[TableColumn]
+  ): Table.ColumnArg =
     r match {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>
         Column(
@@ -236,26 +245,28 @@ object LogArea {
             cellRenderer    = clipboardCellRenderer(b.props.site),
             className       = SeqexecStyles.clipboardIconDiv.htmlClass,
             headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
-          ))
+          )
+        )
       case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn =>
         Column(
           Column.propsNoFlex(width     = width,
                              dataKey   = meta.name,
                              label     = meta.label,
-                             className = LogColumnStyle))
+                             className = LogColumnStyle)
+        )
       case ColumnRenderArgs(meta, _, width, _) =>
         Column(
           Column.propsNoFlex(
-            width          = width,
-            dataKey        = meta.name,
-            label          = meta.label,
+            width   = width,
+            dataKey = meta.name,
+            label   = meta.label,
             headerRenderer = resizableHeaderRenderer(
               b.state.tableState
-                .resizeColumn(meta.column,
-                              size,
-                              b.setStateL(State.tableState)(_))),
+                .resizeColumn(meta.column, size, b.setStateL(State.tableState)(_))
+            ),
             className = LogColumnStyle
-          ))
+          )
+        )
     }
 
   private def clipboardCellRenderer(
@@ -271,15 +282,15 @@ object LogArea {
   // Style for each row
   private def rowClassName(b: Backend)(i: Int): String =
     ((i, b.props.rowGetter(b.state)(i)) match {
-      case (-1, _)                                    =>
+      case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  =>
+      case (_, LogRow(_, ServerLogLevel.INFO, _, _)) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.infoLog
-      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  =>
+      case (_, LogRow(_, ServerLogLevel.WARN, _, _)) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.warningLog
       case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.errorLog
-      case _                                          =>
+      case _ =>
         SeqexecStyles.stepRow
     }).htmlClass
 
@@ -292,12 +303,10 @@ object LogArea {
         Table.props(
           disableHeader = false,
           noRowsRenderer = () =>
-            <.div(
-              ^.cls := "ui center aligned segment noRows",
-              SeqexecStyles.noRowsSegment,
+            Segment(textAlign = Center, clazz = SeqexecStyles.noRowsSegment)(
               ^.height := 270.px,
               "No log entries"
-          ),
+            ),
           overscanRowCount = SeqexecStyles.overscanRowCount,
           height           = 200,
           rowCount         = b.props.rowCount(b.state),
@@ -314,8 +323,8 @@ object LogArea {
       <.div()
     }
 
-  private def onResize(b: Backend): Size => Callback = s =>
-    b.modStateL(State.tableState)(_.recalculateWidths(s, _ => true, columnWidths))
+  private def onResize(b: Backend): Size => Callback =
+    s => b.modStateL(State.tableState)(_.recalculateWidths(s, _ => true, columnWidths))
 
   private def onLevelChange(
     b: Backend,
@@ -329,44 +338,33 @@ object LogArea {
     .render { b =>
       val p = b.props
       val s = b.state
-      val toggleIcon = (p.log.display === SectionOpen)
-        .fold(Icon("angle double down"), Icon("angle double up"))
+      val toggleIcon = if (p.log.display === SectionOpen) {
+        IconDoubleDown
+      } else { IconDoubleUp }
       val toggleText =
         (p.log.display === SectionOpen).fold("Hide Log", "Show Log")
-      <.div(
-        ^.cls := "ui sixteen wide column",
-        SeqexecStyles.logSegment,
-        <.div(
-          ^.cls := "ui secondary segment",
-          SeqexecStyles.logSecondarySegment,
-          <.div(
-            ^.cls := "ui grid",
-            <.div(
-              ^.cls := "ui row",
-              SeqexecStyles.logControlRow,
-              <.div(
-                ^.cls := "ui six wide column",
+      GridColumn(width = Sixteen, clazz = SeqexecStyles.logSegment)(
+        Segment(secondary = true, clazz = SeqexecStyles.logSecondarySegment)(
+          Grid(
+            GridRow(clazz = SeqexecStyles.logControlRow)(
+              GridColumn(width = Six)(
                 Button(icon          = true,
                        labelPosition = "left",
                        compact       = true,
                        size          = Small,
                        onClick       = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleIcon, toggleText)
               ),
-              <.div(
-                ^.cls := "ui ten wide column",
-                <.div(
-                  ^.cls := "ui form row",
-                  <.div(
-                    ^.cls := "fields",
-                    SeqexecStyles.selectorFields,
+              GridColumn(width = Ten)(
+                Form(
+                  FormGroup(clazz = SeqexecStyles.selectorFields)(
                     s.selectedLevels.toTagMod {
                       case (l, s) =>
-                        <.div(
-                          ^.cls := "inline field",
+                        FormField(inline = true)(
                           Checkbox(
-                            label = l.show,
+                            label   = l.show,
                             checked = s,
-                            onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) => (onLevelChange(b, l)(p.checked.getOrElse(false)))
+                            onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
+                              (onLevelChange(b, l)(p.checked.getOrElse(false)))
                           )
                         )
                     }
@@ -374,13 +372,8 @@ object LogArea {
                 )
               ).when(p.log.display === SectionOpen)
             ),
-            <.div(
-              ^.cls := "ui row",
-              SeqexecStyles.logTableRow,
-              AutoSizer(
-                AutoSizer.props(table(b),
-                                disableHeight = true,
-                                onResize      = onResize(b)))
+            GridRow(clazz = SeqexecStyles.logTableRow)(
+              AutoSizer(AutoSizer.props(table(b), disableHeight = true, onResize = onResize(b)))
             ).when(p.log.display === SectionOpen)
           )
         )
