@@ -5,22 +5,22 @@ package seqexec.web.client.components
 
 import cats.implicits._
 import diode.react.ReactPot._
-import japgolly.scalajs.react.vdom.html_<^._
+import gem.enum.Site
 import japgolly.scalajs.react.extra.router._
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
-import gem.enum.Site
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
 import react.semanticui.collections.grid._
+import react.semanticui.elements.divider.Divider
 import react.semanticui.widths._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.tabs.TabsArea
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
-import react.semanticui.elements.divider.Divider
 
 final case class AppTitle(site: Site, ws: WebSocketConnection) extends ReactProps {
   @inline def render: VdomElement = AppTitle.component(this)
@@ -97,7 +97,7 @@ object SeqexecMain {
         ),
         lbConnect(p => LoginBox(p())),
         userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p()))),
-        Footer(Footer.Props(p.ctl, p.site))
+        Footer(p.ctl, p.site)
       )
     )
     .configure(Reusability.shouldComponentUpdate)

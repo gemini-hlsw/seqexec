@@ -6,9 +6,8 @@ package seqexec.web.client.components
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.collections.menu._
 import seqexec.web.client.actions.SelectCalibrationQueue
@@ -17,11 +16,15 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.reusability._
 
+final case class Footer(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps {
+  @inline def render: VdomElement = Footer.component(this)
+}
+
 /**
   * Component for the bar at the top of the page
   */
 object Footer {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+  type Props = Footer
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
@@ -57,11 +60,10 @@ object Footer {
             clazz  = SeqexecStyles.notInMobile
           )(OcsBuildInfo.version)
         ),
-        userConnect(FooterStatus.apply)
+        userConnect(x => FooterStatus(x()))
       )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

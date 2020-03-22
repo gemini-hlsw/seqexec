@@ -32,6 +32,7 @@ import react.semanticui.collections.grid.Grid
 import react.semanticui.collections.grid.GridColumn
 import react.semanticui.collections.grid.GridRow
 import react.semanticui.elements.button.Button
+import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.segment.Segment
 import react.semanticui.modules.checkbox.Checkbox
 import react.semanticui.sizes._
@@ -349,7 +350,7 @@ object LogArea {
             GridRow(clazz = SeqexecStyles.logControlRow)(
               GridColumn(width = Six)(
                 Button(icon          = true,
-                       labelPosition = "left",
+                       labelPosition = LabelPosition.Left,
                        compact       = true,
                        size          = Small,
                        onClick       = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleIcon, toggleText)

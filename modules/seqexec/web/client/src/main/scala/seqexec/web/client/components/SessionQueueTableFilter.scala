@@ -3,20 +3,20 @@
 
 package seqexec.web.client.components
 
-import seqexec.web.client.circuit._
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.semanticui.elements.icon.Icon
-import react.semanticui.views.item._
 import react.semanticui.collections.menu._
-import react.semanticui.sizes._
-import seqexec.web.client.model.SessionQueueFilter
-import seqexec.web.client.model.ObsClass
-import seqexec.web.client.actions.UpdateSessionFilter
 import react.semanticui.collections.menu.MenuIcon
+import react.semanticui.sizes._
+import react.semanticui.views.item._
+import seqexec.web.client.actions.UpdateSessionFilter
+import seqexec.web.client.circuit._
+import seqexec.web.client.icons._
+import seqexec.web.client.model.ObsClass
+import seqexec.web.client.model.SessionQueueFilter
 
 /**
   * Container for the queue table
@@ -52,13 +52,13 @@ object SessionQueueTableFilter {
                  clazz    = SeqexecStyles.filterPane)(
               Item(as    = "a",
                    clazz = SeqexecStyles.filterActiveButton.when_(filter.dayTimeSelected))(
-                Icon("sun"),
+                IconSun,
                 ^.onClick --> onlyDayTime,
                 " Daytime"
               ),
               Item(as    = "a",
                    clazz = SeqexecStyles.filterActiveButton.when_(filter.nightTimeSelected))(
-                Icon("moon"),
+                IconMoon,
                 ^.onClick --> onlyNightTime,
                 " Nighttime"
               )

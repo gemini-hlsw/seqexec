@@ -11,4 +11,6 @@ object icons {
   val IconCopyOutline: Icon   = Icon("copy outline")
   val IconDoubleDown: Icon    = Icon("angle double down")
   val IconDoubleUp: Icon      = Icon("angle double up")
+  val IconSun: Icon           = Icon("sun")
+  val IconMoon: Icon          = Icon("moon")
 }

@@ -5,20 +5,20 @@ package seqexec.web.client.components
 
 import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
-import seqexec.model.Notification
-import react.semanticui.elements.icon.Icon
-import react.semanticui.modules.modal._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.semanticui.colors._
+import react.semanticui.elements.button.Button
+import react.semanticui.modules.modal._
 import react.semanticui.modules.modal.ModalSize
+import seqexec.model.Notification
+import seqexec.web.client.actions.CloseUserNotificationBox
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.icons._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.reusability._
-import react.semanticui.elements.button.Button
 
 /**
   * UI for the model displaying resource conflicts
@@ -31,7 +31,8 @@ object UserNotificationBox {
 
   private val close = Callback(SeqexecCircuit.dispatch(CloseUserNotificationBox))
 
-  private val component = ScalaComponent.builder[Props]("UserNotificationBox")
+  private val component = ScalaComponent
+    .builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>
       val UserNotificationState(open, not) = p.notification
@@ -41,14 +42,14 @@ object UserNotificationBox {
         onClose = close
       )(
         not.map(h => ModalHeader(Notification.header(h))),
-        not.map{h =>
+        not.map { h =>
           ModalContent(
             <.div(Notification.body(h).toTagMod(<.p(_)))
           )
         },
         ModalActions(
           Button(color = Green, positive = true, inverted = true, onClick = close)(
-            Icon("checkmark"),
+            IconCheckmark,
             "Ok"
           )
         )
