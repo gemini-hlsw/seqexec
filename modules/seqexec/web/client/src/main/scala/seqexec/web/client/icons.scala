@@ -13,4 +13,12 @@ object icons {
   val IconDoubleUp: Icon      = Icon("angle double up")
   val IconSun: Icon           = Icon("sun")
   val IconMoon: Icon          = Icon("moon")
+  val IconRefresh: Icon       = Icon("refresh")
+  val IconPause: Icon         = Icon("pause")
+  val IconPlay: Icon          = Icon("play")
+  val IconBan: Icon           = Icon("ban")
+  val IconStop: Icon          = Icon("stop")
+  val IconCloneOutline: Icon  = Icon("clone outline")
+  val IconTrashOutline: Icon  = Icon("trash alternate outline")
+  val IconInbox: Icon         = Icon("inbox")
 }

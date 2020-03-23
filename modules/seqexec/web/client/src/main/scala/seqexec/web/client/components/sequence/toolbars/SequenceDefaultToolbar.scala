@@ -43,12 +43,13 @@ object SequenceDefaultToolbar {
             ^.cls := "ui right floated column",
             SeqexecStyles.infoOnControl,
             p.observerReader(_() match {
-              case Some(p) => SequenceInfo(SequenceInfo.Props(p))
+              case Some(p) => SequenceInfo(p)
               case _       => <.div()
             })
           )
         )
-    ))
+      )
+    )
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

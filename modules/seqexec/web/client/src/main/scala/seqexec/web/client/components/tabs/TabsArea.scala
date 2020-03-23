@@ -21,10 +21,7 @@ import seqexec.web.client.reusability._
 /**
   * Top level container of the tabs area
   */
-final case class TabsArea(
-  router: RouterCtl[SeqexecPages],
-  site:   Site
-) extends ReactProps {
+final case class TabsArea(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps {
   @inline def render: VdomElement = TabsArea.component(this)
 }
 

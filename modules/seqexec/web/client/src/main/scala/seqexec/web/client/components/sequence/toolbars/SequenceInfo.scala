@@ -3,24 +3,29 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.web.client.circuit.SequenceInfoFocus
-import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.Size
-import seqexec.model.SequenceState
-import seqexec.model.UnknownTargetName
-import react.common._
+import cats.implicits._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import cats.implicits._
+import react.common._
+import react.semanticui.collections.form._
+import react.semanticui.colors._
+import react.semanticui.elements.label.Label
+import react.semanticui.sizes._
+import seqexec.model.SequenceState
+import seqexec.model.UnknownTargetName
+import seqexec.web.client.circuit.SequenceInfoFocus
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
+
+final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps {
+  @inline def render: VdomElement = SequenceInfo.component(this)
+}
 
 /**
   * Display the name of the sequence and the observer
   */
 object SequenceInfo {
-  final case class Props(p: SequenceInfoFocus)
+  type Props = SequenceInfo
 
   private def component =
     ScalaComponent
@@ -29,29 +34,20 @@ object SequenceInfo {
       .render_P { p =>
         val SequenceInfoFocus(isLogged, obsName, status, tName) = p.p
         val unknownTargetName: TagMod =
-          Label(Label.Props(UnknownTargetName, basic = true))
+          Label(basic = true)(UnknownTargetName)
         val targetName = tName
           .filter(_.nonEmpty)
-          .fold(unknownTargetName)(t => Label(Label.Props(t, basic = true)))
-        <.div(
-          ^.cls := "ui form",
-          <.div(
-            ^.cls := "fields",
+          .fold(unknownTargetName)(t => Label(basic = true)(t))
+        Form(
+          FormGroup(
             SeqexecStyles.fieldsNoBottom,
-            <.div(
-              ^.cls := "field",
-              Label(
-                Label.Props("Sequence Complete",
-                            color = "green".some,
-                            icon  = IconCheckmark.some,
-                            size  = Size.Big))
+            FormField(
+              Label(color = Green, icon = IconCheckmark, size = Big)("Sequence Complete")
             ).when(status === SequenceState.Completed),
-            <.div(
-              ^.cls := "field",
-              Label(Label.Props(obsName, basic = true))
+            FormField(
+              Label(basic = true)(obsName)
             ).when(isLogged),
-            <.div(
-              ^.cls := "field",
+            FormField(
               targetName
             ).when(isLogged)
           )
@@ -59,5 +55,4 @@ object SequenceInfo {
       }
       .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

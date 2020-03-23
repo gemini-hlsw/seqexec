@@ -44,10 +44,12 @@ object LoginBox {
   type Props = LoginBox
 
   @Lenses
-  final case class State(username:    String,
-                         password:    String,
-                         progressMsg: Option[String],
-                         errorMsg:    Option[String])
+  final case class State(
+    username:    String,
+    password:    String,
+    progressMsg: Option[String],
+    errorMsg:    Option[String]
+  )
 
   object State {
     val Empty: State = State("", "", None, None)
@@ -82,31 +84,31 @@ object LoginBox {
     val attemptLogin = (e: ReactEvent, _: Form.FormProps) =>
       e.preventDefaultCB *>
         b.state >>= { s =>
-          // Change the UI and call login on the remote backend
-          updateProgressMsg("Authenticating...") >>
-            Callback.future(
-              SeqexecWebClient
-                .login(s.username, s.password)
-                .map(loggedInEvent)
-                .recover {
-                  case _: Exception =>
-                    updateErrorMsg("Login failed, check username/password")
-                }
-            )
-        }
+        // Change the UI and call login on the remote backend
+        updateProgressMsg("Authenticating...") >>
+          Callback.future(
+            SeqexecWebClient
+              .login(s.username, s.password)
+              .map(loggedInEvent)
+              .recover {
+                case _: Exception =>
+                  updateErrorMsg("Login failed, check username/password")
+              }
+          )
+      }
 
     private def toolbar(s: State): ModalActions =
       ModalActions(
         Grid(
           GridRow(verticalAlign = Middle)(
             s.progressMsg.whenDefined(m =>
-                GridColumn(
-                  textAlign = Left,
-                  floated   = floats.Left,
-                  width     = Six
-                )(
-                  Icon(name = "circle notched", loading = true),
-                  m
+              GridColumn(
+                textAlign = Left,
+                floated   = floats.Left,
+                width     = Six
+              )(
+                Icon(name = "circle notched", loading = true),
+                m
               )
             ),
             s.errorMsg.whenDefined(m =>
@@ -115,7 +117,7 @@ object LoginBox {
                 floated   = floats.Left,
                 width     = Six,
                 color     = Red
-              )(                
+              )(
                 Icon("attention"),
                 m
               )

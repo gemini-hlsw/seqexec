@@ -31,12 +31,14 @@ import mouse.boolean._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router:     RouterCtl[SeqexecPages],
-                         instrument: Instrument,
-                         id:         Observation.Id,
-                         step:       Int,
-                         total:      Int,
-                         isPreview:  Boolean) {
+  final case class Props(
+    router:     RouterCtl[SeqexecPages],
+    instrument: Instrument,
+    id:         Observation.Id,
+    step:       Int,
+    total:      Int,
+    isPreview:  Boolean
+  ) {
     val sequenceConnect: ReactConnectProxy[Option[SequenceInfoFocus]] =
       SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
   }
@@ -79,7 +81,7 @@ object StepConfigToolbar {
           <.div(
             ^.cls := "left floated six wide column bottom aligned computer only",
             p.sequenceConnect(_() match {
-              case Some(p) => SequenceInfo(SequenceInfo.Props(p))
+              case Some(p) => SequenceInfo(p)
               case _       => React.Fragment()
             })
           ),

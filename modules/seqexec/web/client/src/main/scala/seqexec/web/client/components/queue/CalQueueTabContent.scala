@@ -4,33 +4,34 @@
 package seqexec.web.client.components.queue
 
 import cats.implicits._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.model.CalibrationQueueId
-import seqexec.web.client.semanticui.dataTab
 import react.semanticui.collections.message.Message
+import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
+import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
-import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.TabSelected
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import react.semanticui.elements.icon.Icon
+import seqexec.web.client.semanticui.dataTab
 
 /**
   * Content of the queue tab
   */
 object CalQueueTabContent {
-  final case class Props(canOperate:   Boolean,
-                         active:       TabSelected,
-                         logDisplayed: SectionVisibilityState) {
+  final case class Props(
+    canOperate:   Boolean,
+    active:       TabSelected,
+    logDisplayed: SectionVisibilityState
+  ) {
     protected[queue] val dayCalConnectOps =
-      SeqexecCircuit.connect(
-        SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
+      SeqexecCircuit.connect(SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
     protected[queue] val dayCalConnect =
       SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
   }
@@ -42,7 +43,7 @@ object CalQueueTabContent {
       icon    = true,
       warning = true
     )(
-      Icon("inbox"),
+      IconInbox,
       "Work in progress"
     ).render
 
@@ -64,7 +65,7 @@ object CalQueueTabContent {
         <.div(
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
-              case Some(x) => CalQueueToolbar.Props(CalibrationQueueId, x).cmp
+              case Some(x) => CalQueueToolbar(CalibrationQueueId, x)
               case _       => <.div()
             })
             .when(p.canOperate),
