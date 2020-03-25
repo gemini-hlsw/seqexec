@@ -9,7 +9,9 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.collections.grid._
 import react.semanticui.colors._
+import react.semanticui.floats._
 import seqexec.model.QueueId
 import seqexec.web.client.actions.RequestAllSelectedSequences
 import seqexec.web.client.actions.RequestClearAllCal
@@ -126,13 +128,9 @@ object CalQueueToolbar {
   private val component = ScalaComponent
     .builder[Props]("CalQueueToolbar")
     .render_P(p =>
-      <.div(
-        ^.cls := "ui grid",
-        <.div(
-          ^.cls := "row",
-          SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "ui left floated column",
+      Grid(
+        GridRow(clazz = SeqexecStyles.shorterRow)(
+          GridColumn(floated = Left)(
             <.div(
               SeqexecStyles.controlButtons,
               addAllButton(p).unless(p.queueRunning),

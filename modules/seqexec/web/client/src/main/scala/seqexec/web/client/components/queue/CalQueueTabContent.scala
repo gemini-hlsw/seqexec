@@ -9,7 +9,12 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.common.implicits._
+import react.semanticui.As
 import react.semanticui.collections.message.Message
+import react.semanticui.elements.segment.Segment
+import react.semanticui.elements.segment.SegmentAttached
+import react.semanticui.modules.tab.TabPane
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -34,6 +39,9 @@ object CalQueueTabContent {
       SeqexecCircuit.connect(SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
     protected[queue] val dayCalConnect =
       SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
+
+    val isActive: Boolean =
+      active === TabSelected.Selected
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -51,17 +59,19 @@ object CalQueueTabContent {
     .builder[Props]("CalQueueTabContent")
     .stateless
     .render_P { p =>
-      <.div(
-        ^.cls := "ui attached secondary segment tab",
-        ^.classSet(
-          "active" -> (p.active === TabSelected.Selected)
-        ),
+      val tabClazz =
+        List(
+          SeqexecStyles.tabSegment,
+          SeqexecStyles.tabSegmentLogShown
+            .when_(p.logDisplayed === SectionOpen),
+          SeqexecStyles.tabSegmentLogHidden
+            .when_(p.logDisplayed === SectionClosed)
+        ).combineAll
+
+      TabPane(active = p.isActive,
+              as     = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
+              clazz  = tabClazz)(
         dataTab := "daycal",
-        SeqexecStyles.tabSegment,
-        SeqexecStyles.tabSegmentLogShown
-          .when(p.logDisplayed === SectionOpen),
-        SeqexecStyles.tabSegmentLogHidden
-          .when(p.logDisplayed === SectionClosed),
         <.div(
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
@@ -77,7 +87,7 @@ object CalQueueTabContent {
               )
             case _ => defaultContent
           })
-        ).when(p.active === TabSelected.Selected)
+        ).when(p.isActive)
       )
     }
     .configure(Reusability.shouldComponentUpdate)

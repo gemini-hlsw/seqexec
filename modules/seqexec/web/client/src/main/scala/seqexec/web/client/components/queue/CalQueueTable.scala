@@ -3,51 +3,47 @@
 
 package seqexec.web.client.components.queue
 
+import cats.data.NonEmptyList
 import cats.Eq
 import cats.implicits._
-import cats.data.NonEmptyList
 import gem.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Lens
 import monocle.macros.Lenses
-import react.virtualized._
-import react.sortable._
 import react.common._
 import react.common.implicits._
-import scala.scalajs.js
-import scala.math.max
+import react.semanticui.colors._
+import react.semanticui.elements.button.Button
+import react.semanticui.sizes._
+import react.sortable._
+import react.virtualized._
 import scala.concurrent.duration._
-import seqexec.model.QueueId
-import seqexec.model.SequenceState
-import seqexec.model.QueueManipulationOp
+import scala.math.max
+import scala.scalajs.js
 import seqexec.model.enum.Instrument
-import seqexec.web.client.model.QueueSeqOperations
-import seqexec.web.client.model.RemoveSeqQueue
+import seqexec.model.QueueId
+import seqexec.model.QueueManipulationOp
+import seqexec.model.SequenceState
+import seqexec.web.client.actions.ClearLastQueueOp
+import seqexec.web.client.actions.RequestMoveCal
+import seqexec.web.client.actions.RequestRemoveSeqCal
+import seqexec.web.client.actions.UpdateCalTableState
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
+import seqexec.web.client.icons._
+import seqexec.web.client.model.QueueSeqOperations
+import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.reusability._
-import seqexec.web.client.actions.ClearLastQueueOp
-import seqexec.web.client.actions.RequestRemoveSeqCal
-import seqexec.web.client.actions.RequestMoveCal
-import seqexec.web.client.actions.UpdateCalTableState
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
-import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
-import seqexec.web.client.semanticui.{ Size => SSize }
 import web.client.table._
 
 /**
@@ -253,20 +249,20 @@ object CalQueueTable {
         SeqexecStyles.centeredCell,
         SeqexecStyles.fullCell,
         Button(
-          size        = SSize.Mini,
-          basic       = false,
-          color       = "brown".some,
-          disabled    = !p.data.canOperate,
-          compact     = true,
-          onClick     = removeSeq(p.queueId, r.obsId),
-          extraStyles = List(SeqexecStyles.autoMargin),
-          icon = p
-            .seqState(r.obsId)
+          size     = Mini,
+          basic    = false,
+          color    = Brown,
+          disabled = !p.data.canOperate,
+          compact  = true,
+          onClick  = removeSeq(p.queueId, r.obsId),
+          clazz    = SeqexecStyles.autoMargin,
+          icon     = true
+        )(
+          p.seqState(r.obsId)
             .filter(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
-            .fold(IconTimes.copyIcon(onClick = removeSeq(p.queueId, r.obsId)))(_ =>
-              IconRefresh.copyIcon(loading   = true)
+            .fold(IconTimes(^.onClick --> removeSeq(p.queueId, r.obsId)))(_ =>
+              IconRefresh.loading(true)
             )
-            .some
         )
       )
 
@@ -276,13 +272,11 @@ object CalQueueTable {
       val icon: TagMod =
         row.status match {
           case SequenceState.Completed =>
-            IconCheckmark.copyIcon(extraStyles = List(selectedIconStyle))
+            IconCheckmark.clazz(selectedIconStyle)
           case SequenceState.Running(_, _) =>
-            IconCircleNotched.copyIcon(fitted      = true,
-                                       loading     = true,
-                                       extraStyles = List(SeqexecStyles.runningIcon))
+            IconCircleNotched.copy(fitted = true, loading = true, clazz = SeqexecStyles.runningIcon)
           case SequenceState.Failed(_) =>
-            IconAttention.copyIcon(color = "red".some, extraStyles = List(selectedIconStyle))
+            IconAttention.copy(color = Red, clazz = selectedIconStyle)
           case _ =>
             EmptyVdom
         }
