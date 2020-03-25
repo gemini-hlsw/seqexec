@@ -21,4 +21,6 @@ object icons {
   val IconCloneOutline: Icon  = Icon("clone outline")
   val IconTrashOutline: Icon  = Icon("trash alternate outline")
   val IconInbox: Icon         = Icon("inbox")
+  val IconChevronLeft: Icon   = Icon("chevron left")
+  val IconChevronRight: Icon  = Icon("chevron right")
 }

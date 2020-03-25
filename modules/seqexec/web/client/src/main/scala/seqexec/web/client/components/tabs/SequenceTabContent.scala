@@ -50,18 +50,15 @@ object SequenceTabContent {
   private def toolbar(p: Props) =
     p.content.tableType match {
       case StepsTableTypeSelection.StepsTableSelected =>
-        SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.content.id))
+        SequenceDefaultToolbar(p.content.id)
           .when(p.content.canOperate && !p.content.isPreview)
       case StepsTableTypeSelection.StepConfigTableSelected(s) =>
-        StepConfigToolbar(
-          StepConfigToolbar
-            .Props(p.router,
-                   p.content.instrument,
-                   p.content.id,
-                   s,
-                   p.content.totalSteps,
-                   p.content.isPreview)
-        ): TagMod
+        StepConfigToolbar(p.router,
+                          p.content.instrument,
+                          p.content.id,
+                          s,
+                          p.content.totalSteps,
+                          p.content.isPreview): TagMod
     }
 
   def stepsTable(p: Props): VdomElement =

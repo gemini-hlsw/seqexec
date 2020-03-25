@@ -27,39 +27,42 @@ import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.icons._
 import seqexec.web.client.reusability._
 
+final case class SequenceControl(p: SequenceControlFocus) extends ReactProps {
+  @inline def render: VdomElement = SequenceControl.component(this)
+  private val runRequested: RunOperation =
+    p.control.tabOperations.runRequested
+
+  private val syncRequested: SyncOperation =
+    p.control.tabOperations.syncRequested
+
+  private val pauseRequested: PauseOperation =
+    p.control.tabOperations.pauseRequested
+
+  private val cancelPauseRequested: CancelPauseOperation =
+    p.control.tabOperations.cancelPauseRequested
+
+  private val syncIdle: Boolean =
+    syncRequested === SyncOperation.SyncIdle
+  private val runIdle: Boolean =
+    runRequested === RunOperation.RunIdle
+  private val pauseIdle: Boolean =
+    pauseRequested === PauseOperation.PauseIdle
+  private val cancelPauseIdle: Boolean =
+    cancelPauseRequested === CancelPauseOperation.CancelPauseIdle
+
+  val canSync: Boolean =
+    p.canOperate && syncIdle && runIdle
+  val canRun: Boolean =
+    p.canOperate && runIdle && syncIdle && !p.control.tabOperations.anyResourceInFlight
+  val canPause: Boolean       = p.canOperate && pauseIdle
+  val canCancelPause: Boolean = p.canOperate && cancelPauseIdle
+}
+
 /**
   * Control buttons for the sequence
   */
 object SequenceControl {
-  final case class Props(p: SequenceControlFocus) {
-    private val runRequested: RunOperation =
-      p.control.tabOperations.runRequested
-
-    private val syncRequested: SyncOperation =
-      p.control.tabOperations.syncRequested
-
-    private val pauseRequested: PauseOperation =
-      p.control.tabOperations.pauseRequested
-
-    private val cancelPauseRequested: CancelPauseOperation =
-      p.control.tabOperations.cancelPauseRequested
-
-    private val syncIdle: Boolean =
-      syncRequested === SyncOperation.SyncIdle
-    private val runIdle: Boolean =
-      runRequested === RunOperation.RunIdle
-    private val pauseIdle: Boolean =
-      pauseRequested === PauseOperation.PauseIdle
-    private val cancelPauseIdle: Boolean =
-      cancelPauseRequested === CancelPauseOperation.CancelPauseIdle
-
-    val canSync: Boolean =
-      p.canOperate && syncIdle && runIdle
-    val canRun: Boolean =
-      p.canOperate && runIdle && syncIdle && !p.control.tabOperations.anyResourceInFlight
-    val canPause: Boolean       = p.canOperate && pauseIdle
-    val canCancelPause: Boolean = p.canOperate && cancelPauseIdle
-  }
+  type Props = SequenceControl
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
