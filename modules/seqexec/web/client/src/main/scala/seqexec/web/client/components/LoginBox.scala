@@ -15,6 +15,7 @@ import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.LoggedIn
 import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.icons._
 import react.semanticui.As
 import react.semanticui.collections.form._
 import react.semanticui.collections.grid._
@@ -107,7 +108,7 @@ object LoginBox {
                 floated   = floats.Left,
                 width     = Six
               )(
-                Icon(name = "circle notched", loading = true),
+                IconCircleNotched.loading(true),
                 m
               )
             ),
@@ -167,7 +168,7 @@ object LoginBox {
                   ^.onChange ==> userMod,
                   ^.autoFocus := true
                 ),
-                Icon("user")
+                IconUser
               )
             ),
             <.div(
@@ -183,7 +184,7 @@ object LoginBox {
                   ^.value := s.password,
                   ^.onChange ==> pwdMod
                 ),
-                Icon("lock")
+                IconLock
               )
             )
           )

@@ -23,4 +23,6 @@ object icons {
   val IconInbox: Icon         = Icon("inbox")
   val IconChevronLeft: Icon   = Icon("chevron left")
   val IconChevronRight: Icon  = Icon("chevron right")
+  val IconUser: Icon          = Icon("user")
+  val IconLock: Icon          = Icon("lock")
 }
