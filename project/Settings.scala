@@ -28,7 +28,7 @@ object Settings {
     val scalaJQuery             = "1.2"
     val scalaJSReactCommon      = "0.5.2"
     val scalaJSReactVirtualized = "0.7.2"
-    val scalaJSReactClipboard   = "0.10.2"
+    val scalaJSReactClipboard   = "0.10.6"
     val scalaJSReactDraggable   = "0.7.2"
     val scalaJSReactSortable    = "0.3.0"
 
