@@ -4,23 +4,24 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.router.RouterCtl
-import gem.Observation
-import japgolly.scalajs.react.component.Scala.Unmounted
 import react.common._
+import react.semanticui.colors._
+import react.semanticui.elements.label.Label
+import react.semanticui.SemanticSize
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.StepItems._
-import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
 
 /**
@@ -82,9 +83,7 @@ object ExposureTimeCell {
         case (c, Some(e)) if c.exists(_ > 1) =>
           (List(
             <.span(^.display := "inline-block", s"${c.foldMap(_.show)} "),
-            <.span(^.display := "inline-block",
-                   ^.verticalAlign := "none",
-                   "\u2A2F"),
+            <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"),
             <.span(^.display := "inline-block", s"$e")
           ) ::: seconds).toTagMod
         case (_, Some(e)) =>
@@ -141,13 +140,10 @@ object SettingsCell {
       } else {
         Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
       }
-      <.div(
-        SeqexecStyles.settingsCell,
-        p.ctl.link(page)(
-          IconCaretRight.copyIcon(color   = "black".some,
-                                  onClick = p.ctl.setUrlAndDispatchCB(page))
-        )
-      )
+      <.div(SeqexecStyles.settingsCell,
+            p.ctl.link(page)(
+              IconCaretRight.color(Black)(^.onClick --> p.ctl.setUrlAndDispatchCB(page))
+            ))
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -158,8 +154,8 @@ object SettingsCell {
   */
 final case class ObjectTypeCell(
   instrument: Instrument,
-  step: Step,
-  size: Size
+  step:       Step,
+  size:       SemanticSize
 ) extends ReactProps {
   @inline def render: VdomElement = ObjectTypeCell.component(this)
 }
@@ -175,24 +171,25 @@ object ObjectTypeCell {
     .stateless
     .render_P { p =>
       <.div( // Column object type
-        p.step.stepType(p.instrument)
+        p.step
+          .stepType(p.instrument)
           .map { st =>
             val stepTypeColor = st match {
-              case _ if p.step.status === StepState.Completed => "light gray"
-              case StepType.Object                            => "green"
-              case StepType.Arc                               => "violet"
-              case StepType.Flat                              => "grey"
-              case StepType.Bias                              => "teal"
-              case StepType.Dark                              => "black"
-              case StepType.Calibration                       => "blue"
-              case StepType.AlignAndCalib                     => "brown"
-              case StepType.NodAndShuffle                     => "olive"
-              case StepType.NodAndShuffleDark                 => "darkolive"
+              case _ if p.step.status === StepState.Completed => Grey
+              case StepType.Object                            => Green
+              case StepType.Arc                               => Violet
+              case StepType.Flat                              => Grey
+              case StepType.Bias                              => Teal
+              case StepType.Dark                              => Black
+              case StepType.Calibration                       => Blue
+              case StepType.AlignAndCalib                     => Brown
+              case StepType.NodAndShuffle                     => Olive
+              case StepType.NodAndShuffleDark                 => Black
             }
-            Label(
-              Label.Props(st.show, color = stepTypeColor.some, size = p.size))
+            Label(color = stepTypeColor, size = p.size)(st.show)
           }
-          .whenDefined)
+          .whenDefined
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

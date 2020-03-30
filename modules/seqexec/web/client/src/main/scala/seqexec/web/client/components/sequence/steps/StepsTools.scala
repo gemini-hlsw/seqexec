@@ -4,19 +4,19 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
-import gem.Observation
 import react.common._
+import react.semanticui.elements.icon.IconRotated
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
+import seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**
   * Component to display an icon for the state
@@ -61,7 +61,7 @@ object StepToolsCell {
           p.breakPointLeaveCB,
           p.heightChangeCB
         ).when(p.clientStatus.isLogged)
-         .unless(p.isPreview),
+          .unless(p.isPreview),
         StepIconCell(
           p.step.status,
           p.step.skip,
@@ -78,10 +78,10 @@ object StepToolsCell {
   * Component to display an icon for the state
   */
 final case class StepIconCell(
-  status: StepState,
-  skip: Boolean,
+  status:    StepState,
+  skip:      Boolean,
   nextToRun: Boolean,
-  height: Int
+  height:    Int
 ) extends ReactProps {
   @inline def render: VdomElement = StepIconCell.component(this)
 }
@@ -94,14 +94,12 @@ object StepIconCell {
   private def stepIcon(p: Props): VdomNode =
     p.status match {
       case StepState.Completed => IconCheckmark
-      case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Running   => IconCircleNotched.loading(true)
       case StepState.Failed(_) => IconAttention
       case StepState.Skipped =>
-        IconReply.copyIcon(fitted  = true,
-                           rotated = Icon.Rotated.CounterClockwise)
+        IconReply.copy(fitted = true, rotated = IconRotated.CounterClockwise)
       case _ if p.skip =>
-        IconReply.copyIcon(fitted  = true,
-                           rotated = Icon.Rotated.CounterClockwise)
+        IconReply.copy(fitted = true, rotated = IconRotated.CounterClockwise)
       case _ if p.nextToRun => IconChevronRight
       case _                => iconEmpty
     }
@@ -119,13 +117,13 @@ object StepIconCell {
   protected val component = ScalaComponent
     .builder[Props]("StepIconCell")
     .stateless
-    .render_P(
-      p =>
-        <.div(
-          ^.height := p.height.px,
-          stepStyle(p),
-          stepIcon(p)
-      ))
+    .render_P(p =>
+      <.div(
+        ^.height := p.height.px,
+        stepStyle(p),
+        stepIcon(p)
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

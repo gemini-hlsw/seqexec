@@ -10,7 +10,6 @@ import react.common._
 import seqexec.web.client.semanticui._
 import web.client.facades.semanticui.SemanticUIProgress._
 
-
 /**
   * Produces a progress element using javascript
   */
@@ -36,7 +35,7 @@ object Progress {
   private val component = ScalaComponent
     .builder[Props]("Progress")
     .stateless
-    .renderPC( (_, p, c) =>
+    .renderPC((_, p, c) =>
       <.div(
         ^.cls := "ui progress",
         p.color.map(u => ^.cls := u).whenDefined,
@@ -44,12 +43,8 @@ object Progress {
           "indicating" -> p.indicating
         ),
         p.progressCls,
-        <.div(^.cls := "bar",
-              p.barCls,
-              <.div(^.cls := "progress").when(p.progress)),
-        <.div(^.cls := "label",
-              p.labelCls,
-              p.label),
+        <.div(^.cls := "bar", p.barCls, <.div(^.cls := "progress").when(p.progress)),
+        <.div(^.cls := "label", p.labelCls, p.label),
         c
       )
     )
@@ -64,7 +59,8 @@ object Progress {
               .precision(0)
           )
         }
-    })
+      }
+    )
     .componentDidMount(ctx =>
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
@@ -76,7 +72,8 @@ object Progress {
               .precision(0)
           )
         }
-    })
+      }
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

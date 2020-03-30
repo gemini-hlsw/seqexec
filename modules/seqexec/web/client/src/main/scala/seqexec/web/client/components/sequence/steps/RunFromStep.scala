@@ -4,19 +4,20 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ScalaComponent
 import gem.Observation
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.web.client.model.StartFromOperation
+import react.semanticui.colors._
+import react.semanticui.elements.button.Button
+import react.semanticui.modules.popup.Popup
 import seqexec.web.client.actions.RequestRunFrom
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
+import seqexec.web.client.icons._
+import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.reusability._
 
 /**
@@ -45,14 +46,14 @@ object RunFromStep {
       <.div(
         SeqexecStyles.runFrom,
         SeqexecStyles.notInMobile,
-        Popup("button", s"Run from step ${p.stepId + 1}")(
-          Button(
-            icon     = Some(IconPlay),
-            color    = Some("blue"),
+        Popup(
+          trigger = Button(
+            icon     = true,
+            color    = Blue,
             onClick  = requestRunFrom(p.id, p.stepId),
             disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
-          )
-        )
+          )(IconPlay)
+        )(s"Run from step ${p.stepId + 1}")
       )
     }
     .configure(Reusability.shouldComponentUpdate)
