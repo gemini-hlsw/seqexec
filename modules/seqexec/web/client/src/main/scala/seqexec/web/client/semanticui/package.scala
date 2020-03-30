@@ -43,5 +43,5 @@ package object semanticui {
             onClick       = onClick,
             color         = color,
             disabled      = disabled
-          )(icon, text): VdomNode)
+          )(icon, text))
 }

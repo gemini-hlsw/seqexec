@@ -157,7 +157,7 @@ object SequenceTab {
             disabled = b.state.loading || running,
             loading  = b.state.loading,
             onClickE = load(b, instrument, sequenceId)
-          ): VdomNode
+          )
         ).when(isPreview && isLogged)
 
       val instrumentWithId =

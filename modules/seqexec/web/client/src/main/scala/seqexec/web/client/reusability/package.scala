@@ -11,6 +11,7 @@ import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
 
 import scala.collection.immutable.SortedMap
+import react.semanticui.SemanticSize
 import seqexec.model.enum.Resource
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.dhs._
@@ -97,4 +98,5 @@ package object reusability {
     Reusability.derive[M2GuideConfig]
   implicit val configReuse: Reusability[TelescopeGuideConfig] =
     Reusability.derive[TelescopeGuideConfig]
+  implicit val reuse: Reusability[SemanticSize] = Reusability.byRef[SemanticSize]
 }
