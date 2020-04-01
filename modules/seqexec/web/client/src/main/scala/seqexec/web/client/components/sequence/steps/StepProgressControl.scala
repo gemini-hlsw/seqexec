@@ -159,7 +159,7 @@ object StepProgressCell {
 
   private def textWithPopup(text: String): VdomNode =
     Popup(
-      <.span(text)
+      trigger = <.span(text)
     )(text)
 
   def stepSubsystemControl(props: Props): VdomElement =

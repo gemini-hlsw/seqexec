@@ -11,26 +11,27 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common._
+import react.semanticui.SemanticColor
+import react.semanticui.colors._
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.model.enum.NodAndShuffleStage
-import seqexec.web.client.components.{DividedProgress, SeqexecStyles}
+import seqexec.web.client.components.{ DividedProgress, SeqexecStyles }
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{NSObservationProgress, NodAndShuffleStatus, ObserveStage, StepId}
+import seqexec.model.{ NSObservationProgress, NodAndShuffleStatus, ObserveStage, StepId }
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.model.{ClientStatus, StopOperation}
+import seqexec.web.client.model.{ ClientStatus, StopOperation }
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui._
 import scala.math.max
 
 final case class NodAndShuffleProgressMessage(
-                                               obsId : Observation.Id,
-                                               stepId: StepId,
-                                               fileId: ImageFileId,
-                                               stopping: Boolean,
-                                               paused: Boolean,
-                                               nsStatus: NodAndShuffleStatus
-                                             ) extends ReactProps {
+  obsId:    Observation.Id,
+  stepId:   StepId,
+  fileId:   ImageFileId,
+  stopping: Boolean,
+  paused:   Boolean,
+  nsStatus: NodAndShuffleStatus
+) extends ReactProps {
   @inline def render: VdomElement = NodAndShuffleProgressMessage.component(this)
 
   protected[steps] val connect =
@@ -53,20 +54,24 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
       <.div(
         SeqexecStyles.specialStateLabel,
         SeqexecStyles.progressMessage,
-        p.nsStatus.state.map[VdomElement] { _ =>
-          s.progressConnect { proxy =>
-            val nsProgress = proxy()
-            val nodCount = NodAndShuffleStage.NsSequence.length
-            val nodMillis = p.nsStatus.nodExposureTime.toMilliseconds.toInt
-            val cycleMillis = nodMillis * nodCount
-            val remainingCycles = p.nsStatus.cycles - nsProgress.foldMap(_.sub.cycle - 1)
-            val remainingNods = nodCount - nsProgress.foldMap(_.sub.stageIndex - 1)
-            val remainingNodMillis = nsProgress.foldMap(_.remaining.toMilliseconds.toInt)
-            val remainingMillis = remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
-            val stage = nsProgress.map(_.stage).getOrElse(ObserveStage.Idle)
-            <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
+        p.nsStatus.state
+          .map[VdomElement] { _ =>
+            s.progressConnect {
+              proxy =>
+                val nsProgress         = proxy()
+                val nodCount           = NodAndShuffleStage.NsSequence.length
+                val nodMillis          = p.nsStatus.nodExposureTime.toMilliseconds.toInt
+                val cycleMillis        = nodMillis * nodCount
+                val remainingCycles    = p.nsStatus.cycles - nsProgress.foldMap(_.sub.cycle - 1)
+                val remainingNods      = nodCount - nsProgress.foldMap(_.sub.stageIndex - 1)
+                val remainingNodMillis = nsProgress.foldMap(_.remaining.toMilliseconds.toInt)
+                val remainingMillis =
+                  remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
+                val stage = nsProgress.map(_.stage).getOrElse(ObserveStage.Idle)
+                <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
+            }
           }
-        } getOrElse <.span(p.fileId)
+          .getOrElse(<.span(p.fileId))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -74,17 +79,15 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
 }
 
 final case class SmoothDividedProgressBar(
-  sections            : List[DividedProgress.Label],
-  sectionTotal        : DividedProgress.Quantity,
-  value               : DividedProgress.Quantity,
-  maxValue            : DividedProgress.Quantity,
-  completeSectionColor: Option[String] = None,
-  ongoingSectionColor : Option[String] = None,
-  progressCls         : List[Css] = Nil,
-  barCls              : List[Css],
-  labelCls            : List[Css] = Nil,
-  stopping            : Boolean,
-  paused: Boolean
+  sections:             List[DividedProgress.Label],
+  sectionTotal:         DividedProgress.Quantity,
+  value:                DividedProgress.Quantity,
+  maxValue:             DividedProgress.Quantity,
+  completeSectionColor: SemanticColor,
+  ongoingSectionColor:  SemanticColor,
+  progressCls:          Css,
+  stopping:             Boolean,
+  paused:               Boolean
 ) extends SmoothProgressBarProps {
   @inline def render: VdomElement = SmoothDividedProgressBar.component(this)
 }
@@ -100,19 +103,16 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
       DividedProgress(
-        sections = p.sections,
-        sectionTotal = p.sectionTotal,
-        value = s.value,
-        completeSectionColor = p.completeSectionColor,
-        ongoingSectionColor = p.ongoingSectionColor,
-        progressCls = p.progressCls,
-        barCls = p.barCls,
-        labelCls = p.labelCls
-        )
+        sections             = p.sections,
+        sectionTotal         = p.sectionTotal,
+        value                = s.value,
+        completeSectionColor = p.completeSectionColor.some,
+        ongoingSectionColor  = p.ongoingSectionColor.some,
+        progressCls          = p.progressCls
+      )
     }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps($ =>
-                                 $.backend.newStateFromProps($.currentProps, $.nextProps))
+    .componentWillReceiveProps($ => $.backend.newStateFromProps($.currentProps, $.nextProps))
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -125,7 +125,9 @@ sealed trait NodAndShuffleProgressProps extends ReactProps {
     summary.tabOperations.stopRequested === StopOperation.StopInFlight
 
   protected[steps] val connect =
-    SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader[NSObservationProgress](summary.obsId, summary.step.id))
+    SeqexecCircuit.connect(
+      SeqexecCircuit.obsProgressReader[NSObservationProgress](summary.obsId, summary.step.id)
+    )
 }
 
 sealed trait NodAndShuffleProgress {
@@ -155,29 +157,33 @@ sealed trait NodAndShuffleProgress {
       s.progressConnect { proxy =>
         val (totalMillis, remainingMillis, cycleIndex, nodIndex) =
           proxy().foldMap(p =>
-            (p.total.toMilliseconds.toInt, p.remaining.toMilliseconds.toInt, p.sub.cycle.toInt, p.sub.stageIndex))
+            (p.total.toMilliseconds.toInt,
+             p.remaining.toMilliseconds.toInt,
+             p.sub.cycle.toInt,
+             p.sub.stageIndex)
+          )
         val elapsedMillis = totalMillis - max(0, remainingMillis)
 
-        p.summary.nsStatus.map[VdomElement] { nsStatus =>
-          val isInError = !p.summary.isNSRunning && p.summary.isNSInError
-          val nodMillis = nsStatus.nodExposureTime.toMilliseconds.toInt
-          val (sectionTotal, currentValue) = quantitiesFromNodMillis(cycleIndex, nodIndex, nodMillis)
+        p.summary.nsStatus
+          .map[VdomElement] { nsStatus =>
+            val isInError = !p.summary.isNSRunning && p.summary.isNSInError
+            val nodMillis = nsStatus.nodExposureTime.toMilliseconds.toInt
+            val (sectionTotal, currentValue) =
+              quantitiesFromNodMillis(cycleIndex, nodIndex, nodMillis)
 
-          SmoothDividedProgressBar(
-            sections = sections(nsStatus),
-            sectionTotal = sectionTotal,
-            value = nsStatus.state.foldMap(_ => currentValue + elapsedMillis), // Only advance smooth bar if actually started
-            maxValue = nsStatus.state.foldMap(_ => currentValue + nodMillis), // Only advance smooth bar if actually started
-            completeSectionColor = if (isInError) "red".some else "green".some,
-            ongoingSectionColor = if (isInError) "red".some else "blue".some,
-            progressCls = List(SeqexecStyles.observationProgressBar),
-            barCls = List(SeqexecStyles.observationBar),
-            labelCls = List(SeqexecStyles.observationLabel),
-            stopping = p.isStopping,
-            paused = p.summary.step.isObservePaused
+            SmoothDividedProgressBar(
+              sections             = sections(nsStatus),
+              sectionTotal         = sectionTotal,
+              value                = nsStatus.state.foldMap(_ => currentValue + elapsedMillis), // Only advance smooth bar if actually started
+              maxValue             = nsStatus.state.foldMap(_ => currentValue + nodMillis), // Only advance smooth bar if actually started
+              completeSectionColor = if (isInError) Red else Green,
+              ongoingSectionColor  = if (isInError) Red else Blue,
+              progressCls          = SeqexecStyles.observationProgressBar,
+              stopping             = p.isStopping,
+              paused               = p.summary.step.isObservePaused
             )
-        } getOrElse
-          <.div("NodAndShuffleProgress invoked without a Nod&Shuffle step summary")
+          }
+          .getOrElse(<.div("NodAndShuffleProgress invoked without a Nod&Shuffle step summary"))
       }
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -185,8 +191,8 @@ sealed trait NodAndShuffleProgress {
 }
 
 final case class NodAndShuffleCycleProgress(summary: StepStateSummary)
-  extends NodAndShuffleProgressProps {
-    @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
+    extends NodAndShuffleProgressProps {
+  @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
 }
 
 object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
@@ -200,17 +206,17 @@ object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
   protected def quantitiesFromNodMillis(
     cycleIndex: Int,
     nodIndex:   Int,
-    nodMillis: DividedProgress.Quantity
+    nodMillis:  DividedProgress.Quantity
   ): (DividedProgress.Quantity, DividedProgress.Quantity) = {
-    val cycleMillis = nodMillis * NodAndShuffleStage.NsSequence.length
+    val cycleMillis  = nodMillis * NodAndShuffleStage.NsSequence.length
     val currentValue = cycleIndex * cycleMillis + nodIndex * nodMillis
     (cycleMillis, currentValue)
   }
 }
 
 final case class NodAndShuffleNodProgress(summary: StepStateSummary)
-  extends NodAndShuffleProgressProps {
-    @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
+    extends NodAndShuffleProgressProps {
+  @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
 }
 
 object NodAndShuffleNodProgress extends NodAndShuffleProgress {
@@ -224,7 +230,7 @@ object NodAndShuffleNodProgress extends NodAndShuffleProgress {
   protected def quantitiesFromNodMillis(
     cycleIndex: Int,
     nodIndex:   Int,
-    nodMillis: DividedProgress.Quantity
+    nodMillis:  DividedProgress.Quantity
   ): (DividedProgress.Quantity, DividedProgress.Quantity) = {
     val currentValue = nodIndex * nodMillis
     (nodMillis, currentValue)
@@ -265,9 +271,9 @@ sealed trait NodAndShuffleRow[L <: OperationLevel] {
             p.stateSummary.step.isObservePaused,
             p.stateSummary.tabOperations,
             p.stateSummary.nsPendingObserveCmd
-            )
-          ).when(p.controlButtonsActive)
-        )
+          )
+        ).when(p.controlButtonsActive)
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
