@@ -25,7 +25,6 @@ object Settings {
     val diode                   = "1.1.7"
     val diodeReact              = "1.1.7.160"
     val javaTimeJS              = "2.0.0-RC5"
-    val scalaJQuery             = "1.3"
     val scalaJSReactCommon      = "0.7.1"
     val scalaJSSemanticUI       = "0.4.7"
     val scalaJSReactVirtualized = "0.7.5"
