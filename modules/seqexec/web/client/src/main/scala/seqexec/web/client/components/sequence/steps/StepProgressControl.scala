@@ -82,7 +82,7 @@ object StepProgressCell {
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
-    Label(color = labelColor(status), icon = true)(labelIcon(status), system.show)
+    Label(color = labelColor(status))(labelIcon(status), system.show)
 
   def stepSystemsStatus(step: Step): VdomElement =
     <.div(

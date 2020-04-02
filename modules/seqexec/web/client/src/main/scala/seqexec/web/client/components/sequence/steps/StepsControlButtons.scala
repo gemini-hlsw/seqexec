@@ -124,7 +124,7 @@ object ControlButtons {
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = IconTrash,
+                  icon     = true,
                   color    = Red,
                   onClick  = requestAbort(p.obsId, p.stepId),
                   disabled = p.requestInFlight || isReadingOut

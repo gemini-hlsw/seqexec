@@ -163,7 +163,7 @@ object SequenceTab {
       val instrumentWithId =
         React.Fragment(
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
-          Label(color = color, icon = icon, clazz = SeqexecStyles.labelPointer)(tabTitle)
+          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
         )
 
       val resourceLabels =
@@ -194,7 +194,7 @@ object SequenceTab {
           <.div(SeqexecStyles.instrumentAndResourcesLabel,
                 <.div(SeqexecStyles.tabLabel, dispName),
                 resourceLabels),
-          Label(color = color, icon = icon, clazz = SeqexecStyles.labelPointer)(tabTitle)
+          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
         )
 
       val tabContent: VdomNode =

@@ -125,7 +125,8 @@ object CalibrationQueueTab {
         <.div(
           SeqexecStyles.tabLabel,
           <.div(SeqexecStyles.activeInstrumentLabel, "Daytime Queue"),
-          Label(color = color, icon = icon, clazz = SeqexecStyles.labelPointer)(
+          Label(color = color, clazz = SeqexecStyles.labelPointer)(
+            icon,
             tab.calibrationTab.state.show
           )
         )
