@@ -237,15 +237,8 @@ lazy val seqexec_web_client = project
     useYarn := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
-      "semantic-ui-modal" -> LibraryVersions.semanticUI,
-      "semantic-ui-progress" -> LibraryVersions.semanticUI,
-      "semantic-ui-popup" -> LibraryVersions.semanticUI,
-      "semantic-ui-tab" -> LibraryVersions.semanticUI,
-      "semantic-ui-visibility" -> LibraryVersions.semanticUI,
-      "semantic-ui-transition" -> LibraryVersions.semanticUI,
-      "semantic-ui-dimmer" -> LibraryVersions.semanticUI,
-      "semantic-ui-less" -> LibraryVersions.semanticUI
+      "semantic-ui-less" -> LibraryVersions.semanticUI,
+      "prop-types" -> "15.7.2"
     ),
     // NPM libs for development, mostly to let webpack do its magic
     npmDevDependencies in Compile ++= Seq(
