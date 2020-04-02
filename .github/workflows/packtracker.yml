@@ -26,7 +26,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           sbt seqexec_web_client/fullOptJS::webpack
-          cd modules/seqexec/web/client/target/scala-2.12/scalajs-bundler/main/
+          cd modules/seqexec/web/client/target/scala-2.13/scalajs-bundler/main/
           node node_modules/webpack/bin/webpack --bail --profile --json --config packtracker.webpack.config.js
         env:
           SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
@@ -36,7 +36,7 @@ jobs:
         if: github.event_name == 'push'
         run: |
           sbt seqexec_web_client/fullOptJS::webpack
-          cd modules/seqexec/web/client/target/scala-2.12/scalajs-bundler/main/
+          cd modules/seqexec/web/client/target/scala-2.13/scalajs-bundler/main/
           node node_modules/webpack/bin/webpack --bail --profile --json --config packtracker.webpack.config.js
         env:
           SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
