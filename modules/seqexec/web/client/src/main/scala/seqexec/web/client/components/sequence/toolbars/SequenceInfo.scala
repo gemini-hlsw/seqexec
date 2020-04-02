@@ -42,7 +42,7 @@ object SequenceInfo {
           FormGroup(
             SeqexecStyles.fieldsNoBottom,
             FormField(
-              Label(color = Green, icon = IconCheckmark, size = Big)("Sequence Complete")
+              Label(color = Green, icon = true, size = Medium)(IconCheckmark, "Sequence Complete")
             ).when(status === SequenceState.Completed),
             FormField(
               Label(basic = true)(obsName)

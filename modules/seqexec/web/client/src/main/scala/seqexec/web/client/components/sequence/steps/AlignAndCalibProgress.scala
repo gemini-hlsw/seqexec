@@ -15,7 +15,8 @@ import react.common._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.progress.Progress
+import react.semanticui.colors._
+import react.semanticui.modules.progress.Progress
 import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
 import seqexec.web.client.model.StepItems.StepStateSummary
@@ -23,7 +24,7 @@ import seqexec.web.client.reusability._
 import scala.math.max
 
 final case class ACProgressBar(
-  step: AlignAndCalibStep,
+  step:  AlignAndCalibStep,
   state: StepStateSummary
 ) extends ReactProps {
   @inline def render: VdomElement = ACProgressBar.component(this)
@@ -90,19 +91,17 @@ object ACProgressBar {
     .initialStateFromProps(State.initialStateFromProps)
     .render_PS { (p, s) =>
       val isInError = !p.state.isACRunning && p.state.isACInError
-      val msg = if (isInError) "Error" else s.msg
+      val msg       = if (isInError) "Error" else s.msg
       Progress(
-        s"Align and Calib: $msg",
-        total       = acSteps.all.length - 1,
-        value       = max(0, s.counter),
-        color       = if (isInError) "red".some else "green".some,
-        progressCls = List(SeqexecStyles.observationProgressBar),
-        barCls      = List(SeqexecStyles.observationBar),
-        labelCls    = List(SeqexecStyles.observationLabel)
-      )
+        total = acSteps.all.length - 1,
+        value = max(0, s.counter),
+        color = if (isInError) Red else Green,
+        clazz = SeqexecStyles.observationProgressBar
+      )(s"Align and Calib: $msg")
     }
     .componentWillReceiveProps(x =>
-      x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show))
+      x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show)
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
@@ -125,11 +124,7 @@ object AlignAndCalibProgress {
   protected val component = ScalaComponent
     .builder[Props]("AlignAndCalibProgress")
     .stateless
-    .render_P(p =>
-        p.connect{s =>
-          ACProgressBar(s(), p.state)
-        }
-    )
+    .render_P(p => p.connect(s => ACProgressBar(s(), p.state)))
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

@@ -14,6 +14,7 @@ import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon._
 import react.semanticui.modules.popup.Popup
+import react.semanticui.modules.popup.PopupPosition
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.operations._
@@ -101,6 +102,7 @@ object ControlButtons {
           p.operations.map {
             case PauseObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = true,
                   color    = Teal,
@@ -110,6 +112,7 @@ object ControlButtons {
               )("Pause the current exposure")
             case StopObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = true,
                   color    = Orange,
@@ -119,6 +122,7 @@ object ControlButtons {
               )("Stop the current exposure early")
             case AbortObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = IconTrash,
                   color    = Red,
@@ -128,6 +132,7 @@ object ControlButtons {
               )("Abort the current exposure")
             case ResumeObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = true,
                   color    = Blue,
@@ -138,6 +143,7 @@ object ControlButtons {
             // N&S operations
             case PauseImmediatelyObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = true,
                   color    = Teal,
@@ -148,6 +154,7 @@ object ControlButtons {
               )("Pause the current exposure immediately")
             case PauseGracefullyObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon    = true,
                   color   = Teal,
@@ -158,6 +165,7 @@ object ControlButtons {
               )("Pause the current exposure at the end of the cycle")
             case StopImmediatelyObservation =>
               Popup(
+                position = PopupPosition.TopRight,
                 trigger = Button(
                   icon     = true,
                   color    = Orange,
@@ -168,7 +176,8 @@ object ControlButtons {
               )("Stop the current exposure immediately")
             case StopGracefullyObservation =>
               Popup(
-                Button(
+                position = PopupPosition.TopRight,
+                trigger = Button(
                   icon    = true,
                   color   = Orange,
                   onClick = requestGracefulStop(p.obsId, p.stepId),

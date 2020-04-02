@@ -18,7 +18,9 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / publishArtifact in (Compile, packageDoc) := false
 
 // Gemini repository
-resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
+resolvers in ThisBuild += "Gemini Repository".at(
+  "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
+)
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
@@ -44,14 +46,19 @@ def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
   s"-${out.commitSuffix.sha}$dirtySuffix"
 }
 
-def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer timestamp d}"
+def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer.timestamp(d)}"
 
 val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
-inThisBuild(List(
-  scalaVersion := Settings.LibraryVersions.scalaVersion,
-  version := dateFormatter.format(dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value))  
-))
+inThisBuild(
+  List(
+    scalaVersion := Settings.LibraryVersions.scalaVersion,
+    version := dateFormatter.format(
+      dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate
+    ) + dynverGitDescribeOutput.value.mkVersion(versionFmt,
+                                                fallbackVersion(dynverCurrentDate.value))
+  )
+)
 
 enablePlugins(GitBranchPrompt)
 
@@ -88,16 +95,15 @@ updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 ///////////////
 lazy val ocs3 = preventPublication(project.in(file(".")))
   .settings(commonSettings)
-  .aggregate(
-    giapi,
-    web_server_common,
-    web_client_common,
-    seqexec_model.js,
-    seqexec_model.jvm,
-    seqexec_engine,
-    seqexec_server,
-    seqexec_web_server,
-    seqexec_web_client)
+  .aggregate(giapi,
+             web_server_common,
+             web_client_common,
+             seqexec_model.js,
+             seqexec_model.jvm,
+             seqexec_engine,
+             seqexec_server,
+             seqexec_web_server,
+             seqexec_web_client)
 
 //////////////
 // Projects
@@ -109,12 +115,25 @@ lazy val giapi = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging.value ++ Monocle.value,
-    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test")
+    libraryDependencies ++= Seq(Cats.value,
+                                Mouse.value,
+                                Shapeless.value,
+                                CatsEffect.value,
+                                Fs2,
+                                GiapiJmsUtil,
+                                GiapiJmsProvider,
+                                GiapiStatusService,
+                                Giapi,
+                                GiapiCommandsClient) ++ Logging.value ++ Monocle.value,
+    libraryDependencies ++= Seq(GmpStatusGateway % "test",
+                                GmpStatusDatabase % "test",
+                                GmpCmdJmsBridge % "test",
+                                NopSlf4j % "test")
   )
 
 // Common utilities for web server projects
-lazy val web_server_common = project.in(file("modules/shared/web/server/"))
+lazy val web_server_common = project
+  .in(file("modules/shared/web/server/"))
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
@@ -122,48 +141,51 @@ lazy val web_server_common = project.in(file("modules/shared/web/server/"))
   )
 
 // Common utilities for web client projects
-lazy val web_client_common = project.in(file("modules/shared/web/client"))
+lazy val web_client_common = project
+  .in(file("modules/shared/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(gspScalaJsSettings: _*)
   .settings(
-    scalacOptions ~= (_.filterNot(Set(
-      // By necessity facades will have unused params
-      "-Wunused:params"
-    ))),
+    scalacOptions ~= (_.filterNot(
+      Set(
+        // By necessity facades will have unused params
+        "-Wunused:params"
+      )
+    )),
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(
       Cats.value,
       Mouse.value,
       ScalaJSDom.value,
-      JQuery.value,
       ScalaJSReactCommon.value,
       ScalaJSReactCats.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
       ScalaJSReactDraggable.value,
-      TestLibs.value) ++ ReactScalaJS.value ++ Monocle.value
+      TestLibs.value
+    ) ++ ReactScalaJS.value ++ Monocle.value
   )
 
 // Project for the server side application
-lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
+lazy val seqexec_web_server = project
+  .in(file("modules/seqexec/web/server"))
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      GspCoreModel.value,
-      GspCoreTestkit.value,
-      UnboundId,
-      JwtCore,
-      JwtCirce,
-      Http4sPrometheus,
-      CommonsHttp,
-      ScalaMock,
-      Log4CatsNoop.value) ++
-      Http4sClient ++ Http4s ++ PureConfig ++ Logging.value ,
+    libraryDependencies ++= Seq(GspCoreModel.value,
+                                GspCoreTestkit.value,
+                                UnboundId,
+                                JwtCore,
+                                JwtCirce,
+                                Http4sPrometheus,
+                                CommonsHttp,
+                                ScalaMock,
+                                Log4CatsNoop.value) ++
+      Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher")
@@ -178,7 +200,8 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .dependsOn(seqexec_server, web_server_common)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
-lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
+lazy val seqexec_web_client = project
+  .in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(BuildInfoPlugin)
@@ -189,59 +212,63 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
     // Configurations for webpack
-    webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
-    webpackBundlingMode in fullOptJS         := BundlingMode.Application,
-    webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
-    webpackDevServerPort                     := 9090,
-    version in webpack                       := "4.41.2",
-    version in startWebpackDevServer         := "3.9.0",
+    webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
+    webpackBundlingMode in fullOptJS := BundlingMode.Application,
+    webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackDevServerPort := 9090,
+    version in webpack := "4.41.2",
+    version in startWebpackDevServer := "3.9.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    webpackConfigFile in fullOptJS           := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
-    webpackConfigFile in fastOptJS           := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
-    webpackConfigFile in Test                := Some(baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"),
-    webpackEmitSourceMaps                    := false,
-    emitSourceMaps                           := false,
-    parallelExecution in Test                := false,
-    version in installJsdom                  := "12.0.0",
-    requireJsDomEnv in Test                  := true,
+    webpackConfigFile in fullOptJS := Some(
+      baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"
+    ),
+    webpackConfigFile in fastOptJS := Some(
+      baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"
+    ),
+    webpackConfigFile in Test := Some(
+      baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"
+    ),
+    webpackEmitSourceMaps := false,
+    emitSourceMaps := false,
+    parallelExecution in Test := false,
+    version in installJsdom := "12.0.0",
+    requireJsDomEnv in Test := true,
     // Use yarn as it is faster than npm
-    useYarn                                  := true,
+    useYarn := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "jquery"                  -> LibraryVersions.jQuery,
-      "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
-      "semantic-ui-modal"       -> LibraryVersions.semanticUI,
-      "semantic-ui-progress"    -> LibraryVersions.semanticUI,
-      "semantic-ui-popup"       -> LibraryVersions.semanticUI,
-      "semantic-ui-tab"         -> LibraryVersions.semanticUI,
-      "semantic-ui-visibility"  -> LibraryVersions.semanticUI,
-      "semantic-ui-transition"  -> LibraryVersions.semanticUI,
-      "semantic-ui-dimmer"      -> LibraryVersions.semanticUI,
-      "semantic-ui-less"        -> LibraryVersions.semanticUI
+      "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
+      "semantic-ui-modal" -> LibraryVersions.semanticUI,
+      "semantic-ui-progress" -> LibraryVersions.semanticUI,
+      "semantic-ui-popup" -> LibraryVersions.semanticUI,
+      "semantic-ui-tab" -> LibraryVersions.semanticUI,
+      "semantic-ui-visibility" -> LibraryVersions.semanticUI,
+      "semantic-ui-transition" -> LibraryVersions.semanticUI,
+      "semantic-ui-dimmer" -> LibraryVersions.semanticUI,
+      "semantic-ui-less" -> LibraryVersions.semanticUI
     ),
     // NPM libs for development, mostly to let webpack do its magic
     npmDevDependencies in Compile ++= Seq(
-      "postcss-loader"                     -> "3.0.0",
-      "autoprefixer"                       -> "9.7.1",
-      "url-loader"                         -> "2.2.0",
-      "file-loader"                        -> "4.2.0",
-      "css-loader"                         -> "3.2.0",
-      "style-loader"                       -> "1.0.0",
-      "less"                               -> "2.7.2",
-      "less-loader"                        -> "4.1.0",
-      "webpack-merge"                      -> "4.2.2",
-      "mini-css-extract-plugin"            -> "0.8.0",
-      "webpack-dev-server-status-bar"      -> "1.1.0",
-      "cssnano"                            -> "4.1.10",
-      "uglifyjs-webpack-plugin"            -> "2.2.0",
-      "html-webpack-plugin"                -> "3.2.0",
+      "postcss-loader" -> "3.0.0",
+      "autoprefixer" -> "9.7.1",
+      "url-loader" -> "2.2.0",
+      "file-loader" -> "4.2.0",
+      "css-loader" -> "3.2.0",
+      "style-loader" -> "1.0.0",
+      "less" -> "2.7.2",
+      "less-loader" -> "4.1.0",
+      "webpack-merge" -> "4.2.2",
+      "mini-css-extract-plugin" -> "0.8.0",
+      "webpack-dev-server-status-bar" -> "1.1.0",
+      "cssnano" -> "4.1.10",
+      "uglifyjs-webpack-plugin" -> "2.2.0",
+      "html-webpack-plugin" -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
-      "favicons-webpack-plugin"            -> "1.0.2",
-      "why-did-you-update"                 -> "1.0.6",
-      "@packtracker/webpack-plugin"        -> "2.2.0"
+      "favicons-webpack-plugin" -> "1.0.2",
+      "why-did-you-update" -> "1.0.6",
+      "@packtracker/webpack-plugin" -> "2.2.0"
     ),
     libraryDependencies ++= Seq(
-      JQuery.value,
       Cats.value,
       Mouse.value,
       CatsEffect.value,
@@ -262,9 +289,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(
-    web_client_common % "compile->compile;test->test",
-    seqexec_model.js % "compile->compile;test->test")
+  .dependsOn(web_client_common % "compile->compile;test->test",
+             seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
 lazy val seqexec_server = project
@@ -277,19 +303,20 @@ lazy val seqexec_server = project
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
-      Seq(GspCoreOcs2Api.value,
-          Http4sCirce,
-          Squants.value,
-          // OCS bundles
-          SpModelCore,
-          POT,
-          OpenCSV,
-          Http4sXml,
-          Http4sBoopickle,
-          PrometheusClient,
-          Log4Cats.value,
-          Log4CatsNoop.value,
-          TestLibs.value
+      Seq(
+        GspCoreOcs2Api.value,
+        Http4sCirce,
+        Squants.value,
+        // OCS bundles
+        SpModelCore,
+        POT,
+        OpenCSV,
+        Http4sXml,
+        Http4sBoopickle,
+        PrometheusClient,
+        Log4Cats.value,
+        Log4CatsNoop.value,
+        TestLibs.value
       ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
@@ -299,7 +326,10 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine % "compile->compile;test->test", giapi, seqexec_model.jvm % "compile->compile;test->test", acm)
+  .dependsOn(seqexec_engine % "compile->compile;test->test",
+             giapi,
+             seqexec_model.jvm % "compile->compile;test->test",
+             acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
@@ -315,7 +345,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       Squants.value,
       Mouse.value,
       BooPickle.value
-      ) ++ Monocle.value,
+    ) ++ Monocle.value,
     Test / libraryDependencies += GspMathTestkit.value
   )
   .jvmSettings(
@@ -361,12 +391,11 @@ lazy val acm = project
       val gen = (sourceManaged in Compile).value
       val out = pkg.split("\\.").foldLeft(gen)(_ / _)
       val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
-      val cmd = List("xjc",
-        "-d", gen.getAbsolutePath,
-        "-p", pkg,
-        xsd.getAbsolutePath)
+      val cmd = List("xjc", "-d", gen.getAbsolutePath, "-p", pkg, xsd.getAbsolutePath)
       val mod = xsd.getParentFile.listFiles.map(_.lastModified).max
-      val cur = if (out.exists && out.listFiles.nonEmpty) out.listFiles.map(_.lastModified).min else Int.MaxValue
+      val cur =
+        if (out.exists && out.listFiles.nonEmpty) out.listFiles.map(_.lastModified).min
+        else Int.MaxValue
       if (mod > cur) {
         out.mkdirs
         val err = cmd.run(ProcessLogger(log.info(_), log.error(_))).exitValue
@@ -385,7 +414,8 @@ lazy val seqexecCommonSettings = Seq(
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
   // Depend on webpack and add the assets created by webpack
-  mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value.map { f => f.data -> f.data.getName() },
+  mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
+    .map(f => f.data -> f.data.getName()),
   // Name of the launch script
   executableScriptName := "seqexec-server",
   // No javadocs
@@ -461,7 +491,7 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in Universal).value
-      val filtered = universalMappings filter {
+      val filtered = universalMappings.filter {
         case (_, name) => !name.contains("_sjs")
       }
       filtered
@@ -483,59 +513,61 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
 /**
   * Project for the seqexec test server at GS on Linux 64
   */
-lazy val app_seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
-  .dependsOn(seqexec_web_server, seqexec_web_client)
-  .aggregate(seqexec_web_server, seqexec_web_client)
-  .enablePlugins(LinuxPlugin)
-  .enablePlugins(JavaServerAppPackaging)
-  .enablePlugins(SystemdPlugin)
-  .enablePlugins(GitBranchPrompt)
-  .settings(seqexecCommonSettings: _*)
-  .settings(seqexecLinux: _*)
-  .settings(deployedAppMappings: _*)
-  .settings(
-    description := "Seqexec GS test deployment",
-    applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GS,
-    mappings in Universal := {
-      // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings filter {
-        case (_, name) => !name.contains("_sjs")
+lazy val app_seqexec_server_gs_test =
+  preventPublication(project.in(file("app/seqexec-server-gs-test")))
+    .dependsOn(seqexec_web_server, seqexec_web_client)
+    .aggregate(seqexec_web_server, seqexec_web_client)
+    .enablePlugins(LinuxPlugin)
+    .enablePlugins(JavaServerAppPackaging)
+    .enablePlugins(SystemdPlugin)
+    .enablePlugins(GitBranchPrompt)
+    .settings(seqexecCommonSettings: _*)
+    .settings(seqexecLinux: _*)
+    .settings(deployedAppMappings: _*)
+    .settings(
+      description := "Seqexec GS test deployment",
+      applicationConfName := "seqexec",
+      applicationConfSite := DeploymentSite.GS,
+      mappings in Universal := {
+        // filter out sjs jar files. otherwise it could generate some conflicts
+        val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+        val filtered = universalMappings.filter {
+          case (_, name) => !name.contains("_sjs")
+        }
+        filtered
       }
-      filtered
-    }
-  )
-  .settings(embeddedJreSettingsLinux64: _*)
-  .dependsOn(seqexec_server)
+    )
+    .settings(embeddedJreSettingsLinux64: _*)
+    .dependsOn(seqexec_server)
 
 /**
   * Project for the seqexec test server at GN on Linux 64
   */
-lazy val app_seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
-  .dependsOn(seqexec_web_server, seqexec_web_client)
-  .aggregate(seqexec_web_server, seqexec_web_client)
-  .enablePlugins(LinuxPlugin, RpmPlugin)
-  .enablePlugins(JavaServerAppPackaging)
-  .enablePlugins(GitBranchPrompt)
-  .settings(seqexecCommonSettings: _*)
-  .settings(seqexecLinux: _*)
-  .settings(deployedAppMappings: _*)
-  .settings(
-    description := "Seqexec GN test deployment",
-    applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GN,
-    mappings in Universal := {
-      // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings filter {
-        case (_, name) => !name.contains("_sjs")
+lazy val app_seqexec_server_gn_test =
+  preventPublication(project.in(file("app/seqexec-server-gn-test")))
+    .dependsOn(seqexec_web_server, seqexec_web_client)
+    .aggregate(seqexec_web_server, seqexec_web_client)
+    .enablePlugins(LinuxPlugin, RpmPlugin)
+    .enablePlugins(JavaServerAppPackaging)
+    .enablePlugins(GitBranchPrompt)
+    .settings(seqexecCommonSettings: _*)
+    .settings(seqexecLinux: _*)
+    .settings(deployedAppMappings: _*)
+    .settings(
+      description := "Seqexec GN test deployment",
+      applicationConfName := "seqexec",
+      applicationConfSite := DeploymentSite.GN,
+      mappings in Universal := {
+        // filter out sjs jar files. otherwise it could generate some conflicts
+        val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+        val filtered = universalMappings.filter {
+          case (_, name) => !name.contains("_sjs")
+        }
+        filtered
       }
-      filtered
-    }
-  )
-  .settings(embeddedJreSettingsLinux64: _*)
-  .dependsOn(seqexec_server)
+    )
+    .settings(embeddedJreSettingsLinux64: _*)
+    .dependsOn(seqexec_server)
 
 /**
   * Project for the seqexec server app for production on Linux 64
@@ -556,7 +588,7 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings filter {
+      val filtered = universalMappings.filter {
         case (_, name) => !name.contains("_sjs")
       }
       filtered
@@ -584,7 +616,7 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings filter {
+      val filtered = universalMappings.filter {
         case (_, name) => !name.contains("_sjs")
       }
       filtered

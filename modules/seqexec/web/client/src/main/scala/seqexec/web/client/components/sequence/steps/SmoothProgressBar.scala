@@ -5,7 +5,8 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
 import japgolly.scalajs.react.extra.TimerSupport
-import japgolly.scalajs.react.{BackendScope, Callback, Reusability}
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.{ BackendScope, Callback, Reusability }
 import monocle.macros.Lenses
 import react.common._
 import scala.concurrent.duration._
@@ -51,9 +52,9 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps] {
     def tickTotal: Callback = b.props.zip(b.state) >>= {
       case (p, s) =>
         val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-        b.modState(State.value.set(min(p.maxValue, next)))
-         .when(!s.skipStep && !p.paused && !p.stopping) *>
-          b.modState(State.skipStep.set(false))
+        b.setStateL(State.value)(min(p.maxValue, next))
+          .when(!s.skipStep && !p.paused && !p.stopping) *>
+          b.setStateL(State.skipStep)(false)
     }
   }
 

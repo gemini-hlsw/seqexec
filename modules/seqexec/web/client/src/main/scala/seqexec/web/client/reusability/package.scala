@@ -27,6 +27,8 @@ import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.StepItems.StepStateSummary
+import react.common._
+import react.semanticui.SemanticColor
 import squants.Time
 import shapeless.tag.@@
 
@@ -41,6 +43,8 @@ package object reusability {
   implicit val obsIdReuse: Reusability[Observation.Id]  = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]     = Reusability.byEq
   implicit val operatorReuse: Reusability[Operator]     = Reusability.byEq
+  implicit val colorReuse: Reusability[SemanticColor]   = Reusability.by(_.toJs)
+  implicit val cssReuse: Reusability[Css]               = Reusability.by(_.htmlClass)
   implicit val stepConfigReuse: Reusability[StepConfig] = Reusability.byEq
   val stdStepReuse: Reusability[StandardStep] =
     Reusability.caseClassExcept(Symbol("config"))
