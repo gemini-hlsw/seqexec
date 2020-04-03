@@ -39,7 +39,7 @@ object SequenceDefaultToolbar {
           GridColumn(floated  = Left,
                      computer = Eight,
                      tablet   = Eight,
-                     only     = GridOnly.WideScreen,
+                     only     = GridOnly.Computer,
                      clazz    = SeqexecStyles.infoOnControl)(
             p.controlReader(_() match {
               case Some(c) => SequenceControl(c)

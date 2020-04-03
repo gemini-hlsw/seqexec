@@ -107,10 +107,6 @@ object SubsystemControlCell {
           val labeled: js.UndefOr[LabelPosition] = buttonIcon
             .as(LabelPosition.Left: js.UndefOr[LabelPosition])
             .getOrElse(js.undefined)
-          val icon: VdomNode = buttonIcon match {
-            case Some(i) => i
-            case None    => EmptyVdom
-          }
 
           Popup(
             trigger = Button(
@@ -125,7 +121,7 @@ object SubsystemControlCell {
               onClickE =
                 if (p.canOperate)(requestResourceCall(p.id, p.stepId, r)) else js.undefined,
               clazz = SeqexecStyles.defaultCursor.unless_(p.canOperate)
-            )(icon, r.show)
+            )(buttonIcon.whenDefined(identity), r.show)
           )(s"Configure ${r.show}")
         }.toTagMod
       )
