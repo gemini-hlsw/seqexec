@@ -11,6 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import react.common.ReactProps
 import react.semanticui.modules.dropdown._
 import scala.scalajs.js.JSConverters._
+import react.semanticui.collections.form.FormField
 
 /**
   * Produces a dropdown menu, similar to a combobox
@@ -36,8 +37,7 @@ object EnumSelect {
       .render_P { p =>
         val enum = implicitly[Enumerated[A]]
 
-        <.div(
-          ^.cls := "field",
+        FormField(
           <.label(p.label),
           Dropdown(
             placeholder = p.placeholder,
@@ -47,8 +47,8 @@ object EnumSelect {
             value       = p.value.map(i => enum.tag(i)).orUndefined,
             options = enum.all.map(i =>
               DropdownItem(
-                /*key = i.show, */ text = i.show,
-                value                   = enum.tag(i),
+                text     = i.show,
+                value    = enum.tag(i),
                 onClickE = (_: ReactMouseEvent, ep: DropdownItem.DropdownItemProps) =>
                   ep.value.toOption
                     .flatMap(v => enum.fromTag(v.asInstanceOf[String]))
@@ -56,7 +56,6 @@ object EnumSelect {
                     .getOrEmpty
               )
             )
-            // onChange    = (_: ReactEvent, ep: Dropdown.DropdownProps) => ep.value.toOption.flatMap(v => enum.fromTag(v.asInstanceOf[String])).map(v => p.onChange(v)).getOrEmpty
           )
         )
       }
