@@ -3,42 +3,40 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ScalaComponent
-import gem.Observation
 import cats.implicits._
+import gem.Observation
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.colors._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon._
+import react.semanticui.modules.popup.Popup
+import react.semanticui.modules.popup.PopupPosition
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.model.operations.Operations._
 import seqexec.model.operations._
-import seqexec.web.client.actions.{RequestAbort, RequestGracefulObsPause, RequestGracefulStop, RequestObsPause, RequestObsResume, RequestStop}
-import seqexec.web.client.model.TabOperations
+import seqexec.model.operations.Operations._
+import seqexec.web.client.actions._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconGroup
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
-import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
-import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
-import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
+import seqexec.web.client.icons._
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.icon.Icon
 
 /**
   * Contains a set of control buttons like stop/abort
   */
 final case class ControlButtons(
-  obsId:                Observation.Id,
-  operations:           List[Operations[_]],
-  sequenceState:        SequenceState,
-  stepId:               Int,
-  isObservePaused:      Boolean,
-  tabOperations:        TabOperations,
-  nsPendingObserveCmd:  Option[NodAndShuffleStep.PendingObserveCmd] = None
+  obsId:               Observation.Id,
+  operations:          List[Operations[_]],
+  sequenceState:       SequenceState,
+  stepId:              Int,
+  isObservePaused:     Boolean,
+  tabOperations:       TabOperations,
+  nsPendingObserveCmd: Option[NodAndShuffleStep.PendingObserveCmd] = None
 ) extends ReactProps {
   @inline def render: VdomElement = ControlButtons.component(this)
 
@@ -52,7 +50,7 @@ object ControlButtons {
   type Props = ControlButtons
 
   implicit val operationsReuse: Reusability[Operations[_]] = Reusability.derive[Operations[_]]
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props]              = Reusability.derive[Props]
 
   private def requestStop(obsId: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestStop(obsId, stepId))
@@ -72,116 +70,128 @@ object ControlButtons {
   private def requestObsResume(obsId: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(obsId, stepId))
 
-  private def requestedIcon(icon: Icon): Icon =
+  private def requestedIcon(icon: Icon): IconGroup =
     IconGroup(
-      icon.copyIcon(key = "main"),
-      Icon.IconCircleNotched.copyIcon(key = "requested", loading = true, color = Some("yellow"))
+      icon(^.key := "main"),
+      IconCircleNotched.copy(loading = true, color = Yellow)(^.key := "requested")
     )
 
   protected val component = ScalaComponent
     .builder[Props]("ControlButtons")
     .render_P { p =>
-      val pauseGracefullyIcon: Icon =
-        p.nsPendingObserveCmd.collect{
-          case NodAndShuffleStep.PauseGracefully => requestedIcon(IconPause)
-        }.getOrElse(IconPause)
+      val pauseGracefullyIcon: VdomNode =
+        p.nsPendingObserveCmd
+          .collect {
+            case NodAndShuffleStep.PauseGracefully => requestedIcon(IconPause): VdomNode
+          }
+          .getOrElse(IconPause)
 
-      val stopGracefullyIcon: Icon =
-        p.nsPendingObserveCmd.collect{
-          case NodAndShuffleStep.StopGracefully => requestedIcon(IconStop)
-        }.getOrElse(IconStop)
+      val stopGracefullyIcon: VdomNode =
+        p.nsPendingObserveCmd
+          .collect {
+            case NodAndShuffleStep.StopGracefully => requestedIcon(IconStop): VdomNode
+          }
+          .getOrElse(IconStop)
 
-      p.connect{ proxy =>
+      p.connect { proxy =>
         val isReadingOut = proxy().exists(_.stage === ObserveStage.ReadingOut)
 
         <.div(
           ^.cls := "ui icon buttons",
           SeqexecStyles.notInMobile,
-           p.operations.map {
-             case PauseObservation =>
-               Popup("button", "Pause the current exposure")(
-                 Button(
-                   icon     = Some(IconPause),
-                   color    = Some("teal"),
-                   onClick  = requestObsPause(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
-                 )
-               )
-             case StopObservation =>
-               Popup("button", "Stop the current exposure early")(
-                 Button(
-                   icon     = Some(IconStop),
-                   color    = Some("orange"),
-                   onClick  = requestStop(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || isReadingOut
-                 )
-               )
-             case AbortObservation =>
-               Popup("button", "Abort the current exposure")(
-                 Button(
-                   icon     = Some(IconTrash),
-                   color    = Some("red"),
-                   onClick  = requestAbort(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || isReadingOut
-                 )
-               )
-             case ResumeObservation =>
-               Popup("button", "Resume the current exposure")(
-                 Button(
-                   icon     = Some(IconPlay),
-                   color    = Some("blue"),
-                   onClick  = requestObsResume(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || !p.isObservePaused || isReadingOut
-                 )
-               )
-             // N&S operations
-             case PauseImmediatelyObservation =>
-               Popup("button", "Pause the current exposure immediately")(
-                 Button(
-                   icon     = Some(IconPause),
-                   color    = Some("teal"),
-                   basic    = true,
-                   onClick  = requestObsPause(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
-                 )
-               )
-             case PauseGracefullyObservation =>
-               Popup("button", "Pause the current exposure at the end of the cycle")(
-                 Button(
-                   icon     = Some(pauseGracefullyIcon),
-                   color    = Some("teal"),
-                   onClick  = requestGracefulObsPause(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
-                 )
-               )
-             case StopImmediatelyObservation =>
-               Popup("button", "Stop the current exposure immediately")(
-                 Button(
-                   icon     = Some(IconStop),
-                   color    = Some("orange"),
-                   basic    = true,
-                   onClick  = requestStop(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || isReadingOut
-                 )
-               )
-             case StopGracefullyObservation =>
-               Popup("button", "Stop the current exposure at the end of the cycle")(
-                 Button(
-                   icon     = Some(stopGracefullyIcon),
-                   color    = Some("orange"),
-                   onClick  = requestGracefulStop(p.obsId, p.stepId),
-                   disabled = p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
-                 )
-               )
-           }
-           .toTagMod
+          p.operations.map {
+            case PauseObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Teal,
+                  onClick  = requestObsPause(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || p.isObservePaused || isReadingOut
+                )(IconPause)
+              )("Pause the current exposure")
+            case StopObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Orange,
+                  onClick  = requestStop(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || isReadingOut
+                )(IconStop)
+              )("Stop the current exposure early")
+            case AbortObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Red,
+                  onClick  = requestAbort(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || isReadingOut
+                )(IconTrash)
+              )("Abort the current exposure")
+            case ResumeObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Blue,
+                  onClick  = requestObsResume(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || !p.isObservePaused || isReadingOut
+                )(IconPlay)
+              )("Resume the current exposure")
+            // N&S operations
+            case PauseImmediatelyObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Teal,
+                  basic    = true,
+                  onClick  = requestObsPause(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || p.isObservePaused || isReadingOut
+                )(IconPause)
+              )("Pause the current exposure immediately")
+            case PauseGracefullyObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon    = true,
+                  color   = Teal,
+                  onClick = requestGracefulObsPause(p.obsId, p.stepId),
+                  disabled =
+                    p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
+                )(pauseGracefullyIcon)
+              )("Pause the current exposure at the end of the cycle")
+            case StopImmediatelyObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon     = true,
+                  color    = Orange,
+                  basic    = true,
+                  onClick  = requestStop(p.obsId, p.stepId),
+                  disabled = p.requestInFlight || isReadingOut
+                )(IconStop)
+              )("Stop the current exposure immediately")
+            case StopGracefullyObservation =>
+              Popup(
+                position = PopupPosition.TopRight,
+                trigger = Button(
+                  icon    = true,
+                  color   = Orange,
+                  onClick = requestGracefulStop(p.obsId, p.stepId),
+                  disabled =
+                    p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
+                )(stopGracefullyIcon)
+              )("Stop the current exposure at the end of the cycle")
+          }.toTagMod
         )
       }
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
-
 
 /**
   * Contains the control buttons like stop/abort at the row level

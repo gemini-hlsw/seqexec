@@ -3,22 +3,27 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
+import cats.implicits._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.web.client.model.ClientStatus
+import react.common.implicits._
+import react.semanticui.elements.header.Header
 import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.reusability._
+
+final case class FooterStatus(status: ClientStatus) extends ReactProps {
+  @inline def render: VdomElement = FooterStatus.component(this)
+}
 
 /**
   * Chooses to display either the guide config or a connection status info
   */
 object FooterStatus {
 
-  final case class Props(status: ClientStatus)
+  type Props = FooterStatus
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   private val wsConnect                       = SeqexecCircuit.connect(_.ws)
@@ -27,21 +32,18 @@ object FooterStatus {
   private val component = ScalaComponent
     .builder[Props]("FooterStatus")
     .stateless
-    .render_P(
-      p =>
-        React.Fragment(
-          <.div(SeqexecStyles.notInMobile,
-                ^.cls := s"ui header item sub",
-                wsConnect(ConnectionState.apply).unless(p.status.isConnected)),
-          <.div(SeqexecStyles.notInMobile,
-                ^.cls := s"ui header item sub",
-                gcConnect(GuideConfigStatus.apply).when(p.status.isConnected)),
-          ControlMenu(p.status)
-        )
+    .render_P(p =>
+      React.Fragment(
+        Header(sub = true, clazz = SeqexecStyles.item |+| SeqexecStyles.notInMobile)(
+          wsConnect(x => ConnectionState(x())).unless(p.status.isConnected)
+        ),
+        Header(sub = true, clazz = SeqexecStyles.item |+| SeqexecStyles.notInMobile)(
+          gcConnect(x => GuideConfigStatus(x())).when(p.status.isConnected)
+        ),
+        ControlMenu(p.status)
+      )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(u: ModelProxy[ClientStatus]): Unmounted[Props, Unit, Unit] =
-    component(Props(u()))
 }

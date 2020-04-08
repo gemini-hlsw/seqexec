@@ -10,7 +10,7 @@ import monocle.macros.Lenses
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.Observer
 import seqexec.model.UserDetails
-import seqexec.web.client.model.SectionVisibilityState.SectionClosed
+import seqexec.web.client.model.SectionVisibilityState._
 
 sealed trait SoundSelection extends Product with Serializable
 
@@ -45,7 +45,8 @@ final case class SeqexecUIModel(
   obsProgress:        AllObservationsProgressState,
   sessionQueueFilter: SessionQueueFilter,
   sound:              SoundSelection,
-  firstLoad:          Boolean)
+  firstLoad:          Boolean
+)
 
 object SeqexecUIModel {
   val Initial: SeqexecUIModel = SeqexecUIModel(
@@ -65,20 +66,20 @@ object SeqexecUIModel {
   )
 
   implicit val eq: Eq[SeqexecUIModel] =
-    Eq.by(
-      x =>
-        (x.navLocation,
-         x.user,
-         x.loginBox,
-         x.globalLog,
-         x.sequencesOnDisplay,
-         x.appTableStates,
-         x.defaultObserver,
-         x.notification,
-         x.queues,
-         x.sessionQueueFilter,
-         x.sound,
-         x.firstLoad))
+    Eq.by(x =>
+      (x.navLocation,
+       x.user,
+       x.loginBox,
+       x.globalLog,
+       x.sequencesOnDisplay,
+       x.appTableStates,
+       x.defaultObserver,
+       x.notification,
+       x.queues,
+       x.sessionQueueFilter,
+       x.sound,
+       x.firstLoad)
+    )
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
 }

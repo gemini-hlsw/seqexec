@@ -3,22 +3,27 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
 import diode.react.ReactPot._
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
+import react.semanticui.colors._
+import react.semanticui.elements.header.Header
+import seqexec.web.client.icons._
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.reusability._
+
+final case class ConnectionState(u: WebSocketConnection) extends ReactProps {
+  @inline def render: VdomElement = ConnectionState.component(this)
+}
 
 /**
   * Alert message when the connection disappears
   */
 object ConnectionState {
 
-  final case class Props(u: WebSocketConnection)
+  type Props = ConnectionState
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -32,25 +37,20 @@ object ConnectionState {
   private val component = ScalaComponent
     .builder[Props]("ConnectionState")
     .stateless
-    .render_P(
-      p =>
-        <.div(
-          ^.cls := "ui header item sub",
-          p.u.ws.renderPending(
-            _ =>
-              <.div(
-                IconAttention.copyIcon(color = Option("red")),
-                <.span(
-                  SeqexecStyles.errorText,
-                  s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."
-                )
-              )
+    .render_P(p =>
+      Header(sub = true, clazz = SeqexecStyles.item)(
+        p.u.ws.renderPending(_ =>
+          <.div(
+            IconAttention.color(Red),
+            <.span(
+              SeqexecStyles.errorText,
+              s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."
+            )
           )
         )
+      )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(u: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] =
-    component(Props(u()))
 }

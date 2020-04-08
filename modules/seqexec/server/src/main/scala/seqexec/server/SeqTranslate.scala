@@ -19,7 +19,7 @@ import mouse.all._
 import seqexec.engine._
 import seqexec.engine.Action.ActionState
 import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model._
+import seqexec.model.{Progress => _, _}
 import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem._

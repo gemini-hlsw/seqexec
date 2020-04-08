@@ -3,50 +3,54 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.Eq
 import cats.data.NonEmptyList
+import cats.Eq
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.builder.Lifecycle.{
+  ComponentDidUpdate,
+  ComponentWillReceiveProps,
+  RenderScope
+}
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.builder.Lifecycle.{ComponentDidUpdate, ComponentWillReceiveProps, RenderScope}
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Lens
 import monocle.macros.Lenses
 import org.scalajs.dom.raw.HTMLElement
-
-import scala.scalajs.js
-import scala.math._
 import react.common._
 import react.common.implicits._
+import react.semanticui.sizes._
+import react.semanticui.{ SemanticSize => SSize }
+import react.virtualized._
+import scala.math._
+import scala.scalajs.js
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
-import seqexec.model.{RunningStep, SequenceState, Step, StepId, StepState}
-import seqexec.web.client.model.lenses._
-import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.model.TabOperations
-import seqexec.web.client.model.RunOperation
-import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.model.StepItems._
-import seqexec.web.client.model.Formatting._
+import seqexec.model.{ RunningStep, SequenceState, Step, StepId, StepState }
+import seqexec.web.client.actions.ClearAllResourceOperations
+import seqexec.web.client.actions.FlipBreakpointStep
+import seqexec.web.client.actions.UpdateSelectedStep
+import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
-import seqexec.web.client.actions.ClearAllResourceOperations
-import seqexec.web.client.actions.UpdateSelectedStep
-import seqexec.web.client.actions.UpdateStepTableState
-import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.sequence.steps.StepsTable.{ State, StepRow }
 import seqexec.web.client.components.TableContainer
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{Size => SSize}
+import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.Formatting._
+import seqexec.web.client.model.lenses._
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.Pages.SeqexecPages
+import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model.StepItems._
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.reusability._
-import react.virtualized._
-import seqexec.web.client.components.sequence.steps.StepsTable.{State, StepRow}
+import seqexec.web.client.icons._
 import web.client.table._
 
 trait Columns {
@@ -285,10 +289,10 @@ trait Columns {
   * Container for a table with the steps
   */
 final case class StepsTable(
-                        router:     RouterCtl[SeqexecPages],
-                        canOperate: Boolean,
-                        stepsTable: StepsTableAndStatusFocus
-                      ) extends ReactProps {
+  router:     RouterCtl[SeqexecPages],
+  canOperate: Boolean,
+  stepsTable: StepsTableAndStatusFocus
+) extends ReactProps {
   @inline def render: VdomElement = StepsTable.component(this)
 
   import StepsTable._ // Import static members from Columns
@@ -314,13 +318,13 @@ final case class StepsTable(
   val showDecker: Boolean    = showProp(InstrumentProperties.Decker)
   val showImagingMirror: Boolean = showProp(
     InstrumentProperties.ImagingMirror
-    )
+  )
   val isPreview: Boolean        = steps.exists(_.isPreview)
   val hasControls: Boolean      = canOperate && !isPreview
   val canSetBreakpoint: Boolean = canOperate && !isPreview
   val showObservingMode: Boolean = showProp(
     InstrumentProperties.ObservingMode
-    )
+  )
   val showReadMode: Boolean = showProp(InstrumentProperties.ReadMode)
 
   val sequenceState: Option[SequenceState] = steps.map(_.state)
@@ -367,14 +371,13 @@ final case class StepsTable(
 
   val offsetWidth: Option[Double] = {
     val (maxWidth, maxAxisLabelWidth, maxNodLabelWidth) = stepsList.sequenceOffsetMaxWidth
-    if(maxNodLabelWidth === 0.0)
+    if (maxNodLabelWidth === 0.0)
       (maxWidth + maxAxisLabelWidth + OffsetIconWidth + OffsetPadding * 4).some
     else
       ((maxWidth + maxAxisLabelWidth + maxNodLabelWidth) * 2 + OffsetIconWidth + OffsetPadding * 5).some
   }
 
-  val exposure: Step => Option[String] = s =>
-    instrument.flatMap(s.exposureAndCoaddsS)
+  val exposure: Step => Option[String] = s => instrument.flatMap(s.exposureAndCoaddsS)
 
   val disperser: Step => Option[String] = s => instrument.flatMap(s.disperser)
 
@@ -412,7 +415,7 @@ final case class StepsTable(
     (ImagingMirrorColumn, _.imagingMirrorName),
     (ObservingModeColumn, _.observingMode),
     (ReadModeColumn, _.readMode)
-    ).toMap
+  ).toMap
 
   private val valueCalculatedCols: TableColumn => Option[Double] = {
     case ExecutionColumn => 200.0.some
@@ -421,11 +424,7 @@ final case class StepsTable(
   }
 
   private val measuredColumnWidths: TableColumn => Option[Double] =
-    colWidthsO(stepsList,
-               allTC,
-               extractors,
-               columnsMinWidth,
-               Map.empty[TableColumn, Double])
+    colWidthsO(stepsList, allTC, extractors, columnsMinWidth, Map.empty[TableColumn, Double])
 
   val columnWidths: TableColumn => Option[Double] =
     c => measuredColumnWidths(c).orElse(valueCalculatedCols(c))
@@ -438,7 +437,7 @@ object StepsTable extends Columns {
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
   private val MiddleButton = 1 // As defined by React.js
-  private val HeaderRow = -1
+  private val HeaderRow    = -1
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -501,7 +500,7 @@ object StepsTable extends Columns {
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
-  implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
+  implicit val tcReuse: Reusability[TableColumn]   = Reusability.byRef
   implicit val scrollBarReuse: Reusability[Double] = Reusability.double(1.0)
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected, x.scrollBarWidth))
@@ -539,32 +538,24 @@ object StepsTable extends Columns {
     f: StepsTableFocus
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      SettingsCell(p.router,
-                   f.instrument,
-                   f.id,
-                   row.step.id,
-                   p.isPreview)
+      SettingsCell(p.router, f.instrument, f.id, row.step.id, p.isPreview)
 
   def stepProgressRenderer(
     f: StepsTableFocus,
     b: Backend
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      StepProgressCell(b.props.status,
-                       StepStateSummary(
-                         row.step,
-                         f.id,
-                         f.instrument,
-                         b.props.tabOperations,
-                         f.state),
-                       b.state.selected,
-                       b.props.isPreview)
+      StepProgressCell(
+        b.props.status,
+        StepStateSummary(row.step, f.id, f.instrument, b.props.tabOperations, f.state),
+        b.state.selected,
+        b.props.isPreview
+      )
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      OffsetsDisplayCell(offsetsDisplay, row.step)
+    (_, _, _, row: StepRow, _) => OffsetsDisplayCell(offsetsDisplay, row.step)
 
   def stepItemRenderer(
     f: Step => Option[String]
@@ -577,8 +568,7 @@ object StepsTable extends Columns {
   def stepExposureRenderer(
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      ExposureTimeCell(row.step, i)
+    (_, _, _, row: StepRow, _) => ExposureTimeCell(row.step, i)
 
   def stepFPURenderer(
     i: Instrument
@@ -594,8 +584,7 @@ object StepsTable extends Columns {
     i:    Instrument,
     size: SSize
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      ObjectTypeCell(i, row.step, size)
+    (_, _, _, row: StepRow, _) => ObjectTypeCell(i, row.step, size)
 
   private val stepRowStyle: Step => Css = {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -622,23 +611,20 @@ object StepsTable extends Columns {
     * Class for the row depends on properties
     */
   def rowClassName(b: Backend)(i: Int): String =
-    ((i,
-      b.props.rowGetter(i),
-      b.props.canSetBreakpoint,
-      b.state.breakpointHover) match {
-      case (HeaderRow, _, _, _)                                   =>
+    ((i, b.props.rowGetter(i), b.props.canSetBreakpoint, b.state.breakpointHover) match {
+      case (HeaderRow, _, _, _) =>
         // Header
         SeqexecStyles.headerRowStyle
-      case (_, StepRow(s), true, _) if s.breakpoint                =>
+      case (_, StepRow(s), true, _) if s.breakpoint =>
         // row with control elements and breakpoint
         breakpointAndControlRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
-      case (_, StepRow(s), false, _) if s.breakpoint               =>
+      case (_, StepRow(s), false, _) if s.breakpoint =>
         // row with breakpoint
         breakpointRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
       case (j, StepRow(s), _, Some(k)) if !s.breakpoint && j === k =>
         // row with breakpoint and hover
         SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
-      case (_, StepRow(s), _, _)                                   =>
+      case (_, StepRow(s), _, _) =>
         // Regular row
         SeqexecStyles.stepRow |+| stepRowStyle(s)
     }).htmlClass
@@ -659,60 +645,58 @@ object StepsTable extends Columns {
   def rowHeight(b: Backend)(i: Int): Int = {
     val row = b.props.rowGetter(i)
     row match {
-      case StepRow(s) if b.props.showRowDetails(s, b.state.selected)              =>
+      case StepRow(s) if b.props.showRowDetails(s, b.state.selected) =>
         // Selected
         SeqexecStyles.runningRowHeight + b.props.rowDetailsHeight(s, b.state.selected)
-      case StepRow(s)
-        if s.status === StepState.Running && s.breakpoint                         =>
+      case StepRow(s) if s.status === StepState.Running && s.breakpoint =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
-      case StepRow(s) if s.status === StepState.Running                           =>
+      case StepRow(s) if s.status === StepState.Running =>
         // Row running
         SeqexecStyles.runningRowHeight
       case StepRow(s)
-        if b.state.selected.exists(_ === s.id) && !s.skip &&
-          (b.props.canControlSubsystems(s.id) || b.props.subsystemsNotIdle(s.id)) =>
+          if b.state.selected.exists(_ === s.id) && !s.skip &&
+            (b.props.canControlSubsystems(s.id) || b.props.subsystemsNotIdle(s.id)) =>
         // Selected
         SeqexecStyles.runningRowHeight
-      case StepRow(s) if s.breakpoint                                             =>
+      case StepRow(s) if s.breakpoint =>
         // Row with a breakpoint set
         baseHeight(b.props) + BreakpointLineHeight
-      case _                                                                      =>
+      case _ =>
         // default row
         baseHeight(b.props)
     }
   }
 
   val columnClassName: TableColumn => Option[Css] = {
-    case ControlColumn                        => SeqexecStyles.controlCellRow.some
-    case StepColumn | ExecutionColumn         => SeqexecStyles.paddedStepRow.some
-    case ObservingModeColumn | ExposureColumn | DisperserColumn | FilterColumn |
-         FPUColumn | CameraColumn | ObjectTypeColumn | DeckerColumn |
-         ReadModeColumn | ImagingMirrorColumn =>
+    case ControlColumn                => SeqexecStyles.controlCellRow.some
+    case StepColumn | ExecutionColumn => SeqexecStyles.paddedStepRow.some
+    case ObservingModeColumn | ExposureColumn | DisperserColumn | FilterColumn | FPUColumn |
+        CameraColumn | ObjectTypeColumn | DeckerColumn | ReadModeColumn | ImagingMirrorColumn =>
       SeqexecStyles.centeredCell.some
-    case SettingsColumn                       => SeqexecStyles.settingsCellRow.some
-    case _                                    => none
+    case SettingsColumn => SeqexecStyles.settingsCellRow.some
+    case _              => none
   }
 
   val headerClassName: TableColumn => Option[Css] = {
-    case ControlColumn  =>
+    case ControlColumn =>
       (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
     case SettingsColumn =>
       (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
-    case _              => none
+    case _ => none
   }
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
       ^.title := "Control",
       IconSettings
-  )
+    )
 
   val settingsHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
       ^.title := "Settings",
       IconBrowser
-  )
+    )
 
   private val fixedHeaderRenderer: TableColumn => HeaderRenderer[js.Object] = {
     case ControlColumn  => controlHeaderRenderer
@@ -722,15 +706,17 @@ object StepsTable extends Columns {
 
   private def columnCellRenderer(
     b: Backend,
-    c: TableColumn): CellRenderer[js.Object, js.Object, StepRow] = {
+    c: TableColumn
+  ): CellRenderer[js.Object, js.Object, StepRow] = {
     val optR = c match {
-      case ControlColumn       =>
+      case ControlColumn =>
         b.props.steps.map(
           stepControlRenderer(_,
                               b,
                               rowBreakpointHoverOnCB(b),
                               rowBreakpointHoverOffCB(b),
-                              recomputeRowHeightsCB))
+                              recomputeRowHeightsCB)
+        )
       case StepColumn          => stepIdRenderer.some
       case ExecutionColumn     => b.props.steps.map(stepProgressRenderer(_, b))
       case OffsetColumn        => stepStatusRenderer(b.props.offsetsDisplay).some
@@ -740,7 +726,7 @@ object StepsTable extends Columns {
       case FilterColumn        => b.props.instrument.map(i => stepItemRenderer(_.filter(i)))
       case FPUColumn           => b.props.instrument.map(i => stepFPURenderer(i))
       case CameraColumn        => b.props.instrument.map(i => stepItemRenderer(_.cameraName(i)))
-      case ObjectTypeColumn    => b.props.instrument.map(stepObjectTypeRenderer(_, SSize.Small))
+      case ObjectTypeColumn    => b.props.instrument.map(stepObjectTypeRenderer(_, Small))
       case SettingsColumn      => b.props.steps.map(p => settingsControlRenderer(b.props, p))
       case ReadModeColumn      => stepItemRendererS(_.readMode).some
       case DeckerColumn        => stepItemRendererS(_.deckerName).some
@@ -761,7 +747,7 @@ object StepsTable extends Columns {
         .getOrEmpty).when_(size.width.toInt > 0)
 
     tb match {
-      case ColumnRenderArgs(meta, _, width, true)  =>
+      case ColumnRenderArgs(meta, _, width, true) =>
         Column(
           Column.propsNoFlex(
             width   = width,
@@ -801,7 +787,7 @@ object StepsTable extends Columns {
   // Aditionally if we programatically scroll to a position we get another call
   // Only after that we assume scroll is user initatied
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val posMod            = b.setStateL(State.scrollPosition)(pos)
+    val posMod = b.setStateL(State.scrollPosition)(pos)
     // This is done to ignore the scrolls made automatically upon startup
     val hasScrolledBefore = b.state.scrollCount > 2
     val modMod            = b.setStateL(State.userModified)(IsModified).when_(hasScrolledBefore)
@@ -820,8 +806,8 @@ object StepsTable extends Columns {
       modMod *>
       // And silently update the model
       b.props.obsId
-        .map(id =>
-          SeqexecCircuit.dispatchCB(UpdateStepTableState(id, newTs.tableState))).getOrEmpty)
+        .map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, newTs.tableState)))
+        .getOrEmpty)
       .when_(posDiff > 1) // Only update the state if the change is significant
   }
 
@@ -847,8 +833,8 @@ object StepsTable extends Columns {
         SeqexecCircuit
           .dispatchCB(ClearAllResourceOperations(id)) *>
         b.modState(State.selected.set(Some(i))) *>
-        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i))
-      ).when_(b.props.stepSelectionAllowed(i) && State.selected.get(b.state).forall(_ =!= i))
+        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
+        .when_(b.props.stepSelectionAllowed(i) && State.selected.get(b.state).forall(_ =!= i))
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
@@ -860,18 +846,17 @@ object StepsTable extends Columns {
           ^.height := size.height.toInt.px,
           "No Steps"
         ),
-      overscanRowCount = SeqexecStyles.overscanRowCount,
-      height           = max(1, size.height.toInt),
-      rowCount         = b.props.rowCount,
-      rowHeight        = rowHeight(b) _,
-      rowClassName     = rowClassName(b) _,
-      width            = max(1, size.width.toInt),
-      rowGetter        = b.props.rowGetter _,
-      scrollToIndex    = startScrollToIndex(b),
-      scrollTop        = startScrollTop(b.state),
-      onRowClick       = singleClick(b),
-      onScroll =
-        (a, _, pos) => updateScrollPosition(b, pos).when_(a.toDouble > 0),
+      overscanRowCount  = SeqexecStyles.overscanRowCount,
+      height            = max(1, size.height.toInt),
+      rowCount          = b.props.rowCount,
+      rowHeight         = rowHeight(b) _,
+      rowClassName      = rowClassName(b) _,
+      width             = max(1, size.width.toInt),
+      rowGetter         = b.props.rowGetter _,
+      scrollToIndex     = startScrollToIndex(b),
+      scrollTop         = startScrollTop(b.state),
+      onRowClick        = singleClick(b),
+      onScroll          = (a, _, pos) => updateScrollPosition(b, pos).when_(a.toDouble > 0),
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,
@@ -888,12 +873,11 @@ object StepsTable extends Columns {
     if (e.altKey || e.button === MiddleButton) {
       e.preventDefaultCB >>
         (p.obsId, p.stepsList.find(_.id === index + 1))
-          .mapN(
-            (oid, step) =>
-              SeqexecCircuit
-                .dispatchCB(FlipBreakpointStep(oid, step))
-                .when_(step.canSetBreakpoint(index + 1, p.nextStepToRun))
-            )
+          .mapN((oid, step) =>
+            SeqexecCircuit
+              .dispatchCB(FlipBreakpointStep(oid, step))
+              .when_(step.canSetBreakpoint(index + 1, p.nextStepToRun))
+          )
           .getOrEmpty
           .when_(p.canSetBreakpoint)
     } else {
@@ -904,18 +888,20 @@ object StepsTable extends Columns {
     }
 
   private def stepsRowRenderer(p: Props, selected: Option[StepId]) =
-    (className:        String,
-     columns:          Array[VdomNode],
-     index:            Int,
-     _:                Boolean,
-     key:              String,
-     _:                StepRow,
-     onRowClick:       Option[OnRowClick],
-     onRowDoubleClick: Option[OnRowClick],
-     _:                Option[OnRowClick],
-     _:                Option[OnRowClick],
-     _:                Option[OnRowClick],
-     style:            Style) => {
+    (
+      className:        String,
+      columns:          Array[VdomNode],
+      index:            Int,
+      _:                Boolean,
+      key:              String,
+      _:                StepRow,
+      onRowClick:       Option[OnRowClick],
+      onRowDoubleClick: Option[OnRowClick],
+      _:                Option[OnRowClick],
+      _:                Option[OnRowClick],
+      _:                Option[OnRowClick],
+      style:            Style
+    ) => {
       p.rowGetter(index) match {
         case StepRow(s) if p.showRowDetails(s, selected) && index === s.id =>
           <.div(
@@ -941,23 +927,24 @@ object StepsTable extends Columns {
                 else
                   List.empty
 
-              rowComponents.zipWithIndex.toTagMod { case (rowComponent, rowIdx) =>
-                <.div(
-                  ^.key := s"$key-subRow-$rowIdx",
-                  SeqexecStyles.expandedBottomRow,
-                  SeqexecStyles.tableDetailRow,
-                  SeqexecStyles.tableDetailRowWithGutter
-                               .when(p.status.isLogged)
-                               .unless(p.isPreview),
-                  ^.height := SeqexecStyles.runningRowHeight.px,
-                  ^.onMouseDown ==> allowedClick(p, index, onRowClick),
-                  ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
-                  rowComponent(s)
-                )
+              rowComponents.zipWithIndex.toTagMod {
+                case (rowComponent, rowIdx) =>
+                  <.div(
+                    ^.key := s"$key-subRow-$rowIdx",
+                    SeqexecStyles.expandedBottomRow,
+                    SeqexecStyles.tableDetailRow,
+                    SeqexecStyles.tableDetailRowWithGutter
+                      .when(p.status.isLogged)
+                      .unless(p.isPreview),
+                    ^.height := SeqexecStyles.runningRowHeight.px,
+                    ^.onMouseDown ==> allowedClick(p, index, onRowClick),
+                    ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+                    rowComponent(s)
+                  )
               }
             }
           )
-        case _                                                   =>
+        case _ =>
           <.div(
             ^.cls := className,
             ^.key := key,
@@ -985,10 +972,7 @@ object StepsTable extends Columns {
   def rowBreakpointHoverOffCB(b: Backend)(index: Int): Callback =
     b.modState(State.breakpointHover.set(None)) *> recomputeRowHeightsCB(index)
 
-  private def updateStep(b:     ReceiveProps,
-                         p:     Props,
-                         obsId: Observation.Id,
-                         i:     StepId): Callback =
+  private def updateStep(b: ReceiveProps, p: Props, obsId: Observation.Id, i: StepId): Callback =
     SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
       b.setStateL(State.selected)(i.some)
         .when_(p.canControlSubsystems(i))
@@ -1008,20 +992,19 @@ object StepsTable extends Columns {
     val (cur: Props, next: Props) = (b.currentProps, b.nextProps)
     // Update the selected step as the run proceeds
     (next.obsId, cur.runningStep, next.runningStep) match {
-      case (Some(obsId), Some(RunningStep(i, _)), None)                                       =>
+      case (Some(obsId), Some(RunningStep(i, _)), None) =>
         // This happens when a sequence stops, e.g. with a pasue
         updateStep(b, next, obsId, i)
-      case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
-        if i =!= j                                                                            =>
+      case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _))) if i =!= j =>
         // This happens when we keep running and move to the next step
         // If the user hasn't scrolled we'll focus on the next step
         updateStep(b, next, obsId, j) *>
           scrollTo(j)
       case (Some(obsId), _, Some(RunningStep(j, _)))
-        if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
+          if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
         // When we start running
         updateStep(b, next, obsId, j)
-      case _                                                                                  =>
+      case _ =>
         Callback.empty
     }
   }
@@ -1035,19 +1018,20 @@ object StepsTable extends Columns {
   }
 
   private val computeScrollBarWidth: CallbackTo[Double] =
-    ref.get.map(_.getDOMNode.toHtml).asCallback.map{
-      _.flatten.flatMap { tableNode =>
-        // Table has a Grid inside, which is the one actually showing the scroll bar.
-        Option(tableNode.querySelector(".ReactVirtualized__Table__Grid")).map {
-          case gridNode: HTMLElement => gridNode.offsetWidth - gridNode.clientWidth
-          case _                     => SeqexecStyles.DefaultScrollBarWidth
+    ref.get.map(_.getDOMNode.toHtml).asCallback.map {
+      _.flatten
+        .flatMap { tableNode =>
+          // Table has a Grid inside, which is the one actually showing the scroll bar.
+          Option(tableNode.querySelector(".ReactVirtualized__Table__Grid")).map {
+            case gridNode: HTMLElement => gridNode.offsetWidth - gridNode.clientWidth
+            case _                     => SeqexecStyles.DefaultScrollBarWidth
+          }
         }
-      }.getOrElse(SeqexecStyles.DefaultScrollBarWidth)
+        .getOrElse(SeqexecStyles.DefaultScrollBarWidth)
     }
 
-  def didUpdate(b: DidUpdate): Callback = {
-    computeScrollBarWidth >>= {sw => b.modState(State.scrollBarWidth.set(sw)) }
-  }
+  def didUpdate(b: DidUpdate): Callback =
+    computeScrollBarWidth >>= { sw => b.modState(State.scrollBarWidth.set(sw)) }
 
   // We need to update the state if the props change
   def receiveNewProps(b: ReceiveProps): Callback = {
@@ -1066,9 +1050,7 @@ object StepsTable extends Columns {
     // If the selected step changes recompute height
     val selected: Option[StepId] =
       (cur.selectedStep, next.selectedStep)
-        .mapN { (c, n) =>
-          min(c, n)
-        }
+        .mapN((c, n) => min(c, n))
         .filter(_ => b.state.selected =!= next.selectedStep)
 
     // If the step is running recalculate height
@@ -1113,10 +1095,10 @@ object StepsTable extends Columns {
         },
         onResize = s =>
           b.modStateL(State.tableState)(
-            _.recalculateWidths(s,
-                                b.props.visibleColumns,
-                                b.props.columnWidths))
-      ))
+            _.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths)
+          )
+      )
+    )
 
   def initialState(p: Props): State =
     (State.tableState.set(p.tableState) >>> State.selected.set(p.selectedStep))(State.InitialState)

@@ -115,6 +115,13 @@ object SeqexecStyles {
 
   val sequencesArea: Css = Css("SeqexecStyles-sequencesArea")
 
+  // Sometimes we need to manually add css
+  val item: Css = Css("item")
+
+  val ui: Css = Css("ui")
+
+  val header: Css = Css("header")
+
   // Media queries to hide/display items for mobile
   val notInMobile: Css = Css("SeqexecStyles-notInMobile")
 
@@ -228,7 +235,7 @@ object SeqexecStyles {
 
   val rowDone: Css = Css("SeqexecStyles-rowDone")
 
-  val rowNone: Css = Css.Zero
+  val rowNone: Css = Css.Empty
 
   val stepRowWithBreakpoint: Css =
     Css("SeqexecStyles-stepRowWithBreakpoint")

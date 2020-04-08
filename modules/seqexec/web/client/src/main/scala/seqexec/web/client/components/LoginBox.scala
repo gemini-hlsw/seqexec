@@ -6,22 +6,28 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.vdom.TagOf
 import monocle.macros.Lenses
-import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
-import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.LoggedIn
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.modal.Content
-import seqexec.web.client.semanticui.elements.modal.Header
-import seqexec.web.client.semanticui.elements.label.FormLabel
+import seqexec.web.client.icons._
+import react.semanticui.As
+import react.semanticui.collections.form._
+import react.semanticui.collections.grid._
+import react.semanticui.colors._
+import react.semanticui.floats
+import react.semanticui.textalignment._
+import react.semanticui.verticalalignment._
+import react.semanticui.widths._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
+import react.semanticui.modules.modal._
+import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
 import react.common._
 import seqexec.web.client.reusability._
@@ -39,10 +45,12 @@ object LoginBox {
   type Props = LoginBox
 
   @Lenses
-  final case class State(username:    String,
-                         password:    String,
-                         progressMsg: Option[String],
-                         errorMsg:    Option[String])
+  final case class State(
+    username:    String,
+    password:    String,
+    progressMsg: Option[String],
+    errorMsg:    Option[String]
+  )
 
   object State {
     val Empty: State = State("", "", None, None)
@@ -74,69 +82,81 @@ object LoginBox {
     def closeBox: Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
-    def attemptLogin: Callback = b.state >>= { s =>
-      // Change the UI and call login on the remote backend
-      updateProgressMsg("Authenticating...") >>
-        Callback.future(
-          SeqexecWebClient
-            .login(s.username, s.password)
-            .map(loggedInEvent)
-            .recover {
-              case _: Exception =>
-                updateErrorMsg("Login failed, check username/password")
-            }
-        )
-    }
+    val attemptLogin = (e: ReactEvent, _: Form.FormProps) =>
+      e.preventDefaultCB *>
+        b.state >>= { s =>
+        // Change the UI and call login on the remote backend
+        updateProgressMsg("Authenticating...") >>
+          Callback.future(
+            SeqexecWebClient
+              .login(s.username, s.password)
+              .map(loggedInEvent)
+              .recover {
+                case _: Exception =>
+                  updateErrorMsg("Login failed, check username/password")
+              }
+          )
+      }
 
-    private def toolbar(s: State) =
-      <.div(
-        ^.cls := "ui actions",
-        <.div(
-          ^.cls := "ui grid",
-          <.div(
-            ^.cls := "middle aligned row",
-            s.progressMsg
-              .map(
-                m =>
-                  <.div(
-                    ^.cls := "left floated left aligned six wide column",
-                    IconCircleNotched.copyIcon(loading = true),
-                    m
-                ))
-              .whenDefined,
-            s.errorMsg
-              .map(
-                m =>
-                  <.div(
-                    ^.cls := "left floated left aligned six wide column red",
-                    IconAttention,
-                    m
-                ))
-              .whenDefined,
-            <.div(
-              ^.cls := "right floated right aligned ten wide column",
-              Button(onClick    = closeBox)("Cancel"),
-              Button(onClick    = attemptLogin,
-                     buttonType = Button.SubmitType,
-                     form       = Some(formId))("Login")
+    private def toolbar(s: State): ModalActions =
+      ModalActions(
+        Grid(
+          GridRow(verticalAlign = Middle)(
+            s.progressMsg.whenDefined(m =>
+              GridColumn(
+                textAlign = Left,
+                floated   = floats.Left,
+                width     = Six
+              )(
+                IconCircleNotched.loading(true),
+                m
+              )
+            ),
+            s.errorMsg.whenDefined(m =>
+              GridColumn(
+                textAlign = Left,
+                floated   = floats.Left,
+                width     = Six,
+                color     = Red
+              )(
+                Icon("attention"),
+                m
+              )
+            ),
+            (
+              GridColumn(
+                textAlign = Right,
+                floated   = floats.Right,
+                width     = Ten
+              )(
+                Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
+                Button(^.tpe := "submit")("Login")
+              )
             )
           )
         )
       )
 
-    def render(s: State): TagOf[Div] =
-      <.div(
-        ^.cls := "ui modal",
-        Header("Login"),
-        Content(
-          <.form(
-            ^.cls := "ui form",
+    def render(p: Props, s: State): VdomNode =
+      Modal(
+        as = As.Form(
+          Form(
+            action    = "#",
+            onSubmitE = attemptLogin
+          )(
             ^.id := formId,
-            ^.method := "post",
-            ^.action := "#",
+            ^.method := "post"
+          )
+        ),
+        open    = p.visible === SectionOpen,
+        onClose = closeBox
+      )(
+        ModalHeader("Login"),
+        ModalContent(
+          <.div(
             <.div(
               ^.cls := "required field",
-              FormLabel(FormLabel.Props("Username", Some("username"))),
+              FormLabel("Username", Some("username")),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
@@ -145,14 +165,15 @@ object LoginBox {
                   ^.name := "username",
                   ^.id := "username",
                   ^.value := s.username,
-                  ^.onChange ==> userMod
+                  ^.onChange ==> userMod,
+                  ^.autoFocus := true
                 ),
                 IconUser
               )
             ),
             <.div(
               ^.cls := "required field",
-              FormLabel(FormLabel.Props("Password", Some("password"))),
+              FormLabel("Password", Some("password")),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
@@ -176,36 +197,6 @@ object LoginBox {
     .builder[Props]("Login")
     .initialState(State.Empty)
     .renderBackend[Backend]
-    .componentDidUpdate(ctx =>
-      Callback {
-        // To properly handle the model we need to do updates with jQuery and
-        // the Semantic UI javascript library
-        // The calls below use a custom scala.js facade for SemanticUI
-        import org.querki.jquery.$
-        import web.client.facades.semanticui.SemanticUIModal._
-
-        // Close the modal box if the model changes
-        ctx.getDOMNode.toElement.foreach {
-          dom =>
-            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionClosed) {
-              $(dom).modal("hide")
-            }
-            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionOpen) {
-              // Configure the modal to autofocus and to act properly on closing
-              $(dom).modal(
-                JsModalOptions
-                  .autofocus(true)
-                  .onHidden { () =>
-                    // Need to call direct access as this is outside the event loop
-                    (ctx.setState(State.Empty) *>
-                      SeqexecCircuit.dispatchCB(CloseLoginBox)).runNow
-                  }
-              )
-              // Show the modal box
-              $(dom).modal("show")
-            }
-        }
-    })
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

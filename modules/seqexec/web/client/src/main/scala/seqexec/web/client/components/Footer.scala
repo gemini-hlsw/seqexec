@@ -6,22 +6,25 @@ package seqexec.web.client.components
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.collections.menu._
 import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
-import seqexec.web.client.semanticui.elements.menu.HeaderItem
 import seqexec.web.client.reusability._
+
+final case class Footer(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps {
+  @inline def render: VdomElement = Footer.component(this)
+}
 
 /**
   * Component for the bar at the top of the page
   */
 object Footer {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+  type Props = Footer
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
@@ -34,45 +37,33 @@ object Footer {
   private val component = ScalaComponent
     .builder[Props]("SeqexecAppBar")
     .stateless
-    .render_P(
-      p =>
-        <.div(
-          ^.cls := "ui footer inverted menu",
-          <.a(
-            ^.cls := "header item",
-            ^.onClick ==> goHome(p),
-            SeqexecStyles.notInMobile,
-            s"Seqexec - ${p.site.shortName}"
-          ),
-          <.a(
-            ^.cls := "header item",
-            ^.onClick ==> goHome(p),
-            SeqexecStyles.onlyMobile,
-            p.site.shortName
-          ),
-          HeaderItem(
-            HeaderItem.Props(OcsBuildInfo.version,
-                             sub         = true,
-                             extraStyles = List(SeqexecStyles.notInMobile))
-          ),
-          userConnect(FooterStatus.apply)
-        )
-    )
-    .componentDidMount(
-      ctx =>
-        Callback {
-          // Mount the Semantic component using jQuery
-          import org.querki.jquery.$
-          import web.client.facades.semanticui.SemanticUIVisibility._
-
-          // Pick the top bar and make it stay visible regardless of scrolling
-          val dom = ctx.getDOMNode.asMounted().asElement()
-          $(dom)
-            .visibility(JsVisiblityOptions.visibilityType("fixed").offset(0))
-        }
+    .render_P(p =>
+      Menu(
+        clazz    = Css("footer"),
+        inverted = true
+      )(
+        MenuItem(
+          as       = "a",
+          header   = true,
+          clazz    = SeqexecStyles.notInMobile,
+          onClickE = goHome(p) _
+        )(s"Seqexec - ${p.site.shortName}"),
+        MenuItem(
+          as       = "a",
+          header   = true,
+          clazz    = SeqexecStyles.onlyMobile,
+          onClickE = goHome(p) _
+        )(p.site.shortName),
+        MenuMenu(
+          MenuItem(
+            header = true,
+            clazz  = SeqexecStyles.notInMobile
+          )(OcsBuildInfo.version)
+        ),
+        userConnect(x => FooterStatus(x()))
+      )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

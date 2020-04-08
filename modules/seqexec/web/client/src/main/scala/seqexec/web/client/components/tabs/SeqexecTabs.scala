@@ -13,6 +13,9 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.circuit.SeqexecCircuit
 import react.common._
+import react.semanticui.collections.menu.Menu
+import react.semanticui.collections.menu.MenuAttached
+import react.semanticui.collections.menu.MenuTabular
 
 /**
   * Menu with tabs
@@ -36,36 +39,29 @@ object SeqexecTabs {
       tabConnect { x =>
         val tabsL = x().tabs.toList
         val runningInstruments = tabsL.collect {
-          case Right(
-              AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
+          case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
             i
         }
-        val tabs = tabsL
-          .sortBy {
-            case Left(_)                 => Int.MinValue
-            case Right(t) if t.isPreview => (Int.MinValue + 1)
-            case Right(t)                => t.instrument.ordinal
-          }
-          .map {
-            case Right(t) =>
-              SequenceTab(
-                p.router,
-                t,
-                x().canOperate,
-                x().defaultObserver,
-                runningInstruments): VdomNode
-            case Left(t) =>
-              CalibrationQueueTab(p.router, t): VdomNode
-          }
-        if (tabs.nonEmpty) {
-          <.div(
-            ^.cls := "ui attached tabular menu",
-            React.Fragment(tabs: _*)
+        val tabs: List[VdomNode] =
+          tabsL
+            .sortBy {
+              case Left(_)                 => Int.MinValue
+              case Right(t) if t.isPreview => (Int.MinValue + 1)
+              case Right(t)                => t.instrument.ordinal
+            }
+            .map {
+              case Right(t) =>
+                SequenceTab(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)
+              case Left(t) =>
+                CalibrationQueueTab(p.router, t)
+            }
+        React.Fragment(
+          Menu(tabular = MenuTabular.Tabular, attached = MenuAttached.Attached)(
+            tabs: _*
           )
-        } else {
-          <.div()
-        }
-    })
+        )
+      }
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 }

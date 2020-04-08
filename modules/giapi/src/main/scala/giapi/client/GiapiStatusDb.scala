@@ -18,7 +18,7 @@ import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.concurrent.Queue
 import fs2.Stream
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /////////////////////////////////////////////////////////////////
 // Links status streaming with the giapi db

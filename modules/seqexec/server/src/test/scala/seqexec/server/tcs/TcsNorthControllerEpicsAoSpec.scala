@@ -66,7 +66,7 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     DummyInstrument(None)
   )
 
-  private val mustPauseWhileOffsetting = PrivateMethod[Boolean]('mustPauseWhileOffsetting)
+  private val mustPauseWhileOffsetting = PrivateMethod[Boolean](Symbol("mustPauseWhileOffsetting"))
 
   // The test uses only NIRI, although the threshold can be different for each instrument. The reason is that the
   // goal of the test is to check that it works in general, not to test for the specific threshold of every

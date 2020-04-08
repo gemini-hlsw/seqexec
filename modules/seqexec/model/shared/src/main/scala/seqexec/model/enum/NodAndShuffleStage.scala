@@ -13,25 +13,25 @@ sealed trait NodAndShuffleStage extends Product with Serializable {
 // The OT lets beams up to G but in practice it is always A/B
 object NodAndShuffleStage {
   case object StageA extends NodAndShuffleStage {
-    val symbol: Symbol = 'A
+    val symbol: Symbol = Symbol("A")
   }
   case object StageB extends NodAndShuffleStage {
-    val symbol: Symbol = 'B
+    val symbol: Symbol = Symbol("B")
   }
   case object StageC extends NodAndShuffleStage {
-    val symbol: Symbol = 'C
+    val symbol: Symbol = Symbol("C")
   }
   case object StageD extends NodAndShuffleStage {
-    val symbol: Symbol = 'D
+    val symbol: Symbol = Symbol("D")
   }
   case object StageE extends NodAndShuffleStage {
-    val symbol: Symbol = 'E
+    val symbol: Symbol = Symbol("E")
   }
   case object StageF extends NodAndShuffleStage {
-    val symbol: Symbol = 'F
+    val symbol: Symbol = Symbol("F")
   }
   case object StageG extends NodAndShuffleStage {
-    val symbol: Symbol = 'G
+    val symbol: Symbol = Symbol("G")
   }
 
   /** @group Typeclass Instances */

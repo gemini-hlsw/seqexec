@@ -248,8 +248,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
                   ResourceRunOperation
                     .fromActionStatus(step.id)(status)
                     .map((resource, _))
-                }).flatten
-              }.toMap.mapValues(SortedMap(_:_*))
+                }).flatten.to(SortedMap)
+              }.toMap
       updated(value.copy(sequences = sequences, resourceRunRequested = resourceRunRequested))
   }
 

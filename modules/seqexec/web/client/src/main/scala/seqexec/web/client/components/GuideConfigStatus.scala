@@ -3,27 +3,32 @@
 
 package seqexec.web.client.components
 
-import cats.Show
 import cats.implicits._
+import cats.Show
 import gem.syntax.all._
-import diode.react.ModelProxy
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.model.TelescopeGuideConfig
+import react.common.implicits._
+import react.semanticui.elements.header.Header
+import react.semanticui.sizes._
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.MountGuideOption
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
 import seqexec.web.client.reusability._
+
+final case class GuideConfigStatus(config: TelescopeGuideConfig) extends ReactProps {
+  @inline def render: VdomElement = GuideConfigStatus.component(this)
+}
 
 /**
   * Alert message when the connection disappears
   */
 object GuideConfigStatus {
-  final case class Props(config: TelescopeGuideConfig)
+  type Props = GuideConfigStatus
 
   implicit val mountGuideShow = Show.show[MountGuideOption] {
     case MountGuideOption.MountGuideOn  => "On"
@@ -47,41 +52,39 @@ object GuideConfigStatus {
     .stateless
     .render_P { p =>
       React.Fragment(
-        <.span(
-          ^.cls := "header item",
-          SeqexecStyles.activeGuide
-            .when(p.config.mountGuide === MountGuideOption.MountGuideOn),
+        Header(as   = "span",
+               size = Small,
+               clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide
+                 .when_(p.config.mountGuide === MountGuideOption.MountGuideOn))(
           s"Mount: ${p.config.mountGuide.show}"
         ),
-        <.span(
-          ^.cls := "header item",
-          SeqexecStyles.activeGuide
-            .when(p.config.m1Guide =!= M1GuideConfig.M1GuideOff),
+        Header(as   = "span",
+               size = Small,
+               clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide
+                 .when_(p.config.m1Guide =!= M1GuideConfig.M1GuideOff))(
           s"M1: ${p.config.m1Guide.show}"
         ),
         p.config.m2Guide match {
           case M2GuideConfig.M2GuideOn(c, s) =>
             React.Fragment(
-              <.span(
-                ^.cls := "header item",
-                SeqexecStyles.activeGuide.when(s.nonEmpty),
+              Header(as    = "span",
+                     size  = Small,
+                     clazz = SeqexecStyles.activeGuide.when_(s.nonEmpty))(
                 s"Tip/Tilt: ${s.map(_.tag).mkString("+")}".when(s.nonEmpty),
                 s"Tip/Tilt: Off".when(s.isEmpty)
               ),
-              <.span(
-                ^.cls := "header item",
-                SeqexecStyles.activeGuide.when(c === ComaOption.ComaOn),
+              Header(as    = "span",
+                     size  = Small,
+                     clazz = SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn))(
                 s"Coma: ${c.show}"
               )
             )
           case M2GuideConfig.M2GuideOff =>
             React.Fragment(
-              <.span(
-                ^.cls := "header item",
+              Header(as = "span", size = Small)(
                 "Tip/Tilt: Off"
               ),
-              <.span(
-                ^.cls := "header item",
+              Header(as = "span", size = Small)(
                 "Coma: Off"
               )
             )
@@ -91,6 +94,4 @@ object GuideConfigStatus {
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(u: ModelProxy[TelescopeGuideConfig]): Unmounted[Props, Unit, Unit] =
-    component(Props(u()))
 }

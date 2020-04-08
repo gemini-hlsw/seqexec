@@ -8,14 +8,14 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.colors._
 import seqexec.model.Step
-import seqexec.web.client.actions.FlipSkipStep
 import seqexec.web.client.actions.FlipBreakpointStep
+import seqexec.web.client.actions.FlipSkipStep
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.icons._
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.reusability._
 
 /**
@@ -38,24 +38,26 @@ object StepBreakStopCell {
   type Props = StepBreakStopCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]('heightChangeCB,
-                                       'breakPointEnterCB,
-                                       'breakPointLeaveCB)
+    Reusability.caseClassExcept[Props](Symbol("heightChangeCB"),
+                                       Symbol("breakPointEnterCB"),
+                                       Symbol("breakPointLeaveCB"))
 
   // Request a to flip the breakpoint
   def flipBreakpoint(p: Props)(e: ReactEvent): Callback =
     e.preventDefaultCB *>
-    e.stopPropagationCB *>
-    Callback.when(p.clientStatus.canOperate)(
-      SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.obsId, p.step)) *>
-        p.heightChangeCB(p.step.id))
+      e.stopPropagationCB *>
+      Callback.when(p.clientStatus.canOperate)(
+        SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.obsId, p.step)) *>
+          p.heightChangeCB(p.step.id)
+      )
 
   // Request a to flip the skip
   def flipSkipped(p: Props)(e: ReactEvent): Callback =
     e.preventDefaultCB *>
-    e.stopPropagationCB *>
-    Callback.when(p.clientStatus.canOperate)(
-      SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step)))
+      e.stopPropagationCB *>
+      Callback.when(p.clientStatus.canOperate)(
+        SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step))
+      )
 
   protected val component = ScalaComponent
     .builder[Props]("StepBreakStopCell")
@@ -71,29 +73,27 @@ object StepBreakStopCell {
           SeqexecStyles.breakPointHandleOff.when(p.step.breakpoint),
           SeqexecStyles.breakPointHandleOn.unless(p.step.breakpoint),
           ^.onClick ==> flipBreakpoint(p),
-          Icon.IconRemove
-            .copyIcon(fitted       = true,
-                      onMouseEnter = p.breakPointEnterCB(p.step.id),
-                      onMouseLeave = p.breakPointLeaveCB(p.step.id),
-                      extraStyles  = List(SeqexecStyles.breakPointOffIcon))
+          IconRemove
+            .copy(fitted = true, clazz = SeqexecStyles.breakPointOffIcon)(
+              ^.onMouseEnter --> p.breakPointEnterCB(p.step.id),
+              ^.onMouseLeave --> p.breakPointLeaveCB(p.step.id)
+            )
             .when(p.step.breakpoint),
-          Icon.IconCaretDown
-            .copyIcon(fitted       = true,
-                      onMouseEnter = p.breakPointEnterCB(p.step.id),
-                      onMouseLeave = p.breakPointLeaveCB(p.step.id),
-                      extraStyles  = List(SeqexecStyles.breakPointOnIcon))
+          IconCaretDown
+            .copy(fitted = true, clazz = SeqexecStyles.breakPointOnIcon)(
+              ^.onMouseEnter --> p.breakPointEnterCB(p.step.id),
+              ^.onMouseLeave --> p.breakPointLeaveCB(p.step.id)
+            )
             .unless(p.step.breakpoint)
         ).when(canSetBreakpoint),
         <.div(
           SeqexecStyles.skipHandle,
           ^.top := (p.rowHeight / 2 - SeqexecStyles.skipHandleHeight + 2).px,
           IconPlusSquareOutline
-            .copyIcon(link = true, onClickE = flipSkipped(p) _)
+            .copy(link = true)(^.onClick ==> flipSkipped(p) _)
             .when(p.step.skip),
           IconMinusCircle
-            .copyIcon(link    = true,
-                      color   = Some("orange"),
-                      onClickE = flipSkipped(p) _)
+            .copy(link = true, color = Orange)(^.onClick ==> flipSkipped(p) _)
             .unless(p.step.skip)
         ).when(canSetSkipMark)
       )

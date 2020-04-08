@@ -162,7 +162,7 @@ object SeqexecEngine {
 
     override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(id))) *>
-        q.enqueue1(Event.start[F, EngineState[F], SeqEvent](id, user, clientId, checkResources(id))).map(_.asRight)
+        q.enqueue1(Event.start[F, EngineState[F], SeqEvent](id, user, clientId, checkResources(id)))
 
     override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
@@ -171,20 +171,20 @@ object SeqexecEngine {
           executeEngine.startFrom(id, stp).as(SequenceStart(id, stp)),
           executeEngine.unit.as(Busy(id, clientId))
         ) )
-      ) ).map(_.asRight)
+      ) )
 
     override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.pause[F, EngineState[F], SeqEvent](id, user)).map(_.asRight)
+      q.enqueue1(Event.pause[F, EngineState[F], SeqEvent](id, user))
 
     override def requestCancelPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =
-      q.enqueue1(Event.cancelPause[F, EngineState[F], SeqEvent](id, user)).map(_.asRight)
+      q.enqueue1(Event.cancelPause[F, EngineState[F], SeqEvent](id, user))
 
     override def setBreakpoint(q: EventQueue[F],
                       seqId: Observation.Id,
                       user: UserDetails,
                       stepId: StepId,
                       v: Boolean): F[Unit] =
-      q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v)).map(_.asRight)
+      q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}") *>
@@ -259,7 +259,7 @@ object SeqexecEngine {
                     user: UserDetails,
                     stepId: StepId,
                     v: Boolean): F[Unit] =
-      q.enqueue1(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v)).map(_.asRight)
+      q.enqueue1(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit] =
       q.enqueue1(Event.poll(clientId))
@@ -384,7 +384,7 @@ object SeqexecEngine {
         executeEngine.get.flatMap(st => removeSeq(qid, seqId)
           .as(UpdateQueueRemove(qid, List(seqId), st.queues.get(qid)
             .map(_.queue.indexOf(seqId)).toList))))
-    ).map(_.asRight)
+    )
 
     private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState[F]] = st =>
       st.queues.get(qid).filter(_.queue.contains(seqId)).map {_ =>
@@ -396,7 +396,7 @@ object SeqexecEngine {
       Event.modifyState[F, EngineState[F], SeqEvent](
         executeEngine.get.flatMap(_ => (moveSeq(qid, seqId, delta) withEvent UpdateQueueMoved(qid,
           cid, seqId, 0)).toHandle))
-      ).map(_.asRight)
+      )
 
     private def clearQ(qid: QueueId): Endo[EngineState[F]] = st =>
       st.queues.get(qid).filter(_.status(st) =!= BatchExecState.Running).map { _ =>
@@ -406,7 +406,7 @@ object SeqexecEngine {
     override def clearQueue(q: EventQueue[F], qid: QueueId): F[Unit] = q.enqueue1(
       Event.modifyState[F, EngineState[F], SeqEvent](
         (clearQ(qid) withEvent UpdateQueueClear(qid)).toHandle)
-    ).map(_.asRight)
+    )
 
     private def setObserverAndSelect(sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId)
     : HandleType[F, Unit] = Handle(
@@ -471,7 +471,7 @@ object SeqexecEngine {
           }
         }.getOrElse(executeEngine.unit)
       }}.as(StartQueue(qid, clientId)))
-    ).map(_.asRight)
+    )
 
     private def stopSequencesInQueue(qid: QueueId): HandleType[F, Unit] =
       executeEngine.get.map(st =>
@@ -491,7 +491,7 @@ object SeqexecEngine {
           }
         }.getOrElse(executeEngine.unit)
       }.as(StopQueue(qid, clientId)))
-    ).map(_.asRight)
+    )
 
     private val iterateQueues: PartialFunction[SystemEvent[F], HandleType[F, Unit]] = {
       // Events that could trigger the scheduling of the next sequence in the queue:
@@ -541,7 +541,7 @@ object SeqexecEngine {
     : F[Unit] =
       q.enqueue1(
         Event.modifyState[F, EngineState[F], SeqEvent](configSystemHandle(sid, stepId, sys, clientID))
-      ).map(_.asRight)
+      )
 
     def notifyODB(i: (EventResult[SeqEvent], EngineState[F])): F[(EventResult[SeqEvent], EngineState[F])] = {
       (i match {

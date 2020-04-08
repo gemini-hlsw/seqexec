@@ -16,7 +16,7 @@ import edu.gemini.aspen.giapi.commands.SequenceCommand
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.commands.HandlerResponse
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 

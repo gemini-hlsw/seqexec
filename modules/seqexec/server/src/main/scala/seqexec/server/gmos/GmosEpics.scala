@@ -20,7 +20,6 @@ import seqexec.server.SeqexecFailure._
 import seqexec.server.EpicsCommandBase
 import seqexec.server.ObserveCommand
 
-import scala.collection.breakOut
 import scala.concurrent.duration._
 
 class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -120,7 +119,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       cs.map(_.addDouble("roiNumUsed", s"${GmosTop}dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): F[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
 
-    val rois: Map[Int, RoiParameters[F]] = (1 to 5).map(i => i -> RoiParameters[F](cs, i))(breakOut)
+    val rois: Map[Int, RoiParameters[F]] = (1 to 5).iterator.map(i => i -> RoiParameters[F](cs, i)).toMap
 
     private val shutterState: Option[CaParameter[String]] =
       cs.map(_.getString("shutterState"))
