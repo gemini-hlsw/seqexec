@@ -70,7 +70,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     DummyInstrument(Instrument.GmosS, (1.millimeters).some)
   )
 
-  private val mustPauseWhileOffsetting = PrivateMethod[Boolean]('mustPauseWhileOffsetting)
+  private val mustPauseWhileOffsetting = PrivateMethod[Boolean](Symbol("mustPauseWhileOffsetting"))
 
   "TcsControllerEpicsCommon" should "not pause guiding if it is not necessary" in {
     //No offset

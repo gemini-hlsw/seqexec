@@ -41,7 +41,7 @@ object CalQueueState {
 @Lenses
 final case class CalibrationQueues(queues: SortedMap[QueueId, CalQueueState]) {
   val queueTables: SortedMap[QueueId, TableState[CalQueueTable.TableColumn]] =
-    queues.mapValues(_.tableState)
+    queues.view.mapValues(_.tableState).to(SortedMap)
 
   def updateTableStates(
     queueTs: Map[QueueId, TableState[CalQueueTable.TableColumn]]
@@ -158,6 +158,6 @@ object CalibrationQueues {
     qid:  QueueId,
     oids: List[Observation.Id]
   ): CalibrationQueues => CalibrationQueues =
-    calStateSeqOpsT(qid).modify(_.filterKeys(!oids.contains(_)))
+    calStateSeqOpsT(qid).modify(_.view.filterKeys(!oids.contains(_)).to(SortedMap))
 
 }

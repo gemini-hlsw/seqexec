@@ -8,7 +8,7 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.{Concurrent, Timer}
 import cats.implicits._
-import edu.gemini.spModel.gemini.gpi.Gpi._
+import edu.gemini.spModel.gemini.gpi.Gpi.{ReadoutArea => _, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.obsclass.ObsClass

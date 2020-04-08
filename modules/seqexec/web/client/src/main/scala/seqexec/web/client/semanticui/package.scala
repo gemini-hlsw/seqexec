@@ -9,12 +9,14 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.CatsReact._
 import react.common.Css
 import react.common.implicits._
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon
+import react.semanticui.elements.button._
+import react.semanticui.elements.icon.Icon
 
 package object semanticui {
+
+  import react.semanticui.SemanticColor
+
+  import react.semanticui.modules.popup.Popup
 
   // Custom attributes used by SemanticUI
   val dataTab: VdomAttr[String]      = VdomAttr("data-tab")
@@ -26,19 +28,20 @@ package object semanticui {
 
   implicit val cssReuse: Reusability[Css] = Reusability.byEq
 
-  def controlButton(icon:     Icon,
-                    color:    String,
-                    onClick:  Callback,
-                    disabled: Boolean,
-                    tooltip:  String,
-                    text:     String): VdomElement =
-    Popup("button", tooltip)(
-      Button(
-        icon     = Some(icon),
-        labeled  = LeftLabeled,
-        onClick  = onClick,
-        color    = Some(color),
-        disabled = disabled
-      )(text)
-    )
+  def controlButton(
+    icon:     Icon,
+    color:    SemanticColor,
+    onClick:  Callback,
+    disabled: Boolean,
+    tooltip:  String,
+    text:     String
+  ): VdomNode =
+    Popup(content = tooltip,
+          trigger = Button(
+            icon          = true,
+            labelPosition = LabelPosition.Left,
+            onClick       = onClick,
+            color         = color,
+            disabled      = disabled
+          )(icon, text))
 }

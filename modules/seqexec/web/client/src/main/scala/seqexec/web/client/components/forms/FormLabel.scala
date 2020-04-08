@@ -1,18 +1,27 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.client.semanticui.elements.label
+package seqexec.web.client.components.forms
 
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common.ReactPropsWithChildren
+import japgolly.scalajs.react.CtorType
+
+final case class FormLabel(
+  text: String,
+  htmlFor: Option[String]
+) extends ReactPropsWithChildren {
+  @inline def render: Seq[CtorType.ChildArg] => VdomElement = FormLabel.component(this)
+}
 
 object FormLabel {
-  final case class Props(text: String, htmlFor: Option[String])
+  type Props = FormLabel
+
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent.builder[Props]("FormLabel")
+  protected val component = ScalaComponent.builder[Props]("FormLabel")
     .stateless
     .renderPC((_, p, c) =>
       <.label(
@@ -23,6 +32,4 @@ object FormLabel {
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

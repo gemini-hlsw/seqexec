@@ -3,26 +3,26 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import gsp.math.Axis
 import react.common._
-import seqexec.model.{NodAndShuffleStep, OffsetType, StandardStep, Step}
+import react.semanticui.colors._
+import react.semanticui.sizes._
+import seqexec.model.{ NodAndShuffleStep, OffsetType, StandardStep, Step }
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.Formatting._
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
-import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
+import seqexec.web.client.icons._
 
 /**
   * Component to display the offsets
   */
 final case class OffsetsDisplayCell(
   offsetsDisplay: OffsetsDisplay,
-  step: Step
+  step:           Step
 ) extends ReactProps {
   @inline def render: VdomElement = OffsetsDisplayCell.component(this)
 }
@@ -30,15 +30,19 @@ final case class OffsetsDisplayCell(
 object OffsetsDisplayCell {
   type Props = OffsetsDisplayCell
 
-  implicit val doubleReuse: Reusability[Double] = Reusability.double(0.0001)
+  implicit val doubleReuse: Reusability[Double]      = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(p => (p.offsetsDisplay, p.step.config))
 
-  private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
-  private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
+  private val guidingIcon   = IconCrosshairs.copy(color = Green, size = Large)
+  private val noGuidingIcon = IconBan.size(Large)
 
-  private def standardOffsetsRender(step: StandardStep, offsetWidth: Double, axisLabelWidth: Double): VdomElement = {
+  private def standardOffsetsRender(
+    step:           StandardStep,
+    offsetWidth:    Double,
+    axisLabelWidth: Double
+  ): VdomElement = {
     val offsetP = step.offset[OffsetType.Telescope, Axis.P]
     val offsetQ = step.offset[OffsetType.Telescope, Axis.Q]
 
@@ -71,7 +75,12 @@ object OffsetsDisplayCell {
     )
   }
 
-  private def nodAndShuffleOffsetsRender(step: NodAndShuffleStep, width: Double, axisLabelWidth: Double, nsNodLabelWidth: Double): VdomElement = {
+  private def nodAndShuffleOffsetsRender(
+    step:            NodAndShuffleStep,
+    width:           Double,
+    axisLabelWidth:  Double,
+    nsNodLabelWidth: Double
+  ): VdomElement = {
     val offsetBP = step.offset[OffsetType.NSNodB, Axis.P]
     val offsetBQ = step.offset[OffsetType.NSNodB, Axis.Q]
     val offsetAP = step.offset[OffsetType.NSNodA, Axis.P]
@@ -80,9 +89,9 @@ object OffsetsDisplayCell {
     <.div(
       SeqexecStyles.offsetsBlock,
       <.div(
-          ^.width := nsNodLabelWidth.px,
-          SeqexecStyles.offsetsNodLabel,
-          offsetNSNod[OffsetType.NSNodB]
+        ^.width := nsNodLabelWidth.px,
+        SeqexecStyles.offsetsNodLabel,
+        offsetNSNod[OffsetType.NSNodB]
       ),
       <.div(
         <.div(
@@ -140,7 +149,8 @@ object OffsetsDisplayCell {
     )
   }
 
-  protected val component = ScalaComponent.builder[Props]("OffsetsDisplayCell")
+  protected val component = ScalaComponent
+    .builder[Props]("OffsetsDisplayCell")
     .stateless
     .render_P { p =>
       p.offsetsDisplay match {
@@ -153,7 +163,8 @@ object OffsetsDisplayCell {
             noGuidingIcon.unless(guiding),
             p.step match {
               case s: StandardStep => standardOffsetsRender(s, offsetWidth, axisLabelWidth)
-              case s: NodAndShuffleStep => nodAndShuffleOffsetsRender(s, offsetWidth, axisLabelWidth, nsNodLabelWidth)
+              case s: NodAndShuffleStep =>
+                nodAndShuffleOffsetsRender(s, offsetWidth, axisLabelWidth, nsNodLabelWidth)
             }
           )
         case _ => <.div()

@@ -10,39 +10,41 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import react.common._
+import react.semanticui.elements.label.Label
+import react.semanticui.modules.popup.Popup
+import react.semanticui.colors._
+import react.semanticui.SemanticColor
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
-import seqexec.model.{SequenceState, Step, StepId, StepState}
+import seqexec.model.{ SequenceState, Step, StepId, StepState }
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.StopOperation
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.icon.Icon
-import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.elements.popup.Popup
+import seqexec.web.client.icons._
+import seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**
   * Component to display the step state and control
   */
 final case class StepProgressCell(
-  clientStatus : ClientStatus,
-  stateSummary : StepStateSummary,
-  selectedStep : Option[StepId],
-  isPreview    : Boolean
+  clientStatus: ClientStatus,
+  stateSummary: StepStateSummary,
+  selectedStep: Option[StepId],
+  isPreview:    Boolean
 ) extends ReactProps {
   @inline def render: VdomElement = StepProgressCell.component(this)
 
-  val step: Step = stateSummary.step
-  val obsId: Observation.Id = stateSummary.obsId
-  val instrument: Instrument = stateSummary.instrument
+  val step: Step                   = stateSummary.step
+  val obsId: Observation.Id        = stateSummary.obsId
+  val instrument: Instrument       = stateSummary.instrument
   val tabOperations: TabOperations = stateSummary.tabOperations
-  val state: SequenceState = stateSummary.state
+  val state: SequenceState         = stateSummary.state
 
   val resourceRunRequested = tabOperations.resourceRunRequested
 
@@ -61,29 +63,26 @@ object StepProgressCell {
   implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
     ControlButtonResolver.build(p => (p.clientStatus, p.state, p.step))
 
-  def labelColor(status: ActionStatus): String = status match {
-    case ActionStatus.Pending   => "gray"
-    case ActionStatus.Running   => "yellow"
-    case ActionStatus.Completed => "green"
-    case ActionStatus.Paused    => "orange"
-    case ActionStatus.Failed    => "red"
-    case ActionStatus.Aborted   => "red"
+  def labelColor(status: ActionStatus): SemanticColor = status match {
+    case ActionStatus.Pending   => Grey
+    case ActionStatus.Running   => Yellow
+    case ActionStatus.Completed => Green
+    case ActionStatus.Paused    => Orange
+    case ActionStatus.Failed    => Red
+    case ActionStatus.Aborted   => Red
   }
 
-  def labelIcon(status: ActionStatus): Option[Icon] = status match {
-    case ActionStatus.Pending   => None
-    case ActionStatus.Running   => IconCircleNotched.copyIcon(loading = true).some
-    case ActionStatus.Completed => IconCheckmark.some
-    case ActionStatus.Paused    => IconPause.some
-    case ActionStatus.Failed    => IconStopCircle.some
-    case ActionStatus.Aborted   => IconStopCircle.some
+  def labelIcon(status: ActionStatus): VdomNode = status match {
+    case ActionStatus.Pending   => iconEmpty
+    case ActionStatus.Running   => IconCircleNotched.loading(true)
+    case ActionStatus.Completed => IconCheckmark
+    case ActionStatus.Paused    => IconPause
+    case ActionStatus.Failed    => IconStopCircle
+    case ActionStatus.Aborted   => IconStopCircle
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
-    Label(
-      Label.Props(s"${system.show}",
-                  color = labelColor(status).some,
-                  icon  = labelIcon(status)))
+    Label(color = labelColor(status))(labelIcon(status), system.show)
 
   def stepSystemsStatus(step: Step): VdomElement =
     <.div(
@@ -91,10 +90,11 @@ object StepProgressCell {
       <.div(
         SeqexecStyles.specialStateLabel,
         "Configuring"
-       ),
+      ),
       <.div(
         SeqexecStyles.subsystems,
-        Step.configStatus.getOption(step)
+        Step.configStatus
+          .getOption(step)
           .orEmpty
           .sortBy(_._1)
           .map(Function.tupled(statusLabel))
@@ -114,13 +114,13 @@ object StepProgressCell {
     ).when(props.controlButtonsActive)
 
   def stepObservationStatusAndFile(
-    props:   Props,
-    fileId:  ImageFileId,
-    paused:  Boolean
+    props:  Props,
+    fileId: ImageFileId,
+    paused: Boolean
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      if(props.stateSummary.isBias) {
+      if (props.stateSummary.isBias) {
         BiasStatus(
           props.obsId,
           props.step.id,
@@ -130,20 +130,18 @@ object StepProgressCell {
         )
       } else {
         props.stateSummary.nsStatus.fold[VdomElement] {
-          ObservationProgressBar(
-            props.obsId,
-            props.step.id,
-            fileId,
-            stopping = !paused && props.isStopping,
-            paused)
+          ObservationProgressBar(props.obsId,
+                                 props.step.id,
+                                 fileId,
+                                 stopping = !paused && props.isStopping,
+                                 paused)
         } { nsStatus =>
-          NodAndShuffleProgressMessage(
-            props.obsId,
-            props.step.id,
-            fileId,
-            props.isStopping,
-            paused,
-            nsStatus)
+          NodAndShuffleProgressMessage(props.obsId,
+                                       props.step.id,
+                                       fileId,
+                                       props.isStopping,
+                                       paused,
+                                       nsStatus)
         }
       },
       stepControlButtons(props)
@@ -159,10 +157,10 @@ object StepProgressCell {
       stepControlButtons(props)
     )
 
-  private def textWithPopup(text: String): VdomElement =
-    Popup("span", text)(
-      <.span(text)
-    )
+  private def textWithPopup(text: String): VdomNode =
+    Popup(
+      trigger = <.span(text)
+    )(text)
 
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
@@ -185,14 +183,16 @@ object StepProgressCell {
           }
         } else {
           textWithPopup(props.step.show)
-        }),
+        }
+      ),
       SubsystemControlCell(
         props.obsId,
         props.step.id,
         Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
         props.resourceRunRequested,
-        props.clientStatus.canOperate)
+        props.clientStatus.canOperate
       )
+    )
 
   def stepPaused(props: Props): VdomElement =
     <.div(
@@ -205,25 +205,24 @@ object StepProgressCell {
       case (f, s) if s.status === StepState.Running && s.fileId.isEmpty && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty                        =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused && s.fileId.isDefined                                   =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined =>
         // Case for exposure paused, label and control buttons
         stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = true)
-      case (_, s) if s.status === StepState.Running && s.fileId.isDefined                      =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = false)
-      case (_, s) if s.wasSkipped                                                              =>
+      case (_, s) if s.wasSkipped =>
         <.p("Skipped")
-      case (_, _) if props.step.skip                                                           =>
+      case (_, _) if props.step.skip =>
         <.p("Skip")
-      case (_, s)
-        if s.status === StepState.Completed && s.fileId.isDefined                              =>
+      case (_, s) if s.status === StepState.Completed && s.fileId.isDefined =>
         <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
-      case (_, s) if props.stepSelected(s.id) && s.canConfigure                                =>
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure =>
         stepSubsystemControl(props)
-      case _                                                                                   =>
+      case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 

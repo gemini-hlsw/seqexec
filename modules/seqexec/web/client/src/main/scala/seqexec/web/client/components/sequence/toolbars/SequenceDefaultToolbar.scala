@@ -4,52 +4,57 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import diode.react.ReactConnectProxy
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.collections.grid._
+import react.semanticui.floats._
+import react.semanticui.widths._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
+
+final case class SequenceDefaultToolbar(id: Observation.Id) extends ReactProps {
+  @inline def render: VdomElement = SequenceDefaultToolbar.component(this)
+
+  val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]] =
+    SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
+  val controlReader: ReactConnectProxy[Option[SequenceControlFocus]] =
+    SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(id))
+}
 
 /**
   * Toolbar for logged in users
   */
 object SequenceDefaultToolbar {
-  final case class Props(id: Observation.Id) {
-    val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]] =
-      SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
-    val controlReader: ReactConnectProxy[Option[SequenceControlFocus]] =
-      SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(id))
-  }
+
+  type Props = SequenceDefaultToolbar
 
   private val component = ScalaComponent
     .builder[Props]("SequenceDefaultToolbar")
     .stateless
     .render_P(p =>
-      <.div(
-        ^.cls := "ui grid",
-        <.div(
-          ^.cls := "two column row",
-          SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "ui left floated column eight wide computer eight wide tablet only",
+      Grid(
+        GridRow(columns = Two, clazz = SeqexecStyles.shorterRow)(
+          GridColumn(floated  = Left,
+                     computer = Eight,
+                     tablet   = Eight,
+                     only     = GridOnly.Computer,
+                     clazz    = SeqexecStyles.infoOnControl)(
             p.controlReader(_() match {
-              case Some(c) => SequenceControl(SequenceControl.Props(c))
+              case Some(c) => SequenceControl(c)
               case _       => <.div()
             })
           ),
-          <.div(
-            ^.cls := "ui right floated column",
-            SeqexecStyles.infoOnControl,
+          GridColumn(floated = Right, clazz = SeqexecStyles.infoOnControl)(
             p.observerReader(_() match {
-              case Some(p) => SequenceInfo(SequenceInfo.Props(p))
+              case Some(p) => SequenceInfo(p)
               case _       => <.div()
             })
           )
         )
-    ))
+      )
+    )
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

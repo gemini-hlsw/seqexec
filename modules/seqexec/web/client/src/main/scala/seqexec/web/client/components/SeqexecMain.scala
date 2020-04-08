@@ -3,22 +3,31 @@
 
 package seqexec.web.client.components
 
+import cats.implicits._
 import diode.react.ReactPot._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.router._
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Reusability
 import gem.enum.Site
+import japgolly.scalajs.react.extra.router._
+import japgolly.scalajs.react.React
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.common.implicits._
+import react.semanticui.collections.grid._
+import react.semanticui.elements.divider.Divider
+import react.semanticui.widths._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.tabs.TabsArea
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
 
+final case class AppTitle(site: Site, ws: WebSocketConnection) extends ReactProps {
+  @inline def render: VdomElement = AppTitle.component(this)
+}
+
 object AppTitle {
-  final case class Props(site: Site, ws: WebSocketConnection)
+  type Props = AppTitle
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -26,82 +35,72 @@ object AppTitle {
     .builder[Props]("SeqexecTitle")
     .stateless
     .render_P(p =>
-      <.h4(
-        ^.cls := "ui horizontal divider header",
-        SeqexecStyles.titleRow,
-        SeqexecStyles.notInMobile,
+      Divider(as         = "h4",
+              horizontal = true,
+              clazz =
+                SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header)(
         s"Seqexec ${p.site.shortName}",
-        p.ws.ws.renderPending(
-          _ =>
-            <.div(
-              SeqexecStyles.errorText,
-              SeqexecStyles.blinking,
-              "Connection lost"
-          ))
-    ))
+        p.ws.ws.renderPending(_ =>
+          <.div(
+            SeqexecStyles.errorText,
+            SeqexecStyles.blinking,
+            "Connection lost"
+          )
+        )
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+final case class SeqexecMain(site: Site, ctl: RouterCtl[SeqexecPages]) extends ReactProps {
+  @inline def render: VdomElement = SeqexecMain.component(this)
 }
 
 object SeqexecMain {
-  final case class Props(site: Site, ctl: RouterCtl[SeqexecPages])
+  type Props = SeqexecMain
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
-  private val lbConnect  = SeqexecCircuit.connect(_.uiModel.loginBox)
-  private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
+  private val lbConnect               = SeqexecCircuit.connect(_.uiModel.loginBox)
+  private val logConnect              = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val userNotificationConnect = SeqexecCircuit.connect(_.uiModel.notification)
-  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-  private val wsConnect = SeqexecCircuit.connect(_.ws)
+  private val headerSideBarConnect    = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+  private val wsConnect               = SeqexecCircuit.connect(_.ws)
 
   private val component = ScalaComponent
     .builder[Props]("SeqexecUI")
     .stateless
     .render_P(p =>
-      <.div(
-        <.div(
-          ^.cls := "ui horizontally padded grid",
-          <.div(
-            ^.cls := "ui row",
-            SeqexecStyles.shorterRow
-          ),
-          wsConnect(ws => AppTitle(AppTitle.Props(p.site, ws()))),
-          <.div(
-            ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
-            SeqexecStyles.queueAreaRow,
-            <.div(
-              ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
-              SeqexecStyles.queueArea,
-              SessionQueueTableSection(p.ctl).when(true)
+      React.Fragment(
+        Grid(padded     = GridPadded.Horizontally)(
+          GridRow(clazz = SeqexecStyles.shorterRow),
+          wsConnect(ws => AppTitle(p.site, ws())),
+          GridRow(clazz = SeqexecStyles.shorterRow |+| SeqexecStyles.queueAreaRow)(
+            GridColumn(mobile   = Sixteen,
+                       tablet   = Ten,
+                       computer = Ten,
+                       clazz    = SeqexecStyles.queueArea)(
+              SessionQueueTableSection(p.ctl)
             ),
-            <.div(
-              ^.cls := "six wide column tablet computer only",
-              SeqexecStyles.headerSideBarArea,
-              headerSideBarConnect(HeadersSideBar.apply)
+            GridColumn(tablet = Six, computer = Six, clazz = SeqexecStyles.headerSideBarArea)(
+              headerSideBarConnect(x => HeadersSideBar(x()))
             )
           ),
-          <.div(
-            ^.cls := "ui row",
-            SeqexecStyles.shorterRow,
-            TabsArea(p.ctl, p.site).when(true)
+          GridRow(clazz = SeqexecStyles.shorterRow)(
+            TabsArea(p.ctl, p.site)
           ),
-          <.div(
-            ^.cls := "ui row",
-            // Add margin to avoid covering the footer
-            SeqexecStyles.logArea,
+          GridRow(clazz = SeqexecStyles.logArea)(
             logConnect(l => LogArea(p.site, l()))
           )
         ),
         lbConnect(p => LoginBox(p())),
-        userNotificationConnect(p =>
-          UserNotificationBox(UserNotificationBox.Props(p()))),
-        Footer(Footer.Props(p.ctl, p.site))
-    ))
+        userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p()))),
+        Footer(p.ctl, p.site)
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(site: Site, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))
 }

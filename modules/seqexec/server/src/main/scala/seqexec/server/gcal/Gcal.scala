@@ -13,7 +13,7 @@ import java.util.{Set => JSet}
 import io.chrisdavenport.log4cats.Logger
 
 import scala.Function.const
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
