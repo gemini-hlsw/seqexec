@@ -5,10 +5,6 @@ package seqexec.web.client
 
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.CatsReact._
-import react.common.Css
-import react.common.implicits._
 import react.semanticui.elements.button._
 import react.semanticui.elements.icon.Icon
 
@@ -25,8 +21,6 @@ package object semanticui {
   val dataPosition: VdomAttr[String] = VdomAttr("data-position")
   val dataInverted: VdomAttr[String] = VdomAttr("data-inverted")
   val formId: VdomAttr[String]       = VdomAttr("form")
-
-  implicit val cssReuse: Reusability[Css] = Reusability.byEq
 
   def controlButton(
     icon:     Icon,
