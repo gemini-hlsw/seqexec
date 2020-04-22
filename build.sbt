@@ -272,6 +272,7 @@ lazy val seqexec_web_client = project
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value,
+      GppUI.value,
       PPrint.value,
       TestLibs.value
     ) ++ ReactScalaJS.value ++ Diode.value

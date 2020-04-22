@@ -88,7 +88,7 @@ object Settings {
     // Gemini Libraries
     val gspMath = "0.1.16"
     val gspCore = "0.1.7"
-
+    val gppUI   = "0.0.1"
   }
 
   /**
@@ -264,6 +264,7 @@ object Settings {
     val GspCoreTestkit =
       Def.setting("edu.gemini" %%% "gsp-core-testkit" % LibraryVersions.gspCore % "test")
     val GspCoreOcs2Api = Def.setting("edu.gemini" %%% "gsp-core-ocs2-api" % LibraryVersions.gspCore)
+    val GppUI = Def.setting("edu.gemini" %%% "gpp-ui" % LibraryVersions.gppUI)
   }
 
   object PluginVersions {

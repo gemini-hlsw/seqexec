@@ -6,7 +6,7 @@ import React from "react";
 if (process.env.NODE_ENV !== "production") {
   const { whyDidYouUpdate } = require("why-did-you-update");
   whyDidYouUpdate(React, {
-    exclude: ["Draggable", "DraggableCore", "AutoSizer", "DiodeWrapper", "Button", "Icon", "Progress", "PopupContent", "Login", "Ref", "RefFindNode"]
+    exclude: ["Draggable", "DraggableCore", "AutoSizer", "DiodeWrapper", "Button", "Icon", "Progress", "PopupContent", "Login", "Ref", "RefFindNode", "DropdownMenu", "DropdownItem"]
   });
 }
 

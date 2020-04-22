@@ -30,10 +30,10 @@ import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
-import seqexec.web.client.components.forms.EnumSelect
 import seqexec.web.client.components.forms.FormLabel
-import seqexec.web.client.components.forms.InputEV
 import seqexec.web.client.reusability._
+import gpp.ui.forms.EnumSelect
+import gpp.ui.forms.InputEV
 
 /**
   * Container for a table with the steps

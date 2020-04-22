@@ -21,7 +21,7 @@ import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.reusability._
-import seqexec.web.client.semanticui.{ Size => _, _ }
+import seqexec.web.client.semanticui._
 import react.semanticui.modules.tab.TabPane
 import react.semanticui.As
 import react.semanticui.elements.segment.Segment
