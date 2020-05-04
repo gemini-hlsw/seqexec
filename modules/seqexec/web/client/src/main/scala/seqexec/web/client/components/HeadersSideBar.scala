@@ -34,6 +34,7 @@ import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
 import gpp.ui.forms.EnumSelect
 import gpp.ui.forms.InputEV
+import gpp.ui.forms.InputOptics
 
 /**
   * Container for a table with the steps
@@ -167,7 +168,7 @@ object HeadersSideBar {
                 "operator",
                 "operator",
                 operatorEV,
-                Operator.valueP,
+                InputOptics.fromIso(Operator.valueI.reverse),
                 placeholder = "Operator...",
                 disabled    = !enabled,
                 onBlur      = _ => submitIfChangedOp
@@ -180,7 +181,7 @@ object HeadersSideBar {
                 "observer",
                 "observer",
                 observerEV,
-                Observer.valueP,
+                InputOptics.fromIso(Observer.valueI.reverse),
                 placeholder = "Observer...",
                 disabled    = !enabled || obsCompleted,
                 onBlur      = _ => submitIfChangedOb

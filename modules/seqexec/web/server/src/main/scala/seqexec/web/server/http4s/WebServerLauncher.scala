@@ -16,9 +16,9 @@ import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.io.FileInputStream
-import java.nio.file.{Path => FilePath}
-import javax.net.ssl.{SSLContext, TrustManagerFactory, KeyManagerFactory}
-import java.security.{KeyStore, Security}
+import java.nio.file.{ Path => FilePath }
+import javax.net.ssl.{ KeyManagerFactory, SSLContext, TrustManagerFactory }
+import java.security.{ KeyStore, Security }
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
@@ -27,7 +27,7 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
-import org.http4s.server.middleware.{Logger => Http4sLogger}
+import org.http4s.server.middleware.{ Logger => Http4sLogger }
 import org.http4s.server.Router
 import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -38,7 +38,7 @@ import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.model.config._
 import seqexec.web.server.config._
-import seqexec.server.{SeqexecEngine, SeqexecMetrics, executeEngine}
+import seqexec.server.{ SeqexecEngine, SeqexecMetrics, executeEngine }
 import seqexec.server.SeqexecFailure
 import seqexec.server.Systems
 import seqexec.server.CaServiceInit
@@ -46,8 +46,9 @@ import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.config._
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.AuthenticationService
-import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
+import web.server.common.{ LogInitialization, RedirectToHttpsRoutes, StaticRoutes }
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.global
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
@@ -59,19 +60,22 @@ object WebServerLauncher extends IOApp with LogInitialization {
   // Try to load config from the file and fall back to the common one in the class path
   def config[F[_]: Sync]: F[ConfigObjectSource] = {
     val defaultConfig = ConfigSource.resources("app.conf").pure[F]
-    val fileConfig = configurationFile.map(ConfigSource.file)
+    val fileConfig    = configurationFile.map(ConfigSource.file)
 
     // ConfigSource, first attempt the file or default to the classpath file
     (fileConfig, defaultConfig).mapN(_.optional.withFallback(_))
   }
 
   /** Configures the Authentication service */
-  def authService[F[_]: Sync: Timer: Logger](mode: Mode, conf: AuthenticationConfig): F[AuthenticationService[F]] =
+  def authService[F[_]: Sync: Timer: Logger](
+    mode: Mode,
+    conf: AuthenticationConfig
+  ): F[AuthenticationService[F]] =
     Sync[F].delay(AuthenticationService[F](mode, conf))
 
   def makeContext[F[_]: Sync](tls: TLSConfig): F[SSLContext] = Sync[F].delay {
     val ksStream = new FileInputStream(tls.keyStore.toFile.getAbsolutePath)
-    val ks = KeyStore.getInstance("JKS")
+    val ks       = KeyStore.getInstance("JKS")
     ks.load(ksStream, tls.keyStorePwd.toCharArray)
     ksStream.close()
     val trustStore = StoreInfo(tls.keyStore.toFile.getAbsolutePath, tls.keyStorePwd)
@@ -91,7 +95,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     val kmf = KeyManagerFactory.getInstance(
       Option(Security.getProperty("ssl.KeyManagerFactory.algorithm"))
-        .getOrElse(KeyManagerFactory.getDefaultAlgorithm))
+        .getOrElse(KeyManagerFactory.getDefaultAlgorithm)
+    )
 
     kmf.init(ks, tls.certPwd.toCharArray)
 
@@ -102,15 +107,15 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
   /** Resource that yields the running web server */
   def webServer[F[_]: ContextShift: Logger: ConcurrentEffect: Timer](
-    conf: SeqexecConfiguration,
-    cal: SmartGcal,
-    as: AuthenticationService[F],
-    inputs: server.EventQueue[F],
-    outputs: Topic[F, SeqexecEvent],
-    se: SeqexecEngine[F],
-    cr: CollectorRegistry,
+    conf:      SeqexecConfiguration,
+    cal:       SmartGcal,
+    as:        AuthenticationService[F],
+    inputs:    server.EventQueue[F],
+    outputs:   Topic[F, SeqexecEvent],
+    se:        SeqexecEngine[F],
+    cr:        CollectorRegistry,
     clientsDb: ClientsSetDb[F],
-    bec: Blocker
+    bec:       Blocker
   ): Resource[F, Server[F]] = {
 
     // The prometheus route does not get logged
@@ -120,16 +125,18 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     val ssl: F[Option[SSLContext]] = conf.webServer.tls.map(makeContext[F]).sequence
 
-    def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] = Resource.liftF(all.flatMap { all =>
-
-      val builder =
-        BlazeServerBuilder[F]
-          .bindHttp(conf.webServer.port, conf.webServer.host)
-          .withWebSockets(true)
-          .withNio2(true)
-          .withHttpApp((prRouter <+> all).orNotFound)
-       ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
-    }).flatten
+    def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] =
+      Resource
+        .liftF(all.flatMap { all =>
+          val builder =
+            BlazeServerBuilder[F](global)
+              .bindHttp(conf.webServer.port, conf.webServer.host)
+              .withWebSockets(true)
+              .withNio2(true)
+              .withHttpApp((prRouter <+> all).orNotFound)
+          ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
+        })
+        .flatten
 
     val router = Router[F](
       "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
@@ -143,8 +150,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/ping" -> new PingRoutes(as).service
     )
 
-    val loggedRoutes = pingRouter <+> Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
-    val metricsMiddleware: Resource[F, HttpRoutes[F]] = Prometheus.metricsOps[F](cr, "seqexec").map(Metrics[F](_)(loggedRoutes))
+    val loggedRoutes =
+      pingRouter <+> Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
+    val metricsMiddleware: Resource[F, HttpRoutes[F]] =
+      Prometheus.metricsOps[F](cr, "seqexec").map(Metrics[F](_)(loggedRoutes))
 
     metricsMiddleware.flatMap(x => build(x.pure[F]))
 
@@ -152,7 +161,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
   def redirectWebServer[F[_]: ConcurrentEffect: Logger: Timer](
     gcdb: GuideConfigDb[F],
-    cal: SmartGcal
+    cal:  SmartGcal
   )(conf: WebServerConfiguration): Resource[F, Server[F]] = {
     val router = Router[F](
       "/api/seqexec/guide" -> new GuideConfigDbRoutes(gcdb).service,
@@ -160,7 +169,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/"                  -> new RedirectToHttpsRoutes[F](443, conf.externalBaseUrl).service
     )
 
-    BlazeServerBuilder[F]
+    BlazeServerBuilder[F](global)
       .bindHttp(conf.insecurePort, conf.host)
       .withHttpApp(router.orNotFound)
       .withNio2(true)
@@ -176,40 +185,46 @@ object WebServerLauncher extends IOApp with LogInitialization {
 /____/\___/\__, /\___/_/|_|\___/\___/
              /_/
 """
-    val msg = s"""Start web server for site ${conf.site} on ${conf.mode} mode, version ${OcsBuildInfo.version}"""
+    val msg =
+      s"""Start web server for site ${conf.site} on ${conf.mode} mode, version ${OcsBuildInfo.version}"""
     Logger[F].info(banner + msg)
   }
 
   // We need to manually update the configuration of the logging subsystem
   // to support capturing log messages and forward them to the clients
   def logToClients(out: Topic[IO, SeqexecEvent]): IO[Appender[ILoggingEvent]] = IO.apply {
-    import ch.qos.logback.classic.{AsyncAppender, Logger, LoggerContext}
+    import ch.qos.logback.classic.{ AsyncAppender, Logger, LoggerContext }
     import org.slf4j.LoggerFactory
 
     val asyncAppender = new AsyncAppender
-    val appender = new AppenderForClients(out)
-    Option(LoggerFactory.getILoggerFactory).collect {
-      case lc: LoggerContext => lc
-    }.foreach { ctx =>
-      asyncAppender.setContext(ctx)
-      appender.setContext(ctx)
-      asyncAppender.addAppender(appender)
-    }
+    val appender      = new AppenderForClients(out)
+    Option(LoggerFactory.getILoggerFactory)
+      .collect {
+        case lc: LoggerContext => lc
+      }
+      .foreach { ctx =>
+        asyncAppender.setContext(ctx)
+        appender.setContext(ctx)
+        asyncAppender.addAppender(appender)
+      }
 
-    Option(LoggerFactory.getLogger("seqexec")).collect {
-      case l: Logger => l
-    }.foreach { l =>
-      l.addAppender(asyncAppender)
-      asyncAppender.start()
-      appender.start()
-    }
+    Option(LoggerFactory.getLogger("seqexec"))
+      .collect {
+        case l: Logger => l
+      }
+      .foreach { l =>
+        l.addAppender(asyncAppender)
+        asyncAppender.start()
+        appender.start()
+      }
     asyncAppender
   }
 
   // Logger of error of last resort.
   def logError[F[_]: Logger]: PartialFunction[Throwable, F[Unit]] = {
-    case e: SeqexecFailure => Logger[F].error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
-    case e: Exception      => Logger[F].error(e)("Seqexec global error handler")
+    case e: SeqexecFailure =>
+      Logger[F].error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
+    case e: Exception => Logger[F].error(e)("Seqexec global error handler")
   }
 
   /** Reads the configuration and launches the seqexec engine and web server */
@@ -221,9 +236,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
       .build()
 
     def engineIO(
-      conf: SeqexecConfiguration,
+      conf:       SeqexecConfiguration,
       httpClient: Client[IO],
-      collector: CollectorRegistry
+      collector:  CollectorRegistry
     ): Resource[IO, SeqexecEngine[IO]] =
       for {
         met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
@@ -234,12 +249,12 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     def webServerIO(
       conf: SeqexecConfiguration,
-      in:  Queue[IO, executeEngine.EventType],
-      out: Topic[IO, SeqexecEvent],
-      en:  SeqexecEngine[IO],
-      cr:  CollectorRegistry,
-      cs:  ClientsSetDb[IO],
-      b:   Blocker
+      in:   Queue[IO, executeEngine.EventType],
+      out:  Topic[IO, SeqexecEvent],
+      en:   SeqexecEngine[IO],
+      cr:   CollectorRegistry,
+      cs:   ClientsSetDb[IO],
+      b:    Blocker
     ): Resource[IO, Unit] =
       for {
         as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
