@@ -6,18 +6,9 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
   * Application settings and dependencies
   */
 object Settings {
-  object Definitions {
-
-    /** The name of the application */
-    val name = "ocs3"
-
-    //"-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString, // Run some tasks in parallel
-  }
 
   /** Library versions */
   object LibraryVersions {
-    val scalaVersion = "2.13.1"
-
     // ScalaJS libraries
     val scalaDom                = "1.0.0"
     val scalajsReact            = "1.6.0"
@@ -41,7 +32,7 @@ object Settings {
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
 
-    val http4sVersion  = "0.21.3"
+    val http4sVersion  = "0.21.4"
     val squants        = "1.6.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
@@ -88,7 +79,7 @@ object Settings {
     // Gemini Libraries
     val gspMath = "0.1.17"
     val gspCore = "0.1.8"
-    val gppUI   = "0.0.2"
+    val gppUI   = "0.0.3"
   }
 
   /**
@@ -264,7 +255,7 @@ object Settings {
     val GspCoreTestkit =
       Def.setting("edu.gemini" %%% "gsp-core-testkit" % LibraryVersions.gspCore % "test")
     val GspCoreOcs2Api = Def.setting("edu.gemini" %%% "gsp-core-ocs2-api" % LibraryVersions.gspCore)
-    val GppUI = Def.setting("edu.gemini" %%% "gpp-ui" % LibraryVersions.gppUI)
+    val GppUI          = Def.setting("edu.gemini" %%% "gpp-ui" % LibraryVersions.gppUI)
   }
 
   object PluginVersions {

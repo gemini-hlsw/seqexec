@@ -9,7 +9,7 @@ import sbtcrossproject.crossProject
 import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
-name := Settings.Definitions.name
+name := "seqexec"
 
 organization in Global := "edu.gemini.ocs"
 
@@ -52,7 +52,6 @@ val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
 inThisBuild(
   List(
-    scalaVersion := Settings.LibraryVersions.scalaVersion,
     version := dateFormatter.format(
       dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate
     ) + dynverGitDescribeOutput.value.mkVersion(versionFmt,
@@ -81,9 +80,6 @@ val stopSeqexecAllCommands = List(
 addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""))
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
-
-resolvers in ThisBuild +=
-  Resolver.sonatypeRepo("public")
 
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("snapshots")
