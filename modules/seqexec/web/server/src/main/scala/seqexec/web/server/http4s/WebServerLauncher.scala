@@ -37,7 +37,6 @@ import seqexec.model.events._
 import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.model.config._
-import seqexec.web.server.config._
 import seqexec.server.{ SeqexecEngine, SeqexecMetrics, executeEngine }
 import seqexec.server.SeqexecFailure
 import seqexec.server.Systems
