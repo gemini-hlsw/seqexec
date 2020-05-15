@@ -11,22 +11,22 @@ object Settings {
   object LibraryVersions {
     // ScalaJS libraries
     val scalaDom                = "1.0.0"
-    val scalajsReact            = "1.6.0"
+    val scalajsReact            = "1.7.0"
     val booPickle               = "1.3.1"
-    val diode                   = "1.1.7"
-    val diodeReact              = "1.1.7.160"
+    val diode                   = "1.1.8"
+    val diodeReact              = "1.1.8.160"
     val javaTimeJS              = "2.0.0"
-    val scalaJSReactCommon      = "0.7.1"
+    val scalaJSReactCommon      = "0.8.0"
     val scalaJSSemanticUI       = "0.4.12"
-    val scalaJSReactVirtualized = "0.7.5"
-    val scalaJSReactClipboard   = "0.10.6"
-    val scalaJSReactDraggable   = "0.7.5"
+    val scalaJSReactVirtualized = "0.8.0"
+    val scalaJSReactClipboard   = "0.11.9"
+    val scalaJSReactDraggable   = "0.8.0"
     val scalaJSReactSortable    = "0.3.1"
 
     // Scala libraries
     val catsEffectVersion   = "2.1.4"
     val catsVersion         = "2.1.1"
-    val mouseVersion        = "0.24"
+    val mouseVersion        = "0.25"
     val fs2Version          = "2.4.4"
     val shapelessVersion    = "2.3.3"
     val scalaParsersVersion = "1.1.2"
@@ -77,9 +77,9 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val gspMath = "0.1.17"
-    val gspCore = "0.1.8"
-    val gppUI   = "0.0.3"
+    val gspMath = "0.2.0"
+    val gspCore = "0.2.0"
+    val gppUI   = "0.1.0"
   }
 
   /**

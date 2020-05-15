@@ -227,7 +227,6 @@ lazy val seqexec_web_client = project
       baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"
     ),
     webpackEmitSourceMaps := false,
-    emitSourceMaps := false,
     parallelExecution in Test := false,
     version in installJsdom := "12.0.0",
     requireJsDomEnv in Test := true,
