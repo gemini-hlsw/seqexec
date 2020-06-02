@@ -25,9 +25,7 @@ import scala.math.max
 final case class ACProgressBar(
   step:  AlignAndCalibStep,
   state: StepStateSummary
-) extends ReactProps {
-  @inline def render: VdomElement = ACProgressBar.component(this)
-}
+) extends ReactProps[ACProgressBar](ACProgressBar.component)
 
 object ACProgressBar {
   type Props = ACProgressBar
@@ -108,8 +106,7 @@ object ACProgressBar {
 /**
   * Component to wrap the progress bar
   */
-final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps {
-  @inline def render: VdomElement = AlignAndCalibProgress.component(this)
+final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps[AlignAndCalibProgress](AlignAndCalibProgress.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.acProgressRW)

@@ -7,7 +7,6 @@ import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
 import seqexec.web.client.model._
@@ -37,9 +36,7 @@ import seqexec.web.client.reusability._
   */
 final case class LoginBox(
   visible: SectionVisibilityState
-) extends ReactProps {
-  @inline def render: VdomElement = LoginBox.component(this)
-}
+) extends ReactProps[LoginBox](LoginBox.component)
 
 object LoginBox {
   type Props = LoginBox

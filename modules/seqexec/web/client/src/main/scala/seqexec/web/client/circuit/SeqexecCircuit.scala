@@ -11,7 +11,7 @@ import diode.react.ReactConnector
 import gem.Observation
 import japgolly.scalajs.react.Callback
 import monocle.Prism
-import org.log4s._
+import typings.loglevel.mod.{ ^ => logger }
 import seqexec.model._
 import seqexec.model.events._
 import seqexec.web.client.actions._
@@ -31,7 +31,6 @@ import scala.scalajs.LinkingInfo
   * Diode processor to log some of the action to aid in debugging
   */
 final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
-  private val logger = getLogger(this.getClass.getName)
   override def process(dispatch:     Dispatcher,
                        action:       Any,
                        next:         Any => ActionResult[M],
@@ -62,7 +61,6 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
 object SeqexecCircuit
     extends Circuit[SeqexecAppRootModel]
     with ReactConnector[SeqexecAppRootModel] {
-  private val logger = getLogger(SeqexecCircuit.getClass.getSimpleName)
   addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
   // Model read-writers

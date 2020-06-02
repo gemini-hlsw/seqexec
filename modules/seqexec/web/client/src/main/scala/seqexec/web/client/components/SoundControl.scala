@@ -17,10 +17,7 @@ import seqexec.web.client.reusability._
 import web.client.Audio
 import react.common.ReactProps
 
-final case class SoundControl(sound: SoundSelection) extends ReactProps {
-  @inline def render: VdomElement = SoundControl.component(this)
-
-}
+final case class SoundControl(sound: SoundSelection) extends ReactProps[SoundControl](SoundControl.component)
 
 /**
   * Button to toggle sound on/off

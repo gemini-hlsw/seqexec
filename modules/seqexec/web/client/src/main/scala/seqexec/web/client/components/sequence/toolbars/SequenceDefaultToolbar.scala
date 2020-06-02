@@ -14,8 +14,7 @@ import react.semanticui.widths._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 
-final case class SequenceDefaultToolbar(id: Observation.Id) extends ReactProps {
-  @inline def render: VdomElement = SequenceDefaultToolbar.component(this)
+final case class SequenceDefaultToolbar(id: Observation.Id) extends ReactProps[SequenceDefaultToolbar](SequenceDefaultToolbar.component) {
 
   val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]] =
     SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))

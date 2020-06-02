@@ -15,7 +15,7 @@ object SortableRow {
   val component: Component[Props, Unit, Unit, CtorType.Props] = ScalaComponent
     .builder[Props]("SortableRow")
     .render_P { p =>
-      raw.defaultRowRenderer(p.p)
+      defaultRowRenderer(p.p)
     }
     .build
 

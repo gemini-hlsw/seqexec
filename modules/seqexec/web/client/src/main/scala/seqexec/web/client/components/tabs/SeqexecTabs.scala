@@ -22,9 +22,7 @@ import react.semanticui.collections.menu.MenuTabular
   */
 final case class SeqexecTabs(
   router: RouterCtl[SeqexecPages]
-) extends ReactProps {
-  @inline def render: VdomElement = SeqexecTabs.component(this)
-}
+) extends ReactProps[SeqexecTabs](SeqexecTabs.component)
 
 object SeqexecTabs {
   type Props = SeqexecTabs

@@ -14,9 +14,8 @@ import seqexec.web.client.icons._
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
 
-final case class ConnectionState(u: WebSocketConnection) extends ReactProps {
-  @inline def render: VdomElement = ConnectionState.component(this)
-}
+final case class ConnectionState(u: WebSocketConnection)
+    extends ReactProps[ConnectionState](ConnectionState.component)
 
 /**
   * Alert message when the connection disappears
@@ -34,7 +33,7 @@ object ConnectionState {
       f"${delay / 1000}%d"
     }
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("ConnectionState")
     .stateless
     .render_P(p =>

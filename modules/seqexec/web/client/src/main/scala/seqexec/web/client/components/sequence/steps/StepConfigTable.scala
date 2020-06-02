@@ -28,8 +28,7 @@ import web.client.table._
 final case class StepConfigTable(
   step: Step,
   startState: TableState[StepConfigTable.TableColumn]
-) extends ReactProps {
-  @inline def render: VdomElement = StepConfigTable.component(this)
+) extends ReactProps[StepConfigTable](StepConfigTable.component) {
 
   val settingsList: List[(SystemName, String, String)] =
     step.config.toList.flatMap {

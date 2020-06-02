@@ -12,16 +12,16 @@ object Settings {
     // ScalaJS libraries
     val scalaDom                = "1.0.0"
     val scalajsReact            = "1.7.0"
-    val booPickle               = "1.3.1"
-    val diode                   = "1.1.8"
-    val diodeReact              = "1.1.8.160"
+    val booPickle               = "1.3.3-SNAPSHOT"
+    val diode                   = "1.1.9-SNAPSHOT"
+    val diodeReact              = "1.1.9-SNAPSHOT.170"
     val javaTimeJS              = "2.0.0"
-    val scalaJSReactCommon      = "0.8.0"
-    val scalaJSSemanticUI       = "0.4.12"
-    val scalaJSReactVirtualized = "0.8.0"
-    val scalaJSReactClipboard   = "0.11.9"
-    val scalaJSReactDraggable   = "0.8.0"
-    val scalaJSReactSortable    = "0.3.1"
+    val scalaJSReactCommon      = "0.9.1"
+    val scalaJSSemanticUI       = "0.5.3"
+    val scalaJSReactVirtualized = "0.9.0"
+    val scalaJSReactClipboard   = "1.1.0"
+    val scalaJSReactDraggable   = "0.9.0"
+    val scalaJSReactSortable    = "0.4.0"
 
     // Scala libraries
     val catsEffectVersion   = "2.1.4"
@@ -40,6 +40,7 @@ object Settings {
     val slf4j          = "1.7.30"
     val log4s          = "1.8.2"
     val log4cats       = "1.1.1"
+    val log4catsLevel  = "0.0.2"
     val logback        = "1.2.3"
     val janino         = "3.1.2"
     val logstash       = "6.4"
@@ -72,14 +73,14 @@ object Settings {
     val gmpCmdClientBridge  = "0.6.3"
     val guava               = "25.0-jre"
     val prometheusClient    = "0.9.0"
-    val geminiLocales       = "0.4.0"
-    val pprint              = "0.6.0"
+    val geminiLocales       = "0.5.0"
+    val pprint              = "0.5.9"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
     val gspMath = "0.2.0"
     val gspCore = "0.2.0"
-    val gppUI   = "0.1.0"
+    val gppUI   = "0.1.2"
   }
 
   /**
@@ -120,6 +121,12 @@ object Settings {
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
     val Log4s = Def.setting("org.log4s" %%% "log4s" % LibraryVersions.log4s)
+    val Log4CatsLogLevel = Def.setting(
+      Seq(
+        "io.chrisdavenport" %%% "log4cats-core"     % LibraryVersions.log4cats,
+        "com.rpiaggio"      %%% "log4cats-loglevel" % LibraryVersions.log4catsLevel
+      )
+    )
     val PrometheusClient =
       "io.prometheus" % "simpleclient_common" % LibraryVersions.prometheusClient
     val Logging = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)

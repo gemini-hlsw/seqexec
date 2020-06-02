@@ -96,7 +96,7 @@ object SeqexecUI {
         .logToConsole
     }
 
-    def navigated(routerLogic: RouterLogic[SeqexecPages], page: ModelRO[SeqexecPages]): SetTimeoutHandle = {
+    def navigated(routerLogic: RouterLogic[SeqexecPages, Unit], page: ModelRO[SeqexecPages]): SetTimeoutHandle = {
       scalajs.js.timers.setTimeout(0)(routerLogic.ctl.set(page.value).runNow())
     }
 

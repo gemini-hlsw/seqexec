@@ -33,17 +33,15 @@ final case class StepToolsCell(
   breakPointEnterCB:  Int => Callback,
   breakPointLeaveCB:  Int => Callback,
   heightChangeCB:     Int => Callback
-) extends ReactProps {
-  @inline def render: VdomElement = StepToolsCell.component(this)
-}
+) extends ReactProps[StepToolsCell](StepToolsCell.component)
 
 object StepToolsCell {
   type Props = StepToolsCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props](Symbol("heightChangeCB"),
-                                       Symbol("breakPointEnterCB"),
-                                       Symbol("breakPointLeaveCB"))
+    Reusability.caseClassExcept[Props]("heightChangeCB",
+                                       "breakPointEnterCB",
+                                       "breakPointLeaveCB")
 
   protected val component = ScalaComponent
     .builder[Props]("StepToolsCell")
@@ -82,9 +80,7 @@ final case class StepIconCell(
   skip:      Boolean,
   nextToRun: Boolean,
   height:    Int
-) extends ReactProps {
-  @inline def render: VdomElement = StepIconCell.component(this)
-}
+) extends ReactProps[StepIconCell](StepIconCell.component)
 
 object StepIconCell {
   type Props = StepIconCell

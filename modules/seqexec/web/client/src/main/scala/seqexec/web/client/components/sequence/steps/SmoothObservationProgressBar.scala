@@ -22,8 +22,7 @@ final case class SmoothObservationProgressBar(
   stopping: Boolean,
   paused:   Boolean,
   stage:    ObserveStage
-) extends SmoothProgressBarProps {
-  @inline def render: VdomElement = SmoothObservationProgressBar.component(this)
+) extends SmoothProgressBarProps[SmoothObservationProgressBar](SmoothObservationProgressBar.component) {
 
   override val maxValue = total
 }

@@ -28,8 +28,7 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.controlButton
 
 final case class CalQueueToolbar(queueId: QueueId, control: CalQueueControlFocus)
-    extends ReactProps {
-  @inline def render: VdomElement = CalQueueToolbar.component(this)
+    extends ReactProps[CalQueueToolbar](CalQueueToolbar.component) {
 
   val canOperate: Boolean = control.canOperate
 

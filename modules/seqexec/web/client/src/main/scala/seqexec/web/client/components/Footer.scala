@@ -16,9 +16,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.reusability._
 
-final case class Footer(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps {
-  @inline def render: VdomElement = Footer.component(this)
-}
+final case class Footer(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps[Footer](Footer.component)
 
 /**
   * Component for the bar at the top of the page

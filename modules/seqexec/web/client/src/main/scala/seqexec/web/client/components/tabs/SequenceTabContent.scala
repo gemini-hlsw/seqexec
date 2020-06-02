@@ -33,8 +33,7 @@ import react.semanticui.elements.segment.SegmentAttached
 final case class SequenceTabContent(
   router:  RouterCtl[SeqexecPages],
   content: SequenceTabContentFocus
-) extends ReactProps {
-  @inline def render: VdomElement = SequenceTabContent.component(this)
+) extends ReactProps[SequenceTabContent](SequenceTabContent.component) {
 
   val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
     SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(content.id))

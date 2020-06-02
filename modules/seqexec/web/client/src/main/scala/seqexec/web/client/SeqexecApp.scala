@@ -15,19 +15,13 @@ import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
-import org.log4s._
+import typings.loglevel.mod.{ ^ => logger }
 import scala.concurrent.ExecutionContext
 
 /**
   * Seqexec WebApp entry point
   */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
-
-  def setupLogger: F[Unit] = F.delay {
-    import Log4sConfig._
-    setLoggerThreshold("seqexec", Info)
-    setLoggerThreshold("", AllThreshold)
-  }
 
   def serverSite(implicit cs: ContextShift[IO]): F[Site] =
     L.liftIO(IO.fromFuture {
@@ -65,12 +59,11 @@ object SeqexecApp extends IOApp {
     val launcher = new SeqexecLauncher[IO]
     // Render the UI using React
     for {
-      _           <- launcher.setupLogger
       seqexecSite <- launcher.serverSite
       _           <- launcher.initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
-      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(getLogger.error(p.toString)))
+      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(logger.error(p.toString)))
     } yield ExitCode.Success
   }
 

@@ -40,9 +40,7 @@ final case class SequenceTab(
   loggedIn:           Boolean,
   defaultObserver:    Observer,
   runningInstruments: List[Instrument]
-) extends ReactProps {
-  @inline def render: VdomElement = SequenceTab.component(this)
-}
+) extends ReactProps[SequenceTab](SequenceTab.component)
 
 object SequenceTab {
   type Props = SequenceTab
@@ -51,7 +49,7 @@ object SequenceTab {
   final case class State(loading: Boolean)
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props](Symbol("router"))
+    Reusability.caseClassExcept[Props]("router")
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]

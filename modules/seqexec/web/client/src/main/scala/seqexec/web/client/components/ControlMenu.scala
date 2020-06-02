@@ -20,9 +20,7 @@ import react.semanticui.collections.menu._
 import react.common.implicits._
 import react.common._
 
-final case class ControlMenu(status: ClientStatus) extends ReactProps {
-  @inline def render: VdomElement = ControlMenu.component(this)
-}
+final case class ControlMenu(status: ClientStatus) extends ReactProps[ControlMenu](ControlMenu.component)
 
 /**
   * Menu with options
@@ -47,7 +45,7 @@ object ControlMenu {
       text
     )
 
-  private val component = ScalaComponent
+  val component = ScalaComponent
     .builder[ControlMenu]("ControlMenu")
     .stateless
     .render_P { p =>

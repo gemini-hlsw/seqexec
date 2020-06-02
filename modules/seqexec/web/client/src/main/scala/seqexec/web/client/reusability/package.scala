@@ -47,7 +47,7 @@ package object reusability {
   implicit val cssReuse: Reusability[Css]               = Reusability.by(_.htmlClass)
   implicit val stepConfigReuse: Reusability[StepConfig] = Reusability.byEq
   val stdStepReuse: Reusability[StandardStep] =
-    Reusability.caseClassExcept(Symbol("config"))
+    Reusability.caseClassExcept("config")
   implicit val nsSubexposureReuse: Reusability[NSSubexposure] =
     Reusability.derive[NSSubexposure]
   implicit val nsRunningStateReuse: Reusability[NSRunningState] =
@@ -55,7 +55,7 @@ package object reusability {
   implicit val nsStatus: Reusability[NodAndShuffleStatus] =
     Reusability.derive[NodAndShuffleStatus]
   val nsStepReuse: Reusability[NodAndShuffleStep] =
-    Reusability.caseClassExcept(Symbol("config"))
+    Reusability.caseClassExcept("config")
   implicit val stepReuse: Reusability[Step] =
     Reusability {
       case (a: StandardStep, b: StandardStep)           => stdStepReuse.test(a, b)

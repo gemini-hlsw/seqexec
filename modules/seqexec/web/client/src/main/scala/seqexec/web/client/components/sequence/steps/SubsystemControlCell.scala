@@ -39,9 +39,7 @@ final case class SubsystemControlCell(
   resources:      List[Resource],
   resourcesCalls: SortedMap[Resource, ResourceRunOperation],
   canOperate:     Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = SubsystemControlCell.component(this)
-}
+) extends ReactProps[SubsystemControlCell](SubsystemControlCell.component)
 
 object SubsystemControlCell {
   type Props = SubsystemControlCell

@@ -37,8 +37,7 @@ final case class ControlButtons(
   isObservePaused:     Boolean,
   tabOperations:       TabOperations,
   nsPendingObserveCmd: Option[NodAndShuffleStep.PendingObserveCmd] = None
-) extends ReactProps {
-  @inline def render: VdomElement = ControlButtons.component(this)
+) extends ReactProps[ControlButtons](ControlButtons.component) {
 
   val requestInFlight = tabOperations.stepRequestInFlight
 
@@ -204,8 +203,7 @@ final case class StepsControlButtons(
   isObservePaused: Boolean,
   isMultiLevel:    Boolean,
   tabOperations:   TabOperations
-) extends ReactProps {
-  @inline def render: VdomElement = StepsControlButtons.component(this)
+) extends ReactProps[StepsControlButtons](StepsControlButtons.component) {
 
   val requestInFlight = tabOperations.stepRequestInFlight
 }

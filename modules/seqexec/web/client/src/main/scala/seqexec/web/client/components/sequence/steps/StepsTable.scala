@@ -287,8 +287,7 @@ final case class StepsTable(
   router:     RouterCtl[SeqexecPages],
   canOperate: Boolean,
   stepsTable: StepsTableAndStatusFocus
-) extends ReactProps {
-  @inline def render: VdomElement = StepsTable.component(this)
+) extends ReactProps[StepsTable](StepsTable.component) {
 
   import StepsTable._ // Import static members from Columns
 
@@ -914,7 +913,7 @@ object StepsTable extends Columns {
               columns.toTagMod
             ),
             p.stepSummary(s).whenDefined { s =>
-              val rowComponents: List[StepStateSummary => ReactProps] =
+              val rowComponents: List[StepStateSummary => ReactProps[_]] =
                 if (s.isAC)
                   List(AlignAndCalibProgress.apply)
                 else if (s.isNS)

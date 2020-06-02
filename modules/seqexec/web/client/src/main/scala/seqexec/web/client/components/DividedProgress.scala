@@ -25,9 +25,7 @@ final case class DividedProgress(
   completeSectionColor: Option[SemanticColor] = None,
   ongoingSectionColor:  Option[SemanticColor] = None,
   progressCls:          Css
-) extends ReactProps {
-  @inline def render: VdomElement = DividedProgress.component(this)
-}
+) extends ReactProps[DividedProgress](DividedProgress.component)
 
 object DividedProgress {
   type Props = DividedProgress
@@ -43,7 +41,7 @@ object DividedProgress {
     .render_P { p =>
       val countSections = p.sections.length
 
-      val sectionProgressStyles: List[Css] =
+      def sectionProgressStyles: List[Css] =
         // Length is 1 + (countSections - 2) + 1 = countSections
         SeqexecStyles.dividedProgressSectionLeft +:
           List.fill(countSections - 2)(SeqexecStyles.dividedProgressSectionMiddle) :+

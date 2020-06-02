@@ -35,8 +35,8 @@ import gpp.ui.forms.InputOptics
 /**
   * Container for a table with the steps
   */
-final case class HeadersSideBar(model: HeaderSideBarFocus) extends ReactProps {
-  @inline def render: VdomElement = HeadersSideBar.component(this)
+final case class HeadersSideBar(model: HeaderSideBarFocus)
+    extends ReactProps[HeadersSideBar](HeadersSideBar.component) {
 
   def canOperate: Boolean = model.status.canOperate
   def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
@@ -218,22 +218,20 @@ object HeadersSideBar {
     .initialState(State(None, None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f =>
-      f.backend.$.props >>= { p =>
-        p.model.operator
-          .map(op => f.backend.updateStateOp(Operator(op.value).some))
-          .getOrEmpty *>
-          (p.selectedObserver match {
-            case Right(Right(a)) =>
-              f.backend.updateStateOb(a.observer)
-            case Right(Left(a)) =>
-              f.backend.updateStateOb(a.observer)
-            case Left(o) =>
-              f.backend.updateStateOb(Observer(o.value).some)
-          })
-      }
-    )
-    .componentDidMount(_.backend.setupTimer)
+    .componentDidMount { f =>
+      val p = f.props
+      p.model.operator
+        .map(op => f.backend.updateStateOp(Operator(op.value).some))
+        .getOrEmpty *>
+        (p.selectedObserver match {
+          case Right(Right(a)) =>
+            f.backend.updateStateOb(a.observer)
+          case Right(Left(a)) =>
+            f.backend.updateStateOb(a.observer)
+          case Left(o) =>
+            f.backend.updateStateOb(Observer(o.value).some)
+      }) >> f.backend.setupTimer
+    }
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model.operator
       val observer = f.nextProps.selectedObserver match {

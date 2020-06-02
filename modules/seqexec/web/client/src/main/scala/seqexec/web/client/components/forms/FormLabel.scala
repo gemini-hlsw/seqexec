@@ -12,9 +12,7 @@ import japgolly.scalajs.react.CtorType
 final case class FormLabel(
   text: String,
   htmlFor: Option[String]
-) extends ReactPropsWithChildren {
-  @inline def render: Seq[CtorType.ChildArg] => VdomElement = FormLabel.component(this)
-}
+) extends ReactPropsWithChildren[FormLabel](FormLabel.component)
 
 object FormLabel {
   type Props = FormLabel
