@@ -33,6 +33,9 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.server.SequenceGen.StepGen
 import squants.Time
+import giapi.client.GiapiConfig
+import giapi.client.commands.Configuration
+import gem.enum.GiapiStatusApply
 
 package server {
 

@@ -3,9 +3,7 @@
 
 package seqexec.server.ghost
 
-import scala.concurrent.duration._
-
-import cats.Eq
+import cats.implicits._
 import cats.effect.Sync
 import cats.syntax.all._
 import giapi.client.GiapiConfig

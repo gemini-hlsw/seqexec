@@ -3,9 +3,6 @@
 
 package seqexec.server.ghost
 
-import scala.concurrent.duration._
-import scala.reflect.ClassTag
-
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
@@ -24,14 +21,18 @@ import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server._
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
-import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
 import squants.time.Seconds
 import squants.time.Time
+import scala.reflect.ClassTag
+import gsp.math.ProperMotion
+import java.lang.{ Double => JDouble, Integer => JInt }
+import edu.gemini.spModel.gemini.ghost.GhostBinning
 
 final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]
@@ -110,16 +111,33 @@ object Ghost {
     val raExtractor  = formatExtractor[RightAscension](RightAscension.fromStringHMS)
     val decExtractor = formatExtractor[Declination](Declination.fromStringSignedDMS)
 
+    val MaxTargets = 8
+
+    def userTargets: List[Option[Target]] = (for {
+      i <- 1 to MaxTargets
+    } yield {
+      val (a, _, _, d, e) = SPGhost.userTargetParams(i)
+      (for {
+        ra <- raExtractor(d)
+        dec <- decExtractor(e)
+        c = (ra, dec).mapN(Coordinates.apply)
+        n <- config.extractInstAs[String](a)
+        // Note the coordinates are PM corrected on the OT side
+      } yield c.map(coord => Target(n, ProperMotion.const(coord).asRight))).toOption.flatten
+    }).toList
+
     EitherT {
       Sync[F].delay {
         (for {
           baseRAHMS  <- raExtractor(SPGhost.BASE_RA_HMS)
           baseDecDMS <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          fiberAgitator  = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
-          srifu1Name     = extractor[String](SPGhost.SRIFU1_NAME)
+          fiberAgitator1 = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
+          fiberAgitator2 = extractor[Boolean](SPGhost.FIBER_AGITATOR_2)
+          srifu1Name    = extractor[String](SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
+          // srifu1Guiding = extractor[GuideFiberState](SPGhost.SRIFU1_GUIDING)
 
           srifu2Name     = extractor[String](SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
@@ -132,20 +150,29 @@ object Ghost {
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
 
+          blueBinning   <- config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
+          redBinning    <- config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
+          blueExposure  <- config.extractObsAs[JDouble](SPGhost.BLUE_EXPOSURE_TIME_PROP).map(_.doubleValue())
+          redExposure   <- config.extractObsAs[JDouble](SPGhost.RED_EXPOSURE_TIME_PROP).map(_.doubleValue())
+          blueCount     <- config.extractObsAs[JInt](SPGhost.BLUE_EXPOSURE_COUNT_PROP).map(_.intValue())
+          redCount      <- config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
+
           config <- GhostConfig(
-                      (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
-                      1.minute,
-                      FiberAgitator.fromBoolean(fiberAgitator.getOrElse(false)),
-                      srifu1Name,
-                      (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
-                      srifu2Name,
-                      (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
-                      hrifu1Name,
-                      (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-                      hrifu2RAHMS.as("Sky"),
-                      (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply)
-                    )
-        } yield config).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            ChannelConfig(blueBinning, blueExposure.second, blueCount),
+            ChannelConfig(redBinning, redExposure.second, redCount),
+            // srifu1Guiding,
+            (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+            1.minute,
+            FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
+            FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
+            srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
+            srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
+            hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
+            hrifu2RAHMS.as("Sky"), (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
+            userTargets.flatten)
+        } yield {
+        config}
+        ).leftMap(e => {System.out.println(e);SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))})
       }
     }.widenRethrowT
   }
