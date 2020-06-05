@@ -46,7 +46,7 @@ object SequenceTab {
   type Props = SequenceTab
 
   @Lenses
-  final case class State(loading: Boolean)
+  final case class State(loading: Boolean, prevTabId: Observation.Id, prevTabLoading: Boolean)
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.caseClassExcept[Props]("router")
@@ -99,8 +99,8 @@ object SequenceTab {
   }
 
   val component = ScalaComponent
-    .builder[Props]("SequenceTab")
-    .initialState(State(false))
+    .builder[Props]
+    .initialStateFromProps(props => State(false, props.tab.id, props.tab.loading))
     .render { b =>
       val status     = b.props.tab.status
       val sequenceId = b.props.tab.id
@@ -227,16 +227,22 @@ object SequenceTab {
         else tabContent
       )
     }
-    .componentWillReceiveProps { f =>
-      val preview = f.nextProps.tab.isPreview
-      val id      = f.nextProps.tab.id
-      val newId   = f.currentProps.tab.id
+    .getDerivedStateFromProps{ (props, state) =>
+      val preview = props.tab.isPreview
+      val id      = state.prevTabId
+      val newId   = props.tab.id
 
-      val wasLoading = f.currentProps.tab.loading
-      val isLoading  = f.nextProps.tab.loading
+      val wasLoading = state.prevTabLoading
+      val isLoading  = props.tab.loading
       // Reset the loading state if the id changes
-      f.setStateL(State.loading)(false)
-        .when_(preview && (id =!= newId || (wasLoading && !isLoading)))
+      Function.chain(
+        State.loading.set(false)
+          .some.filter(_ => preview && (id =!= newId || (wasLoading && !isLoading))).toList :::
+        List(
+          State.prevTabId.set(newId),
+          State.prevTabLoading.set(isLoading)
+        )
+      )(state)
     }
     .configure(Reusability.shouldComponentUpdate)
     .build

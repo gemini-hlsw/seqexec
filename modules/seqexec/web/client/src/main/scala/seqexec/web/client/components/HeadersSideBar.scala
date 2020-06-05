@@ -63,13 +63,20 @@ object HeadersSideBar {
     Show.show(_.label)
 
   @Lenses
-  final case class State(operator: Option[Operator], observer: Option[Observer])
+  final case class State(
+    operator: Option[Operator],
+    observer: Option[Observer],
+    prevOperator: Option[Operator],
+    prevObserver: Option[Observer]
+  )
 
   object State {
-    implicit val equals: Eq[State] = Eq.fromUniversalEquals
+    def apply(operator: Option[Operator], observer: Option[Observer]): State =
+      State(operator, observer, operator, observer)
 
-    implicit val stateReuse: Reusability[State] = Reusability.derive
+    implicit val stateEquals: Eq[State] = Eq.fromUniversalEquals
 
+    implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.operator, s.observer))
   }
 
   class Backend(val $ : BackendScope[HeadersSideBar, State]) extends TimerSupport {
@@ -214,39 +221,36 @@ object HeadersSideBar {
   }
 
   private val component = ScalaComponent
-    .builder[HeadersSideBar]("HeadersSideBar")
-    .initialState(State(None, None))
+    .builder[HeadersSideBar]
+    .getDerivedStateFromPropsAndState[State]{ (p, sOpt) =>
+      val operator = p.model.operator
+      val observer = 
+        p.selectedObserver match {
+          case Right(Right(a)) => a.observer
+          case Right(Left(a))  => a.observer
+          case Left(o)         => o.some
+        }
+
+      sOpt.fold(State(operator, observer)){ s =>
+        Function.chain(
+          List(
+            State.operator.set(operator),
+            State.prevOperator.set(operator)
+          ).some
+            .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
+            .orEmpty :::
+          List(
+            State.observer.set(observer),
+            State.prevObserver.set(observer)
+          ).some
+            .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
+            .orEmpty
+        )(s)
+      }       
+    }
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentDidMount { f =>
-      val p = f.props
-      p.model.operator
-        .map(op => f.backend.updateStateOp(Operator(op.value).some))
-        .getOrEmpty *>
-        (p.selectedObserver match {
-          case Right(Right(a)) =>
-            f.backend.updateStateOb(a.observer)
-          case Right(Left(a)) =>
-            f.backend.updateStateOb(a.observer)
-          case Left(o) =>
-            f.backend.updateStateOb(Observer(o.value).some)
-      }) >> f.backend.setupTimer
-    }
-    .componentWillReceiveProps { f =>
-      val operator = f.nextProps.model.operator
-      val observer = f.nextProps.selectedObserver match {
-        case Right(Right(a)) => a.observer
-        case Right(Left(a))  => a.observer
-        case Left(o)         => o.some
-      }
-      // Update the operator and observator fields
-      Callback.when(
-        (operator =!= f.state.operator) && operator.nonEmpty
-      )(f.setStateL(State.operator)(operator)) *>
-        Callback.when(
-          (observer =!= f.state.observer) && observer.nonEmpty
-        )(f.setStateL(State.observer)(observer))
-    }
+    .componentDidMount(_.backend.setupTimer)
     .configure(Reusability.shouldComponentUpdate)
     .build
 

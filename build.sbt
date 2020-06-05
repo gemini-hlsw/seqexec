@@ -255,7 +255,6 @@ lazy val seqexec_web_client = project
       "html-webpack-plugin" -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
       "favicons-webpack-plugin" -> "1.0.2",
-      "why-did-you-update" -> "1.0.6",
       "@packtracker/webpack-plugin" -> "2.2.0"
     ),
     libraryDependencies ++= Seq(
@@ -287,7 +286,6 @@ lazy val seqexec_server = project
   .in(file("modules/seqexec/server"))
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
-  .disablePlugins(HydraPlugin)
   .settings(commonSettings: _*)
   .settings(
     scalacOptions += "-Ymacro-annotations",

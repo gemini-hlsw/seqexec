@@ -48,7 +48,7 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
   implicit val stateReuse: Reusability[State] = Reusability.always
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleProgress")
+    .builder[Props]
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
       <.div(
@@ -96,7 +96,7 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent
-    .builder[Props]("SmoothDividedProgressBar")
+    .builder[Props]
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
@@ -110,7 +110,7 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
       )
     }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps($ => $.backend.newStateFromProps($.currentProps, $.nextProps))
+    .getDerivedStateFromProps(deriveNewState _)
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -150,7 +150,7 @@ sealed trait NodAndShuffleProgress {
   ): (DividedProgress.Quantity, DividedProgress.Quantity) // (sectionTotal, currentValue)
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleProgress")
+    .builder[Props]
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
       s.progressConnect { proxy =>
@@ -250,7 +250,7 @@ sealed trait NodAndShuffleRow[A, L <: OperationLevel] {
   protected def progressControl(summary: StepStateSummary): VdomElement
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleCycleRow")
+    .builder[Props]
     .stateless
     .render_P { p =>
       <.span(

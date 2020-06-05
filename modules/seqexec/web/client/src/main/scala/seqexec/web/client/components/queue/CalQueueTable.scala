@@ -117,7 +117,7 @@ object CalQueueTable {
 
     def rowGetter(s: State)(i: Int): CalQueueRow = {
       val moved = s.moved
-        .flatMap(c => data.seqs.lift(c.oldIndex).map(o => moveSeq(data.seqs, c.newIndex, o)))
+        .flatMap(c => data.seqs.lift(c._2.oldIndex).map(o => moveSeq(data.seqs, c._2.newIndex, o)))
         .getOrElse(data.seqs)
       moved
         .lift(i)
@@ -173,14 +173,14 @@ object CalQueueTable {
         }
         .map(i => ((i._2 + 1) to rowCount).toList)
         .orEmpty
-
   }
 
   @Lenses
   final case class State(
     tableState:        TableState[TableColumn],
     animationRendered: Boolean,
-    moved:             Option[IndexChange]
+    moved:             Option[(Observation.Id, IndexChange)],
+    prevLastOp:        Option[QueueManipulationOp]
   )
 
   object State {
@@ -189,9 +189,9 @@ object CalQueueTable {
     val ROTableState: TableState[TableColumn] =
       TableState(NotModified, 0, ro)
     val DefaultRO: State =
-      State(ROTableState, animationRendered = false, moved = None)
+      State(ROTableState, animationRendered = false, moved = None, prevLastOp = None)
     val DefaultEditable: State =
-      State(EditableTableState, animationRendered = false, moved = None)
+      State(EditableTableState, animationRendered = false, moved = None, prevLastOp = None)
 
     val scrollPosition: Lens[State, JsNumber] =
       State.tableState ^|-> TableState.scrollPosition
@@ -407,36 +407,21 @@ object CalQueueTable {
 
     def requestMove(c: IndexChange): Callback =
       (b.props >>= { p =>
-        p.data.seqs
-          .map(_.id)
-          .lift(c.oldIndex)
-          .map(i =>
-            SeqexecCircuit.dispatchCB(RequestMoveCal(p.queueId, i, c.newIndex - c.oldIndex))
-          )
-          .getOrEmpty
-      }) *> b.modState(_.copy(moved = c.some))
+        val movedObsId =
+          p.data.seqs
+            .map(_.id)
+            .lift(c.oldIndex)
+        movedObsId.map(obsId =>
+          SeqexecCircuit.dispatchCB(RequestMoveCal(p.queueId, obsId, c.newIndex - c.oldIndex)) >> 
+            b.setStateL(State.moved)((obsId, c).some)
+        ).getOrEmpty
+      })
 
-    def resetAnim: Callback =
-      b.setStateL(State.animationRendered)(true) *>
-        b.props >>= { p => SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId)) }
+    def resetAnim(p: Props): Callback =
+      SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId)) 
+        .when(p.data.lastOp.isDefined).void
 
-    def allowAnim: Callback =
-      b.setStateL(State.animationRendered)(false)
-
-    def resetMoved: Callback =
-      b.setStateL(State.moved)(none)
-
-    def updateVisibleCols: Callback =
-      b.props >>= { p =>
-        val cols = if (p.data.loggedIn) {
-          State.DefaultEditable.tableState.columns
-        } else {
-          State.DefaultRO.tableState.columns
-        }
-        b.setStateL(State.columns)(cols)
-      }
-
-    def render(p: Props, s: State): VdomElement =
+     def render(p: Props, s: State): VdomElement = {
       TableContainer(
         TableContainer.Props(
           p.canOperate,
@@ -462,35 +447,55 @@ object CalQueueTable {
           onResize = _ => Callback.empty
         )
       )
-
+    }
   }
 
   def initialState(p: Props): State =
     if (p.data.loggedIn) {
       State.DefaultEditable
-        .copy(tableState = p.data.tableState)
+        .copy(tableState = p.data.tableState, prevLastOp = p.data.lastOp)
     } else {
       State.DefaultRO
-        .copy(tableState = p.data.tableState)
+        .copy(tableState = p.data.tableState, prevLastOp = p.data.lastOp)
     }
 
+
   private val component = ScalaComponent
-    .builder[Props]("CalQueueTable")
+    .builder[Props]
     .initialStateFromProps(initialState)
     .renderBackend[CalQueueTableBackend]
-    .componentWillMount { c =>
-      // If on load we have an op don't animate
-      c.backend.resetAnim.when_(c.props.data.lastOp.isDefined)
-    }
-    .componentWillReceiveProps { c =>
+    .getDerivedStateFromProps{ (props, state) => 
       // This is a bit tricky. if the last op has changed we allow animation
-      val opChanged = c.nextProps.data.lastOp =!= c.currentProps.data.lastOp
-      c.backend.allowAnim.when(opChanged) *>
-        // And then we reset the state to avoid re running the anim
-        c.backend.setTimeout(c.backend.resetAnim, 1.second).when(opChanged) *>
-        c.backend.resetMoved *>
-        c.backend.updateVisibleCols
+      val opChanged = props.data.lastOp =!= state.prevLastOp
+
+      val animationRendered = opChanged match {
+        case true  => false
+        case false => state.animationRendered
+      }
+
+      val moved = state.moved.filter{case (obsId, ic) => 
+        props.data.seqs
+            .map(_.id)
+            .lift(ic.newIndex)
+            .forall(_ =!= obsId)
+      
+      }
+
+      val cols = if (props.data.loggedIn) {
+        State.DefaultEditable.tableState.columns
+      } else {
+        State.DefaultRO.tableState.columns
+      }
+
+      (
+        State.animationRendered.set(animationRendered) >>>
+        State.moved.set(moved) >>>
+        State.columns.set(cols) >>> 
+        State.prevLastOp.set(props.data.lastOp)
+      )(state)
     }
+    .componentDidMount($ => $.backend.resetAnim($.props))
+    .componentDidUpdate($ => $.backend.setTimeout($.backend.resetAnim($.currentProps), 1.second))
     .configure(Reusability.shouldComponentUpdate)
     .configure(TimerSupport.install)
     .build
