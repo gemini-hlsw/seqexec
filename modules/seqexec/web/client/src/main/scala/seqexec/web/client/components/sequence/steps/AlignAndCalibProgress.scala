@@ -96,8 +96,8 @@ object ACProgressBar {
         clazz = SeqexecStyles.observationProgressBar
       )(s"Align and Calib: $msg")
     }
-    .componentWillReceiveProps(x =>
-      x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show)
+    .getDerivedStateFromProps((p, s) =>
+      (State.counter.modify(_ + 1) >>> State.msg.set(p.step.show))(s)
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

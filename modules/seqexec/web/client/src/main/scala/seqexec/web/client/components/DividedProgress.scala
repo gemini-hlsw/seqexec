@@ -41,7 +41,7 @@ object DividedProgress {
     .render_P { p =>
       val countSections = p.sections.length
 
-      def sectionProgressStyles: List[Css] =
+      val sectionProgressStyles: List[Css] =
         // Length is 1 + (countSections - 2) + 1 = countSections
         SeqexecStyles.dividedProgressSectionLeft +:
           List.fill(countSections - 2)(SeqexecStyles.dividedProgressSectionMiddle) :+
