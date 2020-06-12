@@ -24,7 +24,15 @@ public class AttributeNotifier<T> {
     }
 
     public void notifyValueChangeSingle(CaAttributeListener<T> listener, List<T> vals) {
-        executor.execute(() -> listener.onValueChange(vals));
+        executor.execute(() -> {
+            synchronized (AttributeNotifier.this) {
+                // Check that the listener has not been removed between the call to notifyValueChangeSingle and
+                // the deferred execution of the callback.
+                if(AttributeNotifier.this.listeners.contains(listener)) {
+                    listener.onValueChange(vals);
+                }
+            }
+        });
     }
 
     synchronized public void notifyValueChange(List<T> newVals) {
@@ -34,7 +42,15 @@ public class AttributeNotifier<T> {
     }
 
     public void notifyValidityChangeSingle(CaAttributeListener<T> listener, boolean validity) {
-        executor.execute(() -> listener.onValidityChange(validity));
+        executor.execute(() -> {
+            synchronized (AttributeNotifier.this) {
+                // Check that the listener has not been removed between the call to notifyValidityChangeSingle and
+                // the deferred execution of the callback.
+                if(AttributeNotifier.this.listeners.contains(listener)) {
+                    listener.onValidityChange(validity);
+                }
+            }
+        });
     }
 
     synchronized public void notifyValidityChange(boolean newValidity) {

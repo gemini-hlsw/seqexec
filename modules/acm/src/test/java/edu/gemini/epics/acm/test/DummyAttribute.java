@@ -93,8 +93,11 @@ public class DummyAttribute<T> implements CaAttribute<T> {
     private final Notifier notifier = new Notifier();
 
     @Override
-    public void addListener(CaAttributeListener<T> listener) {
+    synchronized public void addListener(CaAttributeListener<T> listener) {
         notifier.addListener(listener);
+        if(values()!=null) {
+            listener.onValueChange(values());
+        }
     }
 
     @Override

@@ -114,8 +114,12 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     }
 
     @Override
-    public void addListener(CaAttributeListener<T> listener) {
+    synchronized public void addListener(CaAttributeListener<T> listener) {
         notifier.addListener(listener);
+        //Call listener with first value, if there is one.
+        if(values() != null) {
+            notifier.notifyValueChangeSingle(listener, values());
+        }
     }
 
     @Override
