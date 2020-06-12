@@ -777,7 +777,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   private val defaultTcsStabilizeTime = Duration.ofSeconds(1)
 
   private val filteredInPositionAttr: CaWindowStabilizer[String] =
-    new CaWindowStabilizer[String](inPositionAttr, defaultTcsStabilizeTime)
+    epicsService.timeWindowFilter(inPositionAttr, defaultTcsStabilizeTime)
 
   // Tcs fudge1 (time to wait for in-position to change to false)
   private val tcsSettleTime = FiniteDuration(2800, MILLISECONDS)
@@ -793,7 +793,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   private val agStabilizeTime = Duration.ofSeconds(1)
 
   private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] =
-    new CaWindowStabilizer[java.lang.Double](agInPositionAttr, agStabilizeTime)
+    epicsService.timeWindowFilter(agInPositionAttr, agStabilizeTime)
 
   def filteredAGInPosition: F[Double] = safeAttributeSDoubleF(filteredAGInPositionAttr)
 

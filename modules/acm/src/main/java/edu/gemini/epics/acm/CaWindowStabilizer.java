@@ -28,13 +28,15 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     private final CaAttributeListener<T> valListener;
     private T filteredVal;
     private T lastVal;
+    private final AttributeNotifier<T> notifier;
 
-    public CaWindowStabilizer(CaAttribute<T> sa, Duration settleTime) {
+    public CaWindowStabilizer(CaAttribute<T> sa, Duration settleTime, ScheduledExecutorService executor) {
         this.sa = sa;
         this.settleTime = settleTime;
         lastVal = filteredVal = sa.value();
+        this.notifier = new AttributeNotifier<T>(executor);
 
-        executor = new ScheduledThreadPoolExecutor(2);
+        this.executor = executor;
 
         sa.addListener(valListener = new CaAttributeListener<T>() {
             @Override
@@ -58,12 +60,9 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
                 timeoutFuture.cancel(true);
             }
             lastVal = val;
-            timeoutFuture = executor.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    CaWindowStabilizer.this.onTimeout();
-                }
-            }, settleTime.toMillis(), TimeUnit.MILLISECONDS);
+            timeoutFuture = executor.schedule(CaWindowStabilizer.this::onTimeout, settleTime.toMillis(),
+                    TimeUnit.MILLISECONDS
+            );
         }
     }
 
@@ -113,34 +112,6 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     public boolean valid() {
         return sa.valid();
     }
-
-    private final class Notifier {
-        private final List<CaAttributeListener<T>> listeners = new LinkedList<>();
-
-        synchronized public void addListener(CaAttributeListener<T> listener) {
-            if (!listeners.contains(listener)) {
-                listeners.add(listener);
-            }
-        }
-
-        synchronized public void removeListener(CaAttributeListener<T> listener) {
-            listeners.remove(listener);
-        }
-
-        synchronized public void notifyValueChange(List<T> newVals) {
-            for (CaAttributeListener<T> listener : listeners) {
-                listener.onValueChange(newVals);
-            }
-        }
-
-        synchronized public void notifyValidityChange(boolean newValidity) {
-            for (CaAttributeListener<T> listener : listeners) {
-                listener.onValidityChange(newValidity);
-            }
-        }
-    }
-
-    private final Notifier notifier = new Notifier();
 
     @Override
     public void addListener(CaAttributeListener<T> listener) {

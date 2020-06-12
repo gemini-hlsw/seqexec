@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +33,15 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
     private final Map<String, CaAttributeImpl<Integer>> integerAttributes;
     private final Map<String, CaAttributeImpl<Short>> shortAttributes;
     private final Map<String, Object> enumAttributes;
+    private final ScheduledExecutorService executor;
     private EpicsReader epicsReader;
 
     public CaStatusAcceptorImpl(String name, String description,
-            EpicsService epicsService) {
+            EpicsService epicsService, ScheduledExecutorService executor) {
         super();
         this.name = name;
         this.description = description;
+        this.executor = executor;
         stringAttributes = new HashMap<>();
         doubleAttributes = new HashMap<>();
         floatAttributes = new HashMap<>();
@@ -63,7 +67,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createDoubleAttribute(name, channel, description,
-                        epicsReader);
+                        epicsReader, executor);
                 doubleAttributes.put(name, attr);
             }
         } else {
@@ -91,7 +95,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createFloatAttribute(name, channel, description,
-                        epicsReader);
+                        epicsReader, executor);
                 floatAttributes.put(name, attr);
             }
         } else {
@@ -119,7 +123,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createIntegerAttribute(name, channel, description,
-                        epicsReader);
+                        epicsReader, executor);
                 integerAttributes.put(name, attr);
             }
         } else {
@@ -147,7 +151,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createShortAttribute(name, channel, description,
-                        epicsReader);
+                        epicsReader, executor);
                 shortAttributes.put(name, attr);
             }
         } else {
@@ -188,7 +192,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createEnumAttribute(name, channel, description, enumType,
-                        epicsReader);
+                        epicsReader, executor);
                 enumAttributes.put(name, attr);
             }
         } else {
@@ -215,7 +219,7 @@ final class CaStatusAcceptorImpl implements StatusAcceptorWithResource {
                         "Attribute already exists with a different type.");
             } else {
                 attr = CaAttributeImpl.createStringAttribute(name, channel, description,
-                        epicsReader);
+                        epicsReader, executor);
                 stringAttributes.put(name, attr);
             }
         } else {

@@ -44,33 +44,14 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
 
     private long timeout;
     private TimeUnit timeoutUnit;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final ChannelListener<Integer> valListener;
-    private ChannelListener<Integer> carClidListener;
-    private ChannelListener<C> carValListener;
+    private final ChannelListener<Integer> carClidListener;
+    private final ChannelListener<C> carValListener;
     private ChannelListener<Short> abortMarkListener;
     private ChannelListener<Short> stopMarkListener;
     private CaSimpleObserveSenderImpl.ApplyState currentState;
-
-    private ThreadFactory threadFactory = new ThreadFactory(){
-
-        @Override
-        public Thread newThread(Runnable r) {
-            final Thread thread = new Thread(r);
-
-            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
-
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
-                }
-            });
-
-            return thread;
-        }
-
-    };
 
     CaSimpleObserveSenderImpl(
             final String name,
@@ -81,11 +62,14 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
             final String description,
             final Class<C> carClass,
             final EpicsReader epicsReader,
-            final EpicsWriter epicsWriter) throws CAException {
+            final EpicsWriter epicsWriter,
+            ScheduledExecutorService executor
+    ) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = idleState;
+        this.executor = executor;
 
         apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         // apply.VAL int > 0
@@ -147,7 +131,6 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
         }
         this.abortMark = abortMark;
 
-        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
     }
 
     @Override
@@ -215,7 +198,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
                 apply.setDir(CadDirective.START);
                 currentState = new CaSimpleObserveSenderImpl.WaitApplyPreset(cm);
                 if (timeout > 0) {
-                    timeoutFuture = executor.schedule(() ->  CaSimpleObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
+                    timeoutFuture = executor.schedule(CaSimpleObserveSenderImpl.this::onTimeout, timeout, timeoutUnit);
                 }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
@@ -299,7 +282,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
 
     }
 
-    private static IdleState idleState = new IdleState();
+    private static final IdleState idleState = new IdleState();
 
     // In this state we wait for clid to change
     private final class WaitApplyPreset implements CaSimpleObserveSenderImpl.ApplyState {
