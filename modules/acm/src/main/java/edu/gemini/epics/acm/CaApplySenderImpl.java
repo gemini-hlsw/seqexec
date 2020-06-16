@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -8,7 +8,6 @@ package edu.gemini.epics.acm;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,11 +33,11 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
 
     private long timeout;
     private TimeUnit timeoutUnit;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final ChannelListener<Integer> valListener;
-    private ChannelListener<Integer> carClidListener;
-    private ChannelListener<C> carValListener;
+    private final ChannelListener<Integer> carClidListener;
+    private final ChannelListener<C> carValListener;
     private State currentState;
     private static final State IdleState = new State() {
         @Override
@@ -72,11 +71,14 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         final String description,
         final Class<C> carClass,
         final EpicsReader epicsReader,
-        final EpicsWriter epicsWriter) throws CAException {
+        final EpicsWriter epicsWriter,
+        final ScheduledExecutorService executor
+    ) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = IdleState;
+        this.executor = executor;
 
         apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         apply.registerValListener(valListener = new ChannelListener<Integer>() {
@@ -106,7 +108,6 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
             }
         });
 
-        executor = SafeExecutor.safeExecutor(2, LOG);
     }
 
     @Override
@@ -161,12 +162,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
 
                 apply.setDir(CadDirective.START);
                 if (timeout > 0) {
-                    timeoutFuture = executor.schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            CaApplySenderImpl.this.onTimeout();
-                        }
-                    }, timeout, timeoutUnit);
+                    timeoutFuture = executor.schedule(CaApplySenderImpl.this::onTimeout, timeout, timeoutUnit);
                 }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
@@ -446,47 +442,29 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
     }
 
     private void succedCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeSuccess();
-            }
-        });
+        executor.execute(cm::completeSuccess);
     }
 
     private void pauseCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completePause();
-            }
-        });
+        executor.execute(cm::completePause);
     }
 
     private void failCommand(final CaCommandMonitorImpl cm, final Exception ex) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeFailure(ex);
-            }
-        });
+        executor.execute(() -> cm.completeFailure(ex));
     }
 
     private void failCommandWithApplyError(final CaCommandMonitorImpl cm) {
         // I found that if I try to read OMSS or MESS from the same thread that
         // is processing a channel notifications, the reads fails with a
         // timeout. But it works if the read is done later from another thread.
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String msg = null;
-                try {
-                    msg = apply.getMessValue();
-                } catch (CAException | TimeoutException e) {
-                    LOG.warn(e.getMessage());
-                }
-                cm.completeFailure(new CaCommandError(msg));
+        executor.execute(() -> {
+            String msg = null;
+            try {
+                msg = apply.getMessValue();
+            } catch (CAException | TimeoutException e) {
+                LOG.warn(e.getMessage());
             }
+            cm.completeFailure(new CaCommandError(msg));
         });
     }
 
@@ -494,17 +472,14 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         // I found that if I try to read OMSS or MESS from the same thread that
         // is processing a channel notifications, the reads fails with a
         // timeout. But it works if the read is done later from another thread.
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String msg = null;
-                try {
-                    msg = car.getOmssValue();
-                } catch (CAException | TimeoutException e) {
-                    LOG.warn(e.getMessage());
-                }
-                cm.completeFailure(new CaCommandError(msg));
+        executor.execute(() -> {
+            String msg = null;
+            try {
+                msg = car.getOmssValue();
+            } catch (CAException | TimeoutException e) {
+                LOG.warn(e.getMessage());
             }
+            cm.completeFailure(new CaCommandError(msg));
         });
     }
 

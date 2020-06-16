@@ -1,13 +1,14 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
 package edu.gemini.epics.acm;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +31,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     private final String channel;
     private final Class<T> type;
     private final String description;
+    private final AttributeNotifier<T> notifier;
 
     private CaAttributeImpl(String name, String channel, Class<T> type,
-            String description, EpicsReader epicsReader) {
+            String description, EpicsReader epicsReader, ScheduledExecutorService executor) {
 
         super();
         this.name = name;
@@ -40,6 +42,7 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         this.type = type;
         this.description = description;
         this.epicsReader = epicsReader;
+        this.notifier = new AttributeNotifier<T>(executor);
     }
 
     void bind(ReadOnlyClientEpicsChannel<T> epicsChannel)
@@ -117,37 +120,13 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
         }
     }
 
-    private final class Notifier {
-        private final List<CaAttributeListener<T>> listeners = new LinkedList<>();
-
-        synchronized public void addListener(CaAttributeListener<T> listener) {
-            if (!listeners.contains(listener)) {
-                listeners.add(listener);
-            }
-        }
-
-        synchronized public void removeListener(CaAttributeListener<T> listener) {
-            listeners.remove(listener);
-        }
-
-        synchronized public void notifyValueChange(List<T> newVals) {
-            for (CaAttributeListener<T> listener : listeners) {
-                listener.onValueChange(newVals);
-            }
-        }
-
-        synchronized public void notifyValidityChange(boolean newValidity) {
-            for (CaAttributeListener<T> listener : listeners) {
-                listener.onValidityChange(newValidity);
-            }
-        }
-    }
-
-    private final Notifier notifier = new Notifier();
-
     @Override
-    public void addListener(CaAttributeListener<T> listener) {
+    synchronized public void addListener(CaAttributeListener<T> listener) {
         notifier.addListener(listener);
+        //Call listener with first value, if there is one.
+        if(values() != null) {
+            notifier.notifyValueChangeSingle(listener, values());
+        }
     }
 
     @Override
@@ -168,10 +147,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     }
 
     static CaAttributeImpl<Double> createDoubleAttribute(
-            String name, String channel, String description, EpicsReader epicsReader)
-            throws CAException {
+            String name, String channel, String description,
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<Double> attr = new CaAttributeImpl<>(name,
-                channel, Double.class, description, epicsReader);
+                channel, Double.class, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getDoubleChannel(channel));
         } catch(Throwable e) {
@@ -182,10 +161,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     }
 
     static public CaAttributeImpl<Float> createFloatAttribute(
-            String name, String channel, String description, EpicsReader epicsReader)
-            throws CAException {
+            String name, String channel, String description,
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<Float> attr = new CaAttributeImpl<>(name, channel,
-                Float.class, description, epicsReader);
+                Float.class, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getFloatChannel(channel));
         } catch(Throwable e) {
@@ -196,10 +175,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     }
 
     static public CaAttributeImpl<Integer> createIntegerAttribute(
-            String name, String channel, String description, EpicsReader epicsReader)
-            throws CAException {
+            String name, String channel, String description,
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<Integer> attr = new CaAttributeImpl<>(name,
-                channel, Integer.class, description, epicsReader);
+                channel, Integer.class, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getIntegerChannel(channel));
         } catch(Throwable e) {
@@ -210,10 +189,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     }
 
     static public CaAttributeImpl<Short> createShortAttribute(
-            String name, String channel, String description, EpicsReader epicsReader)
-            throws CAException {
+            String name, String channel, String description,
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<Short> attr = new CaAttributeImpl<>(name,
-                channel, Short.class, description, epicsReader);
+                channel, Short.class, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getShortChannel(channel));
         } catch(Throwable e) {
@@ -224,10 +203,10 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
     }
 
     static public CaAttributeImpl<String> createStringAttribute(
-            String name, String channel, String description, EpicsReader epicsReader)
-            throws CAException {
+            String name, String channel, String description,
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<String> attr = new CaAttributeImpl<>(name,
-                channel, String.class, description, epicsReader);
+                channel, String.class, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getStringChannel(channel));
         } catch(Throwable e) {
@@ -239,9 +218,9 @@ final class CaAttributeImpl<T> implements CaAttribute<T> {
 
     static public <T extends Enum<T>> CaAttributeImpl<T> createEnumAttribute(
             String name, String channel, String description, Class<T> enumType,
-            EpicsReader epicsReader) throws CAException {
+            EpicsReader epicsReader, ScheduledExecutorService executor) {
         CaAttributeImpl<T> attr = new CaAttributeImpl<>(name, channel,
-                enumType, description, epicsReader);
+                enumType, description, epicsReader, executor);
         try {
             attr.bind(epicsReader.getEnumChannel(channel, enumType));
         } catch(Throwable e) {

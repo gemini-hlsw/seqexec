@@ -195,7 +195,7 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   private val guideStabilizeTime = FiniteDuration(1, SECONDS)
   private val filteredNotGuidingAttr: CaWindowStabilizer[Integer] =
-    new CaWindowStabilizer[Integer](notGuidingAttr, java.time.Duration.ofMillis(guideStabilizeTime.toMillis))
+    epicsService.timeWindowFilter(notGuidingAttr, java.time.Duration.ofMillis(guideStabilizeTime.toMillis))
 
   private val guideTimeout = FiniteDuration(5, SECONDS)
   def waitForGuideOn: F[Unit] =

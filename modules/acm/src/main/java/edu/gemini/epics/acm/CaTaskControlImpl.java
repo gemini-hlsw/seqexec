@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -33,9 +33,8 @@ public class CaTaskControlImpl implements TaskControlWithResource {
 
     private long timeout;
     private TimeUnit timeoutUnit;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
-    private final EpicsWriter epicsWriter;
     private final ChannelListener<Integer> valListener;
     private final ChannelListener<TaskControlState> stateListener;
     private final CaParameterStorage storage;
@@ -64,12 +63,14 @@ public class CaTaskControlImpl implements TaskControlWithResource {
         }
     };
 
-    public CaTaskControlImpl(String name, String channel, String description, EpicsService epicsService)
+    public CaTaskControlImpl(String name, String channel, String description, EpicsService epicsService,
+                             ScheduledExecutorService executor)
             throws CAException {
         this.name = name;
         this.description = description;
+        this.executor = executor;
 
-        epicsWriter = new EpicsWriterImpl(epicsService);
+        EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
         storage = new CaParameterStorage(epicsWriter);
         record = new CaTaskControlRecord(channel, epicsService);
 
@@ -90,8 +91,6 @@ public class CaTaskControlImpl implements TaskControlWithResource {
                 }
             }
         });
-
-        executor = new ScheduledThreadPoolExecutor(2);
 
     }
 

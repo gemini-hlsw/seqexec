@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package edu.gemini.epics.acm
@@ -7,10 +7,11 @@ import edu.gemini.epics.EpicsReader
 import edu.gemini.epics.EpicsWriter
 import edu.gemini.epics.api.ChannelListener
 import edu.gemini.epics.ReadWriteClientEpicsChannel
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Integer => JInteger}
 import java.lang.{Short => JShort}
+
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -25,6 +26,8 @@ import org.scalatest.funsuite.AnyFunSuite
   */
 final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks with GnirsMocks {
 
+  val executor:ScheduledExecutorService = new ScheduledThreadPoolExecutor(2)
+
   test("NIFS normal observation") {
     val (epicsReader, epicsWriter) = nifsMocks
 
@@ -38,7 +41,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "NIFS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -110,7 +114,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GMOS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -205,7 +210,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GMOS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
     val observeErrorCount = new AtomicInteger()
@@ -373,7 +379,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GMOS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -448,7 +455,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GMOS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -513,7 +521,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "NIRI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
 
     // Start idle
     assert(observe.applyState().isIdle)
@@ -583,7 +592,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GSAOI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -647,7 +657,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GSAOI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -716,7 +727,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GSAOI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -787,7 +799,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GNIRS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -859,7 +872,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GNIRS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -931,7 +945,8 @@ final class ObserveStateSpec extends AnyFunSuite with GsaoiMocks with NifsMocks 
       "GNIRS Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     // Start idle
     assert(observe.applyState().isIdle)
 

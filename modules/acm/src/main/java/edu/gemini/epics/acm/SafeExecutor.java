@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 
 public interface SafeExecutor {
-    public static ScheduledExecutorService safeExecutor(Integer threadCount, Logger logger) {
+    public static ScheduledExecutorService safeExecutor(Integer threadCount, Logger logger, String className) {
         ThreadFactory threadFactory = new ThreadFactory() {
 
             @Override
@@ -27,7 +27,7 @@ public interface SafeExecutor {
 
                     @Override
                     public void uncaughtException(Thread t, Throwable e) {
-                        logger.error("Uncaught exception on CaSimpleObserverSender at thread: " + t.getId(), e);
+                        logger.error("Uncaught exception on " + className + " at thread: " + t.getId(), e);
                     }
                 });
 

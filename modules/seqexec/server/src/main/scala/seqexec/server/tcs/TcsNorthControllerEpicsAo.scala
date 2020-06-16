@@ -103,6 +103,8 @@ object TcsNorthControllerEpicsAo {
 
       def sysConfig(current: EpicsTcsAoConfig): F[EpicsTcsAoConfig] = {
         val params = configParams(current)
+        val mountMoves: Boolean = subsystems.contains(Subsystem.Mount) &&
+          tcs.tc.offsetA.exists(_ =!= current.base.instrumentOffset)
         val stabilizationTime = tcs.tc.offsetA
           .map(TcsSettleTimeCalculator.calc(current.base.instrumentOffset, _, subsystems, tcs.inst.instrument))
           .getOrElse(0.seconds)
@@ -113,7 +115,7 @@ object TcsNorthControllerEpicsAo {
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
             _ <- L.debug("TCS configuration command post")
-            _ <- if(subsystems.contains(Subsystem.Mount))
+            _ <- if(mountMoves)
               epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis), tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")

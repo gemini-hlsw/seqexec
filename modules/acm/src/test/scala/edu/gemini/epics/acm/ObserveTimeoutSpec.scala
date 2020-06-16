@@ -1,16 +1,19 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package edu.gemini.epics.acm
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
+
 import org.scalatest.funsuite.AnyFunSuite
 
 /**
   * Tests of the observe state machine timeouts
   */
 final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMocks {
+
+  val executor: ScheduledExecutorService = new ScheduledThreadPoolExecutor(2)
 
   test("NIRI no response should timeout") {
     val (epicsReader, epicsWriter) = niriMocks
@@ -25,7 +28,8 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
       "NIRI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
 
     observe.setTimeout(5, TimeUnit.SECONDS)
     // Start idle
@@ -95,7 +99,8 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
       "GSAOI Observe",
       classOf[CarState],
       epicsReader,
-      epicsWriter)
+      epicsWriter,
+      executor)
     observe.setTimeout(5, TimeUnit.SECONDS)
     // Start idle
     assert(observe.applyState().isIdle)

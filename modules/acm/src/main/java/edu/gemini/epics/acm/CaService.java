@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -8,6 +8,7 @@ package edu.gemini.epics.acm;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -19,6 +20,8 @@ import edu.gemini.epics.impl.EpicsReaderImpl;
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.impl.EpicsWriterImpl;
 import gov.aps.jca.CAException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Works as the main access point for the EPICS Action Command Model API. It
@@ -43,6 +46,7 @@ import gov.aps.jca.CAException;
 public final class CaService {
 
     private static final String EPICS_CA_ADDR_LIST = "EPICS_CA_ADDR_LIST";
+    private static final Logger LOG = LoggerFactory.getLogger(CaService.class.getName());
     private EpicsService epicsService;
     private final Map<String, StatusAcceptorWithResource> statusAcceptors;
     private final Map<String, ApplySenderWithResource> applySenders;
@@ -50,10 +54,12 @@ public final class CaService {
     private final Map<String, ApplySenderWithResource> continuousCmdSenders;
     private final Map<String, CommandSenderWithResource> commandSenders;
     private final Map<String, TaskControlWithResource> taskControlSenders;
+    private final ScheduledExecutorService executorService;
     static private String addrList = "";
     static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
-    static private Lock instanceLock = new ReentrantLock();
+    static private final Lock instanceLock = new ReentrantLock();
+    static private final int THREAD_COUNT = 8;
 
     private CaService(String addrList, Duration timeout) {
         statusAcceptors = new HashMap<>();
@@ -62,7 +68,8 @@ public final class CaService {
         continuousCmdSenders = new HashMap<>();
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
-        epicsService = new EpicsService(addrList, Double.valueOf(timeout.getSeconds()));
+        epicsService = new EpicsService(addrList, (double) timeout.getSeconds());
+        executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG, this.getClass().getName());
 
         epicsService.startService();
     }
@@ -150,7 +157,7 @@ public final class CaService {
     public CaStatusAcceptor createStatusAcceptor(String name, String description) {
         CaStatusAcceptor a = statusAcceptors.get(name);
         if (a == null) {
-            StatusAcceptorWithResource b = new CaStatusAcceptorImpl(name, description, epicsService);
+            StatusAcceptorWithResource b = new CaStatusAcceptorImpl(name, description, epicsService, executorService);
             statusAcceptors.put(name, b);
             return b;
         } else {
@@ -198,11 +205,11 @@ public final class CaService {
             EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarStateGEM5.class, epicsReader, epicsWriter);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter, executorService);
             }
             else {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarState.class, epicsReader, epicsWriter);
+                        description, CarState.class, epicsReader, epicsWriter, executorService);
             }
             applySenders.put(name, b);
             return b;
@@ -249,11 +256,11 @@ public final class CaService {
             EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarStateGEM5.class, epicsReader, epicsWriter);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter, executorService);
             }
             else  {
                 b = new CaObserveSenderImpl<CarState>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarState.class, epicsReader, epicsWriter);
+                        description, CarState.class, epicsReader, epicsWriter, executorService);
             }
             observeSenders.put(name, b);
             return b;
@@ -298,11 +305,11 @@ public final class CaService {
             EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaSimpleObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarStateGEM5.class, epicsReader, epicsWriter);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter, executorService);
             }
             else  {
                 b = new CaSimpleObserveSenderImpl<CarState>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarState.class, epicsReader, epicsWriter);
+                        description, CarState.class, epicsReader, epicsWriter, executorService);
             }
             observeSenders.put(name, b);
             return b;
@@ -349,11 +356,11 @@ public final class CaService {
             EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaContinuousApplySenderImpl<CarStateGEM5>(name, applyRecord, carRecord, description,
-                        CarStateGEM5.class, epicsReader, epicsWriter);
+                        CarStateGEM5.class, epicsReader, epicsWriter, executorService);
             }
             else  {
                 b = new CaContinuousApplySenderImpl<CarState>(name, applyRecord, carRecord, description,
-                        CarState.class, epicsReader, epicsWriter);
+                        CarState.class, epicsReader, epicsWriter, executorService);
             }
             continuousCmdSenders.put(name, b);
             return b;
@@ -496,7 +503,8 @@ public final class CaService {
             throws CAException {
         CaTaskControl a = taskControlSenders.get(name);
         if(a == null) {
-            TaskControlWithResource b = new CaTaskControlImpl(name, recordName, description, epicsService);
+            TaskControlWithResource b = new CaTaskControlImpl(name, recordName, description, epicsService,
+                    executorService);
             taskControlSenders.put(name, b);
             return b;
         } else {
@@ -522,6 +530,10 @@ public final class CaService {
         if(t != null) {
             t.unbind();
         }
+    }
+
+    public <T> CaWindowStabilizer<T> timeWindowFilter(CaAttribute<T> attr, Duration stabilizationTime) {
+        return new CaWindowStabilizer<T>(attr, stabilizationTime, executorService);
     }
 
 }

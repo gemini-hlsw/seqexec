@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -33,11 +33,11 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
 
     private long timeout;
     private TimeUnit timeoutUnit;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final ChannelListener<Integer> valListener;
-    private ChannelListener<Integer> carClidListener;
-    private ChannelListener<C> carValListener;
+    private final ChannelListener<Integer> carClidListener;
+    private final ChannelListener<C> carValListener;
     private State currentState;
     private static final State IdleState = new State() {
         @Override
@@ -71,11 +71,14 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
             final String description,
             final Class<C> carClass,
             final EpicsReader epicsReader,
-            final EpicsWriter epicsWriter) throws CAException {
+            final EpicsWriter epicsWriter,
+            final ScheduledExecutorService executor
+            ) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = IdleState;
+        this.executor = executor;
 
         apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
@@ -96,7 +99,6 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
             }
         });
 
-        executor = SafeExecutor.safeExecutor(2, LOG);
     }
 
     @Override
@@ -151,7 +153,7 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
 
                 apply.setDir(CadDirective.START);
                 if (timeout > 0) {
-                    timeoutFuture = executor.schedule(() -> CaContinuousApplySenderImpl.this.onTimeout(), timeout,
+                    timeoutFuture = executor.schedule(CaContinuousApplySenderImpl.this::onTimeout, timeout,
                             timeoutUnit);
                 }
             } catch (CAException | TimeoutException e) {
@@ -369,7 +371,7 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
     }
 
     private void succedCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(() -> cm.completeSuccess());
+        executor.execute(cm::completeSuccess);
     }
 
     private void failCommand(final CaCommandMonitorImpl cm, final Exception ex) {
