@@ -484,6 +484,8 @@ object TcsControllerEpicsCommon {
     override def applyBasicConfig(subsystems: NonEmptySet[Subsystem], tcs: BasicTcsConfig): F[Unit] = {
       def sysConfig(current: BaseEpicsTcsConfig): F[BaseEpicsTcsConfig] = {
         val params = configBaseParams(subsystems, current, tcs)
+        val mountMoves: Boolean = subsystems.contains(Subsystem.Mount) &&
+          tcs.tc.offsetA.exists(_ =!= current.instrumentOffset)
         val stabilizationTime = tcs.tc.offsetA
           .map(TcsSettleTimeCalculator.calc(current.instrumentOffset, _, subsystems, tcs.inst.instrument))
           .getOrElse(0.seconds)
@@ -493,7 +495,7 @@ object TcsControllerEpicsCommon {
             _ <- L.debug("Start TCS configuration")
             s <- params.foldLeft(current.pure[F]){ case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(ConfigTimeout)
-            _ <- if(subsystems.contains(Subsystem.Mount))
+            _ <- if(mountMoves)
               epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis), tcsTimeout) *> L.debug("TCS inposition")
             else if(Set(Subsystem.PWFS1, Subsystem.PWFS2, Subsystem.AGUnit).exists(subsystems.contains))
               epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
