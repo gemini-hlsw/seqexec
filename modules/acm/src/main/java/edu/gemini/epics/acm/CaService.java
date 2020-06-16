@@ -69,7 +69,7 @@ public final class CaService {
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
         epicsService = new EpicsService(addrList, (double) timeout.getSeconds());
-        executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG);
+        executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG, this.getClass().getName());
 
         epicsService.startService();
     }
