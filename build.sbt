@@ -319,7 +319,7 @@ lazy val seqexec_server = project
   .dependsOn(seqexec_engine % "compile->compile;test->test",
              giapi,
              seqexec_model.jvm % "compile->compile;test->test",
-             acm)
+             acm % "compile->compile;test->test")
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level

@@ -459,6 +459,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideMode"))
 
     private val coma = cs.map(_.getString("coma"))
+
     override def setComa(v: String): F[Unit] = setParameter(coma, v)
   }
 
@@ -466,12 +467,15 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideConfig"))
 
     private val source = cs.map(_.getString("source"))
+
     override def setSource(v: String): F[Unit] = setParameter(source, v)
 
     private val beam = cs.map(_.getString("beam"))
+
     override def setBeam(v: String): F[Unit] = setParameter(beam, v)
 
     private val reset = cs.map(_.getString("reset"))
+
     override def setReset(v: String): F[Unit] = setParameter(reset, v)
   }
 
@@ -611,12 +615,15 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoCorrect"))
 
     private val correct = cs.map(_.getString("correct"))
+
     override def setCorrections(v: String): F[Unit] = setParameter(correct, v)
 
     private val gains = cs.map(_.getInteger("gains"))
+
     override def setGains(v: Int): F[Unit] = setParameter[F, java.lang.Integer](gains, v)
 
     private val matrix = cs.map(_.getInteger("matrix"))
+
     override def setMatrix(v: Int): F[Unit] = setParameter[F, java.lang.Integer](matrix, v)
   }
 
@@ -625,18 +632,23 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
       override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoPrepareCm"))
 
       private val x = cs.map(_.getDouble("x"))
+
       override def setX(v: Double): F[Unit] = setParameter[F, java.lang.Double](x, v)
 
       private val y = cs.map(_.getDouble("y"))
+
       override def setY(v: Double): F[Unit] = setParameter[F, java.lang.Double](y, v)
 
       private val seeing = cs.map(_.getDouble("seeing"))
+
       override def setSeeing(v: Double): F[Unit] = setParameter[F, java.lang.Double](seeing, v)
 
       private val starMagnitude = cs.map(_.getDouble("gsmag"))
+
       override def setStarMagnitude(v: Double): F[Unit] = setParameter[F, java.lang.Double](starMagnitude, v)
 
       private val windSpeed = cs.map(_.getDouble("windspeed"))
+
       override def setWindSpeed(v: Double): F[Unit] = setParameter[F, java.lang.Double](windSpeed, v)
     }
 
@@ -648,15 +660,19 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoStats"))
 
     private val fileName = cs.map(_.getString("filename"))
+
     override def setFileName(v: String): F[Unit] = setParameter(fileName, v)
 
     private val samples = cs.map(_.getInteger("samples"))
+
     override def setSamples(v: Int): F[Unit] = setParameter[F, java.lang.Integer](samples, v)
 
     private val interval = cs.map(_.getDouble("interval"))
+
     override def setInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](interval, v)
 
     private val triggerTime = cs.map(_.getDouble("trigtime"))
+
     override def setTriggerTimeInterval(v: Double): F[Unit] = setParameter[F, java.lang.Double](triggerTime, v)
   }
 
@@ -664,15 +680,19 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("filter1"))
 
     private val bandwidth = cs.map(_.getDouble("bandwidth"))
+
     override def setBandwidth(v: Double): F[Unit] = setParameter[F, java.lang.Double](bandwidth, v)
 
     private val maxVelocity = cs.map(_.getDouble("maxv"))
+
     override def setMaxVelocity(v: Double): F[Unit] = setParameter[F, java.lang.Double](maxVelocity, v)
 
     private val grabRadius = cs.map(_.getDouble("grab"))
+
     override def setGrabRadius(v: Double): F[Unit] = setParameter[F, java.lang.Double](grabRadius, v)
 
     private val shortCircuit = cs.map(_.getString("shortCircuit"))
+
     override def setShortCircuit(v: String): F[Unit] = setParameter(shortCircuit, v)
   }
 
@@ -684,6 +704,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val m1GuideAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m1Guide",
     s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide")
+
   override def m1Guide: F[BinaryOnOff] = safeAttributeF(m1GuideAttr)
 
   override def m2p1Guide: F[String] = safeAttributeF(tcsState.getStringAttribute("m2p1Guide"))
@@ -698,6 +719,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val m2GuideStateAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m2GuideState",
     s"${TcsTop}om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state")
+
   override def m2GuideState: F[BinaryOnOff] = safeAttributeF(m2GuideStateAttr)
 
   override def xoffsetPoA1: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("xoffsetPoA1"))
@@ -739,12 +761,13 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs1On",
     s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating")
+
   override def pwfs1On: F[BinaryYesNo] = safeAttributeF(pwfs1OnAttr)
 
   private val pwfs2OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs2On",
     s"${TcsTop}drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating")
 
-  override def pwfs2On:F[BinaryYesNo] = safeAttributeF(pwfs2OnAttr)
+  override def pwfs2On: F[BinaryYesNo] = safeAttributeF(pwfs2OnAttr)
 
   private val oiwfsOnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("oiwfsOn",
     s"${TcsTop}drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating")
@@ -763,10 +786,11 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val inPositionAttr: CaAttribute[String] = tcsState.getStringAttribute("inPosition")
 
-  override def inPosition:F[String] = safeAttributeF(inPositionAttr)
+  override def inPosition: F[String] = safeAttributeF(inPositionAttr)
 
   private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
-  override def agInPosition:F[Double] = safeAttributeSDoubleF(agInPositionAttr)
+
+  override def agInPosition: F[Double] = safeAttributeSDoubleF(agInPositionAttr)
 
   override val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("p1", tcsState)
 
@@ -777,7 +801,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   private val defaultTcsStabilizeTime = Duration.ofSeconds(1)
 
   private val filteredInPositionAttr: CaWindowStabilizer[String] =
-    new CaWindowStabilizer[String](inPositionAttr, defaultTcsStabilizeTime)
+    epicsService.timeWindowFilter(inPositionAttr, defaultTcsStabilizeTime)
 
   // Tcs fudge1 (time to wait for in-position to change to false)
   private val tcsSettleTime = FiniteDuration(2800, MILLISECONDS)
@@ -786,14 +810,19 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
-    T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *>
-      Sync[F].delay(filteredInPositionAttr.restart(stabilizationTime))
-        .flatMap(waitForValueF(_, "TRUE", timeout,"TCS inposition flag"))
+    T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *> (
+      if (stabilizationTime.isZero) {
+        waitForValueF(inPositionAttr, "TRUE", timeout, "TCS inposition flag")
+      } else {
+        Sync[F].delay(filteredInPositionAttr.restart(stabilizationTime))
+          .flatMap(waitForValueF(_, "TRUE", timeout, "TCS inposition flag"))
+      }
+    )
 
   private val agStabilizeTime = Duration.ofSeconds(1)
 
   private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] =
-    new CaWindowStabilizer[java.lang.Double](agInPositionAttr, agStabilizeTime)
+    epicsService.timeWindowFilter(agInPositionAttr, agStabilizeTime)
 
   def filteredAGInPosition: F[Double] = safeAttributeSDoubleF(filteredAGInPositionAttr)
 

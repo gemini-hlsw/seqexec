@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -32,7 +32,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final String name;
     private final String description;
 
-    private final EpicsReader epicsReader;
     private final CaApplyRecord apply;
     private final CaCarRecord<C> car;
     private final CaCarRecord<C> observeCar;
@@ -46,12 +45,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     private long timeout;
     private TimeUnit timeoutUnit;
-    private ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor;
     private ScheduledFuture<?> timeoutFuture;
     private final ChannelListener<Integer> valListener;
-    private ChannelListener<Integer> carClidListener;
-    private ChannelListener<C> carValListener;
-    private ChannelListener<C> observeCarValListener;
+    private final ChannelListener<Integer> carClidListener;
+    private final ChannelListener<C> carValListener;
+    private final ChannelListener<C> observeCarValListener;
     private ChannelListener<Short> abortMarkListener;
     private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.ApplyState currentState;
@@ -66,13 +65,14 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         final String description,
         final Class<C> carClass,
         final EpicsReader epicsReader,
-        final EpicsWriter epicsWriter) throws CAException {
+        final EpicsWriter epicsWriter,
+        final ScheduledExecutorService executor
+    ) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = idleState;
-
-        this.epicsReader = epicsReader;
+        this.executor = executor;
 
         apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         // apply.VAL int > 0
@@ -142,7 +142,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
         this.abortMark = abortMark;
 
-        executor = SafeExecutor.safeExecutor(2, LOG);
     }
 
     @Override
@@ -324,7 +323,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     }
 
-    private static ObserveState idleObserveState = new ObserveIdleState();
+    private static final ObserveState idleObserveState = new ObserveIdleState();
 
     // At this state we are waiting for busy on the observeC
     private final class ObserveWaitBusy implements ObserveState {

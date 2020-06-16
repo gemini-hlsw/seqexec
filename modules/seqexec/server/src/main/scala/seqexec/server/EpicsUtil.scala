@@ -192,6 +192,9 @@ object EpicsUtil {
       val lock = new ReentrantLock()
 
       // First we verify that the attribute doesn't already have the required value.
+      // NOTE: It was possible to lose a change to the right value if it happened between here and the line that
+      // subscribes to the attribute, and the wait would end in timeout. That is not the case anymore, because the
+      // CaAttribute will call the callback once on subscription.
       if (!attr.values().isEmpty && vv.contains(attr.value)) {
         f(attr.value.asRight)
       } else {
