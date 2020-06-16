@@ -69,22 +69,22 @@ object GuideConfigStatus {
             React.Fragment(
               Header(as    = "span",
                      size  = Small,
-                     clazz = SeqexecStyles.activeGuide.when_(s.nonEmpty))(
+                     clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(s.nonEmpty))(
                 s"Tip/Tilt: ${s.map(_.tag).mkString("+")}".when(s.nonEmpty),
                 s"Tip/Tilt: Off".when(s.isEmpty)
               ),
               Header(as    = "span",
                      size  = Small,
-                     clazz = SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn))(
+                     clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn))(
                 s"Coma: ${c.show}"
               )
             )
           case M2GuideConfig.M2GuideOff =>
             React.Fragment(
-              Header(as = "span", size = Small)(
+              Header(as = "span", size = Small, clazz = SeqexecStyles.item)(
                 "Tip/Tilt: Off"
               ),
-              Header(as = "span", size = Small)(
+              Header(as = "span", size = Small, clazz = SeqexecStyles.item)(
                 "Coma: Off"
               )
             )
