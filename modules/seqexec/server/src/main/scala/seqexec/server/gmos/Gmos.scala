@@ -31,7 +31,6 @@ import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.GmosParameters._
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
-import seqexec.server.gmos.GmosController._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.SiteDependentTypes

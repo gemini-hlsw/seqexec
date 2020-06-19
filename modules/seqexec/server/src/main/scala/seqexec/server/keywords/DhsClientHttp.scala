@@ -4,7 +4,6 @@
 package seqexec.server.keywords
 
 import cats.FlatMap
-import cats.implicits._
 import cats.data.EitherT
 import cats.effect.Concurrent
 import cats.effect.Timer

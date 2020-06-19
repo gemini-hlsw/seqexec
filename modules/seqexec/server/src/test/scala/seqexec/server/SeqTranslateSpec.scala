@@ -78,7 +78,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
   private val s6: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.OKAborted(Response.Aborted(toImageFileId(fileId)))))(baseState)
 
-  private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync
+  private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync()
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId, graceful = false).apply(s0).isDefined)

@@ -292,7 +292,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
 }
 
 object TableState {
-  def AllColsVisible[A](a: A): Boolean = true
+  def AllColsVisible[A]: A => Boolean = (_: A) => true
 
   def NoInitialWidth[A]: A => Option[Double] = _ => None
 

@@ -14,7 +14,7 @@ import mouse.all._
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
-import seqexec.server.{EpicsCommandBase, EpicsSystem}
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure._
 import seqexec.server.EpicsCommandBase

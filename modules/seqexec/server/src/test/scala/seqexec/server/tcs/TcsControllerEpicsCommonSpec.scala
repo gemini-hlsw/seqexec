@@ -325,7 +325,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     assert(result.isEmpty)
 
@@ -354,7 +354,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.Pwfs1StopObserveCmd,
@@ -386,7 +386,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     val (head, tail) = result.span{
       case TestTcsEvent.OffsetACmd(_, _) => false
@@ -433,7 +433,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.Pwfs1ObserveCmd,
@@ -480,7 +480,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     assert(result.isEmpty)
 
@@ -496,7 +496,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.Pwfs2StopObserveCmd,
@@ -528,7 +528,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     val (head, tail) = result.span{
       case TestTcsEvent.OffsetACmd(_, _) => false
@@ -575,7 +575,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.Pwfs2ObserveCmd,
@@ -622,7 +622,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     assert(result.isEmpty)
 
@@ -638,7 +638,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.OiwfsStopObserveCmd,
@@ -670,7 +670,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     val (head, tail) = result.span{
       case TestTcsEvent.OffsetACmd(_, _) => false
@@ -717,7 +717,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       r <- d.outputF
     } yield r
 
-    val result = genOut.unsafeRunSync
+    val result = genOut.unsafeRunSync()
 
     (List(
       TestTcsEvent.OiwfsObserveCmd,

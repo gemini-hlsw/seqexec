@@ -6,7 +6,6 @@ package seqexec.engine
 import cats.Id
 import cats.data.NonEmptyList
 import org.scalatest.matchers.should.Matchers
-import org.scalatest._
 import seqexec.model.ActionType
 import org.scalatest.flatspec.AnyFlatSpec
 

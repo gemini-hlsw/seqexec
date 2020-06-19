@@ -59,20 +59,20 @@ class StaticRoutesSpec extends AnyFlatSpec with Matchers with EitherValues {
   "StaticRoutes regular files" should
     "return a file if present on resources" in {
       val service = Blocker[IO].use(b => IO(new StaticRoutes[IO](false, builtAtMillis, b).service))
-      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.status))).unsafeRunSync should contain(Status.Ok)
-      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync.getOrElse(Headers.empty).toList should contain (`Content-Type`(text.css))
+      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.status))).unsafeRunSync() should contain(Status.Ok)
+      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync().getOrElse(Headers.empty).toList should contain (`Content-Type`(text.css))
     }
     it should "not leak the application configuration file" in {
       val service = Blocker[IO].use(b => IO(new StaticRoutes[IO](true, builtAtMillis, b).service))
-      service.flatMap(_.apply(Request(uri = uri("/app.conf"))).value.map(_.map(_.status))).unsafeRunSync shouldBe empty
+      service.flatMap(_.apply(Request(uri = uri("/app.conf"))).value.map(_.map(_.status))).unsafeRunSync() shouldBe empty
     }
     it should "cache them for a year on production mode" in {
       val service = Blocker[IO].use(b => IO(new StaticRoutes[IO](false, builtAtMillis, b).service))
-      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync.getOrElse(Headers.empty).toList should contain (`Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds))))
+      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync().getOrElse(Headers.empty).toList should contain (`Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds))))
     }
     it should "not cache them on dev mode" in {
       val service = Blocker[IO].use(b => IO(new StaticRoutes[IO](true, builtAtMillis, b).service))
-      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync.getOrElse(Headers.empty).toList should not contain `Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds)))
+      service.flatMap(_.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers))).unsafeRunSync().getOrElse(Headers.empty).toList should not contain `Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds)))
     }
     it should "support fingerprinting" in {
       val service = Blocker[IO].use(b => IO(new StaticRoutes[IO](true, builtAtMillis, b).service))

@@ -88,19 +88,19 @@ final class GiapiStatusSpec extends CatsSuite {
   test("Test reading an existing status item") {
     client(GmpStatus.amqUrl("tests1"), intItemName, strItemName).use { case (_, c) =>
       c.get[Int](intItemName)
-     } .unsafeRunSync shouldBe 1
+     }.unsafeRunSync() shouldBe 1
   }
 
   test("Test reading an status with string type") {
     client(GmpStatus.amqUrl("tests2"), intItemName, strItemName).use { case (_, c) =>
       c.get[String](strItemName)
-    } .attempt.unsafeRunSync shouldBe Right("one")
+    }.attempt.unsafeRunSync() shouldBe Right("one")
   }
 
   test("Test reading an unknown status item") {
     client(GmpStatus.amqUrl("tests3"), intItemName, strItemName).use { case (_, c) =>
       c.get[Int]("item:u")
-    } .attempt.unsafeRunSync should matchPattern {
+    }.attempt.unsafeRunSync() should matchPattern {
       case Left(GiapiException(_)) =>
     }
   }
@@ -108,14 +108,14 @@ final class GiapiStatusSpec extends CatsSuite {
   test("Test reading an unknown status item as optional") {
     client(GmpStatus.amqUrl("tests4"), intItemName, strItemName).use { case (_, c) =>
       c.getO[Int]("item:u")
-    } .unsafeRunSync shouldBe None
+    }.unsafeRunSync() shouldBe None
   }
 
   test("Closing connection should terminate") {
     // This should fail but we are mostly concerned with ensuring that it terminates
     client(GmpStatus.amqUrl("tests5"), intItemName, strItemName).use { case (g, c) =>
       GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)
-    } .attempt.unsafeRunSync should matchPattern {
+    }.attempt.unsafeRunSync() should matchPattern {
       case Left(GiapiException(_)) =>
     }
   }

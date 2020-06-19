@@ -52,7 +52,7 @@ package object table {
             axis                     = Axis.X,
             defaultClassName         = "DragHandle",
             defaultClassNameDragging = "DragHandleActive",
-            onDrag                   = (ev: MouseEvent, d: DraggableData) => rs(dataKey, d.deltaX),
+            onDrag                   = (_: MouseEvent, d: DraggableData) => rs(dataKey, d.deltaX),
             position                 = ControlPosition(0)
           ),
           <.span(^.cls := "DragHandleIcon", "⋮")

@@ -49,12 +49,12 @@ class InstrumentControllerSimSpec extends CatsSuite {
     )
     // We make a very long observation here to ensure we don't stack overflow
     val result =
-      sim.observeTic(None).unsafeRunSync
+      sim.observeTic(None).unsafeRunSync()
     assert(result === ObserveCommandResult.Success)
   }
   test("normal observation") {
     implicit val tio = noWaitTio
-    val result = simulator.observe(toImageFileId("S001"), 5.seconds).unsafeRunSync
+    val result = simulator.observe(toImageFileId("S001"), 5.seconds).unsafeRunSync()
     assert(result === ObserveCommandResult.Success)
   }
   test("pause observation") {
@@ -65,7 +65,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
       r <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
     assert(result === ObserveCommandResult.Paused)
   }
   test("abort observation") {
@@ -76,7 +76,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.abortObserve
       r <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
     assert(result === ObserveCommandResult.Aborted)
   }
   test("stop observation") {
@@ -87,7 +87,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.stopObserve
       r <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
     assert(result === ObserveCommandResult.Stopped)
   }
   test("pause/stop pause observation") {
@@ -100,7 +100,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       r <- sim.stopPaused
       _ <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
 
     assert(result === ObserveCommandResult.Stopped)
   }
@@ -113,7 +113,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- sim.pauseObserve
       r <- sim.resumePaused
       _ <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
 
     assert(result === ObserveCommandResult.Success)
   }
@@ -128,7 +128,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- sim.stopObserve
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       r <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
 
     // FIXME The simulator should return Stopped
     // assert(result === ObserveCommandResult.Stopped)
@@ -144,7 +144,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       r <- sim.abortPaused
       _ <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
 
     assert(result === ObserveCommandResult.Aborted)
   }
@@ -158,7 +158,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.abortObserve
       r <- f.join
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
 
     // FIXME The simulator should return Stopped
     // assert(result === ObserveCommandResult.Aborted)

@@ -82,26 +82,26 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
   ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly
     client(GmpCommands.amqUrl("test1"), false).use { c =>
       c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    } .unsafeRunSync shouldBe Left(CommandResultException(Response.ERROR, "Message cannot be null"))
+    }.unsafeRunSync() shouldBe Left(CommandResultException(Response.ERROR, "Message cannot be null"))
   }
 
   test("Test sending a command with no answer") {
     client(GmpCommands.amqUrl("test2"), true).use { c =>
       c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    } .unsafeRunSync shouldBe Left(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
+    }.unsafeRunSync() shouldBe Left(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
   }
 
   test("Test sending a command with immediate answer") {
     client(GmpCommands.amqUrl("test3"), true).use { c =>
       c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    } .unsafeRunSync shouldBe Right(CommandResult(Response.COMPLETED))
+    }.unsafeRunSync() shouldBe Right(CommandResult(Response.COMPLETED))
   }
 
   test("Test sending a command with accepted but never completed answer") {
     val timeout = 1.second
     client(GmpCommands.amqUrl("test4"), true).use { c =>
       c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt
-    } .unsafeRunSync shouldBe Left(CommandResultException.timedOut(timeout))
+    }.unsafeRunSync() shouldBe Left(CommandResultException.timedOut(timeout))
   }
 
 }

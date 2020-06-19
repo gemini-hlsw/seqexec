@@ -31,7 +31,7 @@ class SeqexecCommandRoutesSpec
         wv =>
           (engine.setWaterVapor _)
             .expects(*, wv, *)
-            .anyNumberOfTimes
+            .anyNumberOfTimes()
             .returning(IO.unit)
       )
     }
@@ -44,9 +44,9 @@ class SeqexecCommandRoutesSpec
             .addCookie("token", t)
             .withEntity(wv)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Set water vapor to $wv"))
+      assert(b.unsafeRunSync() === Some(s"Set water vapor to $wv"))
     }
   }
 
@@ -57,7 +57,7 @@ class SeqexecCommandRoutesSpec
         wv =>
           (engine.setImageQuality _)
             .expects(*, wv, *)
-            .anyNumberOfTimes
+            .anyNumberOfTimes()
             .returning(IO.unit)
       )
     }
@@ -70,9 +70,9 @@ class SeqexecCommandRoutesSpec
             .addCookie("token", t)
             .withEntity(iq)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Set image quality to $iq"))
+      assert(b.unsafeRunSync() === Some(s"Set image quality to $iq"))
     }
   }
 
@@ -83,7 +83,7 @@ class SeqexecCommandRoutesSpec
         wv =>
           (engine.setSkyBackground _)
             .expects(*, wv, *)
-            .anyNumberOfTimes
+            .anyNumberOfTimes()
             .returning(IO.unit)
       )
     }
@@ -96,9 +96,9 @@ class SeqexecCommandRoutesSpec
             .addCookie("token", t)
             .withEntity(sb)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Set sky background to $sb"))
+      assert(b.unsafeRunSync() === Some(s"Set sky background to $sb"))
     }
   }
 
@@ -109,7 +109,7 @@ class SeqexecCommandRoutesSpec
         wv =>
           (engine.setCloudCover _)
             .expects(*, wv, *)
-            .anyNumberOfTimes
+            .anyNumberOfTimes()
             .returning(IO.unit)
       )
     }
@@ -122,9 +122,9 @@ class SeqexecCommandRoutesSpec
             .addCookie("token", t)
             .withEntity(cc)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Set cloud cover to $cc"))
+      assert(b.unsafeRunSync() === Some(s"Set cloud cover to $cc"))
     }
   }
 
@@ -133,7 +133,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.start _)
         .expects(*, *, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, clientId: ClientId) =>
@@ -147,9 +147,9 @@ class SeqexecCommandRoutesSpec
                       ))
             .addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Started sequence ${obsId.format}"))
+      assert(b.unsafeRunSync() === Some(s"Started sequence ${obsId.format}"))
     }
   }
 
@@ -158,7 +158,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.startFrom _)
         .expects(*, *, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, clientId: ClientId) =>
@@ -172,10 +172,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Started sequence ${obsId.format} from step $startFrom"
         )
       )
@@ -187,7 +187,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.requestPause _)
         .expects(*, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id) =>
@@ -198,9 +198,9 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Pause sequence ${obsId.format}"))
+      assert(b.unsafeRunSync() === Some(s"Pause sequence ${obsId.format}"))
     }
   }
 
@@ -209,7 +209,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.requestCancelPause _)
         .expects(*, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id) =>
@@ -220,9 +220,9 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
-      assert(b.unsafeRunSync === Some(s"Cancel Pause sequence ${obsId.format}"))
+      assert(b.unsafeRunSync() === Some(s"Cancel Pause sequence ${obsId.format}"))
     }
   }
 
@@ -231,7 +231,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.setBreakpoint _)
         .expects(*, *, *, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
@@ -243,10 +243,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Set breakpoint in step $toSet of sequence ${obsId.format}"
         )
       )
@@ -258,7 +258,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.setSkipMark _)
         .expects(*, *, *, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
@@ -270,10 +270,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Set skip mark in step $toSet of sequence ${obsId.format}"
         )
       )
@@ -285,7 +285,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.stopObserve _)
         .expects(*, *, false)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -297,10 +297,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Stop requested for ${obsId.format} on step $step"
         )
       )
@@ -312,7 +312,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.stopObserve _)
         .expects(*, *, true)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -324,10 +324,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Stop gracefully requested for ${obsId.format} on step $step"
         )
       )
@@ -339,7 +339,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.abortObserve _)
         .expects(*, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -351,10 +351,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Abort requested for ${obsId.format} on step $step"
         )
       )
@@ -366,7 +366,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.pauseObserve _)
         .expects(*, *, false)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -378,10 +378,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Pause observation requested for ${obsId.format} on step $step"
         )
       )
@@ -393,7 +393,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.pauseObserve _)
         .expects(*, *, true)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -406,10 +406,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Pause observation gracefully requested for ${obsId.format} on step $step"
         )
       )
@@ -421,7 +421,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.resumeObserve _)
         .expects(*, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
@@ -433,10 +433,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Resume observation requested for ${obsId.format} on step $step"
         )
       )
@@ -448,7 +448,7 @@ class SeqexecCommandRoutesSpec
     inAnyOrder {
       (engine.setObserver _)
         .expects(*, *, *, *)
-        .anyNumberOfTimes
+        .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, obs: String) =>
@@ -461,10 +461,10 @@ class SeqexecCommandRoutesSpec
         l <- s(
           Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
         ).value
-      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync
+      } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
-        b.unsafeRunSync === Some(
+        b.unsafeRunSync() === Some(
           s"Set observer name to '${obs}' for sequence ${obsId.format}"
         )
       )

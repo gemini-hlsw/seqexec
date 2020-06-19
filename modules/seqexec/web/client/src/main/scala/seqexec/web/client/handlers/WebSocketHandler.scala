@@ -84,10 +84,10 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
       }
 
     ws.binaryType = "arraybuffer"
-    ws.onopen = _ => onOpen
+    ws.onopen = _ => onOpen()
     ws.onmessage = onMessage _
-    ws.onerror = _ => onError
-    ws.onclose = _ => onClose
+    ws.onerror = _ => onError()
+    ws.onclose = _ => onClose()
     Connecting
   }.recover {
     case _: Throwable => NoAction

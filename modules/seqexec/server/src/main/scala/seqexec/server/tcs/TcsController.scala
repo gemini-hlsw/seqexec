@@ -200,8 +200,8 @@ object TcsController {
 
   final case class FocalPlaneOffset(x: Length@@OffsetX, y: Length@@OffsetY) {
     def toInstrumentOffset(iaa: Angle): InstrumentOffset = InstrumentOffset(
-      tag[OffsetP]((-x * iaa.cos + y * iaa.sin) * FOCAL_PLANE_SCALE),
-      tag[OffsetQ]((-x * iaa.sin - y * iaa.cos) * FOCAL_PLANE_SCALE)
+      tag[OffsetP]((x.unary_-() * iaa.cos + y * iaa.sin) * FOCAL_PLANE_SCALE),
+      tag[OffsetQ]((x.unary_-() * iaa.sin - y * iaa.cos) * FOCAL_PLANE_SCALE)
     )
   }
   object FocalPlaneOffset {
@@ -215,7 +215,7 @@ object TcsController {
 
   final case class InstrumentOffset(p: Angle@@OffsetP, q: Angle@@OffsetQ) {
     def toFocalPlaneOffset(iaa: Angle): FocalPlaneOffset = FocalPlaneOffset(
-      tag[OffsetX]((-p * iaa.cos - q * iaa.sin) / FOCAL_PLANE_SCALE),
+      tag[OffsetX]((p.unary_-() * iaa.cos - q * iaa.sin) / FOCAL_PLANE_SCALE),
       tag[OffsetY](( p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
     )
   }

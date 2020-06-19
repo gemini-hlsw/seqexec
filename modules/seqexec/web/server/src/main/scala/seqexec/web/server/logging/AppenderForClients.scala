@@ -37,6 +37,6 @@ class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILog
 
     // Send a message to the clients if level is INFO or higher
     // We are outside the normal execution loop, thus we need to call unsafePerformSync directly
-    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage))).unsafeRunSync
+    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage))).unsafeRunSync()
   }
 }

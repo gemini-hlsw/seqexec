@@ -12,11 +12,10 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import monocle.macros.Lenses
 import react.common._
-import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.reusability._
 import react.semanticui.colors._
 import react.semanticui.modules.progress.Progress
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
 import seqexec.web.client.model.StepItems.StepStateSummary

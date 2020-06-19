@@ -23,7 +23,7 @@ class JWTTokensSpec extends CatsSuite {
   test("JWT Tokens: encode/decode") {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
-      val token = authService.buildToken(userDetails).unsafeRunSync
+      val token = authService.buildToken(userDetails).unsafeRunSync()
       Right(userDetails) shouldEqual authService.decodeToken(token)
     }
   }

@@ -148,7 +148,7 @@ final class GuideConfigDbSpec extends AnyFlatSpec {
     implicit val ctx = IO.contextShift(scala.concurrent.ExecutionContext.global)
     val db = GuideConfigDb.newDb[IO]
 
-    val ret = db.flatMap(x => x.set(guideConfig1) *> x.value).unsafeRunSync
+    val ret = db.flatMap(x => x.set(guideConfig1) *> x.value).unsafeRunSync()
 
     ret shouldBe guideConfig1
   }

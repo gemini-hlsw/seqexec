@@ -32,7 +32,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId1)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
   it should "not add sequence id if sequence does not exists" in {
     val badObsId = Observation.Id.unsafeFromString("NonExistent-1")
@@ -45,7 +45,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => assert(exq.queue.isEmpty)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not add sequence id if sequence is running or completed" in {
@@ -67,7 +67,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => assert(exq.queue.isEmpty)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not add sequence id if already in queue" in {
@@ -82,7 +82,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId1)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine addSequencesToQueue" should
@@ -98,7 +98,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId1, seqObsId2, seqObsId3)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not add sequence id if sequence is running or completed" in {
@@ -119,7 +119,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId3)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not add sequence id if already in queue" in {
@@ -135,7 +135,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId1, seqObsId2)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine clearQueue" should
@@ -155,7 +155,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List.empty
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine removeSequenceFromQueue" should
@@ -174,7 +174,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId2)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not remove sequence id if sequence is running" in {
@@ -195,7 +195,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
         case Some(exq) => exq.queue shouldBe List(seqObsId1, seqObsId2)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine moveSequenceInQueue" should
@@ -212,7 +212,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       (for {
         q <- Queue.bounded[IO, executeEngine.EventType](10)
         r <- advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueId, obsId, n, clientId))
-      } yield r).unsafeRunSync
+      } yield r).unsafeRunSync()
 
     val sf1 = testAdvance(seqObsId2, -1)
 
@@ -316,7 +316,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s) && testCompleted(seqObsId2)(s) && testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "set observer for all sequences in queue" in {
@@ -334,7 +334,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
           s.get(seqObsId2).map(_.observer) === Some(Some(observer)) &&
           s.get(seqObsId3).map(_.observer) === Some(Some(observer))
         )
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "load the sequences to the corresponding instruments" in {
@@ -348,7 +348,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     } yield inside(s1.map(_.selected)) {
       case Some(sel1) => assert(sel1.get(Instrument.F2) === Some(seqObsId1) &&
                                 sel1.get(Instrument.GmosS) === Some(seqObsId2))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   "SeqexecEngine stopQueue" should "stop running the sequences in the queue" in {
@@ -364,7 +364,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
                       assert(!testCompleted(seqObsId2)(s))
                       assert(!testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   "SeqexecEngine start sequence" should "not run sequence not in queue if running queue needs the same resources" in {
@@ -377,7 +377,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId))
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status === SequenceState.Idle)
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "run sequence if it is in running queue and resources are available" in {
@@ -389,7 +389,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId), 2)
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status.isRunning)
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "not run sequence in running queue if resources are not available" in {
@@ -407,7 +407,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId))
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status === SequenceState.Idle)
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   "SeqexecEngine" should "not automatically schedule queued sequences stopped by the user" in {
@@ -429,7 +429,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
                       assert(testCompleted(seqObsId2)(s))
                       assert(!testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "not automatically schedule queued sequences that ended in error" in {
@@ -451,7 +451,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
         assert(testCompleted(seqObsId2)(s))
         assert(!testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "allow restarting a queued sequence stopped by the user" in {
@@ -470,7 +470,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s))
                       assert(testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "allow restarting a queued sequence that ended in error" in {
@@ -491,7 +491,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s))
                       assert(testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "not allow starting a non queued sequence if it uses resources required by a running queue" in {
@@ -509,7 +509,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(!testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   "SeqexecEngine addSequenceToQueue" should "start added sequence if queue is running and resources are available" in {
@@ -529,7 +529,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     } yield inside(sf) {
       case Some(s) => assert(testCompleted(seqObsId1)(s))
                       assert(!testCompleted(seqObsId2)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   it should "not start added sequence if queue is running but resources are unavailable" in {
@@ -548,7 +548,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     } yield inside(sf) {
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
                       assert(!testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
   "SeqexecEngine removeSequenceFromQueue" should "start sequences waiting resources freed by removed sequence" in {
@@ -577,7 +577,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       case Some(s) => assert(!testCompleted(seqObsId1)(s))
                       assert(testCompleted(seqObsId2)(s))
                       assert(testCompleted(seqObsId3)(s))
-    } ).unsafeRunSync
+    } ).unsafeRunSync()
   }
 
 }
