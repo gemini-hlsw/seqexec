@@ -65,6 +65,8 @@ trait SeqexecEngine[F[_]] {
 
   def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit]
 
+  def resetConditions(q: EventQueue[F]): F[Unit]
+
   def setConditions(q: EventQueue[F], conditions: Conditions, user: UserDetails): F[Unit]
 
   def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit]
@@ -233,6 +235,10 @@ object SeqexecEngine {
     override def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Updating loaded sequences") *>
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent]((EngineState.selected[F].set(Map.empty) withEvent ClearLoadedSequences(user.some)).toHandle))
+
+    override def resetConditions(q: EventQueue[F]): F[Unit] =
+      logDebugEvent(q, "SeqexecEngine: Reset conditions") *>
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent]((EngineState.conditions[F].set(Conditions.Default) >>> refreshSequences withEvent SetConditions(Conditions.Default, None)).toHandle))
 
     override def setConditions(q: EventQueue[F], conditions: Conditions, user: UserDetails): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Setting conditions") *>
