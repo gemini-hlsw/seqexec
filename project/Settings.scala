@@ -20,7 +20,7 @@ object Settings {
     val scalaJSSemanticUI       = "0.5.3"
     val scalaJSReactVirtualized = "0.9.0"
     val scalaJSReactClipboard   = "1.1.0"
-    val scalaJSReactDraggable   = "0.9.0"
+    val scalaJSReactDraggable   = "0.9.1"
     val scalaJSReactSortable    = "0.4.0"
 
     // Scala libraries
@@ -78,9 +78,9 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val gspMath = "0.2.0"
-    val gspCore = "0.2.0"
-    val gppUI   = "0.1.2"
+    val gspMath = "0.2.2"
+    val gspCore = "0.2.4"
+    val gppUI   = "0.1.5"
   }
 
   /**

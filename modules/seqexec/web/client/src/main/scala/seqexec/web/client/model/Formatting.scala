@@ -40,7 +40,7 @@ object Formatting {
     s"${show.format}"
 
   def offsetAngle(off: Angle): String =
-    f" ${Angle.signedArcseconds.get(off).toDouble}%03.2f″"
+    f" ${Angle.signedDecimalArcseconds.get(off).toDouble}%03.2f″"
 
   def axisLabelWidth[A](implicit show: OffsetFormat[A]): Double =
     tableTextWidth(offsetAxis[A])

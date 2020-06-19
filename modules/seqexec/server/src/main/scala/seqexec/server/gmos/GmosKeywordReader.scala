@@ -44,7 +44,7 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config
     Gmos.nodAndShuffle(config).explainExtractError[F]
       .flatMap(
         _.positions.find(_.stage === stage)
-          .map{x => Angle.signedArcseconds.get(l.get(x.offset)).toDouble.pure[F]}
+          .map{x => Angle.signedDecimalArcseconds.get(l.get(x.offset)).toDouble.pure[F]}
           .getOrElse(SeqexecFailure.Unexpected(s"Cannot find stage ${stage.symbol} parameters in step configuration.")
             .raiseError[F, Double]
           )
