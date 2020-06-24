@@ -321,9 +321,7 @@ object NiriControllerEpics extends NiriEncoders {
           calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.post(_).flatTap{ _ => L.debug("Completed NIRI observe") })
 
       override def endObserve: F[Unit] =
-        L.debug("Send endObserve to NIRI") *>
-          epicsSys.endObserveCmd.mark *>
-          epicsSys.endObserveCmd.post(DefaultTimeout).void
+        L.debug("Skipped sending endObserve to NIRI")
 
       override def stopObserve: F[Unit] =
         L.debug("Stop NIRI exposure") *>
