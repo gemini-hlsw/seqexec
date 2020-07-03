@@ -18,6 +18,14 @@ final case class Conditions(
 
 object Conditions {
 
+  val Unknown: Conditions =
+    Conditions(
+      CloudCover.Unknown,
+      ImageQuality.Unknown,
+      SkyBackground.Unknown,
+      WaterVapor.Unknown
+    )
+
   val Worst: Conditions =
     Conditions(
       CloudCover.Any,
@@ -45,12 +53,10 @@ object Conditions {
     )
 
   val Default: Conditions =
-    Worst // Taken from ODB
+    Unknown // Taken from ODB
 
   implicit val equalConditions: Eq[Conditions] =
     Eq.by(x => (x.cc, x.iq, x.sb, x.wv))
 
-  implicit val showConditions: Show[Conditions] =
-    Show.show(x => List(x.cc, x.iq, x.sb, x.wv).mkString(", "))
 
 }
