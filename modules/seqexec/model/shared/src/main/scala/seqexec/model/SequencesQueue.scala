@@ -27,7 +27,6 @@ final case class SequencesQueue[T](
 )
 
 object SequencesQueue {
-
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
     Eq.by(x => (x.loaded, x.conditions, x.operator, x.queues, x.sessionQueue))
 

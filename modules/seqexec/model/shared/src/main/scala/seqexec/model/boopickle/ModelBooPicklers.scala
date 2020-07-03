@@ -35,7 +35,7 @@ import squants.time.TimeConversions._
 
 /**
   * Contains boopickle implicit picklers of model objects
-  * Boopickle can auto derived encoders but it is preferred to make
+  * Boopickle can auto derive encoders but it is preferred to make
   * them explicitly
   */
 trait ModelBooPicklers extends GemModelBooPicklers {
