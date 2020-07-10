@@ -33,7 +33,7 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
 
   implicit protected val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  protected def deriveNewState(props: P, state: State): State = 
+  protected def deriveNewState(props: P, state: State): State =
     if (props.paused =!= state.prevPaused || props.stopping =!= state.prevStopping) {
       state
     } else if (props.stopping) {
@@ -50,7 +50,7 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
     def setupTimer: Callback =
       setInterval(tickTotal, periodUpdate.millisecond)
 
-    def tickTotal: Callback = 
+    def tickTotal: Callback =
       b.props.zip(b.state) >>= {
         case (p, s) =>
           val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)

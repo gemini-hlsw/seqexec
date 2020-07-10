@@ -412,13 +412,13 @@ object CalQueueTable {
             .map(_.id)
             .lift(c.oldIndex)
         movedObsId.map(obsId =>
-          SeqexecCircuit.dispatchCB(RequestMoveCal(p.queueId, obsId, c.newIndex - c.oldIndex)) >> 
+          SeqexecCircuit.dispatchCB(RequestMoveCal(p.queueId, obsId, c.newIndex - c.oldIndex)) >>
             b.setStateL(State.moved)((obsId, c).some)
         ).getOrEmpty
       })
 
     def resetAnim(p: Props): Callback =
-      SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId)) 
+      SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId))
         .when(p.data.lastOp.isDefined).void
 
      def render(p: Props, s: State): VdomElement = {
@@ -464,7 +464,7 @@ object CalQueueTable {
     .builder[Props]
     .initialStateFromProps(initialState)
     .renderBackend[CalQueueTableBackend]
-    .getDerivedStateFromProps{ (props, state) => 
+    .getDerivedStateFromProps{ (props, state) =>
       // This is a bit tricky. if the last op has changed we allow animation
       val opChanged = props.data.lastOp =!= state.prevLastOp
 
@@ -473,12 +473,11 @@ object CalQueueTable {
         case false => state.animationRendered
       }
 
-      val moved = state.moved.filter{case (obsId, ic) => 
+      val moved = state.moved.filter { case (obsId, ic) =>
         props.data.seqs
             .map(_.id)
             .lift(ic.newIndex)
             .forall(_ =!= obsId)
-      
       }
 
       val cols = if (props.data.loggedIn) {
@@ -490,7 +489,7 @@ object CalQueueTable {
       (
         State.animationRendered.set(animationRendered) >>>
         State.moved.set(moved) >>>
-        State.columns.set(cols) >>> 
+        State.columns.set(cols) >>>
         State.prevLastOp.set(props.data.lastOp)
       )(state)
     }
