@@ -123,7 +123,7 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
  * Type parameter BaseEpicsTcsConfig is the class used to hold the current configuration
  */
 object TcsControllerEpicsCommon {
-  private def mustPauseWhileOffsetting(current: BaseEpicsTcsConfig, demand: BasicTcsConfig): Boolean = {
+  private[tcs] def mustPauseWhileOffsetting(current: BaseEpicsTcsConfig, demand: BasicTcsConfig): Boolean = {
     val distanceSquared = demand.tc.offsetA.map(_.toFocalPlaneOffset(current.iaa))
       .map { o => (o.x - current.offset.x, o.y - current.offset.y) }
       .map(d => d._1 * d._1 + d._2 * d._2)

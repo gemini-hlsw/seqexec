@@ -527,7 +527,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         xoff <- OptionT(xOffsetOption)
         yoff <- OptionT(yOffsetOption)
         iaa  <- OptionT.liftF(sys.instrAA.map(Degrees(_)))
-      } yield  -1*xoff * iaa.cos + yoff * iaa.sin
+      } yield xoff * -1 * iaa.cos + yoff * iaa.sin
     ).value
      .handleError(_ => none)
 

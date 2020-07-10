@@ -66,15 +66,13 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     DummyInstrument(None)
   )
 
-  private val mustPauseWhileOffsetting = PrivateMethod[Boolean](Symbol("mustPauseWhileOffsetting"))
-
   // The test uses only NIRI, although the threshold can be different for each instrument. The reason is that the
   // goal of the test is to check that it works in general, not to test for the specific threshold of every
   // instrument.
   it should "decide if it can keep Altair guiding active when applying an offset" in {
     val niriAoThreshold = Arcseconds(3.0)
     //Big offset with Altair in use
-    TcsNorthControllerEpicsAo invokePrivate mustPauseWhileOffsetting(
+    TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(
@@ -95,7 +93,7 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
       )(baseConfig)
     ) shouldBe true
 
-    TcsNorthControllerEpicsAo invokePrivate mustPauseWhileOffsetting(
+    TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(
@@ -117,7 +115,7 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     ) shouldBe true
 
     //Small offset with Altair in use
-    TcsNorthControllerEpicsAo invokePrivate mustPauseWhileOffsetting(
+    TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(

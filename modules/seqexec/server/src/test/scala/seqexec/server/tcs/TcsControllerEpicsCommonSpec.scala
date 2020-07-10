@@ -70,17 +70,15 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     DummyInstrument(Instrument.GmosS, (1.millimeters).some)
   )
 
-  private val mustPauseWhileOffsetting = PrivateMethod[Boolean](Symbol("mustPauseWhileOffsetting"))
-
   "TcsControllerEpicsCommon" should "not pause guiding if it is not necessary" in {
     //No offset
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       baseConfig
     ) shouldBe false
 
     //Offset, but no guider in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
         InstrumentOffset(
@@ -93,7 +91,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
 
   it should "decide if it can keep PWFS1 guiding active when applying an offset" in {
     //Big offset with PWFS1 in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -113,7 +111,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
         ) (baseConfig)
     ) shouldBe true
 
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -134,7 +132,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     ) shouldBe true
 
     //Small offset with PWFS1 in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -157,7 +155,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
 
   it should "decide if it can keep PWFS2 guiding active when applying an offset" in {
     //Big offset with PWFS2 in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -177,7 +175,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
         )(baseConfig)
     ) shouldBe true
 
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -198,7 +196,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     ) shouldBe true
 
     //Small offset with PWFS2 in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -224,7 +222,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     val threshold = Millimeters(1.0)
 
     //Big offset with OIWFS in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -245,7 +243,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
         )(baseConfig)
     ) shouldBe true
 
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -267,7 +265,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     ) shouldBe true
 
     //Small offset with OIWFS in use
-    TcsControllerEpicsCommon invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
