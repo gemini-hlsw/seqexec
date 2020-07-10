@@ -9,7 +9,6 @@ import gem.util.Enumerated
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.MonocleReact._
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.colors._

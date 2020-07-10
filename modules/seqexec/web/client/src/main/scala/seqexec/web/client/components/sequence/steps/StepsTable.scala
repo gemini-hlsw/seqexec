@@ -50,7 +50,6 @@ import web.client.table._
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Resource
 import seqexec.web.client.model.ResourceRunOperation
-import cats.kernel.Semigroup
 
 trait Columns {
   val ControlWidth: Double          = 40
@@ -480,7 +479,7 @@ object StepsTable extends Columns {
     prevSelectedStep:         Option[StepId],
     prevSequenceState:        Option[SequenceState],
     prevRunning:              Option[RunningStep],
-    prevResourceRunRequested: SortedMap[Resource, ResourceRunOperation],    
+    prevResourceRunRequested: SortedMap[Resource, ResourceRunOperation],
     recomputeFrom:            Option[Int], // Min row to recompute heights from
     runNewStep:               Option[(StepId, Boolean)] // (New running step, scroll to it?)
   ) {
@@ -1046,7 +1045,7 @@ object StepsTable extends Columns {
 
   def initialState(p: Props): State =
     (
-      State.tableState.set(p.tableState) >>> 
+      State.tableState.set(p.tableState) >>>
       State.selected.set(p.selectedStep) >>>
       State.prevStepSummaries.set(p.stepsList.map(StepSummary.fromStep)) >>>
       State.prevSelectedStep.set(p.selectedStep) >>>
@@ -1063,7 +1062,7 @@ object StepsTable extends Columns {
     nextStep:     Option[RunningStep],
     curSeqState:  Option[SequenceState],
     nextSeqState: Option[SequenceState]
-  )(f: Option[(StepId, Boolean)] => A): A = 
+  )(f: Option[(StepId, Boolean)] => A): A =
     (curStep, nextStep) match {
       case (Some(RunningStep(i, _)), None) =>
         // This happens when a sequence stops, e.g. with a pasue
@@ -1089,7 +1088,7 @@ object StepsTable extends Columns {
       val propsStepSummaries = p.stepsList.map(StepSummary.fromStep)
       propsStepSummaries
         .zip(s.prevStepSummaries)
-        .collect{ 
+        .collect{
           case(cur, prev) if cur.status =!= prev.status         => cur.id
           case(cur, prev) if cur.breakpoint =!= prev.breakpoint => cur.id
         }
@@ -1111,9 +1110,9 @@ object StepsTable extends Columns {
         .map(stepId => (stepId, State.prevResourceRunRequested.set(p.tabOperations.resourceRunRequested)))
 
     // Recompute selected step
-    val runningSelectedStepUpdate: Option[State => State] = 
+    val runningSelectedStepUpdate: Option[State => State] =
       selectStep[Option[State => State]](s.prevRunning, p.runningStep, s.prevSequenceState, p.sequenceState)(
-        _.map{ case (stepId, scroll) => 
+        _.map{ case (stepId, scroll) =>
           Function.chain(
             State.selected.set(stepId.some).some.filter(_ => p.canControlSubsystems(stepId)).toList :+
               State.runNewStep.set((stepId, scroll).some)
@@ -1150,15 +1149,15 @@ object StepsTable extends Columns {
 
       scrollToCB(prevP, currP) *>
         currP.obsId.zip($.currentState.runNewStep).map{ case (obsId, (stepId, scroll)) =>
-          updateStep(obsId, stepId) *> scrollTo(stepId).when(scroll).void *> 
+          updateStep(obsId, stepId) *> scrollTo(stepId).when(scroll).void *>
             $.setStateL(State.runNewStep)(none) // This does't cause a loop because runNewStep is not in State reusability.
         }.getOrEmpty *>
-        $.currentState.recomputeFrom.map(recomputeRowHeightsCB).getOrEmpty *> 
+        $.currentState.recomputeFrom.map(recomputeRowHeightsCB).getOrEmpty *>
         $.setStateL(State.recomputeFrom)(none) *>  // This does't cause a loop because recomputeFrom is not in State reusability.
         computeScrollBarWidth >>= { sw => $.setStateL(State.scrollBarWidth)(sw).when(sw =!= $.currentState.scrollBarWidth).void }
     }
   }
- 
+
 
   protected val component = ScalaComponent
     .builder[Props]

@@ -30,7 +30,7 @@ import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
 import gpp.ui.forms.EnumSelect
 import gpp.ui.forms.InputEV
-import gpp.ui.forms.InputOptics
+import gpp.ui.forms.InputFormat
 
 /**
   * Container for a table with the steps
@@ -167,11 +167,11 @@ object HeadersSideBar {
             <.div(
               ^.cls := "eight wide field",
               FormLabel("Operator", Some("operator")),
-              InputEV[Operator](
+              InputEV[StateSnapshot, Operator](
                 "operator",
                 "operator",
                 operatorEV,
-                InputOptics.fromIso(Operator.valueI.reverse),
+format =                 InputFormat.fromIso(Operator.valueI.reverse),
                 placeholder = "Operator...",
                 disabled    = !enabled,
                 onBlur      = _ => submitIfChangedOp
@@ -180,11 +180,11 @@ object HeadersSideBar {
             <.div(
               ^.cls := "eight wide field",
               FormLabel(observerField, Some("observer")),
-              InputEV[Observer](
+              InputEV[StateSnapshot, Observer](
                 "observer",
                 "observer",
                 observerEV,
-                InputOptics.fromIso(Observer.valueI.reverse),
+                format = InputFormat.fromIso(Observer.valueI.reverse),
                 placeholder = "Observer...",
                 disabled    = !enabled || obsCompleted,
                 onBlur      = _ => submitIfChangedOb
@@ -224,7 +224,7 @@ object HeadersSideBar {
     .builder[HeadersSideBar]
     .getDerivedStateFromPropsAndState[State]{ (p, sOpt) =>
       val operator = p.model.operator
-      val observer = 
+      val observer =
         p.selectedObserver match {
           case Right(Right(a)) => a.observer
           case Right(Left(a))  => a.observer
@@ -246,7 +246,7 @@ object HeadersSideBar {
             .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
             .orEmpty
         )(s)
-      }       
+      }
     }
     .renderBackend[Backend]
     .configure(TimerSupport.install)

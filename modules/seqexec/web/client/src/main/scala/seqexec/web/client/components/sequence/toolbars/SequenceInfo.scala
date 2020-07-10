@@ -16,7 +16,6 @@ import seqexec.model.UnknownTargetName
 import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
-import scala.annotation.nowarn
 
 final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps[SequenceInfo](SequenceInfo.component)
 
