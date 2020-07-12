@@ -24,7 +24,7 @@ object Settings {
     val scalaJSReactSortable    = "0.3.1"
 
     // Scala libraries
-    val catsEffectVersion   = "2.1.3"
+    val catsEffectVersion   = "2.1.4"
     val catsVersion         = "2.1.1"
     val mouseVersion        = "0.24"
     val fs2Version          = "2.4.2"
