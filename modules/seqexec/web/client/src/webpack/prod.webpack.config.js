@@ -39,12 +39,6 @@ const Web = Merge(
       publicPath: "/" // Required to make url navigation work
     },
     plugins: [
-      // Useful to further minify react and make it faster in production
-      new Webpack.DefinePlugin({
-        "process.env": {
-          NODE_ENV: JSON.stringify("production")
-        }
-      }),
       new HtmlWebpackPlugin({
         title: "Seqexec",
         filename: "index.html",

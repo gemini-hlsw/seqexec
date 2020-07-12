@@ -250,7 +250,7 @@ lazy val seqexec_web_client = project
       "mini-css-extract-plugin" -> "0.8.0",
       "webpack-dev-server-status-bar" -> "1.1.0",
       "cssnano" -> "4.1.10",
-      "uglifyjs-webpack-plugin" -> "2.2.0",
+      "terser-webpack-plugin" -> "3.0.6",
       "html-webpack-plugin" -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
       "favicons-webpack-plugin" -> "1.0.2",
