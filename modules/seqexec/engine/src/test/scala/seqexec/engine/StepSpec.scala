@@ -19,7 +19,7 @@ import seqexec.engine.TestUtil.TestState
 import seqexec.engine.EventResult._
 import seqexec.engine.SystemEvent._
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
+import seqexec.model.{ClientId, SequenceState, StepState}
 import seqexec.model.enum.Resource
 import seqexec.model.{ActionType, UserDetails}
 import scala.Function.const
@@ -172,13 +172,13 @@ class StepSpec extends CatsSuite {
   def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
+    ).compile.last.unsafeRunSync().map(_._2)
   }
 
   def runToCompletionL(s0: TestState): List[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.toVector.unsafeRunSync.map(_._2).toList
+    ).compile.toVector.unsafeRunSync().map(_._2).toList
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
@@ -299,7 +299,7 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qs1 = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.cancelPause[IO, TestState, Unit](seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qs1 = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.cancelPause[IO, TestState, Unit](seqId, user))))(qs0).take(1).compile.last.unsafeRunSync().map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(_, status, _)) =>
@@ -330,7 +330,7 @@ class StepSpec extends CatsSuite {
           )
         )
       )
-    val qss = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.pause[IO, TestState, Unit](seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qss = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.pause[IO, TestState, Unit](seqId, user))))(qs0).take(1).compile.last.unsafeRunSync().map(_._2)
 
     inside (qss.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
@@ -370,7 +370,7 @@ class StepSpec extends CatsSuite {
 
     val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, clientId, always)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.toVector)}.unsafeRunSync
+    ).compile.toVector)}.unsafeRunSync()
 
     val actionsCompleted = qss.map(_._1).collect{case SystemUpdate(x: Completed[_], _) => x}
     assert(actionsCompleted.length == 4)

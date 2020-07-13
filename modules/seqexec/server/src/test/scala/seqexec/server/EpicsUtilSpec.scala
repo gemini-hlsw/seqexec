@@ -24,7 +24,7 @@ class EpicsUtilSpec extends AnyFlatSpec {
     attr.setValue(1)
     (IO.delay(filtered.restart) *>
       EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), "")
-    ).unsafeRunSync
+    ).unsafeRunSync()
   }
 
 }

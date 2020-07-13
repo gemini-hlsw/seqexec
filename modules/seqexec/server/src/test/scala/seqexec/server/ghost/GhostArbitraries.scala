@@ -11,7 +11,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
 
 trait GhostArbitraries extends ArbTime {
 

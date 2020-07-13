@@ -6,6 +6,7 @@ package web.client
 import cats.implicits._
 import scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
+import scala.annotation.nowarn
 
 /**
   * JS Facade for HTML5 audio
@@ -15,6 +16,7 @@ import scala.scalajs.js.annotation.JSGlobal
 class Audio(val src: String) extends js.Object {
   def play(): js.Any  = js.native
   def pause(): js.Any = js.native
+  @nowarn
   def canPlayType(tp: String): String = js.native
 }
 

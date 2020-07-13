@@ -207,6 +207,7 @@ lazy val seqexec_web_client = project
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     // Configurations for webpack
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS := BundlingMode.Application,

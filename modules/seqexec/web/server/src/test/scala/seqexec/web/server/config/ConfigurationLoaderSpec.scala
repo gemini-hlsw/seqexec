@@ -58,7 +58,7 @@ class ConfigurationLoaderSpec extends CatsSuite {
   val blocker = Blocker.liftExecutionContext(ExecutionContext.global)
   test("read config") {
     assert(
-      loadConfiguration[IO](ConfigSource.string(conf), blocker).unsafeRunSync === ref
+      loadConfiguration[IO](ConfigSource.string(conf), blocker).unsafeRunSync() === ref
     )
   }
 

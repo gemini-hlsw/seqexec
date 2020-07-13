@@ -16,7 +16,7 @@ import io.chrisdavenport.log4cats.Logger
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import seqexec.engine.Sequence.State.Final
-import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
+import seqexec.model.{ClientId, SequenceState, StepState}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ActionType, UserDetails}
@@ -119,12 +119,12 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
       )
     )(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
+    ).compile.last.unsafeRunSync().map(_._2)
   }
 
   it should "be in Running status after starting" in {
     val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
-    val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync().map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
 
@@ -156,7 +156,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
 
     //take(3): Start, Executing, Paused
-    executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
+    executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync().map(_._2)
   }
 
   "sequence state" should "stay as running when action pauses itself" in {
@@ -422,7 +422,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
       executionEngine.startSingle(ActionCoords(seqId, c)).void
     )
     val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
-      .map(_._2).take(2).compile.toList.unsafeRunSync
+      .map(_._2).take(2).compile.toList.unsafeRunSync()
 
     /**
      * First state update must have the action started.
@@ -483,7 +483,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     val sf = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(qs2).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
+    ).compile.last.unsafeRunSync().map(_._2)
 
     inside (sf.flatMap(_.sequences.get(seqId).map(_.toSequence))) {
       case Some(seq) => assertResult(Some(StepState.Completed))(seq.steps.get(0).map(_.status))

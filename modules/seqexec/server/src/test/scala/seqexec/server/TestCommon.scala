@@ -27,7 +27,6 @@ import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs._
 import seqexec.model.config._
-import seqexec.server.keywords.GdsClient
 import seqexec.server.altair.{AltairControllerSim, AltairKeywordReaderDummy}
 import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.{DummyGcalKeywordsReader, GcalControllerSim}
@@ -147,7 +146,7 @@ object TestCommon {
   def testCompleted(oid: Observation.Id)(st: EngineState[IO]): Boolean = st.sequences.get(oid)
     .exists(_.seq.status.isCompleted)
 
-  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
+  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
 
   private val gpiSim: IO[GpiController[IO]] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
     new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
@@ -196,9 +195,9 @@ object TestCommon {
         AltairKeywordReaderDummy[IO],
         GemsKeywordReaderDummy[IO],
         DummyGwsKeywordsReader[IO]
-      )}.unsafeRunSync
+      )}.unsafeRunSync()
 
-  val seqexecEngine: SeqexecEngine[IO] = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync
+  val seqexecEngine: SeqexecEngine[IO] = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync()
 
   def advanceOne(q: EventQueue[IO], s0: EngineState[IO], put: IO[Unit]): IO[Option[EngineState[IO]]] =
     advanceN(q, s0, put, 1L)

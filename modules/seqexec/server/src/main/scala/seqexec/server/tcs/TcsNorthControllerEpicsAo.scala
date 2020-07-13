@@ -46,24 +46,24 @@ object TcsNorthControllerEpicsAo {
     case _                => none
   }
 
-    private def mustPauseWhileOffsetting(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): Boolean = {
-      val distanceSquared = demand.tc.offsetA.map(_.toFocalPlaneOffset(current.base.iaa))
-        .map { o => (o.x - current.base.offset.x, o.y - current.base.offset.y) }
-        .map(d => d._1 * d._1 + d._2 * d._2)
+  private[tcs] def mustPauseWhileOffsetting(current: EpicsTcsAoConfig, demand: TcsNorthAoConfig): Boolean = {
+    val distanceSquared = demand.tc.offsetA.map(_.toFocalPlaneOffset(current.base.iaa))
+      .map { o => (o.x - current.base.offset.x, o.y - current.base.offset.y) }
+      .map(d => d._1 * d._1 + d._2 * d._2)
 
-      val aoThreshold = aoOffsetThreshold(demand.inst.instrument)
-          .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.GAOS, M1Source.GAOS) && demand.gds.aoguide.isActive)
+    val aoThreshold = aoOffsetThreshold(demand.inst.instrument)
+        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.GAOS, M1Source.GAOS) && demand.gds.aoguide.isActive)
 
-      val thresholds = List(
-        (Tcs.calcGuiderInUse(demand.gc, TipTiltSource.PWFS1, M1Source.PWFS1) && demand.gds.pwfs1.isActive)
-          .option(pwfs1OffsetThreshold),
-        aoThreshold,
-        demand.inst.oiOffsetGuideThreshold
-          .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive)
-      )
-      // Does the offset movement surpass any of the existing thresholds ?
-      distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
-    }
+    val thresholds = List(
+      (Tcs.calcGuiderInUse(demand.gc, TipTiltSource.PWFS1, M1Source.PWFS1) && demand.gds.pwfs1.isActive)
+        .option(pwfs1OffsetThreshold),
+      aoThreshold,
+      demand.inst.oiOffsetGuideThreshold
+        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive)
+    )
+    // Does the offset movement surpass any of the existing thresholds ?
+    distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
+  }
 
   private final class TcsNorthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(implicit L: Logger[F]) extends TcsNorthControllerEpicsAo[F] with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)

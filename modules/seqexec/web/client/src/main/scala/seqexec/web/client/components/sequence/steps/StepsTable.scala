@@ -8,13 +8,9 @@ import cats.Eq
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.builder.Lifecycle.{
-  ComponentDidUpdate,
-  ComponentWillReceiveProps,
-  RenderScope
-}
-import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.component.builder.Lifecycle._
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
@@ -39,7 +35,6 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.components.sequence.steps.StepsTable.{ State, StepRow }
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Formatting._

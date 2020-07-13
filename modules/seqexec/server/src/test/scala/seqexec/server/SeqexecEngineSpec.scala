@@ -29,7 +29,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.flatMap(EngineState.operator.get)) {
         case Some(op) => op shouldBe operator
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine setImageQuality" should "set Image Quality condition" in {
@@ -43,7 +43,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) {
         case Some(op) => op shouldBe iq
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
 
   }
 
@@ -57,7 +57,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) {
         case Some(op) => op shouldBe wv
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine setCloudCover" should "set Cloud Cover condition" in {
@@ -70,7 +70,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) {
         case Some(op) => op shouldBe cc
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine setSkyBackground" should "set Sky Background condition" in {
@@ -83,7 +83,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) {
         case Some(op) => op shouldBe sb
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine setObserver" should "set observer's name" in {
@@ -96,7 +96,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
         case Some(op) => op shouldBe observer
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine" should "not run 2nd sequence because it's using the same resource" in {
@@ -114,7 +114,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
 
   }
 
@@ -133,7 +133,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine configSystem" should "run a system configuration" in {
@@ -149,7 +149,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not run a system configuration if sequence is running" in {
@@ -167,7 +167,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not run a system configuration if system is in use" in {
@@ -187,7 +187,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "run a system configuration when other sequence is running with other systems" in {
@@ -207,7 +207,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine startFrom" should "start a sequence from an arbitrary step" in {
@@ -226,7 +226,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                             assertResult(Some(StepState.Skipped))(steps.get(1).map(_.status))
                             assertResult(Some(StepState.Completed))(steps.get(2).map(_.status))
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "SeqexecEngine startFrom" should "not start the sequence if there is a resource conflict" in {
@@ -249,7 +249,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
 }

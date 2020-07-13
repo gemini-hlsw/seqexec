@@ -136,7 +136,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.flatMap(EngineState.operator.get)) {
         case Some(op) => op shouldBe operator
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView setImageQuality" should "set Image Quality condition" in {
@@ -150,7 +150,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) {
         case Some(op) => op shouldBe iq
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
 
   }
 
@@ -164,7 +164,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) {
         case Some(op) => op shouldBe wv
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView setCloudCover" should "set Cloud Cover condition" in {
@@ -177,7 +177,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) {
         case Some(op) => op shouldBe cc
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView setSkyBackground" should "set Sky Background condition" in {
@@ -190,7 +190,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) {
         case Some(op) => op shouldBe sb
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView setObserver" should "set observer's name" in {
@@ -203,7 +203,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
         case Some(op) => op shouldBe observer
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView" should "not run 2nd sequence because it's using the same resource" in {
@@ -221,7 +221,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
 
   }
 
@@ -240,7 +240,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView configSystem" should "run a system configuration" in {
@@ -256,7 +256,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not run a system configuration if sequence is running" in {
@@ -274,7 +274,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "not run a system configuration if system is in use" in {
@@ -294,7 +294,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   it should "run a system configuration when other sequence is running with other systems" in {
@@ -314,7 +314,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView startFrom" should "start a sequence from an arbitrary step" in {
@@ -333,7 +333,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                             assertResult(Some(StepState.Skipped))(steps.get(1).map(_.status))
                             assertResult(Some(StepState.Completed))(steps.get(2).map(_.status))
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
   "StepsView startFrom" should "not start the sequence if there is a resource conflict" in {
@@ -356,7 +356,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
-    }).unsafeRunSync
+    }).unsafeRunSync()
   }
 
 }

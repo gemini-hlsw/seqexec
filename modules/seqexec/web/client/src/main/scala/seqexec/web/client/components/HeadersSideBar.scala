@@ -6,15 +6,11 @@ package seqexec.web.client.components
 import cats.Eq
 import cats.implicits._
 import cats.Show
-import japgolly.scalajs.react.BackendScope
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.CatsReact._
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
 import react.common._

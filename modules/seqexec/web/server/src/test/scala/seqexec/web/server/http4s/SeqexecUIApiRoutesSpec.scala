@@ -22,7 +22,7 @@ class SeqexecUIApiRoutesSpec
         s.apply(Request(method = Method.POST, uri = uri("/seqexec/login")))
           .value
       ).map(_.status).value
-    } yield assert(r === Some(Status.BadRequest))).unsafeRunSync
+    } yield assert(r === Some(Status.BadRequest))).unsafeRunSync()
   }
 
   test("SeqexecUIApiRoutes login: reject GET requests") {
@@ -33,7 +33,7 @@ class SeqexecUIApiRoutesSpec
       r <- Nested(
         s.apply(Request(method = Method.GET, uri = uri("/seqexec/login"))).value
       ).map(_.status).value
-    } yield r).unsafeRunSync
+    } yield r).unsafeRunSync()
     assert(r === Some(Status.NotFound))
   }
 
@@ -49,7 +49,7 @@ class SeqexecUIApiRoutesSpec
       s <- r.map(_.status).pure[IO]
       k <- r.map(_.cookies).orEmpty.pure[IO]
       t = k.find(_.name === "token")
-    } yield assert(t.isDefined && s === Some(Status.Ok))).unsafeRunSync
+    } yield assert(t.isDefined && s === Some(Status.Ok))).unsafeRunSync()
   }
 
   test("SeqexecUIApiRoutes logout: successful logout clears the cookie") {
@@ -64,7 +64,7 @@ class SeqexecUIApiRoutesSpec
       k <- r.map(_.cookies).orEmpty.pure[IO]
       t = k.find(_.name === "token")
       c = t.map(_.content).exists(_ === "") // Cleared cookie
-    } yield assert(c && s === Some(Status.Ok))).unsafeRunSync
+    } yield assert(c && s === Some(Status.Ok))).unsafeRunSync()
   }
 
   test("SeqexecUIApiRoutes site") {
@@ -76,7 +76,7 @@ class SeqexecUIApiRoutesSpec
           .addCookie("token", t)
       ).value
       s <- r.map(_.as[String]).sequence
-    } yield assert(s === Some("GS"))).unsafeRunSync
+    } yield assert(s === Some("GS"))).unsafeRunSync()
   }
 
 }

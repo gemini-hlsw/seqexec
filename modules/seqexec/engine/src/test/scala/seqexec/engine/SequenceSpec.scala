@@ -88,7 +88,7 @@ class SequenceSpec extends AnyFlatSpec {
       )
     )(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
+    ).compile.last.unsafeRunSync().map(_._2)
 
   it should "stop on breakpoints" in {
 
