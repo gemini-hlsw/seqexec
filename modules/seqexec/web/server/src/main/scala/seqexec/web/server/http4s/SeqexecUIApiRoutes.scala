@@ -132,8 +132,6 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
 
       case ws @ GET -> Root / "seqexec" / "events" as user        =>
         // If the user didn't login, anonymize
-        def debug(clientId: ClientId): SeqexecEvent => Stream[F, SeqexecEvent] = (e: SeqexecEvent) =>
-          Stream.eval(L.debug(s"${clientId.self} ${e.getClass.getName}") *> e.pure[F])
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
 
         def initialEvent(clientId: ClientId): Stream[F, WebSocketFrame] =
@@ -145,7 +143,6 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](site: Site,
             .map(anonymizeF)
             .filter(filterOutNull)
             .filter(filterOutOnClientId(clientId))
-            .flatMap(debug(clientId))
             .map(toFrame)
         val clientSocket = (ws.req.remoteAddr, ws.req.remotePort).mapN((a, p) => s"$a:$p").orEmpty
         val userAgent = ws.req.headers.get(`User-Agent`)
