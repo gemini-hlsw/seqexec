@@ -4,7 +4,7 @@
 package seqexec.server.keywords
 
 import cats.implicits._
-import cats.{ Eq, MonadError }
+import cats.Eq
 import cats.data.EitherT
 import cats.data.Nested
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
@@ -18,12 +18,13 @@ import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import gem.enum.Site
 import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
-import java.time.{ Instant, LocalDate, LocalDateTime, ZoneId }
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
+import cats.effect.Sync
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
-import seqexec.server.{ CleanConfig, ConfigUtilOps, SeqexecFailure }
+import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.Tcs
@@ -91,7 +92,7 @@ final case class TimingWindowKeywords(
 )
 
 object ObsKeywordReader extends ObsKeywordsReaderConstants {
-  def apply[F[_]: MonadError[?[_], Throwable]](config: CleanConfig, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
+  def apply[F[_]: Sync](config: CleanConfig, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
     // Format used on FITS keywords
     val telescopeName: String = site match {
       case Site.GN => "Gemini-North"
@@ -303,12 +304,14 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
           }
           .leftMap(explainExtractError)
           .map { v =>
-            LocalDate
+            Sync[F].delay(
+              LocalDate
               .now(ZoneId.of("GMT"))
               .plusMonths(v.toLong)
               .format(DateTimeFormatter.ISO_LOCAL_DATE)
+            )
           }
-          .pure[F]
+          .sequence
       ).widenRethrowT
 
     override def releaseDate: F[String] = calcReleaseDate
