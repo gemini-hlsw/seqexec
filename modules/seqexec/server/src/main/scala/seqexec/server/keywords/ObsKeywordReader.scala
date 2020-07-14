@@ -4,7 +4,7 @@
 package seqexec.server.keywords
 
 import cats.implicits._
-import cats.{ Eq, MonadError }
+import cats.Eq
 import cats.data.EitherT
 import cats.data.Nested
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
@@ -18,12 +18,13 @@ import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import gem.enum.Site
 import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
-import java.time.{ Instant, LocalDate, LocalDateTime, ZoneId }
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
+import cats.effect.Sync
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
-import seqexec.server.{ CleanConfig, ConfigUtilOps, SeqexecFailure }
+import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.Tcs
@@ -52,7 +53,7 @@ sealed trait ObsKeywordsReader[F[_]] {
   def odgw3Guide: F[StandardGuideOptions.Value]
   def odgw4Guide: F[StandardGuideOptions.Value]
   def headerPrivacy: F[Boolean]
-  def proprietaryMonths: F[String]
+  def releaseDate: F[String]
   def obsObject: F[String]
   def geminiQA: F[String]
   def pIReq: F[String]
@@ -91,7 +92,7 @@ final case class TimingWindowKeywords(
 )
 
 object ObsKeywordReader extends ObsKeywordsReaderConstants {
-  def apply[F[_]: MonadError[?[_], Throwable]](config: CleanConfig, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
+  def apply[F[_]: Sync](config: CleanConfig, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
     // Format used on FITS keywords
     val telescopeName: String = site match {
       case Site.GN => "Gemini-North"
@@ -295,10 +296,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def headerPrivacy: F[Boolean] = headerPrivacyF
 
-    private val noProprietaryMonths: F[String] =
-      LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
-
-    private val calcProprietaryMonths: F[String] =
+    private val calcReleaseDate: F[String] =
       EitherT(
         config.extractAs[Integer](PROPRIETARY_MONTHS_KEY)
           .recoverWith {
@@ -306,17 +304,17 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
           }
           .leftMap(explainExtractError)
           .map { v =>
-            LocalDate
+            Sync[F].delay(
+              LocalDate
               .now(ZoneId.of("GMT"))
               .plusMonths(v.toLong)
               .format(DateTimeFormatter.ISO_LOCAL_DATE)
+            )
           }
-          .pure[F]
+          .sequence
       ).widenRethrowT
 
-    override def proprietaryMonths: F[String] =
-      headerPrivacyF
-        .ifM(calcProprietaryMonths, noProprietaryMonths)
+    override def releaseDate: F[String] = calcReleaseDate
 
     private val manualDarkValue    = "Manual Dark"
     private val manualDarkOverride = "Dark"

@@ -228,6 +228,6 @@ class StandardHeader[F[_]: Sync](
       buildDouble(tcsReader.startAirMass, KeywordName.AMSTART),
       buildDouble(tcsReader.endAirMass, KeywordName.AMEND),
       buildBoolean(obsReader.headerPrivacy, KeywordName.PROP_MD, DefaultHeaderValue.FalseDefaultValue),
-      buildString(obsReader.proprietaryMonths, KeywordName.RELEASE)
+      buildString(obsReader.releaseDate, KeywordName.RELEASE)
     ))
 }
