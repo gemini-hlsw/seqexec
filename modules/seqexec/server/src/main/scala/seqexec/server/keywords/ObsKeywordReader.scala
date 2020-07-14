@@ -52,7 +52,7 @@ sealed trait ObsKeywordsReader[F[_]] {
   def odgw3Guide: F[StandardGuideOptions.Value]
   def odgw4Guide: F[StandardGuideOptions.Value]
   def headerPrivacy: F[Boolean]
-  def proprietaryMonths: F[String]
+  def releaseDate: F[String]
   def obsObject: F[String]
   def geminiQA: F[String]
   def pIReq: F[String]
@@ -295,10 +295,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
 
     override def headerPrivacy: F[Boolean] = headerPrivacyF
 
-    private val noProprietaryMonths: F[String] =
-      LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
-
-    private val calcProprietaryMonths: F[String] =
+    private val calcReleaseDate: F[String] =
       EitherT(
         config.extractAs[Integer](PROPRIETARY_MONTHS_KEY)
           .recoverWith {
@@ -314,9 +311,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
           .pure[F]
       ).widenRethrowT
 
-    override def proprietaryMonths: F[String] =
-      headerPrivacyF
-        .ifM(calcProprietaryMonths, noProprietaryMonths)
+    override def releaseDate: F[String] = calcReleaseDate
 
     private val manualDarkValue    = "Manual Dark"
     private val manualDarkOverride = "Dark"
