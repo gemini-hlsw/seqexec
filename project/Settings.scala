@@ -52,7 +52,7 @@ object Settings {
     // test libraries
     val xmlUnit        = "1.6"
     val jUnitInterface = "0.11"
-    val scalaMock      = "4.4.0"
+    val scalaMock      = "5.0.0"
 
     // Pure JS libraries
     val semanticUI = "2.3.1"
