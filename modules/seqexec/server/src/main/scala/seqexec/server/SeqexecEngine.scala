@@ -31,7 +31,6 @@ import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{StepId, UserDetails}
 import seqexec.model.config._
 import seqexec.server.SeqEvent._
-import seqexec.server.SeqTranslate.dataIdFromConfig
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
@@ -173,7 +172,7 @@ object SeqexecEngine {
             seq.seqGen.steps.find(_.id === step.id)
               .map { x =>
                 Handle.fromStream[F, EngineState[F], EventType[F]](Stream.eval(
-                  dataIdFromConfig[F](x.config).flatMap(systems.odb.sequenceStart(id, _)).as(Event.nullEvent[F])
+                  systems.odb.sequenceStart(id, x.dataId).as(Event.nullEvent[F])
                 )).as((id, step.id).some)
               }
           }

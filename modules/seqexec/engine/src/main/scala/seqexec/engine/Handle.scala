@@ -72,12 +72,13 @@ object Handle {
   // are concatenated in the reverse order.
   implicit class HandleReverseMap[F[_]: Monad, D, V, A](self: Handle[F, D, V, A]) {
     private def reverseConcatOpP(op1: Option[Stream[F, V]],
-                              op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
-          case (None, None) => None
-          case (Some(p1), None) => Some(p1)
-          case (None, Some(p2)) => Some(p2)
-          case (Some(p1), Some(p2)) => Some(p2 ++ p1)
-        }
+                                 op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
+      case (None, None) => None
+      case (Some(p1), None) => Some(p1)
+      case (None, Some(p2)) => Some(p2)
+      case (Some(p1), Some(p2)) => Some(p2 ++ p1)
+    }
+
     def reversedStreamFlatMap[B](f: A => Handle[F, D, V, B]):Handle[F, D, V, B] = Handle[F, D, V, B](
       self.run.flatMap {
         case (a, op1) => f(a).run.map {
