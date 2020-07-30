@@ -318,7 +318,7 @@ object SeqexecEngine {
     private def heartbeatStream: Stream[F, EventType[F]] = {
       // If there is no heartbeat in 5 periods throw an error
       val noHeartbeatDetection =
-        SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod, "Event stream timed out")
+        SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod, "Engine heartbeat not detected")
       Stream.awakeDelay[F](heartbeatPeriod)
         .as(Event.nullEvent: EventType[F])
         .through(noHeartbeatDetection.andThen(_.recoverWith { case _ =>

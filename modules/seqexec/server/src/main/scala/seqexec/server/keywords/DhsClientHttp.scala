@@ -35,13 +35,13 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
   import DhsClientHttp._
 
   private val clientWithRetry = {
-    val max = 2
+    val max = 4
     var attemptsCounter = 1
     val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {
         attemptsCounter = attemptsCounter + 1
-        Some(10.milliseconds)
+        10.milliseconds.some
       }
     }
     Retry[F](policy)(base)
@@ -70,7 +70,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
           "keywords" := keywords.keywords
         )
       ),
-      baseURI / id / "keywords"
+      if (finalFlag) baseURI / id / "eywords" else baseURI / id / "keywords"
     )
     val cl = if(finalFlag) base else clientWithRetry
     cl.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
