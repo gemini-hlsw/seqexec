@@ -77,7 +77,7 @@ trait NiriEncoders {
     case Filter.NBF_FEII         => "FeII"
     case Filter.NBF_H2O_2045     => "H2Oice(2045)"
     case Filter.NBF_HE12P2S      => "HeI(2p2s)"
-    case Filter.NBF_KCONT1       => "Kcon(227)"
+    case Filter.NBF_KCONT1       => "Kcon(209)"
     case Filter.NBF_H210         => "H2 1-0 S1"
     case Filter.NBF_BRGAMMA      => "Br(gamma)"
     case Filter.NBF_H221         => "H2 2-1 S1"
