@@ -3,6 +3,7 @@
 
 package seqexec.server
 
+import cats.Monoid
 import cats.implicits._
 import cats.effect._
 import cats.data.NonEmptyList
@@ -10,6 +11,7 @@ import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
+
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
@@ -41,6 +43,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     GmosS,
     List(SequenceGen.PendingStepGen(
       1,
+      Monoid.empty[DataId],
       config,
       Set(GmosS),
       SequenceGen.StepActionsGen(List(), Map(), _ => List(observeActions(Action.ActionState.Idle)))

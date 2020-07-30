@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.Applicative
+import cats.{Applicative, Monoid}
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import cats.data.NonEmptyList
@@ -219,6 +219,7 @@ object TestCommon {
     instrument = Instrument.F2,
     steps = List(SequenceGen.PendingStepGen(
       id = 1,
+      Monoid.empty[DataId],
       config = CleanConfig.empty,
       resources = Set.empty,
       generator = SequenceGen.StepActionsGen(
@@ -237,6 +238,7 @@ object TestCommon {
         .range(1, n)
         .map(SequenceGen.PendingStepGen(
           _,
+          Monoid.empty[DataId],
           config = CleanConfig.empty,
           resources = Set.empty,
           generator = SequenceGen.StepActionsGen(
@@ -253,6 +255,7 @@ object TestCommon {
     steps = List(
       SequenceGen.PendingStepGen(
         id = 1,
+        Monoid.empty[DataId],
         config = CleanConfig.empty,
         resources = resources,
         generator = SequenceGen.StepActionsGen(
@@ -263,6 +266,7 @@ object TestCommon {
       ),
       SequenceGen.PendingStepGen(
         id = 2,
+        Monoid.empty[DataId],
         config = CleanConfig.empty,
         resources = resources,
         generator = SequenceGen.StepActionsGen(

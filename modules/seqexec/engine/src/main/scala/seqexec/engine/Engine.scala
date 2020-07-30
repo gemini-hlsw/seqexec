@@ -19,7 +19,7 @@ import seqexec.engine.EventResult.Outcome
 import seqexec.engine.Result.{PartialVal, RetVal}
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
-import seqexec.model.{ClientId, SequenceState, StepId}
+import seqexec.model.{SequenceState, StepId}
 
 class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.State[F, S]) {
   val L: Logger[F] = Logger[F]
@@ -35,19 +35,12 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
     modifyS(id)(Sequence.State.status.set(st))
 
-  def start(id: Observation.Id, clientId: ClientId, userCheck: S => Boolean): Handle[F, S, Event[F, S, U], Unit] =
+  def start(id: Observation.Id): Handle[F, S, Event[F, S, U], Unit] =
     getS(id).flatMap {
-      case Some(seq) =>
-        // No resources being used by other running sequences
-        (get.flatMap { st =>
-          if (userCheck(st)) {
-            putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
-              send(Event.executing(id))
-          // cannot run sequence
-          } else {
-            send(busy(id, clientId))
-          }
-        }).whenA(seq.status.isIdle || seq.status.isError)
+      case Some(seq) => {
+        putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
+          send(Event.executing(id))
+      }.whenA(seq.status.isIdle || seq.status.isError)
       case None      => unit
     }
 
@@ -295,7 +288,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   private def send(ev: EventType): HandleType[Unit] = Handle.fromStream(Stream(ev))
 
   private def handleUserEvent(ue: UserEventType): HandleType[ResultType] = ue match {
-    case Start(id, _, clid, userCheck) => debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
+    case Start(id, _, _)               => debug(s"Engine: Start requested for sequence ${id.format}") *> start(id) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case Pause(id, _)                  => debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case CancelPause(id, _)            => debug(s"Engine: Pause canceled for sequence ${id.format}") *> cancelPause(id) *> pure(UserCommandResponse(ue, Outcome.Ok, None))
     case Breakpoint(id, _, step, v)    => debug(s"Engine: breakpoint changed for sequence ${id.format} and step $step to $v") *>

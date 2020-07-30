@@ -13,7 +13,6 @@ import seqexec.engine._
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem._
-import SeqTranslate.dataIdFromConfig
 import squants.time.Time
 import squants.time.TimeConversions._
 import scala.concurrent.duration._
@@ -105,30 +104,21 @@ trait ObserveActions {
     env.inst.keywordsClient.closeImage(id)
 
   /**
-    * Read the data id value from the sequence
-    */
-  def dataId[F[_]: MonadError[?[_], Throwable]](
-    env: ObserveEnvironment[F]
-  ): F[DataId] =
-    dataIdFromConfig[F](env.config)
-
-  /**
     * Preamble for observations. It tells the odb, the subsystems
     * send the start headers and finally sends an observe
     */
   def observePreamble[F[_]: Concurrent: Timer: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  ): F[(DataId, ObserveCommandResult)] =
+  ): F[ObserveCommandResult] =
     for {
-      d <- dataId(env)
-      _ <- sendDataStart(env.systems, env.obsId, fileId, d)
+      _ <- sendDataStart(env.systems, env.obsId, fileId, env.dataId)
       _ <- notifyObserveStart(env)
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
       r <- env.inst.observe(env.config)(fileId)
       _ <- info(s"Completed ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
-    } yield (d, r)
+    } yield r
 
   /**
     * End of an observation for a typical instrument
@@ -137,7 +127,6 @@ trait ObserveActions {
     */
   def okTail[F[_]: Concurrent: Timer](
     fileId:  ImageFileId,
-    dataId:  DataId,
     stopped: Boolean,
     env:     ObserveEnvironment[F]
   ): F[Result[F]] =
@@ -145,7 +134,7 @@ trait ObserveActions {
       _ <- notifyObserveEnd(env)
       _ <- env.headers(env.ctx).reverseIterator.map(_.sendAfter(fileId)).to(List).sequence.void
       _ <- closeImage(fileId, env)
-      _ <- sendDataEnd[F](env.systems, env.obsId, fileId, dataId)
+      _ <- sendDataEnd[F](env.systems, env.obsId, fileId, env.dataId)
     } yield
       if (stopped) Result.OKStopped(Response.Observed(fileId))
       else Result.OK(Response.Observed(fileId))
@@ -155,14 +144,13 @@ trait ObserveActions {
     */
   private def observeTail[F[_]: Timer](
     fileId: ImageFileId,
-    dataId: DataId,
     env:    ObserveEnvironment[F]
   )(r:      ObserveCommandResult)(implicit cio: Concurrent[F]): Stream[F, Result[F]] =
     Stream.eval(r match {
       case ObserveCommandResult.Success =>
-        okTail(fileId, dataId, stopped = false, env)
+        okTail(fileId, stopped = false, env)
       case ObserveCommandResult.Stopped =>
-        okTail(fileId, dataId, stopped = true, env)
+        okTail(fileId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
@@ -173,17 +161,17 @@ trait ObserveActions {
                 (elapsed: Time) => Stream.eval{
                   c.continue
                     .self(elapsed)
-                }.flatMap(observeTail(fileId, dataId, env))
+                }.flatMap(observeTail(fileId, env))
             val stopPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.stopPaused
                     .self
-                }.flatMap(observeTail(fileId, dataId, env))
+                }.flatMap(observeTail(fileId, env))
             val abortPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.abortPaused
                     .self
-                }.flatMap(observeTail(fileId, dataId, env))
+                }.flatMap(observeTail(fileId, env))
 
              Result.Paused(
               ObserveContext[F](
@@ -207,8 +195,8 @@ trait ObserveActions {
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
     for {
-      (dataId, result) <- Stream.eval(observePreamble(fileId, env))
-      ret              <- observeTail(fileId, dataId, env)(result)
+      result <- Stream.eval(observePreamble(fileId, env))
+      ret              <- observeTail(fileId, env)(result)
     } yield ret
 
 }

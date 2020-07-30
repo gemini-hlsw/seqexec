@@ -60,7 +60,7 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
           fileId = StepsView
             .fileId(step.executions)
             .orElse(stepg.some.collect {
-              case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
+              case SequenceGen.CompletedStepGen(_, _, _, fileId) => fileId
             }.flatten),
           pendingObserveCmd = (observeStatus(step.executions) === ActionStatus.Running).option(pendingObsCmd).flatten
         )
