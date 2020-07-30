@@ -80,49 +80,49 @@ object OdbProxy {
     private val sessionName = "sessionQueue"
 
     override def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
-      L.debug(s"Start dataset for obsId: ${obsId.format} and dataId: $dataId") *>
+      L.debug(s"Send ODB event datasetStart for obsId: ${obsId.format} and dataId: $dataId, with fileId: $fileId") *>
       F.delay(
         xmlrpcClient.datasetStart(sessionName, obsId.format, dataId, fileId.toString)
       )
 
     override def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
-      L.debug(s"Complete dataset for obsId: ${obsId.format} and dataId: $dataId") *>
+      L.debug(s"Send ODB event datasetComplete for obsId: ${obsId.format} and dataId: $dataId, with fileId: $fileId") *>
       F.delay(
         xmlrpcClient.datasetComplete(sessionName, obsId.format, dataId, fileId.toString)
       )
 
     override def obsAbort(obsId: Observation.Id, reason: String): F[Boolean] =
-      L.debug(s"Aborted: ${obsId.format} reason: $reason") *>
+      L.debug(s"Send ODB event observationAbort for obsId: ${obsId.format} reason: $reason") *>
       F.delay(
         xmlrpcClient.observationAbort(sessionName, obsId.format, reason)
       )
 
     override def sequenceEnd(obsId: Observation.Id): F[Boolean] =
-      L.debug(s"${obsId.format} sequence ended") *>
+      L.debug(s"Send ODB event sequenceEnd for obsId: ${obsId.format}") *>
       F.delay(
         xmlrpcClient.sequenceEnd(sessionName, obsId.format)
       )
 
     override def sequenceStart(obsId: Observation.Id, dataId: DataId): F[Boolean] =
-      L.debug(s"${obsId.format} sequence started") *>
+      L.debug(s"Send ODB event sequenceStart for obsId: ${obsId.format} and dataId: $dataId") *>
       F.delay(
         xmlrpcClient.sequenceStart(sessionName, obsId.format, dataId.toString)
       )
 
     override def obsContinue(obsId: Observation.Id): F[Boolean] =
-      L.debug(s"${obsId.format} sequence continues") *>
+      L.debug(s"Send ODB event observationContinue for obsId: ${obsId.format}") *>
       F.delay(
         xmlrpcClient.observationContinue(sessionName, obsId.format)
       )
 
     override def obsPause(obsId: Observation.Id, reason: String): F[Boolean] =
-      L.debug(s"${obsId.format} sequence paused: $reason") *>
+      L.debug(s"Send ODB event observationPause for obsId: ${obsId.format} $reason") *>
       F.delay(
         xmlrpcClient.observationPause(sessionName, obsId.format, reason)
       )
 
     override def obsStop(obsId: Observation.Id, reason: String): F[Boolean] =
-      L.debug(s"${obsId.format} sequence stopped: $reason") *>
+      L.debug(s"Send ODB event observationStop fro obsID: ${obsId.format} $reason") *>
       F.delay(
         xmlrpcClient.observationStop(sessionName, obsId.format, reason)
       )

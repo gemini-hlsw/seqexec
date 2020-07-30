@@ -66,8 +66,6 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     _ <- IO(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
-  private def always[D]: D => Boolean = _ => true
-
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
   val executions: List[ParallelActions[IO]] =
@@ -115,7 +113,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(
       Stream.eval(
-        IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))
+        IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId))
       )
     )(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
@@ -123,7 +121,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   }
 
   it should "be in Running status after starting" in {
-    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
+    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId)))
     val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync().map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -153,7 +151,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
         )
       ) ) )
     )
-    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always)))
+    val p = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId)))
 
     //take(3): Start, Executing, Paused
     executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync().map(_._2)
@@ -203,7 +201,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
         )
         Stream.eval(List(
           List[IO[Unit]](
-            q.enqueue1(Event.start[IO, TestState, Unit](seqId, user, clientId, always)),
+            q.enqueue1(Event.start[IO, TestState, Unit](seqId, user, clientId)),
             startedFlag.acquire,
             q.enqueue1(Event.nullEvent),
             q.enqueue1(Event.getState[IO, TestState, Unit] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent[IO]).some })

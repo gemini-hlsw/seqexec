@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{EitherT, NonEmptyList, NonEmptySet}
+import cats.data.{EitherT, NonEmptySet}
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -91,12 +91,6 @@ object SeqTranslate {
         stepType: StepType
       ): SequenceGen.StepGen[F] = {
         val ia = inst.instrumentActions(config)
-        val initialStepExecutions: List[ParallelActions[F]] =
-          // Ask the instrument if we need an initial action
-          (i === 0 && ia.runInitialAction(stepType)).option {
-            NonEmptyList.one(dataIdFromConfig[F](config).flatMap(systems.odb.sequenceStart(obsId, _))
-              .as(Response.Ignored).toAction(ActionType.Undefined))
-          }.toList
 
         val configs: Map[Resource, Action[F]] = sys.map { x =>
           val res = x.resource
@@ -117,7 +111,7 @@ object SeqTranslate {
             i,
             config,
             calcResources(sys),
-            StepActionsGen(initialStepExecutions, configs, rest)
+            StepActionsGen(List.empty, configs, rest)
           )
           case StepState.Pending                   => SequenceGen.SkippedStepGen(
             i,
