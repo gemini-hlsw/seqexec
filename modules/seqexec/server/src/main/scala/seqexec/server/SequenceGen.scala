@@ -12,7 +12,7 @@ import seqexec.engine.ExecutionIndex
 import seqexec.engine.ActionIndex
 import seqexec.model.StepId
 import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model.dhs.ImageFileId
+import seqexec.model.dhs.{DataId, ImageFileId}
 
 /*
  * SequenceGen keeps all the information extracted from the ODB sequence.
@@ -42,14 +42,15 @@ object SequenceGen {
 
   sealed trait StepGen[+F[_]] {
     val id: StepId
+    val dataId: DataId
     val config: CleanConfig
   }
 
   object StepGen {
     def generate[F[_]](stepGen: StepGen[F], ctx: HeaderExtraData): EngineStep[F] = stepGen match {
-      case p: PendingStepGen[F]       => EngineStep.init[F](stepGen.id, p.generator.generate(ctx))
-      case SkippedStepGen(id, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
-      case CompletedStepGen(id, _, _) => EngineStep.init[F](id, Nil)
+      case p: PendingStepGen[F]          => EngineStep.init[F](stepGen.id, p.generator.generate(ctx))
+      case SkippedStepGen(id, _, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
+      case CompletedStepGen(id, _, _, _) => EngineStep.init[F](id, Nil)
     }
   }
 
@@ -73,18 +74,21 @@ object SequenceGen {
   }
 
   final case class PendingStepGen[F[_]](override val id: StepId,
-                                  override val config: CleanConfig,
-                                  resources: Set[Resource],
-                                  generator: StepActionsGen[F]
-                             ) extends StepGen[F]
+                                        override val dataId: DataId,
+                                        override val config: CleanConfig,
+                                        resources: Set[Resource],
+                                        generator: StepActionsGen[F]
+                                       ) extends StepGen[F]
 
   final case class SkippedStepGen(override val id: StepId,
+                                  override val dataId: DataId,
                                   override val config: CleanConfig
                               ) extends StepGen[Nothing]
 
   // Receiving a sequence from the ODB with a completed step without an image file id would be
   // weird, but I still use an Option just in case
   final case class CompletedStepGen(override val id: StepId,
+                                    override val dataId: DataId,
                                     override val config: CleanConfig,
                                     fileId: Option[ImageFileId]
                                 ) extends StepGen[Nothing]

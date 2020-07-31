@@ -47,7 +47,6 @@ class StepSpec extends CatsSuite {
   (Action.ActionState.Failed(failure), Nil))
   private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
   private val actionCompleted: Action[IO] = action.copy(state = Action.State(Action.ActionState.Completed(DummyResult), Nil))
-  private def always[D]: D => Boolean = _ => true
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
   def simpleStep(pending: List[ParallelActions[IO]], focus: Execution[IO], done: List[NonEmptyList[Result[IO]]]): Step.Zipper[IO] = {
@@ -85,7 +84,7 @@ class StepSpec extends CatsSuite {
   val stepzar0: Step.Zipper[IO] = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
   val stepzar1: Step.Zipper[IO] = simpleStep(List(NonEmptyList.one(action)), Execution(List(actionCompleted,
     actionCompleted)), List(NonEmptyList.one(result)))
-  private val startEvent = Event.start[IO, TestState, Unit](seqId, user, clientId, always)
+  private val startEvent = Event.start[IO, TestState, Unit](seqId, user, clientId)
 
   /**
     * Emulates TCS configuration in the real world.
@@ -157,7 +156,7 @@ class StepSpec extends CatsSuite {
 
   def triggerStart(q: IO[Queue[IO, executionEngine.EventType]]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
-      _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId, always)))
+      _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId)))
       // Same case that the pause action
     } yield Result.OK(DummyResult))
 
@@ -170,13 +169,13 @@ class StepSpec extends CatsSuite {
   }
 
   def runToCompletion(s0: TestState): Option[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync().map(_._2)
   }
 
   def runToCompletionL(s0: TestState): List[TestState] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector.unsafeRunSync().map(_._2).toList
   }
@@ -368,7 +367,7 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, clientId, always)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, clientId)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector)}.unsafeRunSync()
 

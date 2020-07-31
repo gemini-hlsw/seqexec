@@ -139,7 +139,7 @@ object StepsView {
         configStatus = configStatus,
         observeStatus = observeStatus(step.executions),
         fileId = fileId(step.executions).orElse(stepg.some.collect{
-          case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
+          case SequenceGen.CompletedStepGen(_, _, _, fileId) => fileId
         }.flatten))
     }
 

@@ -61,8 +61,6 @@ class SequenceSpec extends AnyFlatSpec {
   private val user = UserDetails("telops", "Telops")
   private val executionEngine = new Engine[IO, TestState, Unit](TestState)
 
-  private def always[D]: D => Boolean = _ => true
-
   def simpleStep(id: Int, breakpoint: Boolean): Step[IO] =
     Step.init(
       id = id,
@@ -83,7 +81,7 @@ class SequenceSpec extends AnyFlatSpec {
     executionEngine.process(PartialFunction.empty)(
       Stream.eval(
         IO.pure(
-          Event.start[IO, TestUtil.TestState, Unit](seqId, user, ClientId(UUID.randomUUID), always)
+          Event.start[IO, TestUtil.TestState, Unit](seqId, user, ClientId(UUID.randomUUID))
         )
       )
     )(s0).drop(1).takeThrough(

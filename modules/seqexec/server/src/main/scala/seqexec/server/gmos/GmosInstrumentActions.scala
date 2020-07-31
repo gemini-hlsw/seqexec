@@ -46,16 +46,15 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   // And can eventually return more than one result
   private def observeTail(
     fileId: ImageFileId,
-    dataId: DataId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle
   )(r:      ObserveCommandResult): F[Result[F]] =
     r match {
       case ObserveCommandResult.Success =>
-        okTail(fileId, dataId, stopped = false, env)
+        okTail(fileId, stopped = false, env)
           .as(Result.Partial(NSFinalObs)) // For normally completed observations send a partial
       case ObserveCommandResult.Stopped =>
-        okTail(fileId, dataId, stopped = true, env)
+        okTail(fileId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
         abortTail(env.systems, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
@@ -67,8 +66,8 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
                 .Paused(
                   ObserveContext(
                     (_: Time) => resumeObserve(fileId, env, nsCfg),
-                    stopPausedObserve(fileId, dataId, env, nsCfg),
-                    abortPausedObserve(fileId, dataId, env, nsCfg),
+                    stopPausedObserve(fileId, env, nsCfg),
+                    abortPausedObserve(fileId, env, nsCfg),
                     e
                   )
                 )
@@ -84,9 +83,9 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   ): F[Result[F]] =
     // Essentially the same as default observation but with a custom tail
     (for {
-      (dataId, result) <- observePreamble(fileId, env)
-      nsCmd            <- nsObsCmd.get
-      ret              <- continueResult(fileId, dataId, env, nsCfg, subExp, nsCmd)(result)
+      result <- observePreamble(fileId, env)
+      nsCmd  <- nsObsCmd.get
+      ret    <- continueResult(fileId, env, nsCfg, subExp, nsCmd)(result)
     } yield ret).safeResult
 
   private def lastObserve(
@@ -96,15 +95,13 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   ): F[Result[F]] =
     // the last step completes the observations doing an observeTail
     (for {
-      dataId  <- dataId(env)
       timeout <- inst.calcObserveTime(env.config)
       ret     <- inst.controller.resumePaused(timeout)
-      t       <- observeTail(fileId, dataId, env, nsCfg)(ret)
+      t       <- observeTail(fileId, env, nsCfg)(ret)
     } yield t).safeResult
 
   private def continueResult(
     fileId: ImageFileId,
-    dataId: DataId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle,
     subExp: NSSubexposure,
@@ -113,29 +110,29 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
       case (Some(PauseImmediately), ObserveCommandResult.Paused) |
            (_, ObserveCommandResult.Success) |
            (_, ObserveCommandResult.Aborted) |
-           (_, ObserveCommandResult.Stopped)                     => observeTail(fileId, dataId, env, nsCfg)(obsResult)
+           (_, ObserveCommandResult.Stopped)                     => observeTail(fileId, env, nsCfg)(obsResult)
 
       // Pause if this was the last subexposure of a cycle
       case (Some(PauseGracefully), ObserveCommandResult.Paused) if subExp.stageIndex === NsSequence.length - 1
-                                                                 => observeTail(fileId, dataId, env, nsCfg)(obsResult)
+                                                                 => observeTail(fileId, env, nsCfg)(obsResult)
 
       case (Some(StopImmediately), ObserveCommandResult.Paused)  => inst.controller.stopPaused
-        .flatMap(observeTail(fileId, dataId, env, nsCfg))
+        .flatMap(observeTail(fileId, env, nsCfg))
 
       // Stop if this was the last subexposure of a cycle
       case (Some(StopGracefully), ObserveCommandResult.Paused)
         if subExp.stageIndex === NsSequence.length - 1
                                                                  => inst.controller.stopPaused
-        .flatMap(observeTail(fileId, dataId, env, nsCfg))
+        .flatMap(observeTail(fileId, env, nsCfg))
 
       case (Some(AbortImmediately), ObserveCommandResult.Paused) => inst.controller.abortPaused
-        .flatMap(observeTail(fileId, dataId, env, nsCfg))
+        .flatMap(observeTail(fileId, env, nsCfg))
 
       // Abort if this was the last subexposure of a cycle
       case (Some(AbortGracefully), ObserveCommandResult.Paused)
         if subExp.stageIndex === NsSequence.length - 1
                                                                  => inst.controller.abortPaused
-        .flatMap(observeTail(fileId, dataId, env, nsCfg))
+        .flatMap(observeTail(fileId, env, nsCfg))
 
       // We reach here only if the result was Paused and no command made it stop/pause/abort
       case _                                                     => Result.Partial(NSContinue).pure[F].widen[Result[F]]
@@ -151,10 +148,9 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   ): F[Result[F]] = (
     for{
       t     <- inst.calcObserveTime(env.config)
-      dId   <- dataId(env)
       r     <- inst.controller.resumePaused(t)
       nsCmd <- nsObsCmdRef.get
-      x     <- continueResult(fileId, dId, env, nsCfg, subExp, nsCmd)(r)
+      x     <- continueResult(fileId, env, nsCfg, subExp, nsCmd)(r)
     } yield x
   ).safeResult
 
@@ -270,20 +266,18 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
 
   def stopPausedObserve(
     fileId: ImageFileId,
-    dataId: DataId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle
   ): Stream[F, Result[F]] = Stream.eval(
-    inst.controller.stopPaused.flatMap(observeTail(fileId, dataId, env, nsCfg))
+    inst.controller.stopPaused.flatMap(observeTail(fileId, env, nsCfg))
   )
 
   def abortPausedObserve(
     fileId: ImageFileId,
-    dataId: DataId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle
   ): Stream[F, Result[F]] = Stream.eval(
-    inst.controller.abortPaused.flatMap(observeTail(fileId, dataId, env, nsCfg))
+    inst.controller.abortPaused.flatMap(observeTail(fileId, env, nsCfg))
   )
 
   def launchObserve(

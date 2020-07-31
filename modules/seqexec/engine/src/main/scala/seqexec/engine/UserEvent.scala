@@ -19,7 +19,7 @@ sealed trait UserEvent[+F[_], S, U] extends Product with Serializable {
 
 object UserEvent {
 
-  final case class Start[S, U](id: Observation.Id, user: Option[UserDetails], clientId: ClientId, userCheck: S => Boolean) extends UserEvent[Nothing, S, U]
+  final case class Start[S, U](id: Observation.Id, user: Option[UserDetails], clientId: ClientId) extends UserEvent[Nothing, S, U]
   final case class Pause[S, U](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[Nothing, S, U]
   final case class CancelPause[S, U](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[Nothing, S, U]
   final case class Breakpoint[S, U](id: Observation.Id, user: Option[UserDetails], step: StepId, v: Boolean) extends UserEvent[Nothing, S, U]

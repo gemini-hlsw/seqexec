@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{EitherT, NonEmptyList, NonEmptySet}
+import cats.data.{EitherT, NonEmptySet}
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -85,18 +85,13 @@ object SeqTranslate {
                                 tio: Timer[F]
                      ): F[SequenceGen.StepGen[F]] = {
       def buildStep(
+        dataId: DataId,
         inst: InstrumentSystem[F],
         sys: List[System[F]],
         headers: HeaderExtraData => List[Header[F]],
         stepType: StepType
       ): SequenceGen.StepGen[F] = {
         val ia = inst.instrumentActions(config)
-        val initialStepExecutions: List[ParallelActions[F]] =
-          // Ask the instrument if we need an initial action
-          (i === 0 && ia.runInitialAction(stepType)).option {
-            NonEmptyList.one(dataIdFromConfig[F](config).flatMap(systems.odb.sequenceStart(obsId, _))
-              .as(Response.Ignored).toAction(ActionType.Undefined))
-          }.toList
 
         val configs: Map[Resource, Action[F]] = sys.map { x =>
           val res = x.resource
@@ -106,7 +101,7 @@ object SeqTranslate {
         }.toMap
 
         def rest(ctx: HeaderExtraData): List[ParallelActions[F]] = {
-          val env = ObserveEnvironment(systems, config, stepType, obsId, inst, sys.filterNot(inst.equals), headers, ctx)
+          val env = ObserveEnvironment(systems, config, stepType, obsId, dataId, inst, sys.filterNot(inst.equals), headers, ctx)
           // Request the instrument to build the observe actions and merge them with the progress
           // Also catches any errors in the process of runnig an observation
           ia.observeActions(env)
@@ -115,17 +110,20 @@ object SeqTranslate {
         extractStatus(config) match {
           case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
             i,
+            dataId,
             config,
             calcResources(sys),
-            StepActionsGen(initialStepExecutions, configs, rest)
+            StepActionsGen(List.empty, configs, rest)
           )
           case StepState.Pending                   => SequenceGen.SkippedStepGen(
             i,
+            dataId,
             config
           )
           // TODO: This case should be for completed Steps only. Fail when step status is unknown.
           case _                                   => SequenceGen.CompletedStepGen(
             i,
+            dataId,
             config,
             datasets.get(i + 1).map(_.filename).map(toImageFileId)
           )
@@ -136,9 +134,10 @@ object SeqTranslate {
         inst      <- MonadError[F, Throwable].fromEither(extractInstrument(config))
         is        <- toInstrumentSys(inst)
         stepType  <- is.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
+        dataId    <- dataIdFromConfig[F](config)
         systems   <- calcSystems(config, stepType, is)
         headers   <- calcHeaders(config, stepType, is)
-      } yield buildStep(is, systems, headers, stepType)
+      } yield buildStep(dataId, is, systems, headers, stepType)
     }
 
     override def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(

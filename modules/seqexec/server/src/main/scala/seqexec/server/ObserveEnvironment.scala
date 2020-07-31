@@ -4,6 +4,7 @@
 package seqexec.server
 
 import gem.Observation
+import seqexec.model.dhs.DataId
 import seqexec.server.keywords._
 import seqexec.server.tcs.Tcs
 
@@ -15,6 +16,7 @@ final case class ObserveEnvironment[F[_]](
   config:   CleanConfig,
   stepType: StepType,
   obsId:    Observation.Id,
+  dataId:   DataId,
   inst:     InstrumentSystem[F],
   otherSys: List[System[F]],
   headers:  HeaderExtraData => List[Header[F]],

@@ -23,8 +23,8 @@ object Event {
   final case class EventUser[F[_], S, U](ue: UserEvent[F, S, U]) extends Event[F, S, U]
   final case class EventSystem[F[_]](se: SystemEvent[F]) extends Event[F, Nothing, Nothing]
 
-  def start[F[_], S, U](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: S => Boolean): Event[F, S, U] =
-    EventUser[F, S, U](Start[S, U](id, user.some, clientId, userCheck))
+  def start[F[_], S, U](id: Observation.Id, user: UserDetails, clientId: ClientId): Event[F, S, U] =
+    EventUser[F, S, U](Start[S, U](id, user.some, clientId))
   def pause[F[_], S, U](id: Observation.Id, user: UserDetails): Event[F, S, U] = EventUser[F, S, U](Pause(id, user.some))
   def cancelPause[F[_], S, U](id: Observation.Id, user: UserDetails): Event[F, S, U] = EventUser[F, S, U](CancelPause(id, user.some))
   def breakpoint[F[_], S, U](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[F, S, U] = EventUser[F, S, U](Breakpoint(id, user.some, step, v))
