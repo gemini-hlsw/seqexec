@@ -11,10 +11,11 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
+import io.chrisdavenport.log4cats.Logger
 
 object NifsHeader {
 
-  def header[F[_]: MonadError[?[_], Throwable]](
+  def header[F[_]: MonadError[?[_], Throwable]: Logger](
     inst:              InstrumentSystem[F],
     instReader:        NifsKeywordReader[F],
     tcsKeywordsReader: TcsKeywordsReader[F]

@@ -8,6 +8,7 @@ import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
+import io.chrisdavenport.log4cats.Logger
 
 package keywords {
   sealed trait KeywordsBundler[F[_]] {
@@ -287,14 +288,18 @@ package object keywords {
   }
   def buildString[F[_]: MonadError[*[_], Throwable]](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def sendKeywords[F[_]: MonadError[*[_], Throwable]](
+  def sendKeywords[F[_]: MonadError[*[_], Throwable]: Logger](
       id: ImageFileId,
       inst: InstrumentSystem[F],
       b: List[KeywordBag => F[KeywordBag]]): F[Unit] =
-    (for {
-      bag <- inst.keywordsClient.keywordsBundler.bundleKeywords(b)
-      _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
-    } yield ())
+    inst
+      .keywordsClient
+      .keywordsBundler
+      .bundleKeywords(b)
+      .redeemWith(e => Logger[F].error(e.getMessage) *> KeywordBag.empty.pure[F], _.pure[F])
+      .flatMap { bag =>
+        inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
+      }
 
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =

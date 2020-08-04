@@ -10,10 +10,11 @@ import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
+import io.chrisdavenport.log4cats.Logger
 
 object AltairLgsHeader {
 
-  def header[F[_]: Sync](inst: InstrumentSystem[F], altairReader: AltairKeywordReader[F]): Header[F] =
+  def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], altairReader: AltairKeywordReader[F]): Header[F] =
     new Header[F] {
 
       override def sendAfter(id: ImageFileId): F[Unit] =

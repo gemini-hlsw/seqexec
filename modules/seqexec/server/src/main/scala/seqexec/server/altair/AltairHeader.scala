@@ -13,9 +13,10 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
+import io.chrisdavenport.log4cats.Logger
 
 object AltairHeader {
-  def header[F[_]: Sync](inst:              InstrumentSystem[F],
+  def header[F[_]: Sync: Logger](inst:              InstrumentSystem[F],
                          altairReader:      AltairKeywordReader[F],
                          tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {

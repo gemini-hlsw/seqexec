@@ -10,9 +10,10 @@ import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.{EpicsHealth, InstrumentSystem}
+import io.chrisdavenport.log4cats.Logger
 
 object GwsHeader {
-  def header[F[_]: MonadError[?[_], Throwable]](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
+  def header[F[_]: MonadError[?[_], Throwable]: Logger](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       gwsReader.health.map(_ === EpicsHealth.Good)
         .handleError(_ => false) // error check the health read
