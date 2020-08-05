@@ -13,9 +13,10 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.keywords.{Header, KeywordBag, ObsKeywordsReader, buildDouble, buildInt32, buildString, sendKeywords}
 import seqexec.server.tcs.{CRFollow, GemsSource, TargetKeywordsReader, TcsKeywordsReader}
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
+import io.chrisdavenport.log4cats.Logger
 
 object GemsHeader {
-  def header[F[_]: Sync](inst: InstrumentSystem[F],
+  def header[F[_]: Sync: Logger](inst: InstrumentSystem[F],
                          gemsReader: GemsKeywordReader[F],
                          obsReader: ObsKeywordsReader[F],
                          tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F]{

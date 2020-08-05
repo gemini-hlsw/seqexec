@@ -8,6 +8,7 @@ import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
+import io.chrisdavenport.log4cats.Logger
 
 package keywords {
   sealed trait KeywordsBundler[F[_]] {
@@ -261,7 +262,7 @@ package object keywords {
   // Keywords are read and they can fail or be missing
   // This Operation will preserve the value if defined or use the default
   // In case it either fails or is empty
-  implicit class KeywordValueSafeOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
+  implicit class KeywordValueSafeOps[F[_]: ApplicativeError[*[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
     private def safeVal: F[Option[A]] = v.attempt.map {
       case Right(a @ Some(_)) => a
       case _                  => None
@@ -270,32 +271,35 @@ package object keywords {
     def safeValOrDefault: F[A] = safeVal.orDefault
   }
 
-  implicit class SafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[A]) {
+  implicit class SafeDefaultOps[F[_]: ApplicativeError[*[_], Throwable], A: DefaultHeaderValue](v: F[A]) {
     // Check if there is an error reading a value and if there is a failure
     // use the default
     def safeValOrDefault: F[A] =
       v.handleError(_ => DefaultHeaderValue[A].default)
   }
 
-  def buildKeyword[F[_]: MonadError[?[_], Throwable], A: DefaultHeaderValue](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
+  def buildKeyword[F[_]: MonadError[*[_], Throwable], A: DefaultHeaderValue](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
     k => get.safeValOrDefault.map(x => k.add(f(name, x)))
-  def buildInt32[F[_]: MonadError[?[_], Throwable]](get: F[Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
-  def buildDouble[F[_]: MonadError[?[_], Throwable]](get: F[Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
-  def buildBoolean[F[_]: MonadError[?[_], Throwable]](get: F[Boolean], name: KeywordName, ev: DefaultHeaderValue[Boolean]): KeywordBag => F[KeywordBag] = {
+  def buildInt32[F[_]: MonadError[*[_], Throwable]](get: F[Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
+  def buildDouble[F[_]: MonadError[*[_], Throwable]](get: F[Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
+  def buildBoolean[F[_]: MonadError[*[_], Throwable]](get: F[Boolean], name: KeywordName, ev: DefaultHeaderValue[Boolean]): KeywordBag => F[KeywordBag] = {
     implicit val defaultV = ev
     buildKeyword(get, name, BooleanKeyword)
   }
-  def buildString[F[_]: MonadError[?[_], Throwable]](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
+  def buildString[F[_]: MonadError[*[_], Throwable]](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def sendKeywords[F[_]: MonadError[?[_], Throwable]](
+  def sendKeywords[F[_]: MonadError[*[_], Throwable]: Logger](
       id: ImageFileId,
       inst: InstrumentSystem[F],
       b: List[KeywordBag => F[KeywordBag]]): F[Unit] =
-    (for {
-      bag <- inst.keywordsClient.keywordsBundler.bundleKeywords(b)
-      _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
-    } yield ())
-    .handleError(_ => ()) // In case there is an error ignore them to let other keywords be added
+    inst
+      .keywordsClient
+      .keywordsBundler
+      .bundleKeywords(b)
+      .redeemWith(e => Logger[F].error(e.getMessage) *> KeywordBag.empty.pure[F], _.pure[F])
+      .flatMap { bag =>
+        inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
+      }
 
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =

@@ -10,9 +10,10 @@ import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
+import io.chrisdavenport.log4cats.Logger
 
 object GcalHeader {
-  implicit def header[F[_]: Sync](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
+  implicit def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
     new Header[F] {
       private val gcalKeywords = List(
         buildString(gcalReader.lamp, KeywordName.GCALLAMP),

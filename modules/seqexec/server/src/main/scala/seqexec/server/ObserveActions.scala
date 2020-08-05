@@ -27,7 +27,7 @@ trait ObserveActions {
   /**
     * Actions to perform when an observe is aborted
     */
-  def abortTail[F[_]: MonadError[?[_], Throwable]](
+  def abortTail[F[_]: MonadError[*[_], Throwable]](
     systems:     Systems[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId
@@ -42,7 +42,7 @@ trait ObserveActions {
   /**
     * Send the datasetStart command to the odb
     */
-  private def sendDataStart[F[_]: MonadError[?[_], Throwable]](
+  private def sendDataStart[F[_]: MonadError[*[_], Throwable]](
     systems:     Systems[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
@@ -58,7 +58,7 @@ trait ObserveActions {
   /**
     * Send the datasetEnd command to the odb
     */
-  private def sendDataEnd[F[_]: MonadError[?[_], Throwable]](
+  private def sendDataEnd[F[_]: MonadError[*[_], Throwable]](
     systems:     Systems[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
@@ -132,7 +132,7 @@ trait ObserveActions {
   ): F[Result[F]] =
     for {
       _ <- notifyObserveEnd(env)
-      _ <- env.headers(env.ctx).reverseIterator.map(_.sendAfter(fileId)).to(List).sequence.void
+      _ <- env.headers(env.ctx).reverseIterator.toList.traverse(_.sendAfter(fileId))
       _ <- closeImage(fileId, env)
       _ <- sendDataEnd[F](env.systems, env.obsId, fileId, env.dataId)
     } yield
@@ -196,7 +196,7 @@ trait ObserveActions {
   ): Stream[F, Result[F]] =
     for {
       result <- Stream.eval(observePreamble(fileId, env))
-      ret              <- observeTail(fileId, env)(result)
+      ret    <- observeTail(fileId, env)(result)
     } yield ret
 
 }

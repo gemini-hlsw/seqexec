@@ -21,9 +21,10 @@ import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
+import io.chrisdavenport.log4cats.Logger
 
 object Flamingos2Header {
-  def header[F[_]: Sync](inst:              InstrumentSystem[F],
+  def header[F[_]: Sync: Logger](inst:              InstrumentSystem[F],
                          f2ObsReader:       Flamingos2Header.ObsKeywordsReader[F],
                          tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {

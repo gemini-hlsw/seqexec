@@ -15,6 +15,7 @@ import seqexec.model.{Observer, Operator}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{InstrumentSystem, OcsBuildInfo}
 import seqexec.server.tcs.{TargetKeywordsReader, TcsController, TcsKeywordsReader}
+import io.chrisdavenport.log4cats.Logger
 
 final case class StateKeywordsReader[F[_]: Applicative](
   conditions: Conditions,
@@ -31,7 +32,7 @@ final case class StateKeywordsReader[F[_]: Applicative](
   def rawBackgroundLight: F[String] = encodeCondition(conditions.sb.toInt)
 }
 
-class StandardHeader[F[_]: Sync](
+class StandardHeader[F[_]: Sync: Logger](
   inst: InstrumentSystem[F],
   obsReader: ObsKeywordsReader[F],
   tcsReader: TcsKeywordsReader[F],

@@ -10,10 +10,11 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
+import io.chrisdavenport.log4cats.Logger
 
 object GsaoiHeader extends GsaoiLUT {
 
-  def header[F[_]: Sync](
+  def header[F[_]: Sync: Logger](
     inst:              InstrumentSystem[F],
     tcsKeywordsReader: TcsKeywordsReader[F],
     instReader:        GsaoiKeywordReader[F]

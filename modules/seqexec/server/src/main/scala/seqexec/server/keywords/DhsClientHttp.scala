@@ -35,13 +35,13 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
   import DhsClientHttp._
 
   private val clientWithRetry = {
-    val max = 2
+    val max = 4
     var attemptsCounter = 1
     val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {
         attemptsCounter = attemptsCounter + 1
-        Some(10.milliseconds)
+        10.milliseconds.some
       }
     }
     Retry[F](policy)(base)
