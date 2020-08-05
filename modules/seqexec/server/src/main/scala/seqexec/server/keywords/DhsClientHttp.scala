@@ -70,7 +70,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
           "keywords" := keywords.keywords
         )
       ),
-      if (finalFlag) baseURI / id / "eywords" else baseURI / id / "keywords"
+      baseURI / id / "keywords"
     )
     val cl = if(finalFlag) base else clientWithRetry
     cl.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
