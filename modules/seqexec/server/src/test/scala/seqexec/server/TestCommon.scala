@@ -87,7 +87,8 @@ object TestCommon {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     "",
     Some("127.0.0.1"),
-    3.seconds
+    3.seconds,
+    10.seconds
   )
 
   def configure[F[_]: Applicative](resource: Resource): F[Result[F]] =

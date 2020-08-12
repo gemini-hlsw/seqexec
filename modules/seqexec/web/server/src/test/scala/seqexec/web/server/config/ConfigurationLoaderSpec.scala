@@ -51,7 +51,8 @@ class ConfigurationLoaderSpec extends CatsSuite {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:",
     Some("127.0.0.1"),
-    5.seconds)
+    5.seconds,
+    10.seconds)
   val ref = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -143,6 +144,7 @@ seqexec-engine {
     tops = "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:"
     epicsCaAddrList = 127.0.0.1
     ioTimeout = 5 seconds
+    dhsTimeout = 10 seconds
     gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"
     gpiGDS = "http://localhost:8888/xmlrpc"
     ghostUrl = "vm://ghost?marshal=false&broker.persistent=false"
