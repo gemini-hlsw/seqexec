@@ -28,6 +28,7 @@ trait GhostSettings
  * @param tops Used to select the top component for epics subsystems
  * @param epicsCaAddrList List of IPs for the epics subsystem
  * @param ioTimeout Timeout to listen for EPICS events
+ * @param dhsTimeout Timeout for DHS operations
  */
 final case class SeqexecEngineConfiguration(
   odb:                     Uri,
@@ -43,7 +44,8 @@ final case class SeqexecEngineConfiguration(
   ghostGDS:                Uri @@ GhostSettings,
   tops:                    String,
   epicsCaAddrList:         Option[String],
-  ioTimeout:               FiniteDuration
+  ioTimeout:               FiniteDuration,
+  dhsTimeout:              FiniteDuration
 )
 
 object SeqexecEngineConfiguration {
@@ -65,7 +67,8 @@ object SeqexecEngineConfiguration {
          x.ghostGDS,
          x.tops,
          x.epicsCaAddrList,
-         x.ioTimeout)
+         x.ioTimeout,
+         x.dhsTimeout)
     )
 
 }
