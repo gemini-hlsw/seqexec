@@ -51,7 +51,7 @@ trait GnirsEncoders {
     case SlitWidth.Slit0_30     => "0.30arcsec"
     case SlitWidth.Slit0_45     => "0.45arcsec"
     case SlitWidth.Slit0_68     => "0.68arcsec"
-    case SlitWidth.Slit1_00     => "1.0arcsec"
+    case SlitWidth.Slit1_00     => "1.00arcsec"
     case SlitWidth.PupilViewer  => "PV"
     case SlitWidth.SmallPinhole => "SmPinholes"
     case SlitWidth.LargePinhole => "LgPinholes"
