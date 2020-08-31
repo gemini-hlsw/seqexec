@@ -52,6 +52,7 @@ val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
 inThisBuild(
   List(
+    scalaVersion in ThisBuild := "2.13.3",
     version := dateFormatter.format(
       dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate
     ) + dynverGitDescribeOutput.value.mkVersion(versionFmt,
