@@ -51,48 +51,46 @@ object SubsystemControlCell {
     stepId: StepId,
     r:      Resource
   ): (ReactEvent, Button.ButtonProps) => Callback =
-    (e: ReactEvent, p: Button.ButtonProps) =>
-      Callback.log(p.toString()) *>
-        e.preventDefaultCB *> e.stopPropagationCB *>
+    (e: ReactEvent, _: Button.ButtonProps) =>
+      e.preventDefaultCB *> e.stopPropagationCB *>
         SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
   private val CompletedIcon = IconCheckmark.copy(
     fitted = true,
-    clazz  = SeqexecStyles.completedIcon
+    clazz = SeqexecStyles.completedIcon
   )
 
   private val RunningIcon = IconCircleNotched.copy(
-    fitted  = true,
+    fitted = true,
     loading = true,
-    clazz   = SeqexecStyles.runningIcon
+    clazz = SeqexecStyles.runningIcon
   )
 
   private val FailureIcon = IconAttention.copy(
-    fitted   = true,
+    fitted = true,
     inverted = true,
-    clazz    = SeqexecStyles.errorIcon
+    clazz = SeqexecStyles.errorIcon
   )
 
   // We want blue if the resource operation is idle or does not exist: these are equivalent cases.
   private def buttonColor(op: Option[ResourceRunOperation]): SemanticColor =
     op.map {
-        case ResourceRunOperation.ResourceRunIdle         => Blue
-        case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
-        case ResourceRunOperation.ResourceRunCompleted(_) => Green
-        case ResourceRunOperation.ResourceRunFailed(_)    => Red
-      }
-      .getOrElse(Blue)
+      case ResourceRunOperation.ResourceRunIdle         => Blue
+      case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
+      case ResourceRunOperation.ResourceRunCompleted(_) => Green
+      case ResourceRunOperation.ResourceRunFailed(_)    => Red
+    }.getOrElse(Blue)
 
   // If we are running, we want a circular spinning icon.
   // If we are completed, we want a checkmark.
   // Otherwise, no icon.
   private def determineIcon(op: Option[ResourceRunOperation]): Option[Icon] =
     op match {
-      case Some(ResourceRunOperation.ResourceRunInFlight(_)) => RunningIcon.some
+      case Some(ResourceRunOperation.ResourceRunInFlight(_))  => RunningIcon.some
       case Some(ResourceRunOperation.ResourceRunCompleted(_)) =>
         CompletedIcon.some
-      case Some(ResourceRunOperation.ResourceRunFailed(_)) => FailureIcon.some
-      case _                                               => none
+      case Some(ResourceRunOperation.ResourceRunFailed(_))    => FailureIcon.some
+      case _                                                  => none
     }
 
   protected val component = ScalaComponent
@@ -101,21 +99,21 @@ object SubsystemControlCell {
       <.div(
         SeqexecStyles.notInMobile,
         p.resources.sorted.map { r =>
-          val buttonIcon = determineIcon(p.resourcesCalls.get(r))
+          val buttonIcon                         = determineIcon(p.resourcesCalls.get(r))
           val labeled: js.UndefOr[LabelPosition] = buttonIcon
             .as(LabelPosition.Left: js.UndefOr[LabelPosition])
             .getOrElse(js.undefined)
 
           Popup(
             trigger = Button(
-              size  = Small,
+              size = Small,
               color = buttonColor(p.resourcesCalls.get(r)),
               disabled = p.resourcesCalls.get(r).exists {
                 case ResourceRunOperation.ResourceRunInFlight(_) => true
                 case _                                           => false
               },
               labelPosition = labeled,
-              icon          = buttonIcon.isDefined,
+              icon = buttonIcon.isDefined,
               onClickE =
                 if (p.canOperate)(requestResourceCall(p.id, p.stepId, r)) else js.undefined,
               clazz = SeqexecStyles.defaultCursor.unless_(p.canOperate)
