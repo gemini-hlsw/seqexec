@@ -51,7 +51,10 @@ trait SequenceConfiguration {
     }.getOrElse(StepState.Failed("Logical error reading step status"))
 
   def extractWavelength(config: CleanConfig): Option[Wavelength] =
-    config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
+    config
+      .extractAs[String](OBSERVING_WAVELENGTH_KEY)
+      .flatMap(v => Either.catchNonFatal(v.toDouble))
+      .map(Wavelength.fromMicrons[Double](_)).toOption
 
   def calcStepType(config: CleanConfig, isNightSeq: Boolean): TrySeq[StepType] = {
     def extractGaos(inst: Instrument): TrySeq[StepType] =
