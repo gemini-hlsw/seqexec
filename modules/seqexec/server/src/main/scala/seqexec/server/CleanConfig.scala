@@ -22,6 +22,8 @@ import seqexec.model.enum.SystemName
  */
 final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
 
+  def containsKey(k: ItemKey): Boolean = itemValue(k).isDefined
+
   def itemValue(k: ItemKey): Option[AnyRef] = overrides.get(k).orElse(Option(config.getItemValue(k)))
 
   private def sanitizeValue(s: Any): String = s match {

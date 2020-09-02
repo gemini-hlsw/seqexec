@@ -51,30 +51,39 @@ trait SequenceConfiguration {
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
     }.getOrElse(StepState.Failed("Logical error reading step status"))
 
-  def extractWavelength(config: CleanConfig): Either[SeqexecFailure, Wavelength] =
-    // Gmos uses Stringg
-    config
-      .extractAs[String](OBSERVING_WAVELENGTH_KEY)
-      .flatMap(v => Either.catchNonFatal(v.toDouble).leftMap(_ => new ContentError(v)))
-      .map(Wavelength.fromMicrons[Double](_))
-      .orElse{
-        // GNIRS uses its own wavelength!!
-        config
-          .extractAs[GNIRSWavelength](OBSERVING_WAVELENGTH_KEY)
-          .map(w => Wavelength.fromMicrons(w.doubleValue()))
-      }.orElse{
-        // Maybe we use ocs Wavelength
-        config
-          .extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY)
-      }.orElse{
-        // Just in case
-        config
-          .extractAs[java.lang.Double](OBSERVING_WAVELENGTH_KEY)
-          .map(v => Wavelength.fromMicrons[Double](v.doubleValue))
-      }.leftMap {
-        case _ =>
-          Unexpected(s"Error reading wavelength ${config.itemValue(OBSERVING_WAVELENGTH_KEY)}: ${config.itemValue(OBSERVING_WAVELENGTH_KEY).getClass()}")
-      }
+  /**
+    * Attempts to extract the Wavelength from the sequence.
+    * The value is not always present thus we can get a None
+    * Also errors reading the value are possible thus we produce an Either
+    */
+  def extractWavelength(config: CleanConfig): Either[SeqexecFailure, Option[Wavelength]] =
+    if (!config.containsKey(OBSERVING_WAVELENGTH_KEY))
+      none.asRight
+    else
+      // Gmos uses String
+      config
+        .extractAs[String](OBSERVING_WAVELENGTH_KEY)
+        .flatMap(v => Either.catchNonFatal(v.toDouble).leftMap(_ => new ContentError(v)))
+        .map(Wavelength.fromMicrons[Double](_).some)
+        .orElse{
+          // GNIRS uses its own wavelength!!
+          config
+            .extractAs[GNIRSWavelength](OBSERVING_WAVELENGTH_KEY)
+            .map(w => Wavelength.fromMicrons(w.doubleValue()).some)
+        }.orElse{
+          // Maybe we use ocs Wavelength
+          config
+            .extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY)
+            .map(_.some)
+        }.orElse{
+          // Just in case
+          config
+            .extractAs[java.lang.Double](OBSERVING_WAVELENGTH_KEY)
+            .map(v => Wavelength.fromMicrons[Double](v.doubleValue).some)
+        }.leftMap {
+          case _ =>
+            Unexpected(s"Error reading wavelength ${config.itemValue(OBSERVING_WAVELENGTH_KEY)}: ${config.itemValue(OBSERVING_WAVELENGTH_KEY).getClass()}")
+        }
 
 
   def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {

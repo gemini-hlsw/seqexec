@@ -327,7 +327,7 @@ object SeqTranslate {
     private def tryWavelength(inst: Instrument, config: CleanConfig): F[Option[Wavelength]] =
       extractWavelength(config) match {
         case Left(x) => Logger[F].error(s"Cannot decode the wavelength for ${inst.label}") *> MonadError[F, Throwable].raiseError(new SeqexecFailure.Execution(s"Cannot decode the wavelength from the sequence $x"))
-        case Right(w) => w.some.pure[F]
+        case Right(w) => w.pure[F]
       }
 
     private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[F],
