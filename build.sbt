@@ -308,7 +308,8 @@ lazy val seqexec_server = project
         PrometheusClient,
         Log4Cats.value,
         Log4CatsNoop.value,
-        TestLibs.value
+        TestLibs.value,
+        PPrint.value
       ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )

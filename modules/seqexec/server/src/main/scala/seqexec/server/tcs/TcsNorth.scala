@@ -38,23 +38,23 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]: Logger] private(tcsContr
   override val resource: Resource = Resource.TCS
 
   // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsNorthConfig, subsystem: Subsystem): List[String] = subsystem match {
-    case Subsystem.M1     => List(tcs.gc.m1Guide.show)
-    case Subsystem.M2     => List(tcs.gc.m2Guide.show)
-    case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
-    case Subsystem.PWFS1  => List((tcs.gds.pwfs1:GuiderConfig).show)
-    case Subsystem.PWFS2  => List((tcs.gds.pwfs2:GuiderConfig).show)
-    case Subsystem.Mount  => List(tcs.tc.show)
-    case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
+  private def subsystemConfig(tcs: TcsNorthConfig, subsystem: Subsystem): String = (subsystem match {
+    case Subsystem.M1     => pprint.apply(tcs.gc.m1Guide)
+    case Subsystem.M2     => pprint.apply(tcs.gc.m2Guide)
+    case Subsystem.OIWFS  => pprint.apply(tcs.gds.oiwfs)
+    case Subsystem.PWFS1  => pprint.apply(tcs.gds.pwfs1)
+    case Subsystem.PWFS2  => pprint.apply(tcs.gds.pwfs2)
+    case Subsystem.Mount  => pprint.apply(tcs.tc)
+    case Subsystem.AGUnit => pprint.apply(List(tcs.agc.sfPos, tcs.agc.hrwfs))
     case Subsystem.Gaos   => tcs match {
-      case x:TcsNorthAoConfig => List((x.gds.aoguide:GuiderConfig).show)
-      case _                  => List.empty
+      case x:TcsNorthAoConfig => pprint.apply(x.gds.aoguide)
+      case _                  => pprint.apply("")
     }
-  }
+  }).plainText
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}") *>
+      subsystems.traverse_(s => Log.debug(s"Applying TCS/$s configuration/config: ${subsystemConfig(cfg, s)}")) *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
