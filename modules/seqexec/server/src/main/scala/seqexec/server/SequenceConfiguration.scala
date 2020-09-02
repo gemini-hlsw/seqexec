@@ -59,15 +59,21 @@ trait SequenceConfiguration {
       .map(Wavelength.fromMicrons[Double](_))
       .orElse{
         // GNIRS uses its own wavelength!!
-        config.extractAs[GNIRSWavelength](OBSERVING_WAVELENGTH_KEY).map(w => Wavelength.fromMicrons(w.doubleValue()))
+        config
+          .extractAs[GNIRSWavelength](OBSERVING_WAVELENGTH_KEY)
+          .map(w => Wavelength.fromMicrons(w.doubleValue()))
       }.orElse{
         // Maybe we use ocs Wavelength
-        config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY)
+        config
+          .extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY)
       }.orElse{
         // Just in case
-        config.extractAs[java.lang.Double](OBSERVING_WAVELENGTH_KEY).map(v => Wavelength.fromMicrons[Double](v.doubleValue))
+        config
+          .extractAs[java.lang.Double](OBSERVING_WAVELENGTH_KEY)
+          .map(v => Wavelength.fromMicrons[Double](v.doubleValue))
       }.leftMap {
-        case e => Unexpected(s"Error reading wavelength ${config.itemValue(OBSERVING_WAVELENGTH_KEY)}: ${config.itemValue(OBSERVING_WAVELENGTH_KEY).getClass()}")
+        case _ =>
+          Unexpected(s"Error reading wavelength ${config.itemValue(OBSERVING_WAVELENGTH_KEY)}: ${config.itemValue(OBSERVING_WAVELENGTH_KEY).getClass()}")
       }
 
 
