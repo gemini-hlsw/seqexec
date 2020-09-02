@@ -11,6 +11,7 @@ import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import edu.gemini.spModel.obscomp.InstConstants.{DATA_LABEL_PROP, OBSERVE_TYPE_PROP, SCIENCE_OBSERVE_TYPE}
+import edu.gemini.spModel.core.Wavelength
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
@@ -323,29 +324,37 @@ object SeqTranslate {
     private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem] =
       NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
+    private def tryWavelength(inst: Instrument, config: CleanConfig): F[Option[Wavelength]] =
+      extractWavelength(config) match {
+        case Left(x) => Logger[F].error(s"Cannot decode the wavelength for ${inst.label}") *> MonadError[F, Throwable].raiseError(new SeqexecFailure.Execution(s"Cannot decode the wavelength from the sequence $x"))
+        case Right(w) => w.pure[F]
+      }
+
     private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[F],
-                       lsource: LightSource, config: CleanConfig): F[System[F]] = site match {
-      case Site.GS => if(useGaos)
-        Gems.fromConfig[F](systems.gems, systems.guideDb)(config).map(a =>
-          TcsSouth.fromConfig[F](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
-            config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
-          )
-        )
-        else
-          TcsSouth.fromConfig[F](systems.tcsSouth, subs, None, inst, systems.guideDb)(
-            config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
-          ).pure[F].widen[System[F]]
-      case Site.GN => if(useGaos)
-          Altair.fromConfig(config, systems.altair).map(a =>
-            TcsNorth.fromConfig[F](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
-              config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
+                       lsource: LightSource, config: CleanConfig): F[System[F]] =
+      tryWavelength(inst.instrument, config).flatMap{w => site match {
+          case Site.GS => if(useGaos)
+            Gems.fromConfig[F](systems.gems, systems.guideDb)(config).map(a =>
+              TcsSouth.fromConfig[F](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              )
             )
-          )
-        else
-          TcsNorth.fromConfig[F](systems.tcsNorth, subs, none, inst, systems.guideDb)(
-            config, LightPath(lsource, inst.sfName(config)), extractWavelength(config)
-          ).pure[F].widen[System[F]]
-    }
+            else
+            TcsSouth.fromConfig[F](systems.tcsSouth, subs, None, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              ).pure[F].widen[System[F]]
+          case Site.GN => if(useGaos)
+              Altair.fromConfig(config, systems.altair).map(a =>
+                TcsNorth.fromConfig[F](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
+                  config, LightPath(lsource, inst.sfName(config)), w
+                )
+              )
+            else
+              TcsNorth.fromConfig[F](systems.tcsNorth, subs, none, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              ).pure[F].widen[System[F]]
+        }
+      }
 
     private def calcSystems(
       config: CleanConfig,

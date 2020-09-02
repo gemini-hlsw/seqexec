@@ -39,20 +39,20 @@ case class TcsSouth [F[_]: Sync: Logger] private(tcsController: TcsSouthControll
 
   //TODO Implement GeMS case
   // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsSouthConfig, subsystem: Subsystem): List[String] = subsystem match {
-    case Subsystem.M1     => List(tcs.gc.m1Guide.show)
-    case Subsystem.M2     => List(tcs.gc.m2Guide.show)
-    case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
-    case Subsystem.PWFS1  => List((tcs.gds.pwfs1:GuiderConfig).show)
-    case Subsystem.PWFS2  => List((tcs.gds.pwfs2:GuiderConfig).show)
-    case Subsystem.Mount  => List(tcs.tc.show)
-    case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
-    case Subsystem.Gaos   => List()
-  }
+  private def subsystemConfig(tcs: TcsSouthConfig, subsystem: Subsystem): String = (subsystem match {
+    case Subsystem.M1     => pprint.apply(tcs.gc.m1Guide)
+    case Subsystem.M2     => pprint.apply(tcs.gc.m2Guide)
+    case Subsystem.OIWFS  => pprint.apply(tcs.gds.oiwfs)
+    case Subsystem.PWFS1  => pprint.apply(tcs.gds.pwfs1)
+    case Subsystem.PWFS2  => pprint.apply(tcs.gds.pwfs2)
+    case Subsystem.Mount  => pprint.apply(tcs.tc)
+    case Subsystem.AGUnit => pprint.apply(List(tcs.agc.sfPos, tcs.agc.hrwfs))
+    case Subsystem.Gaos   => pprint.apply("")
+  }).plainText
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap{ cfg =>
-      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}") *>
+      subsystems.traverse_(s => Log.debug(s"Applying TCS/$s configuration/config: ${subsystemConfig(cfg, s)}")) *>
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 

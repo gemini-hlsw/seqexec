@@ -8,9 +8,9 @@ import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Wavelength => GNIRSWavelength}
 import seqexec.model.enum.Instrument
 import seqexec.model.StepState
-import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2
 import seqexec.server.gpi.Gpi
 import seqexec.server.ghost.Ghost
@@ -23,6 +23,7 @@ import seqexec.server.gnirs._
 import seqexec.server.SeqexecFailure.UnrecognizedInstrument
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
 
 trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =
@@ -50,13 +51,42 @@ trait SequenceConfiguration {
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
     }.getOrElse(StepState.Failed("Logical error reading step status"))
 
-  def extractWavelength(config: CleanConfig): Option[Wavelength] =
-    config
-      .extractAs[String](OBSERVING_WAVELENGTH_KEY)
-      .flatMap(v => Either.catchNonFatal(v.toDouble))
-      .map(Wavelength.fromMicrons[Double](_)).toOption
+  /**
+    * Attempts to extract the Wavelength from the sequence.
+    * The value is not always present thus we can get a None
+    * Also errors reading the value are possible thus we produce an Either
+    */
+  def extractWavelength(config: CleanConfig): Either[SeqexecFailure, Option[Wavelength]] =
+    if (!config.containsKey(OBSERVING_WAVELENGTH_KEY))
+      none.asRight
+    else
+      // Gmos uses String
+      config
+        .extractAs[String](OBSERVING_WAVELENGTH_KEY)
+        .flatMap(v => Either.catchNonFatal(v.toDouble).leftMap(_ => new ContentError(v)))
+        .map(Wavelength.fromMicrons[Double](_).some)
+        .orElse{
+          // GNIRS uses its own wavelength!!
+          config
+            .extractAs[GNIRSWavelength](OBSERVING_WAVELENGTH_KEY)
+            .map(w => Wavelength.fromMicrons(w.doubleValue()).some)
+        }.orElse{
+          // Maybe we use ocs Wavelength
+          config
+            .extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY)
+            .map(_.some)
+        }.orElse{
+          // Just in case
+          config
+            .extractAs[java.lang.Double](OBSERVING_WAVELENGTH_KEY)
+            .map(v => Wavelength.fromMicrons[Double](v.doubleValue).some)
+        }.leftMap {
+          case _ =>
+            Unexpected(s"Error reading wavelength ${config.itemValue(OBSERVING_WAVELENGTH_KEY)}: ${config.itemValue(OBSERVING_WAVELENGTH_KEY).getClass()}")
+        }
 
-  def calcStepType(config: CleanConfig, isNightSeq: Boolean): TrySeq[StepType] = {
+
+  def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
     def extractGaos(inst: Instrument): TrySeq[StepType] =
       config.extractAs[String](AO_SYSTEM_KEY) match {
         case Left(ConfigUtilOps.ConversionError(_, _)) =>
