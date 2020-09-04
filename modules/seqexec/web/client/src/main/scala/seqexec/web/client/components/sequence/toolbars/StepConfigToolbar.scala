@@ -37,9 +37,7 @@ final case class StepConfigToolbar(
   step:       Int,
   total:      Int,
   isPreview:  Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = StepConfigToolbar.component(this)
-
+) extends ReactProps[StepConfigToolbar](StepConfigToolbar.component) {
   val sequenceConnect: ReactConnectProxy[Option[SequenceInfoFocus]] =
     SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
 }

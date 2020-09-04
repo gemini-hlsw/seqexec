@@ -30,13 +30,13 @@ import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
 import gpp.ui.forms.EnumSelect
 import gpp.ui.forms.InputEV
-import gpp.ui.forms.InputOptics
+import gpp.ui.forms.InputFormat
 
 /**
   * Container for a table with the steps
   */
-final case class HeadersSideBar(model: HeaderSideBarFocus) extends ReactProps {
-  @inline def render: VdomElement = HeadersSideBar.component(this)
+final case class HeadersSideBar(model: HeaderSideBarFocus)
+    extends ReactProps[HeadersSideBar](HeadersSideBar.component) {
 
   def canOperate: Boolean = model.status.canOperate
   def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
@@ -63,13 +63,20 @@ object HeadersSideBar {
     Show.show(_.label)
 
   @Lenses
-  final case class State(operator: Option[Operator], observer: Option[Observer])
+  final case class State(
+    operator: Option[Operator],
+    observer: Option[Observer],
+    prevOperator: Option[Operator],
+    prevObserver: Option[Observer]
+  )
 
   object State {
-    implicit val equals: Eq[State] = Eq.fromUniversalEquals
+    def apply(operator: Option[Operator], observer: Option[Observer]): State =
+      State(operator, observer, operator, observer)
 
-    implicit val stateReuse: Reusability[State] = Reusability.derive
+    implicit val stateEquals: Eq[State] = Eq.fromUniversalEquals
 
+    implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.operator, s.observer))
   }
 
   class Backend(val $ : BackendScope[HeadersSideBar, State]) extends TimerSupport {
@@ -160,11 +167,11 @@ object HeadersSideBar {
             <.div(
               ^.cls := "eight wide field",
               FormLabel("Operator", Some("operator")),
-              InputEV[Operator](
+              InputEV[StateSnapshot, Operator](
                 "operator",
                 "operator",
                 operatorEV,
-                InputOptics.fromIso(Operator.valueI.reverse),
+format =                 InputFormat.fromIso(Operator.valueI.reverse),
                 placeholder = "Operator...",
                 disabled    = !enabled,
                 onBlur      = _ => submitIfChangedOp
@@ -173,11 +180,11 @@ object HeadersSideBar {
             <.div(
               ^.cls := "eight wide field",
               FormLabel(observerField, Some("observer")),
-              InputEV[Observer](
+              InputEV[StateSnapshot, Observer](
                 "observer",
                 "observer",
                 observerEV,
-                InputOptics.fromIso(Observer.valueI.reverse),
+                format = InputFormat.fromIso(Observer.valueI.reverse),
                 placeholder = "Observer...",
                 disabled    = !enabled || obsCompleted,
                 onBlur      = _ => submitIfChangedOb
@@ -214,41 +221,36 @@ object HeadersSideBar {
   }
 
   private val component = ScalaComponent
-    .builder[HeadersSideBar]("HeadersSideBar")
-    .initialState(State(None, None))
+    .builder[HeadersSideBar]
+    .getDerivedStateFromPropsAndState[State]{ (p, sOpt) =>
+      val operator = p.model.operator
+      val observer =
+        p.selectedObserver match {
+          case Right(Right(a)) => a.observer
+          case Right(Left(a))  => a.observer
+          case Left(o)         => o.some
+        }
+
+      sOpt.fold(State(operator, observer)){ s =>
+        Function.chain(
+          List(
+            State.operator.set(operator),
+            State.prevOperator.set(operator)
+          ).some
+            .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
+            .orEmpty :::
+          List(
+            State.observer.set(observer),
+            State.prevObserver.set(observer)
+          ).some
+            .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
+            .orEmpty
+        )(s)
+      }
+    }
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f =>
-      f.backend.$.props >>= { p =>
-        p.model.operator
-          .map(op => f.backend.updateStateOp(Operator(op.value).some))
-          .getOrEmpty *>
-          (p.selectedObserver match {
-            case Right(Right(a)) =>
-              f.backend.updateStateOb(a.observer)
-            case Right(Left(a)) =>
-              f.backend.updateStateOb(a.observer)
-            case Left(o) =>
-              f.backend.updateStateOb(Observer(o.value).some)
-          })
-      }
-    )
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps { f =>
-      val operator = f.nextProps.model.operator
-      val observer = f.nextProps.selectedObserver match {
-        case Right(Right(a)) => a.observer
-        case Right(Left(a))  => a.observer
-        case Left(o)         => o.some
-      }
-      // Update the operator and observator fields
-      Callback.when(
-        (operator =!= f.state.operator) && operator.nonEmpty
-      )(f.setStateL(State.operator)(operator)) *>
-        Callback.when(
-          (observer =!= f.state.observer) && observer.nonEmpty
-        )(f.setStateL(State.observer)(observer))
-    }
     .configure(Reusability.shouldComponentUpdate)
     .build
 

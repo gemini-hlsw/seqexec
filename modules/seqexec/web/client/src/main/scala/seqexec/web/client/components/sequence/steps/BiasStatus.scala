@@ -18,8 +18,7 @@ case class BiasStatus(
   fileId: String,
   stopping: Boolean,
   paused: Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = BiasStatus.component(this)
+) extends ReactProps[BiasStatus](BiasStatus.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader[ObservationProgress](obsId, stepId))

@@ -30,9 +30,7 @@ import seqexec.web.client.semanticui._
 final case class CalibrationQueueTab(
   router: RouterCtl[SeqexecPages],
   tab:    CalibrationQueueTabActive
-) extends ReactProps {
-  @inline def render: VdomElement = CalibrationQueueTab.component(this)
-}
+) extends ReactProps[CalibrationQueueTab](CalibrationQueueTab.component)
 
 object CalibrationQueueTab {
   type Props = CalibrationQueueTab

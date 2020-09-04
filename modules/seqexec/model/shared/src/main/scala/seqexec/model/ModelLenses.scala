@@ -147,7 +147,7 @@ trait ModelLenses {
 
   val signedArcsecFormat: Format[String, Angle] =
     Format[String, BigDecimal](_.parseBigDecimalOption, _.toString)
-      .composeFormat(Angle.signedArcseconds.reverse.asFormat)
+      .composeFormat(Angle.signedDecimalArcseconds.reverse.asFormat)
   def signedComponentFormat[A]: Format[String, Offset.Component[A]] =
     signedArcsecFormat.composeIso(Offset.Component.angle[A].reverse)
 

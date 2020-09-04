@@ -27,9 +27,7 @@ import seqexec.web.client.reusability._
 /**
   * Component to display an item of a sequence
   */
-final case class StepItemCell(value: Option[String]) extends ReactProps {
-  @inline def render: VdomElement = StepItemCell.component(this)
-}
+final case class StepItemCell(value: Option[String]) extends ReactProps[StepItemCell](StepItemCell.component)
 
 object StepItemCell {
   type Props = StepItemCell
@@ -52,9 +50,7 @@ object StepItemCell {
 /**
   * Component to display the exposure time and coadds
   */
-final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps {
-  @inline def render: VdomElement = ExposureTimeCell.component(this)
-}
+final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps[ExposureTimeCell](ExposureTimeCell.component)
 
 object ExposureTimeCell {
   type Props = ExposureTimeCell
@@ -122,9 +118,7 @@ final case class SettingsCell(
   obsId:      Observation.Id,
   index:      Int,
   isPreview:  Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = SettingsCell.component(this)
-}
+) extends ReactProps[SettingsCell](SettingsCell.component)
 
 object SettingsCell {
   type Props = SettingsCell
@@ -156,9 +150,7 @@ final case class ObjectTypeCell(
   instrument: Instrument,
   step:       Step,
   size:       SemanticSize
-) extends ReactProps {
-  @inline def render: VdomElement = ObjectTypeCell.component(this)
-}
+) extends ReactProps[ObjectTypeCell](ObjectTypeCell.component)
 
 object ObjectTypeCell {
   type Props = ObjectTypeCell

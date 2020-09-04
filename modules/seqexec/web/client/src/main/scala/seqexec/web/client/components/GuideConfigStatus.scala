@@ -20,9 +20,8 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.web.client.reusability._
 
-final case class GuideConfigStatus(config: TelescopeGuideConfig) extends ReactProps {
-  @inline def render: VdomElement = GuideConfigStatus.component(this)
-}
+final case class GuideConfigStatus(config: TelescopeGuideConfig)
+    extends ReactProps[GuideConfigStatus](GuideConfigStatus.component)
 
 /**
   * Alert message when the connection disappears

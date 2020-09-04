@@ -60,8 +60,7 @@ final case class ObservationProgressBar(
   fileId:   ImageFileId,
   stopping: Boolean,
   paused:   Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = ObservationProgressBar.component(this)
+) extends ReactProps[ObservationProgressBar](ObservationProgressBar.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader[ObservationProgress](obsId, stepId))
@@ -72,7 +71,7 @@ object ObservationProgressBar {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  protected val component = ScalaComponent
+  val component = ScalaComponent
     .builder[Props]("ObservationProgressDisplay")
     .stateless
     .render_P(p =>

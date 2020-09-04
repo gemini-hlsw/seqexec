@@ -19,7 +19,8 @@ calibrations/
 .metals/
 .bloop/
 project/project/.bloop/
-project/metals.sbt
+metals.sbt
+.vscode
 
 # hydra
 .hydra/
@@ -68,9 +69,13 @@ ensime.sbt
 archive
 smartgcal
 .jvmopts
+
 # Node modules
 node_modules/
 package-lock.json
+
+# Scalafmt
+.scalafmt.conf
 
 # Project specific
 modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server/log/

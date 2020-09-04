@@ -17,9 +17,7 @@ import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 
-final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps {
-  @inline def render: VdomElement = SequenceInfo.component(this)
-}
+final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps[SequenceInfo](SequenceInfo.component)
 
 /**
   * Display the name of the sequence and the observer
@@ -27,7 +25,7 @@ final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps {
 object SequenceInfo {
   type Props = SequenceInfo
 
-  private def component =
+  val component =
     ScalaComponent
       .builder[Props]("SequenceInfo")
       .stateless

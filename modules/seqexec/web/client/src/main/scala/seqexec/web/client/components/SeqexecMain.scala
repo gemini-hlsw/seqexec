@@ -22,9 +22,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
 
-final case class AppTitle(site: Site, ws: WebSocketConnection) extends ReactProps {
-  @inline def render: VdomElement = AppTitle.component(this)
-}
+final case class AppTitle(site: Site, ws: WebSocketConnection) extends ReactProps[AppTitle](AppTitle.component)
 
 object AppTitle {
   type Props = AppTitle
@@ -54,9 +52,7 @@ object AppTitle {
 
 }
 
-final case class SeqexecMain(site: Site, ctl: RouterCtl[SeqexecPages]) extends ReactProps {
-  @inline def render: VdomElement = SeqexecMain.component(this)
-}
+final case class SeqexecMain(site: Site, ctl: RouterCtl[SeqexecPages]) extends ReactProps[SeqexecMain](SeqexecMain.component)
 
 object SeqexecMain {
   type Props = SeqexecMain

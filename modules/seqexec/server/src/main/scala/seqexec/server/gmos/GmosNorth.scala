@@ -29,7 +29,6 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
   nsCmdR: Ref[F, Option[NSObserveCommand]]
 ) extends Gmos[F, NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
-    override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
     override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
       config.extractInstAs[NorthTypes#Filter](FILTER_PROP)
     override def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.DisperserNorth] =
@@ -38,6 +37,7 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
       config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
     override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
+    override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
   },
   nsCmdR
 )(northConfigTypes) {

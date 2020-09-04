@@ -25,9 +25,7 @@ final case class DividedProgress(
   completeSectionColor: Option[SemanticColor] = None,
   ongoingSectionColor:  Option[SemanticColor] = None,
   progressCls:          Css
-) extends ReactProps {
-  @inline def render: VdomElement = DividedProgress.component(this)
-}
+) extends ReactProps[DividedProgress](DividedProgress.component)
 
 object DividedProgress {
   type Props = DividedProgress

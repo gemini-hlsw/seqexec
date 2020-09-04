@@ -175,8 +175,8 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
               .nod(
                 sub.stage,
                 InstrumentOffset(
-                  tag[OffsetP](nsPos.offset.p.toRadians.radians),
-                  tag[OffsetQ](nsPos.offset.q.toRadians.radians)
+                  tag[OffsetP](nsPos.offset.p.toSignedDoubleRadians.radians),
+                  tag[OffsetQ](nsPos.offset.q.toSignedDoubleRadians.radians)
                 ),
                 nsPos.guide === Guiding.Guide
               )

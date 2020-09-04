@@ -28,9 +28,7 @@ final case class RunFromStep(
   stepId:           Int,
   resourceInFlight: Boolean,
   runFrom:          StartFromOperation
-) extends ReactProps {
-  @inline def render: VdomElement = RunFromStep.component(this)
-}
+) extends ReactProps[RunFromStep](RunFromStep.component)
 
 object RunFromStep {
   type Props = RunFromStep

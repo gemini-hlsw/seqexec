@@ -7,7 +7,7 @@ const path = require("path");
 const Webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
-const UglifyWebpackPlugin = require("uglifyjs-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 const cssnano = require("cssnano");
 
 // Dir at the top of the module. e.g. edu_gemini_seqexec_web_client
@@ -145,13 +145,14 @@ exports.minifyJavaScript = () => ({
   optimization: {
     minimize: true,
     minimizer: [
-      new UglifyWebpackPlugin({
-        parallel: true,
-        uglifyOptions: { mangle: true },
-        sourceMap: false
-      })
-    ]
-  }
+      new TerserPlugin({
+        terserOptions: {
+          parallel: true,
+          sourceMap: false,
+        },
+      }),
+    ],
+  },
 });
 
 // Loader for fonts

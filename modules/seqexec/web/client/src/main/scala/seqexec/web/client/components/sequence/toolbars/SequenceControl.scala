@@ -27,8 +27,7 @@ import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.icons._
 import seqexec.web.client.reusability._
 
-final case class SequenceControl(p: SequenceControlFocus) extends ReactProps {
-  @inline def render: VdomElement = SequenceControl.component(this)
+final case class SequenceControl(p: SequenceControlFocus) extends ReactProps[SequenceControl](SequenceControl.component) {
   private val runRequested: RunOperation =
     p.control.tabOperations.runRequested
 

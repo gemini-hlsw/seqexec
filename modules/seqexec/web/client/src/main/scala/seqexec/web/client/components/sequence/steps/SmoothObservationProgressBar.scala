@@ -22,8 +22,7 @@ final case class SmoothObservationProgressBar(
   stopping: Boolean,
   paused:   Boolean,
   stage:    ObserveStage
-) extends SmoothProgressBarProps {
-  @inline def render: VdomElement = SmoothObservationProgressBar.component(this)
+) extends SmoothProgressBarProps[SmoothObservationProgressBar](SmoothObservationProgressBar.component) {
 
   override val maxValue = total
 }
@@ -36,11 +35,11 @@ object SmoothObservationProgressBar
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent
-    .builder[Props]("SmoothProgressBar")
+    .builder[Props]
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
-      val remainingMillis = s.maxValue - s.value
+      val remainingMillis = p.maxValue - s.value
 
       Progress(
         total = p.total,
@@ -50,7 +49,7 @@ object SmoothObservationProgressBar
       )(label(p.fileId, remainingMillis.some, p.stopping, p.paused, p.stage))
     }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps(x => x.backend.newStateFromProps(x.currentProps, x.nextProps))
+    .getDerivedStateFromProps(deriveNewState _)
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build

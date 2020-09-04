@@ -15,19 +15,14 @@ import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
-import org.log4s._
+import typings.loglevel.mod.{ ^ => logger }
 import scala.concurrent.ExecutionContext
 
 /**
   * Seqexec WebApp entry point
   */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
-
-  def setupLogger: F[Unit] = F.delay {
-    import Log4sConfig._
-    setLoggerThreshold("seqexec", Info)
-    setLoggerThreshold("", AllThreshold)
-  }
+  // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
 
   def serverSite(implicit cs: ContextShift[IO]): F[Site] =
     L.liftIO(IO.fromFuture {
@@ -39,20 +34,22 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
       }
     })
 
-  def initializeDataModel(seqexecSite: Site): F[Unit] = F.delay {
-    // Set the instruments before adding it to the dom
-    SeqexecCircuit.dispatch(Initialize(seqexecSite))
-  }
-
-  def renderingNode: F[Element] = F.delay {
-    // Find or create the node where we render
-    Option(document.getElementById("root")).getOrElse {
-      val elem = document.createElement("div")
-      elem.id = "root"
-      document.body.appendChild(elem)
-      elem
+  def initializeDataModel(seqexecSite: Site): F[Unit] =
+    F.delay {
+      // Set the instruments before adding it to the dom
+      SeqexecCircuit.dispatch(Initialize(seqexecSite))
     }
-  }
+
+  def renderingNode: F[Element] =
+    F.delay {
+      // Find or create the node where we render
+      Option(document.getElementById("root")).getOrElse {
+        val elem = document.createElement("div")
+        elem.id = "root"
+        document.body.appendChild(elem)
+        elem
+      }
+    }
 }
 
 /**
@@ -61,16 +58,15 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
   */
 @JSExportTopLevel("SeqexecApp")
 object SeqexecApp extends IOApp {
-  override def run(args:  List[String]): IO[ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] = {
     val launcher = new SeqexecLauncher[IO]
     // Render the UI using React
     for {
-      _           <- launcher.setupLogger
       seqexecSite <- launcher.serverSite
       _           <- launcher.initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
-      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(getLogger.error(p.toString)))
+      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(logger.error(p.toString)))
     } yield ExitCode.Success
   }
 

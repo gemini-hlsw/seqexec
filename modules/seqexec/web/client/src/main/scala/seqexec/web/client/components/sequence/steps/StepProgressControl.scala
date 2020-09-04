@@ -37,8 +37,7 @@ final case class StepProgressCell(
   stateSummary: StepStateSummary,
   selectedStep: Option[StepId],
   isPreview:    Boolean
-) extends ReactProps {
-  @inline def render: VdomElement = StepProgressCell.component(this)
+) extends ReactProps[StepProgressCell](StepProgressCell.component) {
 
   val step: Step                   = stateSummary.step
   val obsId: Observation.Id        = stateSummary.obsId

@@ -9,6 +9,7 @@ import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.component.Scala
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.SemanticColor
@@ -31,8 +32,7 @@ final case class NodAndShuffleProgressMessage(
   stopping: Boolean,
   paused:   Boolean,
   nsStatus: NodAndShuffleStatus
-) extends ReactProps {
-  @inline def render: VdomElement = NodAndShuffleProgressMessage.component(this)
+) extends ReactProps[NodAndShuffleProgressMessage](NodAndShuffleProgressMessage.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader[NSObservationProgress](obsId, stepId))
@@ -48,7 +48,7 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
   implicit val stateReuse: Reusability[State] = Reusability.always
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleProgress")
+    .builder[Props]
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
       <.div(
@@ -88,9 +88,7 @@ final case class SmoothDividedProgressBar(
   progressCls:          Css,
   stopping:             Boolean,
   paused:               Boolean
-) extends SmoothProgressBarProps {
-  @inline def render: VdomElement = SmoothDividedProgressBar.component(this)
-}
+) extends SmoothProgressBarProps[SmoothDividedProgressBar](SmoothDividedProgressBar.component)
 
 object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressBar] {
   type Props = SmoothDividedProgressBar
@@ -98,7 +96,7 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   protected val component = ScalaComponent
-    .builder[Props]("SmoothDividedProgressBar")
+    .builder[Props]
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
@@ -112,13 +110,14 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
       )
     }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps($ => $.backend.newStateFromProps($.currentProps, $.nextProps))
+    .getDerivedStateFromProps(deriveNewState _)
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
 
-sealed trait NodAndShuffleProgressProps extends ReactProps {
+sealed abstract class NodAndShuffleProgressProps[A](override val component: Scala.Component[A, _, _, CtorType.Props])
+    extends ReactProps[A](component) {
   val summary: StepStateSummary
 
   def isStopping: Boolean =
@@ -131,7 +130,7 @@ sealed trait NodAndShuffleProgressProps extends ReactProps {
 }
 
 sealed trait NodAndShuffleProgress {
-  type Props <: NodAndShuffleProgressProps
+  type Props <: NodAndShuffleProgressProps[_]
 
   // From diode doc (Usage with React): "Having a single reference to (connect)
   // during your components lifecycle ensures that React will update your
@@ -151,7 +150,7 @@ sealed trait NodAndShuffleProgress {
   ): (DividedProgress.Quantity, DividedProgress.Quantity) // (sectionTotal, currentValue)
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleProgress")
+    .builder[Props]
     .initialStateFromProps(p => State(p.connect))
     .render_PS { (p, s) =>
       s.progressConnect { proxy =>
@@ -191,9 +190,7 @@ sealed trait NodAndShuffleProgress {
 }
 
 final case class NodAndShuffleCycleProgress(summary: StepStateSummary)
-    extends NodAndShuffleProgressProps {
-  @inline def render: VdomElement = NodAndShuffleCycleProgress.component(this)
-}
+    extends NodAndShuffleProgressProps[NodAndShuffleCycleProgress](NodAndShuffleCycleProgress.component)
 
 object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
   type Props = NodAndShuffleCycleProgress
@@ -215,9 +212,7 @@ object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
 }
 
 final case class NodAndShuffleNodProgress(summary: StepStateSummary)
-    extends NodAndShuffleProgressProps {
-  @inline def render: VdomElement = NodAndShuffleNodProgress.component(this)
-}
+    extends NodAndShuffleProgressProps[NodAndShuffleNodProgress](NodAndShuffleNodProgress.component)
 
 object NodAndShuffleNodProgress extends NodAndShuffleProgress {
   type Props = NodAndShuffleNodProgress
@@ -237,13 +232,13 @@ object NodAndShuffleNodProgress extends NodAndShuffleProgress {
   }
 }
 
-sealed trait NodAndShuffleRowProps extends ReactProps {
+sealed abstract class NodAndShuffleRowProps[A](override val component: Scala.Component[A, _, _, CtorType.Props]) extends ReactProps[A](component) {
   val clientStatus: ClientStatus
   val stateSummary: StepStateSummary
 }
 
-sealed trait NodAndShuffleRow[L <: OperationLevel] {
-  type Props <: NodAndShuffleRowProps
+sealed trait NodAndShuffleRow[A, L <: OperationLevel] {
+  type Props <: NodAndShuffleRowProps[A]
 
   implicit val propsReuse: Reusability[Props]
 
@@ -255,7 +250,7 @@ sealed trait NodAndShuffleRow[L <: OperationLevel] {
   protected def progressControl(summary: StepStateSummary): VdomElement
 
   protected[steps] val component = ScalaComponent
-    .builder[Props]("NodAndShuffleCycleRow")
+    .builder[Props]
     .stateless
     .render_P { p =>
       <.span(
@@ -282,11 +277,9 @@ sealed trait NodAndShuffleRow[L <: OperationLevel] {
 final case class NodAndShuffleCycleRowProps(
   clientStatus: ClientStatus,
   stateSummary: StepStateSummary
-) extends NodAndShuffleRowProps {
-  @inline def render: VdomElement = NodAndShuffleCycleRow.component(this)
-}
+) extends NodAndShuffleRowProps[NodAndShuffleCycleRowProps](NodAndShuffleCycleRow.component)
 
-object NodAndShuffleCycleRow extends NodAndShuffleRow[OperationLevel.NsCycle] {
+object NodAndShuffleCycleRow extends NodAndShuffleRow[NodAndShuffleCycleRowProps, OperationLevel.NsCycle] {
   def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleCycleRowProps =
     NodAndShuffleCycleRowProps(clientStatus, state)
 
@@ -304,11 +297,9 @@ object NodAndShuffleCycleRow extends NodAndShuffleRow[OperationLevel.NsCycle] {
 final case class NodAndShuffleNodRowProps(
   clientStatus: ClientStatus,
   stateSummary: StepStateSummary
-) extends NodAndShuffleRowProps {
-  @inline def render: VdomElement = NodAndShuffleNodRow.component(this)
-}
+) extends NodAndShuffleRowProps[NodAndShuffleNodRowProps](NodAndShuffleNodRow.component)
 
-object NodAndShuffleNodRow extends NodAndShuffleRow[OperationLevel.NsNod] {
+object NodAndShuffleNodRow extends NodAndShuffleRow[NodAndShuffleNodRowProps, OperationLevel.NsNod] {
   def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleNodRowProps =
     NodAndShuffleNodRowProps(clientStatus, state)
 

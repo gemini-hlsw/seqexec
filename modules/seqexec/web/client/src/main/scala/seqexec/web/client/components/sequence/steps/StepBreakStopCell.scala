@@ -30,17 +30,15 @@ final case class StepBreakStopCell(
   breakPointEnterCB:  Int => Callback,
   breakPointLeaveCB:  Int => Callback,
   heightChangeCB:     Int => Callback
-) extends ReactProps {
-  @inline def render: VdomElement = StepBreakStopCell.component(this)
-}
+) extends ReactProps[StepBreakStopCell](StepBreakStopCell.component)
 
 object StepBreakStopCell {
   type Props = StepBreakStopCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props](Symbol("heightChangeCB"),
-                                       Symbol("breakPointEnterCB"),
-                                       Symbol("breakPointLeaveCB"))
+    Reusability.caseClassExcept[Props]("heightChangeCB",
+                                       "breakPointEnterCB",
+                                       "breakPointLeaveCB")
 
   // Request a to flip the breakpoint
   def flipBreakpoint(p: Props)(e: ReactEvent): Callback =

@@ -208,7 +208,6 @@ lazy val seqexec_web_client = project
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
-    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     // Configurations for webpack
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS := BundlingMode.Application,
@@ -227,7 +226,6 @@ lazy val seqexec_web_client = project
       baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"
     ),
     webpackEmitSourceMaps := false,
-    emitSourceMaps := false,
     parallelExecution in Test := false,
     version in installJsdom := "12.0.0",
     requireJsDomEnv in Test := true,
@@ -252,11 +250,10 @@ lazy val seqexec_web_client = project
       "mini-css-extract-plugin" -> "0.8.0",
       "webpack-dev-server-status-bar" -> "1.1.0",
       "cssnano" -> "4.1.10",
-      "uglifyjs-webpack-plugin" -> "2.2.0",
+      "terser-webpack-plugin" -> "3.0.6",
       "html-webpack-plugin" -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
       "favicons-webpack-plugin" -> "1.0.2",
-      "why-did-you-update" -> "1.0.6",
       "@packtracker/webpack-plugin" -> "2.2.0"
     ),
     libraryDependencies ++= Seq(
@@ -265,7 +262,6 @@ lazy val seqexec_web_client = project
       CatsEffect.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
-      Log4s.value,
       ScalaJSReactSemanticUI.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
@@ -273,7 +269,7 @@ lazy val seqexec_web_client = project
       GppUI.value,
       PPrint.value,
       TestLibs.value
-    ) ++ ReactScalaJS.value ++ Diode.value
+    ) ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,

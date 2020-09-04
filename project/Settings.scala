@@ -10,41 +10,41 @@ object Settings {
   /** Library versions */
   object LibraryVersions {
     // ScalaJS libraries
-    val scalaDom                = "1.0.0"
-    val scalajsReact            = "1.6.0"
-    val booPickle               = "1.3.1"
-    val diode                   = "1.1.7"
-    val diodeReact              = "1.1.7.160"
+    val scalaDom                = "1.1.0"
+    val scalajsReact            = "1.7.5"
+    val booPickle               = "1.3.3"
+    val diode                   = "1.1.13"
     val javaTimeJS              = "2.0.0"
-    val scalaJSReactCommon      = "0.7.1"
-    val scalaJSSemanticUI       = "0.4.12"
-    val scalaJSReactVirtualized = "0.7.5"
-    val scalaJSReactClipboard   = "0.10.6"
-    val scalaJSReactDraggable   = "0.7.5"
-    val scalaJSReactSortable    = "0.3.1"
+    val scalaJSReactCommon      = "0.9.7"
+    val scalaJSSemanticUI       = "0.6.3"
+    val scalaJSReactVirtualized = "0.9.4"
+    val scalaJSReactClipboard   = "1.2.1"
+    val scalaJSReactDraggable   = "0.9.5"
+    val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
     val catsEffectVersion   = "2.1.4"
     val catsVersion         = "2.1.1"
-    val mouseVersion        = "0.24"
+    val mouseVersion        = "0.25"
     val fs2Version          = "2.4.4"
     val shapelessVersion    = "2.3.3"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
 
     val http4sVersion  = "0.21.7"
-    val squants        = "1.6.0"
+    val squants        = "1.7.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "4.3.0"
     val slf4j          = "1.7.30"
     val log4s          = "1.8.2"
     val log4cats       = "1.1.1"
+    val log4catsLevel  = "0.0.2"
     val logback        = "1.2.3"
     val janino         = "3.1.2"
     val logstash       = "6.4"
     val pureConfig     = "0.13.0"
-    val monocleVersion = "2.0.5"
+    val monocleVersion = "2.1.0"
     val circeVersion   = "0.13.0"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
@@ -72,14 +72,14 @@ object Settings {
     val gmpCmdClientBridge  = "0.6.3"
     val guava               = "25.0-jre"
     val prometheusClient    = "0.9.0"
-    val geminiLocales       = "0.4.0"
+    val geminiLocales       = "0.5.0"
     val pprint              = "0.6.0"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val gspMath = "0.1.17"
-    val gspCore = "0.1.8"
-    val gppUI   = "0.0.3"
+    val gspMath = "0.2.8"
+    val gspCore = "0.2.8"
+    val gppUI   = "0.2.9"
   }
 
   /**
@@ -120,6 +120,12 @@ object Settings {
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
     val Log4s = Def.setting("org.log4s" %%% "log4s" % LibraryVersions.log4s)
+    val Log4CatsLogLevel = Def.setting(
+      Seq(
+        "io.chrisdavenport" %%% "log4cats-core"     % LibraryVersions.log4cats,
+        "com.rpiaggio"      %%% "log4cats-loglevel" % LibraryVersions.log4catsLevel
+      )
+    )
     val PrometheusClient =
       "io.prometheus" % "simpleclient_common" % LibraryVersions.prometheusClient
     val Logging = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
@@ -173,7 +179,7 @@ object Settings {
     val Diode = Def.setting(
       Seq(
         "io.suzaku" %%% "diode" % LibraryVersions.diode,
-        "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
+        "io.suzaku" %%% "diode-react" % LibraryVersions.diode
       )
     )
     val ScalaJSDom = Def.setting("org.scala-js" %%% "scalajs-dom" % LibraryVersions.scalaDom)

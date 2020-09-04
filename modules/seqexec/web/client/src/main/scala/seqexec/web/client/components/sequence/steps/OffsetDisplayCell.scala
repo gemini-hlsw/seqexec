@@ -23,9 +23,7 @@ import seqexec.web.client.icons._
 final case class OffsetsDisplayCell(
   offsetsDisplay: OffsetsDisplay,
   step:           Step
-) extends ReactProps {
-  @inline def render: VdomElement = OffsetsDisplayCell.component(this)
-}
+) extends ReactProps[OffsetsDisplayCell](OffsetsDisplayCell.component)
 
 object OffsetsDisplayCell {
   type Props = OffsetsDisplayCell

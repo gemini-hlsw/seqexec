@@ -17,7 +17,6 @@ import diode.data.Pot
 import diode.data.Ready
 import java.time.Instant
 import mouse.all._
-import org.log4s._
 import org.scalajs.dom._
 import scala.scalajs.js.timers._
 import scala.concurrent.Future
@@ -31,6 +30,7 @@ import seqexec.model.events._
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
+import typings.loglevel.mod.{ ^ => logger }
 
 /**
   * Handles the WebSocket connection and performs reconnection if needed
@@ -41,7 +41,6 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     with ModelBooPicklers {
 
   private implicit val runner = new RunAfterJS
-  private val logger          = getLogger(this.getClass.getSimpleName)
 
   // Makes a websocket connection and setups event listeners
   def webSocket: Future[Action] = Future[Action] {

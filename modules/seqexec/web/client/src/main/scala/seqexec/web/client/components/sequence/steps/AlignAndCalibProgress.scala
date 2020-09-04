@@ -9,7 +9,6 @@ import gem.util.Enumerated
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.MonocleReact._
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.colors._
@@ -25,9 +24,7 @@ import scala.math.max
 final case class ACProgressBar(
   step:  AlignAndCalibStep,
   state: StepStateSummary
-) extends ReactProps {
-  @inline def render: VdomElement = ACProgressBar.component(this)
-}
+) extends ReactProps[ACProgressBar](ACProgressBar.component)
 
 object ACProgressBar {
   type Props = ACProgressBar
@@ -98,8 +95,8 @@ object ACProgressBar {
         clazz = SeqexecStyles.observationProgressBar
       )(s"Align and Calib: $msg")
     }
-    .componentWillReceiveProps(x =>
-      x.modStateL(State.counter)(_ + 1) >> x.setStateL(State.msg)(x.nextProps.step.show)
+    .getDerivedStateFromProps((p, s) =>
+      (State.counter.modify(_ + 1) >>> State.msg.set(p.step.show))(s)
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -108,8 +105,7 @@ object ACProgressBar {
 /**
   * Component to wrap the progress bar
   */
-final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps {
-  @inline def render: VdomElement = AlignAndCalibProgress.component(this)
+final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps[AlignAndCalibProgress](AlignAndCalibProgress.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.acProgressRW)

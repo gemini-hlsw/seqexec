@@ -236,9 +236,11 @@ object SessionQueueTable extends Columns {
 
   @Lenses
   final case class State(
-    tableState: TableState[TableColumn],
-    rowLoading: Option[Int],
-    lastSize:   Option[Size]
+    tableState:   TableState[TableColumn],
+    rowLoading:   Option[Int],
+    lastSize:     Option[Size],
+    prevObsIds:   List[Observation.Id],
+    prevLoggedIn: Boolean
   ) {
     // Reset loading of rows
     def resetLoading(p: Props): State =
@@ -247,7 +249,6 @@ object SessionQueueTable extends Columns {
       } else {
         this
       }
-
   }
 
   object State {
@@ -265,8 +266,7 @@ object SessionQueueTable extends Columns {
       TableState(NotModified, 0, all)
 
     val InitialState: State =
-      State(InitialTableState, None, None)
-
+      State(InitialTableState, None, None, List.empty, false)
   }
 
   // Reusability
@@ -277,7 +277,7 @@ object SessionQueueTable extends Columns {
   implicit val stSeFocusReuse: Reusability[StatusAndLoadedSequencesFocus] =
     Reusability.by(x => (x.status, x.sequences, x.tableState, x.queueFilter))
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.sequences)
-  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
+  implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.tableState ,s.rowLoading, s.lastSize))
 
   // ScalaJS defined trait
   trait SessionQueueRow extends js.Object {
@@ -701,7 +701,11 @@ object SessionQueueTable extends Columns {
     }
 
   private def initialState(p: Props): State =
-    State.tableState.set(p.sequences.tableState)(State.InitialState)
+    (
+      State.tableState.set(p.sequences.tableState) >>>
+      State.prevObsIds.set(p.obsIds) >>>
+      State.prevLoggedIn.set(p.loggedIn)
+    )(State.InitialState)
 
   private def onResize(b: Backend): Size => Callback =
     s =>
@@ -711,7 +715,7 @@ object SessionQueueTable extends Columns {
         )
 
   private val component = ScalaComponent
-    .builder[Props]("SessionQueueTable")
+    .builder[Props]
     .initialStateFromProps(initialState)
     .render(b =>
       AutoSizer(
@@ -720,27 +724,30 @@ object SessionQueueTable extends Columns {
       )
     )
     .configure(Reusability.shouldComponentUpdate)
-    .componentWillReceiveProps { b =>
-      // Reset loading
-      b.modState(_.resetLoading(b.nextProps)) *>
-        // if login state changes recalculate widths
-        b.modStateOption { s =>
-            s.lastSize.map(ls =>
-              (State.userModified.modify { s =>
+    .getDerivedStateFromProps{ (props, state) =>
+      Function.chain(
+        ((s: State) => s.resetLoading(props)) ::
+        List( (s: State) =>
+          s.lastSize.fold(s)( ls =>
+            (
+              State.userModified.modify { um =>
                 // If login state changes discard user modifications
-                if (b.currentProps.loggedIn =!= b.nextProps.loggedIn) {
+                if (props.loggedIn =!= state.prevLoggedIn) {
                   NotModified
-                } else s
-              } >>>
+                } else um
+              } andThen(
                 State.tableState.modify(
-                  _.recalculateWidths(ls, b.nextProps.visibleColumns, b.nextProps.columnWidths)
-                ))(s)
-            )
-          }
-          .when(
-            b.currentProps.obsIds =!= b.nextProps.obsIds || b.currentProps.loggedIn =!= b.nextProps.loggedIn
-          )
-          .void
+                  _.recalculateWidths(ls, props.visibleColumns, props.columnWidths)
+                )
+              )
+            )(s)
+          ),
+          State.prevObsIds.set(props.obsIds),
+          State.prevLoggedIn.set(props.loggedIn)
+        ).some
+         .filter(_ => props.obsIds =!= state.prevObsIds || props.loggedIn =!= state.prevLoggedIn)
+         .orEmpty
+      )(state)
     }
     .build
 
