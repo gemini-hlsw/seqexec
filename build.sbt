@@ -227,7 +227,7 @@ lazy val seqexec_web_client = project
     ),
     webpackEmitSourceMaps := false,
     parallelExecution in Test := false,
-    version in installJsdom := "12.0.0",
+    version in installJsdom := "16.4.0",
     requireJsDomEnv in Test := true,
     // Use yarn as it is faster than npm
     useYarn := true,
@@ -240,7 +240,7 @@ lazy val seqexec_web_client = project
     npmDevDependencies in Compile ++= Seq(
       "postcss-loader" -> "3.0.0",
       "autoprefixer" -> "9.7.1",
-      "url-loader" -> "2.2.0",
+      "url-loader" -> "4.1.0",
       "file-loader" -> "4.2.0",
       "css-loader" -> "3.2.0",
       "style-loader" -> "1.0.0",
