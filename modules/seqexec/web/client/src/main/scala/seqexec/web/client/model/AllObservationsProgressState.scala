@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
 import gem.Observation
 import monocle.{Lens, Optional, Prism}
 import monocle.macros.Lenses

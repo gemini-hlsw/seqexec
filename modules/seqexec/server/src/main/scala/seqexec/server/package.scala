@@ -6,7 +6,7 @@ package seqexec
 import cats.{Applicative, ApplicativeError, Endo, Eq, Functor, MonadError}
 import cats.data._
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue

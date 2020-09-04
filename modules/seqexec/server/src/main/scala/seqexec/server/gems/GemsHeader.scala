@@ -4,7 +4,7 @@
 package seqexec.server.gems
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import gem.Observation
 import gem.enum.KeywordName

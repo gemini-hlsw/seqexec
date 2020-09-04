@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
 import cats.data.NonEmptyList
 import gem.Observation
 import monocle.Getter

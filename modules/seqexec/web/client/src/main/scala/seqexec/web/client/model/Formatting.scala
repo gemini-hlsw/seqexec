@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import gsp.math.{Angle, Axis}
 import seqexec.model.enum.Instrument
 import seqexec.model.{NodAndShuffleStep, OffsetFormat, OffsetType, StandardStep, Step}

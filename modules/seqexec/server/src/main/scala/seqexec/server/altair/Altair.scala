@@ -5,7 +5,7 @@ package seqexec.server.altair
 
 import cats.ApplicativeError
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType

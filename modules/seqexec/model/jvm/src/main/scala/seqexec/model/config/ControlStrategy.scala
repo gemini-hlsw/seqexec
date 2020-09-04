@@ -3,7 +3,7 @@
 
 package seqexec.model.config
 
-import cats.implicits._
+import cats.syntax.all._
 import gem.util.Enumerated
 
 sealed trait ControlStrategy extends Product with Serializable

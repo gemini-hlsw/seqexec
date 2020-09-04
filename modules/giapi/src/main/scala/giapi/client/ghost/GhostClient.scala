@@ -5,7 +5,7 @@ package giapi.client.ghost
 
 import cats._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
 import scala.concurrent.duration._

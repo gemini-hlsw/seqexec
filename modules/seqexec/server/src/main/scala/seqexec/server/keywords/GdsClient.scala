@@ -6,7 +6,7 @@ package seqexec.server.keywords
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.Concurrent
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import org.http4s.client.Client
 import org.http4s._

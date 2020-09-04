@@ -5,7 +5,7 @@ package seqexec.web.server.http4s
 
 import cats.effect._
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import fs2.concurrent.InspectableQueue

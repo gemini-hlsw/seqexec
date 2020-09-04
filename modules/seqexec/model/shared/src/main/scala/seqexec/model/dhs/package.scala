@@ -5,7 +5,6 @@ package seqexec.model
 
 import cats.Eq
 import cats.Monoid
-import cats.implicits._
 import shapeless.tag.@@
 import shapeless.tag
 

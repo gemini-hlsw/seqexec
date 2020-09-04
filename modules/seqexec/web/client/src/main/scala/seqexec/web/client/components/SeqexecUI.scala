@@ -4,7 +4,7 @@
 package seqexec.web.client.components
 
 import diode.ModelRO
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import monocle.Prism
 import japgolly.scalajs.react.vdom.html_<^._

@@ -4,7 +4,6 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
 import seqexec.model.enum._
 import seqexec.model.GmosParameters._
 import monocle.macros.Lenses

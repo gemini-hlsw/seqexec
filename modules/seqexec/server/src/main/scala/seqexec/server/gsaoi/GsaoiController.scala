@@ -6,7 +6,7 @@ package seqexec.server.gsaoi
 import cats.Applicative
 import cats.Eq
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.gsaoi.GsaoiController.DCConfig

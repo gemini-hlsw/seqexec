@@ -5,7 +5,7 @@ package seqexec.server.gsaoi
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import seqexec.server.keywords._

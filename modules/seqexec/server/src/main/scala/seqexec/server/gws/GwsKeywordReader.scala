@@ -4,7 +4,7 @@
 package seqexec.server.gws
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import seqexec.server.EpicsHealth
 import seqexec.server.keywords._

@@ -4,7 +4,7 @@
 package seqexec.web.server.http4s
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.{ EntityDecoder, HttpRoutes }
 import org.http4s.dsl.Http4sDsl

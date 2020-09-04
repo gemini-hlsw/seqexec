@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats._
-import cats.implicits._
 import diode.data.Pot
 import org.scalajs.dom.WebSocket
 import scala.scalajs.js.timers.SetIntervalHandle

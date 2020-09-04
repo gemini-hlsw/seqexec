@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.CtorType

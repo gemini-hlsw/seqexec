@@ -5,7 +5,7 @@ package seqexec.server.gws
 
 import cats.effect.IO
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.CaService
 import seqexec.server.EpicsHealth
 import seqexec.server.EpicsSystem

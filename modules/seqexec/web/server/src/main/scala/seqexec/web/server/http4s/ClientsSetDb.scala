@@ -5,7 +5,7 @@ package seqexec.web.server.http4s
 
 import cats.effect.concurrent.Ref
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import org.http4s.headers.`User-Agent`
 import io.chrisdavenport.log4cats.Logger
 import java.time.Instant

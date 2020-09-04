@@ -4,7 +4,6 @@
 package seqexec
 
 import cats._
-import cats.implicits._
 import java.util.UUID
 import squants.time.Time
 import squants.time.TimeUnit

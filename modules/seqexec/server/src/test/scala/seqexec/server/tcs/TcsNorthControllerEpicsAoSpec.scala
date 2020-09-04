@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
 import org.scalatest.PrivateMethodTester

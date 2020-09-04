@@ -4,7 +4,7 @@
 package seqexec.server.niri
 
 import cats.effect.{Async, IO, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import java.lang.{Double => JDouble}
 
 import edu.gemini.epics.acm._

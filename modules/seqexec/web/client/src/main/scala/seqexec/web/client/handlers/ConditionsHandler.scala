@@ -11,7 +11,7 @@ import diode.NoAction
 import seqexec.model.Conditions
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-import cats.implicits._
+import cats.syntax.all._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 

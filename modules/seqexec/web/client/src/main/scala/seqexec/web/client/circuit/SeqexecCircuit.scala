@@ -4,7 +4,6 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
 import diode.react.ReactConnector

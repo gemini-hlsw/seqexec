@@ -6,7 +6,7 @@ package seqexec.server.gpi
 import cats.Applicative
 import cats.data.Nested
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId

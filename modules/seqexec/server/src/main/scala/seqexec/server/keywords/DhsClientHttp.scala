@@ -9,7 +9,7 @@ import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import gem.enum.DhsKeywordName
 import io.circe.syntax._
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}

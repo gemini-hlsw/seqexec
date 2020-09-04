@@ -5,7 +5,7 @@ package seqexec.server.nifs
 
 import cats.Applicative
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig

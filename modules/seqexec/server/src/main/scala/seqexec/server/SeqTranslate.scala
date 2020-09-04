@@ -7,7 +7,7 @@ import cats._
 import cats.data.{EitherT, NonEmptySet}
 import cats.effect.{Concurrent, Sync, Timer}
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import edu.gemini.spModel.obscomp.InstConstants.{DATA_LABEL_PROP, OBSERVE_TYPE_PROP, SCIENCE_OBSERVE_TYPE}

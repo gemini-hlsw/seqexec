@@ -2,8 +2,6 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
-
-import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 import monocle.macros.Lenses

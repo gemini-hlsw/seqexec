@@ -3,7 +3,7 @@
 
 package seqexec.server.gnirs
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.{Async, IO, Sync}
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}

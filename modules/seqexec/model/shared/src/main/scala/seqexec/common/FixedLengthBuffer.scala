@@ -6,7 +6,7 @@ package seqexec.common
 import cats.{Applicative, Eq, Eval, Traverse, Order}
 import cats.data.Chain
 import cats.data.Chain._
-import cats.implicits._
+import cats.syntax.all._
 import mouse.all._
 
 object FixedLengthBuffer {

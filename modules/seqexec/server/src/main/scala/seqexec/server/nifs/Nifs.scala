@@ -6,7 +6,7 @@ package seqexec.server.nifs
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.{Concurrent, Timer, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE

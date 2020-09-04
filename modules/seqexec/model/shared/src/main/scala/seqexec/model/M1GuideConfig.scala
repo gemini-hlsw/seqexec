@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats.Eq
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.enum.M1Source
 
 /** Data type for M1 guide config. */

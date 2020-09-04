@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.Monad
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import mouse.boolean._
 import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer

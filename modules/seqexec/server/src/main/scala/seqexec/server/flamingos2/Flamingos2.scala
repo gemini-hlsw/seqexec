@@ -6,7 +6,7 @@ package seqexec.server.flamingos2
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.{Concurrent, Sync, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}

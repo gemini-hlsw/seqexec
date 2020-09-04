@@ -2,8 +2,6 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
-
-import cats.implicits._
 import cats.Eq
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 

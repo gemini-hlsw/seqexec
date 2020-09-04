@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.implicits._
+import cats.syntax.all._
 import atto._, Atto._
 import gem.enum.LightSinkName
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}

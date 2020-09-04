@@ -4,7 +4,7 @@
 package seqexec.server.gems
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import seqexec.server.gems.Gems.{GemsWfsState, Cwfs1DetectorState, Cwfs2DetectorState, Cwfs3DetectorState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}

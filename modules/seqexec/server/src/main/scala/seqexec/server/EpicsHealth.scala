@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import gem.util.Enumerated
 
 sealed trait EpicsHealth extends Product with Serializable

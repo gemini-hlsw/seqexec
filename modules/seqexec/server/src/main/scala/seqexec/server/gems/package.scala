@@ -4,7 +4,6 @@
 package seqexec.server
 
 import cats.Eq
-import cats.implicits._
 import edu.gemini.seqexec.server.gems.{ApdState, BinaryOnOff, ReadyState}
 
 package object gems {

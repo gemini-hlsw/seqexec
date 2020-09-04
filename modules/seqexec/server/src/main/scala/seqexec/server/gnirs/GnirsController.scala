@@ -6,7 +6,7 @@ package seqexec.server.gnirs
 import cats.Applicative
 import cats.Eq
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult

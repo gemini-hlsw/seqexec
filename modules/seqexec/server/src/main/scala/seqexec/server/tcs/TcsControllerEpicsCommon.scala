@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats._
 import cats.data._
 import cats.effect.{Async, Sync, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import io.chrisdavenport.log4cats.Logger
 import gem.enum.LightSinkName

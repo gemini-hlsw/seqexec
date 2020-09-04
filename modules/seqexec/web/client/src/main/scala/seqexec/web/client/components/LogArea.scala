@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import cats.data.NonEmptyList
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import cats.Show
 import gem.enum.Site
 import japgolly.scalajs.react._

@@ -7,7 +7,7 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.InstrumentSystem.ElapsedTime

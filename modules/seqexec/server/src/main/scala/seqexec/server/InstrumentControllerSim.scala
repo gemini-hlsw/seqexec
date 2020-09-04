@@ -7,7 +7,7 @@ import cats._
 import cats.effect.Timer
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
 import io.chrisdavenport.log4cats.Logger

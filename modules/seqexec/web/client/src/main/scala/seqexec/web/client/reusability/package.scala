@@ -4,7 +4,6 @@
 package seqexec.web.client
 
 import diode.data.PotState
-import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
 import japgolly.scalajs.react.CatsReact._

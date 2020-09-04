@@ -6,7 +6,7 @@ package giapi.client
 import cats.effect.Concurrent
 import fs2.Stream
 import fs2.concurrent.SignallingRef
-import cats.implicits._
+import cats.syntax.all._
 import cats.Applicative
 
 sealed trait StatusValue extends Product with Serializable

@@ -4,7 +4,7 @@
 package seqexec.web.client.components
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import cats.Show
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot

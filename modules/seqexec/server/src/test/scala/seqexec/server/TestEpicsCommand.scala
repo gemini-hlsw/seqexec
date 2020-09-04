@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.{Applicative, Monad}
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model.enum.ApplyCommandResult

@@ -8,7 +8,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.effect.{ Concurrent, Timer }
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import fs2.concurrent.Topic
 import fs2.Pipe
 import fs2.Stream

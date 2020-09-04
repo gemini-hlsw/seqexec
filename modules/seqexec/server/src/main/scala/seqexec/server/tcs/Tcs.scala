@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import mouse.all._
 import seqexec.model.{M1GuideConfig, M2GuideConfig, TelescopeGuideConfig}

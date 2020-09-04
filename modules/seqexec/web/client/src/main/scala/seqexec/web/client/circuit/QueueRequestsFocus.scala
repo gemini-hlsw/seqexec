@@ -4,7 +4,6 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import cats.implicits._
 import monocle.Lens
 import monocle.Optional
 import monocle.macros.Lenses

@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats.Eq
 import cats.Order
-import cats.implicits._
+import cats.syntax.all._
 import dhs.ImageFileId
 import gem.Observation
 import java.time.Instant

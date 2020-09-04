@@ -6,7 +6,7 @@ package giapi
 import cats._
 import cats.effect._
 import cats.effect.implicits._
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.status.StatusHandler
 import edu.gemini.aspen.giapi.status.StatusItem

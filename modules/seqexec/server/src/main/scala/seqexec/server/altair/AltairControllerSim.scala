@@ -4,7 +4,7 @@
 package seqexec.server.altair
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.altair.AltairController.FieldLens
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
