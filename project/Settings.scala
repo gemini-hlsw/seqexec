@@ -77,8 +77,8 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val gspMath = "0.2.8"
-    val gspCore = "0.2.8"
+    val gspMath = "0.3.0"
+    val gspCore = "0.3.0"
     val gppUI   = "0.2.9"
   }
 
