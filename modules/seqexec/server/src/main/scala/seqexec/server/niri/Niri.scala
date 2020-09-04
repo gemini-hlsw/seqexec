@@ -6,7 +6,7 @@ package seqexec.server.niri
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.{Concurrent, Sync, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}

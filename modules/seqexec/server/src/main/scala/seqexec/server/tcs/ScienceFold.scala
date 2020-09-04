@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import gem.enum.LightSinkName
 import seqexec.server.tcs.TcsController._
 

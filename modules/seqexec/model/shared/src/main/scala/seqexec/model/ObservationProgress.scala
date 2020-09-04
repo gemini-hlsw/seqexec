@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.util.Enumerated
 import monocle.{Iso, Prism}

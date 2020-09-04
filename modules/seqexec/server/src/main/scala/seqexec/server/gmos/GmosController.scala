@@ -5,7 +5,7 @@ package seqexec.server.gmos
 
 import cats.Eq
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
 import gsp.math.Offset

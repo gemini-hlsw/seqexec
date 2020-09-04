@@ -4,7 +4,6 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
 import gem.Observation
 import monocle.{Getter, Traversal}
 import monocle.function.Each._

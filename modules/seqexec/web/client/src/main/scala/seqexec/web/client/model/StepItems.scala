@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.{Eq, Monoid}
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiObservingMode

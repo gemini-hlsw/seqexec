@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats._
 import cats.data.OneAnd
-import cats.implicits._
+import cats.syntax.all._
 import mouse.boolean._
 import edu.gemini.seqexec.server.tcs.BinaryYesNo
 import edu.gemini.spModel.core.Wavelength

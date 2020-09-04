@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.config2.ConfigSequence
 import edu.gemini.spModel.config2.ItemKey

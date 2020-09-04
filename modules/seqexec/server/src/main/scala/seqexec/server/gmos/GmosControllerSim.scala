@@ -4,7 +4,7 @@
 package seqexec.server.gmos
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref

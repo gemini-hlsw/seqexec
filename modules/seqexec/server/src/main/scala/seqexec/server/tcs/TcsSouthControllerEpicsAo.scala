@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.NonEmptySet
 import cats.effect.{Async, Sync, Timer}
 import io.chrisdavenport.log4cats.Logger

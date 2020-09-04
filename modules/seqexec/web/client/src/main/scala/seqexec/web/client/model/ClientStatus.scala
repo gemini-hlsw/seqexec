@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
 import monocle.Getter
 import monocle.Lens
 import seqexec.model.UserDetails

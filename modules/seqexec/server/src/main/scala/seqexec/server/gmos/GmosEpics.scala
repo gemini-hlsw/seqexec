@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.IO
 import cats.effect.Async
 import cats.effect.Sync

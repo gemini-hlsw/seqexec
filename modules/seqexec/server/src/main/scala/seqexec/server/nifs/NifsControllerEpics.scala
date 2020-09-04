@@ -7,7 +7,7 @@ import cats._
 import cats.data.OptionT
 import cats.effect.Async
 import cats.effect.Timer
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ReadMode => LegacyReadMode}
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{EngReadMode => LegacyEngReadMode}
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{Filter => LegacyFilter}

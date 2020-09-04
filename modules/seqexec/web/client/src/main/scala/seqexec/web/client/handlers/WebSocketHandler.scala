@@ -4,7 +4,7 @@
 package seqexec.web.client.handlers
 
 import boopickle.Default.Unpickle
-import cats.implicits._
+import cats.syntax.all._
 import diode.util.RunAfterJS
 import diode.Action
 import diode.ActionHandler

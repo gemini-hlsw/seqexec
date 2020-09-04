@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.gsaoi.GsaoiEpics
 import seqexec.server.keywords._
 

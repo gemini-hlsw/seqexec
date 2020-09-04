@@ -4,7 +4,7 @@
 package giapi.client.gpi
 
 import cats.ApplicativeError
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Resource
 import cats.effect.Timer
 import cats.effect.ConcurrentEffect

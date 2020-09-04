@@ -6,7 +6,7 @@ package seqexec.server.flamingos2
 import cats.Applicative
 import cats.data.EitherT
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
 import java.time.LocalDate

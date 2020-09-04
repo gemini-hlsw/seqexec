@@ -4,7 +4,7 @@
 package seqexec.model.enum
 
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import gem.util.Enumerated
 
 sealed abstract class StepType(val label: String)

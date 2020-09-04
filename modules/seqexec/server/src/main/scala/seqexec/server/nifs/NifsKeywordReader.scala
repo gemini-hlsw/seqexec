@@ -5,7 +5,7 @@ package seqexec.server.nifs
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.keywords._
 
 trait NifsKeywordReader[F[_]] {

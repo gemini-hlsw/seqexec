@@ -4,7 +4,7 @@
 package seqexec.server.gsaoi
 
 import cats.effect.{Async, IO, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaParameter, CaService, CaStatusAcceptor, CaWindowStabilizer, CarState}
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
 import seqexec.server.{EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil, ObserveCommand}

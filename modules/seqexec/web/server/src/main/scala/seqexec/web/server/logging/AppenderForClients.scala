@@ -6,7 +6,7 @@ package seqexec.web.server.logging
 import java.time.Instant
 
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase

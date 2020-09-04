@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.Applicative
 import cats.effect.Concurrent
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import fs2.concurrent.SignallingRef
 import mouse.boolean._

@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.ao.AOConstants._

@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.data._
 import cats.effect.{Async, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.Altair

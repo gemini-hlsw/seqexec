@@ -4,7 +4,7 @@
 package giapi.client
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect._
 import giapi.client.syntax.giapiconfig._
 import edu.gemini.aspen.giapi.commands.{ Command => GiapiCommand }

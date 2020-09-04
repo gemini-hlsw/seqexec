@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import gem.enum.Site
 import seqexec.model.enum.Instrument

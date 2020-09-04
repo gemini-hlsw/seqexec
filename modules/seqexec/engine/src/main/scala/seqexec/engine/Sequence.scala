@@ -5,7 +5,7 @@ package seqexec.engine
 
 import seqexec.model.{SequenceState, StepId}
 import gem.Observation
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Lens
 import monocle.macros.GenLens
 import seqexec.engine.Result.RetVal

@@ -6,7 +6,7 @@ package seqexec.web.client.services
 import boopickle.Default.Pickle
 import boopickle.Default.Pickler
 import boopickle.Default.Unpickle
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest

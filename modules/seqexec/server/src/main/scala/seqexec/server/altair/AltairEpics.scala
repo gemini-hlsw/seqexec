@@ -9,7 +9,7 @@ import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
 import seqexec.server.EpicsCommandBase.setParameter
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.EpicsUtil._
 
 import scala.concurrent.duration.FiniteDuration

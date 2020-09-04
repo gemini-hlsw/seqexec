@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
 import monocle.Iso
 import shapeless.tag

@@ -6,7 +6,7 @@ package seqexec.server
 import cats.{Applicative, FlatMap, Functor}
 import cats.data.StateT
 import cats.effect.Timer
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import seqexec.model.ObserveStage
 import squants.time.{Milliseconds, Seconds, Time}

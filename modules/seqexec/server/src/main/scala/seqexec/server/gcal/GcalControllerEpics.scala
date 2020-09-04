@@ -4,7 +4,7 @@
 package seqexec.server.gcal
 
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import io.chrisdavenport.log4cats.Logger

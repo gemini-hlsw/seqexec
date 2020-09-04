@@ -5,7 +5,7 @@ package seqexec.server.niri
 
 import cats.Applicative
 import cats.effect.{Async, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
 import edu.gemini.seqexec.server.niri.{Mask => JMask}

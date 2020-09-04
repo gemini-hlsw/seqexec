@@ -5,7 +5,7 @@ package seqexec.server.gnirs
 
 import cats.data.Kleisli
 import cats.data.EitherT
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.{Concurrent, Sync, Timer}
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._

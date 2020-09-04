@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.Order
 import cats.data.NonEmptySet
-import cats.implicits._
+import cats.syntax.all._
 import mouse.boolean._
 import seqexec.model.enum.Instrument
 import seqexec.server.tcs.TcsController.{InstrumentOffset, Subsystem}

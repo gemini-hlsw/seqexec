@@ -4,7 +4,6 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import cats.implicits._
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal

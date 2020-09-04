@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats._
-import cats.implicits._
 import gem.enum.Site
 import gem.Observation
 import monocle.Lens

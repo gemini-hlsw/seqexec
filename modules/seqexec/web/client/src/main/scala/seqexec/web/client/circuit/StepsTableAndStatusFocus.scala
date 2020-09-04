@@ -4,7 +4,7 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import monocle.Getter
 import seqexec.web.client.model._

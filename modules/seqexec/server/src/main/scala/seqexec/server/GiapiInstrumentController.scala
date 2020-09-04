@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.HandlerResponse
 import giapi.client.GiapiClient
 import giapi.client.commands.CommandResult

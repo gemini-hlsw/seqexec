@@ -5,7 +5,7 @@ package seqexec.server.gsaoi
 
 import cats.effect.Timer
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import mouse.boolean._
 import edu.gemini.seqexec.server.gsaoi.DhsConnected

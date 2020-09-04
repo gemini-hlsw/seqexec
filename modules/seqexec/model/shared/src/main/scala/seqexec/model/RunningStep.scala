@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats.Show
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 
 sealed trait RunningStep {
   val last: StepId

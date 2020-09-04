@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.data.NonEmptySet
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import mouse.all._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.gems.CanopusWfs

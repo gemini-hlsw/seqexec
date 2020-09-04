@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import diode.Action
 import gem.Observation
 import japgolly.scalajs.react.extra.router._

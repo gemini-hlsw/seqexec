@@ -3,7 +3,7 @@
 
 package seqexec.server.gnirs
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.{Async, Sync, Timer}
 import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams

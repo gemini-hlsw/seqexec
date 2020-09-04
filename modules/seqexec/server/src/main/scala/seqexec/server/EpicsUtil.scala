@@ -8,7 +8,7 @@ import cats.data.Nested
 import cats.effect.Sync
 import cats.effect.Async
 import cats.effect.Timer
-import cats.implicits._
+import cats.syntax.all._
 import mouse.boolean._
 import fs2.Stream
 import java.lang.{Double => JDouble}

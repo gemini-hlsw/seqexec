@@ -4,7 +4,6 @@
 package seqexec.model.config
 
 import cats._
-import cats.implicits._
 
 /**
   * Indicates how each subsystems is treated, e.g. full connection or simulated

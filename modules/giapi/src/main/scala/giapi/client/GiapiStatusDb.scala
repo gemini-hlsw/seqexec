@@ -5,7 +5,7 @@ package giapi.client
 
 import cats.Applicative
 import cats.ApplicativeError
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import cats.effect.Resource
 import cats.effect.Effect

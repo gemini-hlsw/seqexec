@@ -4,7 +4,7 @@
 package seqexec.server.keywords
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import cats.data.Nested
 import edu.gemini.spModel.guide.StandardGuideOptions

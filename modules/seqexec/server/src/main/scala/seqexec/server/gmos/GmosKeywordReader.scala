@@ -6,7 +6,7 @@ package seqexec.server.gmos
 import cats.data.EitherT
 import cats.{Applicative, MonadError}
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.gmos.GmosEpics.RoiStatus

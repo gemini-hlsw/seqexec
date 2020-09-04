@@ -5,7 +5,7 @@ package web.client
 
 import cats.Foldable
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback

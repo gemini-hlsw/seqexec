@@ -5,7 +5,7 @@ package seqexec.server.gpi
 
 import cats._
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Apodizer => LegacyApodizer }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Adc => LegacyAdc }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ArtificialSource => LegacyArtificialSource }

@@ -4,7 +4,6 @@
 package seqexec.server
 
 import cats.Eq
-import cats.implicits._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 
 package object nifs {

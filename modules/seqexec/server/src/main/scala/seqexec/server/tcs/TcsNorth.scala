@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.MonadError
 import cats.data.NonEmptySet
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import mouse.all._
 import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._

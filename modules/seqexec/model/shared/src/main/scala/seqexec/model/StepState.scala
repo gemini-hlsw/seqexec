@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 
 sealed abstract class StepState(val canRunFrom: Boolean)
   extends Product with Serializable

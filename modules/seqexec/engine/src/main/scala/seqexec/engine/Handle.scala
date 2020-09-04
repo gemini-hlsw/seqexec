@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import cats.{Applicative, Functor, Monad}
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.StateT
 import fs2.Stream
 

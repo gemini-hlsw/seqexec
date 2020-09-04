@@ -5,7 +5,7 @@ package seqexec.server.gcal
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import mouse.boolean._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.server.keywords._

@@ -4,7 +4,6 @@
 package seqexec.engine
 
 import cats.Eq
-import cats.implicits._
 import gem.Observation
 import seqexec.model.StepId
 

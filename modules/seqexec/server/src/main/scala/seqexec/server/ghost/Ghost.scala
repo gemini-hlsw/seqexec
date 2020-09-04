@@ -6,7 +6,7 @@ package seqexec.server.ghost
 import cats.data.Kleisli
 import cats.data.EitherT
 import cats.effect.{Concurrent, Sync, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}

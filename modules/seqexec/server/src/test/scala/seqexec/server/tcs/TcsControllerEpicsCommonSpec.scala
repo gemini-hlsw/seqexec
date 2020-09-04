@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.effect.{IO, Sync, Timer}
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
