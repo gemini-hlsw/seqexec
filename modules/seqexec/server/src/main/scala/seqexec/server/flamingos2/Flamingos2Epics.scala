@@ -4,7 +4,7 @@
 package seqexec.server.flamingos2
 
 import cats.effect.{Async, IO, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm._
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.{EpicsCommandBase, EpicsSystem}

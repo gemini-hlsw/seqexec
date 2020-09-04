@@ -3,7 +3,7 @@
 
 package seqexec.server.keywords
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.Eq
 import cats.data.EitherT
 import cats.data.Nested

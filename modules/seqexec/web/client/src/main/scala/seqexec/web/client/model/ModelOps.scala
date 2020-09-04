@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.NonEmptyList
 import gem.enum.Site
 import seqexec.model.enum.Instrument

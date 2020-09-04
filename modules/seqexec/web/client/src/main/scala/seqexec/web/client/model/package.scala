@@ -4,7 +4,7 @@
 package seqexec.web.client
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import diode.data._
 import org.scalajs.dom.WebSocket
 import seqexec.web.client.model.SectionVisibilityState._

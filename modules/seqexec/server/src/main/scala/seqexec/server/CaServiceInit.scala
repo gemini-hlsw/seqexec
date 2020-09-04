@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.CaService
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.config.SeqexecEngineConfiguration

@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses

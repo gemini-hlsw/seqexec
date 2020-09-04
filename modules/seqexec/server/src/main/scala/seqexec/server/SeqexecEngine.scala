@@ -7,7 +7,7 @@ import cats._
 import cats.data.StateT
 import cats.effect.{Concurrent, ConcurrentEffect, Sync, Timer}
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
 import fs2.{Pipe, Pure, Stream}
 import gem.Observation

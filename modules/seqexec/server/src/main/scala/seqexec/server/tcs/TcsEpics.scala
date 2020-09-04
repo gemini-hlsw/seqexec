@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import java.util.concurrent.TimeUnit
 
 import cats.effect.{Async, IO, LiftIO, Sync, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import squants.Angle
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}

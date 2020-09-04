@@ -4,7 +4,7 @@
 package seqexec.server.nifs
 
 import cats.MonadError
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId

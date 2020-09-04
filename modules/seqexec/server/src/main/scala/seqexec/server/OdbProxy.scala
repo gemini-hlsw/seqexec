@@ -6,7 +6,7 @@ package seqexec.server
 import cats.Applicative
 import cats.effect.Sync
 import cats.data.EitherT
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Peer
 import edu.gemini.seqexec.odb.{SeqExecService, SeqexecSequence}

@@ -5,7 +5,7 @@ package seqexec.web.server.security
 
 import cats._
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
 import io.chrisdavenport.log4cats.Logger
 import io.circe._

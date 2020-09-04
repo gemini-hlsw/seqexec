@@ -4,7 +4,7 @@
 package seqexec.server.gems
 
 import cats.effect.{Async, IO, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
 import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}

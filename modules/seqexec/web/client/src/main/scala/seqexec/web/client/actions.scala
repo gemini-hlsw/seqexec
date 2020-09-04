@@ -5,7 +5,7 @@ package seqexec.web.client
 
 import diode.Action
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import gem.enum.Site
 import seqexec.model._

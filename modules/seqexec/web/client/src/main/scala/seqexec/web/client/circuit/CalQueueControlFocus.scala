@@ -3,7 +3,7 @@
 
 package seqexec.web.client.circuit
 
-import cats.Eq
+import cats._
 import cats.implicits._
 import monocle.Getter
 import monocle.Optional

@@ -3,8 +3,8 @@
 
 package seqexec.web.client.components
 
+import cats._
 import cats.implicits._
-import cats.Show
 import gem.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability

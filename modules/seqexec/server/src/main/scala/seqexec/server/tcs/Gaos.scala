@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats.{Eq, Show}
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.Gaos.PauseCondition.{FixedPauseCondition, OffsetMove}

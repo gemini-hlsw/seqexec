@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats._
-import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.events._

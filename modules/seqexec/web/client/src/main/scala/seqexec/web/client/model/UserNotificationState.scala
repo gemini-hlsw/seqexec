@@ -4,7 +4,6 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.model.Notification
 import seqexec.web.client.model.SectionVisibilityState.SectionClosed

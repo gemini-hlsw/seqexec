@@ -3,7 +3,7 @@
 
 package seqexec.web.server
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Blocker
 import cats.effect.Sync
 import cats.effect.ContextShift

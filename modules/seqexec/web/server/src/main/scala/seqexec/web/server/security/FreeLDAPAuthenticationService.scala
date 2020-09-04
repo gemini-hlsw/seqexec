@@ -6,7 +6,7 @@ package seqexec.web.server.security
 import cats._
 import cats.effect._
 import cats.free.Free
-import cats.implicits._
+import cats.syntax.all._
 import com.unboundid.ldap.sdk._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.UserDetails

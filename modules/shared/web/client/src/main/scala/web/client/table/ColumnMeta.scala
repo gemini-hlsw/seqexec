@@ -4,7 +4,6 @@
 package web.client.table
 
 import cats.Eq
-import cats.implicits._
 import japgolly.scalajs.react.Reusability
 import monocle.macros.Lenses
 

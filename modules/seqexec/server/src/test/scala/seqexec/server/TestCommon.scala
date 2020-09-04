@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.{Applicative, Monoid}
 import cats.effect.{ContextShift, IO, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.noop.NoOpLogger

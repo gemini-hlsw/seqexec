@@ -4,7 +4,7 @@
 package seqexec.server.nifs
 
 import cats.effect.{Async, IO, Sync}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode

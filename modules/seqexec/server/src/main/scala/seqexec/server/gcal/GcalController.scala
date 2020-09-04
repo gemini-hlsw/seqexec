@@ -4,7 +4,7 @@
 package seqexec.server.gcal
 
 import cats.{Eq, Show}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
 trait GcalController[F[_]] {

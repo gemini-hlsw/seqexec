@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats.{ApplicativeError, Endo, MonadError}
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.{Concurrent, Timer}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY

@@ -3,8 +3,7 @@
 
 package seqexec.model
 
-import cats.Eq
-import cats.Show
+import cats._
 import cats.implicits._
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.TipTiltSource

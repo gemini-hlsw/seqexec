@@ -4,9 +4,8 @@
 package seqexec.web.client.components
 
 import cats.data.NonEmptyList
-import cats.Eq
+import cats._
 import cats.implicits._
-import cats.Show
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope

@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import fs2.Stream
 import gem.Observation

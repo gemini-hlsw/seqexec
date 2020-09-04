@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.engine

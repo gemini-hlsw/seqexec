@@ -4,7 +4,7 @@
 package seqexec.server.gcal
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Lamp, Shutter}

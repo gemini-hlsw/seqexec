@@ -5,7 +5,7 @@ package seqexec.server.gnirs
 
 import cats.effect.Sync
 import cats.effect.Timer
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult

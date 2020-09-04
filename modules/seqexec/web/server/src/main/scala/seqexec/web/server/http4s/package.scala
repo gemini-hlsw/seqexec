@@ -3,7 +3,7 @@
 
 package seqexec.web.server
 
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import seqexec.model.QueueId
 import seqexec.model.Observer

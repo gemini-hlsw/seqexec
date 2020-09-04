@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.Id
 import cats.effect.IO
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.NonEmptyList
 import fs2.concurrent.Queue
 import org.scalatest.Inside.inside

@@ -3,7 +3,7 @@
 
 package seqexec.server.ghost
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.Eq
 import cats.effect.Sync
 import gsp.math.Coordinates

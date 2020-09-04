@@ -4,7 +4,7 @@
 package seqexec.server.gems
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 

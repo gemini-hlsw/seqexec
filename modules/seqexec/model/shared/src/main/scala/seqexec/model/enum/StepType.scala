@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.Show
+import cats._
 import cats.implicits._
 import gem.util.Enumerated
 

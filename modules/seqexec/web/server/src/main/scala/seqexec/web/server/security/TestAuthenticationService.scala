@@ -4,7 +4,7 @@
 package seqexec.web.server.security
 
 import cats.Applicative
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
 

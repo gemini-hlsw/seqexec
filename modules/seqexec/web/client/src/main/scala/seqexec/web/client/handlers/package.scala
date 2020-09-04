@@ -4,7 +4,7 @@
 package seqexec.web.client
 
 import cats.Monoid
-import cats.implicits._
+import cats.syntax.all._
 import diode.Action
 import diode.ActionHandler
 import diode.ActionResult

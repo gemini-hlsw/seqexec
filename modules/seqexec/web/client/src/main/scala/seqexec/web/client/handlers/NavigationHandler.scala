@@ -3,7 +3,7 @@
 
 package seqexec.web.client.handlers
 
-import cats.implicits._
+import cats.syntax.all._
 import diode.{ActionHandler, ActionResult, ModelRW}
 import seqexec.web.client.model._
 import seqexec.web.client.actions._

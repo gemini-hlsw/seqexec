@@ -5,7 +5,7 @@ package seqexec.web.client.components.queue
 
 import cats.data.NonEmptyList
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback

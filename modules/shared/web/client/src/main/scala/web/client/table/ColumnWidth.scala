@@ -4,7 +4,7 @@
 package web.client.table
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import mouse.boolean._
 

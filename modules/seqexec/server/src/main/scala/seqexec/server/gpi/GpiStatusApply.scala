@@ -4,7 +4,7 @@
 package seqexec.server.gpi
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import gem.enum.GiapiStatusApply
 import gem.enum.GiapiStatusApply._
 import gem.enum.GiapiStatus

@@ -3,7 +3,7 @@
 
 package seqexec.model
 
-import cats.implicits._
+import cats.syntax.all._
 import java.util.UUID
 import gem.Observation
 import gem.arb.ArbEnumerated._

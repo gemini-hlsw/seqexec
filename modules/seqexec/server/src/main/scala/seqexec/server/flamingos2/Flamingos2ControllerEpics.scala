@@ -5,7 +5,7 @@ package seqexec.server.flamingos2
 
 import cats.data.StateT
 import cats.effect.{Async, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage

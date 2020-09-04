@@ -6,7 +6,7 @@ package seqexec.server.gmos
 import cats.Applicative
 import cats.ApplicativeError
 import cats.effect.{Async, Timer}
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import io.chrisdavenport.log4cats.Logger

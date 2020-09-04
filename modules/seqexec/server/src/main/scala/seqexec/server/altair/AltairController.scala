@@ -4,7 +4,7 @@
 package seqexec.server.altair
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import squants.Time
 import squants.space.Length

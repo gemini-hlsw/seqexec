@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.{Applicative, Eq}
 import cats.effect.{Sync, Timer}
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import monocle.{Getter, Lens}
 import monocle.macros.Lenses

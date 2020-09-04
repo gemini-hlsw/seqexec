@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import cats.data.NonEmptyList
 import mouse.all._
 import gem.Observation

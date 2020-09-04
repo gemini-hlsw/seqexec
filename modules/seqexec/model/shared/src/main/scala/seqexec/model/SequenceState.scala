@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 
 sealed trait SequenceState extends Product with Serializable {
   import SequenceState._

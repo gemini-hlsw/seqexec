@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.tabs
 
-import cats.implicits._
+import cats.syntax.all._
 import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.Reusability

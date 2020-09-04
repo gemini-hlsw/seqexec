@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import seqexec.model.enum.MountGuideOption
 import seqexec.model.enum.ComaOption

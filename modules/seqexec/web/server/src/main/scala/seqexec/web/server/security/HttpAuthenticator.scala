@@ -5,7 +5,7 @@ package seqexec.web.server.security
 
 import cats._
 import cats.data.{Kleisli, OptionT}
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect.Sync
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult

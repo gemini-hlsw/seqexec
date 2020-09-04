@@ -6,7 +6,7 @@ package seqexec.server.altair
 import cats._
 import cats.effect.Async
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import cats.kernel.Eq
 import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl

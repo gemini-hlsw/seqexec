@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.Eq
+import cats._
 import cats.implicits._
 import seqexec.model.enum.Instrument
 

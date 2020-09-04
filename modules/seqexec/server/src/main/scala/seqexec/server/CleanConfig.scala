@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP

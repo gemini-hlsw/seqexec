@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import cats.effect._
 import fs2.Stream
 import gem.Observation

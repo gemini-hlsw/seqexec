@@ -3,8 +3,7 @@
 
 package seqexec.model
 
-import cats.Show
-import cats.Eq
+import cats._
 import cats.implicits._
 
 sealed trait RunningStep {

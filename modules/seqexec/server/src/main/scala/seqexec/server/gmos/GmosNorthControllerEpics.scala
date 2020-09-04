@@ -4,7 +4,7 @@
 package seqexec.server.gmos
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex
 import seqexec.server.EpicsCodex.EncodeEpicsValue

@@ -3,8 +3,7 @@
 
 package seqexec.model
 
-import cats.Eq
-import cats.Order
+import cats._
 import cats.implicits._
 import dhs.ImageFileId
 import gem.Observation

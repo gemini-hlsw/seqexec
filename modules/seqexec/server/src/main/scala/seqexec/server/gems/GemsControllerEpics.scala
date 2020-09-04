@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.ApplicativeError
 import cats.effect.Async
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._

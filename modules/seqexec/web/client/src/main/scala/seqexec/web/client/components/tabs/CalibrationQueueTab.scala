@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.tabs
 
-import cats.implicits._
+import cats.syntax.all._
 import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope

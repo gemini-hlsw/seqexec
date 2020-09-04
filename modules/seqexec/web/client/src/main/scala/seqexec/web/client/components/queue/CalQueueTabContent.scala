@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.queue
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent

@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.implicits._
+import cats.syntax.all._
 import gem.util.Enumerated
 
 sealed abstract class WaterVapor(val toInt: Option[Int], val label: String)
