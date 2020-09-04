@@ -4,14 +4,14 @@
 package seqexec.server.gmos
 
 import cats.syntax.all._
+import mouse.all._
+import seqexec.engine
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.engine
-import seqexec.server._
 import seqexec.server.StepsView._
+import seqexec.server._
 import seqexec.server.gmos.GmosController.Config._
-import mouse.all._
-import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 
 final class GmosStepsView[F[_]] extends StepsView[F] {
   override def stepView(

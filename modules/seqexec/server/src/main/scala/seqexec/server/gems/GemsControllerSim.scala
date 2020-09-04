@@ -6,9 +6,18 @@ package seqexec.server.gems
 import cats.Applicative
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
-import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
-import seqexec.server.gems.Gems.{GemsWfsState, Cwfs1DetectorState, Cwfs2DetectorState, Cwfs3DetectorState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}
+import seqexec.server.gems.Gems.Cwfs1DetectorState
+import seqexec.server.gems.Gems.Cwfs2DetectorState
+import seqexec.server.gems.Gems.Cwfs3DetectorState
+import seqexec.server.gems.Gems.GemsWfsState
+import seqexec.server.gems.Gems.Odgw1DetectorState
+import seqexec.server.gems.Gems.Odgw2DetectorState
+import seqexec.server.gems.Gems.Odgw3DetectorState
+import seqexec.server.gems.Gems.Odgw4DetectorState
 import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 
 object GemsControllerSim {
   def apply[F[_]: Applicative](implicit L: Logger[F]): GemsController[F] =

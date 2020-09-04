@@ -5,14 +5,20 @@ package seqexec.server.gmos
 
 import cats.effect._
 import cats.syntax.all._
+import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode}
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.Beam
-import seqexec.server.gmos.GmosController.{SouthTypes, southConfigTypes}
+import seqexec.server.gmos.GmosController.SouthTypes
+import seqexec.server.gmos.GmosController.southConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
-import edu.gemini.spModel.gemini.gmos.GmosCommonType
-import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser, FPUnitSouth => FPU, FilterSouth => Filter, StageModeSouth => StageMode}
 
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue{

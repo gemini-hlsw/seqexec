@@ -3,13 +3,14 @@
 
 package seqexec.engine
 
-import seqexec.model.{SequenceState, StepId}
-import gem.Observation
 import cats.implicits._
+import gem.Observation
 import monocle.Lens
 import monocle.macros.GenLens
-import seqexec.engine.Result.RetVal
 import seqexec.engine.Action.ActionState
+import seqexec.engine.Result.RetVal
+import seqexec.model.SequenceState
+import seqexec.model.StepId
 
 /**
   * A list of `Step`s grouped by target and instrument.

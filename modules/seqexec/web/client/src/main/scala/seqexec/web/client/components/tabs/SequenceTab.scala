@@ -5,24 +5,24 @@ package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
 import gem.Observation
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
-import react.common.{ Size => _, _ }
+import react.common.{Size => _, _}
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon._
 import react.semanticui.elements.label.Label
 import react.semanticui.modules.popup.Popup
 import react.semanticui.sizes._
-import seqexec.model.enum.Instrument
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
+import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles

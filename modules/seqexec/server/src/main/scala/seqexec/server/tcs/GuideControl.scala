@@ -3,9 +3,10 @@
 
 package seqexec.server.tcs
 
-import seqexec.server.tcs.TcsController._
 import seqexec.server.EpicsCommand
-import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
+import seqexec.server.tcs.TcsController._
+import seqexec.server.tcs.TcsEpics.ProbeFollowCmd
+import seqexec.server.tcs.TcsEpics.ProbeGuideCmd
 
 final case class GuideControl[F[_]](subs: Subsystem,
                                     parkCmd: EpicsCommand[F],

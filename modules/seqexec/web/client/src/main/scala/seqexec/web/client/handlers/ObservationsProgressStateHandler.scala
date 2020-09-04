@@ -3,21 +3,29 @@
 
 package seqexec.web.client.handlers
 
+import scala.concurrent.duration.Duration
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
 import gem.Observation
-import seqexec.model.{NSObservationProgress, ObservationProgress, ObserveStage, Progress, Step}
+import seqexec.model.NSObservationProgress
+import seqexec.model.ObservationProgress
+import seqexec.model.ObserveStage
+import seqexec.model.Progress
+import seqexec.model.Step
 import seqexec.model.enum.ActionStatus
-import seqexec.model.events.{ObservationProgressEvent, SeqexecModelUpdate, SequenceAborted, SequenceError, StepExecuted}
-import seqexec.web.client.model._
+import seqexec.model.events.ObservationProgressEvent
+import seqexec.model.events.SeqexecModelUpdate
+import seqexec.model.events.SequenceAborted
+import seqexec.model.events.SequenceError
+import seqexec.model.events.StepExecuted
 import seqexec.web.client.actions._
+import seqexec.web.client.model._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import squants.time.Time
-
-import scala.concurrent.duration.Duration
 
 /**
   * Handles updates to obs progress

@@ -254,7 +254,7 @@ lazy val seqexec_web_client = project
       "html-webpack-plugin" -> "3.2.0",
       "optimize-css-assets-webpack-plugin" -> "5.0.3",
       "favicons-webpack-plugin" -> "1.0.2",
-      "@packtracker/webpack-plugin" -> "2.2.0"
+      "@packtracker/webpack-plugin" -> "2.3.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,

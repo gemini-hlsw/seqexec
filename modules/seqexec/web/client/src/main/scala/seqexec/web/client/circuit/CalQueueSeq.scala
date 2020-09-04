@@ -9,11 +9,11 @@ import gem.Observation
 import monocle.Getter
 import monocle.macros.Lenses
 import monocle.std
-import seqexec.model.enum.Instrument
-import seqexec.model.SequencesQueue
-import seqexec.model.SequenceView
 import seqexec.model.SequenceMetadata
 import seqexec.model.SequenceState
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
+import seqexec.model.enum.Instrument
 
 @Lenses
 final case class CalQueueSeq(id:     Observation.Id,

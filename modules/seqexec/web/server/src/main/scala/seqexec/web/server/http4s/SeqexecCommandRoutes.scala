@@ -9,13 +9,13 @@ import gem.Observation
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
-import seqexec.server.SeqexecEngine
-import seqexec.server
+import seqexec.model._
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
-import seqexec.model._
+import seqexec.server
+import seqexec.server.SeqexecEngine
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication

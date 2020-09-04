@@ -3,18 +3,23 @@
 
 package seqexec.server.gcal
 
-import cats.effect.Async
-import cats.syntax.all._
-import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
-import edu.gemini.seqexec.server.gcal.BinaryOnOff
-import io.chrisdavenport.log4cats.Logger
-import seqexec.server.EpicsCodex._
-import seqexec.server.gcal.GcalController.{Diffuser, Filter, Shutter, _}
-import seqexec.server.EpicsUtil.applyParam
-
 import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.syntax.all._
+import edu.gemini.seqexec.server.gcal.BinaryOnOff
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Filter
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
+import io.chrisdavenport.log4cats.Logger
+import seqexec.server.EpicsCodex._
+import seqexec.server.EpicsUtil.applyParam
+import seqexec.server.gcal.GcalController.Diffuser
+import seqexec.server.gcal.GcalController.Filter
+import seqexec.server.gcal.GcalController.Shutter
+import seqexec.server.gcal.GcalController._
 
 object GcalControllerEpics {
   // Default value from Tcl Seqexec

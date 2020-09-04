@@ -6,15 +6,15 @@ package seqexec.server.nifs
 import cats.Applicative
 import cats.Show
 import cats.syntax.all._
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.nifs.NifsController.DCConfig
-import seqexec.server.nifs.NifsController.NifsConfig
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.Progress
+import seqexec.server.nifs.NifsController.DCConfig
+import seqexec.server.nifs.NifsController.NifsConfig
+import shapeless.tag.@@
 import squants.Time
 import squants.time.TimeConversions._
-import shapeless.tag.@@
 
 trait NifsController[F[_]] {
 

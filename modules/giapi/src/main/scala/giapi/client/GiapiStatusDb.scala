@@ -3,22 +3,23 @@
 
 package giapi.client
 
+import scala.jdk.CollectionConverters._
+
 import cats.Applicative
 import cats.ApplicativeError
-import cats.syntax.all._
-import cats.effect.Sync
-import cats.effect.Resource
-import cats.effect.Effect
 import cats.effect.ConcurrentEffect
+import cats.effect.Effect
+import cats.effect.Resource
+import cats.effect.Sync
 import cats.effect.implicits._
+import cats.syntax.all._
 import edu.gemini.aspen.giapi.status.StatusHandler
 import edu.gemini.aspen.giapi.status.StatusItem
-import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
+import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
-import fs2.concurrent.Queue
 import fs2.Stream
-import scala.jdk.CollectionConverters._
+import fs2.concurrent.Queue
 
 /////////////////////////////////////////////////////////////////
 // Links status streaming with the giapi db

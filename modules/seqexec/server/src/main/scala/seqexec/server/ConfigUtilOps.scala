@@ -3,21 +3,21 @@
 
 package seqexec.server
 
-import cats.syntax.all._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.config2.ConfigSequence
-import edu.gemini.spModel.config2.ItemKey
-import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
-import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
-import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
-import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
 import java.beans.PropertyDescriptor
 import java.lang.{Integer => JInt}
 
-import cats.ApplicativeError
-
 import scala.reflect.ClassTag
+
+import cats.ApplicativeError
+import cats.syntax.all._
+import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.ConfigSequence
+import edu.gemini.spModel.config2.ItemKey
+import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import shapeless.tag
 import shapeless.tag.@@
 

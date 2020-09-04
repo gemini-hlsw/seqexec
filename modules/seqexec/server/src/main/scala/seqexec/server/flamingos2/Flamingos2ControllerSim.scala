@@ -10,13 +10,13 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.InstrumentControllerSim
+import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.Progress
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
-import seqexec.server.InstrumentControllerSim
-import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
 

@@ -9,13 +9,15 @@ import cats.syntax.all._
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
-import seqexec.server.ConfigUtilOps._
 import seqexec.model.enum.Resource
 import seqexec.server.CleanConfig
+import seqexec.server.ConfigUtilOps._
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
 import seqexec.server.tcs.Gaos
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import squants.Time
 
 trait Altair[F[_]] extends Gaos[F] {

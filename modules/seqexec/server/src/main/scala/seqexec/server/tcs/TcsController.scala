@@ -4,16 +4,18 @@
 package seqexec.server.tcs
 
 import cats._
-import cats.data.{NonEmptySet, OneAnd}
+import cats.data.NonEmptySet
+import cats.data.OneAnd
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import gem.enum._
 import monocle.macros.Lenses
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.InstrumentGuide
-import squants.{Angle, Length}
 import shapeless.tag
 import shapeless.tag.@@
+import squants.Angle
+import squants.Length
 
 /**
  * Created by jluhrs on 7/30/15.

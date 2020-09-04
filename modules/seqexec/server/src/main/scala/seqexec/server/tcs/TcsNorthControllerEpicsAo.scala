@@ -3,34 +3,35 @@
 
 package seqexec.server.tcs
 
+import java.time.Duration
+
 import cats._
 import cats.data._
-import cats.effect.{Async, Timer}
+import cats.effect.Async
+import cats.effect.Timer
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
-import mouse.boolean._
 import monocle.macros.Lenses
-import squants.Length
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.ComaOption
-import seqexec.model.enum.MountGuideOption
-import seqexec.model.enum.M1Source
-import seqexec.model.enum.TipTiltSource
-import seqexec.model.M2GuideConfig
+import mouse.boolean._
 import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
-import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.AltairConfig
-import seqexec.server.tcs.TcsController._
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.SeqexecFailure
+import seqexec.server.altair.Altair
+import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.Gaos._
+import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import shapeless.tag.@@
+import squants.Length
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
-
-import java.time.Duration
 
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(subsystems: NonEmptySet[Subsystem],

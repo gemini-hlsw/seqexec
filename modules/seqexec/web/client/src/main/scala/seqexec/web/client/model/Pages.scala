@@ -7,13 +7,13 @@ import cats._
 import cats.syntax.all._
 import diode.Action
 import gem.Observation
-import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.extra.router._
+import monocle.Prism
 import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit.SeqexecCircuit
-import monocle.Prism
 
 // Pages
 object Pages {

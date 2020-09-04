@@ -3,11 +3,12 @@
 
 package seqexec.server.gsaoi
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import seqexec.server.keywords._
 
 trait GsaoiKeywordReader[F[_]] {

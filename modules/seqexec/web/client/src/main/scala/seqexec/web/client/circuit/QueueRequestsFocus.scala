@@ -3,18 +3,19 @@
 
 package seqexec.web.client.circuit
 
+import scala.collection.immutable.SortedMap
+
 import cats.Eq
 import monocle.Lens
 import monocle.Optional
 import monocle.macros.Lenses
-import scala.collection.immutable.SortedMap
-import seqexec.model.ClientId
-import seqexec.model.QueueId
-import seqexec.model.Observer
-import seqexec.model.ExecutionQueueView
 import seqexec.model.BatchCommandState
-import seqexec.model.SequencesQueue
+import seqexec.model.ClientId
+import seqexec.model.ExecutionQueueView
+import seqexec.model.Observer
+import seqexec.model.QueueId
 import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SeqexecUIModel
 import seqexec.web.client.model.SequencesOnDisplay

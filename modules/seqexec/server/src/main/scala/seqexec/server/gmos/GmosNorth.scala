@@ -3,23 +3,26 @@
 
 package seqexec.server.gmos
 
-import cats.syntax.all._
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
-import io.chrisdavenport.log4cats.Logger
-import seqexec.model.enum.Instrument
-import seqexec.server.{CleanConfig, ConfigUtilOps}
-import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.gmos.Gmos.SiteSpecifics
-import seqexec.server.gmos.GmosController.{NorthTypes, northConfigTypes}
-import seqexec.server.keywords.DhsClient
-import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth._
-import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_PROP}
+import edu.gemini.spModel.gemini.gmos.InstGmosCommon.FPU_PROP_NAME
+import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
+import io.chrisdavenport.log4cats.Logger
+import seqexec.model.enum.Instrument
+import seqexec.server.CleanConfig
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.gmos.Gmos.SiteSpecifics
+import seqexec.server.gmos.GmosController.NorthTypes
+import seqexec.server.gmos.GmosController.northConfigTypes
+import seqexec.server.keywords.DhsClient
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
 

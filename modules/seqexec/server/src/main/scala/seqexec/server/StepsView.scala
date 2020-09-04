@@ -3,22 +3,22 @@
 
 package seqexec.server
 
-import cats.implicits._
 import cats.data.NonEmptyList
+import cats.implicits._
+import seqexec.engine
+import seqexec.engine.Action
+import seqexec.engine.Action.ActionState
+import seqexec.engine.ParallelActions
 import seqexec.model.ActionType
-import seqexec.model.Step
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.StandardStep
+import seqexec.model.Step
+import seqexec.model.StepState
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
-import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Instrument._
-import seqexec.model.StepState
-import seqexec.engine
-import seqexec.engine.Action.ActionState
-import seqexec.engine.Action
-import seqexec.engine.ParallelActions
-import seqexec.model.NodAndShuffleStep.PendingObserveCmd
+import seqexec.model.enum.Resource
 import seqexec.server.gmos.GmosStepsView
 
 trait StepsView[F[_]] {

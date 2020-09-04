@@ -3,14 +3,15 @@
 
 package seqexec.model
 
+import scala.collection.immutable.SortedMap
+
 import cats._
 import cats.implicits._
 import gem.Observation
-import monocle.{Getter, Traversal}
+import monocle.Getter
+import monocle.Traversal
 import monocle.function.Each._
 import monocle.macros.Lenses
-
-import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 
 /**

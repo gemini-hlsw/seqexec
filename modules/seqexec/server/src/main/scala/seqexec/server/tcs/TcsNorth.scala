@@ -7,20 +7,27 @@ import cats.MonadError
 import cats.data.NonEmptySet
 import cats.effect.Sync
 import cats.syntax.all._
-import mouse.all._
-import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
-import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
+import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
-import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
+import mouse.all._
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.NodAndShuffleStage
+import seqexec.model.enum.Resource
+import seqexec.model.enum.TipTiltSource
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentSystem
+import seqexec.server.SeqexecFailure
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsNorthController.{TcsNorthAoConfig, TcsNorthConfig}
-import seqexec.server.ConfigUtilOps._
+import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
+import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
 import shapeless.tag
 import shapeless.tag.@@
 import squants.Angle

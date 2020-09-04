@@ -7,7 +7,11 @@ import cats.data.NonEmptySet
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsController.{AoTcsConfig, GuiderConfig, InstrumentOffset, Subsystem, TcsConfig}
+import seqexec.server.tcs.TcsController.AoTcsConfig
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsController.TcsConfig
 import shapeless.tag.@@
 
 trait TcsSouthController[F[_]] {

@@ -3,6 +3,9 @@
 
 package seqexec.web.client.handlers
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
+import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
@@ -11,9 +14,6 @@ import diode.NoAction
 import seqexec.model.Conditions
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-import cats.syntax.all._
-
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
   * Handles updates to conditions

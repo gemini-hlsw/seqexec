@@ -4,15 +4,17 @@
 package seqexec.server.tcs
 
 import cats.syntax.all._
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
-import seqexec.model.enum.MountGuideOption
-import seqexec.model.enum.ComaOption
-import seqexec.model.enum.M1Source
-import seqexec.model.enum.TipTiltSource
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.EpicsCodex.DecodeEpicsValue
-import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
+import seqexec.server.tcs.TcsController.FollowOption.FollowOff
+import seqexec.server.tcs.TcsController.FollowOption.FollowOn
 import seqexec.server.tcs.TcsController._
 
 trait TcsConfigDecoders {

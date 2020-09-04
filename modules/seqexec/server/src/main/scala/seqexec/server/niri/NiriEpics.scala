@@ -3,21 +3,27 @@
 
 package seqexec.server.niri
 
-import cats.effect.{Async, IO, Sync}
-import cats.syntax.all._
 import java.lang.{Double => JDouble}
 
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
-import edu.gemini.seqexec.server.niri.{ReadMode => JReadMode}
-import edu.gemini.seqexec.server.niri.{Mask => JMask}
-import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
 import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
+import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
+import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
+import edu.gemini.seqexec.server.niri.{Mask => JMask}
+import edu.gemini.seqexec.server.niri.{ReadMode => JReadMode}
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.{EpicsCommandBase, EpicsSystem, ObserveCommand}
-import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil.safeAttributeF
+import seqexec.server.EpicsUtil.safeAttributeSDoubleF
+import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommand
 
 class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

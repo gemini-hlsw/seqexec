@@ -3,21 +3,21 @@
 
 package seqexec.web.server
 
-import cats.syntax.all._
 import cats.effect.Blocker
-import cats.effect.Sync
 import cats.effect.ContextShift
+import cats.effect.Sync
+import cats.syntax.all._
 import gem.enum.Site
 import org.http4s.Uri
 import pureconfig._
-import pureconfig.generic.auto._
 import pureconfig.error._
+import pureconfig.generic.ProductHint
+import pureconfig.generic.auto._
 import pureconfig.module.catseffect.syntax._
 import pureconfig.module.http4s._
-import pureconfig.generic.ProductHint
+import seqexec.model.config._
 import shapeless.tag
 import shapeless.tag.@@
-import seqexec.model.config._
 
 package config {
   final case class SiteValueUnknown(site: String) extends FailureReason {

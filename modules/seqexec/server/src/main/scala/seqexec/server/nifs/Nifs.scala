@@ -3,39 +3,47 @@
 
 package seqexec.server.nifs
 
-import cats.data.Kleisli
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import cats.data.EitherT
-import cats.effect.{Concurrent, Timer, Sync}
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
-import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
-
-import shapeless.tag
-import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{CleanConfig, ConfigResult, InstrumentActions, InstrumentSystem, Progress, TrySeq}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps.ExtractFailure
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSystem
+import seqexec.server.InstrumentSystem.AbortObserveCmd
+import seqexec.server.InstrumentSystem.StopObserveCmd
+import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.Progress
+import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.InstrumentSystem.UnpausableControl
-import seqexec.server.InstrumentSystem.AbortObserveCmd
-import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.nifs.NifsController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import shapeless.tag
+import squants.Length
+import squants.Time
 import squants.space.Arcseconds
-import squants.{Length, Time}
 import squants.time.TimeConversions._
 
 final case class Nifs[F[_]: Logger: Concurrent: Timer](

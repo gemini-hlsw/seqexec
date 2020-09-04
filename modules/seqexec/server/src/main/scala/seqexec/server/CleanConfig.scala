@@ -4,15 +4,22 @@
 package seqexec.server
 
 import cats.syntax.all._
-import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
-import seqexec.server.ConfigUtilOps._
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.DefaultConfig
+import edu.gemini.spModel.config2.ItemEntry
+import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.obscomp.InstConstants.{ARC_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, FLAT_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, TELESCOPE_KEY}
 import seqexec.model.StepConfig
 import seqexec.model.enum.SystemName
+import seqexec.server.ConfigUtilOps._
 
 /*
  * CleanConfig is a wrapper over Config that allows to override some of the Config parameters. It allows to change some

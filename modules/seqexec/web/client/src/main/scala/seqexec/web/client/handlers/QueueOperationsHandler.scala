@@ -3,22 +3,23 @@
 
 package seqexec.web.client.handlers
 
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
-import seqexec.web.client.model.CalibrationQueues
+import seqexec.web.client.actions._
 import seqexec.web.client.model.AddDayCalOperation
+import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.ClearAllCalOperation
+import seqexec.web.client.model.MoveSeqQueue
+import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation
-import seqexec.web.client.model.RemoveSeqQueue
-import seqexec.web.client.model.MoveSeqQueue
-import seqexec.web.client.actions._
 
 /**
   * Updates the state of the tabs when requests are executed

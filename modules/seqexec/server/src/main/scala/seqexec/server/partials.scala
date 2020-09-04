@@ -4,8 +4,9 @@
 package seqexec.server
 
 import seqexec.engine.Result.PartialVal
+import seqexec.model.NSSubexposure
+import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{NSSubexposure, ObserveStage}
 import squants.Time
 
 // Marker trait for partials that won't result on a client message

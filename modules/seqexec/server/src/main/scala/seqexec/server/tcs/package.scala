@@ -3,18 +3,23 @@
 
 package seqexec.server
 
-import cats.Eq
-import cats.syntax.all._
-import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
-import monocle.Iso
-import shapeless.tag
-import shapeless.tag.@@
-import squants.{Angle, Length, Ratio}
-import squants.space.{Arcseconds, Millimeters}
-
 import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
+
+import cats.Eq
+import cats.syntax.all._
+import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import monocle.Iso
+import shapeless.tag
+import shapeless.tag.@@
+import squants.Angle
+import squants.Length
+import squants.Ratio
+import squants.space.Arcseconds
+import squants.space.Millimeters
 
 package tcs {
 

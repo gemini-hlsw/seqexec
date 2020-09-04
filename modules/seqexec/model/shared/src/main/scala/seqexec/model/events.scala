@@ -3,11 +3,12 @@
 
 package seqexec.model
 
+import java.time.Instant
+
 import cats._
 import cats.implicits._
-import dhs.ImageFileId
 import gem.Observation
-import java.time.Instant
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum._
 
 object events {

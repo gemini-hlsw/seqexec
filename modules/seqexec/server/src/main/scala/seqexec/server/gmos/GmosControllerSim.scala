@@ -4,31 +4,35 @@
 package seqexec.server.gmos
 
 import cats._
-import cats.syntax.all._
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
-import io.chrisdavenport.log4cats.Logger
+import cats.syntax.all._
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some
-import seqexec.model.{NSSubexposure, ObserveStage}
 import seqexec.model.GmosParameters.NsCyclesI
+import seqexec.model.NSSubexposure
+import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage._
+import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.InstrumentControllerSim
 import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.ObsProgress
+import seqexec.server.Progress
 import seqexec.server.ProgressUtil.countdown
+import seqexec.server.RemainingTime
+import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.GmosConfig
 import seqexec.server.gmos.GmosController.NorthTypes
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.gmos.GmosController.SouthTypes
-import seqexec.server.gmos.GmosController.Config.NSConfig
-import seqexec.server.{InstrumentControllerSim, ObsProgress, Progress, RemainingTime}
+import shapeless.tag
 import squants.Time
 import squants.time.TimeConversions._
-import shapeless.tag
 
 /**
   * Keep track of the current execution state

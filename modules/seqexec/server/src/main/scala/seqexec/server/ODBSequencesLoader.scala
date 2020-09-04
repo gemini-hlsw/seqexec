@@ -3,18 +3,22 @@
 
 package seqexec.server
 
-import cats.{ApplicativeError, Endo, MonadError}
+import cats.ApplicativeError
+import cats.Endo
+import cats.MonadError
+import cats.effect.Concurrent
+import cats.effect.Timer
 import cats.syntax.all._
-import cats.effect.{Concurrent, Timer}
+import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
-import edu.gemini.spModel.core.SPProgramID
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
-import seqexec.engine.{Event, Sequence}
+import seqexec.engine.Event
+import seqexec.engine.Sequence
+import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent._
 import seqexec.server.SeqexecFailure.SeqexecException
-import seqexec.server.ConfigUtilOps._
 
 final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
   odbProxy: OdbProxy[F],

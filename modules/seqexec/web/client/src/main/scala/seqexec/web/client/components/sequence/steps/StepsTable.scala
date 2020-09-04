@@ -3,16 +3,20 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.data.NonEmptyList
+import scala.collection.immutable.SortedMap
+import scala.math._
+import scala.scalajs.js
+
 import cats.Eq
+import cats.data.NonEmptyList
 import cats.implicits._
 import gem.Observation
-import japgolly.scalajs.react._
 import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.raw.JsNumber
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Lens
 import monocle.macros.Lenses
@@ -22,11 +26,14 @@ import react.common.implicits._
 import react.semanticui.sizes._
 import react.semanticui.{ SemanticSize => SSize }
 import react.virtualized._
-import scala.math._
-import scala.scalajs.js
+import seqexec.model.RunningStep
+import seqexec.model.SequenceState
+import seqexec.model.Step
+import seqexec.model.StepId
+import seqexec.model.StepState
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.model.enum.StepType
-import seqexec.model.{ RunningStep, SequenceState, Step, StepId, StepState }
 import seqexec.web.client.actions.ClearAllResourceOperations
 import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.actions.UpdateSelectedStep
@@ -36,20 +43,18 @@ import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
+import seqexec.web.client.icons._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Formatting._
-import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model.Pages.SeqexecPages
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.reusability._
-import seqexec.web.client.icons._
 import web.client.table._
-import scala.collection.immutable.SortedMap
-import seqexec.model.enum.Resource
-import seqexec.web.client.model.ResourceRunOperation
 
 trait Columns {
   val ControlWidth: Double          = 40

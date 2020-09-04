@@ -4,9 +4,11 @@
 package seqexec.web.client.handlers
 
 import cats.syntax.all._
-import diode.{ActionHandler, ActionResult, ModelRW}
-import seqexec.web.client.model._
+import diode.ActionHandler
+import diode.ActionResult
+import diode.ModelRW
 import seqexec.web.client.actions._
+import seqexec.web.client.model._
 
 class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers[M, Pages.SeqexecPages] {
   def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = {

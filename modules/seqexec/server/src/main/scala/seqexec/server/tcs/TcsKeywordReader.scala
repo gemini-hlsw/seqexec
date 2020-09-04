@@ -3,15 +3,15 @@
 
 package seqexec.server.tcs
 
-import cats._
-import cats.effect.Sync
-import cats.data.OptionT
-import cats.data.Nested
-import cats.syntax.all._
-import gsp.math.syntax.string._
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import cats._
+import cats.data.Nested
+import cats.data.OptionT
+import cats.effect.Sync
+import cats.syntax.all._
+import gsp.math.syntax.string._
 import monocle.Prism
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope

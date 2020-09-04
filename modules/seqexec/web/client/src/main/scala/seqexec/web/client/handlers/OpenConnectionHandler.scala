@@ -9,8 +9,8 @@ import diode.ActionResult
 import diode.ModelRW
 import seqexec.model.events._
 import seqexec.web.client.actions._
-import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.components.queue.CalQueueTable
+import seqexec.web.client.model.CalibrationQueues
 
 /**
   * Updates internal states when the connection opens

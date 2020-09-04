@@ -3,29 +3,37 @@
 
 package seqexec.web.client.handlers
 
-import cats.implicits._
-import diode.{ActionBatch, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import org.scalajs.dom.window
-import seqexec.model.enum.ActionStatus
-import seqexec.model.SingleActionOp
-import seqexec.model.Observer
-import seqexec.model.SequencesQueue
-import seqexec.model.SequenceView
-import seqexec.model.StepState
-import seqexec.model.Step
-import seqexec.model.events._
-import seqexec.web.client.model.lenses.sequenceStepT
-import seqexec.web.client.model.lenses.sequenceViewT
-import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.model.{AlignAndCalibStep, ResourceRunOperation, SoundSelection}
-import seqexec.web.client.actions._
-import seqexec.web.client.circuit._
-import seqexec.web.client.services.SeqexecWebClient
-import seqexec.web.client.services.WebpackResources._
-import seqexec.web.client.model.Pages.Root
+import scala.collection.immutable.SortedMap
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.collection.immutable.SortedMap
+
+import cats.implicits._
+import diode.ActionBatch
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import diode.NoAction
+import org.scalajs.dom.window
+import seqexec.model.Observer
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
+import seqexec.model.SingleActionOp
+import seqexec.model.Step
+import seqexec.model.StepState
+import seqexec.model.enum.ActionStatus
+import seqexec.model.events._
+import seqexec.web.client.actions._
+import seqexec.web.client.circuit._
+import seqexec.web.client.model.AlignAndCalibStep
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.Pages.Root
+import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.SoundSelection
+import seqexec.web.client.model.lenses.sequenceStepT
+import seqexec.web.client.model.lenses.sequenceViewT
+import seqexec.web.client.services.SeqexecWebClient
+import seqexec.web.client.services.WebpackResources._
 import web.client.Audio
 
 /**

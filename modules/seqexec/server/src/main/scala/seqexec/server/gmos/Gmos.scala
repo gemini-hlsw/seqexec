@@ -3,44 +3,54 @@
 
 package seqexec.server.gmos
 
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
+import scala.concurrent.duration._
+
 import cats._
-import cats.data.Kleisli
 import cats.data.EitherT
-import cats.syntax.all._
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
+import cats.syntax.all._
 import edu.gemini.spModel.config2.ItemKey
+import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.guide.StandardGuideOptions
-import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
+import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
+import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import gem.enum.LightSinkName
 import gsp.math.Angle
 import gsp.math.Offset
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
-import java.lang.{Double => JDouble, Integer => JInt}
-import scala.concurrent.duration._
+import seqexec.model.GmosParameters._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
-import seqexec.model.GmosParameters._
-import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
-import seqexec.server.gmos.Gmos.SiteSpecifics
-import seqexec.server.gmos.GmosController.Config._
-import seqexec.server.gmos.GmosController.Config.NSConfig
-import seqexec.server.gmos.GmosController.SiteDependentTypes
-import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
-import seqexec.server._
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
-import squants.space.Length
-import squants.{Seconds, Time}
-import squants.space.LengthConversions._
+import seqexec.server.ConfigUtilOps.ContentError
+import seqexec.server.ConfigUtilOps.ConversionError
+import seqexec.server.ConfigUtilOps._
+import seqexec.server._
+import seqexec.server.gmos.Gmos.SiteSpecifics
+import seqexec.server.gmos.GmosController.Config.NSConfig
+import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.gmos.GmosController.SiteDependentTypes
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import shapeless.tag
+import squants.Seconds
+import squants.Time
+import squants.space.Length
+import squants.space.LengthConversions._
 
 abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes]
 (val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])

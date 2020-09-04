@@ -3,19 +3,23 @@
 
 package seqexec.web.client.components.queue
 
-import cats.data.NonEmptyList
+import scala.concurrent.duration._
+import scala.math.max
+import scala.scalajs.js
+
 import cats.Eq
+import cats.data.NonEmptyList
 import cats.syntax.all._
 import gem.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Lens
 import monocle.macros.Lenses
@@ -26,13 +30,10 @@ import react.semanticui.elements.button.Button
 import react.semanticui.sizes._
 import react.sortable._
 import react.virtualized._
-import scala.concurrent.duration._
-import scala.math.max
-import scala.scalajs.js
-import seqexec.model.enum.Instrument
 import seqexec.model.QueueId
 import seqexec.model.QueueManipulationOp
 import seqexec.model.SequenceState
+import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.ClearLastQueueOp
 import seqexec.web.client.actions.RequestMoveCal
 import seqexec.web.client.actions.RequestRemoveSeqCal

@@ -6,8 +6,9 @@ package seqexec.server.niri
 import cats.Show
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
 import seqexec.server.Progress
+import seqexec.server.niri.NiriController.DCConfig
+import seqexec.server.niri.NiriController.NiriConfig
 import squants.Time
 
 trait NiriController[F[_]] {

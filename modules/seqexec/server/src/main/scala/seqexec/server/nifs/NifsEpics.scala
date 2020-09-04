@@ -3,21 +3,23 @@
 
 package seqexec.server.nifs
 
-import cats.effect.{Async, IO, Sync}
+import java.lang.{Double => JDouble}
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
-import java.lang.{Double => JDouble}
-
-import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommandBase
-import seqexec.server.ObserveCommand
+import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
-import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.ObserveCommand
 
 class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")

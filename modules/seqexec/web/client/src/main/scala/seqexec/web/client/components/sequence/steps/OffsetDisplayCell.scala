@@ -3,19 +3,22 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import gsp.math.Axis
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
-import gsp.math.Axis
 import react.common._
 import react.semanticui.colors._
 import react.semanticui.sizes._
-import seqexec.model.{ NodAndShuffleStep, OffsetType, StandardStep, Step }
-import seqexec.web.client.model.StepItems._
-import seqexec.web.client.model.Formatting._
+import seqexec.model.NodAndShuffleStep
+import seqexec.model.OffsetType
+import seqexec.model.StandardStep
+import seqexec.model.Step
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.reusability._
 import seqexec.web.client.icons._
+import seqexec.web.client.model.Formatting._
+import seqexec.web.client.model.StepItems._
+import seqexec.web.client.reusability._
 
 /**
   * Component to display the offsets

@@ -4,7 +4,8 @@
 package seqexec.engine
 
 import cats.data.NonEmptyList
-import monocle.function.Index.{index, listIndex}
+import monocle.function.Index.index
+import monocle.function.Index.listIndex
 import monocle.syntax.apply._
 import mouse.boolean._
 import seqexec.engine.Action.ActionState

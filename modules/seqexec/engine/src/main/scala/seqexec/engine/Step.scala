@@ -7,8 +7,9 @@ import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 import monocle.macros.Lenses
-import seqexec.model.{StepId, StepState}
 import seqexec.engine.Action.ActionState
+import seqexec.model.StepId
+import seqexec.model.StepState
 
 /**
   * A list of `Executions` grouped by observation.

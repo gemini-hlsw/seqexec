@@ -3,12 +3,13 @@
 
 package seqexec.server.tcs
 
-import cats.data.NonEmptySet
 import cats.Applicative
+import cats.data.NonEmptySet
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
-import seqexec.server.tcs.TcsController.{InstrumentOffset, Subsystem}
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.Subsystem
 import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 
 class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthController[F] {

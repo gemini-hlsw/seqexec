@@ -3,15 +3,20 @@
 
 package seqexec.web.client.model
 
+import scala.math.max
+
 import cats.Eq
 import cats.syntax.all._
-import gsp.math.{Angle, Axis}
+import gsp.math.Angle
+import gsp.math.Axis
+import seqexec.model.NodAndShuffleStep
+import seqexec.model.OffsetFormat
+import seqexec.model.OffsetType
+import seqexec.model.StandardStep
+import seqexec.model.Step
 import seqexec.model.enum.Instrument
-import seqexec.model.{NodAndShuffleStep, OffsetFormat, OffsetType, StandardStep, Step}
 import seqexec.web.client.model.StepItems._
 import web.client.utils._
-
-import scala.math.max
 
 /**
   * Utility methods to format step items

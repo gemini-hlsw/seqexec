@@ -10,9 +10,10 @@ import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.gnirs.GnirsController.GnirsConfig
 import seqexec.server.Progress
-import squants.{Length, Time}
+import seqexec.server.gnirs.GnirsController.GnirsConfig
+import squants.Length
+import squants.Time
 import squants.time.TimeConversions._
 
 trait GnirsController[F[_]] {

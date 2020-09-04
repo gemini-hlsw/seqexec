@@ -11,8 +11,8 @@ import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
-import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GpiHeader {
 

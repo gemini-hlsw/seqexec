@@ -5,15 +5,21 @@ package seqexec.server.gmos
 
 import cats.effect._
 import cats.syntax.all._
+import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+import edu.gemini.spModel.gemini.gmos.GmosNorthType.{DisperserNorth => Disperser}
+import edu.gemini.spModel.gemini.gmos.GmosNorthType.{FPUnitNorth => FPU}
+import edu.gemini.spModel.gemini.gmos.GmosNorthType.{FilterNorth => Filter}
+import edu.gemini.spModel.gemini.gmos.GmosNorthType.{StageModeNorth => StageMode}
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.Beam
-import seqexec.server.gmos.GmosController.{NorthTypes, northConfigTypes}
+import seqexec.server.gmos.GmosController.NorthTypes
+import seqexec.server.gmos.GmosController.northConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
-import edu.gemini.spModel.gemini.gmos.GmosCommonType
-import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
-import edu.gemini.spModel.gemini.gmos.GmosNorthType.{DisperserNorth => Disperser, FPUnitNorth => FPU, FilterNorth => Filter, StageModeNorth => StageMode}
 
 object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
   override val filter: EpicsCodex.EncodeEpicsValue[NorthTypes#Filter, (String, String)] = EncodeEpicsValue{

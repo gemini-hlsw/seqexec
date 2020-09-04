@@ -4,18 +4,22 @@
 package seqexec.server.keywords
 
 import cats.Applicative
-import cats.syntax.all._
-import cats.effect.Sync
 import cats.data.Nested
+import cats.effect.Sync
+import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.Conditions
-import seqexec.model.{Observer, Operator}
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.{InstrumentSystem, OcsBuildInfo}
-import seqexec.server.tcs.{TargetKeywordsReader, TcsController, TcsKeywordsReader}
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.Conditions
+import seqexec.model.Observer
+import seqexec.model.Operator
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem
+import seqexec.server.OcsBuildInfo
+import seqexec.server.tcs.TargetKeywordsReader
+import seqexec.server.tcs.TcsController
+import seqexec.server.tcs.TcsKeywordsReader
 
 final case class StateKeywordsReader[F[_]: Applicative](
   conditions: Conditions,

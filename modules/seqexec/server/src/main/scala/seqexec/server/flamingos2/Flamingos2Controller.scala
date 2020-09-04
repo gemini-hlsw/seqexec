@@ -3,13 +3,14 @@
 
 package seqexec.server.flamingos2
 
+import scala.concurrent.duration.Duration
+
 import cats.Show
 import cats.kernel.Eq
 import fs2.Stream
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.Progress
-import scala.concurrent.duration.Duration
 import squants.Time
 
 trait Flamingos2Controller[F[_]] {

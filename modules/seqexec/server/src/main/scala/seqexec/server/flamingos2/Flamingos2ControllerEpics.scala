@@ -3,23 +3,32 @@
 
 package seqexec.server.flamingos2
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
 import cats.data.StateT
-import cats.effect.{Async, Timer}
+import cats.effect.Async
+import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{ObsProgress, Progress, ProgressUtil, RemainingTime}
-import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server.EpicsCodex._
+import seqexec.server.ObsProgress
+import seqexec.server.Progress
+import seqexec.server.ProgressUtil
+import seqexec.server.RemainingTime
+import seqexec.server.flamingos2.Flamingos2Controller._
 import squants.Time
 import squants.time.TimeConversions._
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
 
 trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {

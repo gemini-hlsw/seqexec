@@ -17,8 +17,8 @@ import react.semanticui.modules.popup.Popup
 import react.semanticui.modules.popup.PopupPosition
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.model.operations._
 import seqexec.model.operations.Operations._
+import seqexec.model.operations._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles

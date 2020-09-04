@@ -5,35 +5,42 @@ package seqexec.server
 
 import cats._
 import cats.data.StateT
-import cats.effect.{Concurrent, ConcurrentEffect, Sync, Timer}
+import cats.effect.Concurrent
+import cats.effect.ConcurrentEffect
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
-import fs2.{Pipe, Pure, Stream}
+import fs2.Pipe
+import fs2.Pure
+import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
-import java.util.concurrent.TimeUnit
 import java.time.Instant
-import mouse.all._
+import java.util.concurrent.TimeUnit
 import monocle.Monocle.index
 import monocle.Optional
-import seqexec.engine.Result.Partial
-import seqexec.engine.EventResult._
-import seqexec.engine.{Step => _, _}
-import seqexec.engine.Handle
-import seqexec.engine.SystemEvent
-import seqexec.engine.UserEvent
-import seqexec.model.NodAndShuffleStep.{PauseGracefully, PendingObserveCmd, StopGracefully}
-import seqexec.model._
-import seqexec.model.enum._
-import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
-import seqexec.model.{StepId, UserDetails}
-import seqexec.model.config._
-import seqexec.server.SeqEvent._
-
+import mouse.all._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
+import seqexec.engine.EventResult._
+import seqexec.engine.Handle
+import seqexec.engine.Result.Partial
+import seqexec.engine.SystemEvent
+import seqexec.engine.UserEvent
+import seqexec.engine.{Step => _, _}
+import seqexec.model.NodAndShuffleStep.PauseGracefully
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
+import seqexec.model.NodAndShuffleStep.StopGracefully
+import seqexec.model.StepId
+import seqexec.model.UserDetails
+import seqexec.model._
+import seqexec.model.config._
+import seqexec.model.enum._
+import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
+import seqexec.server.SeqEvent._
 
 trait SeqexecEngine[F[_]] {
 

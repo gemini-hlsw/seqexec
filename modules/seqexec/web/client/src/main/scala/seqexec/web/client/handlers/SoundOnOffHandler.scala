@@ -3,9 +3,11 @@
 
 package seqexec.web.client.handlers
 
-import diode.{ActionHandler, ActionResult, ModelRW}
-import seqexec.web.client.model.SoundSelection
+import diode.ActionHandler
+import diode.ActionResult
+import diode.ModelRW
 import seqexec.web.client.actions.FlipSoundOnOff
+import seqexec.web.client.model.SoundSelection
 
 /**
  * Handles changing the user selection

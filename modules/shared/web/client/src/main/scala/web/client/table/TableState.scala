@@ -3,20 +3,21 @@
 
 package web.client.table
 
+import scala.annotation.tailrec
+import scala.math.max
+import scala.math.min
+
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.Optional
 import monocle.function.Each._
 import monocle.function.Index._
-import japgolly.scalajs.react.raw.JsNumber
-import japgolly.scalajs.react.Callback
 import react.common._
 import react.virtualized._
-import scala.math.max
-import scala.math.min
-import scala.annotation.tailrec
 
 /**
   * State of a table

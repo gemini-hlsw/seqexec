@@ -3,6 +3,8 @@
 
 package seqexec.web.client.circuit
 
+import scala.collection.immutable.SortedMap
+
 import cats._
 import cats.implicits._
 import gem.Observation
@@ -11,9 +13,13 @@ import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum.Resource
-import seqexec.web.client.model.{AlignAndCalibStep, Pages, ResourceRunOperation, SeqexecAppRootModel, SequenceTab, SequencesOnDisplay, SoundSelection}
-
-import scala.collection.immutable.SortedMap
+import seqexec.web.client.model.AlignAndCalibStep
+import seqexec.web.client.model.Pages
+import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.SeqexecAppRootModel
+import seqexec.web.client.model.SequenceTab
+import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.web.client.model.SoundSelection
 
 @Lenses
 final case class WebSocketsFocus(location:             Pages.SeqexecPages,

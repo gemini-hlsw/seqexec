@@ -3,16 +3,17 @@
 
 package seqexec.engine
 
-import cats.syntax.all._
+import java.time.Instant
+
 import cats.effect.Sync
+import cats.syntax.all._
 import fs2.Stream
 import gem.Observation
-import java.time.Instant
-import seqexec.model.ClientId
-import seqexec.model.UserDetails
-import seqexec.model.StepId
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
+import seqexec.model.ClientId
+import seqexec.model.StepId
+import seqexec.model.UserDetails
 
 /**
   * Anything that can go through the Event Queue.

@@ -6,8 +6,8 @@ package seqexec.server.gcal
 import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
-import mouse.boolean._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
+import mouse.boolean._
 import seqexec.server.keywords._
 
 trait GcalKeywordReader[F[_]] {

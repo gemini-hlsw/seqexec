@@ -3,29 +3,29 @@
 
 package seqexec.web.client.circuit
 
+import scala.scalajs.LinkingInfo
+
 import cats._
-import cats.implicits._
 import cats.data.NonEmptyList
+import cats.implicits._
 import diode._
 import diode.react.ReactConnector
 import gem.Observation
 import japgolly.scalajs.react.Callback
 import monocle.Prism
-import typings.loglevel.mod.{ ^ => logger }
 import seqexec.model._
 import seqexec.model.events._
-import seqexec.web.client.actions._
-import seqexec.web.client.model._
-import seqexec.web.client.handlers._
 import seqexec.web.client.actions.AppendToLog
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.actions.OpenLoginBox
 import seqexec.web.client.actions.OpenUserNotificationBox
 import seqexec.web.client.actions.ServerMessage
+import seqexec.web.client.actions._
 import seqexec.web.client.actions.show
-
-import scala.scalajs.LinkingInfo
+import seqexec.web.client.handlers._
+import seqexec.web.client.model._
+import typings.loglevel.mod.{ ^ => logger }
 
 /**
   * Diode processor to log some of the action to aid in debugging

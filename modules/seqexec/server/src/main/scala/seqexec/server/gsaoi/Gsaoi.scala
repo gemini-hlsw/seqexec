@@ -3,34 +3,44 @@
 
 package seqexec.server.gsaoi
 
-import cats.data.Kleisli
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
-
-import shapeless.tag
-import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSystem, Progress, SeqexecFailure, TrySeq}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps.ExtractFailure
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSystem
+import seqexec.server.InstrumentSystem._
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
+import seqexec.server.TrySeq
+import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.InstrumentSystem._
-import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import shapeless.tag
+import squants.Length
+import squants.Time
 import squants.space.Arcseconds
-import squants.{Length, Time}
 import squants.time.TimeConversions._
 
 final case class Gsaoi[F[_]: Logger: Concurrent: Timer](

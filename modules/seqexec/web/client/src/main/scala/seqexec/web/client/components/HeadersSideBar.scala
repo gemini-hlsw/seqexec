@@ -3,34 +3,35 @@
 
 package seqexec.web.client.components
 
+import scala.concurrent.duration._
+
 import cats.Eq
-import cats.syntax.all._
 import cats.Show
+import cats.syntax.all._
+import gpp.ui.forms.EnumSelect
+import gpp.ui.forms.InputEV
+import gpp.ui.forms.InputFormat
+import japgolly.scalajs.react.CatsReact._
+import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.TimerSupport
-import japgolly.scalajs.react.CatsReact._
-import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.collections.form._
 import react.semanticui.elements.segment.Segment
 import react.semanticui.widths._
-import scala.concurrent.duration._
+import seqexec.model.Observer
+import seqexec.model.Operator
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
-import seqexec.model.Observer
-import seqexec.model.Operator
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
-import gpp.ui.forms.EnumSelect
-import gpp.ui.forms.InputEV
-import gpp.ui.forms.InputFormat
 
 /**
   * Container for a table with the steps

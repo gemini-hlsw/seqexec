@@ -11,14 +11,14 @@ import seqexec.server.EpicsHealth
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
 import squants.MetricSystem.Milli
+import squants.Temperature
+import squants.Velocity
 import squants.motion.Bars
 import squants.motion.MetersPerSecond
 import squants.motion.Pressure
 import squants.space.Angle
 import squants.space.Degrees
 import squants.thermal.Celsius
-import squants.Temperature
-import squants.Velocity
 
 /**
   * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.

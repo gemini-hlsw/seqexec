@@ -3,27 +3,34 @@
 
 package seqexec.server.tcs
 
-import cats._
-import cats.data._
-import cats.effect.{Async, Sync, Timer}
-import cats.syntax.all._
-import edu.gemini.spModel.core.Wavelength
-import io.chrisdavenport.log4cats.Logger
-import gem.enum.LightSinkName
-import mouse.boolean._
-import monocle.Lens
-import seqexec.model.enum.{ComaOption, M1Source, MountGuideOption, TipTiltSource}
-import seqexec.model.M2GuideConfig
-import seqexec.model.M1GuideConfig
-import seqexec.model.TelescopeGuideConfig
-import seqexec.server.EpicsCodex.encode
-import seqexec.server.tcs.TcsController._
-import seqexec.server.{EpicsCommand, SeqexecFailure}
-import squants.time.TimeConversions._
-import java.util.concurrent.TimeUnit.SECONDS
 import java.time.Duration
+import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
+
+import cats._
+import cats.data._
+import cats.effect.Async
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.syntax.all._
+import edu.gemini.spModel.core.Wavelength
+import gem.enum.LightSinkName
+import io.chrisdavenport.log4cats.Logger
+import monocle.Lens
+import mouse.boolean._
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
+import seqexec.server.EpicsCodex.encode
+import seqexec.server.EpicsCommand
+import seqexec.server.SeqexecFailure
+import seqexec.server.tcs.TcsController._
+import squants.time.TimeConversions._
 
 /**
  * Base implementation of an Epics TcsController

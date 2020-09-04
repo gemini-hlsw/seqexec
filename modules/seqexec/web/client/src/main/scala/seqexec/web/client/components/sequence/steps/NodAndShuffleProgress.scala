@@ -3,27 +3,33 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import scala.math.max
+
 import cats.syntax.all._
 import diode.react.ReactConnectProxy
 import gem.Observation
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.component.Scala
+import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.SemanticColor
 import react.semanticui.colors._
-import seqexec.web.client.model.StepItems.StepStateSummary
-import seqexec.model.enum.NodAndShuffleStage
-import seqexec.web.client.components.{ DividedProgress, SeqexecStyles }
+import seqexec.model.NSObservationProgress
+import seqexec.model.NodAndShuffleStatus
+import seqexec.model.ObserveStage
+import seqexec.model.StepId
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{ NSObservationProgress, NodAndShuffleStatus, ObserveStage, StepId }
+import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.operations._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.model.{ ClientStatus, StopOperation }
+import seqexec.web.client.components.DividedProgress
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.StepItems.StepStateSummary
+import seqexec.web.client.model.StopOperation
 import seqexec.web.client.reusability._
-import scala.math.max
 
 final case class NodAndShuffleProgressMessage(
   obsId:    Observation.Id,

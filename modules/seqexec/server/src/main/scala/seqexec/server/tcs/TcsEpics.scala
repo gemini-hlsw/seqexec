@@ -3,24 +3,31 @@
 
 package seqexec.server.tcs
 
-import java.util.concurrent.TimeUnit
-
-import cats.effect.{Async, IO, LiftIO, Sync, Timer}
-import cats.syntax.all._
-import squants.Angle
-import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.tcs.{BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo}
-import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.EpicsCommandBase._
-import seqexec.server.EpicsUtil._
-import seqexec.server.SeqexecFailure.SeqexecException
-import seqexec.server.{EpicsCommand, EpicsCommandBase, EpicsSystem}
-import squants.space.Degrees
-
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.time.Duration
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.LiftIO
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.syntax.all._
+import edu.gemini.epics.acm._
+import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import seqexec.model.enum.ApplyCommandResult
+import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
+import seqexec.server.EpicsCommandBase._
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil._
+import seqexec.server.SeqexecFailure.SeqexecException
+import squants.Angle
+import squants.space.Degrees
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used

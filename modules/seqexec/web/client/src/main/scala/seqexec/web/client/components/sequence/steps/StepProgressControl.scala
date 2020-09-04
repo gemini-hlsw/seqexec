@@ -3,30 +3,33 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.implicits._
 import cats.data.Nested
+import cats.implicits._
 import gem.Observation
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
 import react.common._
+import react.semanticui.SemanticColor
+import react.semanticui.colors._
 import react.semanticui.elements.label.Label
 import react.semanticui.modules.popup.Popup
-import react.semanticui.colors._
-import react.semanticui.SemanticColor
+import seqexec.model.SequenceState
+import seqexec.model.Step
+import seqexec.model.StepId
+import seqexec.model.StepState
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
-import seqexec.model.enum.Resource
 import seqexec.model.enum.Instrument
-import seqexec.model.{ SequenceState, Step, StepId, StepState }
-import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.model.TabOperations
-import seqexec.web.client.model.StopOperation
-import seqexec.web.client.model.StepItems._
-import seqexec.web.client.model.ModelOps._
+import seqexec.model.enum.Resource
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.reusability._
 import seqexec.web.client.icons._
+import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.StepItems._
+import seqexec.web.client.model.StopOperation
+import seqexec.web.client.model.TabOperations
+import seqexec.web.client.reusability._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**

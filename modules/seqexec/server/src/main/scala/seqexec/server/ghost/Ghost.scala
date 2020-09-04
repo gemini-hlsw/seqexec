@@ -3,32 +3,35 @@
 
 package seqexec.server.ghost
 
-import cats.data.Kleisli
+import scala.concurrent.duration._
+import scala.reflect.ClassTag
+
 import cats.data.EitherT
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import fs2.Stream
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import fs2.Stream
 import gem.enum.LightSinkName
-import gsp.math.{Coordinates, Declination, RightAscension}
+import gsp.math.Coordinates
+import gsp.math.Declination
+import gsp.math.RightAscension
 import gsp.math.optics.Format
 import io.chrisdavenport.log4cats.Logger
-
-import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.CleanConfig.extractItem
-import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.GdsClient
+import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
 import squants.time.Seconds
 import squants.time.Time
-
-import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]

@@ -8,11 +8,13 @@ import cats.data.NonEmptySet
 import cats.syntax.all._
 import mouse.boolean._
 import seqexec.model.enum.Instrument
-import seqexec.server.tcs.TcsController.{InstrumentOffset, Subsystem}
-import squants.{Ratio, Time}
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.Subsystem
+import squants.Ratio
+import squants.Time
 import squants.space.Angle
-import squants.time.TimeConversions._
 import squants.space.AngleConversions._
+import squants.time.TimeConversions._
 
 object TcsSettleTimeCalculator {
 

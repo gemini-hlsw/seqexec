@@ -3,35 +3,35 @@
 
 package seqexec.server
 
+import java.lang.{Double => JDouble}
+import java.lang.{Float => JFloat}
+import java.lang.{Integer => JInt}
+import java.util
+import java.util.TimerTask
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
+import java.util.{Timer => JTimer}
+
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
+import scala.math.abs
+
 import cats._
 import cats.data.Nested
-import cats.effect.Sync
 import cats.effect.Async
+import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import mouse.boolean._
-import fs2.Stream
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
-import java.lang.{Float => JFloat}
-import java.util
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.{Timer => JTimer}
-import java.util.TimerTask
-import java.util.concurrent.locks.ReentrantLock
-
 import edu.gemini.epics.acm._
+import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
+import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.NullEpicsError
+import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Time
-
-import scala.math.abs
-import scala.jdk.CollectionConverters._
-import scala.concurrent.duration.FiniteDuration
 
 trait EpicsCommand[F[_]] {
   def post(timeout: FiniteDuration): F[ApplyCommandResult]

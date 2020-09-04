@@ -7,9 +7,9 @@ import cats.effect.Sync
 import edu.gemini.spModel.core.Peer
 import edu.gemini.spModel.gemini.calunit.smartgcal.CalibrationProviderHolder
 import edu.gemini.spModel.smartgcal.provider.CalibrationProviderImpl
-import edu.gemini.spModel.smartgcal.repository.CalibrationUpdater
 import edu.gemini.spModel.smartgcal.repository.CalibrationFileCache
 import edu.gemini.spModel.smartgcal.repository.CalibrationRemoteRepository
+import edu.gemini.spModel.smartgcal.repository.CalibrationUpdater
 import seqexec.model.config._
 
 // This makes it cleaner that we have started SmartGcal

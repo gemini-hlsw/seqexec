@@ -3,21 +3,22 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+
 import cats._
 import cats.implicits._
 import gem.Observation
 import monocle.Optional
 import monocle.Traversal
-import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import monocle.std
 import monocle.function.Each.each
-import scala.collection.immutable.SortedMap
+import monocle.macros.Lenses
+import monocle.std
 import seqexec.model.CalibrationQueueId
 import seqexec.model.QueueId
-import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.model.QueueManipulationOp
+import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table.TableState
 
 @Lenses

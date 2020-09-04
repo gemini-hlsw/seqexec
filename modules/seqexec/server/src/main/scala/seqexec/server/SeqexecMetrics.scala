@@ -3,11 +3,11 @@
 
 package seqexec.server
 
-import cats.syntax.all._
 import cats.effect.Sync
+import cats.syntax.all._
 import gem.enum.Site
-import seqexec.model.enum.Instrument
 import io.prometheus.client._
+import seqexec.model.enum.Instrument
 
 final case class SeqexecMetrics private (
   site: Site,

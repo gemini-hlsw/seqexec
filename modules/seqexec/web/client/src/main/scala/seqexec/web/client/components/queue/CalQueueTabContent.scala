@@ -4,9 +4,9 @@
 package seqexec.web.client.components.queue
 
 import cats.syntax.all._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._

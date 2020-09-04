@@ -3,33 +3,34 @@
 
 package seqexec.web.client.components
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
-import scala.concurrent.ExecutionContext.Implicits.global
-import seqexec.model.UserDetails
-import seqexec.web.client.model._
-import seqexec.web.client.model.SectionVisibilityState._
-import seqexec.web.client.actions.CloseLoginBox
-import seqexec.web.client.actions.LoggedIn
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.icons._
+import react.common._
 import react.semanticui.As
 import react.semanticui.collections.form._
 import react.semanticui.collections.grid._
 import react.semanticui.colors._
+import react.semanticui.elements.button.Button
+import react.semanticui.elements.icon.Icon
 import react.semanticui.floats
+import react.semanticui.modules.modal._
 import react.semanticui.textalignment._
 import react.semanticui.verticalalignment._
 import react.semanticui.widths._
-import react.semanticui.elements.button.Button
-import react.semanticui.elements.icon.Icon
-import react.semanticui.modules.modal._
+import seqexec.model.UserDetails
+import seqexec.web.client.actions.CloseLoginBox
+import seqexec.web.client.actions.LoggedIn
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.forms.FormLabel
-import seqexec.web.client.services.SeqexecWebClient
-import react.common._
+import seqexec.web.client.icons._
+import seqexec.web.client.model.SectionVisibilityState._
+import seqexec.web.client.model._
 import seqexec.web.client.reusability._
+import seqexec.web.client.services.SeqexecWebClient
 
 /**
   * UI for the login box

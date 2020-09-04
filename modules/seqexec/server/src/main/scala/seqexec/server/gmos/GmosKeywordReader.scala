@@ -3,22 +3,27 @@
 
 package seqexec.server.gmos
 
+import cats.Applicative
+import cats.MonadError
 import cats.data.EitherT
-import cats.{Applicative, MonadError}
 import cats.effect.Sync
 import cats.syntax.all._
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.keywords._
-import seqexec.server.gmos.GmosEpics.RoiStatus
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
-import seqexec.model.enum.NodAndShuffleStage.{StageA, StageB}
-import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
-import seqexec.server.CleanConfig.extractItem
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
-import gsp.math.{Angle, Offset}
+import gsp.math.Angle
+import gsp.math.Offset
 import monocle.Getter
 import seqexec.model.enum.NodAndShuffleStage
+import seqexec.model.enum.NodAndShuffleStage.StageA
+import seqexec.model.enum.NodAndShuffleStage.StageB
+import seqexec.server.CleanConfig
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.SeqexecFailure
+import seqexec.server.gmos.GmosEpics.RoiStatus
+import seqexec.server.keywords._
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 

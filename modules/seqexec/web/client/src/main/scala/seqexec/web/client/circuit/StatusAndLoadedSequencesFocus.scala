@@ -9,11 +9,11 @@ import gem.Observation
 import monocle.Getter
 import seqexec.model._
 import seqexec.model.enum._
+import seqexec.web.client.components.SessionQueueTable
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model._
 import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model.lenses.obsClassT
-import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
 final case class SequenceInSessionQueue(id:            Observation.Id,

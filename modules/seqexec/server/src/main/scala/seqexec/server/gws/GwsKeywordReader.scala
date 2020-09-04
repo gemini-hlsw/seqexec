@@ -4,20 +4,20 @@
 package seqexec.server.gws
 
 import cats.Applicative
-import cats.syntax.all._
 import cats.effect.Sync
+import cats.syntax.all._
 import seqexec.server.EpicsHealth
 import seqexec.server.keywords._
 import shapeless.tag
 import shapeless.tag.@@
+import squants.Angle
+import squants.Temperature
+import squants.Velocity
 import squants.motion.MetersPerSecond
 import squants.motion.Pressure
 import squants.motion.StandardAtmospheres
 import squants.space.Degrees
 import squants.thermal.Celsius
-import squants.Angle
-import squants.Temperature
-import squants.Velocity
 
 trait DewPoint
 

@@ -3,9 +3,10 @@
 
 package seqexec.model
 
-import cats.{ Eq, Show }
-import monocle.macros.GenIso
+import cats.Eq
+import cats.Show
 import monocle.Iso
+import monocle.macros.GenIso
 
 final case class Observer(value: String)
 

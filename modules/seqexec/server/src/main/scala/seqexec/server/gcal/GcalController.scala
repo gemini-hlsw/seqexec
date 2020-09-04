@@ -3,7 +3,8 @@
 
 package seqexec.server.gcal
 
-import cats.{Eq, Show}
+import cats.Eq
+import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 

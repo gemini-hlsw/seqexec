@@ -3,14 +3,14 @@
 
 package seqexec.web.client.components
 
-import seqexec.web.client.circuit._
-import seqexec.web.client.model.Pages._
-import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import seqexec.web.client.circuit._
+import seqexec.web.client.model.Pages._
 
 /**
   * Container for the queue table

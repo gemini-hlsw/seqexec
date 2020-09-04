@@ -3,54 +3,61 @@
 
 package seqexec.web.server.http4s
 
+import java.io.FileInputStream
+import java.nio.file.{Path => FilePath}
+import java.security.KeyStore
+import java.security.Security
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+
+import scala.concurrent.ExecutionContext.global
+import scala.concurrent.duration._
+
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
+import fs2.Stream
 import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
-import fs2.Stream
-import io.prometheus.client.CollectorRegistry
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import java.io.FileInputStream
-import java.nio.file.{Path => FilePath}
-
-import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
-import java.security.{KeyStore, Security}
-
-import org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
-import org.http4s.client.asynchttpclient.AsyncHttpClient
-import org.http4s.client.Client
+import io.prometheus.client.CollectorRegistry
+import org.asynchttpclient.AsyncHttpClientConfig
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.HttpRoutes
+import org.http4s.client.Client
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
+import org.http4s.server.Router
+import org.http4s.server.SSLKeyStoreSupport.StoreInfo
+import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
 import org.http4s.server.middleware.{Logger => Http4sLogger}
-import org.http4s.server.Router
-import org.http4s.server.Server
-import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
 import pureconfig._
+import seqexec.model.config._
 import seqexec.model.events._
 import seqexec.server
-import seqexec.server.tcs.GuideConfigDb
-import seqexec.model.config._
-import seqexec.server.{SeqexecEngine, SeqexecMetrics, executeEngine}
-import seqexec.server.SeqexecFailure
-import seqexec.server.Systems
 import seqexec.server.CaServiceInit
+import seqexec.server.SeqexecEngine
+import seqexec.server.SeqexecFailure
+import seqexec.server.SeqexecMetrics
+import seqexec.server.Systems
+import seqexec.server.executeEngine
+import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.config._
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.AuthenticationService
-import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
-
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.global
+import web.server.common.LogInitialization
+import web.server.common.RedirectToHttpsRoutes
+import web.server.common.StaticRoutes
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")

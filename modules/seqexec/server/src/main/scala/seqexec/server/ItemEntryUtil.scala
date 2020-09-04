@@ -3,7 +3,9 @@
 
 package seqexec.server
 
-import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
+import edu.gemini.spModel.`type`.DisplayableSpType
+import edu.gemini.spModel.`type`.LoggableSpType
+import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.config2.ItemEntry
 
 /**

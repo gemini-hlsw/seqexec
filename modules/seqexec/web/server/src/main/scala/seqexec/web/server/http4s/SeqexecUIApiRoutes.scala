@@ -5,42 +5,47 @@ package seqexec.web.server.http4s
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.math._
+
 import cats.data.NonEmptyList
-import cats.effect.{ Concurrent, Timer }
+import cats.effect.Concurrent
 import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import fs2.concurrent.Topic
 import fs2.Pipe
 import fs2.Stream
-import giapi.client.GiapiStatusDb
-import giapi.client.StatusValue
+import fs2.concurrent.Topic
 import gem.enum.GiapiStatus
 import gem.enum.Site
+import giapi.client.GiapiStatusDb
+import giapi.client.StatusValue
 import io.chrisdavenport.log4cats.Logger
 import org.http4s._
 import org.http4s.dsl._
+import org.http4s.headers.`User-Agent`
+import org.http4s.headers.`WWW-Authenticate`
 import org.http4s.server.middleware.GZip
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{ Binary, Pong, Ping, Close }
-import org.http4s.headers.`WWW-Authenticate`
-import org.http4s.headers.`User-Agent`
-import scala.concurrent.duration._
-import scala.math._
+import org.http4s.websocket.WebSocketFrame.Binary
+import org.http4s.websocket.WebSocketFrame.Close
+import org.http4s.websocket.WebSocketFrame.Ping
+import org.http4s.websocket.WebSocketFrame.Pong
 import scodec.bits.ByteVector
 import seqexec.model.ClientId
 import seqexec.model._
-import seqexec.model.events._
-import seqexec.server.tcs.GuideConfigDb
 import seqexec.model.boopickle._
 import seqexec.model.config._
+import seqexec.model.events._
+import seqexec.server.SeqexecEngine
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.http4s.encoder._
-import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.AuthenticationService
+import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
-import seqexec.web.server.OcsBuildInfo
-import seqexec.server.SeqexecEngine
 
 /**
   * Rest Endpoints under the /api route

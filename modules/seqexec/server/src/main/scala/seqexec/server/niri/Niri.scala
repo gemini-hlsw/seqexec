@@ -3,33 +3,50 @@
 
 package seqexec.server.niri
 
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.niri.InstNIRI._
-import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
-import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.seqexec.server.niri.ReadMode
+import edu.gemini.spModel.gemini.niri.InstNIRI._
+import edu.gemini.spModel.gemini.niri.Niri.Camera
+import edu.gemini.spModel.gemini.niri.Niri.WellDepth
+import edu.gemini.spModel.gemini.niri.Niri.{ReadMode => OCSReadMode}
+import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
-import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.Instrument
-import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSystem, Progress, SeqexecFailure, TrySeq}
+import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
-import seqexec.server.tcs.FOCAL_PLANE_SCALE
-import java.lang.{Double => JDouble, Integer => JInt}
-
-import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps.ExtractFailure
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
+import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
+import seqexec.server.TrySeq
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import seqexec.server.niri.NiriController._
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import squants.Length
+import squants.Time
 import squants.space.Arcseconds
-import squants.{Length, Time}
 import squants.time.TimeConversions._
 
 final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriController[F], dhsClient: DhsClient[F])

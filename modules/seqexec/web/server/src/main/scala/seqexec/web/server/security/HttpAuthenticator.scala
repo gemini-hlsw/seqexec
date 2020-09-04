@@ -3,16 +3,18 @@
 
 package seqexec.web.server.security
 
+import java.time.Instant
+
 import cats._
-import cats.data.{Kleisli, OptionT}
-import cats.syntax.all._
+import cats.data.Kleisli
+import cats.data.OptionT
 import cats.effect.Sync
-import seqexec.model.UserDetails
-import seqexec.web.server.security.AuthenticationService.AuthResult
+import cats.syntax.all._
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
-import java.time.Instant
+import seqexec.model.UserDetails
+import seqexec.web.server.security.AuthenticationService.AuthResult
 
 /**
   * Bridge between http4s authentication and the actual internal authenticator

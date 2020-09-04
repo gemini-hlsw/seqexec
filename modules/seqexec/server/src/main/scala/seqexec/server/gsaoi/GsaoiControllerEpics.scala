@@ -3,27 +3,35 @@
 
 package seqexec.server.gsaoi
 
-import cats.effect.Timer
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
 import cats.effect.Async
+import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
-import mouse.boolean._
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
-import edu.gemini.spModel.gemini.gsaoi.Gsaoi.{Filter, ReadMode, Roi, UtilityWheel}
+import edu.gemini.spModel.gemini.gsaoi.Gsaoi.Filter
+import edu.gemini.spModel.gemini.gsaoi.Gsaoi.ReadMode
+import edu.gemini.spModel.gemini.gsaoi.Gsaoi.Roi
+import edu.gemini.spModel.gemini.gsaoi.Gsaoi.UtilityWheel
 import io.chrisdavenport.log4cats.Logger
+import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsCodex._
-import seqexec.server.gsaoi.GsaoiController.{DCConfig, GsaoiConfig}
-import seqexec.server.{EpicsUtil, Progress, SeqexecFailure, failUnlessM}
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil.applyParam
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
+import seqexec.server.failUnlessM
+import seqexec.server.gsaoi.GsaoiController.DCConfig
+import seqexec.server.gsaoi.GsaoiController.GsaoiConfig
 import squants.Time
 import squants.time.TimeConversions._
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
 
 object GsaoiControllerEpics {
 

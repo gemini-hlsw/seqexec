@@ -3,30 +3,34 @@
 
 package seqexec.server.altair
 
-import cats._
-import cats.effect.Async
-import cats.effect.Sync
-import cats.syntax.all._
-import cats.kernel.Eq
-import edu.gemini.epics.acm.CarStateGEM5
-import edu.gemini.seqexec.server.altair.LgsSfoControl
-import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 
-import mouse.boolean._
+import scala.concurrent.duration.FiniteDuration
+
+import cats._
+import cats.effect.Async
+import cats.effect.Sync
+import cats.kernel.Eq
+import cats.syntax.all._
+import edu.gemini.epics.acm.CarStateGEM5
+import edu.gemini.seqexec.server.altair.LgsSfoControl
+import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import monocle.macros.Lenses
-import seqexec.server.{SeqexecFailure, TrySeq}
+import mouse.boolean._
+import seqexec.server.SeqexecFailure
+import seqexec.server.TrySeq
 import seqexec.server.altair.AltairController._
-import seqexec.server.tcs.{FOCAL_PLANE_SCALE, TcsEpics}
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
-import squants.{Length, Time}
+import seqexec.server.tcs.TcsEpics
+import squants.Length
+import squants.Time
+import squants.space.Arcseconds
+import squants.space.Millimeters
 import squants.time.TimeConversions._
-import squants.space.{Arcseconds, Millimeters}
-
-import scala.concurrent.duration.FiniteDuration
 
 object AltairControllerEpics {
   @Lenses

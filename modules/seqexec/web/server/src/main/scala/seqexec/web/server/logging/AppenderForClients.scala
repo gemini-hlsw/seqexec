@@ -10,9 +10,9 @@ import cats.syntax.all._
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
+import fs2.concurrent.Topic
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
-import fs2.concurrent.Topic
 
 /**
  * Custom appender that can take log events from logback and send them

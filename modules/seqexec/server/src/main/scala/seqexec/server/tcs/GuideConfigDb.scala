@@ -8,21 +8,33 @@ import cats.effect.Concurrent
 import cats.syntax.all._
 import fs2.Stream
 import fs2.concurrent.SignallingRef
+import io.circe.Decoder
+import io.circe.DecodingFailure
 import mouse.boolean._
-import seqexec.model.enum.MountGuideOption._
-import seqexec.model.enum.ComaOption
-import seqexec.model.enum.ComaOption._
-import seqexec.model.enum.M1Source
-import seqexec.model.enum.MountGuideOption
-import seqexec.model.enum.TipTiltSource
 import seqexec.model.M1GuideConfig
 import seqexec.model.M1GuideConfig._
 import seqexec.model.M2GuideConfig
 import seqexec.model.M2GuideConfig._
 import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.ComaOption._
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.MountGuideOption._
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.altair.AltairController._
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn, OIUsage, Odgw1Usage, Odgw2Usage, Odgw3Usage, Odgw4Usage, P1Usage, Cwfs1Usage, Cwfs2Usage, Cwfs3Usage}
-import io.circe.{Decoder, DecodingFailure}
+import seqexec.server.gems.GemsController.Cwfs1Usage
+import seqexec.server.gems.GemsController.Cwfs2Usage
+import seqexec.server.gems.GemsController.Cwfs3Usage
+import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.gems.GemsController.GemsOff
+import seqexec.server.gems.GemsController.GemsOn
+import seqexec.server.gems.GemsController.OIUsage
+import seqexec.server.gems.GemsController.Odgw1Usage
+import seqexec.server.gems.GemsController.Odgw2Usage
+import seqexec.server.gems.GemsController.Odgw3Usage
+import seqexec.server.gems.GemsController.Odgw4Usage
+import seqexec.server.gems.GemsController.P1Usage
 import squants.space.Millimeters
 
 final case class GuideConfig(tcsGuide: TelescopeGuideConfig,

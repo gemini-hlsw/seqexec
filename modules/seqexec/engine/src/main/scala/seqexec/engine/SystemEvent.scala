@@ -3,9 +3,10 @@
 
 package seqexec.engine
 
-import seqexec.engine.Result._
-import seqexec.model.{ClientId, StepId}
 import gem.Observation
+import seqexec.engine.Result._
+import seqexec.model.ClientId
+import seqexec.model.StepId
 
 /**
   * Events generated internally by the Engine.

@@ -6,32 +6,50 @@ package seqexec.server.tcs
 import cats._
 import cats.data.OneAnd
 import cats.syntax.all._
-import mouse.boolean._
 import edu.gemini.seqexec.server.tcs.BinaryYesNo
 import edu.gemini.spModel.core.Wavelength
-import seqexec.model.enum.MountGuideOption
+import mouse.boolean._
+import seqexec.model.TelescopeGuideConfig
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
 import seqexec.model.enum.TipTiltSource
-import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.decode
-import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.NullEpicsError
-import seqexec.server.gems.Gems.{Cwfs1DetectorState, Cwfs2DetectorState, Cwfs3DetectorState, DetectorStateOps, GemsWfsState, Odgw1DetectorState, Odgw2DetectorState, Odgw3DetectorState, Odgw4DetectorState}
+import seqexec.server.gems.Gems.Cwfs1DetectorState
 import seqexec.server.gems.Gems.Cwfs1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs2DetectorState
 import seqexec.server.gems.Gems.Cwfs2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs3DetectorState
 import seqexec.server.gems.Gems.Cwfs3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.DetectorStateOps
+import seqexec.server.gems.Gems.GemsWfsState
+import seqexec.server.gems.Gems.Odgw1DetectorState
 import seqexec.server.gems.Gems.Odgw1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw2DetectorState
 import seqexec.server.gems.Gems.Odgw2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw3DetectorState
 import seqexec.server.gems.Gems.Odgw3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw4DetectorState
 import seqexec.server.gems.Gems.Odgw4DetectorState.{Off => _, On => _, _}
-import seqexec.server.tcs.GemsSource.{Cwfs1, Cwfs2, Cwfs3, Odgw1, Odgw2, Odgw3, Odgw4}
+import seqexec.server.tcs.GemsSource.Cwfs1
+import seqexec.server.tcs.GemsSource.Cwfs2
+import seqexec.server.tcs.GemsSource.Cwfs3
+import seqexec.server.tcs.GemsSource.Odgw1
+import seqexec.server.tcs.GemsSource.Odgw2
+import seqexec.server.tcs.GemsSource.Odgw3
+import seqexec.server.tcs.GemsSource.Odgw4
+import seqexec.server.tcs.TcsController.FollowOption.FollowOff
+import seqexec.server.tcs.TcsController.FollowOption.FollowOn
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import shapeless.tag
-import squants.{Angle, Length}
-import squants.space.{Angstroms, Degrees, Millimeters}
+import squants.Angle
+import squants.Length
+import squants.space.Angstroms
+import squants.space.Degrees
+import squants.space.Millimeters
 
 sealed trait TcsConfigRetriever[F[_]] {
   def retrieveBaseConfiguration: F[BaseEpicsTcsConfig]

@@ -5,18 +5,19 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import gsp.math.syntax.all._
-import gsp.math.{Angle, Offset}
+import gsp.math.Angle
+import gsp.math.Offset
 import gsp.math.optics.Format
+import gsp.math.syntax.all._
 import monocle._
-import monocle.macros.GenLens
-import monocle.macros.GenPrism
 import monocle.function.At.at
 import monocle.function.At.atMap
 import monocle.function.FilterIndex.filterIndex
-import monocle.unsafe.MapTraversal._
+import monocle.macros.GenLens
+import monocle.macros.GenPrism
 import monocle.std.option.some
 import monocle.std.string._
+import monocle.unsafe.MapTraversal._
 import seqexec.model.enum._
 import seqexec.model.events._
 

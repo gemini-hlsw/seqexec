@@ -3,19 +3,19 @@
 
 package seqexec.web.client.components
 
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.FlipSoundOnOff
-import seqexec.web.client.model.SoundSelection
-import react.semanticui.sizes._
+import react.common.ReactProps
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon.Icon
-import seqexec.web.client.services.WebpackResources._
+import react.semanticui.sizes._
+import seqexec.web.client.actions.FlipSoundOnOff
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.reusability._
+import seqexec.web.client.services.WebpackResources._
 import web.client.Audio
-import react.common.ReactProps
 
 final case class SoundControl(sound: SoundSelection) extends ReactProps[SoundControl](SoundControl.component)
 

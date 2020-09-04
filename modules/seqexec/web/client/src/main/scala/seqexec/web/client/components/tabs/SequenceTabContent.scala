@@ -5,12 +5,16 @@ package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
 import diode.react.ReactConnectProxy
-import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
+import react.semanticui.As
+import react.semanticui.elements.segment.Segment
+import react.semanticui.elements.segment.SegmentAttached
+import react.semanticui.modules.tab.TabPane
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.StepConfigTable
@@ -22,10 +26,6 @@ import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
-import react.semanticui.modules.tab.TabPane
-import react.semanticui.As
-import react.semanticui.elements.segment.Segment
-import react.semanticui.elements.segment.SegmentAttached
 
 /**
   * Content of a single tab with a sequence

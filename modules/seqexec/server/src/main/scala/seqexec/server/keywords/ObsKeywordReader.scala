@@ -3,30 +3,36 @@
 
 package seqexec.server.keywords
 
-import cats.syntax.all._
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 import cats.Eq
 import cats.data.EitherT
 import cats.data.Nested
+import cats.effect.Sync
+import cats.syntax.all._
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
-import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
+import edu.gemini.spModel.dataflow.GsaSequenceEditor.HEADER_VISIBILITY_KEY
+import edu.gemini.spModel.dataflow.GsaSequenceEditor.PROPRIETARY_MONTHS_KEY
+import edu.gemini.spModel.gemini.gems.CanopusWfs
+import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
+import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import gem.enum.Site
 import gsp.math.syntax.string._
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
-
-import cats.effect.Sync
-import edu.gemini.spModel.gemini.gems.CanopusWfs
-import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import mouse.boolean._
-import seqexec.server.{CleanConfig, ConfigUtilOps, SeqexecFailure}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.Tcs
 
 sealed trait ObsKeywordsReader[F[_]] {

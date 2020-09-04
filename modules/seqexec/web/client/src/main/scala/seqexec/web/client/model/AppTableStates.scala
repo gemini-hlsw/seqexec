@@ -6,13 +6,13 @@ package seqexec.web.client.model
 import cats.Eq
 import gem.Observation
 import monocle.Lens
-import monocle.macros.Lenses
 import monocle.function.At._
+import monocle.macros.Lenses
 import seqexec.model._
-import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.queue.CalQueueTable
+import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.table._
 
 /**

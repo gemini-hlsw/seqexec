@@ -8,14 +8,14 @@ import gem.Observation
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.booPickle._
+import seqexec.model.Conditions
+import seqexec.model.Operator
 import seqexec.model._
+import seqexec.model.boopickle.ModelBooPicklers
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
-import seqexec.model.Conditions
-import seqexec.model.Operator
-import seqexec.model.boopickle.ModelBooPicklers
 
 /**
   * Contains http4s implicit encoders of model objects

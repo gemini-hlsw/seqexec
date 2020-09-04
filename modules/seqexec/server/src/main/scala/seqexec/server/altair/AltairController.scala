@@ -5,7 +5,9 @@ package seqexec.server.altair
 
 import cats.Eq
 import cats.syntax.all._
-import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import squants.Time
 import squants.space.Length
 

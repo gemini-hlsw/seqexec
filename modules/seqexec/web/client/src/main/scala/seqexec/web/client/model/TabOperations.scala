@@ -3,17 +3,18 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+
 import cats.Eq
 import cats.implicits._
 import gem.util.Enumerated
 import monocle.Lens
-import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import seqexec.model.enum.{ActionStatus, Resource}
+import monocle.macros.Lenses
 import seqexec.model.StepId
-
-import scala.collection.immutable.SortedMap
+import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.Resource
 
 sealed trait RunOperation extends Product with Serializable
 object RunOperation {

@@ -3,10 +3,10 @@
 
 package web.client.table
 
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.CtorType
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Component
+import japgolly.scalajs.react.vdom.html_<^._
 import react.virtualized._
 
 object SortableRow {

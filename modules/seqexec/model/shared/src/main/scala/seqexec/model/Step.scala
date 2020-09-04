@@ -6,13 +6,13 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import gem.util.Enumerated
-import seqexec.model.enum._
-import seqexec.model.dhs._
-import monocle.Prism
 import monocle.Lens
 import monocle.Optional
-import monocle.macros.Lenses
+import monocle.Prism
 import monocle.macros.GenPrism
+import monocle.macros.Lenses
+import seqexec.model.dhs._
+import seqexec.model.enum._
 
 sealed trait Step extends Product with Serializable {
   def id: StepId

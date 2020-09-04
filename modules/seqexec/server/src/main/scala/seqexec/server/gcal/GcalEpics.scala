@@ -3,16 +3,20 @@
 
 package seqexec.server.gcal
 
-import cats.effect.{Async, IO, Sync}
-import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService}
+import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import edu.gemini.epics.acm.CaAttribute
+import edu.gemini.epics.acm.CaCommandSender
+import edu.gemini.epics.acm.CaService
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
-
-import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by jluhrs on 3/14/17.

@@ -3,6 +3,9 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import scala.collection.immutable.SortedMap
+import scala.scalajs.js
+
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.Callback
@@ -12,17 +15,15 @@ import japgolly.scalajs.react.Reusability._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.SemanticColor
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.icon.Icon
 import react.semanticui.modules.popup.Popup
-import react.semanticui.SemanticColor
 import react.semanticui.sizes._
-import scala.collection.immutable.SortedMap
-import scala.scalajs.js
-import seqexec.model.enum._
 import seqexec.model.StepId
+import seqexec.model.enum._
 import seqexec.web.client.actions.RequestResourceRun
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles

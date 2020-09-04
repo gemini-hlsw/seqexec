@@ -7,7 +7,8 @@ import cats.Eq
 import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
-import monocle.{Iso, Prism}
+import monocle.Iso
+import monocle.Prism
 import monocle.macros.GenPrism
 import squants.Time
 

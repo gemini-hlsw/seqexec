@@ -7,8 +7,8 @@ import cats._
 import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.dhs.ImageFileId
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
 
 package keywords {
   sealed trait KeywordsBundler[F[_]] {

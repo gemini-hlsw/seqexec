@@ -3,6 +3,8 @@
 
 package seqexec.web.client.handlers
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -11,12 +13,11 @@ import diode.ModelRW
 import diode.NoAction
 import seqexec.model.SequenceState
 import seqexec.model.events._
-import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions._
-import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.circuit.SODLocationFocus
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.Pages._
+import seqexec.web.client.services.SeqexecWebClient
 
 /**
   * Handles updates to the selected sequences set

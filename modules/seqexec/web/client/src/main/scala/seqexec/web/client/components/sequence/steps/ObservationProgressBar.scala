@@ -3,20 +3,23 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import scala.math.max
+
 import cats.syntax.all._
 import gem.Observation
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
 import react.common._
-import react.semanticui.modules.progress.Progress
 import react.semanticui.colors._
+import react.semanticui.modules.progress.Progress
+import seqexec.model.ObservationProgress
+import seqexec.model.ObserveStage
+import seqexec.model.StepId
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.{ ObservationProgress, ObserveStage, StepId }
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import scala.math.max
 
 trait ProgressLabel {
   def label(

@@ -3,16 +3,27 @@
 
 package seqexec.server.gems
 
-import cats.effect.{Async, IO, Sync}
-import cats.syntax.all._
-import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
-import edu.gemini.seqexec.server.gems.{ApdState, LoopState, ReadyState}
-import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
-import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSListSFloatF, safeAttributeSListSIntF}
-import seqexec.server.EpicsUtil.safeAttributeSIntF
-
 import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all._
+import edu.gemini.epics.acm.CaCommandSender
+import edu.gemini.epics.acm.CaService
+import edu.gemini.epics.acm.CaStatusAcceptor
+import edu.gemini.seqexec.server.gems.ApdState
+import edu.gemini.seqexec.server.gems.LoopState
+import edu.gemini.seqexec.server.gems.ReadyState
+import seqexec.server.EpicsCommandBase
+import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
+import seqexec.server.EpicsUtil.safeAttributeF
+import seqexec.server.EpicsUtil.safeAttributeSDoubleF
+import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.EpicsUtil.safeAttributeSListSFloatF
+import seqexec.server.EpicsUtil.safeAttributeSListSIntF
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

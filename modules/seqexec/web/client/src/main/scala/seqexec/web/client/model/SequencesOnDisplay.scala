@@ -3,28 +3,29 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+
 import cats.Eq
-import cats.implicits._
 import cats.data.NonEmptyList
+import cats.implicits._
 import gem.Observation
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.std
-import shapeless.tag
-import scala.collection.immutable.SortedMap
+import seqexec.common.Zipper
+import seqexec.model.BatchCommandState
+import seqexec.model.CalibrationQueueId
 import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.StepId
-import seqexec.model.CalibrationQueueId
-import seqexec.model.BatchCommandState
 import seqexec.model.enum._
-import seqexec.common.Zipper
-import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.circuit.DayCalObserverFocus
+import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.model.ModelOps._
+import shapeless.tag
 
 // Model for the tabbed area of sequences
 @Lenses

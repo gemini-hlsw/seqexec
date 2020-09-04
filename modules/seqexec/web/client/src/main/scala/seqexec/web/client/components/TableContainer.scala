@@ -3,13 +3,13 @@
 
 package seqexec.web.client.components
 
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
-import react.virtualized._
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.virtualized._
 
 /**
   * Container for several types of tables

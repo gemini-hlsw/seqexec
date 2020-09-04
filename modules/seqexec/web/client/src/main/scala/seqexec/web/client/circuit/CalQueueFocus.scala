@@ -3,23 +3,24 @@
 
 package seqexec.web.client.circuit
 
+import scala.collection.immutable.SortedMap
+
 import cats._
 import cats.implicits._
 import gem.Observation
 import monocle.Getter
 import monocle.Lens
 import monocle.Traversal
-import monocle.macros.Lenses
 import monocle.function.Each.each
 import monocle.function.Each.listEach
 import monocle.function.FilterIndex.filterIndex
+import monocle.macros.Lenses
 import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
-import seqexec.web.client.model._
-import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.model.QueueManipulationOp
+import seqexec.web.client.components.queue.CalQueueTable
+import seqexec.web.client.model._
 import web.client.table.TableState
-import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueFocus(

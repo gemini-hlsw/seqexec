@@ -3,34 +3,35 @@
 
 package seqexec.web.client.services
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.scalajs.js.URIUtils._
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.scalajs.js.typedarray.TypedArrayBuffer
+
 import boopickle.Default.Pickle
 import boopickle.Default.Pickler
 import boopickle.Default.Unpickle
 import cats.syntax.all._
 import gem.Observation
-import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
+import org.scalajs.dom.ext.Ajax
 import seqexec.common.HttpStatusCodes
 import seqexec.model.ClientId
-import seqexec.model.QueueId
-import seqexec.model.UserDetails
-import seqexec.model.UserLoginRequest
 import seqexec.model.Observer
 import seqexec.model.Operator
+import seqexec.model.QueueId
 import seqexec.model.Step
 import seqexec.model.StepId
+import seqexec.model.UserDetails
+import seqexec.model.UserLoginRequest
+import seqexec.model.boopickle._
 import seqexec.model.enum.CloudCover
-import seqexec.model.enum.Instrument
 import seqexec.model.enum.ImageQuality
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
-import seqexec.model.enum.Resource
-import seqexec.model.boopickle._
-import scala.scalajs.js.URIUtils._
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.typedarray.ArrayBuffer
-import scala.scalajs.js.typedarray.TypedArrayBuffer
 
 /**
   * Encapsulates remote calls to the Seqexec Web API

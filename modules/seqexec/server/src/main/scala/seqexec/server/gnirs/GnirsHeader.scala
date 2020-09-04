@@ -6,11 +6,11 @@ package seqexec.server.gnirs
 import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords._
-import seqexec.server.InstrumentSystem
-import seqexec.server.tcs.TcsKeywordsReader
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem
+import seqexec.server.keywords._
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GnirsHeader {
   def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {

@@ -3,29 +3,34 @@
 
 package seqexec
 
-import cats.{Applicative, ApplicativeError, Endo, Eq, Functor, MonadError}
+import cats.Applicative
+import cats.ApplicativeError
+import cats.Endo
+import cats.Eq
+import cats.Functor
+import cats.MonadError
 import cats.data._
 import cats.effect.IO
 import cats.syntax.all._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
-import fs2.concurrent.Queue
 import fs2.Stream
+import fs2.concurrent.Queue
 import gem.Observation
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.Logger
-import monocle.macros.Lenses
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monocle.Lens
 import monocle.Optional
-import monocle.macros.GenLens
-import monocle.function.Index._
 import monocle.function.At._
+import monocle.function.Index._
+import monocle.macros.GenLens
+import monocle.macros.Lenses
 import seqexec.engine.Engine
-import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result
+import seqexec.engine.Result.PauseContext
+import seqexec.engine._
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.engine._
 import seqexec.server.SequenceGen.StepGen
 import squants.Time
 

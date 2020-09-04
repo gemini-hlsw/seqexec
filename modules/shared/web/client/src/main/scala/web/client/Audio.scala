@@ -2,9 +2,9 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.client
-import scalajs.js
-import scala.scalajs.js.annotation.JSGlobal
 import scala.annotation.nowarn
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSGlobal
 
 /**
   * JS Facade for HTML5 audio

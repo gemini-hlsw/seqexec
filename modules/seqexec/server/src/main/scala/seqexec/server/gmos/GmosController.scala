@@ -3,26 +3,29 @@
 
 package seqexec.server.gmos
 
+import scala.concurrent.duration.Duration
+
 import cats.Eq
 import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
-import gsp.math.Offset
+import edu.gemini.spModel.gemini.gmos.GmosNorthType
+import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import gem.util.Enumerated
-import scala.concurrent.duration.Duration
+import gsp.math.Offset
+import seqexec.model.GmosParameters._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.NodAndShuffleStage
-import seqexec.model.GmosParameters._
+import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.SeqexecFailure.Unexpected
+import seqexec.server._
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.gmos.GmosController.Config.NSConfig
-import seqexec.server.SeqexecFailure.Unexpected
-import seqexec.server.InstrumentSystem.ElapsedTime
-import seqexec.server._
-import squants.{Length, Time}
 import shapeless.tag
+import squants.Length
+import squants.Time
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
   import GmosController._

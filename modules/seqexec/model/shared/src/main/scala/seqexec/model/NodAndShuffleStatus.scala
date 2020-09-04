@@ -5,9 +5,9 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import seqexec.model.enum._
-import seqexec.model.GmosParameters._
 import monocle.macros.Lenses
+import seqexec.model.GmosParameters._
+import seqexec.model.enum._
 import squants.Time
 
 final case class NSRunningState(action: NSAction, sub: NSSubexposure)

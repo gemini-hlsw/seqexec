@@ -7,10 +7,11 @@ import cats._
 import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords._
-import seqexec.server.{EpicsHealth, InstrumentSystem}
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.EpicsHealth
+import seqexec.server.InstrumentSystem
+import seqexec.server.keywords._
 
 object GwsHeader {
   def header[F[_]: MonadError[?[_], Throwable]: Logger](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {

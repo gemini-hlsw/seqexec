@@ -3,34 +3,35 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+import scala.scalajs.js.timers._
+
 import cats._
 import cats.implicits._
-import gem.enum.Site
 import gem.Observation
-import monocle.Lens
+import gem.enum.Site
 import monocle.Getter
+import monocle.Lens
 import monocle.Traversal
-import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import monocle.function.Each.each
 import monocle.function.FilterIndex.filterIndex
-import scala.collection.immutable.SortedMap
-import scala.scalajs.js.timers._
-import seqexec.model.enum.MountGuideOption._
-import seqexec.model.M1GuideConfig._
-import seqexec.model.M2GuideConfig._
+import monocle.macros.Lenses
+import seqexec.model.CalibrationQueueId
 import seqexec.model.ClientId
 import seqexec.model.Conditions
 import seqexec.model.ExecutionQueueView
+import seqexec.model.M1GuideConfig._
+import seqexec.model.M2GuideConfig._
 import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
-import seqexec.model.CalibrationQueueId
 import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.MountGuideOption._
+import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
 /**

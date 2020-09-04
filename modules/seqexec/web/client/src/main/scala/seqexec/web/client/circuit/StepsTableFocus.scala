@@ -10,9 +10,9 @@ import monocle.Getter
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.web.client.model._
-import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model._
 import web.client.table._
 
 @Lenses

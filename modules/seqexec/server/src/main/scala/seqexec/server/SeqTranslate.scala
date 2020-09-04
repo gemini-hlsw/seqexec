@@ -3,52 +3,68 @@
 
 package seqexec.server
 
+import scala.concurrent.duration._
+
 import cats._
-import cats.data.{EitherT, NonEmptySet}
-import cats.effect.{Concurrent, Sync, Timer}
+import cats.data.EitherT
+import cats.data.NonEmptySet
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
-import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
-import edu.gemini.spModel.obscomp.InstConstants.{DATA_LABEL_PROP, OBSERVE_TYPE_PROP, SCIENCE_OBSERVE_TYPE}
+import edu.gemini.seqexec.odb.ExecutedDataset
+import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
+import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
 import mouse.all._
-import seqexec.engine._
 import seqexec.engine.Action.ActionState
-import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model.{Progress => _, _}
+import seqexec.engine._
 import seqexec.model.dhs._
-import seqexec.server.SeqexecFailure.Unexpected
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
+import seqexec.model.{Progress => _, _}
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentSystem._
-import seqexec.server.SequenceGen.StepActionsGen
-import seqexec.server.flamingos2.{Flamingos2, Flamingos2Header}
-import seqexec.server.keywords._
+import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.SequenceConfiguration._
-import seqexec.server.gpi.{Gpi, GpiHeader}
-import seqexec.server.ghost.{Ghost, GhostHeader}
-import seqexec.server.gsaoi._
-import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosObsKeywordsReader, GmosSouth}
-import seqexec.server.gws.GwsHeader
-import seqexec.server.tcs._
-import seqexec.server.tcs.TcsController.{LightPath, LightSource}
-import seqexec.server.gnirs._
-import seqexec.server.niri._
-import seqexec.server.nifs._
+import seqexec.server.SequenceGen.StepActionsGen
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairHeader
 import seqexec.server.altair.AltairLgsHeader
-import seqexec.server.gems.{Gems, GemsHeader}
-import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigUtilOps._
+import seqexec.server.flamingos2.Flamingos2
+import seqexec.server.flamingos2.Flamingos2Header
+import seqexec.server.gcal._
+import seqexec.server.gems.Gems
+import seqexec.server.gems.GemsHeader
+import seqexec.server.ghost.Ghost
+import seqexec.server.ghost.GhostHeader
+import seqexec.server.gmos.GmosHeader
+import seqexec.server.gmos.GmosNorth
+import seqexec.server.gmos.GmosObsKeywordsReader
+import seqexec.server.gmos.GmosSouth
 import seqexec.server.gmos.NSObserveCommand
+import seqexec.server.gnirs._
+import seqexec.server.gpi.Gpi
+import seqexec.server.gpi.GpiHeader
+import seqexec.server.gsaoi._
+import seqexec.server.gws.GwsHeader
+import seqexec.server.keywords._
+import seqexec.server.nifs._
+import seqexec.server.niri._
+import seqexec.server.tcs.TcsController.LightPath
+import seqexec.server.tcs.TcsController.LightSource
+import seqexec.server.tcs._
 import squants.Time
 import squants.time.TimeConversions._
-import scala.concurrent.duration._
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 

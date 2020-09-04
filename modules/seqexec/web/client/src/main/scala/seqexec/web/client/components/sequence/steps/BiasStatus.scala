@@ -7,7 +7,8 @@ import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import seqexec.model.{ObservationProgress, StepId}
+import seqexec.model.ObservationProgress
+import seqexec.model.StepId
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
