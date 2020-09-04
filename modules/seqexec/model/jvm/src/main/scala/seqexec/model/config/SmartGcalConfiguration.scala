@@ -4,6 +4,7 @@
 package seqexec.model.config
 
 import cats.Eq
+import cats.implicits._
 import java.nio.file.Path
 import org.http4s.Uri
 

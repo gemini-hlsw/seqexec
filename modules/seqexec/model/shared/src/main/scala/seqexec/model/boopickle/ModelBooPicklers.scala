@@ -16,10 +16,8 @@ import boopickle.Default.UUIDPickler
 import boopickle.Default.optionPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
-import cats.Eq
-import cats.Traverse
-import cats.Monoid
-import cats.syntax.all._
+import cats._
+import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
 import java.time.Instant

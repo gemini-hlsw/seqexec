@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.syntax.all._
+import cats.implicits._
 import gem.Observation
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource

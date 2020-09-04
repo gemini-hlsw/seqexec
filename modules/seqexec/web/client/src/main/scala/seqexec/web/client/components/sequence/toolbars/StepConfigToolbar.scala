@@ -2,6 +2,8 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.toolbars
+
+import cats.implicits._
 import diode.react.ReactConnectProxy
 import gem.Observation
 import japgolly.scalajs.react.component.Scala.Unmounted

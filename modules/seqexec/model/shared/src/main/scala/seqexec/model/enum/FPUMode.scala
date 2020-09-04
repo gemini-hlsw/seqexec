@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.syntax.all._
+import cats.implicits._
 import gem.util.Enumerated
 
 sealed abstract class FPUMode(val label: String)

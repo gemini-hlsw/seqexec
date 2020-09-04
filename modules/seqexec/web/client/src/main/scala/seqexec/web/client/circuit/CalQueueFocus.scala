@@ -3,7 +3,8 @@
 
 package seqexec.web.client.circuit
 
-import cats.Eq
+import cats._
+import cats.implicits._
 import gem.Observation
 import monocle.Getter
 import monocle.Lens

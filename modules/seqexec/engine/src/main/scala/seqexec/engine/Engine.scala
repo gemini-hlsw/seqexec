@@ -6,7 +6,7 @@ package seqexec.engine
 import cats._
 import cats.data.StateT
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.implicits._
 import fs2.Stream
 import gem.Observation
 import monocle.Optional

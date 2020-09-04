@@ -5,7 +5,7 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.data.NonEmptyList
 import cats.Eq
-import cats.syntax.all._
+import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.MonocleReact._

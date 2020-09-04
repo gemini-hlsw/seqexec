@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.syntax.all._
+import cats.implicits._
 import gem.util.Enumerated
 import monocle.Lens
 import monocle.macros.Lenses

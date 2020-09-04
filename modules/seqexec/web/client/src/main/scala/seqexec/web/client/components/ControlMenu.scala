@@ -2,6 +2,8 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
+
+import cats.implicits._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._

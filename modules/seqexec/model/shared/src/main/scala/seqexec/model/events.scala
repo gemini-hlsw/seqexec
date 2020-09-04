@@ -3,9 +3,8 @@
 
 package seqexec.model
 
-import cats.Eq
-import cats.Order
-import cats.syntax.all._
+import cats._
+import cats.implicits._
 import dhs.ImageFileId
 import gem.Observation
 import java.time.Instant

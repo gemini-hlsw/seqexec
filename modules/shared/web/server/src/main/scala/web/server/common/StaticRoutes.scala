@@ -5,6 +5,7 @@ package web.server.common
 
 import cats.data.{ NonEmptyList, OptionT }
 import cats.effect.{ Blocker, Sync, ContextShift }
+import cats.instances.string._
 import cats.syntax.eq._
 import org.http4s.CacheDirective._
 import org.http4s.headers.`Cache-Control`

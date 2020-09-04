@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.syntax.all._
+import cats.implicits._
 import gem.Observation
 
 sealed trait QueueManipulationOp extends Product with Serializable {

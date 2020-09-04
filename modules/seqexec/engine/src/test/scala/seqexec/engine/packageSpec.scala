@@ -5,7 +5,7 @@ package seqexec.engine
 
 import cats.effect.concurrent.Semaphore
 import cats.data.NonEmptyList
-import cats.syntax.all._
+import cats.implicits._
 import cats.effect._
 import fs2.Stream
 import gem.Observation

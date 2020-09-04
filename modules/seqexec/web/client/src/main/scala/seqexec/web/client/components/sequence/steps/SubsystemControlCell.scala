@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.syntax.all._
+import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactEvent

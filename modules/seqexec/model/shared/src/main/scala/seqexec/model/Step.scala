@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats._
-import cats.syntax.all._
+import cats.implicits._
 import gem.util.Enumerated
 import seqexec.model.enum._
 import seqexec.model.dhs._

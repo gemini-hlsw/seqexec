@@ -2,7 +2,9 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
-import cats.Show
+
+import cats._
+import cats.implicits._
 import gem.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability

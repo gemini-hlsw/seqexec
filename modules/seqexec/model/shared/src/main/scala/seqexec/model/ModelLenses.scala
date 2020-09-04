@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats._
-import cats.syntax.all._
+import cats.implicits._
 import gsp.math.syntax.all._
 import gsp.math.{Angle, Offset}
 import gsp.math.optics.Format

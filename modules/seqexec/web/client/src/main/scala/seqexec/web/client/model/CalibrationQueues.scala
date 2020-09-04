@@ -4,6 +4,7 @@
 package seqexec.web.client.model
 
 import cats._
+import cats.implicits._
 import gem.Observation
 import monocle.Optional
 import monocle.Traversal

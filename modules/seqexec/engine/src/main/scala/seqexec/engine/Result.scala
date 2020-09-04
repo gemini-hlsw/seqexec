@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import cats.Eq
-import cats.syntax.all._
+import cats.implicits._
 
 /**
   * The result of an `Action`.

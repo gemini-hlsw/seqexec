@@ -4,6 +4,7 @@
 package seqexec.common
 
 import cats._
+import cats.implicits._
 import cats.data.NonEmptyList
 import monocle.macros.Lenses
 import monocle.{ Prism, Traversal }

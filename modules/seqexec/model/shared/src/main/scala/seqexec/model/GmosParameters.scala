@@ -4,6 +4,7 @@
 package seqexec.model
 
 import cats.Eq
+import cats.implicits._
 import shapeless.tag.@@
 import scala.concurrent.duration.SECONDS
 
