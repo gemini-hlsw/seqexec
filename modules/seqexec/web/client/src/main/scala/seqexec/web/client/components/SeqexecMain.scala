@@ -15,6 +15,7 @@ import react.common._
 import react.common.implicits._
 import react.semanticui.collections.grid._
 import react.semanticui.elements.divider.Divider
+import react.semanticui.toasts._
 import react.semanticui.widths._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.tabs.TabsArea
@@ -22,7 +23,8 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
 
-final case class AppTitle(site: Site, ws: WebSocketConnection) extends ReactProps[AppTitle](AppTitle.component)
+final case class AppTitle(site: Site, ws: WebSocketConnection)
+    extends ReactProps[AppTitle](AppTitle.component)
 
 object AppTitle {
   type Props = AppTitle
@@ -33,10 +35,11 @@ object AppTitle {
     .builder[Props]("SeqexecTitle")
     .stateless
     .render_P(p =>
-      Divider(as         = "h4",
+      Divider(as = "h4",
               horizontal = true,
               clazz =
-                SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header)(
+                SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
+      )(
         s"Seqexec ${p.site.shortName}",
         p.ws.ws.renderPending(_ =>
           <.div(
@@ -52,7 +55,8 @@ object AppTitle {
 
 }
 
-final case class SeqexecMain(site: Site, ctl: RouterCtl[SeqexecPages]) extends ReactProps[SeqexecMain](SeqexecMain.component)
+final case class SeqexecMain(site: Site, ctl: RouterCtl[SeqexecPages])
+    extends ReactProps[SeqexecMain](SeqexecMain.component)
 
 object SeqexecMain {
   type Props = SeqexecMain
@@ -70,14 +74,19 @@ object SeqexecMain {
     .stateless
     .render_P(p =>
       React.Fragment(
-        Grid(padded     = GridPadded.Horizontally)(
+        SemanticToastContainer(position = ContainerPosition.BottomRight,
+                               animation = SemanticAnimation.FadeUp,
+                               clazz = SeqexecStyles.Toast
+        ),
+        Grid(padded = GridPadded.Horizontally)(
           GridRow(clazz = SeqexecStyles.shorterRow),
           wsConnect(ws => AppTitle(p.site, ws())),
           GridRow(clazz = SeqexecStyles.shorterRow |+| SeqexecStyles.queueAreaRow)(
-            GridColumn(mobile   = Sixteen,
-                       tablet   = Ten,
+            GridColumn(mobile = Sixteen,
+                       tablet = Ten,
                        computer = Ten,
-                       clazz    = SeqexecStyles.queueArea)(
+                       clazz = SeqexecStyles.queueArea
+            )(
               SessionQueueTableSection(p.ctl)
             ),
             GridColumn(tablet = Six, computer = Six, clazz = SeqexecStyles.headerSideBarArea)(
