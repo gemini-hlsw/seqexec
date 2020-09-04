@@ -4,7 +4,7 @@
 package seqexec.web.client.components
 
 import cats.implicits._
-import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.JSConverters._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
