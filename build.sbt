@@ -189,7 +189,7 @@ lazy val seqexec_web_server = project
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := BuildInfoKey.ofN(name, version, buildInfoBuildNumber),
+    buildInfoKeys ++= Seq[BuildInfoKey](name, version, buildInfoBuildNumber),
     buildInfoOptions += BuildInfoOption.BuildTime,
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
@@ -273,7 +273,7 @@ lazy val seqexec_web_client = project
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoKeys ++= Seq[BuildInfoKey](name, version),
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
@@ -311,7 +311,7 @@ lazy val seqexec_server = project
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := BuildInfoKey.ofN(name, version),
+    buildInfoKeys ++= Seq[BuildInfoKey](name, version),
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
