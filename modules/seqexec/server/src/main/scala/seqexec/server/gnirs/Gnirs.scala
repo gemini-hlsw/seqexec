@@ -3,27 +3,39 @@
 
 package seqexec.server.gnirs
 
-import cats.data.Kleisli
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import cats.data.EitherT
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import cats.effect.{Concurrent, Sync, Timer}
-import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
+import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
+import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
-import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
-import java.lang.{Double => JDouble, Integer => JInt}
-
+import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import gem.enum.LightSinkName
 import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.enum.ObserveCommandResult
-import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Filter1, Other, ReadMode}
-import seqexec.server._
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
+import seqexec.server.ConfigUtilOps._
+import seqexec.server._
+import seqexec.server.gnirs.GnirsController.CCConfig
+import seqexec.server.gnirs.GnirsController.DCConfig
+import seqexec.server.gnirs.GnirsController.Filter1
+import seqexec.server.gnirs.GnirsController.Other
+import seqexec.server.gnirs.GnirsController.ReadMode
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._

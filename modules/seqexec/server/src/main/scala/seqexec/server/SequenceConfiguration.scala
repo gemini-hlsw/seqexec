@@ -4,26 +4,26 @@
 package seqexec.server
 
 import cats.syntax.all._
-import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Wavelength => GNIRSWavelength}
-import seqexec.model.enum.Instrument
+import edu.gemini.spModel.obscomp.InstConstants._
 import seqexec.model.StepState
-import seqexec.server.flamingos2.Flamingos2
-import seqexec.server.gpi.Gpi
-import seqexec.server.ghost.Ghost
-import seqexec.server.gsaoi._
-import seqexec.server.gmos.GmosNorth
-import seqexec.server.gmos.GmosSouth
-import seqexec.server.niri._
-import seqexec.server.nifs._
-import seqexec.server.gnirs._
-import seqexec.server.SeqexecFailure.UnrecognizedInstrument
-import seqexec.server.SeqexecFailure.Unexpected
+import seqexec.model.enum.Instrument
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.SeqexecFailure.Unexpected
+import seqexec.server.SeqexecFailure.UnrecognizedInstrument
+import seqexec.server.flamingos2.Flamingos2
+import seqexec.server.ghost.Ghost
+import seqexec.server.gmos.GmosNorth
+import seqexec.server.gmos.GmosSouth
+import seqexec.server.gnirs._
+import seqexec.server.gpi.Gpi
+import seqexec.server.gsaoi._
+import seqexec.server.nifs._
+import seqexec.server.niri._
 
 trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =

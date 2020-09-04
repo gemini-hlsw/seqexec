@@ -3,7 +3,11 @@
 
 package seqexec.common
 
-import cats.{Applicative, Eq, Eval, Traverse, Order}
+import cats.Applicative
+import cats.Eq
+import cats.Eval
+import cats.Order
+import cats.Traverse
 import cats.data.Chain
 import cats.data.Chain._
 import cats.implicits._

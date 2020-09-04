@@ -3,33 +3,33 @@
 
 package seqexec.web.client
 
+import scala.collection.immutable.SortedMap
+
 import diode.data.PotState
 import gem.Observation
 import gem.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
-
-import scala.collection.immutable.SortedMap
-import react.semanticui.SemanticSize
-import seqexec.model.enum.Resource
-import seqexec.model.enum.ServerLogLevel
-import seqexec.model.dhs._
-import seqexec.model._
-import seqexec.web.client.model.AvailableTab
-import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.model.UserNotificationState
-import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.model.QueueOperations
-import seqexec.web.client.model.TabOperations
-import seqexec.web.client.model.ResourceRunOperation
-import seqexec.web.client.model.TabSelected
-import seqexec.web.client.model.GlobalLog
-import seqexec.web.client.circuit._
-import seqexec.web.client.model.StepItems.StepStateSummary
 import react.common._
 import react.semanticui.SemanticColor
-import squants.Time
+import react.semanticui.SemanticSize
+import seqexec.model._
+import seqexec.model.dhs._
+import seqexec.model.enum.Resource
+import seqexec.model.enum.ServerLogLevel
+import seqexec.web.client.circuit._
+import seqexec.web.client.model.AvailableTab
+import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.GlobalLog
+import seqexec.web.client.model.QueueOperations
+import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.StepItems.StepStateSummary
+import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.TabSelected
+import seqexec.web.client.model.UserNotificationState
+import seqexec.web.client.model.WebSocketConnection
 import shapeless.tag.@@
+import squants.Time
 
 package object reusability {
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =

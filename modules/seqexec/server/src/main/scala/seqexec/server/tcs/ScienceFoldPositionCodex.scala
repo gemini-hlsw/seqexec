@@ -3,13 +3,16 @@
 
 package seqexec.server.tcs
 
+import atto.Atto._
+import atto._
 import cats.syntax.all._
-import atto._, Atto._
 import gem.enum.LightSinkName
-import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}
-import seqexec.server.tcs.TcsController.LightSource._
+import seqexec.server.EpicsCodex.DecodeEpicsValue
+import seqexec.server.EpicsCodex.EncodeEpicsValue
+import seqexec.server.tcs.ScienceFold.Parked
+import seqexec.server.tcs.ScienceFold.Position
 import seqexec.server.tcs.TcsController.LightSource
-import seqexec.server.tcs.ScienceFold.{Parked, Position}
+import seqexec.server.tcs.TcsController.LightSource._
 
 // Decoding and encoding the science fold position require some common definitions, therefore I
 // put them inside an object

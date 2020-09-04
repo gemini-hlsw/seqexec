@@ -3,22 +3,27 @@
 
 package seqexec.server.gcal
 
-import cats._
-import cats.syntax.all._
-import cats.effect.Sync
-import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
-import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Lamp, Shutter}
 import java.util.{Set => JSet}
-
-import io.chrisdavenport.log4cats.Logger
 
 import scala.Function.const
 import scala.jdk.CollectionConverters._
+
+import cats._
+import cats.effect.Sync
+import cats.syntax.all._
+import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Resource
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.gcal.GcalController._
-import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, SeqexecFailure, System}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.SeqexecFailure
+import seqexec.server.System
+import seqexec.server.gcal.GcalController._
 
 /**
   * Created by jluhrs on 3/21/17.

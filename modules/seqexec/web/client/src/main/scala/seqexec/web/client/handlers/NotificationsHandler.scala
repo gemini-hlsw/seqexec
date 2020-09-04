@@ -3,20 +3,21 @@
 
 package seqexec.web.client.handlers
 
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import seqexec.model.InstrumentInUse
-import seqexec.model.ResourceConflict
 import seqexec.model.RequestFailed
+import seqexec.model.ResourceConflict
 import seqexec.model.SubsystemBusy
 import seqexec.model.events.UserNotification
-import seqexec.web.client.model._
 import seqexec.web.client.actions._
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import seqexec.web.client.model._
 
 class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState])
     extends ActionHandler(modelRW)

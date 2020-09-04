@@ -6,29 +6,32 @@ package seqexec.server
 import cats.Monad
 import cats.effect._
 import cats.syntax.all._
-import mouse.boolean._
 import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer
 import gem.enum.Site
-import io.chrisdavenport.log4cats.Logger
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
+import io.chrisdavenport.log4cats.Logger
+import mouse.boolean._
 import org.http4s.client.Client
 import seqexec.model.config._
 import seqexec.server.altair._
 import seqexec.server.flamingos2._
-import seqexec.server.keywords._
-import seqexec.server.gpi._
-import seqexec.server.gmos._
-import seqexec.server.gsaoi._
-import seqexec.server.ghost._
 import seqexec.server.gcal._
 import seqexec.server.gems._
-import seqexec.server.tcs._
+import seqexec.server.ghost._
+import seqexec.server.gmos._
 import seqexec.server.gnirs._
-import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsKeywordReader, GwsKeywordsReaderEpics}
-import seqexec.server.niri._
+import seqexec.server.gpi._
+import seqexec.server.gsaoi._
+import seqexec.server.gws.DummyGwsKeywordsReader
+import seqexec.server.gws.GwsEpics
+import seqexec.server.gws.GwsKeywordReader
+import seqexec.server.gws.GwsKeywordsReaderEpics
+import seqexec.server.keywords._
 import seqexec.server.nifs._
+import seqexec.server.niri._
+import seqexec.server.tcs._
 
 final case class Systems[F[_]](
   odb:                 OdbProxy[F],

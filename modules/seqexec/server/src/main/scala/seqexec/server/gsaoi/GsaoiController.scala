@@ -9,12 +9,12 @@ import cats.Show
 import cats.syntax.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.Progress
 import seqexec.server.gsaoi.GsaoiController.DCConfig
 import seqexec.server.gsaoi.GsaoiController.GsaoiConfig
-import seqexec.server.Progress
+import shapeless.tag.@@
 import squants.Time
 import squants.time.TimeConversions._
-import shapeless.tag.@@
 
 trait GsaoiController[F[_]] {
 

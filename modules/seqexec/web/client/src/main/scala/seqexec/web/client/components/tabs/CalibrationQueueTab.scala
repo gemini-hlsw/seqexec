@@ -5,11 +5,11 @@ package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
 import gem.Observation
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
 import react.common._

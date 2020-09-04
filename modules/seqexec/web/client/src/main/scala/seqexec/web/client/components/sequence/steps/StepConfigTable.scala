@@ -3,25 +3,26 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import scala.math.max
+import scala.scalajs.js
+
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.raw.JsNumber
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.Reusability
-import react.virtualized._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
-import scala.scalajs.js
-import scala.math.max
+import react.virtualized._
 import seqexec.model.Step
 import seqexec.model.enum.SystemName
+import seqexec.web.client.actions.UpdateStepsConfigTableState
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.UpdateStepsConfigTableState
 import seqexec.web.client.reusability._
 import web.client.table._
 

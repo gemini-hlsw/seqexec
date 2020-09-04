@@ -3,39 +3,39 @@
 
 package seqexec.server.nifs
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+import scala.math.abs
+
 import cats._
 import cats.data.OptionT
 import cats.effect.Async
 import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ReadMode => LegacyReadMode}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{EngReadMode => LegacyEngReadMode}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Filter => LegacyFilter}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Disperser => LegacyDisperser}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Mask => LegacyMask}
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.{ReadMode => EReadMode}
 import edu.gemini.seqexec.server.nifs.{TimeMode => ETimeMode}
-import mouse.boolean._
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Disperser => LegacyDisperser}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{EngReadMode => LegacyEngReadMode}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Filter => LegacyFilter}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{Mask => LegacyMask}
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ReadMode => LegacyReadMode}
 import io.chrisdavenport.log4cats.Logger
+import mouse.boolean._
 import seqexec.model.ObserveStage
-
-import scala.math.abs
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.EpicsCodex._
+import seqexec.server.EpicsUtil._
 import seqexec.server.Progress
 import seqexec.server.ProgressUtil
 import seqexec.server.SeqexecFailure
 import seqexec.server.failUnlessM
-import seqexec.server.EpicsUtil._
-import seqexec.server.EpicsCodex._
 import shapeless.tag
 import squants.Time
 import squants.time.TimeConversions._
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
 
 object NifsLookupTables {
 

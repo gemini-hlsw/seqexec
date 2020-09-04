@@ -3,9 +3,11 @@
 
 package seqexec.server
 
+import scala.concurrent.duration._
+
 import cats._
-import cats.syntax.all._
 import cats.effect._
+import cats.syntax.all._
 import fs2.Stream
 import gem.Observation
 import io.chrisdavenport.log4cats.Logger
@@ -15,7 +17,6 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem._
 import squants.time.Time
 import squants.time.TimeConversions._
-import scala.concurrent.duration._
 
 /**
   * Methods usedd to generate observation related actions

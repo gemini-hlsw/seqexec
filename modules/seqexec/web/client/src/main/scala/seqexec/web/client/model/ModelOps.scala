@@ -4,15 +4,15 @@
 package seqexec.web.client.model
 
 import cats.Show
-import cats.syntax.all._
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import gem.enum.Site
+import seqexec.model.SequenceState
+import seqexec.model.SequenceView
+import seqexec.model.Step
+import seqexec.model.StepState
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import seqexec.model.StepState
-import seqexec.model.SequenceState
-import seqexec.model.Step
-import seqexec.model.SequenceView
 
 /**
   * Contains useful operations for the seqexec model

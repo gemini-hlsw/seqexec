@@ -5,9 +5,9 @@ package seqexec.server.tcs
 
 import edu.gemini.spModel.core.Wavelength
 import monocle.macros.Lenses
-import squants.Angle
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.tcs.TcsController._
+import squants.Angle
 
 final case class InstrumentPorts(
   flamingos2Port: Int,

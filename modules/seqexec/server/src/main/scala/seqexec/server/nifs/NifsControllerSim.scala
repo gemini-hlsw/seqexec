@@ -9,11 +9,11 @@ import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.InstrumentControllerSim
 import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.Progress
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
-import seqexec.server.InstrumentControllerSim
-import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
 

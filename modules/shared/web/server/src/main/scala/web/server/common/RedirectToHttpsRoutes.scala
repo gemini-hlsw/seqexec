@@ -4,9 +4,10 @@
 package web.server.common
 
 import cats.effect.Sync
+import org.http4s.HttpRoutes
+import org.http4s.Uri
 import org.http4s.dsl._
 import org.http4s.headers.Location
-import org.http4s.{HttpRoutes, Uri}
 
 class RedirectToHttpsRoutes[F[_]: Sync](toPort: Int, externalName: String) extends Http4sDsl[F] {
   val baseUri: Uri = Uri.fromString(s"https://$externalName:$toPort").getOrElse(Uri.uri("/"))

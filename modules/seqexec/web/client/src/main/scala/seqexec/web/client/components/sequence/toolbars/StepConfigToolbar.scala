@@ -6,10 +6,10 @@ package seqexec.web.client.components.sequence.toolbars
 import cats.implicits._
 import diode.react.ReactConnectProxy
 import gem.Observation
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import mouse.boolean._
 import react.common._
@@ -22,8 +22,8 @@ import react.semanticui.floats._
 import react.semanticui.sizes._
 import react.semanticui.verticalalignment.Bottom
 import react.semanticui.widths._
-import seqexec.model.enum.Instrument
 import seqexec.model.RunningStep
+import seqexec.model.enum.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles

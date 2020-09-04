@@ -8,12 +8,21 @@ import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import gem.Observation
 import gem.enum.KeywordName
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
-import seqexec.server.keywords.{Header, KeywordBag, ObsKeywordsReader, buildDouble, buildInt32, buildString, sendKeywords}
-import seqexec.server.tcs.{CRFollow, GemsSource, TargetKeywordsReader, TcsKeywordsReader}
+import seqexec.server.keywords.Header
+import seqexec.server.keywords.KeywordBag
+import seqexec.server.keywords.ObsKeywordsReader
+import seqexec.server.keywords.buildDouble
+import seqexec.server.keywords.buildInt32
+import seqexec.server.keywords.buildString
+import seqexec.server.keywords.sendKeywords
+import seqexec.server.tcs.CRFollow
+import seqexec.server.tcs.GemsSource
+import seqexec.server.tcs.TargetKeywordsReader
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
-import io.chrisdavenport.log4cats.Logger
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GemsHeader {
   def header[F[_]: Sync: Logger](inst: InstrumentSystem[F],

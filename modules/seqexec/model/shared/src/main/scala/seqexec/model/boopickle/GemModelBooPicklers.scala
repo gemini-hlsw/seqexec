@@ -3,17 +3,20 @@
 
 package seqexec.model.boopickle
 
+import java.time.LocalDate
+import java.time.Year
+
 import boopickle.Default.Pickler
-import boopickle.Default.transformPickler
 import boopickle.Default.generatePickler
-import boopickle.Default.stringPickler
-import boopickle.Default.shortPickler
 import boopickle.Default.intPickler
 import boopickle.Default.longPickler
+import boopickle.Default.shortPickler
+import boopickle.Default.stringPickler
+import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
-import gem.{ProgramId, Observation}
+import gem.Observation
+import gem.ProgramId
 import gsp.math.Index
-import java.time.{LocalDate, Year}
 
 /**
   * Contains boopickle implicit picklers of gem model objects

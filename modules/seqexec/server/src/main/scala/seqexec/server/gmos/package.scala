@@ -3,9 +3,9 @@
 
 package seqexec.server
 
-import seqexec.model.enum.NSAction
-import seqexec.model.NSSubexposure
 import seqexec.engine.Result.PartialVal
+import seqexec.model.NSSubexposure
+import seqexec.model.enum.NSAction
 
 package object gmos {
   type GmosSouthController[F[_]] = GmosController[F, GmosController.SouthTypes]

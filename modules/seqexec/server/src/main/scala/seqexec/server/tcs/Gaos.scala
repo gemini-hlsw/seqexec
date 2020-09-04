@@ -3,12 +3,15 @@
 
 package seqexec.server.tcs
 
-import cats.{Eq, Show}
+import cats.Eq
+import cats.Show
 import cats.syntax.all._
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.Gaos.PauseCondition.{FixedPauseCondition, OffsetMove}
-import seqexec.server.tcs.Gaos.ResumeCondition.{FixedResumeCondition, OffsetReached}
+import seqexec.server.tcs.Gaos.PauseCondition.FixedPauseCondition
+import seqexec.server.tcs.Gaos.PauseCondition.OffsetMove
+import seqexec.server.tcs.Gaos.ResumeCondition.FixedResumeCondition
+import seqexec.server.tcs.Gaos.ResumeCondition.OffsetReached
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 

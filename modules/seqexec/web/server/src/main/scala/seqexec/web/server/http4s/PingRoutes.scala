@@ -7,8 +7,8 @@ import cats.effect.Sync
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.dsl._
-import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.AuthenticationService
+import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.Http4sAuthentication
 
 /**

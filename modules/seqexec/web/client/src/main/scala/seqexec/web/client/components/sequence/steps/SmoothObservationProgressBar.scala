@@ -4,13 +4,13 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.semanticui.modules.progress.Progress
 import react.semanticui.colors._
+import react.semanticui.modules.progress.Progress
 import seqexec.model.ObserveStage
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._

@@ -5,9 +5,9 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
+import seqexec.model.GmosParameters._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
-import seqexec.model.GmosParameters._
 import shapeless.tag
 
 final case class NSSubexposure private (

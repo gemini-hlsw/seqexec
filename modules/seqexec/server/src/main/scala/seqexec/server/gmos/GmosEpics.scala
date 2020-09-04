@@ -3,24 +3,25 @@
 
 package seqexec.server.gmos
 
-import cats.syntax.all._
-import cats.effect.IO
-import cats.effect.Async
-import cats.effect.Sync
-import edu.gemini.epics.acm._
 import java.lang.{Double => JDouble}
 
+import scala.concurrent.duration._
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all._
+import edu.gemini.epics.acm._
 import mouse.all._
 import seqexec.model.enum.ApplyCommandResult
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
-import seqexec.server.SeqexecFailure._
-import seqexec.server.EpicsCommandBase
 import seqexec.server.ObserveCommand
-
-import scala.concurrent.duration._
+import seqexec.server.SeqexecFailure._
+import seqexec.server.gmos.GmosEpics.RoiParameters
+import seqexec.server.gmos.GmosEpics.RoiStatus
 
 class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

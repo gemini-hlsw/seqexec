@@ -3,22 +3,27 @@
 
 package seqexec.web.client.components
 
-import cats.data.NonEmptyList
-import cats._
-import cats.implicits._
-import gem.enum.Site
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.vdom.html_<^._
-import java.time.format.DateTimeFormatter
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+import scala.collection.immutable.SortedMap
+import scala.math.max
+import scala.scalajs.js
+
+import cats._
+import cats.data.NonEmptyList
+import cats.implicits._
+import gem.enum.Site
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.vdom.html_<^._
+import monocle.Lens
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import monocle.Lens
 import monocle.macros.Lenses
 import mouse.all._
 import react.clipboard._
@@ -35,12 +40,9 @@ import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.segment.Segment
 import react.semanticui.modules.checkbox.Checkbox
 import react.semanticui.sizes._
-import react.semanticui.widths._
 import react.semanticui.textalignment._
+import react.semanticui.widths._
 import react.virtualized._
-import scala.collection.immutable.SortedMap
-import scala.math.max
-import scala.scalajs.js
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._

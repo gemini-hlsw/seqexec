@@ -3,15 +3,18 @@
 
 package seqexec.server.flamingos2
 
-import cats.effect.{Async, IO, Sync}
+import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.{EpicsCommandBase, EpicsSystem}
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
-
-import scala.concurrent.duration.FiniteDuration
 
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

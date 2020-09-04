@@ -6,7 +6,9 @@ package seqexec.server.gems
 import cats.Eq
 import cats.syntax.all._
 import seqexec.server.gems.Gems.GemsWfsState
-import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 
 trait GemsController[F[_]] {
   import GemsController._

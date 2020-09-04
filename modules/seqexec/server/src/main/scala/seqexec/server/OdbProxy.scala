@@ -4,16 +4,17 @@
 package seqexec.server
 
 import cats.Applicative
-import cats.effect.Sync
 import cats.data.EitherT
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.pot.sp.SPObservationID
+import edu.gemini.seqexec.odb.SeqExecService
+import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.core.Peer
-import edu.gemini.seqexec.odb.{SeqExecService, SeqexecSequence}
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.wdba.xmlrpc.ServiceException
-import io.chrisdavenport.log4cats.Logger
 import gem.Observation
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs._
 
 sealed trait OdbCommands[F[_]] {

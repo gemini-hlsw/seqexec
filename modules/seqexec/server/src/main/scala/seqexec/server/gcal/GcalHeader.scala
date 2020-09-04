@@ -7,10 +7,10 @@ import cats.Applicative
 import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords._
-import seqexec.server.InstrumentSystem
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem
+import seqexec.server.keywords._
 
 object GcalHeader {
   implicit def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =

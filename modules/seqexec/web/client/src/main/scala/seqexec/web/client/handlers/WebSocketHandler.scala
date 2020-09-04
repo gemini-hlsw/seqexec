@@ -3,9 +3,17 @@
 
 package seqexec.web.client.handlers
 
+import java.time.Instant
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.timers._
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.scalajs.js.typedarray.TypedArrayBuffer
+
 import boopickle.Default.Unpickle
 import cats.syntax.all._
-import diode.util.RunAfterJS
 import diode.Action
 import diode.ActionHandler
 import diode.ActionResult
@@ -15,21 +23,15 @@ import diode.NoAction
 import diode.data.Pending
 import diode.data.Pot
 import diode.data.Ready
-import java.time.Instant
+import diode.util.RunAfterJS
 import mouse.all._
 import org.scalajs.dom._
-import scala.scalajs.js.timers._
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.scalajs.js.typedarray.ArrayBuffer
-import scala.scalajs.js.typedarray.TypedArrayBuffer
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import seqexec.model.enum.ServerLogLevel
 import seqexec.model.boopickle.ModelBooPicklers
+import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
-import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
+import seqexec.web.client.model._
 import typings.loglevel.mod.{ ^ => logger }
 
 /**

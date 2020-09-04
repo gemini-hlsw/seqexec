@@ -3,18 +3,27 @@
 
 package seqexec.web.client.handlers
 
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import seqexec.model.enum.Resource
 import seqexec.model.RequestFailed
-import seqexec.web.client.model.{AbortOperation, CancelPauseOperation, PauseOperation, ResourceRunOperation, RunOperation, SequencesOnDisplay, StartFromOperation, StopOperation, SyncOperation, TabOperations}
+import seqexec.model.enum.Resource
 import seqexec.web.client.actions._
+import seqexec.web.client.model.AbortOperation
+import seqexec.web.client.model.CancelPauseOperation
+import seqexec.web.client.model.PauseOperation
+import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.web.client.model.StartFromOperation
+import seqexec.web.client.model.StopOperation
+import seqexec.web.client.model.SyncOperation
+import seqexec.web.client.model.TabOperations
 
 /**
   * Updates the state of the tabs when requests are executed

@@ -3,18 +3,19 @@
 
 package seqexec.web.client.handlers
 
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
+import seqexec.common.HttpStatusCodes
 import seqexec.model.UserDetails
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-import seqexec.common.HttpStatusCodes
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
   * Handles actions related to opening/closing the login box

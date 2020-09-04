@@ -5,12 +5,12 @@ package seqexec.web.server
 
 import cats.syntax.all._
 import gem.Observation
-import seqexec.model.QueueId
+import seqexec.model.ClientId
 import seqexec.model.Observer
 import seqexec.model.Operator
+import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import seqexec.model.ClientId
 
 trait Var {
   object ObsIdVar {

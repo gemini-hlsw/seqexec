@@ -7,11 +7,11 @@ import cats.effect.Sync
 import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords._
-import seqexec.server.InstrumentSystem
-import seqexec.server.tcs.TcsKeywordsReader
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem
+import seqexec.server.keywords._
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GmosHeader {
   def header[F[_]: Sync: Logger](

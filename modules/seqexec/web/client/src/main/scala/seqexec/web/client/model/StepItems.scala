@@ -3,18 +3,27 @@
 
 package seqexec.web.client.model
 
-import cats.{Eq, Monoid}
+import cats.Eq
+import cats.Monoid
 import cats.syntax.all._
 import gem.Observation
 import gem.enum.GpiDisperser
-import gem.enum.GpiObservingMode
 import gem.enum.GpiFilter
+import gem.enum.GpiObservingMode
 import gsp.math.Offset
+import seqexec.model.NodAndShuffleStatus
+import seqexec.model.NodAndShuffleStep
 import seqexec.model.OffsetConfigResolver
-import seqexec.model.enum.{FPUMode, Guiding, Instrument, StepType}
-import seqexec.model.{NodAndShuffleStatus, NodAndShuffleStep, SequenceState, Step, StepId, enumerations}
-import seqexec.web.client.model.lenses._
+import seqexec.model.SequenceState
+import seqexec.model.Step
+import seqexec.model.StepId
+import seqexec.model.enum.FPUMode
+import seqexec.model.enum.Guiding
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.StepType
+import seqexec.model.enumerations
 import seqexec.web.client.model.Formatting._
+import seqexec.web.client.model.lenses._
 
 /**
   * Contains methods to access details of a step normally stored on the step sequence

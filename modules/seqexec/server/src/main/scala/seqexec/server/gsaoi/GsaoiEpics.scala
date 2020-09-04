@@ -3,17 +3,33 @@
 
 package seqexec.server.gsaoi
 
-import cats.effect.{Async, IO, Sync}
-import cats.syntax.all._
-import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaParameter, CaService, CaStatusAcceptor, CaWindowStabilizer, CarState}
-import edu.gemini.seqexec.server.gsaoi.DhsConnected
-import seqexec.server.{EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil, ObserveCommand}
-import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.EpicsUtil.{safeAttributeF, safeAttributeSDoubleF, safeAttributeSIntF}
 import java.lang.{Double => JDouble}
 import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all._
+import edu.gemini.epics.acm.CaApplySender
+import edu.gemini.epics.acm.CaAttribute
+import edu.gemini.epics.acm.CaCommandSender
+import edu.gemini.epics.acm.CaParameter
+import edu.gemini.epics.acm.CaService
+import edu.gemini.epics.acm.CaStatusAcceptor
+import edu.gemini.epics.acm.CaWindowStabilizer
+import edu.gemini.epics.acm.CarState
+import edu.gemini.seqexec.server.gsaoi.DhsConnected
+import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
+import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
+import seqexec.server.EpicsUtil.safeAttributeF
+import seqexec.server.EpicsUtil.safeAttributeSDoubleF
+import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommand
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

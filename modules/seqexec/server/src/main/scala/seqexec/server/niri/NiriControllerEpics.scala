@@ -3,34 +3,39 @@
 
 package seqexec.server.niri
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
 import cats.Applicative
-import cats.effect.{Async, Timer}
+import cats.effect.Async
+import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
-import edu.gemini.seqexec.server.niri.{Mask => JMask}
-import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
 import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
-import edu.gemini.spModel.gemini.niri.Niri.Disperser
-import edu.gemini.spModel.gemini.niri.Niri.Mask
-import edu.gemini.spModel.gemini.niri.Niri.Filter
-import edu.gemini.spModel.gemini.niri.Niri.Camera
+import edu.gemini.seqexec.server.niri.{Camera => JCamera}
+import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
+import edu.gemini.seqexec.server.niri.{Mask => JMask}
 import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
+import edu.gemini.spModel.gemini.niri.Niri.Camera
+import edu.gemini.spModel.gemini.niri.Niri.Disperser
+import edu.gemini.spModel.gemini.niri.Niri.Filter
+import edu.gemini.spModel.gemini.niri.Niri.Mask
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{EpicsCodex, Progress, ProgressUtil, SeqexecFailure}
-import seqexec.server.EpicsUtil._
+import seqexec.server.EpicsCodex
 import seqexec.server.EpicsCodex._
+import seqexec.server.EpicsUtil._
+import seqexec.server.Progress
+import seqexec.server.ProgressUtil
+import seqexec.server.SeqexecFailure
 import seqexec.server.niri.NiriController._
 import squants.Time
 import squants.time.TimeConversions._
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
 
 trait NiriEncoders {
 

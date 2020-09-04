@@ -3,13 +3,13 @@
 
 package seqexec.web.client.components
 
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.semanticui.collections.menu._
 import react.semanticui.collections.menu.MenuIcon
+import react.semanticui.collections.menu._
 import react.semanticui.sizes._
 import react.semanticui.views.item._
 import seqexec.web.client.actions.UpdateSessionFilter

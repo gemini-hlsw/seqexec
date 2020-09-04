@@ -3,10 +3,11 @@
 
 package seqexec.web.client.model
 
+import scala.scalajs.js.timers.SetIntervalHandle
+
 import cats._
 import diode.data.Pot
 import org.scalajs.dom.WebSocket
-import scala.scalajs.js.timers.SetIntervalHandle
 
 final case class WebSocketConnection(ws:            Pot[WebSocket],
                                      nextAttempt:   Int,

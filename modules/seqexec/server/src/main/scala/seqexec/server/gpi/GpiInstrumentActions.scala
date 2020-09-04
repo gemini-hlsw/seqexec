@@ -10,10 +10,10 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
-import seqexec.server.StepType
 import seqexec.server.InstrumentActions
 import seqexec.server.ObserveActions
 import seqexec.server.ObserveEnvironment
+import seqexec.server.StepType
 
 /**
   * Gpi needs different actions for A&C

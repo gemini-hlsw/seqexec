@@ -9,12 +9,12 @@ import cats.effect.Concurrent
 import cats.effect.Timer
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.ActionType
-import seqexec.model.dhs.ImageFileId
 import seqexec.engine.Action
 import seqexec.engine.Action.ActionState
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
+import seqexec.model.ActionType
+import seqexec.model.dhs.ImageFileId
 
 /**
   * Algebra to generate actions for an observation.

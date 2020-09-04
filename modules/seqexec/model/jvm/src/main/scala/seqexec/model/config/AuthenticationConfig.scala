@@ -3,9 +3,10 @@
 
 package seqexec.model.config
 
+import scala.concurrent.duration.FiniteDuration
+
 import cats.Eq
 import cats.implicits._
-import scala.concurrent.duration.FiniteDuration
 import org.http4s.Uri
 
 /**

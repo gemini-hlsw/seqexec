@@ -3,16 +3,19 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+
 import cats.Eq
 import gem.Observation
-import monocle.{Lens, Optional, Prism}
-import monocle.macros.Lenses
+import monocle.Lens
+import monocle.Optional
+import monocle.Prism
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
+import monocle.macros.Lenses
 import monocle.std.option.some
-import seqexec.model.{Progress, StepId}
-
-import scala.collection.immutable.SortedMap
+import seqexec.model.Progress
+import seqexec.model.StepId
 
 /**
   * UI record of the remaining time for observations

@@ -2,18 +2,18 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.tabs
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
-import seqexec.model.SequenceState
-import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.AvailableTab
-import seqexec.web.client.circuit.SeqexecCircuit
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.collections.menu.Menu
 import react.semanticui.collections.menu.MenuAttached
 import react.semanticui.collections.menu.MenuTabular
+import seqexec.model.SequenceState
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.AvailableTab
+import seqexec.web.client.model.Pages._
 
 /**
   * Menu with tabs

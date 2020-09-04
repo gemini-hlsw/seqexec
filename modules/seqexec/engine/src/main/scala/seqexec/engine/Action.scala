@@ -5,13 +5,13 @@ package seqexec.engine
 
 import fs2.Stream
 import monocle.Lens
+import monocle.macros.Lenses
 import seqexec.engine.Result.Error
 import seqexec.engine.Result.PartialVal
 import seqexec.engine.Result.PauseContext
 import seqexec.engine.Result.RetVal
 import seqexec.model.ActionType
 import seqexec.model.enum.ActionStatus
-import monocle.macros.Lenses
 
 @Lenses
 final case class Action[F[_]](

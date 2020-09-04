@@ -9,10 +9,13 @@ import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
-import io.circe.syntax._
-import io.circe.jawn.decode
 import io.circe.generic.semiauto.deriveCodec
-import pdi.jwt.{Jwt, JwtAlgorithm, JwtClaim, JwtCirce}
+import io.circe.jawn.decode
+import io.circe.syntax._
+import pdi.jwt.Jwt
+import pdi.jwt.JwtAlgorithm
+import pdi.jwt.JwtCirce
+import pdi.jwt.JwtClaim
 import seqexec.model.UserDetails
 import seqexec.model.config._
 import seqexec.web.server.security.AuthenticationService.AuthResult

@@ -4,10 +4,11 @@
 package seqexec.common
 
 import cats._
-import cats.implicits._
 import cats.data.NonEmptyList
+import cats.implicits._
+import monocle.Prism
+import monocle.Traversal
 import monocle.macros.Lenses
-import monocle.{ Prism, Traversal }
 
 /**
   * Minimal zipper based on scalaz's implementation

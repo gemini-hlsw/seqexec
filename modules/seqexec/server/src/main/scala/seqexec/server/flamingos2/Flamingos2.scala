@@ -3,33 +3,40 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.Kleisli
-import cats.data.EitherT
-import cats.effect.{Concurrent, Sync, Timer}
-import cats.syntax.all._
-import fs2.Stream
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
-import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
 
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.SECONDS
+import scala.reflect.ClassTag
+
+import cats.data.EitherT
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.syntax.all._
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import fs2.Stream
 import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
-
-import scala.concurrent.duration.{Duration, SECONDS}
-import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server._
-import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
+import seqexec.server.flamingos2.Flamingos2Controller._
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
-import squants.time.{Seconds, Time}
-
-import scala.reflect.ClassTag
+import squants.time.Seconds
+import squants.time.Time
 
 final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   f2Controller: Flamingos2Controller[F],

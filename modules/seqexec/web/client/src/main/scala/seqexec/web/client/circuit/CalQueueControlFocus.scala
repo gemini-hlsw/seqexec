@@ -8,13 +8,13 @@ import cats.implicits._
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
+import monocle.function.At.at
 import monocle.macros.Lenses
 import monocle.std
-import monocle.function.At.at
+import seqexec.model.BatchCommandState
 import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.model.SequencesQueue
-import seqexec.model.BatchCommandState
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
 

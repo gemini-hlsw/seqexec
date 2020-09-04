@@ -3,9 +3,10 @@
 
 package seqexec.server.tcs
 
-import seqexec.model.enum.{ComaOption, MountGuideOption}
-import seqexec.model.M2GuideConfig
 import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.MountGuideOption
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.tcs.TcsController._
 

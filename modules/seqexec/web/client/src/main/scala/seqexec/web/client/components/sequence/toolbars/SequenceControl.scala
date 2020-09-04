@@ -4,28 +4,28 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import cats.syntax.all._
-import japgolly.scalajs.react.vdom.html_<^._
+import gem.Observation
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Reusability
-import gem.Observation
+import japgolly.scalajs.react.vdom.html_<^._
 import mouse.all._
 import react.common._
 import react.semanticui.colors._
-import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
-import seqexec.web.client.actions.RequestSync
 import seqexec.web.client.actions.RequestRun
-import seqexec.web.client.model.RunOperation
-import seqexec.web.client.model.PauseOperation
-import seqexec.web.client.model.CancelPauseOperation
-import seqexec.web.client.model.SyncOperation
+import seqexec.web.client.actions.RequestSync
+import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.icons._
+import seqexec.web.client.model.CancelPauseOperation
+import seqexec.web.client.model.PauseOperation
+import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.controlButton
 
 final case class SequenceControl(p: SequenceControlFocus) extends ReactProps[SequenceControl](SequenceControl.component) {
   private val runRequested: RunOperation =

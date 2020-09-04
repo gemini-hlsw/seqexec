@@ -5,8 +5,8 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import shapeless.tag.@@
 import shapeless.tag
+import shapeless.tag.@@
 
 package dhs {
 

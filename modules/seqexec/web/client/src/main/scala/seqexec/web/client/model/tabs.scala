@@ -3,6 +3,8 @@
 
 package seqexec.web.client.model
 
+import scala.collection.immutable.SortedMap
+
 import cats._
 import cats.syntax.all._
 import gem.Observation
@@ -13,12 +15,11 @@ import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
 import monocle.std.either._
-import scala.collection.immutable.SortedMap
 import seqexec.model.Observer
-import seqexec.model.StepId
+import seqexec.model.RunningStep
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
-import seqexec.model.RunningStep
+import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag.@@

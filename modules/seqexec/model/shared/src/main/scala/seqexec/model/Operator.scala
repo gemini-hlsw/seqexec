@@ -3,10 +3,11 @@
 
 package seqexec.model
 
-import cats.{ Eq, Show }
-import monocle.macros.Lenses
+import cats.Eq
+import cats.Show
 import monocle.Iso
 import monocle.macros.GenIso
+import monocle.macros.Lenses
 
 @Lenses
 final case class Operator(value: String)

@@ -7,9 +7,9 @@ import cats.Eq
 import cats.syntax.all._
 import gem.Observation
 import monocle.Getter
-import seqexec.web.client.model._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.model._
 import web.client.table._
 
 final case class StepsTableAndStatusFocus(

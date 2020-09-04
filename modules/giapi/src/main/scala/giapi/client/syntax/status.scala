@@ -3,8 +3,8 @@
 
 package giapi.client.syntax
 
-import giapi.client.StatusValue
 import giapi.client.GiapiConfig
+import giapi.client.StatusValue
 
 object status {
 

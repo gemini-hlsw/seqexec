@@ -4,8 +4,8 @@
 package seqexec.web.client
 
 import cats.Eq
-import cats.syntax.all._
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import diode._
 import gem.Observation
 import monocle.Getter
@@ -13,9 +13,9 @@ import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
-import seqexec.web.client.model._
 import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model._
+import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
 
 package object circuit {
   implicit def CircuitToOps[T <: AnyRef](c: Circuit[T]): CircuitOps[T] =

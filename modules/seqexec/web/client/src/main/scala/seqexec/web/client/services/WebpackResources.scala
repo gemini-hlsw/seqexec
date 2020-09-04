@@ -5,6 +5,7 @@ package seqexec.web.client.services
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
+
 import cats.Show
 import cats.syntax.all._
 

@@ -3,15 +3,22 @@
 
 package web.server.common
 
-import cats.data.{ NonEmptyList, OptionT }
-import cats.effect.{ Blocker, Sync, ContextShift }
+import scala.concurrent.duration._
+
+import cats.data.NonEmptyList
+import cats.data.OptionT
+import cats.effect.Blocker
+import cats.effect.ContextShift
+import cats.effect.Sync
 import cats.instances.string._
 import cats.syntax.eq._
 import org.http4s.CacheDirective._
+import org.http4s.HttpRoutes
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.StaticFile
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
-import org.http4s.{ HttpRoutes, Request, Response, StaticFile }
-import scala.concurrent.duration._
 
 class StaticRoutes[F[_]: Sync: ContextShift](devMode: Boolean, builtAtMillis: Long, blocker: Blocker) {
   val oneYear: Int = 365 * 24 * 60 * 60 // One year in seconds

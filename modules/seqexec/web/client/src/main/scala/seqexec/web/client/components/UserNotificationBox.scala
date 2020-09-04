@@ -4,20 +4,20 @@
 package seqexec.web.client.components
 
 import cats.implicits._
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
-import react.semanticui.modules.modal._
 import react.semanticui.modules.modal.ModalSize
+import react.semanticui.modules.modal._
 import seqexec.model.Notification
 import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.icons._
-import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
+import seqexec.web.client.model._
 import seqexec.web.client.reusability._
 
 /**

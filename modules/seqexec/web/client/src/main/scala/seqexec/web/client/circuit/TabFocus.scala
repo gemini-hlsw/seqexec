@@ -4,8 +4,8 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import cats.syntax.all._
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import monocle.Getter
 import seqexec.model._
 import seqexec.web.client.model._

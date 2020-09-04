@@ -3,6 +3,8 @@
 
 package seqexec.web.client.handlers
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -12,10 +14,9 @@ import diode.NoAction
 import gem.enum.Site
 import seqexec.model.Observer
 import seqexec.model.Operator
-import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.actions._
+import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.services.SeqexecWebClient
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
   * Handles updates to the operator

@@ -3,30 +3,31 @@
 
 package seqexec.model.boopickle
 
+import java.time.Instant
+
 import boopickle.Default.Pickler
-import boopickle.Default.generatePickler
-import boopickle.Default.transformPickler
-import boopickle.Default.compositePickler
-import boopickle.Default.intPickler
-import boopickle.Default.doublePickler
-import boopickle.Default.stringPickler
-import boopickle.Default.longPickler
-import boopickle.Default.booleanPickler
 import boopickle.Default.UUIDPickler
+import boopickle.Default.booleanPickler
+import boopickle.Default.compositePickler
+import boopickle.Default.doublePickler
+import boopickle.Default.generatePickler
+import boopickle.Default.intPickler
+import boopickle.Default.longPickler
 import boopickle.Default.optionPickler
+import boopickle.Default.stringPickler
+import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
 import cats._
 import cats.implicits._
 import gem.Observation
 import gem.util.Enumerated
-import java.time.Instant
-import seqexec.model._
-import seqexec.model.enum._
 import seqexec.model.GmosParameters._
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
-import seqexec.model.events._
+import seqexec.model._
 import seqexec.model.dhs._
+import seqexec.model.enum._
+import seqexec.model.events._
 import shapeless.tag
 import shapeless.tag.@@
 import squants.time.TimeConversions._

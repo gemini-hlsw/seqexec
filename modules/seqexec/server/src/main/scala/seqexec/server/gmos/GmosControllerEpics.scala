@@ -3,36 +3,43 @@
 
 package seqexec.server.gmos
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
 import cats.Applicative
 import cats.ApplicativeError
-import cats.effect.{Async, Timer}
+import cats.effect.Async
+import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import io.chrisdavenport.log4cats.Logger
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import mouse.all._
-import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.GmosParameters._
-import seqexec.model.{NSSubexposure, ObserveStage}
+import seqexec.model.NSSubexposure
+import seqexec.model.ObserveStage
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.NodAndShuffleStage._
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsCodex.EncodeEpicsValue
+import seqexec.server.EpicsCodex._
+import seqexec.server.EpicsCommandBase
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil._
 import seqexec.server.InstrumentSystem.ElapsedTime
-import seqexec.server.RemainingTime
 import seqexec.server.NSProgress
-import seqexec.server.{EpicsCommandBase, EpicsUtil, Progress, SeqexecFailure}
-import seqexec.server.EpicsCodex._
+import seqexec.server.Progress
+import seqexec.server.RemainingTime
+import seqexec.server.SeqexecFailure
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
-import squants.time.TimeConversions._
-import squants.{Length, Time}
 import shapeless.tag
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
+import squants.Length
+import squants.Time
+import squants.time.TimeConversions._
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {

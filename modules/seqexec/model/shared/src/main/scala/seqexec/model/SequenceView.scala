@@ -3,12 +3,12 @@
 
 package seqexec.model
 
-import monocle.macros.Lenses
 import cats._
 import cats.implicits._
 import gem.Observation
 import monocle.Traversal
 import monocle.function.Each._
+import monocle.macros.Lenses
 
 @Lenses
 final case class SequenceView (

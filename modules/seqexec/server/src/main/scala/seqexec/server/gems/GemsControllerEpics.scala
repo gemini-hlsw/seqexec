@@ -3,20 +3,24 @@
 
 package seqexec.server.gems
 
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
 import cats.ApplicativeError
 import cats.effect.Async
 import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
-import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gems.Gems._
+import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gsaoi.GsaoiGuider
-import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, PauseResume, ResumeCondition, ResumeConditionSet}
-
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
+import seqexec.server.tcs.Gaos.PauseCondition
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeCondition
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 
 class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](epicsSys: GemsEpics[F],
                                                                           gsaoiGuider: GsaoiGuider[F]

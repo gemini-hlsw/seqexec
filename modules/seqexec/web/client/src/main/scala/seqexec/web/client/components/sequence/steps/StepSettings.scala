@@ -5,19 +5,19 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
 import gem.Observation
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import react.semanticui.SemanticSize
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
-import react.semanticui.SemanticSize
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.StepType
 import seqexec.model.Step
 import seqexec.model.StepState
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.StepType
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.Pages

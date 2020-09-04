@@ -3,16 +3,20 @@
 
 package seqexec.server.altair
 
-import cats.effect.{Async, IO, Sync}
-import mouse.boolean._
+import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
-import seqexec.server.{EpicsCommandBase, EpicsSystem, EpicsUtil}
+import mouse.boolean._
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
-import cats.syntax.all._
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil._
-
-import scala.concurrent.duration.FiniteDuration
 
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")

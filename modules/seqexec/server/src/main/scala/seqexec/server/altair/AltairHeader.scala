@@ -8,12 +8,12 @@ import cats.effect.Sync
 import cats.syntax.all._
 import gem.Observation
 import gem.enum.KeywordName
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
-import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
-import io.chrisdavenport.log4cats.Logger
+import seqexec.server.tcs.TcsKeywordsReader
 
 object AltairHeader {
   def header[F[_]: Sync: Logger](inst:              InstrumentSystem[F],

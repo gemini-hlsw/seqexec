@@ -3,27 +3,34 @@
 
 package seqexec.server.gnirs
 
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+
+import scala.concurrent.duration.FiniteDuration
+
+import cats.effect.Async
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.syntax.all._
-import cats.effect.{Async, Sync, Timer}
-import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
+import seqexec.server.EpicsUtil._
+import seqexec.server._
 import seqexec.server.gnirs.GnirsController._
+import squants.Length
+import squants.Time
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.{Length, Time}
-
-import java.util.concurrent.TimeUnit.{SECONDS, MILLISECONDS}
-
-import scala.concurrent.duration.FiniteDuration
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {

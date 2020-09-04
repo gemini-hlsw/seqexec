@@ -9,17 +9,19 @@ import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
+import io.chrisdavenport.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._
-import io.chrisdavenport.log4cats.Logger
 import seqexec.engine.Event._
-import seqexec.engine.EventResult.UserCommandResponse
-import seqexec.engine.EventResult.SystemUpdate
 import seqexec.engine.EventResult.Outcome
-import seqexec.engine.Result.{PartialVal, RetVal}
+import seqexec.engine.EventResult.SystemUpdate
+import seqexec.engine.EventResult.UserCommandResponse
+import seqexec.engine.Result.PartialVal
+import seqexec.engine.Result.RetVal
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
-import seqexec.model.{SequenceState, StepId}
+import seqexec.model.SequenceState
+import seqexec.model.StepId
 
 class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.State[F, S]) {
   val L: Logger[F] = Logger[F]

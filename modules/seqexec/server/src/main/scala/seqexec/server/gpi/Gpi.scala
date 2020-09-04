@@ -3,34 +3,35 @@
 
 package seqexec.server.gpi
 
-import cats._
-import cats.data.EitherT
-import cats.data.Kleisli
-import cats.effect.{Concurrent, Timer}
-import cats.syntax.all._
-import edu.gemini.spModel.gemini.gpi.Gpi.{ReadoutArea => _, _}
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.obscomp.InstConstants
-import edu.gemini.spModel.obsclass.ObsClass
-import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
 import java.lang.{Boolean => JBoolean}
 import java.lang.{Double => JDouble}
 import java.lang.{Integer => JInt}
 
+import scala.concurrent.duration._
+
+import cats._
+import cats.data.EitherT
+import cats.data.Kleisli
+import cats.effect.Concurrent
+import cats.effect.Timer
+import cats.syntax.all._
+import edu.gemini.spModel.gemini.gpi.Gpi.{ReadoutArea => _, _}
+import edu.gemini.spModel.obsclass.ObsClass
+import edu.gemini.spModel.obscomp.InstConstants
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import fs2.Stream
 import gem.enum.GpiReadMode
 import gem.enum.LightSinkName
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.CleanConfig.extractItem
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-
-import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time

@@ -3,11 +3,14 @@
 
 package seqexec.server.gpi
 
+import scala.concurrent.duration._
+
 import cats._
 import cats.effect.Sync
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.gpi.Gpi.{ Apodizer => LegacyApodizer }
+import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Adc => LegacyAdc }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Apodizer => LegacyApodizer }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ArtificialSource => LegacyArtificialSource }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Disperser => LegacyDisperser }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ FPM => LegacyFPM }
@@ -16,20 +19,18 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
-import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import gem.enum.GiapiStatusApply._
 import gem.enum.GpiReadMode
-import giapi.client.commands.Configuration
-import giapi.client.commands.CommandResultException
-import giapi.client.gpi.GpiClient
 import giapi.client.GiapiStatusDb
+import giapi.client.commands.CommandResultException
+import giapi.client.commands.Configuration
+import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
-import scala.concurrent.duration._
-import seqexec.server.keywords.GdsClient
-import seqexec.server.SeqexecFailure
-import seqexec.server.GiapiInstrumentController
 import seqexec.server.AbstractGiapiInstrumentController
+import seqexec.server.GiapiInstrumentController
+import seqexec.server.SeqexecFailure
+import seqexec.server.keywords.GdsClient
 
 final case class AOFlags(useAo:      Boolean,
                          useCal:     Boolean,

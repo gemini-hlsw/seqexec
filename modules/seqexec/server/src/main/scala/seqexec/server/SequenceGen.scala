@@ -3,16 +3,21 @@
 
 package seqexec.server
 
-import cats.syntax.all._
 import cats.data.NonEmptyList
-import mouse.all._
+import cats.syntax.all._
 import gem.Observation
-import seqexec.engine.{Action, ActionCoordsInSeq, ParallelActions, Step => EngineStep}
-import seqexec.engine.ExecutionIndex
+import mouse.all._
+import seqexec.engine.Action
+import seqexec.engine.ActionCoordsInSeq
 import seqexec.engine.ActionIndex
+import seqexec.engine.ExecutionIndex
+import seqexec.engine.ParallelActions
+import seqexec.engine.{Step => EngineStep}
 import seqexec.model.StepId
-import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model.dhs.{DataId, ImageFileId}
+import seqexec.model.dhs.DataId
+import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 
 /*
  * SequenceGen keeps all the information extracted from the ODB sequence.

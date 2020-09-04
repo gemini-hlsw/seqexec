@@ -3,21 +3,35 @@
 
 package seqexec.server.gems
 
-import cats.{Eq, MonadError}
+import cats.Eq
+import cats.MonadError
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants.GUIDE_WITH_OIWFS_PROP
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.{CleanConfig, SeqexecFailure}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems.GemsWfsState
-import seqexec.server.gems.GemsController.{GemsConfig, OIUsage, Odgw1Usage, Odgw2Usage, Odgw3Usage, Odgw4Usage, P1Usage}
-import seqexec.server.gems.GemsController.{Cwfs1Usage, Cwfs2Usage, Cwfs3Usage}
-import seqexec.server.tcs.{Gaos, GuideConfigDb, Tcs}
-import seqexec.server.tcs.Gaos.{PauseConditionSet, PauseResume, ResumeConditionSet}
+import seqexec.server.gems.GemsController.Cwfs1Usage
+import seqexec.server.gems.GemsController.Cwfs2Usage
+import seqexec.server.gems.GemsController.Cwfs3Usage
+import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.gems.GemsController.OIUsage
+import seqexec.server.gems.GemsController.Odgw1Usage
+import seqexec.server.gems.GemsController.Odgw2Usage
+import seqexec.server.gems.GemsController.Odgw3Usage
+import seqexec.server.gems.GemsController.Odgw4Usage
+import seqexec.server.gems.GemsController.P1Usage
+import seqexec.server.tcs.Gaos
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeConditionSet
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.server.tcs.Tcs
 import squants.Time
 
 trait Gems[F[_]] extends Gaos[F] {

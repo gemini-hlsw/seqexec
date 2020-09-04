@@ -3,10 +3,14 @@
 
 package web.server.common
 
-import cats.effect.Sync
 import java.io.File
-import java.nio.file.{Path, Paths}
-import java.util.logging.{Level, LogManager, Logger}
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.logging.Level
+import java.util.logging.LogManager
+import java.util.logging.Logger
+
+import cats.effect.Sync
 import org.slf4j.bridge.SLF4JBridgeHandler
 
 trait AppBaseDir {

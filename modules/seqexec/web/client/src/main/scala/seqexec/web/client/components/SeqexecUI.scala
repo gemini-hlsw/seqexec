@@ -3,23 +3,25 @@
 
 package seqexec.web.client.components
 
-import diode.ModelRO
-import cats.syntax.all._
+import scala.scalajs.js.timers.SetTimeoutHandle
+
 import cats.effect.Sync
-import monocle.Prism
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.router._
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.MonocleReact._
+import cats.syntax.all._
+import diode.ModelRO
 import gem.Observation
 import gem.enum.Site
-import scala.scalajs.js.timers.SetTimeoutHandle
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.WSConnect
-import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.extra.router._
+import japgolly.scalajs.react.vdom.html_<^._
+import monocle.Prism
 import seqexec.model.enum.Instrument
+import seqexec.web.client.actions.NavigateSilentTo
+import seqexec.web.client.actions.RequestSoundEcho
+import seqexec.web.client.actions.WSConnect
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.Pages._
 
 /**
   * UI Router

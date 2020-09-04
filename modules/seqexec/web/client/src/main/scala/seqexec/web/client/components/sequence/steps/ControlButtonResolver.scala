@@ -3,7 +3,8 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import seqexec.model.{SequenceState, Step}
+import seqexec.model.SequenceState
+import seqexec.model.Step
 import seqexec.web.client.model.ClientStatus
 
 sealed trait ControlButtonResolver[A] {

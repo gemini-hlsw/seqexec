@@ -3,12 +3,12 @@
 
 package seqexec.model
 
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.SECONDS
+
 import cats.Eq
 import cats.implicits._
 import shapeless.tag.@@
-import scala.concurrent.duration.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
 
 trait GmosParameters {
   trait NsPairsI

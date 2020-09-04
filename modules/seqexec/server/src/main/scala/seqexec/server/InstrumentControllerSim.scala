@@ -3,9 +3,11 @@
 
 package seqexec.server
 
+import scala.concurrent.duration._
+
 import cats._
-import cats.effect.Timer
 import cats.effect.Sync
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
@@ -15,10 +17,9 @@ import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server.SeqexecFailure.SeqexecException
 import squants.time.Time
-import scala.concurrent.duration._
 
 sealed trait InstrumentControllerSim[F[_]] {
   def log(msg: => String): F[Unit]

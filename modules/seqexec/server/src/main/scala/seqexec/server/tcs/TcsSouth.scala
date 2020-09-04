@@ -6,7 +6,6 @@ package seqexec.server.tcs
 import cats.data.NonEmptySet
 import cats.effect.Sync
 import cats.syntax.all._
-import mouse.all._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
@@ -14,14 +13,46 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
-import seqexec.model.enum.{M1Source, NodAndShuffleStage, Resource, TipTiltSource}
-import seqexec.server.{CleanConfig, ConfigResult, InstrumentSystem, SeqexecFailure}
+import mouse.all._
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.NodAndShuffleStage
+import seqexec.model.enum.Resource
+import seqexec.model.enum.TipTiltSource
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.gems.Gems
-import seqexec.server.tcs.TcsController.{AGConfig, AoGuidersConfig, AoTcsConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
+import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentSystem
+import seqexec.server.SeqexecFailure
+import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsSouthController.{CWFS1Config, CWFS2Config, CWFS3Config, GemsGuiders, ODGW1Config, ODGW2Config, ODGW3Config, ODGW4Config, TcsSouthConfig}
+import seqexec.server.tcs.TcsController.AGConfig
+import seqexec.server.tcs.TcsController.AoGuidersConfig
+import seqexec.server.tcs.TcsController.AoTcsConfig
+import seqexec.server.tcs.TcsController.BasicGuidersConfig
+import seqexec.server.tcs.TcsController.BasicTcsConfig
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.GuiderSensorOff
+import seqexec.server.tcs.TcsController.HrwfsConfig
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.LightPath
+import seqexec.server.tcs.TcsController.OIConfig
+import seqexec.server.tcs.TcsController.OffsetP
+import seqexec.server.tcs.TcsController.OffsetQ
+import seqexec.server.tcs.TcsController.P1Config
+import seqexec.server.tcs.TcsController.P2Config
+import seqexec.server.tcs.TcsController.ProbeTrackingConfig
+import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsController.TelescopeConfig
+import seqexec.server.tcs.TcsSouthController.CWFS1Config
+import seqexec.server.tcs.TcsSouthController.CWFS2Config
+import seqexec.server.tcs.TcsSouthController.CWFS3Config
+import seqexec.server.tcs.TcsSouthController.GemsGuiders
+import seqexec.server.tcs.TcsSouthController.ODGW1Config
+import seqexec.server.tcs.TcsSouthController.ODGW2Config
+import seqexec.server.tcs.TcsSouthController.ODGW3Config
+import seqexec.server.tcs.TcsSouthController.ODGW4Config
+import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds

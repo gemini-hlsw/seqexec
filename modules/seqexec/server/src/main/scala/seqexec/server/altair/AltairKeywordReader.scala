@@ -3,8 +3,8 @@
 
 package seqexec.server.altair
 
-import cats.effect.Sync
 import cats.Applicative
+import cats.effect.Sync
 import cats.syntax.all._
 import seqexec.server.keywords._
 

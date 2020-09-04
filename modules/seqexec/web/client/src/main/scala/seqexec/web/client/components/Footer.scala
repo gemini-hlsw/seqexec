@@ -4,16 +4,16 @@
 package seqexec.web.client.components
 
 import gem.enum.Site
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.collections.menu._
+import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.reusability._
 
 final case class Footer(router: RouterCtl[SeqexecPages], site: Site) extends ReactProps[Footer](Footer.component)

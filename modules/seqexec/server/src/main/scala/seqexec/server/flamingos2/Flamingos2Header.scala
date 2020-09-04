@@ -3,25 +3,29 @@
 
 package seqexec.server.flamingos2
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import cats.Applicative
 import cats.data.EitherT
 import cats.effect.Sync
 import cats.syntax.all._
-import gem.Observation
-import gem.enum.KeywordName
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.{CleanConfig, ConfigUtilOps, InstrumentSystem, SeqexecFailure}
-import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.keywords._
-import seqexec.server.tcs.TcsKeywordsReader
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
+import gem.Observation
+import gem.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.CleanConfig
+import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigUtilOps
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentSystem
+import seqexec.server.SeqexecFailure
+import seqexec.server.keywords._
+import seqexec.server.tcs.TcsKeywordsReader
 
 object Flamingos2Header {
   def header[F[_]: Sync: Logger](inst:              InstrumentSystem[F],

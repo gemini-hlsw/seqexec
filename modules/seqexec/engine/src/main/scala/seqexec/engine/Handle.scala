@@ -3,9 +3,11 @@
 
 package seqexec.engine
 
-import cats.{Applicative, Functor, Monad}
-import cats.syntax.all._
+import cats.Applicative
+import cats.Functor
+import cats.Monad
 import cats.data.StateT
+import cats.syntax.all._
 import fs2.Stream
 
 /**

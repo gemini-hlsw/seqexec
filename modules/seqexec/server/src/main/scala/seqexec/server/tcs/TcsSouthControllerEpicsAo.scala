@@ -3,29 +3,48 @@
 
 package seqexec.server.tcs
 
+import java.time.Duration
+
 import cats._
-import cats.syntax.all._
 import cats.data.NonEmptySet
-import cats.effect.{Async, Sync, Timer}
+import cats.effect.Async
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.syntax.all._
 import io.chrisdavenport.log4cats.Logger
 import monocle.Lens
-import mouse.boolean._
 import monocle.macros.Lenses
+import mouse.boolean._
+import seqexec.model.M1GuideConfig
 import seqexec.model.M1GuideConfig.M1GuideOn
-import seqexec.model.{M1GuideConfig, M2GuideConfig, TelescopeGuideConfig}
-import seqexec.model.enum.{ComaOption, M1Source, MountGuideOption, TipTiltSource}
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.EpicsCodex.encode
 import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.Gaos.{PauseCondition, PauseConditionSet, ResumeCondition, ResumeConditionSet}
+import seqexec.server.tcs.Gaos.PauseCondition
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.ResumeCondition
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import seqexec.server.tcs.GemsSource._
-import seqexec.server.tcs.TcsController.{AoGuidersConfig, AoTcsConfig, GuiderConfig, GuiderSensorOff, GuiderSensorOption, ProbeTrackingConfig, Subsystem, wavelengthEq}
-import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, VirtualGemsTelescope}
-import seqexec.server.tcs.TcsSouthController.{GemsGuiders, TcsSouthAoConfig}
+import seqexec.server.tcs.TcsController.AoGuidersConfig
+import seqexec.server.tcs.TcsController.AoTcsConfig
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.GuiderSensorOff
+import seqexec.server.tcs.TcsController.GuiderSensorOption
+import seqexec.server.tcs.TcsController.ProbeTrackingConfig
+import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsController.wavelengthEq
+import seqexec.server.tcs.TcsEpics.ProbeFollowCmd
+import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
+import seqexec.server.tcs.TcsSouthController.GemsGuiders
+import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
 import squants.time.TimeConversions._
-
-import java.time.Duration
 
 /**
  * Controller of Gemini's South AO system over epics

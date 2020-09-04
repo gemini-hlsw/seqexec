@@ -3,17 +3,20 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.syntax.all._
-import japgolly.scalajs.react.extra.TimerSupport
-import japgolly.scalajs.react.MonocleReact._
-import japgolly.scalajs.react.CtorType
-import japgolly.scalajs.react.{ BackendScope, Callback, Reusability }
-import japgolly.scalajs.react.component.Scala
-import monocle.macros.Lenses
-import react.common._
 import scala.concurrent.duration._
 import scala.math.max
 import scala.math.min
+
+import cats.syntax.all._
+import japgolly.scalajs.react.BackendScope
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.CtorType
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.component.Scala
+import japgolly.scalajs.react.extra.TimerSupport
+import monocle.macros.Lenses
+import react.common._
 
 abstract class SmoothProgressBarProps[A](override val component: Scala.Component[A, _, _, CtorType.Props])
     extends ReactProps[A](component) {

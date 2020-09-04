@@ -3,8 +3,8 @@
 
 package seqexec.web.client.components.forms
 
-import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common.ReactPropsWithChildren
 

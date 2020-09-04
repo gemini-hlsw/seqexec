@@ -4,15 +4,15 @@
 package seqexec.server
 
 import gem.Observation
-import seqexec.model.enum._
-import seqexec.model.UserDetails
-import seqexec.model.Observer
-import seqexec.model.Operator
+import seqexec.model.ClientId
 import seqexec.model.Conditions
 import seqexec.model.Notification
-import seqexec.model.ClientId
+import seqexec.model.Observer
+import seqexec.model.Operator
 import seqexec.model.QueueId
 import seqexec.model.StepId
+import seqexec.model.UserDetails
+import seqexec.model.enum._
 
 sealed trait SeqEvent extends Product with Serializable
 

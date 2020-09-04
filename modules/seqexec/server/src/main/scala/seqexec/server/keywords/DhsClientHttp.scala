@@ -3,30 +3,37 @@
 
 package seqexec.server.keywords
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+import scala.concurrent.duration._
+
 import cats.FlatMap
 import cats.data.EitherT
 import cats.effect.Concurrent
-import cats.effect.Timer
 import cats.effect.Sync
+import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import gem.enum.DhsKeywordName
-import io.circe.syntax._
-import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import io.chrisdavenport.log4cats.Logger
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import org.http4s.client.Client
+import io.circe.Decoder
+import io.circe.DecodingFailure
+import io.circe.Encoder
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s._
-import org.http4s.dsl.io._
 import org.http4s.circe._
-import org.http4s.client.middleware.{Retry, RetryPolicy}
+import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.client.middleware.Retry
+import org.http4s.client.middleware.RetryPolicy
+import org.http4s.dsl.io._
 import seqexec.model.dhs._
-import seqexec.server.{SeqexecFailure, TrySeq}
-import seqexec.server.keywords.DhsClient.ImageParameters
+import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
-import scala.concurrent.duration._
+import seqexec.server.TrySeq
+import seqexec.server.keywords.DhsClient.ImageParameters
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface

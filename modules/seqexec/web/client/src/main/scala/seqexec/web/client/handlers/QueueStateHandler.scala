@@ -7,12 +7,12 @@ import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import seqexec.model.events._
 import seqexec.model.QueueManipulationOp
+import seqexec.model.events._
+import seqexec.web.client.actions._
 import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation
-import seqexec.web.client.actions._
 
 /**
   * Handles updates to the selected sequences set

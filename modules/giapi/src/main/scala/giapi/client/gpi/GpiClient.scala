@@ -3,22 +3,23 @@
 
 package giapi.client.gpi
 
+import scala.concurrent.duration._
+
 import cats.ApplicativeError
-import cats.syntax.all._
+import cats.effect.ConcurrentEffect
 import cats.effect.Resource
 import cats.effect.Timer
-import cats.effect.ConcurrentEffect
+import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.Activity
 import edu.gemini.aspen.giapi.commands.SequenceCommand
 import fs2.Stream
-import giapi.client.commands.Command
-import giapi.client.commands.CommandResult
-import giapi.client.commands.Configuration
 import giapi.client.Giapi
 import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResult
+import giapi.client.commands.Configuration
 import mouse.boolean._
-import scala.concurrent.duration._
 
 sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 

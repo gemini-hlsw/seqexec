@@ -5,20 +5,20 @@ package seqexec.web.client.components
 
 import cats.implicits._
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.Reusability
-import seqexec.web.client.actions.Logout
-import seqexec.web.client.actions.OpenLoginBox
-import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.reusability._
-import react.semanticui.sizes._
+import react.common._
+import react.common.implicits._
+import react.semanticui.collections.menu._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon.Icon
-import react.semanticui.collections.menu._
-import react.common.implicits._
-import react.common._
+import react.semanticui.sizes._
+import seqexec.web.client.actions.Logout
+import seqexec.web.client.actions.OpenLoginBox
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.reusability._
 
 final case class ControlMenu(status: ClientStatus) extends ReactProps[ControlMenu](ControlMenu.component)
 

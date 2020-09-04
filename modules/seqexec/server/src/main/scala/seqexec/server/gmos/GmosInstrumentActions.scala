@@ -3,28 +3,28 @@
 
 package seqexec.server.gmos
 
-import cats.syntax.all._
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
+import cats.syntax.all._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.dhs._
-import seqexec.model.enum.NodAndShuffleStage._
-import seqexec.model.enum.Guiding
-import seqexec.model.enum.ObserveCommandResult
-import seqexec.model.NSSubexposure
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
-import seqexec.server._
+import seqexec.model.NSSubexposure
+import seqexec.model.dhs._
+import seqexec.model.enum.Guiding
+import seqexec.model.enum.NodAndShuffleStage._
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentActions._
 import seqexec.server.ObserveActions._
+import seqexec.server._
 import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.gmos.NSObserveCommand._
 import seqexec.server.gmos.NSPartial._
 import seqexec.server.tcs.TcsController.InstrumentOffset
 import seqexec.server.tcs.TcsController.OffsetP
 import seqexec.server.tcs.TcsController.OffsetQ
-import seqexec.server.gmos.NSObserveCommand._
 import shapeless.tag
 import squants.Time
 import squants.space.AngleConversions._

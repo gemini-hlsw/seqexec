@@ -6,18 +6,18 @@ package seqexec.web.client.components
 import cats._
 import cats.implicits._
 import gem.syntax.all._
-import japgolly.scalajs.react._
 import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
 import react.semanticui.elements.header.Header
 import react.semanticui.sizes._
-import seqexec.model.enum.ComaOption
-import seqexec.model.enum.MountGuideOption
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.MountGuideOption
 import seqexec.web.client.reusability._
 
 final case class GuideConfigStatus(config: TelescopeGuideConfig)

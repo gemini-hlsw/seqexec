@@ -7,9 +7,9 @@ import cats.Eq
 import gem.Observation
 import monocle.Getter
 import monocle.macros.Lenses
+import seqexec.model.QueueId
 import seqexec.model._
 import seqexec.model.enum.Instrument
-import seqexec.model.QueueId
 import seqexec.web.client.model._
 
 final case class SequenceObserverFocus(instrument: Instrument,
