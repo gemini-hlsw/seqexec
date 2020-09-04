@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Set up Scala
         uses: olafurpg/setup-scala@v2
         with:
@@ -26,7 +28,9 @@ jobs:
         run: |
           echo ${{ github.event.pull_request.base.sha }}
           echo ${{ github.event.base_ref }}
+          echo ${{ github.base_ref }}
           git rev-parse HEAD
+          git rev-parse HEAD^1
       - name: Export assets to packtracker
         if: github.event_name == 'pull_request'
         run: |
@@ -46,4 +50,3 @@ jobs:
         env:
           SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
           PT_COMMIT: ${{ github.sha }}
-          PT_PRIOR_COMMIT: ${{ github.event.base_ref }}
