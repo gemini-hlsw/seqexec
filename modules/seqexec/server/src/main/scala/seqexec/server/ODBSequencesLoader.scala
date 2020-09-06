@@ -8,7 +8,7 @@ import cats.Endo
 import cats.MonadError
 import cats.effect.Concurrent
 import cats.effect.Timer
-import cats.syntax.all._
+import cats.implicits._
 import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
@@ -19,6 +19,7 @@ import seqexec.engine.Sequence
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent._
 import seqexec.server.SeqexecFailure.SeqexecException
+import seqexec.server.SeqexecFailure.UnrecognizedInstrument
 
 final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
   odbProxy: OdbProxy[F],
@@ -53,35 +54,41 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
 
         // Verify that the program id is valid
         configObsId
-          .adaptErr{ case _ => SeqexecFailure.Unexpected(s"Invalid $configObsId")}
-          .flatMap( s => ApplicativeError[F, Throwable].catchNonFatal(SPProgramID.toProgramID(s)))
-          .flatMap( _ => translator.sequence(seqId, odbSeq))
+          .adaptErr { case _ => SeqexecFailure.Unexpected(s"Invalid $configObsId") }
+          .flatMap(s => ApplicativeError[F, Throwable].catchNonFatal(SPProgramID.toProgramID(s)))
+          .flatMap(_ => translator.sequence(seqId, odbSeq))
       }
 
     def loadSequenceEvent(seqg: SequenceGen[F]): EventType[F] =
       Event.modifyState[F, EngineState[F], SeqEvent]({ st: EngineState[F] =>
         st.sequences
           .get(seqId)
-          .fold(ODBSequencesLoader.loadSequenceEndo(seqId, seqg, execEngine))(
-            _ => ODBSequencesLoader.reloadSequenceEndo(seqId, seqg, execEngine)
+          .fold(ODBSequencesLoader.loadSequenceEndo(seqId, seqg, execEngine))(_ =>
+            ODBSequencesLoader.reloadSequenceEndo(seqId, seqg, execEngine)
           )(st)
       }.withEvent(LoadSequence(seqId)).toHandle)
 
     t.map {
-      case (err :: _, None) =>
-        List(Event.logDebugMsgF[F, EngineState[F], SeqEvent](explain(err)))
-      case (errs, Some(seq)) =>
+      case (UnrecognizedInstrument(_) :: _, None) =>
+        Nil
+      case (err :: _, None)                       =>
+        val explanation = explain(err)
+        List(Event.logDebugMsgF[F, EngineState[F], SeqEvent](explanation))
+      case (errs, Some(seq))                      =>
         loadSequenceEvent(seq).pure[F] :: errs.map(e =>
-          Event.logDebugMsgF[F, EngineState[F], SeqEvent](explain(e)))
-      case _ => Nil
-    }.recover{ case e => List(Event.logDebugMsgF(explain(e)))
-    }.map { _.sequence}.flatten
+          Event.logDebugMsgF[F, EngineState[F], SeqEvent](explain(e))
+        )
+      case _                                      => Nil
+    }.recover { case e => List(Event.logDebugMsgF(explain(e))) }
+      .map(_.sequence)
+      .flatten
   }
 
-  private def explain(err: Throwable): String = err match {
-    case s: SeqexecFailure => SeqexecFailure.explain(s)
-    case _                 => SeqexecFailure.explain(SeqexecException(err))
-  }
+  private def explain(err: Throwable): String =
+    err match {
+      case s: SeqexecFailure => SeqexecFailure.explain(s)
+      case _                 => SeqexecFailure.explain(SeqexecException(err))
+    }
 
   def refreshSequenceList(odbList: List[Observation.Id], st: EngineState[F])(
       implicit cio: Concurrent[F],
