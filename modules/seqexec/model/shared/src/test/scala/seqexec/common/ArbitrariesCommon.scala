@@ -6,6 +6,7 @@ package seqexec.common
 import cats.data.NonEmptyList
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
+import gem.data.Zipper
 
 trait ArbitrariesCommon {
 

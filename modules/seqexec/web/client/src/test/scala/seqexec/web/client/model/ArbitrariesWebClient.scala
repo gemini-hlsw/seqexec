@@ -10,6 +10,7 @@ import gem.arb.ArbObservation
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
+import gem.data.Zipper
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
@@ -22,7 +23,6 @@ import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
 import seqexec.model.SequenceEventsArbitraries.qmArb
 import seqexec.common.FixedLengthBuffer
-import seqexec.common.Zipper
 import seqexec.common.ArbitrariesCommon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SectionVisibilityState._
@@ -558,8 +558,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
       .contramap(x => (x.log, x.display))
 
   implicit val arbStepConfigTableTableColumn: Arbitrary[StepConfigTable.TableColumn] =
-    Arbitrary(
-      Gen.oneOf(StepConfigTable.NameColumn, StepConfigTable.ValueColumn))
+    Arbitrary(Gen.oneOf(StepConfigTable.NameColumn, StepConfigTable.ValueColumn))
 
   implicit val stepConfigTableColumnCogen: Cogen[StepConfigTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
@@ -576,10 +575,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
   implicit val stepsTableColumnCogen: Cogen[StepsTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val arbCalQueueTableTableColumn
-    : Arbitrary[CalQueueTable.TableColumn] =
-    Arbitrary(
-      Gen.oneOf(CalQueueTable.ObsIdColumn, CalQueueTable.InstrumentColumn))
+  implicit val arbCalQueueTableTableColumn: Arbitrary[CalQueueTable.TableColumn] =
+    Arbitrary(Gen.oneOf(CalQueueTable.ObsIdColumn, CalQueueTable.InstrumentColumn))
 
   implicit val calTableColumnCogen: Cogen[CalQueueTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
@@ -608,8 +605,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
   implicit val calQueuesCogen: Cogen[CalibrationQueues] =
     Cogen[List[(QueueId, CalQueueState)]].contramap(_.queues.toList)
 
-  implicit val arbAllObservationsProgressState
-    : Arbitrary[AllObservationsProgressState] =
+  implicit val arbAllObservationsProgressState: Arbitrary[AllObservationsProgressState] =
     Arbitrary {
       for {
         ops <- arbitrary[SortedMap[(Observation.Id, StepId), Progress]]
