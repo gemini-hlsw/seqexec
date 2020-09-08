@@ -50,10 +50,10 @@ object ConfigUtilOps {
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
   implicit class TrySeqed[A] private[server] (r: Either[ExtractFailure, A]) {
-    def asTrySeq: TrySeq[A] = r.leftMap(explainExtractError)
+    def adaptExtractFailure: Either[SeqexecFailure, A] = r.leftMap(explainExtractError)
   }
 
-  implicit class ApplicativeErrored[A] private[server] (r:Either[ExtractFailure, A]) {
+  implicit class ApplicativeErrored[A] private[server] (r: Either[ExtractFailure, A]) {
     def toF[F[_]: ApplicativeError[?[_], Throwable]]: F[A] = r.fold(explainExtractError(_).raiseError[F, A], _.pure[F])
   }
 

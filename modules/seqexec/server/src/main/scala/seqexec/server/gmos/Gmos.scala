@@ -127,7 +127,7 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
         )
     }.getOrElse(ConfigUtilOps.ContentError(s"Disperser is missing an order.").asLeft)
 
-  private def ccConfigFromSequenceConfig(config: CleanConfig): TrySeq[configTypes.CCConfig] =
+  private def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, configTypes.CCConfig] =
     (for {
       filter           <- ss.extractFilter(config)
       disp             <- ss.extractDisperser(config)
@@ -263,7 +263,7 @@ object Gmos {
       pos    <- nsPosition(config, sc)
     } yield NSConfig.NodAndShuffle(tag[NsCyclesI][Int](cycles), tag[NsRowsI][Int](rows), pos, expTime(config))
 
-  def nsConfig(config: CleanConfig): TrySeq[NSConfig] =
+  def nsConfig(config: CleanConfig): Either[SeqexecFailure, NSConfig] =
     (for {
       useNS <- config.extractInstAs[java.lang.Boolean](USE_NS_PROP)
       ns    <- if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight
@@ -319,7 +319,7 @@ object Gmos {
       (e / nsConfig.exposureDivider).seconds
     }
 
-  def dcConfigFromSequenceConfig(config: CleanConfig, nsConfig: NSConfig): TrySeq[DCConfig] =
+  def dcConfigFromSequenceConfig(config: CleanConfig, nsConfig: NSConfig): Either[SeqexecFailure, DCConfig] =
     (for {
       obsType      <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       shutterState <- shutterStateObserveType(obsType).asRight

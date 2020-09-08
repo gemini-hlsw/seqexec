@@ -29,7 +29,7 @@ trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =
     config
       .extractInstAs[String](INSTRUMENT_NAME_PROP)
-      .asTrySeq
+      .adaptExtractFailure
       .flatMap {
         case Flamingos2.name => Instrument.F2.asRight
         case GmosSouth.name  => Instrument.GmosS.asRight
@@ -87,7 +87,7 @@ trait SequenceConfiguration {
 
 
   def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
-    def extractGaos(inst: Instrument): TrySeq[StepType] =
+    def extractGaos(inst: Instrument): Either[SeqexecFailure, StepType] =
       config.extractAs[String](AO_SYSTEM_KEY) match {
         case Left(ConfigUtilOps.ConversionError(_, _)) =>
           Unexpected("Unable to get AO system from sequence").asLeft
