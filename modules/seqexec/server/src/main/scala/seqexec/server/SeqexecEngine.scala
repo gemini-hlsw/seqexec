@@ -210,8 +210,7 @@ object SeqexecEngine {
           case (false, _) => executeEngine.unit.as(Busy(id, clientId))
           // Target check fails
           case (_, false) =>
-            println("TARGGT")
-            executeEngine.unit.as(Busy(id, clientId))
+            executeEngine.unit.as(RequestConfirmation(UserPrompt.TargetCheckOverride(id), clientId))
           // Allowed to run
           case _ => startAfterCheck(startAction, id)
         }

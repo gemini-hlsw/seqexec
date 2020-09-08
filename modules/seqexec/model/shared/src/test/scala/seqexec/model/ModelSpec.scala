@@ -55,6 +55,7 @@ final class ModelSpec extends CatsSuite {
   checkAll("Order[QueueId]", OrderTests[QueueId].eqv)
   checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
+  checkAll("Eq[UserPrompt]", EqTests[UserPrompt].eqv)
   checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
   checkAll("Eq[RequestFailed]", EqTests[RequestFailed].eqv)

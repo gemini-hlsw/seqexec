@@ -31,6 +31,7 @@ import seqexec.model.events._
 import shapeless.tag
 import shapeless.tag.@@
 import squants.time.TimeConversions._
+import seqexec.model.UserPrompt.TargetCheckOverride
 
 /**
   * Contains boopickle implicit picklers of model objects
@@ -231,6 +232,9 @@ trait ModelBooPicklers extends GemModelBooPicklers {
       .addConcreteType[InstrumentInUse]
       .addConcreteType[RequestFailed]
       .addConcreteType[SubsystemBusy]
+  implicit val userPromptPickler: Pickler[UserPrompt] =
+    compositePickler[UserPrompt]
+      .addConcreteType[TargetCheckOverride]
 
   implicit val connectionOpenEventPickler = generatePickler[ConnectionOpenEvent]
   implicit val sequenceStartPickler       = generatePickler[SequenceStart]
@@ -262,6 +266,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val exposurePausedPickler      = generatePickler[ExposurePaused]
   implicit val serverLogMessagePickler    = generatePickler[ServerLogMessage]
   implicit val userNotificationPickler    = generatePickler[UserNotification]
+  implicit val userPromptNotPickler       = generatePickler[UserPromptNotification]
   implicit val guideConfigPickler         = generatePickler[GuideConfigUpdate]
   implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
   implicit val observationStagePickler    = enumeratedPickler[ObserveStage]
@@ -303,6 +308,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ExposurePaused]
     .addConcreteType[ServerLogMessage]
     .addConcreteType[UserNotification]
+    .addConcreteType[UserPromptNotification]
     .addConcreteType[GuideConfigUpdate]
     .addConcreteType[QueueUpdated]
     .addConcreteType[ObservationProgressEvent]

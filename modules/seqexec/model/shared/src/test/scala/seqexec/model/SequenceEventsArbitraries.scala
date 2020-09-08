@@ -10,7 +10,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import gem.Observation
 import gem.arb.ArbEnumerated._
-import gsp.math.arb.ArbTime
+import gsp.math.arb.ArbTime._
 import java.time.Instant
 import seqexec.model.enum._
 import seqexec.model.dhs._
@@ -18,7 +18,7 @@ import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.all._
 
-trait SequenceEventsArbitraries extends ArbTime {
+trait SequenceEventsArbitraries {
 
   implicit val gcuArb = Arbitrary[GuideConfigUpdate] {
     arbitrary[TelescopeGuideConfig].map(GuideConfigUpdate.apply)
@@ -180,6 +180,13 @@ trait SequenceEventsArbitraries extends ArbTime {
       i <- arbitrary[Notification]
       c <- arbitrary[ClientId]
     } yield UserNotification(i, c)
+  }
+
+  implicit val unpArb = Arbitrary[UserPromptNotification] {
+    for {
+      i <- arbitrary[UserPrompt]
+      c <- arbitrary[ClientId]
+    } yield UserPromptNotification(i, c)
   }
 
   implicit val oprArb = Arbitrary[ObservationProgressEvent] {
