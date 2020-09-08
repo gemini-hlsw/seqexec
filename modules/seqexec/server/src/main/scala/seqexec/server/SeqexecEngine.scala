@@ -48,9 +48,9 @@ trait SeqexecEngine[F[_]] {
 
   def sync(q: EventQueue[F], seqId: Observation.Id): F[Unit]
 
-  def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit]
+  def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit]
 
-  def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit]
+  def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit]
 
   def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit]
 
@@ -138,6 +138,7 @@ object SeqexecEngine {
     implicit executeEngine: seqexec.server.ExecEngineType[F]
   ) extends SeqexecEngine[F] {
 
+    private val Log = Logger[F]
     private val odbLoader = new ODBSequencesLoader[F](systems.odb, translator)
 
     override def sync(q: EventQueue[F], seqId: Observation.Id): F[Unit] =
@@ -161,6 +162,13 @@ object SeqexecEngine {
         )
       )
     }
+
+    /**
+     * Check if the target on the TCS matches the seqexec target
+     */
+    private def targetCheck(seqId: Observation.Id, runOverride: RunOverride)(st: EngineState[F]): F[Boolean] =
+      // TODO Implement target check
+      Log.info(s"Target check $seqId, $runOverride, $st") *> true.pure[F]
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -186,29 +194,28 @@ object SeqexecEngine {
         }.getOrElse(executeEngine.pure(none[(Observation.Id, StepId)]))
       }
 
+    private def startAfterCheck(startAction: HandleType[F, Unit], id: Observation.Id): HandleType[F, SeqEvent] =
+      startAction.reversedStreamFlatMap(_ => sequenceStart(id).map(
+        _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
+      ))
+
+    private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId): HandleType[F, SeqEvent] =
+      executeEngine.get.flatMap(st => checkResources(id)(st).fold(
+        startAfterCheck(startAction, id),
+        executeEngine.unit.as(Busy(id, clientId))
+      ) )
+
     // Stars a sequence from the first non executed step. The method checks for resources conflict.
-    override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit] =
+    override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *>
-        executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-          executeEngine.start(id).reversedStreamFlatMap(_ => sequenceStart(id).map(
-            _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
-          )),
-          executeEngine.unit.as(Busy(id, clientId))
-        ) )
+        clearObsCmd(id) *> startCheckResources(executeEngine.start(id), id, clientId)
       ) )
 
     // Stars a sequence from an arbitrary step. All previous non executed steps are skipped.
     // The method checks for resources conflict.
-    override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit] =
+    override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *>
-        executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-          executeEngine.startFrom(id, stp).reversedStreamFlatMap(_ => sequenceStart(id).map(
-            _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
-          )),
-          executeEngine.unit.as(Busy(id, clientId))
-        ) )
+        clearObsCmd(id) *> startCheckResources(executeEngine.startFrom(id, stp), id, clientId)
       ) )
 
     override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =

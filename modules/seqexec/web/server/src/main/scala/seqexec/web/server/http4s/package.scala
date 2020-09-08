@@ -11,6 +11,9 @@ import seqexec.model.Operator
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
+import org.http4s.QueryParamDecoder
+import seqexec.model.enum.RunOverride
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 
 trait Var {
   object ObsIdVar {
@@ -66,5 +69,17 @@ trait Var {
     def unapply(str: String): Option[Int] =
       Either.catchNonFatal(str.toInt).toOption
   }
+
 }
-package object http4s extends Var
+
+trait QueryParams {
+  implicit val RunOverrideQueryParamDecoder: QueryParamDecoder[RunOverride] =
+    QueryParamDecoder[Boolean].map {
+      case true => RunOverride.Override
+      case _    => RunOverride.Default
+    }
+
+  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("override")
+}
+
+package object http4s extends Var with QueryParams

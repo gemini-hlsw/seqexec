@@ -20,6 +20,7 @@ import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
+import seqexec.model.enum.RunOverride
 
 /**
   * Rest Endpoints under the /api route
@@ -34,12 +35,12 @@ class SeqexecCommandRoutes[F[_]: Sync](
   private val httpAuthentication = new Http4sAuthentication(auth)
 
   private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
-    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
-        se.start(inputQueue, obsId, user, clientId) *>
+    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) :? OptionalRunOverride(runOverride) as user =>
+        se.start(inputQueue, obsId, user, clientId, runOverride.getOrElse(RunOverride.Default)) *>
           Ok(s"Started sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId) as _ =>
-        se.startFrom(inputQueue, obsId, stepId, clientId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId):? OptionalRunOverride(runOverride) as _ =>
+        se.startFrom(inputQueue, obsId, stepId, clientId, runOverride.getOrElse(RunOverride.Default)) *>
           Ok(s"Started sequence ${obsId.format} from step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
