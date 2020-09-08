@@ -9,7 +9,7 @@ import gem.Observation
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 
-sealed trait Notification
+sealed trait Notification extends Product with Serializable
 
 object Notification {
   implicit lazy val eq: Eq[Notification] =
@@ -21,30 +21,32 @@ object Notification {
       case _                                          => false
     }
 
-  def header(n: Notification): String = n match {
-    case ResourceConflict(_)    => "Resource conflict"
-    case InstrumentInUse(_, _)  => "Instrument busy"
-    case RequestFailed(_)       => "Request failed"
-    case SubsystemBusy(_, _, _) => "Resource busy"
-  }
+  def header(n: Notification): String =
+    n match {
+      case ResourceConflict(_)    => "Resource conflict"
+      case InstrumentInUse(_, _)  => "Instrument busy"
+      case RequestFailed(_)       => "Request failed"
+      case SubsystemBusy(_, _, _) => "Resource busy"
+    }
 
-  def body(n: Notification): List[String] = n match {
-    case ResourceConflict(sid) =>
-      List(
-        s"There is a conflict trying to run the sequence '${sid.format}'",
-        "Possibly another sequence is being executed on the same instrument"
-      )
-    case InstrumentInUse(sid, ins) =>
-      List(
-        s"Cannot select sequence '${sid.format}' for instrument '${ins.label}'",
-        "Possibly another sequence is being executed on the same instrument"
-      )
-    case RequestFailed(msgs) =>
-      s"Request to the seqexec server failed:" :: msgs
+  def body(n: Notification): List[String] =
+    n match {
+      case ResourceConflict(sid)         =>
+        List(
+          s"There is a conflict trying to run the sequence '${sid.format}'",
+          "Possibly another sequence is being executed on the same instrument"
+        )
+      case InstrumentInUse(sid, ins)     =>
+        List(
+          s"Cannot select sequence '${sid.format}' for instrument '${ins.label}'",
+          "Possibly another sequence is being executed on the same instrument"
+        )
+      case RequestFailed(msgs)           =>
+        s"Request to the seqexec server failed:" :: msgs
 
-    case SubsystemBusy(_, _, resource) =>
-      List(s"Cannot configure ${resource.show}, subsystem busy")
-  }
+      case SubsystemBusy(_, _, resource) =>
+        List(s"Cannot configure ${resource.show}, subsystem busy")
+    }
 }
 
 // Notification that user tried to run a sequence that used resource already in use
@@ -55,8 +57,7 @@ object ResourceConflict {
 }
 
 // Notification that user tried to select a sequence for an instrument for which a sequence was already running
-final case class InstrumentInUse(sid: Observation.Id, ins: Instrument)
-    extends Notification
+final case class InstrumentInUse(sid: Observation.Id, ins: Instrument) extends Notification
 
 object InstrumentInUse {
   implicit lazy val eq: Eq[InstrumentInUse] =
@@ -72,9 +73,7 @@ object RequestFailed {
 }
 
 // Notification that a resource configuration failed as the resource was busy
-final case class SubsystemBusy(oid:      Observation.Id,
-                               stepId:   StepId,
-                               resource: Resource)
+final case class SubsystemBusy(oid: Observation.Id, stepId: StepId, resource: Resource)
     extends Notification
 
 object SubsystemBusy {

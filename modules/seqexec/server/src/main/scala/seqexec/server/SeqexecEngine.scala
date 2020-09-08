@@ -138,7 +138,6 @@ object SeqexecEngine {
     implicit executeEngine: seqexec.server.ExecEngineType[F]
   ) extends SeqexecEngine[F] {
 
-    private val Log = Logger[F]
     private val odbLoader = new ODBSequencesLoader[F](systems.odb, translator)
 
     override def sync(q: EventQueue[F], seqId: Observation.Id): F[Unit] =
@@ -148,6 +147,10 @@ object SeqexecEngine {
         ).compile.drain
       }
 
+    /**
+     * Check if the resources to run a sequence are available
+     * @return true if resources are available
+     */
     private def checkResources(seqId: Observation.Id)(st: EngineState[F]): Boolean = {
       // Resources used by running sequences
       val used = resourcesInUse(st)
@@ -158,17 +161,18 @@ object SeqexecEngine {
       st.sequences.get(seqId).exists(x =>
         x.seqGen.resources.intersect(used).isEmpty && (
           st.queues.values.filter(_.status(st).running).exists(_.queue.contains(seqId)) ||
-          x.seqGen.resources.intersect(reservedByQueues).isEmpty
+            x.seqGen.resources.intersect(reservedByQueues).isEmpty
         )
       )
     }
 
     /**
      * Check if the target on the TCS matches the seqexec target
+     * TODO: Implement. I suspect this needs to return F[Boolean]
+     * @return true if target is valid
      */
-    private def targetCheck(seqId: Observation.Id, runOverride: RunOverride)(st: EngineState[F]): F[Boolean] =
-      // TODO Implement target check
-      Log.info(s"Target check $seqId, $runOverride, $st") *> true.pure[F]
+    private def targetCheck: Boolean =
+      false
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -200,10 +204,18 @@ object SeqexecEngine {
       ))
 
     private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId): HandleType[F, SeqEvent] =
-      executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-        startAfterCheck(startAction, id),
-        executeEngine.unit.as(Busy(id, clientId))
-      ) )
+      executeEngine.get.flatMap{ st =>
+        (checkResources(id)(st), targetCheck) match {
+          // Resource check fails
+          case (false, _) => executeEngine.unit.as(Busy(id, clientId))
+          // Target check fails
+          case (_, false) =>
+            println("TARGGT")
+            executeEngine.unit.as(Busy(id, clientId))
+          // Allowed to run
+          case _ => startAfterCheck(startAction, id)
+        }
+      }
 
     // Stars a sequence from the first non executed step. The method checks for resources conflict.
     override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit] =
@@ -805,6 +817,7 @@ object SeqexecEngine {
       case LoadSequence(id)                   => Stream.emit(SequenceLoaded(id, svs))
       case UnloadSequence(id)                 => Stream.emit(SequenceUnloaded(id, svs))
       case NotifyUser(m, cid)                 => Stream.emit(UserNotification(m, cid))
+      case RequestConfirmation(m, cid)        => Stream.emit(UserPromptNotification(m, cid))
       case UpdateQueueAdd(qid, seqs)          => Stream.emit(QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs))
       case UpdateQueueRemove(qid, s, p, l)    => Stream.emits(QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
         +: l.map{case (sid, step) => ClientSequenceStart(sid, step, svs)}

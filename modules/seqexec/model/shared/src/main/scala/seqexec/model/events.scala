@@ -319,6 +319,14 @@ object events {
       Eq.by(x => (x.memo, x.clientId))
   }
 
+  final case class UserPromptNotification(prompt: UserPrompt, clientId: ClientId)
+      extends ForClient
+
+  object UserPromptNotification {
+    implicit lazy val equal: Eq[UserPromptNotification] =
+      Eq.by(x => (x.prompt, x.clientId))
+  }
+
   final case class GuideConfigUpdate(telescope: TelescopeGuideConfig)
       extends SeqexecEvent
 
