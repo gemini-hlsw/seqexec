@@ -52,7 +52,7 @@ object Footer {
     )
 
   private val component = ScalaComponent
-    .builder[Props]("Footer")
+    .builder[Props]
     .stateless
     .render_P(p =>
       Menu(
