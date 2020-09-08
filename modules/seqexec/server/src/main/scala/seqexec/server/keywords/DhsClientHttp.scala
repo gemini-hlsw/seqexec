@@ -32,7 +32,6 @@ import org.http4s.dsl.io._
 import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
-import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient.ImageParameters
 
 /**
@@ -59,7 +58,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       Json.obj("createImage" := p.asJson),
       baseURI
     )
-    clientWithRetry.expect[TrySeq[ImageFileId]](req)(jsonOf[F, TrySeq[ImageFileId]])
+    clientWithRetry.expect[Either[SeqexecFailure, ImageFileId]](req)(jsonOf[F, Either[SeqexecFailure, ImageFileId]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
       .flatMap(EitherT.fromEither(_)).liftF
@@ -80,7 +79,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       baseURI / id / "keywords"
     )
     val cl = if(finalFlag) base else clientWithRetry
-    cl.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
+    cl.expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
       .flatMap(EitherT.fromEither(_)).liftF
@@ -112,31 +111,32 @@ object DhsClientHttp {
     } yield Error(t, msg)
   )
 
-  implicit def obsIdDecode: Decoder[TrySeq[ImageFileId]] = Decoder.instance[TrySeq[ImageFileId]](
+  implicit def obsIdDecode: Decoder[Either[SeqexecFailure, ImageFileId]] = Decoder.instance[Either[SeqexecFailure, ImageFileId]](
     c => {
       val r = c.downField("response")
       val s = r.downField("status").as[String]
       s.flatMap {
         case "success" =>
-          r.downField("result").as[String].map(i => TrySeq(toImageFileId(i)))
+          r.downField("result").as[String].map(i => toImageFileId(i).asRight)
         case "error"   =>
           r.downField("errors").as[List[Error]].map(l =>
-            TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", ")))
+            SeqexecFailure.Unexpected(l.mkString(", ")).asLeft
           )
         case r         =>
           Left(DecodingFailure(s"Unknown response: $r", c.history))
       }
     } )
 
-  implicit def unitDecode: Decoder[TrySeq[Unit]] = Decoder.instance[TrySeq[Unit]]( c => {
+  implicit def unitDecode: Decoder[Either[SeqexecFailure, Unit]] = Decoder.instance[Either[SeqexecFailure, Unit]]( c => {
     val r = c.downField("response")
     val s = r.downField("status").as[String]
     s flatMap {
       case "success" =>
-        Right(TrySeq(()))
+        ().asRight.asRight
       case "error"   =>
         r.downField("errors").as[List[Error]].map(
-          l => TrySeq.fail[Unit](SeqexecFailure.Unexpected(l.mkString(", "))))
+          l => SeqexecFailure.Unexpected(l.mkString(", ")).asLeft[Unit]
+        )
       case r         =>
         Left(DecodingFailure(s"Unknown response: $r", c.history))
     }

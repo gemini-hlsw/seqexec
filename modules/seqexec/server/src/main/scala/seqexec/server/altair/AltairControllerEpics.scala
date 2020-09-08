@@ -20,7 +20,6 @@ import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.server.SeqexecFailure
-import seqexec.server.TrySeq
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import seqexec.server.tcs.Gaos._
@@ -150,7 +149,7 @@ object AltairControllerEpics {
       )
     }
 
-    private def checkStrapLoopState(currCfg: EpicsAltairConfig): TrySeq[Unit] =
+    private def checkStrapLoopState(currCfg: EpicsAltairConfig): Either[SeqexecFailure, Unit] =
       currCfg.strapRTStatus.either(
         SeqexecFailure.Unexpected("Cannot start Altair STRAP loop, RT Control status is bad."), ()
       ) *>

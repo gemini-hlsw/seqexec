@@ -34,7 +34,6 @@ import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
-import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -45,6 +44,7 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import seqexec.server.SeqexecFailure
 
 final case class Nifs[F[_]: Logger: Concurrent: Timer](
   controller: NifsController[F],
@@ -66,7 +66,7 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
     config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
-      EitherT.fromEither[F](getDCConfig(config).asTrySeq)
+      EitherT.fromEither[F](getDCConfig(config).adaptExtractFailure)
         .widenRethrowT
         .flatMap(controller.observe(fileId, _))
     }
@@ -228,10 +228,10 @@ object Nifs {
           StdDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
       }
 
-  def fromSequenceConfig(config: CleanConfig): TrySeq[NifsConfig] =
+  def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, NifsConfig] =
     for {
-      cc <- getCCConfig(config).asTrySeq
-      dc <- getDCConfig(config).asTrySeq
+      cc <- getCCConfig(config).adaptExtractFailure
+      dc <- getDCConfig(config).adaptExtractFailure
     } yield NifsConfig(cc, dc)
 
 }

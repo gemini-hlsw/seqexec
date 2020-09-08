@@ -98,13 +98,6 @@ package object server {
   implicit val sgoEq: Eq[StandardGuideOptions.Value] =
     Eq[Int].contramap(_.ordinal())
 
-  type TrySeq[A]                 = Either[SeqexecFailure, A]
-
-  object TrySeq {
-    def apply[A](a: A): TrySeq[A]              = Either.right(a)
-    def fail[A](p:  SeqexecFailure): TrySeq[A] = Either.left(p)
-  }
-
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
   // This is far from ideal but we'll address this in another refactoring

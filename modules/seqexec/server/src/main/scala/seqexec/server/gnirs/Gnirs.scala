@@ -98,10 +98,10 @@ object Gnirs {
   def extractCoadds(config: CleanConfig): Either[ExtractFailure, Int] =
     config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
 
-  def fromSequenceConfig(config: CleanConfig): TrySeq[GnirsController.GnirsConfig] =
+  def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GnirsController.GnirsConfig] =
     (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
 
-  private def getDCConfig(config: CleanConfig): TrySeq[DCConfig] = (for {
+  private def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] = (for {
     expTime <- extractExposureTime(config)
     coadds  <- extractCoadds(config)
     readMode <- config.extractInstAs[ReadMode](READ_MODE_PROP)
@@ -109,7 +109,7 @@ object Gnirs {
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: CleanConfig): TrySeq[CCConfig] = config.extractObsAs[String](OBSERVE_TYPE_PROP)
+  private def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] = config.extractObsAs[String](OBSERVE_TYPE_PROP)
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
     case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
     case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
@@ -125,7 +125,7 @@ object Gnirs {
     }
   }
 
-  private def getCCOtherConfig(config: CleanConfig): TrySeq[CCConfig] = (for {
+  private def getCCOtherConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] = (for {
     xdisp   <- config.extractInstAs[CrossDispersed](CROSS_DISPERSED_PROP)
     woll    <- config.extractInstAs[WollastonPrism](WOLLASTON_PRISM_PROP)
     mode    <- getCCMode(config, xdisp, woll)

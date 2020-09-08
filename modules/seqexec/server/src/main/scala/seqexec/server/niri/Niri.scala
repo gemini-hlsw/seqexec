@@ -38,7 +38,6 @@ import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -136,7 +135,7 @@ object Niri {
   def getCameraConfig(config: CleanConfig): Either[ExtractFailure, Camera] =
     config.extractInstAs[Camera](CAMERA_PROP)
 
-  def getCCCommonConfig(config: CleanConfig): TrySeq[Common] = (for {
+  def getCCCommonConfig(config: CleanConfig): Either[SeqexecFailure, Common] = (for {
     cam <- getCameraConfig(config)
     bms <- config.extractInstAs[BeamSplitter](BEAM_SPLITTER_PROP)
     foc <- config.extractInstAs[Focus](FOCUS_PROP)
@@ -145,7 +144,7 @@ object Niri {
   } yield Common(cam, bms, foc, dsp, msk))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def getCCIlluminatedConfig(config: CleanConfig): TrySeq[Illuminated] = {
+  def getCCIlluminatedConfig(config: CleanConfig): Either[SeqexecFailure, Illuminated] = {
     val filter = (for {
       f  <- config.extractInstAs[Filter](FILTER_PROP)
       fl <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
@@ -156,9 +155,9 @@ object Niri {
     (filter, getCCCommonConfig(config)).mapN(Illuminated)
   }
 
-  def getCCDarkConfig(config: CleanConfig): TrySeq[Dark] = getCCCommonConfig(config).map(Dark)
+  def getCCDarkConfig(config: CleanConfig): Either[SeqexecFailure, Dark] = getCCCommonConfig(config).map(Dark)
 
-  def getCCConfig(config: CleanConfig): TrySeq[CCConfig] =
+  def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] =
     config.extractObsAs[String](OBSERVE_TYPE_PROP)
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       .flatMap{
@@ -167,7 +166,7 @@ object Niri {
         case _                 => getCCIlluminatedConfig(config)
       }
 
-  def getDCConfig(config: CleanConfig): TrySeq[DCConfig] = (for {
+  def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] = (for {
       expTime    <- extractExposureTime(config)
       coadds     <- extractCoadds(config)
       rm         <- config.extractInstAs[OCSReadMode](READ_MODE_PROP)
@@ -177,7 +176,7 @@ object Niri {
     } yield DCConfig(expTime, coadds, readMode, builtInROI))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig(config: CleanConfig): TrySeq[NiriConfig] = for {
+  def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, NiriConfig] = for {
     cc <- getCCConfig(config)
     dc <- getDCConfig(config)
   } yield NiriConfig(cc, dc)

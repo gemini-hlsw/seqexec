@@ -155,7 +155,7 @@ object Flamingos2 {
                                                 .map(_.getOrElse(default))
     }
 
-  def ccConfigFromSequenceConfig(config: CleanConfig): TrySeq[CCConfig] =
+  def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] =
     (for {
       obsType <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       // WINDOW_COVER_PROP is optional. It can be a WindowCover, an Option[WindowCover], or not be present. If no
@@ -173,7 +173,7 @@ object Flamingos2 {
     } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected
     (ConfigUtilOps.explain(e)))
 
-  def dcConfigFromSequenceConfig(config: CleanConfig): TrySeq[DCConfig] =
+  def dcConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] =
     (for {
       p <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map(x => Duration(x, SECONDS))
       // Reads is usually inferred from the read mode, but it can be explicit.

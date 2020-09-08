@@ -31,7 +31,6 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem._
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.TrySeq
 import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
@@ -172,10 +171,10 @@ object Gsaoi {
       fowSamples <- extractNrOfFowSamples(config)
     } yield DCConfig(readMode, roi, coadds, expTime, fowSamples)
 
-  def fromSequenceConfig(config: CleanConfig): TrySeq[GsaoiConfig] =
+  def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GsaoiConfig] =
     for {
-      cc <- readCCConfig(config).asTrySeq
-      dc <- readDCConfig(config).asTrySeq
+      cc <- readCCConfig(config).adaptExtractFailure
+      dc <- readDCConfig(config).adaptExtractFailure
     } yield GsaoiConfig(cc, dc)
 
 }
