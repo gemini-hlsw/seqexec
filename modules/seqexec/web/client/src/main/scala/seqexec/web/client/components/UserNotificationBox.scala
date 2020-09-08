@@ -6,8 +6,8 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.modules.modal.ModalSize
@@ -20,25 +20,28 @@ import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.model._
 import seqexec.web.client.reusability._
 
+final case class UserNotificationBox(notification: UserNotificationState)
+    extends ReactProps[UserNotificationBox](UserNotificationBox.component)
+
 /**
-  * UI for the model displaying resource conflicts
-  */
+ * UI for the model displaying resource conflicts
+ */
 object UserNotificationBox {
 
-  final case class Props(notification: UserNotificationState)
+  type Props = UserNotificationBox
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification)
 
   private val close = Callback(SeqexecCircuit.dispatch(CloseUserNotificationBox))
 
   private val component = ScalaComponent
-    .builder[Props]("UserNotificationBox")
+    .builder[Props]
     .stateless
     .render_P { p =>
       val UserNotificationState(open, not) = p.notification
       Modal(
-        size    = ModalSize.Tiny,
-        open    = open === SectionOpen,
+        size = ModalSize.Tiny,
+        open = open === SectionOpen,
         onClose = close
       )(
         not.map(h => ModalHeader(Notification.header(h))),
@@ -58,5 +61,4 @@ object UserNotificationBox {
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(v: Props): Unmounted[Props, Unit, Unit] = component(v)
 }

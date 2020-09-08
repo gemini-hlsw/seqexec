@@ -14,22 +14,23 @@ import seqexec.web.client.model.SectionVisibilityState._
 sealed trait SoundSelection extends Product with Serializable
 
 object SoundSelection {
-  case object SoundOn extends SoundSelection
+  case object SoundOn  extends SoundSelection
   case object SoundOff extends SoundSelection
 
   /** @group Typeclass Instances */
   implicit val SoundSelectionEnumerated: Enumerated[SoundSelection] =
     Enumerated.of(SoundOn, SoundOff)
 
-  def flip: SoundSelection => SoundSelection = _ match {
-    case SoundSelection.SoundOn  => SoundSelection.SoundOff
-    case SoundSelection.SoundOff => SoundSelection.SoundOn
-  }
+  def flip: SoundSelection => SoundSelection =
+    _ match {
+      case SoundSelection.SoundOn  => SoundSelection.SoundOff
+      case SoundSelection.SoundOff => SoundSelection.SoundOn
+    }
 }
 
 /**
-  * UI model, changes here will update the UI
-  */
+ * UI model, changes here will update the UI
+ */
 @Lenses
 final case class SeqexecUIModel(
   navLocation:        Pages.SeqexecPages,
@@ -40,6 +41,7 @@ final case class SeqexecUIModel(
   appTableStates:     AppTableStates,
   defaultObserver:    Observer,
   notification:       UserNotificationState,
+  userPrompt:         UserPromptState,
   queues:             CalibrationQueues,
   obsProgress:        AllObservationsProgressState,
   sessionQueueFilter: SessionQueueFilter,
@@ -57,6 +59,7 @@ object SeqexecUIModel {
     AppTableStates.Initial,
     Observer(""),
     UserNotificationState.Empty,
+    UserPromptState.Empty,
     CalibrationQueues.Default,
     AllObservationsProgressState.Empty,
     SessionQueueFilter.NoFilter,
@@ -74,10 +77,12 @@ object SeqexecUIModel {
        x.appTableStates,
        x.defaultObserver,
        x.notification,
+       x.userPrompt,
        x.queues,
        x.sessionQueueFilter,
        x.sound,
-       x.firstLoad)
+       x.firstLoad
+      )
     )
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter

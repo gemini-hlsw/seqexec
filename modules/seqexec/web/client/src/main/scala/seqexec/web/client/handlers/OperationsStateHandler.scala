@@ -26,54 +26,66 @@ import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabOperations
 
 /**
-  * Updates the state of the tabs when requests are executed
-  */
+ * Updates the state of the tabs when requests are executed
+ */
 class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesOnDisplay] {
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
-    case RequestRun(id) =>
+    case RequestRun(id, _)             =>
       updatedL(
-        SequencesOnDisplay.markOperations(
-          id,
-          TabOperations.runRequested.set(RunOperation.RunInFlight)))
+        SequencesOnDisplay.markOperations(id,
+                                          TabOperations.runRequested.set(RunOperation.RunInFlight)
+        )
+      )
 
-    case RequestStop(id, _) =>
+    case RequestStop(id, _)            =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.stopRequested.set(StopOperation.StopInFlight)))
+          TabOperations.stopRequested.set(StopOperation.StopInFlight)
+        )
+      )
 
-    case RequestAbort(id, _) =>
+    case RequestAbort(id, _)           =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.abortRequested.set(AbortOperation.AbortInFlight)))
+          TabOperations.abortRequested.set(AbortOperation.AbortInFlight)
+        )
+      )
 
-    case RequestSync(id) =>
+    case RequestSync(id)               =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.syncRequested.set(SyncOperation.SyncInFlight)))
+          TabOperations.syncRequested.set(SyncOperation.SyncInFlight)
+        )
+      )
 
-    case RequestPause(id) =>
+    case RequestPause(id)              =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)))
+          TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)
+        )
+      )
 
-    case RequestCancelPause(id) =>
+    case RequestCancelPause(id)        =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.cancelPauseRequested.set(CancelPauseOperation.CancelPauseInFlight)))
+          TabOperations.cancelPauseRequested.set(CancelPauseOperation.CancelPauseInFlight)
+        )
+      )
 
-    case RunFromComplete(id, _) =>
+    case RunFromComplete(id, _)        =>
       updatedL(
-        SequencesOnDisplay.markOperations(
-          id,
-          TabOperations.startFromRequested
-            .set(StartFromOperation.StartFromIdle)))
+        SequencesOnDisplay.markOperations(id,
+                                          TabOperations.startFromRequested
+                                            .set(StartFromOperation.StartFromIdle)
+        )
+      )
 
     case RunResourceComplete(id, s, r) =>
       updatedL(
@@ -99,47 +111,47 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-    case RunStarted(_) | RunStop(_) | RunGracefulStop(_) |
-         RunAbort(_) | RunObsPause(_) | RunGracefulObsPause(_) |
-         RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) |
-         RunResource(_, _, _) =>
+    case RunStarted(_) | RunStop(_) | RunGracefulStop(_) | RunAbort(_) | RunObsPause(_) |
+        RunGracefulObsPause(_) | RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) |
+        RunResource(_, _, _) =>
       noChange
 
-    case RunSync(id) =>
+    case RunSync(id)                 =>
       updatedL(
-        SequencesOnDisplay.markOperations(
-          id,
-          TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
+        SequencesOnDisplay.markOperations(id,
+                                          TabOperations.syncRequested.set(SyncOperation.SyncIdle)
+        )
+      )
 
     case RunResourceRemote(id, s, r) =>
       // reset others instrument that may have run common resources
       val resetOthers: SequencesOnDisplay => SequencesOnDisplay =
-        if (Resource.common.contains(r)) {
+        if (Resource.common.contains(r))
           SequencesOnDisplay.resetCommonResourceOperations(id, r)
-        } else {
+        else
           identity
-        }
       updatedLE(
         resetOthers >>>
-        SequencesOnDisplay.markOperations(
-          id,
-          TabOperations
-            .resourceRun(r)
-            .set(ResourceRunOperation.ResourceRunInFlight(s).some)),
+          SequencesOnDisplay.markOperations(id,
+                                            TabOperations
+                                              .resourceRun(r)
+                                              .set(ResourceRunOperation.ResourceRunInFlight(s).some)
+          ),
         Effect.action(UpdateSelectedStepForce(id, s))
       )
   }
 
   def handleOperationFailed: PartialFunction[Any, ActionResult[M]] = {
-    case RunStartFailed(id) =>
+    case RunStartFailed(id)             =>
       updatedL(
         SequencesOnDisplay.markOperations(id,
                                           TabOperations.runRequested
-                                            .set(RunOperation.RunIdle))
+                                            .set(RunOperation.RunIdle)
+        )
       )
 
-    case RunSyncFailed(id) =>
-      val msg = s"Failed to sync sequence ${id.format}"
+    case RunSyncFailed(id)              =>
+      val msg          = s"Failed to sync sequence ${id.format}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg))))
       )
@@ -147,17 +159,18 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                   id,
                   TabOperations.syncRequested.set(SyncOperation.SyncIdle)
                 ),
-                notification)
+                notification
+      )
 
-    case RunAbortFailed(id) =>
-      val msg = s"Failed to abort sequence ${id.format}"
+    case RunAbortFailed(id)             =>
+      val msg          = s"Failed to abort sequence ${id.format}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg))))
       )
       updatedLE(SequencesOnDisplay.resetOperations(id), notification)
 
-    case RunStopFailed(id) =>
-      val msg = s"Failed to stop sequence ${id.format}"
+    case RunStopFailed(id)              =>
+      val msg          = s"Failed to stop sequence ${id.format}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg))))
       )
@@ -165,10 +178,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                   id,
                   TabOperations.stopRequested.set(StopOperation.StopIdle)
                 ),
-                notification)
+                notification
+      )
 
-    case RunPauseFailed(id) =>
-      val msg = s"Failed to pause sequence ${id.format}"
+    case RunPauseFailed(id)             =>
+      val msg          = s"Failed to pause sequence ${id.format}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg))))
       )
@@ -176,10 +190,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                   id,
                   TabOperations.pauseRequested.set(PauseOperation.PauseIdle)
                 ),
-                notification)
+                notification
+      )
 
-    case RunFromFailed(id, sid) =>
-      val msg = s"Failed to start sequence ${id.format} from step ${sid + 1}"
+    case RunFromFailed(id, sid)         =>
+      val msg          = s"Failed to start sequence ${id.format} from step ${sid + 1}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg))))
       )
@@ -192,7 +207,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       )
 
     case RunResourceFailed(id, s, r, m) =>
-      val msg = s"Failed to configure ${r.show} for sequence ${id.format}"
+      val msg          = s"Failed to configure ${r.show} for sequence ${id.format}"
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(List(msg, m))))
       )
@@ -203,11 +218,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                       .resourceRun(r)
                       .set(ResourceRunOperation.ResourceRunFailed(s).some)
                   ),
-                notification)
+                notification
+      )
   }
 
   def handleSelectedStep: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateSelectedStep(id, step) =>
+    case UpdateSelectedStep(id, step)      =>
       updatedSilent(value.selectStep(id, step))
 
     case UpdateSelectedStepForce(id, step) =>
@@ -215,28 +231,28 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   def handleOperationComplete: PartialFunction[Any, ActionResult[M]] = {
-    case RunStopCompleted(id) =>
+    case RunStopCompleted(id)                             =>
       updatedL(SequencesOnDisplay.resetOperations(id))
 
-    case ClearRunOnError(id) =>
+    case ClearRunOnError(id)                              =>
       updatedL(SequencesOnDisplay.resetOperations(id))
 
-    case ClearOperations(id) =>
+    case ClearOperations(id)                              =>
       updatedL(SequencesOnDisplay.resetOperations(id))
 
-    case ClearAllOperations =>
+    case ClearAllOperations                               =>
       updated(value.resetAllOperations)
 
-    case ClearAllResourceOperations(id) =>
+    case ClearAllResourceOperations(id)                   =>
       updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
 
     case ClearAllResourceOperationsOnStepChange(id, step) =>
-      if(!value.selectedStep(id).contains(step))
+      if (!value.selectedStep(id).contains(step))
         updatedL(SequencesOnDisplay.resetAllResourceOperations(id))
       else
         noChange
 
-    case ClearResourceOperations(id, r) =>
+    case ClearResourceOperations(id, r)                   =>
       updatedL(SequencesOnDisplay.resetResourceOperations(id, r))
   }
 
@@ -246,5 +262,6 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
          handleOperationFailed,
          handleSelectedStep,
          handleOperationComplete,
-         handleRequestResourceRun).combineAll
+         handleRequestResourceRun
+    ).combineAll
 }

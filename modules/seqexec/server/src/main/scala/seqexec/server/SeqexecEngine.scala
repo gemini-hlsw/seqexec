@@ -171,8 +171,8 @@ object SeqexecEngine {
      * TODO: Implement. I suspect this needs to return F[Boolean]
      * @return true if target is valid
      */
-    private def targetCheck: Boolean =
-      false
+    private def sequenceTcsTargetMatch: Boolean =
+      true
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -203,14 +203,15 @@ object SeqexecEngine {
         _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
       ))
 
-    private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId): HandleType[F, SeqEvent] =
+    private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId, runOverride: RunOverride): HandleType[F, SeqEvent] =
       executeEngine.get.flatMap{ st =>
-        (checkResources(id)(st), targetCheck) match {
+        (checkResources(id)(st), sequenceTcsTargetMatch, runOverride) match {
           // Resource check fails
-          case (false, _) => executeEngine.unit.as(Busy(id, clientId))
-          // Target check fails
-          case (_, false) =>
-            executeEngine.unit.as(RequestConfirmation(UserPrompt.TargetCheckOverride(id), clientId))
+          case (false, _, _) => executeEngine.unit.as(Busy(id, clientId))
+          // Target check fails and no override
+          case (_, false, RunOverride.Default) =>
+            // TODO get the correct target names from the seqexec and the TCS
+            executeEngine.unit.as(RequestConfirmation(UserPrompt.TargetCheckOverride(id, "Jupiter", "Vega"), clientId))
           // Allowed to run
           case _ => startAfterCheck(startAction, id)
         }
@@ -219,14 +220,14 @@ object SeqexecEngine {
     // Stars a sequence from the first non executed step. The method checks for resources conflict.
     override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *> startCheckResources(executeEngine.start(id), id, clientId)
+        clearObsCmd(id) *> startCheckResources(executeEngine.start(id), id, clientId, runOverride)
       ) )
 
     // Stars a sequence from an arbitrary step. All previous non executed steps are skipped.
     // The method checks for resources conflict.
     override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *> startCheckResources(executeEngine.startFrom(id, stp), id, clientId)
+        clearObsCmd(id) *> startCheckResources(executeEngine.startFrom(id, stp), id, clientId, runOverride)
       ) )
 
     override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =

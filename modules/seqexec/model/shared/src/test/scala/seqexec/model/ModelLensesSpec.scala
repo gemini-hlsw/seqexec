@@ -9,19 +9,12 @@ import gsp.math.laws.discipline.FormatTests
 import gsp.math.arb.ArbOffset._
 import gsp.math.arb.ArbAngle._
 import gsp.math.Axis
-import monocle.law.discipline.LensTests
-import monocle.law.discipline.OptionalTests
-import monocle.law.discipline.PrismTests
-import monocle.law.discipline.TraversalTests
+import monocle.law.discipline._
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
-import seqexec.model.arb.ArbStep._
-import seqexec.model.arb.ArbStepState._
-import seqexec.model.arb.ArbStandardStep._
-import seqexec.model.arb.ArbNodAndShuffleStep._
-import seqexec.model.arb.ArbStepConfig._
+import seqexec.model.arb.all._
 
 final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("event observer name lens", LensTests(obsNameL))

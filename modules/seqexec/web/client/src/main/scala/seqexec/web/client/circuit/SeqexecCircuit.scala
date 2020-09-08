@@ -28,13 +28,15 @@ import seqexec.web.client.model._
 import typings.loglevel.mod.{ ^ => logger }
 
 /**
-  * Diode processor to log some of the action to aid in debugging
-  */
+ * Diode processor to log some of the action to aid in debugging
+ */
 final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
-  override def process(dispatch:     Dispatcher,
-                       action:       Any,
-                       next:         Any => ActionResult[M],
-                       currentModel: M): ActionResult[M] = {
+  override def process(
+    dispatch:     Dispatcher,
+    action:       Any,
+    next:         Any => ActionResult[M],
+    currentModel: M
+  ): ActionResult[M] = {
     // log some of the actions
     action match {
       case AppendToLog(_)                             =>
@@ -47,7 +49,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case UpdateSelectedStep(_, _)                   =>
       case VerifyLoggedStatus                         =>
       case a: Action                                  =>
-        if(LinkingInfo.developmentMode) logger.info(s"Action: ${a.show}")
+        if (LinkingInfo.developmentMode) logger.info(s"Action: ${a.show}")
       case _                                          =>
     }
     // call the next processor
@@ -56,8 +58,8 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
 }
 
 /**
-  * Contains the Diode circuit to manipulate the page
-  */
+ * Contains the Diode circuit to manipulate the page
+ */
 object SeqexecCircuit
     extends Circuit[SeqexecAppRootModel]
     with ReactConnector[SeqexecAppRootModel] {
@@ -68,8 +70,7 @@ object SeqexecCircuit
     this.zoomRWL(WebSocketsFocus.webSocketFocusL)
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-    this.zoomRWL(
-      SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates)
@@ -94,8 +95,7 @@ object SeqexecCircuit
   val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
     this.zoomRWL(SODLocationFocus.sodLocationFocusL)
 
-  val statusAndLoadedSequencesReader
-    : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
+  val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
 
   val sessionQueueFilterReader: ModelR[SeqexecAppRootModel, SessionQueueFilter] =
@@ -128,16 +128,17 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
     this.zoomG(
       SeqexecAppRootModel.sequencesOnDisplayL
-        .composeGetter(SequencesOnDisplay.tabG(id)))
+        .composeGetter(SequencesOnDisplay.tabG(id))
+    )
 
   def sequenceObserverReader(
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
-  def obsProgressReader[P <: Progress : Eq](
-    id:     Observation.Id,
-    stepId: StepId
+  def obsProgressReader[P <: Progress: Eq](
+    id:                     Observation.Id,
+    stepId:                 StepId
   )(implicit progressPrism: Prism[Progress, P]): ModelR[SeqexecAppRootModel, Option[P]] =
     this.zoomO(AllObservationsProgressState.progressStateO[P](id, stepId))
 
@@ -171,32 +172,41 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
     this.zoomG(CalQueueFocus.calQueueG(id))
 
-  private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
-  private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
-  private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
-  private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
-  private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
-  private val notificationBoxHandler   = new ModalBoxHandler(OpenUserNotificationBox, CloseUserNotificationBox, zoomTo(_.uiModel.notification.visibility))
-  private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
-  private val userNotificationHandler  = new NotificationsHandler(zoomTo(_.uiModel.notification))
-  private val sequenceDisplayHandler   = new SequenceDisplayHandler(sequencesReaderRW)
-  private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.sequences))
-  private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-  private val conditionsHandler        = new ConditionsHandler(zoomTo(_.sequences.conditions))
-  private val operatorHandler          = new OperatorHandler(zoomTo(_.sequences.operator))
-  private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
-  private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
-  private val queueRequestsHandler     = new QueueRequestsHandler(queueFocusRW)
-  private val tableStateHandler        = new TableStateHandler(tableStateRW)
-  private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
-  private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)
-  private val siteHandler              = new SiteHandler(zoomTo(_.site))
-  private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
-  private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
-  private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
-  private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
-  private val sessionFilterHandler     = new SessionQueueFilterHandler(zoomTo(_.uiModel.sessionQueueFilter))
-  private val soundHandler             = new SoundOnOffHandler(zoomTo(_.uiModel.sound))
+  private val wsHandler               = new WebSocketHandler(zoomTo(_.ws))
+  private val serverMessagesHandler   = new ServerMessagesHandler(webSocketFocusRW)
+  private val initialSyncHandler      = new InitialSyncHandler(initialSyncFocusRW)
+  private val navigationHandler       = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+  private val loginBoxHandler         =
+    new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
+  private val notificationBoxHandler  = new ModalBoxHandler(OpenUserNotificationBox,
+                                                           CloseUserNotificationBox,
+                                                           zoomTo(_.uiModel.notification.visibility)
+  )
+  private val userLoginHandler        = new UserLoginHandler(zoomTo(_.uiModel.user))
+  private val userNotificationHandler = new NotificationsHandler(zoomTo(_.uiModel.notification))
+  private val userPromptHandler       = new UserPromptHandler(zoomTo(_.uiModel.userPrompt))
+  private val sequenceDisplayHandler  = new SequenceDisplayHandler(sequencesReaderRW)
+  private val sequenceExecHandler     = new SequenceExecutionHandler(zoomTo(_.sequences))
+  private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+  private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
+  private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))
+  private val defaultObserverHandler  = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
+  private val remoteRequestsHandler   = new RemoteRequestsHandler(zoomTo(_.clientId))
+  private val queueRequestsHandler    = new QueueRequestsHandler(queueFocusRW)
+  private val tableStateHandler       = new TableStateHandler(tableStateRW)
+  private val loadSequencesHandler    = new LoadedSequencesHandler(sodLocationReaderRW)
+  private val operationsStateHandler  = new OperationsStateHandler(sequencesOnDisplayRW)
+  private val siteHandler             = new SiteHandler(zoomTo(_.site))
+  private val queueOpsHandler         = new QueueOperationsHandler(queueOperationsRW)
+  private val queueStateHandler       = new QueueStateHandler(queueOperationsRW)
+  private val openConnectionHandler   = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
+  private val observationsProgHandler = new ObservationsProgressStateHandler(
+    zoomTo(_.uiModel.obsProgress)
+  )
+  private val sessionFilterHandler    = new SessionQueueFilterHandler(
+    zoomTo(_.uiModel.sessionQueueFilter)
+  )
+  private val soundHandler            = new SoundOnOffHandler(zoomTo(_.uiModel.sound))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -205,13 +215,16 @@ object SeqexecCircuit
   override protected def actionHandler =
     composeHandlers(
       wsHandler,
-      foldHandlers(serverMessagesHandler,
-                   initialSyncHandler,
-                   loadSequencesHandler,
-                   userNotificationHandler,
-                   openConnectionHandler,
-                   queueStateHandler,
-                   observationsProgHandler),
+      foldHandlers(
+        serverMessagesHandler,
+        initialSyncHandler,
+        loadSequencesHandler,
+        userNotificationHandler,
+        userPromptHandler,
+        openConnectionHandler,
+        queueStateHandler,
+        observationsProgHandler
+      ),
       sequenceExecHandler,
       notificationBoxHandler,
       loginBoxHandler,
@@ -231,16 +244,16 @@ object SeqexecCircuit
     )
 
   /**
-    * Handles a fatal error most likely during action processing
-    */
+   * Handles a fatal error most likely during action processing
+   */
   override def handleFatal(action: Any, e: Throwable): Unit = {
     logger.error(s"Action not handled $action")
     super.handleFatal(action, e)
   }
 
   /**
-    * Handle a non-fatal error, such as dispatching an action with no action handler.
-    */
+   * Handle a non-fatal error, such as dispatching an action with no action handler.
+   */
   override def handleError(msg: String): Unit =
     logger.error(s"Action error $msg")
 

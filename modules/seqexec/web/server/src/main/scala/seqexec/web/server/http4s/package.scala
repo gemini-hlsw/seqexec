@@ -79,7 +79,7 @@ trait QueryParams {
       case _    => RunOverride.Default
     }
 
-  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("override")
+  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("overrideTargetCheck")
 }
 
 package object http4s extends Var with QueryParams

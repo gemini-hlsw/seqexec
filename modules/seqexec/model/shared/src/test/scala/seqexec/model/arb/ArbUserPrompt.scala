@@ -13,14 +13,17 @@ import seqexec.model.UserPrompt
 import seqexec.model.UserPrompt.TargetCheckOverride
 
 trait ArbUserPrompt extends ArbObservation {
-  implicit val targetChecOverrideArb = Arbitrary[TargetCheckOverride] {
+
+  implicit val targetCheckOverrideArb = Arbitrary[TargetCheckOverride] {
     for {
       id <- arbitrary[Observation.Id]
-    } yield TargetCheckOverride(id)
+      st <- arbitrary[String]
+      tt <- arbitrary[String]
+    } yield TargetCheckOverride(id, st, tt)
   }
 
   implicit val targetCheckOverrideCogen: Cogen[TargetCheckOverride] =
-    Cogen[Observation.Id].contramap(_.sid)
+    Cogen[(Observation.Id, String, String)].contramap(x => (x.sid, x.obsTarget, x.tcsTarget))
 
   implicit val userPromptArb = Arbitrary[UserPrompt] {
     for {
@@ -32,7 +35,7 @@ trait ArbUserPrompt extends ArbObservation {
     Cogen[Option[TargetCheckOverride]]
       .contramap {
         case r: TargetCheckOverride => Some(r)
-        case _ => None
+        case _                      => None
       }
 
 }

@@ -349,6 +349,7 @@ object events {
       case (a: SeqexecModelUpdate,       b: SeqexecModelUpdate)       => a === b
       case (a: ServerLogMessage,         b: ServerLogMessage)         => a === b
       case (a: UserNotification,         b: UserNotification)         => a === b
+      case (a: UserPromptNotification,   b: UserPromptNotification)   => a === b
       case (a: GuideConfigUpdate,        b: GuideConfigUpdate)        => a === b
       case (a: ObservationProgressEvent, b: ObservationProgressEvent) => a === b
       case (a: SingleActionEvent,        b: SingleActionEvent)        => a === b

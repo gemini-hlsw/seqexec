@@ -234,6 +234,7 @@ trait SequenceEventsArbitraries {
       arbitrary[ConnectionOpenEvent],
       arbitrary[ServerLogMessage],
       arbitrary[UserNotification],
+      arbitrary[UserPromptNotification],
       arbitrary[ObservationProgressEvent],
       arbitrary[AlignAndCalibEvent],
       arbitrary[NullEvent.type]
@@ -323,6 +324,9 @@ trait SequenceEventsArbitraries {
   implicit val slmCogen: Cogen[ServerLogMessage] =
     Cogen[(ServerLogLevel, Instant, String)]
       .contramap(x => (x.level, x.timestamp, x.msg))
+
+  implicit val upnCogen: Cogen[UserPromptNotification] =
+    Cogen[(UserPrompt, ClientId)].contramap(x => (x.prompt, x.clientId))
 
   implicit val unCogen: Cogen[UserNotification] =
     Cogen[(Notification, ClientId)].contramap(x => (x.memo, x.clientId))
