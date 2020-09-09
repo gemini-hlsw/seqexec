@@ -6,8 +6,8 @@ package seqexec.web.client.components
 import react.common.style._
 
 /**
-  * Custom CSS for the Seqexec UI
-  */
+ * Custom CSS for the Seqexec UI
+ */
 object SeqexecStyles {
 
   val headerHeight: Int             = 33
@@ -18,6 +18,9 @@ object SeqexecStyles {
   val TableBorderWidth: Double      = 1.0
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
+
+  val Toast: Css =
+    Css("SeqexecStyles-toast")
 
   val tableDetailRow: Css =
     Css("SeqexecStyles-tableDetailRow")
