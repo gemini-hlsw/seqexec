@@ -313,8 +313,8 @@ object GmosControllerEpics extends GmosEncoders {
         }
 
         cc match {
-          case cfg.BuiltInFPU(fpu) => setFPUParams(builtInFPU(fpu))
-          case CustomMaskFPU(name) => setFPUParams(customFPU(name))
+          case cfg.BuiltInFPU(fpu) => L.debug(s"Set GMOS built in fpu $fpu").some +: setFPUParams(builtInFPU(fpu))
+          case CustomMaskFPU(name) => L.debug(s"Set GMOS custom fpu $name").some +: setFPUParams(customFPU(name))
           case UnknownFPU          => List.empty
           //TODO Improve data model to remove this case. It is here because the BuiltInFPU of the
           // other site is also a type of GmosFPU, even if it never will appear here.
@@ -348,7 +348,7 @@ object GmosControllerEpics extends GmosEncoders {
 
       private def dcParams(state: GmosDCEpicsState, config: DCConfig): List[F[Unit]] =
         List(
-          applyParam(state.reqExposureTime, encode(config.t), (_: Int) => sys.configDCCmd.setExposureTime(config.t)),
+          applyParam(state.reqExposureTime, encode(config.t), (_: Int) => L.debug(s"Set GMOS expTime ${config.t}") *> sys.configDCCmd.setExposureTime(config.t)),
           setShutterState(state, config),
           applyParam(state.ampReadMode, encode(config.r.ampReadMode), sys.configDCCmd.setAmpReadMode),
           setGainSetting(state, config.r.ampReadMode, config.r.ampGain),
