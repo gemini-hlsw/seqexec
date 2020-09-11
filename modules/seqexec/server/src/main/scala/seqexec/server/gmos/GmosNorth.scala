@@ -3,7 +3,6 @@
 
 package seqexec.server.gmos
 
-import cats.Eq
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
@@ -42,7 +41,7 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
     val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
-    val fpuEq: Eq[GmosNorthType.FPUnitNorth] = Eq.fromUniversalEquals
+    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
   },
   nsCmdR
 )(northConfigTypes) {

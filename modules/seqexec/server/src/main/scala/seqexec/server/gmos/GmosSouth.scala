@@ -3,7 +3,6 @@
 
 package seqexec.server.gmos
 
-import cats.Eq
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
@@ -34,7 +33,6 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
 ) extends Gmos[F, SouthTypes](
   c,
   new SiteSpecifics[SouthTypes] {
-    val fpuEq: Eq[GmosSouthType.FPUnitSouth] = Eq.fromUniversalEquals
     val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
       config.extractInstAs[SouthTypes#Filter](FILTER_PROP)
@@ -44,6 +42,7 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
       config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
       config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
+    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
   },
   nsCmdR
 )(southConfigTypes) {

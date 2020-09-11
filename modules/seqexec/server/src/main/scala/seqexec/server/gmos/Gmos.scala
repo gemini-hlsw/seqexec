@@ -108,17 +108,15 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
   protected def fpuFromFPUnit(
     n: Option[T#FPU],
     m: Option[String],
-    fpu: FPUnitMode)(implicit eqFPU: Eq[T#FPU]
-  ): GmosFPU = fpu match {
-    case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
-    case FPUnitMode.CUSTOM_MASK =>
+    isCustomMask: Boolean
+  ): GmosFPU =
+    if (!isCustomMask)
+      configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
+    else
       (m, n) match {
-        // if FPU is set to NONE ignore custom mask
-        case (_, Some(x)) if x === ss.fpuDefault => configTypes.BuiltInFPU(ss.fpuDefault)
         case (Some(u), _)                        => GmosController.Config.CustomMaskFPU(u)
         case _                                   => GmosController.Config.UnknownFPU
       }
-  }
 
   private def calcDisperser(
     disp: T#Disperser,
@@ -144,8 +142,9 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       disperserOrder   =  config.extractInstAs[DisperserOrder](DISPERSER_ORDER_PROP)
       disperserLambda  =  config.extractInstAs[JDouble](DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
       fpuName          =  ss.extractFPU(config)
+      customMask       =  ss.isCustomFPU(config)
       fpuMask          =  config.extractInstAs[String](FPU_MASK_PROP)
-      fpu              <- config.extractInstAs[FPUnitMode](FPU_MODE_PROP).map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption, _)(ss.fpuEq))
+      fpu              =  fpuFromFPUnit(fpuName.toOption, fpuMask.toOption, customMask)
       stageMode        <- ss.extractStageMode(config)
       dtax             <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
       adc              <- config.extractInstAs[ADC](ADC_PROP)
@@ -227,7 +226,7 @@ object Gmos {
 
     val fpuDefault: T#FPU
 
-    val fpuEq: Eq[T#FPU]
+    def isCustomFPU(config: CleanConfig): Boolean
   }
 
   val NSKey: ItemKey = INSTRUMENT_KEY / USE_NS_PROP

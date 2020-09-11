@@ -237,6 +237,7 @@ object GmosController {
     override val mirror = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
     override def isMirror(v: GmosNorthType.DisperserNorth): Boolean = v === mirror
   }
+
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
