@@ -7,7 +7,7 @@ import scala.collection.immutable.SortedMap
 
 import diode.data.PotState
 import gem.Observation
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
 import react.common._
@@ -33,6 +33,8 @@ import shapeless.tag.@@
 import squants.Time
 
 package object reusability {
+  implicit def oldEnumeratedReuse[A <: AnyRef: gem.util.Enumerated]: Reusability[A] =
+    Reusability.byRef
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A]                                  =

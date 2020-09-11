@@ -9,7 +9,9 @@ import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import seqexec.model.enum.M1Source
 import seqexec.model.M1GuideConfig
-import gem.arb.ArbEnumerated._
+import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
+import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
+import lucuma.core.util.arb.ArbEnumerated._
 
 trait ArbM1GuideConfig {
 

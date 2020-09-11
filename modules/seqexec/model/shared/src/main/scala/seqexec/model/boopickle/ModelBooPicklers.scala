@@ -21,7 +21,7 @@ import boopickle.DefaultBasic.mapPickler
 import cats._
 import cats.implicits._
 import gem.Observation
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import seqexec.model.GmosParameters._
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.UserPrompt.TargetCheckOverride
@@ -42,10 +42,22 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap
 
+  def oldSourceIndex[A: gem.util.Enumerated]: Map[Int, A] =
+    gem.util.Enumerated[A].all.zipWithIndex.map(_.swap).toMap
+
   def sourceIndex[A: Enumerated]: Map[Int, A] =
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
-  // scalastyle:off
+  def oldValuesMapPickler[A: Eq: gem.util.Enumerated, B: Monoid: Pickler](
+    valuesMap: Map[B, A]
+  ): Pickler[A] =
+    transformPickler(
+      (t: B) =>
+        valuesMap
+          .get(t)
+          .getOrElse(throw new RuntimeException(s"Failed to decode value"))
+    )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
+
   def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
   ): Pickler[A] =
@@ -54,7 +66,9 @@ trait ModelBooPicklers extends GemModelBooPicklers {
         .get(t)
         .getOrElse(throw new RuntimeException(s"Failed to decode value"))
     )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
-  // scalastyle:on
+
+  def oldEnumeratedPickler[A: Eq: gem.util.Enumerated]: Pickler[A] =
+    oldValuesMapPickler[A, Int](oldSourceIndex[A])
 
   def enumeratedPickler[A: Eq: Enumerated]: Pickler[A] =
     valuesMapPickler[A, Int](sourceIndex[A])
@@ -62,12 +76,12 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val timeProgressPickler =
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
 
-  implicit val instrumentPickler   = enumeratedPickler[Instrument]
-  implicit val resourcePickler     = enumeratedPickler[Resource]
+  implicit val instrumentPickler = oldEnumeratedPickler[Instrument]
+  implicit val resourcePickler   = oldEnumeratedPickler[Resource]
 
   implicit val operatorPickler = generatePickler[Operator]
 
-  implicit val systemNamePickler = enumeratedPickler[SystemName]
+  implicit val systemNamePickler = oldEnumeratedPickler[SystemName]
 
   implicit val observerPickler = generatePickler[Observer]
 
@@ -100,7 +114,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SequenceState.Aborted.type]
     .addConcreteType[SequenceState.Idle.type]
 
-  implicit val actionStatusPickler = enumeratedPickler[ActionStatus]
+  implicit val actionStatusPickler = oldEnumeratedPickler[ActionStatus]
 
   implicit val stepStatePendingPickler   = generatePickler[StepState.Pending.type]
   implicit val stepStateCompletedPickler =
@@ -120,13 +134,12 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[StepState.Running.type]
     .addConcreteType[StepState.Paused.type]
 
-  implicit val imageIdPickler                                  = transformPickler((s: String) => tag[ImageFileIdT](s))(identity)
-  implicit val standardStepPickler                             = generatePickler[StandardStep]
-  implicit def taggedIntPickler[A]: Pickler[Int @@ A]          =
-    transformPickler((s: Int) => tag[A](s))(identity)
-  implicit val nsStagePickler                                  = enumeratedPickler[NodAndShuffleStage]
-  implicit val nsActionPickler                                 = enumeratedPickler[NSAction]
-  implicit val nsSubexposurePickler: Pickler[NSSubexposure]    =
+  implicit val imageIdPickler = transformPickler((s: String) => tag[ImageFileIdT](s))(identity)
+  implicit val standardStepPickler = generatePickler[StandardStep]
+  implicit def taggedIntPickler[A]: Pickler[Int @@ A] = transformPickler((s: Int) => tag[A](s))(identity)
+  implicit val nsStagePickler = oldEnumeratedPickler[NodAndShuffleStage]
+  implicit val nsActionPickler = oldEnumeratedPickler[NSAction]
+  implicit val nsSubexposurePickler: Pickler[NSSubexposure] =
     transformPickler[NSSubexposure, (NsCycles, NsCycles, Int)] {
       case (t: NsCycles, c: NsCycles, i: Int) =>
         NSSubexposure
@@ -135,11 +148,10 @@ trait ModelBooPicklers extends GemModelBooPicklers {
             throw new RuntimeException("Failed to decode ns subexposure")
           )
     }((ns: NSSubexposure) => (ns.totalCycles, ns.cycle, ns.stageIndex))
-  implicit val nsRunningStatePickler                           = generatePickler[NSRunningState]
-  implicit val nsStatusPickler                                 = generatePickler[NodAndShuffleStatus]
-  implicit val nsPendObsCmdPickler: Pickler[PendingObserveCmd] =
-    enumeratedPickler[PendingObserveCmd]
-  implicit val nsStepPickler                                   = generatePickler[NodAndShuffleStep]
+  implicit val nsRunningStatePickler = generatePickler[NSRunningState]
+  implicit val nsStatusPickler = generatePickler[NodAndShuffleStatus]
+  implicit val nsPendObsCmdPickler: Pickler[PendingObserveCmd] = oldEnumeratedPickler[PendingObserveCmd]
+  implicit val nsStepPickler = generatePickler[NodAndShuffleStep]
 
   implicit val stepPickler = compositePickler[Step]
     .addConcreteType[StandardStep]
@@ -189,7 +201,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[BatchCommandState.Run]
     .addConcreteType[BatchCommandState.Stop.type]
 
-  implicit val batchExecStatePickler = enumeratedPickler[BatchExecState]
+  implicit val batchExecStatePickler = oldEnumeratedPickler[BatchExecState]
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
@@ -199,15 +211,15 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceQueueViewPickler =
     generatePickler[SequencesQueue[SequenceView]]
 
-  implicit val comaPickler = enumeratedPickler[ComaOption]
+  implicit val comaPickler = oldEnumeratedPickler[ComaOption]
 
   implicit val tipTiltSourcePickler  = enumeratedPickler[TipTiltSource]
   implicit val serverLogLevelPickler = enumeratedPickler[ServerLogLevel]
   implicit val m1SourcePickler       = enumeratedPickler[M1Source]
 
-  implicit val mountGuidePickler    = enumeratedPickler[MountGuideOption]
-  implicit val m1GuideOnPickler     = generatePickler[M1GuideConfig.M1GuideOn]
-  implicit val m1GuideOffPickler    =
+  implicit val mountGuidePickler = enumeratedPickler[MountGuideOption]
+  implicit val m1GuideOnPickler  = generatePickler[M1GuideConfig.M1GuideOn]
+  implicit val m1GuideOffPickler =
     generatePickler[M1GuideConfig.M1GuideOff.type]
   implicit val m1GuideConfigPickler = compositePickler[M1GuideConfig]
     .addConcreteType[M1GuideConfig.M1GuideOn]
@@ -259,23 +271,23 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     generatePickler[SequencePauseRequested]
   implicit val sequencePauseCanceledPickler       =
     generatePickler[SequencePauseCanceled]
-  implicit val sequenceRefreshedPickler           = generatePickler[SequenceRefreshed]
-  implicit val actionStopRequestedPickler         = generatePickler[ActionStopRequested]
-  implicit val sequenceStoppedPickler             = generatePickler[SequenceStopped]
-  implicit val sequenceAbortedPickler             = generatePickler[SequenceAborted]
-  implicit val sequenceUpdatedPickler             = generatePickler[SequenceUpdated]
-  implicit val sequenceErrorPickler               = generatePickler[SequenceError]
-  implicit val sequencePausedPickler              = generatePickler[SequencePaused]
-  implicit val exposurePausedPickler              = generatePickler[ExposurePaused]
-  implicit val serverLogMessagePickler            = generatePickler[ServerLogMessage]
-  implicit val userNotificationPickler            = generatePickler[UserNotification]
-  implicit val userPromptNotPickler               = generatePickler[UserPromptNotification]
-  implicit val guideConfigPickler                 = generatePickler[GuideConfigUpdate]
-  implicit val queueUpdatedPickler                = generatePickler[QueueUpdated]
-  implicit val observationStagePickler            = enumeratedPickler[ObserveStage]
-  implicit val observationProgressPickler         = generatePickler[ObservationProgress]
-  implicit val nsobseProgressPickler              = generatePickler[NSObservationProgress]
-  implicit val progressPickler                    = compositePickler[Progress]
+  implicit val sequenceRefreshedPickler   = generatePickler[SequenceRefreshed]
+  implicit val actionStopRequestedPickler = generatePickler[ActionStopRequested]
+  implicit val sequenceStoppedPickler     = generatePickler[SequenceStopped]
+  implicit val sequenceAbortedPickler     = generatePickler[SequenceAborted]
+  implicit val sequenceUpdatedPickler     = generatePickler[SequenceUpdated]
+  implicit val sequenceErrorPickler       = generatePickler[SequenceError]
+  implicit val sequencePausedPickler      = generatePickler[SequencePaused]
+  implicit val exposurePausedPickler      = generatePickler[ExposurePaused]
+  implicit val serverLogMessagePickler    = generatePickler[ServerLogMessage]
+  implicit val userNotificationPickler    = generatePickler[UserNotification]
+  implicit val userPromptNotPickler       = generatePickler[UserPromptNotification]
+  implicit val guideConfigPickler         = generatePickler[GuideConfigUpdate]
+  implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
+  implicit val observationStagePickler    = oldEnumeratedPickler[ObserveStage]
+  implicit val observationProgressPickler = generatePickler[ObservationProgress]
+  implicit val nsobseProgressPickler      = generatePickler[NSObservationProgress]
+  implicit val progressPickler = compositePickler[Progress]
     .addConcreteType[ObservationProgress]
     .addConcreteType[NSObservationProgress]
   implicit val obsProgressPickler                 = generatePickler[ObservationProgressEvent]

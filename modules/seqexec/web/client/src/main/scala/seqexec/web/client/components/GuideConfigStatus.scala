@@ -5,7 +5,6 @@ package seqexec.web.client.components
 
 import cats._
 import cats.implicits._
-import gem.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -39,10 +38,10 @@ object GuideConfigStatus {
     case ComaOption.ComaOff => "Off"
   }
 
-  implicit val m1GuideShow = Show.show[M1GuideConfig] {
-    case M1GuideConfig.M1GuideOn(s) => s.tag
-    case M1GuideConfig.M1GuideOff   => "Off"
-  }
+  // implicit val m1GuideShow = Show.show[M1GuideConfig] {
+  //   case M1GuideConfig.M1GuideOn(s) => s.source
+  //   case M1GuideConfig.M1GuideOff   => "Off"
+  // }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -61,7 +60,7 @@ object GuideConfigStatus {
                size = Small,
                clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide
                  .when_(p.config.m1Guide =!= M1GuideConfig.M1GuideOff))(
-          s"M1: ${p.config.m1Guide.show}"
+          s"M1: ${p.config.m1Guide.toString}"
         ),
         p.config.m2Guide match {
           case M2GuideConfig.M2GuideOn(c, s) =>
@@ -69,13 +68,13 @@ object GuideConfigStatus {
               Header(as    = "span",
                      size  = Small,
                      clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(s.nonEmpty))(
-                s"Tip/Tilt: ${s.map(_.tag).mkString("+")}".when(s.nonEmpty),
+                s"Tip/Tilt: ${s.map(_.toString).mkString("+")}".when(s.nonEmpty),
                 s"Tip/Tilt: Off".when(s.isEmpty)
               ),
               Header(as    = "span",
                      size  = Small,
                      clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn))(
-                s"Coma: ${c.show}"
+                s"Coma: ${c.toString}"
               )
             )
           case M2GuideConfig.M2GuideOff =>

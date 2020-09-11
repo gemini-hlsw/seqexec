@@ -7,7 +7,9 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import gem.arb.ArbEnumerated._
+import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
+import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.TipTiltSource
 import seqexec.model.M2GuideConfig

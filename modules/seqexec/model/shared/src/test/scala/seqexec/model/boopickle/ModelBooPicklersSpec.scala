@@ -5,7 +5,8 @@ package seqexec.model.boopickle
 
 import cats.tests.CatsSuite
 import gem.Observation
-import gem.arb.ArbEnumerated._
+import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
+import lucuma.core.util.arb.ArbEnumerated._
 import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._

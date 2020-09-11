@@ -5,7 +5,9 @@ package seqexec.model
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
-import gem.arb.ArbEnumerated._
+import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
+import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.GmosParameters._
 import seqexec.model.dhs._

@@ -3,6 +3,7 @@
 
 package seqexec.web.client.arb
 
+import cats._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import scala.collection.immutable.SortedMap
@@ -33,7 +34,7 @@ trait ArbTabOperations {
 
   implicit val arbTabOperations: Arbitrary[TabOperations] = {
     implicit val ordering: Ordering[Resource] =
-      cats.Order[Resource].toOrdering
+      Order[Resource].toOrdering
 
     Arbitrary {
       for {

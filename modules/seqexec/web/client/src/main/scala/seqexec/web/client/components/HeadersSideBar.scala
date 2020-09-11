@@ -6,11 +6,8 @@ package seqexec.web.client.components
 import scala.concurrent.duration._
 
 import cats.Eq
-import cats.Show
 import cats.syntax.all._
-import gpp.ui.forms.EnumSelect
-import gpp.ui.forms.InputEV
-import gpp.ui.forms.InputFormat
+import lucuma.ui.forms._
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
@@ -32,6 +29,7 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
+import lucuma.core.util.Display
 
 /**
   * Container for a table with the steps
@@ -51,17 +49,17 @@ object HeadersSideBar {
   implicit val eqHeadersSideBar: Eq[HeadersSideBar]    = Eq.by(_.model)
   implicit val propsReuse: Reusability[HeadersSideBar] = Reusability.byEq
 
-  implicit val showSkyBackground: Show[SkyBackground] =
-    Show.show(_.label)
+  implicit val showSkyBackground: Display[SkyBackground] =
+    Display.by(_.toInt.foldMap(_.toString), _.label)
 
-  implicit val showWaterVapor: Show[WaterVapor] =
-    Show.show(_.label)
+  implicit val displayWaterVapor: Display[WaterVapor] =
+    Display.by(_.toInt.foldMap(_.toString), _.label)
 
-  implicit val showCloudCover: Show[CloudCover] =
-    Show.show(_.label)
+  implicit val showCloudCover: Display[CloudCover] =
+    Display.by(_.toInt.foldMap(_.toString), _.label)
 
-  implicit val showImageQuality: Show[ImageQuality] =
-    Show.show(_.label)
+  implicit val showImageQuality: Display[ImageQuality] =
+    Display.by(_.toInt.foldMap(_.toString), _.label)
 
   @Lenses
   final case class State(

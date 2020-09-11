@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /** Enumerated type for M1 Source. */
 sealed trait M1Source extends Product with Serializable

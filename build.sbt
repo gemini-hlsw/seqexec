@@ -52,7 +52,6 @@ val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
 inThisBuild(
   List(
-    scalaVersion in ThisBuild := "2.13.3",
     version := dateFormatter.format(
       dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate
     ) + dynverGitDescribeOutput.value.mkVersion(versionFmt,
@@ -270,7 +269,7 @@ lazy val seqexec_web_client = project
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value,
-      GppUI.value,
+      LucumaUI.value,
       PPrint.value,
       TestLibs.value
     ) ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value
@@ -338,7 +337,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       Squants.value,
       Mouse.value,
       BooPickle.value
-    ) ++ Monocle.value,
+    ) ++ Monocle.value ++ LucumaCore.value,
     Test / libraryDependencies += GspMathTestkit.value
   )
   .jvmSettings(

@@ -79,7 +79,8 @@ object Settings {
     // Gemini Libraries
     val gspMath = "0.2.8"
     val gspCore = "0.2.8"
-    val gppUI   = "0.2.9"
+    val lucumaCore = "0.4.5"
+    val lucumaUI   = "0.3.2"
   }
 
   /**
@@ -261,7 +262,13 @@ object Settings {
     val GspCoreTestkit =
       Def.setting("edu.gemini" %%% "gsp-core-testkit" % LibraryVersions.gspCore % "test")
     val GspCoreOcs2Api = Def.setting("edu.gemini" %%% "gsp-core-ocs2-api" % LibraryVersions.gspCore)
-    val GppUI          = Def.setting("edu.gemini" %%% "gpp-ui" % LibraryVersions.gppUI)
+    val LucumaCore     = Def.setting(
+      Seq(
+        "edu.gemini" %%% "lucuma-core" % LibraryVersions.lucumaCore,
+        "edu.gemini" %%% "lucuma-core-testkit" % LibraryVersions.lucumaCore
+      )
+    )
+    val LucumaUI       = Def.setting("edu.gemini" %%% "lucuma-ui" % LibraryVersions.lucumaUI)
   }
 
   object PluginVersions {

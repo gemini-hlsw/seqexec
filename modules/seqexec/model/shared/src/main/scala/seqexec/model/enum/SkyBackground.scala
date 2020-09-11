@@ -4,7 +4,7 @@
 package seqexec.model.enum
 
 import cats.syntax.all._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed abstract class SkyBackground(val toInt: Option[Int], val label: String)
   extends Product with Serializable

@@ -4,7 +4,6 @@
 package seqexec.model
 
 import cats.Eq
-import cats.Show
 import cats.syntax.all._
 import seqexec.model.enum.M1Source
 
@@ -19,7 +18,6 @@ object M1GuideConfig {
     implicit val eq: Eq[M1GuideOn] = Eq.by(_.source)
   }
 
-  implicit val show: Show[M1GuideConfig] = Show.fromToString
   implicit val eq: Eq[M1GuideConfig] = Eq.instance {
     case (M1GuideOff, M1GuideOff)     => true
     case (M1GuideOn(a), M1GuideOn(b)) => a === b
