@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import cats.Eq
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
@@ -33,14 +34,15 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
 ) extends Gmos[F, SouthTypes](
   c,
   new SiteSpecifics[SouthTypes] {
-    override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
-    override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
+    val fpuEq: Eq[GmosSouthType.FPUnitSouth] = Eq.fromUniversalEquals
+    val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
+    def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
       config.extractInstAs[SouthTypes#Filter](FILTER_PROP)
-    override def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] =
+    def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] =
       config.extractInstAs[SouthTypes#Disperser](DISPERSER_PROP)
-    override def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] =
+    def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] =
       config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
-    override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
+    def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
       config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
   },
   nsCmdR
