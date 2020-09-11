@@ -46,9 +46,7 @@ object StepItems {
       case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
       case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
       case Instrument.F2    => enumerations.fpu.Flamingos2.get
-      case _                =>
-        _ =>
-          none
+      case _                => _ => none
     }
 
     def exposureTime: Option[Double] = observeExposureTimeO.getOption(s)
@@ -63,12 +61,19 @@ object StepItems {
         case _                               => none
       }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
+
+    def isNoneFPU(i: Instrument): Boolean =
+      (i, instrumentFPUO.getOption(s)) match {
+        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("FPU_NONE")) => true
+        case _ => false
+      }
+
     def fpu(i: Instrument): Option[String] =
       for {
         mode <- instrumentFPUModeO
           .getOption(s)
           .orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
-        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO
+        fpuL = if (isNoneFPU(i) || mode === FPUMode.BuiltIn) instrumentFPUO
         else instrumentFPUCustomMaskO
         fpu <- fpuL.getOption(s)
       } yield fpuNameMapper(i)(fpu).getOrElse(fpu)

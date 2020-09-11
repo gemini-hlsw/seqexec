@@ -32,15 +32,16 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
   nsCmdR: Ref[F, Option[NSObserveCommand]]
 ) extends Gmos[F, NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
-    override def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
+    def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
       config.extractInstAs[NorthTypes#Filter](FILTER_PROP)
-    override def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.DisperserNorth] =
+    def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.DisperserNorth] =
       config.extractInstAs[NorthTypes#Disperser](DISPERSER_PROP)
-    override def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] =
+    def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] =
       config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
-    override def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
+    def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
-    override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
+    val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
+    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
   },
   nsCmdR
 )(northConfigTypes) {

@@ -112,7 +112,7 @@ object Ghost {
           baseRAHMS     <- raExtractor(SPGhost.BASE_RA_HMS)
           baseDecDMS    <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          fiberAgitator = extractor[Boolean](SPGhost.FIBER_AGITATOR)
+          fiberAgitator = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
           srifu1Name    = extractor[String](SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)

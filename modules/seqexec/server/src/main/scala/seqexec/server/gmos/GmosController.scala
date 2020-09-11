@@ -5,7 +5,6 @@ package seqexec.server.gmos
 
 import scala.concurrent.duration.Duration
 
-import cats.Eq
 import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
@@ -212,8 +211,6 @@ object GmosController {
     type FPU
     type GmosStageMode
     type Disperser
-
-    val disperserEq: Eq[Disperser]
   }
 
   final class SouthTypes extends SiteDependentTypes {
@@ -221,8 +218,6 @@ object GmosController {
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
     override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
-
-    override val disperserEq: Eq[GmosSouthType.DisperserSouth] = Eq.fromUniversalEquals
   }
 
   final class SouthConfigTypes extends Config[SouthTypes] {
@@ -236,14 +231,13 @@ object GmosController {
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosNorthType.StageModeNorth
     override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth
-
-    override val disperserEq: Eq[GmosNorthType.DisperserNorth] = Eq.fromUniversalEquals
   }
 
   final class NorthConfigTypes extends Config[NorthTypes] {
     override val mirror = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
     override def isMirror(v: GmosNorthType.DisperserNorth): Boolean = v === mirror
   }
+
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter

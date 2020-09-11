@@ -105,16 +105,24 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
     else
       nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.pauseObserve
 
-  protected def fpuFromFPUnit(n: Option[T#FPU], m: Option[String])(fpu: FPUnitMode): GmosFPU = fpu match {
-    case FPUnitMode.BUILTIN     => configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
-    case FPUnitMode.CUSTOM_MASK => m match {
-      case Some(u) => GmosController.Config.CustomMaskFPU(u)
-      case _       => GmosController.Config.UnknownFPU
-    }
-  }
+  protected def fpuFromFPUnit(
+    n: Option[T#FPU],
+    m: Option[String],
+    isCustomMask: Boolean
+  ): GmosFPU =
+    if (!isCustomMask)
+      configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
+    else
+      (m, n) match {
+        case (Some(u), _)                        => GmosController.Config.CustomMaskFPU(u)
+        case _                                   => GmosController.Config.UnknownFPU
+      }
 
-  private def calcDisperser(disp: T#Disperser, order: Option[DisperserOrder], wl: Option[Length])
-  : Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
+  private def calcDisperser(
+    disp: T#Disperser,
+    order: Option[DisperserOrder],
+    wl: Option[Length]
+  ): Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
     if (configTypes.isMirror(disp)) {
       configTypes.GmosDisperser.Mirror.asRight[ConfigUtilOps.ExtractFailure]
     } else order.map { o =>
@@ -134,8 +142,9 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       disperserOrder   =  config.extractInstAs[DisperserOrder](DISPERSER_ORDER_PROP)
       disperserLambda  =  config.extractInstAs[JDouble](DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
       fpuName          =  ss.extractFPU(config)
+      customMask       =  ss.isCustomFPU(config)
       fpuMask          =  config.extractInstAs[String](FPU_MASK_PROP)
-      fpu              <- config.extractInstAs[FPUnitMode](FPU_MODE_PROP).map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
+      fpu              =  fpuFromFPUnit(fpuName.toOption, fpuMask.toOption, customMask)
       stageMode        <- ss.extractStageMode(config)
       dtax             <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
       adc              <- config.extractInstAs[ADC](ADC_PROP)
@@ -183,13 +192,14 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
   override def notifyObserveStart: F[Unit] = Applicative[F].unit
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
-    (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN {(v, ns) =>
+    (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN { (v, ns) =>
       v / ns.exposureDivider.toDouble
     }
 
@@ -205,7 +215,7 @@ object Gmos {
   def rowsToShuffle(stage: NodAndShuffleStage, rows: Int): Int =
     if (stage === StageA) 0 else rows
 
-  trait SiteSpecifics[T<:SiteDependentTypes] {
+  trait SiteSpecifics[T <: SiteDependentTypes] {
     def extractFilter(config: CleanConfig): Either[ExtractFailure, T#Filter]
 
     def extractDisperser(config: CleanConfig): Either[ExtractFailure, T#Disperser]
@@ -215,18 +225,22 @@ object Gmos {
     def extractStageMode(config: CleanConfig): Either[ExtractFailure, T#GmosStageMode]
 
     val fpuDefault: T#FPU
+
+    def isCustomFPU(config: CleanConfig): Boolean
   }
 
   val NSKey: ItemKey = INSTRUMENT_KEY / USE_NS_PROP
 
   def isNodAndShuffle(config: CleanConfig): Boolean =
-    config.extractAs[java.lang.Boolean](NSKey)
+    config
+      .extractAs[java.lang.Boolean](NSKey)
       .map(_.booleanValue())
       .getOrElse(false)
 
   def ccElectronicOffset(config: CleanConfig): ElectronicOffset =
     ElectronicOffset.fromBoolean(
-      config.extractInstAs[java.lang.Boolean](USE_ELECTRONIC_OFFSETTING_PROP)
+      config
+        .extractInstAs[java.lang.Boolean](USE_ELECTRONIC_OFFSETTING_PROP)
         .map(_.booleanValue())
         .getOrElse(false) // We should always set electronic offset to false unless explicitly enabled
     )
@@ -276,7 +290,8 @@ object Gmos {
       )
 
   def expTime(config: CleanConfig): Time =
-    config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+    config
+      .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
       .map(v => Seconds(v.toDouble))
       .getOrElse(Seconds(10000))
 
