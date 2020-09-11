@@ -241,7 +241,7 @@ object GmosController {
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
-  class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T], val ns: NSConfig) {
+  final case class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T], val ns: NSConfig) {
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig, ns: NSConfig) = this(cc, dc, c, ns)
   }
 
