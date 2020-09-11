@@ -90,7 +90,7 @@ updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 ///////////////
 // Root project
 ///////////////
-lazy val ocs3 = preventPublication(project.in(file(".")))
+lazy val seqexec = preventPublication(project.in(file(".")))
   .settings(commonSettings)
   .aggregate(giapi,
              web_server_common,
