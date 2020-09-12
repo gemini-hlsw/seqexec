@@ -34,6 +34,7 @@ import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -44,7 +45,6 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
-import seqexec.server.SeqexecFailure
 
 final case class Nifs[F[_]: Logger: Concurrent: Timer](
   controller: NifsController[F],

@@ -10,6 +10,7 @@ import gem.Observation
 import gem.enum.Site
 import org.scalajs.dom.WebSocket
 import pprint.PPrinter
+import seqexec.model.Notification.RequestFailed
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
@@ -19,8 +20,8 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.SessionQueueFilter
-import web.client.table._
 import seqexec.web.client.model.UserPromptResult
+import web.client.table._
 
 object actions {
 

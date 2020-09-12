@@ -11,10 +11,10 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
+import seqexec.model.UserPrompt
 import seqexec.model.events.UserPromptNotification
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
-import seqexec.model.UserPrompt
 
 class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
     extends ActionHandler(modelRW)

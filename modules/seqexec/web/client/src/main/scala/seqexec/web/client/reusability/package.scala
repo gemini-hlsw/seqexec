@@ -27,10 +27,10 @@ import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.UserNotificationState
+import seqexec.web.client.model.UserPromptState
 import seqexec.web.client.model.WebSocketConnection
 import shapeless.tag.@@
 import squants.Time
-import seqexec.web.client.model.UserPromptState
 
 package object reusability {
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =

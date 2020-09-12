@@ -16,8 +16,8 @@ import squants.time.Time
 import squants.time.TimeUnit
 
 /**
-  * Tests Model typeclasses
-  */
+ * Tests Model typeclasses
+ */
 final class ModelSpec extends CatsSuite {
 
   checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
@@ -39,8 +39,7 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ActionType]", EqTests[ActionType].eqv)
   checkAll("Eq[SequenceMetadata]", EqTests[SequenceMetadata].eqv)
   checkAll("Eq[SequenceView]", EqTests[SequenceView].eqv)
-  checkAll("Eq[SequencesQueue[SequenceView]]",
-           EqTests[SequencesQueue[SequenceView]].eqv)
+  checkAll("Eq[SequencesQueue[SequenceView]]", EqTests[SequencesQueue[SequenceView]].eqv)
   checkAll("Eq[StepType]", EqTests[StepType].eqv)
   checkAll("Eq[Guiding]", EqTests[Guiding].eqv)
   checkAll("Eq[FPUMode]", EqTests[FPUMode].eqv)
@@ -55,11 +54,12 @@ final class ModelSpec extends CatsSuite {
   checkAll("Order[QueueId]", OrderTests[QueueId].eqv)
   checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
+  checkAll("Eq[Notification.ResourceConflict]", EqTests[Notification.ResourceConflict].eqv)
+  checkAll("Eq[Notification.InstrumentInUse]", EqTests[Notification.InstrumentInUse].eqv)
+  checkAll("Eq[Notification.RequestFailed]", EqTests[Notification.RequestFailed].eqv)
+  checkAll("Eq[Notification.SubsystemBusy]", EqTests[Notification.SubsystemBusy].eqv)
   checkAll("Eq[UserPrompt]", EqTests[UserPrompt].eqv)
-  checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
-  checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
-  checkAll("Eq[RequestFailed]", EqTests[RequestFailed].eqv)
-  checkAll("Eq[SubsystemBusy]", EqTests[SubsystemBusy].eqv)
+  checkAll("Eq[UserPrompt.TargetCheckOverride]", EqTests[UserPrompt.TargetCheckOverride].eqv)
   checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
   checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
   checkAll("Eq[NSObservationProgress]", EqTests[NSObservationProgress].eqv)

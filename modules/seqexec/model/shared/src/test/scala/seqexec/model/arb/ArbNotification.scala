@@ -12,10 +12,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Cogen
 import seqexec.model.StepId
 import seqexec.model.Notification
-import seqexec.model.ResourceConflict
-import seqexec.model.RequestFailed
-import seqexec.model.InstrumentInUse
-import seqexec.model.SubsystemBusy
+import seqexec.model.Notification._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 

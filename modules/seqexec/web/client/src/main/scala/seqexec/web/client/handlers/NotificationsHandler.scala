@@ -11,10 +11,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import seqexec.model.InstrumentInUse
-import seqexec.model.RequestFailed
-import seqexec.model.ResourceConflict
-import seqexec.model.SubsystemBusy
+import seqexec.model.Notification._
 import seqexec.model.events.UserNotification
 import seqexec.web.client.actions._
 import seqexec.web.client.model._

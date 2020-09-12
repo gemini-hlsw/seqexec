@@ -3,6 +3,12 @@
 
 package seqexec.server
 
+import java.time.Instant
+import java.util.concurrent.TimeUnit
+
+import scala.collection.immutable.SortedMap
+import scala.concurrent.duration._
+
 import cats._
 import cats.data.StateT
 import cats.effect.Concurrent
@@ -18,13 +24,9 @@ import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
-import java.time.Instant
-import java.util.concurrent.TimeUnit
 import monocle.Monocle.index
 import monocle.Optional
 import mouse.all._
-import scala.collection.immutable.SortedMap
-import scala.concurrent.duration._
 import seqexec.engine.EventResult._
 import seqexec.engine.Handle
 import seqexec.engine.Result.Partial
@@ -34,6 +36,7 @@ import seqexec.engine.{Step => _, _}
 import seqexec.model.NodAndShuffleStep.PauseGracefully
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.NodAndShuffleStep.StopGracefully
+import seqexec.model.Notification._
 import seqexec.model.StepId
 import seqexec.model.UserDetails
 import seqexec.model._

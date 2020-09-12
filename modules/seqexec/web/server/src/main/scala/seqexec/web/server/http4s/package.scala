@@ -5,15 +5,15 @@ package seqexec.web.server
 
 import cats.syntax.all._
 import gem.Observation
+import org.http4s.QueryParamDecoder
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import seqexec.model.ClientId
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import org.http4s.QueryParamDecoder
 import seqexec.model.enum.RunOverride
-import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 
 trait Var {
   object ObsIdVar {
@@ -79,7 +79,8 @@ trait QueryParams {
       case _    => RunOverride.Default
     }
 
-  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("overrideTargetCheck")
 }
 
-package object http4s extends Var with QueryParams
+package object http4s extends Var with QueryParams {
+  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("overrideTargetCheck")
+}

@@ -17,6 +17,7 @@ import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
 import seqexec.web.client.actions.RequestRun
 import seqexec.web.client.actions.RequestSync
+import seqexec.web.client.actions.RunOptions
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
@@ -26,7 +27,6 @@ import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.controlButton
-import seqexec.web.client.actions.RunOptions
 
 final case class SequenceControl(p: SequenceControlFocus)
     extends ReactProps[SequenceControl](SequenceControl.component) {

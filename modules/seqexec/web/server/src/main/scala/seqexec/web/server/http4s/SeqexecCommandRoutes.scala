@@ -10,17 +10,14 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 import seqexec.model._
-import seqexec.model.enum.CloudCover
-import seqexec.model.enum.ImageQuality
-import seqexec.model.enum.SkyBackground
-import seqexec.model.enum.WaterVapor
+import seqexec.model.enum._
 import seqexec.server
 import seqexec.server.SeqexecEngine
+import seqexec.web.server.http4s.OptionalRunOverride
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
-import seqexec.model.enum.RunOverride
 
 /**
   * Rest Endpoints under the /api route

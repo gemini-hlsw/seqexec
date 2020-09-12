@@ -13,6 +13,7 @@ import react.semanticui.elements.button.Button
 import react.semanticui.modules.modal.ModalSize
 import react.semanticui.modules.modal._
 import seqexec.model.Notification
+import seqexec.model.Notification._
 import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.icons._
@@ -27,6 +28,32 @@ final case class UserNotificationBox(notification: UserNotificationState)
  * UI for the model displaying resource conflicts
  */
 object UserNotificationBox {
+  def header(n: Notification): String =
+    n match {
+      case ResourceConflict(_)    => "Resource conflict"
+      case InstrumentInUse(_, _)  => "Instrument busy"
+      case RequestFailed(_)       => "Request failed"
+      case SubsystemBusy(_, _, _) => "Resource busy"
+    }
+
+  def body(n: Notification): List[String] =
+    n match {
+      case ResourceConflict(sid)         =>
+        List(
+          s"There is a conflict trying to run the sequence '${sid.format}'",
+          "Possibly another sequence is being executed on the same instrument"
+        )
+      case InstrumentInUse(sid, ins)     =>
+        List(
+          s"Cannot select sequence '${sid.format}' for instrument '${ins.label}'",
+          "Possibly another sequence is being executed on the same instrument"
+        )
+      case RequestFailed(msgs)           =>
+        s"Request to the seqexec server failed:" :: msgs
+
+      case SubsystemBusy(_, _, resource) =>
+        List(s"Cannot configure ${resource.show}, subsystem busy")
+    }
 
   type Props = UserNotificationBox
 
@@ -44,10 +71,10 @@ object UserNotificationBox {
         open = open === SectionOpen,
         onClose = close
       )(
-        not.map(h => ModalHeader(Notification.header(h))),
+        not.map(h => ModalHeader(header(h))),
         not.map { h =>
           ModalContent(
-            <.div(Notification.body(h).toTagMod(<.p(_)))
+            <.div(body(h).toTagMod(<.p(_)))
           )
         },
         ModalActions(

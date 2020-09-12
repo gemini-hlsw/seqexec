@@ -9,6 +9,7 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
 import gem.Observation
+import gem.data.Zipper
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
@@ -25,7 +26,6 @@ import seqexec.web.client.circuit.DayCalObserverFocus
 import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag
-import gem.data.Zipper
 
 // Model for the tabbed area of sequences
 @Lenses
