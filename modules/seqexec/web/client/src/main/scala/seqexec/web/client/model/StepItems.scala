@@ -17,7 +17,6 @@ import seqexec.model.OffsetConfigResolver
 import seqexec.model.SequenceState
 import seqexec.model.Step
 import seqexec.model.StepId
-import seqexec.model.enum.FPUMode
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
@@ -26,8 +25,8 @@ import seqexec.web.client.model.Formatting._
 import seqexec.web.client.model.lenses._
 
 /**
-  * Contains methods to access details of a step normally stored on the step sequence
-  */
+ * Contains methods to access details of a step normally stored on the step sequence
+ */
 object StepItems {
 
   private val gpiObsMode = GpiObservingMode.all.map(x => x.shortName -> x).toMap
@@ -38,20 +37,23 @@ object StepItems {
   val gpiDispersers: Map[String, String] =
     GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
 
-  private val obsNames =
+  private val obsNames                   =
     GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
 
   implicit class StepOps(val s: Step) extends AnyVal {
-    def fpuNameMapper(i: Instrument): String => Option[String] = i match {
-      case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
-      case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
-      case Instrument.F2    => enumerations.fpu.Flamingos2.get
-      case _                => _ => none
-    }
+    def fpuNameMapper(i: Instrument): String => Option[String] =
+      i match {
+        case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
+        case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
+        case Instrument.F2    => enumerations.fpu.Flamingos2.get
+        case _                => _ => none
+      }
 
     def exposureTime: Option[Double] = observeExposureTimeO.getOption(s)
+
     def exposureTimeS(i: Instrument): Option[String] =
       exposureTime.map(formatExposureTime(i))
+
     def exposureAndCoaddsS(i: Instrument): Option[String] =
       (coAdds, exposureTime) match {
         case (c, Some(e)) if c.exists(_ > 1) =>
@@ -62,21 +64,16 @@ object StepItems {
       }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
 
-    def isNoneFPU(i: Instrument): Boolean =
+    def isCustomMask(i: Instrument): Boolean =
       (i, instrumentFPUO.getOption(s)) match {
-        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("FPU_NONE")) => true
-        case _ => false
+        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK")) => true
+        case _                                                                          => false
       }
 
-    def fpu(i: Instrument): Option[String] =
-      for {
-        mode <- instrumentFPUModeO
-          .getOption(s)
-          .orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
-        fpuL = if (isNoneFPU(i) || mode === FPUMode.BuiltIn) instrumentFPUO
-        else instrumentFPUCustomMaskO
-        fpu <- fpuL.getOption(s)
-      } yield fpuNameMapper(i)(fpu).getOrElse(fpu)
+    def fpu(i: Instrument): Option[String] = {
+      val fpuL = if (!isCustomMask(i)) instrumentFPUO else instrumentFPUCustomMaskO
+      fpuL.getOption(s).map(fpu => fpuNameMapper(i)(fpu).getOrElse(fpu))
+    }
 
     def fpuOrMask(i: Instrument): Option[String] =
       fpu(i)
@@ -185,13 +182,14 @@ object StepItems {
         .getOption(s)
         .flatMap(obsNames.get)
 
-    def cameraName(i: Instrument): Option[String] = i match {
-      case Instrument.Niri =>
-        instrumentCameraO
-          .getOption(s)
-          .flatMap(enumerations.camera.Niri.get)
-      case _               => None
-    }
+    def cameraName(i: Instrument): Option[String] =
+      i match {
+        case Instrument.Niri =>
+          instrumentCameraO
+            .getOption(s)
+            .flatMap(enumerations.camera.Niri.get)
+        case _               => None
+      }
 
     def deckerName: Option[String] =
       instrumentDeckerO.getOption(s)
@@ -203,16 +201,15 @@ object StepItems {
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {
 
     // Offsets to be displayed with a width
-    def offsetsDisplay: OffsetsDisplay = {
+    def offsetsDisplay: OffsetsDisplay =
       (OffsetsDisplay.DisplayOffsets.apply _).tupled(steps.sequenceOffsetMaxWidth)
-    }
 
   }
 
   sealed abstract class DetailRows(val rows: Int)
   object DetailRows {
-    final case object NoDetailRows extends DetailRows(0)
-    final case object OneDetailRow extends DetailRows(1)
+    final case object NoDetailRows  extends DetailRows(0)
+    final case object OneDetailRow  extends DetailRows(1)
     final case object TwoDetailRows extends DetailRows(2)
   }
 
@@ -255,7 +252,7 @@ object StepItems {
       hasControls && selected.exists(_ === step.id)
 
     def detailRows(selected: Option[StepId], hasControls: Boolean): DetailRows =
-      if( ((isNS || isNSInError) && canControlThisStep(selected, hasControls)) || isNSObserving)
+      if (((isNS || isNSInError) && canControlThisStep(selected, hasControls)) || isNSObserving)
         DetailRows.TwoDetailRows
       else if (isACRunning || isACInError)
         DetailRows.OneDetailRow
