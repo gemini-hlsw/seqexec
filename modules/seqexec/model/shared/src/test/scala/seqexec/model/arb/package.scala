@@ -22,4 +22,5 @@ package object arb {
     with ArbGmosParameters
     with ArbNSRunningState
     with ArbObservationProgress
+    with ArbUserPrompt
 }

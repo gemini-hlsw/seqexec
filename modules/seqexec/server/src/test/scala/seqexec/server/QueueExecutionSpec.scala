@@ -18,6 +18,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource.TCS
 import seqexec.server.TestCommon._
 import org.scalatest.flatspec.AnyFlatSpec
+import seqexec.model.enum.RunOverride
 
 class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
 
@@ -374,7 +375,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId))
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default))
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status === SequenceState.Idle)
     } ).unsafeRunSync()
@@ -386,7 +387,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId), 2)
+      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default), 2)
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status.isRunning)
     } ).unsafeRunSync()
@@ -404,7 +405,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Attempt to run sequence 3 must fail
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),clientId))
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default))
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) {
       case Some(s) => assert(s.seq.status === SequenceState.Idle)
     } ).unsafeRunSync()
@@ -422,7 +423,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId)
+      _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
@@ -444,7 +445,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId)
+      _ <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
@@ -464,7 +465,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 1 is started. It should run. And when finishes, sequence 3 should be run too.
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId)
+      _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
@@ -485,7 +486,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId)
+      _ <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).drop(1)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
@@ -504,7 +505,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Attempt to run sequence 3. it should fail, because it uses the same instrument as sequence 1
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      _ <- seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId)
+      _ <- seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {

@@ -32,6 +32,7 @@ final class SeqexecEventSpec extends CatsSuite with SequenceEventsArbitraries {
   checkAll("Eq[ExposurePaused]", EqTests[ExposurePaused].eqv)
   checkAll("Eq[SequenceError]", EqTests[SequenceError].eqv)
   checkAll("Eq[UserNotification]", EqTests[UserNotification].eqv)
+  checkAll("Eq[UserPromptNotification]", EqTests[UserPromptNotification].eqv)
   checkAll("Eq[ObservationProgressEvent]", EqTests[ObservationProgressEvent].eqv)
   checkAll("Eq[SequenceStopped]", EqTests[SequenceStopped].eqv)
   checkAll("Eq[SequenceAborted]", EqTests[SequenceAborted].eqv)

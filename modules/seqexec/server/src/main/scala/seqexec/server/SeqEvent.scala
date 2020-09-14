@@ -12,6 +12,7 @@ import seqexec.model.Operator
 import seqexec.model.QueueId
 import seqexec.model.StepId
 import seqexec.model.UserDetails
+import seqexec.model.UserPrompt
 import seqexec.model.enum._
 
 sealed trait SeqEvent extends Product with Serializable
@@ -30,6 +31,7 @@ object SeqEvent {
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   final case class NotifyUser(memo: Notification, clientID: ClientId) extends SeqEvent
+  final case class RequestConfirmation(propm: UserPrompt, cid: ClientId) extends SeqEvent
   final case class StartQueue(qid: QueueId, clientID: ClientId, startedSeqs: List[(Observation.Id, StepId)])
     extends SeqEvent
   final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent

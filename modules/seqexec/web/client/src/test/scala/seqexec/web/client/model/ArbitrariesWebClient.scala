@@ -37,6 +37,7 @@ import seqexec.web.client.arb.ArbTabOperations
 import shapeless.tag
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
+import org.scalacheck.Cogen._
 import org.scalacheck._
 import org.scalajs.dom.WebSocket
 import web.client.table.TableArbitraries
@@ -125,21 +126,19 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
-    Cogen[(SequenceView,
-           Option[Int],
-           TabOperations)].contramap { x =>
+    Cogen[(SequenceView, Option[Int], TabOperations)].contramap { x =>
       (x.currentSequence, x.stepConfig, x.tabOperations)
     }
 
   implicit val arbSeqexecTab: Arbitrary[SeqexecTab] = Arbitrary {
     Gen.frequency(10 -> arbitrary[InstrumentSequenceTab],
-                  1 -> arbitrary[PreviewSequenceTab],
-                  1 -> arbitrary[CalibrationQueueTab])
+                  1  -> arbitrary[PreviewSequenceTab],
+                  1  -> arbitrary[CalibrationQueueTab]
+    )
   }
 
   implicit val sxCogen: Cogen[SeqexecTab] =
-    Cogen[Either[CalibrationQueueTab,
-                 Either[PreviewSequenceTab, InstrumentSequenceTab]]]
+    Cogen[Either[CalibrationQueueTab, Either[PreviewSequenceTab, InstrumentSequenceTab]]]
       .contramap {
         case a: CalibrationQueueTab   => Left(a)
         case a: PreviewSequenceTab    => Right(Left(a))
@@ -147,8 +146,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
       }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
-    Gen.frequency(10 -> arbitrary[InstrumentSequenceTab],
-                  1 -> arbitrary[PreviewSequenceTab])
+    Gen.frequency(10 -> arbitrary[InstrumentSequenceTab], 1 -> arbitrary[PreviewSequenceTab])
   }
 
   implicit val stCogen: Cogen[SequenceTab] =
@@ -174,24 +172,20 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     Cogen[Zipper[SeqexecTab]]
       .contramap(_.tabs)
 
-
   private val posNumTuple3Gen: Gen[(Double, Double, Double)] =
     for {
       a1 <- Gen.posNum[Double]
       a2 <- Gen.posNum[Double]
       a3 <- Gen.posNum[Double]
-    } yield {
-      (a1, a2, a3)
-    }
+    } yield (a1, a2, a3)
 
   implicit val arbOffsetsDisplay: Arbitrary[OffsetsDisplay] =
     Arbitrary {
       for {
         s <- Gen.option(posNumTuple3Gen)
-      } yield
-        s.fold(OffsetsDisplay.NoDisplay: OffsetsDisplay)(
-          (OffsetsDisplay.DisplayOffsets.apply _).tupled
-        )
+      } yield s.fold(OffsetsDisplay.NoDisplay: OffsetsDisplay)(
+        (OffsetsDisplay.DisplayOffsets.apply _).tupled
+      )
     }
 
   implicit val odCogen: Cogen[OffsetsDisplay] =
@@ -226,10 +220,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         arbitrary[PendingStale[A]],
         arbitrary[Throwable].map(Failed(_)),
         arbitrary[(A, Throwable)].map { case (a, t) => FailedStale(a, t) }
-      ))
+      )
+    )
 
   implicit def potCogen[A: Cogen]: Cogen[Pot[A]] =
-    Cogen[Option[Option[Either[Long, Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]]
+    Cogen[Option[
+      Option[Either[Long, Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]
+    ]]
       .contramap {
         case Empty              => None
         case Unavailable        => Some(None)
@@ -250,8 +247,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val wssCogen: Cogen[WebSocketConnection] =
-    Cogen[(Pot[WebSocket], Int, Boolean)].contramap(x =>
-      (x.ws, x.nextAttempt, x.autoReconnect))
+    Cogen[(Pot[WebSocket], Int, Boolean)].contramap(x => (x.ws, x.nextAttempt, x.autoReconnect))
 
   implicit val arbClientStatus: Arbitrary[ClientStatus] =
     Arbitrary {
@@ -269,7 +265,9 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
       Gen.oneOf(Gen.const(StepsTableTypeSelection.StepsTableSelected),
                 Gen
                   .posNum[Int]
-                  .map(StepsTableTypeSelection.StepConfigTableSelected.apply)))
+                  .map(StepsTableTypeSelection.StepConfigTableSelected.apply)
+      )
+    )
 
   implicit val tableTypeCogen: Cogen[StepsTableTypeSelection] =
     Cogen[String].contramap(_.productPrefix)
@@ -322,8 +320,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
       .contramap(x => (x.canOperate, x.active, x.logDisplayed))
 
   implicit val arbtcf: Arbitrary[TabContentFocus] = Arbitrary {
-    Gen.frequency(10 -> arbitrary[SequenceTabContentFocus],
-                  4 -> arbitrary[CalQueueTabContentFocus])
+    Gen.frequency(10 -> arbitrary[SequenceTabContentFocus], 4 -> arbitrary[CalQueueTabContentFocus])
   }
 
   implicit val tcfCogen: Cogen[TabContentFocus] =
@@ -417,7 +414,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
        x.stepConfigDisplayed,
        x.nextStepToRun,
        x.selectedStep,
-       x.tableState)
+       x.tableState
+      )
     }
 
   implicit val arbSequencesFocus: Arbitrary[SequencesFocus] =
@@ -543,7 +541,18 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
 
   implicit val userNotificationCogen: Cogen[UserNotificationState] =
     Cogen[(SectionVisibilityState, Option[Notification])].contramap(x =>
-      (x.visibility, x.notification))
+      (x.visibility, x.notification)
+    )
+
+  implicit val arbUserPromptState: Arbitrary[UserPromptState] =
+    Arbitrary {
+      for {
+        n <- arbitrary[Option[UserPrompt]]
+      } yield UserPromptState(n)
+    }
+
+  implicit val userPromptStateCogen: Cogen[UserPromptState] =
+    Cogen[Option[UserPrompt]].contramap(_.notification)
 
   implicit val arbGlobalLog: Arbitrary[GlobalLog] =
     Arbitrary {
@@ -644,6 +653,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         appTableStates     <- arbitrary[AppTableStates]
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
+        prompt             <- arbitrary[UserPromptState]
         queues             <- arbitrary[CalibrationQueues]
         progress           <- arbitrary[AllObservationsProgressState]
         filter             <- arbitrary[SessionQueueFilter]
@@ -659,6 +669,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
           appTableStates,
           defaultObserver,
           notification,
+          prompt,
           queues,
           progress,
           filter,
@@ -773,7 +784,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
 
   implicit val initialSyncFocusCogen: Cogen[InitialSyncFocus] =
     Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Boolean)].contramap(x =>
-      (x.location, x.sod, x.firstLoad))
+      (x.location, x.sod, x.firstLoad)
+    )
 
   implicit val arbSeqexecAppRootModel: Arbitrary[SeqexecAppRootModel] =
     Arbitrary {

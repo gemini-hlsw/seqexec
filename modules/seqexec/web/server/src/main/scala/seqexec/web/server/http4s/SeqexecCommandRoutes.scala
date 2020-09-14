@@ -10,12 +10,10 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
 import seqexec.model._
-import seqexec.model.enum.CloudCover
-import seqexec.model.enum.ImageQuality
-import seqexec.model.enum.SkyBackground
-import seqexec.model.enum.WaterVapor
+import seqexec.model.enum._
 import seqexec.server
 import seqexec.server.SeqexecEngine
+import seqexec.web.server.http4s.OptionalRunOverride
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
@@ -34,12 +32,12 @@ class SeqexecCommandRoutes[F[_]: Sync](
   private val httpAuthentication = new Http4sAuthentication(auth)
 
   private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
-    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
-        se.start(inputQueue, obsId, user, clientId) *>
+    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) :? OptionalRunOverride(runOverride) as user =>
+        se.start(inputQueue, obsId, user, clientId, runOverride.getOrElse(RunOverride.Default)) *>
           Ok(s"Started sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId) as _ =>
-        se.startFrom(inputQueue, obsId, stepId, clientId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId):? OptionalRunOverride(runOverride) as _ =>
+        se.startFrom(inputQueue, obsId, stepId, clientId, runOverride.getOrElse(RunOverride.Default)) *>
           Ok(s"Started sequence ${obsId.format} from step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / "pause" as user =>

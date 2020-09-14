@@ -216,7 +216,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default))
     } yield {
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
@@ -235,7 +235,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId), 2)
+      sf <- advanceN(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default), 2)
     } yield {
       inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)
@@ -323,7 +323,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId1, runStepId, clientId)
+      _  <- seqexecEngine.startFrom(q, seqObsId1, runStepId, clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning))
         .compile.last
@@ -348,7 +348,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId2, runStepId, clientId)
+      _  <- seqexecEngine.startFrom(q, seqObsId2, runStepId, clientId, RunOverride.Default)
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
         .takeThrough(_.sequences.get(seqObsId2).exists(_.seq.status.isRunning))
         .compile.last

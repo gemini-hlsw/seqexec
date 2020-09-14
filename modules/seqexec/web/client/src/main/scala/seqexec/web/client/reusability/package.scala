@@ -27,6 +27,7 @@ import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.UserNotificationState
+import seqexec.web.client.model.UserPromptState
 import seqexec.web.client.model.WebSocketConnection
 import shapeless.tag.@@
 import squants.Time
@@ -80,8 +81,8 @@ package object reusability {
     Reusability.derive
   implicit val availableTabsReuse: Reusability[AvailableTab]                        = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]                           = Reusability.byEq
-  implicit val usrNotReuse: Reusability[UserNotificationState]                      =
-    Reusability.byEq
+  implicit val usrPromptReuse: Reusability[UserPromptState]                         = Reusability.byEq
+  implicit val usrNotReuse: Reusability[UserNotificationState]                      = Reusability.byEq
   implicit val qoReuse: Reusability[QueueOperations]                                = Reusability.byEq
   implicit val qfReuse: Reusability[CalQueueControlFocus]                           = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]                                 = Reusability.byEq

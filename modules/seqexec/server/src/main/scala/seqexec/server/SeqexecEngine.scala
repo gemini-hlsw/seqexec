@@ -3,6 +3,12 @@
 
 package seqexec.server
 
+import java.time.Instant
+import java.util.concurrent.TimeUnit
+
+import scala.collection.immutable.SortedMap
+import scala.concurrent.duration._
+
 import cats._
 import cats.data.StateT
 import cats.effect.Concurrent
@@ -18,13 +24,9 @@ import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
-import java.time.Instant
-import java.util.concurrent.TimeUnit
 import monocle.Monocle.index
 import monocle.Optional
 import mouse.all._
-import scala.collection.immutable.SortedMap
-import scala.concurrent.duration._
 import seqexec.engine.EventResult._
 import seqexec.engine.Handle
 import seqexec.engine.Result.Partial
@@ -34,6 +36,7 @@ import seqexec.engine.{Step => _, _}
 import seqexec.model.NodAndShuffleStep.PauseGracefully
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.NodAndShuffleStep.StopGracefully
+import seqexec.model.Notification._
 import seqexec.model.StepId
 import seqexec.model.UserDetails
 import seqexec.model._
@@ -48,9 +51,9 @@ trait SeqexecEngine[F[_]] {
 
   def sync(q: EventQueue[F], seqId: Observation.Id): F[Unit]
 
-  def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit]
+  def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit]
 
-  def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit]
+  def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit]
 
   def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit]
 
@@ -147,6 +150,10 @@ object SeqexecEngine {
         ).compile.drain
       }
 
+    /**
+     * Check if the resources to run a sequence are available
+     * @return true if resources are available
+     */
     private def checkResources(seqId: Observation.Id)(st: EngineState[F]): Boolean = {
       // Resources used by running sequences
       val used = resourcesInUse(st)
@@ -157,10 +164,18 @@ object SeqexecEngine {
       st.sequences.get(seqId).exists(x =>
         x.seqGen.resources.intersect(used).isEmpty && (
           st.queues.values.filter(_.status(st).running).exists(_.queue.contains(seqId)) ||
-          x.seqGen.resources.intersect(reservedByQueues).isEmpty
+            x.seqGen.resources.intersect(reservedByQueues).isEmpty
         )
       )
     }
+
+    /**
+     * Check if the target on the TCS matches the seqexec target
+     * TODO: Implement. I suspect this needs to return F[Boolean]
+     * @return true if target is valid
+     */
+    private def sequenceTcsTargetMatch: Boolean =
+      true
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -186,29 +201,36 @@ object SeqexecEngine {
         }.getOrElse(executeEngine.pure(none[(Observation.Id, StepId)]))
       }
 
+    private def startAfterCheck(startAction: HandleType[F, Unit], id: Observation.Id): HandleType[F, SeqEvent] =
+      startAction.reversedStreamFlatMap(_ => sequenceStart(id).map(
+        _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
+      ))
+
+    private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId, runOverride: RunOverride): HandleType[F, SeqEvent] =
+      executeEngine.get.flatMap{ st =>
+        (checkResources(id)(st), sequenceTcsTargetMatch, runOverride) match {
+          // Resource check fails
+          case (false, _, _) => executeEngine.unit.as(Busy(id, clientId))
+          // Target check fails and no override
+          case (_, false, RunOverride.Default) =>
+            // TODO get the correct target names from the seqexec and the TCS
+            executeEngine.unit.as(RequestConfirmation(UserPrompt.TargetCheckOverride(id, "Jupiter", "Vega"), clientId))
+          // Allowed to run
+          case _ => startAfterCheck(startAction, id)
+        }
+      }
+
     // Stars a sequence from the first non executed step. The method checks for resources conflict.
-    override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId): F[Unit] =
+    override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *>
-        executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-          executeEngine.start(id).reversedStreamFlatMap(_ => sequenceStart(id).map(
-            _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
-          )),
-          executeEngine.unit.as(Busy(id, clientId))
-        ) )
+        clearObsCmd(id) *> startCheckResources(executeEngine.start(id), id, clientId, runOverride)
       ) )
 
     // Stars a sequence from an arbitrary step. All previous non executed steps are skipped.
     // The method checks for resources conflict.
-    override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId): F[Unit] =
+    override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *>
-        executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-          executeEngine.startFrom(id, stp).reversedStreamFlatMap(_ => sequenceStart(id).map(
-            _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
-          )),
-          executeEngine.unit.as(Busy(id, clientId))
-        ) )
+        clearObsCmd(id) *> startCheckResources(executeEngine.startFrom(id, stp), id, clientId, runOverride)
       ) )
 
     override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =
@@ -798,6 +820,7 @@ object SeqexecEngine {
       case LoadSequence(id)                   => Stream.emit(SequenceLoaded(id, svs))
       case UnloadSequence(id)                 => Stream.emit(SequenceUnloaded(id, svs))
       case NotifyUser(m, cid)                 => Stream.emit(UserNotification(m, cid))
+      case RequestConfirmation(m, cid)        => Stream.emit(UserPromptNotification(m, cid))
       case UpdateQueueAdd(qid, seqs)          => Stream.emit(QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs))
       case UpdateQueueRemove(qid, s, p, l)    => Stream.emits(QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
         +: l.map{case (sid, step) => ClientSequenceStart(sid, step, svs)}

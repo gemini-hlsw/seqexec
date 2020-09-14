@@ -11,7 +11,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import seqexec.model.RequestFailed
+import seqexec.model.Notification.RequestFailed
 import seqexec.web.client.actions._
 import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.CalibrationQueues
