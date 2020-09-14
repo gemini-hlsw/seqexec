@@ -57,23 +57,20 @@ object StepItems {
     def exposureAndCoaddsS(i: Instrument): Option[String] =
       (coAdds, exposureTime) match {
         case (c, Some(e)) if c.exists(_ > 1) =>
-          s"${c.foldMap(_.show)}x${formatExposureTime(i)(e)} [s]".some
+          s"${c.foldMap(_.show)}x${formatExposureTime(i)(e)} s".some
         case (_, Some(e))                    =>
-          s"${formatExposureTime(i)(e)} [s]".some
+          s"${formatExposureTime(i)(e)} s".some
         case _                               => none
       }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
 
-    def isCustomMask(i: Instrument): Boolean =
-      (i, instrumentFPUO.getOption(s)) match {
-        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK")) => true
-        case _                                                                          => false
+    def fpu(i: Instrument): Option[String] =
+      (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {
+        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK"), c) => c
+        case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, None, c @ Some(_))      => c
+        case (_, Some(b), _)                                                               => fpuNameMapper(i)(b)
+        case _                                                                             => none
       }
-
-    def fpu(i: Instrument): Option[String] = {
-      val fpuL = if (!isCustomMask(i)) instrumentFPUO else instrumentFPUCustomMaskO
-      fpuL.getOption(s).map(fpu => fpuNameMapper(i)(fpu).getOrElse(fpu))
-    }
 
     def fpuOrMask(i: Instrument): Option[String] =
       fpu(i)
@@ -89,64 +86,67 @@ object StepItems {
 
     def nodAndShuffle(i: Instrument): Option[StepType] =
       i match {
-        case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).exists(identity) =>
+        case Instrument.GmosS | Instrument.GmosN
+            if isNodAndShuffleO.getOption(s).exists(identity) =>
           stepTypeO.getOption(s) match {
             case Some(StepType.Dark) => StepType.NodAndShuffleDark.some
             case _                   => StepType.NodAndShuffle.some
           }
-        case _                                                                                     => none
+        case _ => none
       }
 
     def stepType(instrument: Instrument): Option[StepType] =
       alignAndCalib(instrument)
-      .orElse(nodAndShuffle(instrument))
-      .orElse(stepTypeO.getOption(s))
+        .orElse(nodAndShuffle(instrument))
+        .orElse(stepTypeO.getOption(s))
 
-    private def gpiFilter: Step => Option[String] = s => {
-      // Read the filter, if not found deduce it from the obs mode
-      val f: Option[GpiFilter] =
-        instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
-          for {
-            m <- instrumentObservingModeO.getOption(s)
-            o <- gpiObsMode.get(m)
-            f <- o.filter
-          } yield f
-        }
-      f.map(_.longName)
-    }
+    private def gpiFilter: Step => Option[String] =
+      s => {
+        // Read the filter, if not found deduce it from the obs mode
+        val f: Option[GpiFilter] =
+          instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
+            for {
+              m <- instrumentObservingModeO.getOption(s)
+              o <- gpiObsMode.get(m)
+              f <- o.filter
+            } yield f
+          }
+        f.map(_.longName)
+      }
 
-    def filter(i: Instrument): Option[String] = i match {
-      case Instrument.GmosS =>
-        instrumentFilterO
-          .getOption(s)
-          .flatMap(enumerations.filter.GmosSFilter.get)
-      case Instrument.GmosN =>
-        instrumentFilterO
-          .getOption(s)
-          .flatMap(enumerations.filter.GmosNFilter.get)
-      case Instrument.F2    =>
-        instrumentFilterO
-          .getOption(s)
-          .flatMap(enumerations.filter.F2Filter.get)
-      case Instrument.Niri  =>
-        instrumentFilterO
-          .getOption(s)
-          .flatMap(enumerations.filter.Niri.get)
-      case Instrument.Gnirs =>
-        instrumentFilterO
-          .getOption(s)
-          .map(_.sentenceCase)
-      case Instrument.Nifs  =>
-        instrumentFilterO
-          .getOption(s)
-          .map(_.sentenceCase)
-      case Instrument.Gsaoi =>
-        instrumentFilterO
-          .getOption(s)
-          .map(_.sentenceCase)
-      case Instrument.Gpi   => gpiFilter(s)
-      case _                => None
-    }
+    def filter(i: Instrument): Option[String] =
+      i match {
+        case Instrument.GmosS =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.GmosSFilter.get)
+        case Instrument.GmosN =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.GmosNFilter.get)
+        case Instrument.F2    =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.F2Filter.get)
+        case Instrument.Niri  =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.Niri.get)
+        case Instrument.Gnirs =>
+          instrumentFilterO
+            .getOption(s)
+            .map(_.sentenceCase)
+        case Instrument.Nifs  =>
+          instrumentFilterO
+            .getOption(s)
+            .map(_.sentenceCase)
+        case Instrument.Gsaoi =>
+          instrumentFilterO
+            .getOption(s)
+            .map(_.sentenceCase)
+        case Instrument.Gpi   => gpiFilter(s)
+        case _                => None
+      }
 
     private def disperserNameMapper(i: Instrument): Map[String, String] =
       i match {
@@ -170,9 +170,11 @@ object StepItems {
       }
     }
 
-    def offset[T, A](implicit resolver: OffsetConfigResolver[T, A],
-      m: Monoid[Offset.Component[A]]): Offset.Component[A] =
-        offsetF[T, A].fold(s).orEmpty
+    def offset[T, A](implicit
+      resolver: OffsetConfigResolver[T, A],
+      m:        Monoid[Offset.Component[A]]
+    ): Offset.Component[A] =
+      offsetF[T, A].fold(s).orEmpty
 
     def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)

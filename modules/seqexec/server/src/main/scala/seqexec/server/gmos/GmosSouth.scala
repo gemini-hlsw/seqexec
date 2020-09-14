@@ -38,11 +38,18 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
       config.extractInstAs[SouthTypes#Filter](FILTER_PROP)
     def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] =
       config.extractInstAs[SouthTypes#Disperser](DISPERSER_PROP)
+    def extractCustomFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, String] =
+      config.extractInstAs[String]("fpuCustomMask")
     def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] =
       config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
       config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
-    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
+    def isCustomFPU(config: CleanConfig): Boolean =
+      (extractFPU(config), extractCustomFPU(config)) match {
+        case (Right(builtIn), _) if builtIn.isCustom() => true
+        case (_, Right(_))                             => true
+        case _                                         => false
+      }
   },
   nsCmdR
 )(southConfigTypes) {
