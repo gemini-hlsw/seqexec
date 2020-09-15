@@ -38,8 +38,6 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
       config.extractInstAs[NorthTypes#Disperser](DISPERSER_PROP)
     def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] =
       config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
-    def extractCustomFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, String] =
-      config.extractInstAs[String]("fpuCustomMask")
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
     val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
@@ -49,7 +47,6 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
         case (_, Right(_))                             => true
         case _                                         => false
       }
-
   },
   nsCmdR
 )(northConfigTypes) {

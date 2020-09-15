@@ -225,6 +225,8 @@ object Gmos {
     if (stage === StageA) 0 else rows
 
   trait SiteSpecifics[T <: SiteDependentTypes] {
+    final val FPU_CUSTOM_MASK = "fpuCustomMask"
+
     def extractFilter(config: CleanConfig): Either[ExtractFailure, T#Filter]
 
     def extractDisperser(config: CleanConfig): Either[ExtractFailure, T#Disperser]
@@ -234,6 +236,9 @@ object Gmos {
     def extractStageMode(config: CleanConfig): Either[ExtractFailure, T#GmosStageMode]
 
     val fpuDefault: T#FPU
+
+    def extractCustomFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, String] =
+      config.extractInstAs[String](FPU_CUSTOM_MASK)
 
     def isCustomFPU(config: CleanConfig): Boolean
   }
