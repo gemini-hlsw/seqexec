@@ -3,8 +3,8 @@
 
 package seqexec.server.gmos
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import scala.concurrent.duration._
 
@@ -114,14 +114,14 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       configTypes.BuiltInFPU(n.getOrElse(ss.fpuDefault))
     else
       (m, n) match {
-        case (Some(u), _)                        => GmosController.Config.CustomMaskFPU(u)
-        case _                                   => GmosController.Config.UnknownFPU
+        case (Some(u), _) => GmosController.Config.CustomMaskFPU(u)
+        case _            => GmosController.Config.UnknownFPU
       }
 
   private def calcDisperser(
-    disp: T#Disperser,
+    disp:  T#Disperser,
     order: Option[DisperserOrder],
-    wl: Option[Length]
+    wl:    Option[Length]
   ): Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
     if (configTypes.isMirror(disp)) {
       configTypes.GmosDisperser.Mirror.asRight[ConfigUtilOps.ExtractFailure]
@@ -137,22 +137,31 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
 
   private def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, configTypes.CCConfig] =
     (for {
-      filter           <- ss.extractFilter(config)
-      disp             <- ss.extractDisperser(config)
-      disperserOrder   =  config.extractInstAs[DisperserOrder](DISPERSER_ORDER_PROP)
-      disperserLambda  =  config.extractInstAs[JDouble](DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
-      fpuName          =  ss.extractFPU(config)
-      customMask       =  ss.isCustomFPU(config)
-      fpuMask          =  config.extractInstAs[String](FPU_MASK_PROP)
-      fpu              =  fpuFromFPUnit(fpuName.toOption, fpuMask.toOption, customMask)
-      stageMode        <- ss.extractStageMode(config)
-      dtax             <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
-      adc              <- config.extractInstAs[ADC](ADC_PROP)
-      electronicOffset =  Gmos.ccElectronicOffset(config)
-      disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-      obsType          <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
-      isDarkOrBias = List(DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE).exists(_ === obsType)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset, isDarkOrBias))
+      filter          <- ss.extractFilter(config)
+      disp            <- ss.extractDisperser(config)
+      disperserOrder   = config.extractInstAs[DisperserOrder](DISPERSER_ORDER_PROP)
+      disperserLambda  =
+        config.extractInstAs[JDouble](DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
+      fpuName          = ss.extractFPU(config)
+      customMask       = ss.isCustomFPU(config)
+      fpuMask          = config.extractInstAs[String](FPU_MASK_PROP)
+      fpu              = fpuFromFPUnit(fpuName.toOption, fpuMask.toOption, customMask)
+      stageMode       <- ss.extractStageMode(config)
+      dtax            <- config.extractInstAs[DTAX](DTAX_OFFSET_PROP)
+      adc             <- config.extractInstAs[ADC](ADC_PROP)
+      electronicOffset = Gmos.ccElectronicOffset(config)
+      disperser       <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
+      obsType         <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
+      isDarkOrBias     = List(DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE).exists(_ === obsType)
+    } yield configTypes.CCConfig(filter,
+                                 disperser,
+                                 fpu,
+                                 stageMode,
+                                 dtax,
+                                 adc,
+                                 electronicOffset,
+                                 isDarkOrBias
+    ))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
@@ -216,6 +225,8 @@ object Gmos {
     if (stage === StageA) 0 else rows
 
   trait SiteSpecifics[T <: SiteDependentTypes] {
+    final val FPU_CUSTOM_MASK = "fpuCustomMask"
+
     def extractFilter(config: CleanConfig): Either[ExtractFailure, T#Filter]
 
     def extractDisperser(config: CleanConfig): Either[ExtractFailure, T#Disperser]
@@ -225,6 +236,9 @@ object Gmos {
     def extractStageMode(config: CleanConfig): Either[ExtractFailure, T#GmosStageMode]
 
     val fpuDefault: T#FPU
+
+    def extractCustomFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, String] =
+      config.extractInstAs[String](FPU_CUSTOM_MASK)
 
     def isCustomFPU(config: CleanConfig): Boolean
   }

@@ -42,7 +42,12 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
       config.extractInstAs[SouthTypes#FPU](FPU_PROP_NAME)
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] =
       config.extractInstAs[SouthTypes#GmosStageMode](STAGE_MODE_PROP)
-    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
+    def isCustomFPU(config: CleanConfig): Boolean =
+      (extractFPU(config), extractCustomFPU(config)) match {
+        case (Right(builtIn), _) if builtIn.isCustom() => true
+        case (_, Right(_))                             => true
+        case _                                         => false
+      }
   },
   nsCmdR
 )(southConfigTypes) {

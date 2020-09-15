@@ -30,7 +30,7 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
   c: GmosNorthController[F],
   dhsClient: DhsClient[F],
   nsCmdR: Ref[F, Option[NSObserveCommand]]
-) extends Gmos[F, NorthTypes](c,
+  ) extends Gmos[F, NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
     def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
       config.extractInstAs[NorthTypes#Filter](FILTER_PROP)
@@ -41,7 +41,12 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
     val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
-    def isCustomFPU(config: CleanConfig): Boolean = extractFPU(config).map(_.isCustom()).getOrElse(false)
+    def isCustomFPU(config: CleanConfig): Boolean =
+      (extractFPU(config), extractCustomFPU(config)) match {
+        case (Right(builtIn), _) if builtIn.isCustom() => true
+        case (_, Right(_))                             => true
+        case _                                         => false
+      }
   },
   nsCmdR
 )(northConfigTypes) {

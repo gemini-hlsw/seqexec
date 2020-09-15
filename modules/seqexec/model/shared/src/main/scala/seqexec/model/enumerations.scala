@@ -11,6 +11,7 @@ package seqexec.model
 object enumerations {
   object filter {
     val GmosSFilter: Map[String, String] = Map(
+      "None" -> "None",
       "NONE" -> "None",
       "u_G0332" -> "u",
       "g_G0325" -> "g",
@@ -45,6 +46,7 @@ object enumerations {
     )
 
     val GmosNFilter: Map[String, String] = Map(
+      "None" -> "None",
       "NONE" -> "None",
       "g_G0301" -> "g",
       "r_G0303" -> "r",

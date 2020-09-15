@@ -65,16 +65,16 @@ object Footer {
           clazz = SeqexecStyles.notInMobile,
           onClickE = goHome(p) _
         )(s"Seqexec - ${p.site.shortName}"),
-        CopyToClipboard(text = OcsBuildInfo.version, onCopy = onVersionCopy)(
-          Popup(
-            position = PopupPosition.TopCenter,
-            size = Tiny,
-            trigger = MenuItem(
-              as = "a",
-              header = true,
-              clazz = SeqexecStyles.notInMobile
-            )(OcsBuildInfo.version)
-          )("Copy to clipboard")
+        Popup(
+          position = PopupPosition.TopCenter,
+          size = Tiny,
+          trigger = MenuItem(as = <.a, header = true, clazz = SeqexecStyles.notInMobile)(
+            CopyToClipboard(text = OcsBuildInfo.version, onCopy = onVersionCopy)(
+              OcsBuildInfo.version
+            )
+          )
+        )(
+          "Copy to clipboard"
         ),
         userConnect(x => FooterStatus(x()))
       )
