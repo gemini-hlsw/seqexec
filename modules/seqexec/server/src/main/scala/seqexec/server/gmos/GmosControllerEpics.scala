@@ -114,7 +114,7 @@ object GmosEncoders extends GmosEncoders
 
 private[gmos] final case class GmosDCEpicsState(
   shutterState: String,
-  reqExposureTime: Int,
+  exposureTime: Int,
   ampReadMode: String,
   gainSetting: Int,
   ampCount: String,
@@ -182,14 +182,14 @@ object GmosControllerEpics extends GmosEncoders {
       private def retrieveDCState: F[GmosDCEpicsState] =
         for {
           shutterState    <- sys.shutterState
-          reqExposureTime <- sys.reqExposureTime
+          exposureTime    <- sys.exposureTime
           ampReadMode     <- sys.ampReadMode
           gainSetting     <- sys.gainSetting
           ampCount        <- sys.ampCount
           roiNumUsed      <- sys.roiNumUsed
           ccdXBinning     <- sys.ccdXBinning
           ccdYBinning     <- sys.ccdYBinning
-        } yield GmosDCEpicsState(shutterState, reqExposureTime, ampReadMode, gainSetting, ampCount, roiNumUsed, ccdXBinning, ccdYBinning)
+        } yield GmosDCEpicsState(shutterState, exposureTime, ampReadMode, gainSetting, ampCount, roiNumUsed, ccdXBinning, ccdYBinning)
 
       private def retrieveCCState: F[GmosCCEpicsState] =
         for {
@@ -348,7 +348,7 @@ object GmosControllerEpics extends GmosEncoders {
 
       private def dcParams(state: GmosDCEpicsState, config: DCConfig): List[F[Unit]] =
         List(
-          applyParam(state.reqExposureTime, encode(config.t), (_: Int) => L.debug(s"Set GMOS expTime ${config.t}") *> sys.configDCCmd.setExposureTime(config.t)),
+          applyParam(state.exposureTime, encode(config.t), (_: Int) => L.debug(s"Set GMOS expTime ${config.t}") *> sys.configDCCmd.setExposureTime(config.t)),
           setShutterState(state, config),
           applyParam(state.ampReadMode, encode(config.r.ampReadMode), sys.configDCCmd.setAmpReadMode),
           setGainSetting(state, config.r.ampReadMode, config.r.ampGain),
