@@ -34,18 +34,23 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
   new SiteSpecifics[NorthTypes] {
     def extractFilter(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] =
       config.extractInstAs[NorthTypes#Filter](FILTER_PROP)
+
     def extractDisperser(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.DisperserNorth] =
       config.extractInstAs[NorthTypes#Disperser](DISPERSER_PROP)
+
     def extractFPU(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.FPUnitNorth] =
       config.extractInstAs[NorthTypes#FPU](FPU_PROP_NAME)
+
     def extractStageMode(config: CleanConfig): Either[ConfigUtilOps.ExtractFailure, GmosNorthType.StageModeNorth] =
       config.extractInstAs[NorthTypes#GmosStageMode](STAGE_MODE_PROP)
+
     val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
+
     def isCustomFPU(config: CleanConfig): Boolean =
       (extractFPU(config), extractCustomFPU(config)) match {
-        case (Right(builtIn), _) if builtIn.isCustom() => true
-        case (_, Right(_))                             => true
-        case _                                         => false
+        case (Right(builtIn), Right(_)) => builtIn.isCustom
+        case (_, Right(_))              => true
+        case _                          => false
       }
   },
   nsCmdR
