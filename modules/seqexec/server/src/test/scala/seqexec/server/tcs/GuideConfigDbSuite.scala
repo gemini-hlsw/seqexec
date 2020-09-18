@@ -5,12 +5,12 @@ package seqexec.server.tcs
 
 import org.scalatest.matchers.should.Matchers._
 import io.circe.parser._
-import GuideConfigDb._
 import cats.effect.IO
 import seqexec.model.enum._
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
+import seqexec.server.tcs.GuideConfigDb._
 import seqexec.server.altair.AltairController.Lgs
 import seqexec.server.gems.GemsController.GemsOn
 import seqexec.server.gems.GemsController.OIUsage
@@ -23,13 +23,13 @@ import seqexec.server.gems.GemsController.Cwfs1Usage
 import seqexec.server.gems.GemsController.Cwfs2Usage
 import seqexec.server.gems.GemsController.Cwfs3Usage
 import squants.space.Millimeters
-import org.scalatest.flatspec.AnyFlatSpec
 
-final class GuideConfigDbSpec extends AnyFlatSpec {
+final class GuideConfigDbSuite extends munit.FunSuite {
 
-  val rawJson1: String = """
+  val rawJson1: String          = """
   {
     "tcsGuide": {
+      "mountGuideOn": true,
       "m1Guide": {
         "on": true,
         "source": "PWFS1"
@@ -38,8 +38,7 @@ final class GuideConfigDbSpec extends AnyFlatSpec {
         "on": true,
         "sources": ["PWFS1"],
         "comaOn": false
-      },
-      "mountGuideOn": true
+      }
     },
     "gaosGuide": null
   }
@@ -53,7 +52,7 @@ final class GuideConfigDbSpec extends AnyFlatSpec {
     None
   )
 
-  val rawJson2: String = """
+  val rawJson2: String          = """
   {
     "tcsGuide": {
       "m1Guide": {
@@ -91,7 +90,7 @@ final class GuideConfigDbSpec extends AnyFlatSpec {
     Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0)))))
   )
 
-  val rawJson3: String = """
+  val rawJson3: String          = """
   {
     "tcsGuide": {
       "m1Guide": {
@@ -125,28 +124,32 @@ final class GuideConfigDbSpec extends AnyFlatSpec {
       M1GuideConfig.M1GuideOn(M1Source.GAOS),
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
     ),
-    Some(Right(GemsOn(
-      Cwfs1Usage.Use,
-      Cwfs2Usage.DontUse,
-      Cwfs3Usage.DontUse,
-      Odgw1Usage.Use,
-      Odgw2Usage.DontUse,
-      Odgw3Usage.Use,
-      Odgw4Usage.Use,
-      P1Usage.DontUse,
-      OIUsage.DontUse
-    )))
+    Some(
+      Right(
+        GemsOn(
+          Cwfs1Usage.Use,
+          Cwfs2Usage.DontUse,
+          Cwfs3Usage.DontUse,
+          Odgw1Usage.Use,
+          Odgw2Usage.DontUse,
+          Odgw3Usage.Use,
+          Odgw4Usage.Use,
+          P1Usage.DontUse,
+          OIUsage.DontUse
+        )
+      )
+    )
   )
 
-  "GuideConfigDb" should "provide decoders" in {
+  test("GuideConfigDb provide decoders") {
     decode[GuideConfig](rawJson1) shouldBe Right(guideConfig1)
     decode[GuideConfig](rawJson2) shouldBe Right(guideConfig2)
     decode[GuideConfig](rawJson3) shouldBe Right(guideConfig3)
   }
 
-  it should "retrieve the same configuration that was set" in {
+  test("retrieve the same configuration that was set") {
     implicit val ctx = IO.contextShift(scala.concurrent.ExecutionContext.global)
-    val db = GuideConfigDb.newDb[IO]
+    val db           = GuideConfigDb.newDb[IO]
 
     val ret = db.flatMap(x => x.set(guideConfig1) *> x.value).unsafeRunSync()
 

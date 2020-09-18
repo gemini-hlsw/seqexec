@@ -37,7 +37,8 @@ object Common {
     dependencyUpdatesFilter -= moduleFilter(
       organization = "com.github.julien-truffaut",
       revision = sbt.io.GlobFilter(Settings.LibraryVersions.monocleVersion.replace("-cats", "*"))
-    )
+    ),
+    testFrameworks += new TestFramework("munit.Framework")
   )
 
 }

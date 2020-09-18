@@ -5,11 +5,12 @@ package seqexec.model.enum
 
 import cats.Show
 import cats.data.NonEmptyList
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /** A Seqexec resource represents any system that can be only used by one single agent. */
 sealed abstract class Resource(val ordinal: Int, val label: String)
-  extends Product with Serializable {
+    extends Product
+    with Serializable {
   def isInstrument: Boolean = false
 }
 
@@ -36,8 +37,7 @@ object Resource {
     Enumerated.of(Instrument.allResources.head, Instrument.allResources.tail: _*)
 }
 
-sealed abstract class Instrument(ordinal: Int, label: String)
-  extends Resource(ordinal, label) {
+sealed abstract class Instrument(ordinal: Int, label: String) extends Resource(ordinal, label) {
   override def isInstrument: Boolean = true
 }
 
@@ -66,7 +66,13 @@ object Instrument {
     gsInstruments.concatNel(gnInstruments)
 
   val allResources: NonEmptyList[Resource] =
-    NonEmptyList.of(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair) ::: Instrument.all
+    NonEmptyList.of(Resource.P1,
+                    Resource.OI,
+                    Resource.TCS,
+                    Resource.Gcal,
+                    Resource.Gems,
+                    Resource.Altair
+    ) ::: Instrument.all
 
   /** @group Typeclass Instances */
   implicit val InstrumentEnumerated: Enumerated[Instrument] =

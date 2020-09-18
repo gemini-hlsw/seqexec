@@ -8,7 +8,7 @@ import org.scalacheck.Cogen
 import org.scalacheck._
 import org.scalacheck.Cogen._
 import gem.arb._
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import gsp.math.Angle
 import gsp.math.Offset
 import gsp.math.arb.ArbOffset._
@@ -41,9 +41,8 @@ trait ArbStepConfig {
   implicit val stParams: Cogen[StepConfig] =
     Cogen[String].contramap(_.mkString(","))
 
-   private val perturbations: List[String => Gen[String]] =
-    List(
-      s => if (s.startsWith("-")) Gen.const(s) else Gen.const(s"00%s") // insert leading 0s
+  private val perturbations: List[String => Gen[String]] =
+    List(s => if (s.startsWith("-")) Gen.const(s) else Gen.const(s"00%s") // insert leading 0s
     )
 
   // Strings that are often parsable as Offsets

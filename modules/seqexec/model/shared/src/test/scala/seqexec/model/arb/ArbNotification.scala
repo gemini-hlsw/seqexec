@@ -4,7 +4,7 @@
 package seqexec.model.arb
 
 import gem.Observation
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._

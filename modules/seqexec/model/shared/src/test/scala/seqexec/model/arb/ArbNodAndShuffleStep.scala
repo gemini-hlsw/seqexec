@@ -3,12 +3,12 @@
 
 package seqexec.model.arb
 
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{ Arbitrary, Cogen, Gen }
 import org.scalacheck.Arbitrary._
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model._
 import seqexec.model.GmosParameters._
-import seqexec.model.NodAndShuffleStep.{PauseGracefully, PendingObserveCmd, StopGracefully}
+import seqexec.model.NodAndShuffleStep.{ PauseGracefully, PendingObserveCmd, StopGracefully }
 import seqexec.model.enum._
 import seqexec.model.arb.ArbStepConfig._
 import seqexec.model.arb.ArbStepState._
@@ -34,9 +34,10 @@ trait ArbNodAndShuffleStep {
       (x.observing, x.totalExposureTime, x.nodExposureTime, x.cycles)
     }
 
-  implicit val nodAndShufflePendingCmdArb: Arbitrary[PendingObserveCmd] = Arbitrary[PendingObserveCmd](
-    Gen.oneOf(List(PauseGracefully, StopGracefully))
-  )
+  implicit val nodAndShufflePendingCmdArb: Arbitrary[PendingObserveCmd] =
+    Arbitrary[PendingObserveCmd](
+      Gen.oneOf(List(PauseGracefully, StopGracefully))
+    )
 
   implicit val nodShuffleStepArb = Arbitrary[NodAndShuffleStep] {
     for {
@@ -49,39 +50,32 @@ trait ArbNodAndShuffleStep {
       cs <- arbitrary[List[(Resource, ActionStatus)]]
       os <- arbitrary[NodAndShuffleStatus]
       oc <- arbitrary[Option[PendingObserveCmd]]
-    } yield
-      new NodAndShuffleStep(id           = id,
-                            config       = c,
-                            status       = s,
-                            breakpoint   = b,
-                            skip         = k,
-                            fileId       = f,
-                            configStatus = cs,
-                            nsStatus     = os,
-                            pendingObserveCmd = oc
-      )
+    } yield new NodAndShuffleStep(id = id,
+                                  config = c,
+                                  status = s,
+                                  breakpoint = b,
+                                  skip = k,
+                                  fileId = f,
+                                  configStatus = cs,
+                                  nsStatus = os,
+                                  pendingObserveCmd = oc
+    )
   }
 
   implicit val nodShuffleStepCogen: Cogen[NodAndShuffleStep] =
-    Cogen[(
-      StepId,
-      Map[SystemName, Map[String, String]],
-      StepState,
-      Boolean,
-      Boolean,
-      Option[dhs.ImageFileId],
-      List[(Resource, ActionStatus)],
-      NodAndShuffleStatus
-    )].contramap(
-      s =>
-        (s.id,
-         s.config,
-         s.status,
-         s.breakpoint,
-         s.skip,
-         s.fileId,
-         s.configStatus,
-         s.nsStatus)
+    Cogen[
+      (
+        StepId,
+        Map[SystemName, Map[String, String]],
+        StepState,
+        Boolean,
+        Boolean,
+        Option[dhs.ImageFileId],
+        List[(Resource, ActionStatus)],
+        NodAndShuffleStatus
+      )
+    ].contramap(s =>
+      (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId, s.configStatus, s.nsStatus)
     )
 
 }

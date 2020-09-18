@@ -151,6 +151,7 @@ lazy val web_client_common = project
     )),
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
+    testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= Seq(
       Cats.value,
       Mouse.value,
@@ -161,7 +162,7 @@ lazy val web_client_common = project
       ScalaJSReactSortable.value,
       ScalaJSReactDraggable.value,
       TestLibs.value
-    ) ++ ReactScalaJS.value ++ Monocle.value
+    ) ++ MUnit.value ++ ReactScalaJS.value ++ Monocle.value
   )
 
 // Project for the server side application
@@ -272,7 +273,7 @@ lazy val seqexec_web_client = project
       LucumaUI.value,
       PPrint.value,
       TestLibs.value
-    ) ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value
+    ) ++ MUnit.value ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -309,7 +310,7 @@ lazy val seqexec_server = project
         Log4CatsNoop.value,
         TestLibs.value,
         PPrint.value
-      ) ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
+      ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
   .settings(

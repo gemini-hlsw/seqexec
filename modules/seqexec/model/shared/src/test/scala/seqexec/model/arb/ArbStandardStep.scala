@@ -6,7 +6,7 @@ package seqexec.model.arb
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.arb.ArbStepConfig._
@@ -24,37 +24,31 @@ trait ArbStandardStep {
       f  <- arbitrary[Option[dhs.ImageFileId]]
       cs <- arbitrary[List[(Resource, ActionStatus)]]
       os <- arbitrary[ActionStatus]
-    } yield
-      new StandardStep(id            = id,
-                       config        = c,
-                       status        = s,
-                       breakpoint    = b,
-                       skip          = k,
-                       fileId        = f,
-                       configStatus  = cs,
-                       observeStatus = os)
+    } yield new StandardStep(id = id,
+                             config = c,
+                             status = s,
+                             breakpoint = b,
+                             skip = k,
+                             fileId = f,
+                             configStatus = cs,
+                             observeStatus = os
+    )
   }
 
   implicit val standardStepCogen: Cogen[StandardStep] =
-    Cogen[(
-      StepId,
-      Map[SystemName, Map[String, String]],
-      StepState,
-      Boolean,
-      Boolean,
-      Option[dhs.ImageFileId],
-      List[(Resource, ActionStatus)],
-      ActionStatus
-    )].contramap(
-      s =>
-        (s.id,
-         s.config,
-         s.status,
-         s.breakpoint,
-         s.skip,
-         s.fileId,
-         s.configStatus,
-         s.observeStatus)
+    Cogen[
+      (
+        StepId,
+        Map[SystemName, Map[String, String]],
+        StepState,
+        Boolean,
+        Boolean,
+        Option[dhs.ImageFileId],
+        List[(Resource, ActionStatus)],
+        ActionStatus
+      )
+    ].contramap(s =>
+      (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId, s.configStatus, s.observeStatus)
     )
 
 }

@@ -79,8 +79,8 @@ object Settings {
     // Gemini Libraries
     val gspMath = "0.2.8"
     val gspCore = "0.2.8"
-    val lucumaCore = "0.4.5"
-    val lucumaUI   = "0.3.2"
+    val lucumaCore = "0.5.1"
+    val lucumaUI   = "0.4.2"
   }
 
   /**
@@ -90,6 +90,12 @@ object Settings {
     // Test Libraries
     val TestLibs = Def.setting(
       "edu.gemini" %%% "gsp-math-testkit" % LibraryVersions.gspMath % "test"
+    )
+    val MUnit = Def.setting(
+      Seq(
+        "org.scalameta" %%% "munit"            % "0.7.14" % Test,
+        "org.typelevel" %%% "discipline-munit" % "0.3.0"  % Test
+      )
     )
     val XmlUnit = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface =
