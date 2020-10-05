@@ -70,7 +70,7 @@ object Handle {
     }
   }
 
-  // This class adds a method to Hadle similar to flatMap, but the Streams resulting from both Handle instances
+  // This class adds a method to Handle similar to flatMap, but the Streams resulting from both Handle instances
   // are concatenated in the reverse order.
   implicit class HandleReverseMap[F[_]: Monad, D, V, A](self: Handle[F, D, V, A]) {
     private def reverseConcatOpP(op1: Option[Stream[F, V]],

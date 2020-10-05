@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-
 import cats._
 import cats.data.StateT
 import cats.effect.Concurrent
@@ -18,6 +17,8 @@ import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
+import edu.gemini.spModel.obscomp.InstConstants.{OBSERVE_TYPE_PROP, OBS_CLASS_PROP, SCIENCE_OBSERVE_TYPE}
+import edu.gemini.spModel.obsclass.ObsClass
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
@@ -44,6 +45,8 @@ import seqexec.model.config._
 import seqexec.model.enum._
 import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.server.SeqEvent._
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.EngineState.atSequence
 
 trait SeqexecEngine[F[_]] {
 
@@ -174,8 +177,55 @@ object SeqexecEngine {
      * TODO: Implement. I suspect this needs to return F[Boolean]
      * @return true if target is valid
      */
-    private def sequenceTcsTargetMatch: Boolean =
-      true
+    private def sequenceTcsTargetMatch(obs: SequenceData[F]): F[Option[(String, String)]] = {
+      val seqTargetO = obs.seq.currentStep
+        .map(_.id)
+        .flatMap(x => obs.seqGen.steps.dropWhile(_.id =!= x).find(a => stepRequiresTargetCheck(a.config)))
+        .flatMap(x => extractTargetName(x.config))
+
+      systems.tcsKeywordReader.sourceATarget.objectName.map( tcsTarget =>
+        seqTargetO.flatMap( seqTarget =>
+          (seqTarget =!= tcsTarget).option((seqTarget, tcsTarget))
+        )
+      )
+    }
+
+    /**
+     * Extract the target name from a step configuration. Some processing is necessary to get the same string that
+     * appears in TCS.
+     */
+    private def extractTargetName(config: CleanConfig): Option[String] = {
+      val BasePositionKey = "Base:name"
+      val SolarSystemObjects = Map(
+        ("199", "Mercury"),
+        ("299", "Venus"),
+        ("301", "Moon"),
+        ("499", "Mars"),
+        ("599", "Jupiter"),
+        ("699", "Saturn"),
+        ("799", "Uranus"),
+        ("899", "Neptune"),
+        ("999", "Pluto") )
+      val baseName = config.extractTelescopeAs[String](BasePositionKey).toOption
+      val EphemerisExtension = ".eph"
+
+      baseName.map { x =>
+        if (x.endsWith(EphemerisExtension)) {
+          x.dropRight(EphemerisExtension.length)
+        } else {
+          SolarSystemObjects.getOrElse(x, x)
+        }
+      }
+    }
+
+    private def stepRequiresTargetCheck(config: CleanConfig): Boolean = (for {
+      obsClass <- config.extractObsAs[String](OBS_CLASS_PROP)
+      obsType  <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
+    } yield (obsClass === ObsClass.SCIENCE.headerValue() ||
+      obsClass === ObsClass.PROG_CAL.headerValue() ||
+      obsClass === ObsClass.PARTNER_CAL.headerValue()
+      ) && obsType === SCIENCE_OBSERVE_TYPE
+    ).getOrElse(false)
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -207,17 +257,21 @@ object SeqexecEngine {
       ))
 
     private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId, runOverride: RunOverride): HandleType[F, SeqEvent] =
-      executeEngine.get.flatMap{ st =>
-        (checkResources(id)(st), sequenceTcsTargetMatch, runOverride) match {
-          // Resource check fails
-          case (false, _, _) => executeEngine.unit.as(Busy(id, clientId))
-          // Target check fails and no override
-          case (_, false, RunOverride.Default) =>
-            // TODO get the correct target names from the seqexec and the TCS
-            executeEngine.unit.as(RequestConfirmation(UserPrompt.TargetCheckOverride(id, "Jupiter", "Vega"), clientId))
-          // Allowed to run
-          case _ => startAfterCheck(startAction, id)
-        }
+      executeEngine.get.flatMap { st =>
+        atSequence(id).getOption(st).map { seq =>
+          executeEngine.liftF(sequenceTcsTargetMatch(seq)).flatMap { targetCheck =>
+            (checkResources(id)(st), targetCheck, runOverride) match {
+              // Resource check fails
+              case (false, _, _) => executeEngine.unit.as[SeqEvent](Busy(id, clientId))
+              // Target check fails and no override
+              case (_, Some((seqTg, tcsTg)), RunOverride.Default) =>
+                // TODO get the correct target names from the seqexec and the TCS
+                executeEngine.unit.as[SeqEvent](RequestConfirmation(UserPrompt.TargetCheckOverride(id, seqTg, tcsTg), clientId))
+              // Allowed to run
+              case _ => startAfterCheck(startAction, id)
+            }
+          }
+        }.getOrElse(executeEngine.unit.as[SeqEvent](NullSeqEvent)) // Trying to run a sequence that does not exists. This should never happen.
       }
 
     // Stars a sequence from the first non executed step. The method checks for resources conflict.

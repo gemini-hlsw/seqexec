@@ -191,7 +191,8 @@ trait TcsKeywordDefaults {
 }
 
 object DummyTargetKeywordsReader {
-  def apply[F[_]: Applicative]: TargetKeywordsReader[F] = new TargetKeywordsReader[F] {
+
+  class DummyTargetKeywordsReaderImpl[F[_]: Applicative] extends TargetKeywordsReader[F] {
 
     override def ra: F[Double] = 0.0.pure[F]
 
@@ -215,10 +216,12 @@ object DummyTargetKeywordsReader {
 
     override def properMotionRA: F[Double] = 0.0.pure[F]
   }
+
+  def apply[F[_]: Applicative]: TargetKeywordsReader[F] = new DummyTargetKeywordsReaderImpl[F]
 }
 
 object DummyTcsKeywordsReader {
-  def apply[F[_]: Applicative]: TcsKeywordsReader[F] = new TcsKeywordsReader[F] {
+  class DummyTcsKeywordReaderImpl[F[_]: Applicative] extends TcsKeywordsReader[F] {
 
     override def hourAngle: F[String] = "00:00:00".pure[F]
 
@@ -334,6 +337,8 @@ object DummyTcsKeywordsReader {
 
     override def decOffset: F[Double] = 0.0.pure[F]
   }
+
+  def apply[F[_]: Applicative]: TcsKeywordsReader[F] = new DummyTcsKeywordReaderImpl[F]
 }
 
 object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
