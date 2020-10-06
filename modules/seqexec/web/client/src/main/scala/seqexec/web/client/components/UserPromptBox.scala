@@ -56,7 +56,7 @@ object UserPromptBox {
 
   def question(n: UserPrompt): List[String] =
     n match {
-      case TargetCheckOverride(sid, obsTarget, tcsTarget) =>
+      case TargetCheckOverride(sid, _, obsTarget, tcsTarget) =>
         List(s"There is a target mismatch running sequence ${sid.format}:",
              s"Target in the sequence: ${obsTarget}",
              s"Target in the TCS: ${tcsTarget}"
