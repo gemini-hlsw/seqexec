@@ -13,7 +13,7 @@ import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.modules.popup.Popup
-import seqexec.web.client.actions.RequestRunFrom
+import seqexec.web.client.actions.{RequestRunFrom, RunOptions}
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
@@ -36,7 +36,7 @@ object RunFromStep {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestRunFrom(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestRunFrom(id, stepId))
+    SeqexecCircuit.dispatchCB(RequestRunFrom(id, stepId, RunOptions.Normal))
 
   protected val component = ScalaComponent
     .builder[Props]("RunFromStep")
