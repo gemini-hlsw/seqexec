@@ -172,18 +172,19 @@ object SeqexecEngine {
       )
     }
 
+    private case class TargetMatchResult(startStep: StepId, sequenceTarget: String, tcsTarget: String)
+
     /**
      * Check if the target on the TCS matches the seqexec target
-     * TODO: Implement. I suspect this needs to return F[Boolean]
-     * @return true if target is valid
+     * @return an F that returns an optional TargetMatchResult if the targets don't match
      */
-    private def sequenceTcsTargetMatch(obs: SequenceData[F], stp: Option[StepId]): F[Option[(StepId, String, String)]] = (
+    private def sequenceTcsTargetMatch(obs: SequenceData[F], stp: Option[StepId]): F[Option[TargetMatchResult]] = (
       for {
         stepId    <- stp.orElse(obs.seq.currentStep.map(_.id))
         a         <- obs.seqGen.steps.dropWhile(_.id =!= stepId).find(a => stepRequiresTargetCheck(a.config))
         seqTarget <- extractTargetName(a.config)
       } yield systems.tcsKeywordReader.sourceATarget.objectName.map { tcsTarget =>
-        (seqTarget =!= tcsTarget).option((stepId, seqTarget, tcsTarget))
+        (seqTarget =!= tcsTarget).option(TargetMatchResult(stepId, seqTarget, tcsTarget))
       }
     ).getOrElse(none.pure[F])
 
@@ -202,7 +203,8 @@ object SeqexecEngine {
         ("699", "Saturn"),
         ("799", "Uranus"),
         ("899", "Neptune"),
-        ("999", "Pluto") )
+        ("999", "Pluto")
+      )
       val baseName = config.extractTelescopeAs[String](BasePositionKey).toOption
       val EphemerisExtension = ".eph"
 
@@ -262,8 +264,7 @@ object SeqexecEngine {
               // Resource check fails
               case (false, _, _) => executeEngine.unit.as[SeqEvent](Busy(id, clientId))
               // Target check fails and no override
-              case (_, Some((stepId, seqTg, tcsTg)), RunOverride.Default) =>
-                // TODO get the correct target names from the seqexec and the TCS
+              case (_, Some(TargetMatchResult(stepId, seqTg, tcsTg)), RunOverride.Default) =>
                 executeEngine.unit.as[SeqEvent](RequestConfirmation(
                   UserPrompt.TargetCheckOverride(id, stepId, seqTg, tcsTg),
                   clientId
