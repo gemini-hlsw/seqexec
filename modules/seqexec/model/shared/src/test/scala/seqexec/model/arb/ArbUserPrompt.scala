@@ -9,17 +9,18 @@ import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import seqexec.model.UserPrompt
+import seqexec.model.{StepId, UserPrompt}
 import seqexec.model.UserPrompt.TargetCheckOverride
 
 trait ArbUserPrompt extends ArbObservation {
 
   implicit val targetCheckOverrideArb = Arbitrary[TargetCheckOverride] {
     for {
-      id <- arbitrary[Observation.Id]
-      st <- arbitrary[String]
-      tt <- arbitrary[String]
-    } yield TargetCheckOverride(id, st, tt)
+      id  <- arbitrary[Observation.Id]
+      stp <- arbitrary[StepId]
+      st  <- arbitrary[String]
+      tt  <- arbitrary[String]
+    } yield TargetCheckOverride(id, stp, st, tt)
   }
 
   implicit val targetCheckOverrideCogen: Cogen[TargetCheckOverride] =

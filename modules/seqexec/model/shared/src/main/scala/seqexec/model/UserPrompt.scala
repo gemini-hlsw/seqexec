@@ -26,11 +26,11 @@ object UserPrompt {
     }
 
   // UserPrompt whether to override the target check
-  final case class TargetCheckOverride(sid: Observation.Id, obsTarget: String, tcsTarget: String)
+  final case class TargetCheckOverride(sid: Observation.Id, stepId: StepId, obsTarget: String, tcsTarget: String)
       extends UserPrompt
 
   object TargetCheckOverride {
     implicit lazy val eq: Eq[TargetCheckOverride] =
-      Eq.by(x => (x.sid, x.obsTarget, x.tcsTarget))
+      Eq.by(x => (x.sid, x.stepId, x.obsTarget, x.tcsTarget))
   }
 }
