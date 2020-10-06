@@ -186,17 +186,6 @@ object SeqexecEngine {
         (seqTarget =!= tcsTarget).option((stepId, seqTarget, tcsTarget))
       }
     ).getOrElse(none.pure[F])
-//      val stepId = stp.orElse(obs.seq.currentStep.map(_.id)) // start from either the given step or the first not run
-//      val seqTargetO = stepId
-//        .flatMap(x => obs.seqGen.steps.dropWhile(_.id =!= x).find(a => stepRequiresTargetCheck(a.config)))
-//        .flatMap(x => extractTargetName(x.config))
-//
-//      systems.tcsKeywordReader.sourceATarget.objectName.map( tcsTarget =>
-//        seqTargetO.flatMap( seqTarget =>
-//          (seqTarget =!= tcsTarget).option((seqTarget, tcsTarget))
-//        )
-//      )
-//    }
 
     /**
      * Extract the target name from a step configuration. Some processing is necessary to get the same string that
