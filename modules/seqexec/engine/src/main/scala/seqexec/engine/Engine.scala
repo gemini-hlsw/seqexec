@@ -391,6 +391,8 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
 
   def pure[A](a: A): HandleType[A] = a.pure[HandleType]
 
+  def liftF[A](f: F[A]): HandleType[A] = Handle.liftF(f)
+
   val unit: HandleType[Unit] =
     Handle.unit
 

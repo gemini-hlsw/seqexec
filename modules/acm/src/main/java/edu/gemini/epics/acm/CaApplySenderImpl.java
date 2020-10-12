@@ -18,6 +18,12 @@ import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
+/**
+ * Monitors the execution of a command in an EPICS system using the Gemini EPICS records.
+ * The command is triggered writing START to the DIR field of an apply record. The apply record then changes its output.
+ * apply.VAL < 0 is an error. apply.VAL > 0 is an command id. The command is completed when the associated CAR record
+ * changes from BUSY to IDLE with its field CLID > than the command id produced by the apply record.
+ */
 final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements ApplySenderWithResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(CaApplySenderImpl.class
@@ -224,7 +230,9 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         @Override
         public State onApplyValChange(final Integer val) {
             if (val > 0) {
-                if (carVal != null && val.equals(carClid)) {
+                // This would be weird, it means the CAR signaled a final state for the command before the Apply record
+                // gave a command id.
+                if (carVal != null && carClid != null && carClid >= val) {
                     if (carVal.isError()) {
                         failCommandWithCarError(cm);
                         return IdleState;
@@ -281,7 +289,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         @Override
         public State onApplyValChange(final Integer val) {
             if (val >= clid) {
-                return new WaitStart(cm, val, carState, carClid);
+                return this;
             } else {
                 failCommand(cm, new CaCommandPostError(
                         "Another command was triggered in apply record "
@@ -338,7 +346,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
 
         @Override
         public State onApplyValChange(final Integer val) {
-            if (val == clid) {
+            if (val >= clid) {
                 return this;
             } else {
                 failCommand(cm, new CaCommandPostError(
@@ -369,7 +377,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
 
         @Override
         public State onCarClidChange(final Integer val) {
-            if (val == clid) {
+            if (val >= clid) {
                 return this;
             } else {
                 failCommand(cm, new CaCommandPostError(

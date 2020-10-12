@@ -124,16 +124,16 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
     wl:    Option[Length]
   ): Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
     if (configTypes.isMirror(disp)) {
-      configTypes.GmosDisperser.Mirror.asRight[ConfigUtilOps.ExtractFailure]
+      configTypes.GmosDisperser.Mirror.asRight
     } else order.map { o =>
       if(o === GmosCommonType.Order.ZERO)
-        configTypes.GmosDisperser.Order0(disp).asRight[ConfigUtilOps.ExtractFailure]
+        configTypes.GmosDisperser.Order0(disp).asRight
       else wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w)
         .asRight[ConfigUtilOps.ExtractFailure]).getOrElse(
           ConfigUtilOps.ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.")
           .asLeft
         )
-    }.getOrElse(ConfigUtilOps.ContentError(s"Disperser is missing an order.").asLeft)
+    }.getOrElse(configTypes.GmosDisperser.Order0(disp).asRight)
 
   private def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, configTypes.CCConfig] =
     (for {
