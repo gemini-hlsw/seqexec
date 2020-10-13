@@ -125,15 +125,18 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
   ): Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
     if (configTypes.isMirror(disp)) {
       configTypes.GmosDisperser.Mirror.asRight
-    } else order.map { o =>
+    } else {
+      // Workaround for missing order: Use order 1 as default
+      val o = order.getOrElse(GmosCommonType.Order.ONE)
+
       if(o === GmosCommonType.Order.ZERO)
         configTypes.GmosDisperser.Order0(disp).asRight
-      else wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w)
-        .asRight[ConfigUtilOps.ExtractFailure]).getOrElse(
-          ConfigUtilOps.ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.")
-          .asLeft
-        )
-    }.getOrElse(configTypes.GmosDisperser.Order0(disp).asRight)
+      else
+        wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w).asRight)
+          .getOrElse(
+            ConfigUtilOps.ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.").asLeft
+          )
+    }
 
   private def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, configTypes.CCConfig] =
     (for {
@@ -297,7 +300,7 @@ object Gmos {
       ns    <- if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight
     } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def nsConfigF[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[NSConfig] =
+  def nsConfigF[F[_]: ApplicativeError[*[_], Throwable]](config: CleanConfig): F[NSConfig] =
     ApplicativeError[F, Throwable]
       .catchNonFatal(
         nsConfig(config).getOrElse(NSConfig.NoNodAndShuffle)
@@ -309,7 +312,7 @@ object Gmos {
       .map(v => Seconds(v.toDouble))
       .getOrElse(Seconds(10000))
 
-  def expTimeF[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[Time] =
+  def expTimeF[F[_]: ApplicativeError[*[_], Throwable]](config: CleanConfig): F[Time] =
     ApplicativeError[F, Throwable]
       .catchNonFatal(
         expTime(config)
