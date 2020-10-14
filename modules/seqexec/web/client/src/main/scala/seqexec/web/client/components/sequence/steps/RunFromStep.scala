@@ -13,16 +13,17 @@ import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.modules.popup.Popup
-import seqexec.web.client.actions.{RequestRunFrom, RunOptions}
+import seqexec.web.client.actions.{ RequestRunFrom, RunOptions }
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.reusability._
+import japgolly.scalajs.react.ReactMouseEvent
 
 /**
-  * Contains the control to start a step from an arbitrary point
-  */
+ * Contains the control to start a step from an arbitrary point
+ */
 final case class RunFromStep(
   id:               Observation.Id,
   stepId:           Int,
@@ -35,8 +36,14 @@ object RunFromStep {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  def requestRunFrom(id: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestRunFrom(id, stepId, RunOptions.Normal))
+  def requestRunFrom(
+    id:     Observation.Id,
+    stepId: Int
+  ): (ReactMouseEvent, Button.ButtonProps) => Callback =
+    (e: ReactMouseEvent, _: Button.ButtonProps) =>
+      SeqexecCircuit
+        .dispatchCB(RequestRunFrom(id, stepId, RunOptions.Normal))
+        .unless_(e.altKey || e.button === StepsTable.MiddleButton)
 
   protected val component = ScalaComponent
     .builder[Props]("RunFromStep")
@@ -46,9 +53,9 @@ object RunFromStep {
         SeqexecStyles.notInMobile,
         Popup(
           trigger = Button(
-            icon     = true,
-            color    = Blue,
-            onClick  = requestRunFrom(p.id, p.stepId),
+            icon = true,
+            color = Blue,
+            onClickE = requestRunFrom(p.id, p.stepId),
             disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
           )(IconPlay)
         )(s"Run from step ${p.stepId + 1}")
