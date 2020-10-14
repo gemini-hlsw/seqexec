@@ -9,7 +9,7 @@ import scala.scalajs.js
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ReactEvent
+import japgolly.scalajs.react.ReactMouseEvent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.Reusability._
 import japgolly.scalajs.react.ScalaComponent
@@ -32,8 +32,8 @@ import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.reusability._
 
 /**
-  * Contains the control buttons for each subsystem
-  */
+ * Contains the control buttons for each subsystem
+ */
 final case class SubsystemControlCell(
   id:             Observation.Id,
   stepId:         Int,
@@ -51,10 +51,11 @@ object SubsystemControlCell {
     id:     Observation.Id,
     stepId: StepId,
     r:      Resource
-  ): (ReactEvent, Button.ButtonProps) => Callback =
-    (e: ReactEvent, _: Button.ButtonProps) =>
-      e.preventDefaultCB *> e.stopPropagationCB *>
-        SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
+  ): (ReactMouseEvent, Button.ButtonProps) => Callback =
+    (e: ReactMouseEvent, _: Button.ButtonProps) =>
+      (e.preventDefaultCB *> e.stopPropagationCB *>
+        SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r)))
+        .unless_(e.altKey || e.button === StepsTable.MiddleButton)
 
   private val CompletedIcon = IconCheckmark.copy(
     fitted = true,
@@ -95,7 +96,7 @@ object SubsystemControlCell {
     }
 
   protected val component = ScalaComponent
-    .builder[Props]("SubsystemControl")
+    .builder[Props]
     .render_P { p =>
       <.div(
         SeqexecStyles.notInMobile,

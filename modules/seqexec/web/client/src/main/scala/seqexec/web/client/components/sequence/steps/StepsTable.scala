@@ -289,8 +289,8 @@ trait Columns {
 }
 
 /**
-  * Container for a table with the steps
-  */
+ * Container for a table with the steps
+ */
 final case class StepsTable(
   router:     RouterCtl[SeqexecPages],
   canOperate: Boolean,
@@ -438,8 +438,8 @@ object StepsTable extends Columns {
   type DidUpdate    = ComponentDidUpdate[Props, State, Unit, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
-  private val MiddleButton = 1 // As defined by React.js
-  private val HeaderRow    = -1
+  val MiddleButton      = 1 // As defined by React.js
+  private val HeaderRow = -1
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -638,8 +638,8 @@ object StepsTable extends Columns {
   }
 
   /**
-    * Class for the row depends on properties
-    */
+   * Class for the row depends on properties
+   */
   def rowClassName($ : Scope)(i: Int): String =
     ((i, $.props.rowGetter(i), $.props.canSetBreakpoint, $.state.breakpointHover) match {
       case (HeaderRow, _, _, _)                                    =>
@@ -660,8 +660,8 @@ object StepsTable extends Columns {
     }).htmlClass
 
   /**
-    * Height depending if we use offsets
-    */
+   * Height depending if we use offsets
+   */
   def baseHeight(p: Props): Int =
     if (p.showOffsets)
       HeightWithOffsets
@@ -669,8 +669,8 @@ object StepsTable extends Columns {
       SeqexecStyles.rowHeight
 
   /**
-    * Calculates the row height depending on conditions
-    */
+   * Calculates the row height depending on conditions
+   */
   def rowHeight($ : Scope)(i: Int): Int = {
     val row = $.props.rowGetter(i)
     row match {
@@ -901,7 +901,7 @@ object StepsTable extends Columns {
   )(e:          ReactMouseEvent): Callback =
     // If alt is pressed or middle button flip the breakpoint
     if (e.altKey || e.button === MiddleButton)
-      e.preventDefaultCB >>
+      e.stopPropagationCB *> e.preventDefaultCB >>
         (p.obsId, p.stepsList.find(_.id === index + 1))
           .mapN((oid, step) =>
             SeqexecCircuit

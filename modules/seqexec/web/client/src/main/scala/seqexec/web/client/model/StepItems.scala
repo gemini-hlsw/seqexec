@@ -215,11 +215,13 @@ object StepItems {
     final case object TwoDetailRows extends DetailRows(2)
   }
 
-  final case class StepStateSummary(step         : Step,
-                                    obsId        : Observation.Id,
-                                    instrument   : Instrument,
-                                    tabOperations: TabOperations,
-                                    state        : SequenceState) {
+  final case class StepStateSummary(
+    step:          Step,
+    obsId:         Observation.Id,
+    instrument:    Instrument,
+    tabOperations: TabOperations,
+    state:         SequenceState
+  ) {
     val isAC: Boolean =
       step.alignAndCalib(instrument).isDefined
 

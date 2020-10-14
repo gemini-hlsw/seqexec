@@ -33,8 +33,8 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**
-  * Component to display the step state and control
-  */
+ * Component to display the step state and control
+ */
 final case class StepProgressCell(
   clientStatus: ClientStatus,
   stateSummary: StepStateSummary,
@@ -122,7 +122,7 @@ object StepProgressCell {
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      if (props.stateSummary.isBias) {
+      if (props.stateSummary.isBias)
         BiasStatus(
           props.obsId,
           props.step.id,
@@ -130,22 +130,23 @@ object StepProgressCell {
           stopping = !paused && props.isStopping,
           paused
         )
-      } else {
+      else
         props.stateSummary.nsStatus.fold[VdomElement] {
           ObservationProgressBar(props.obsId,
                                  props.step.id,
                                  fileId,
                                  stopping = !paused && props.isStopping,
-                                 paused)
+                                 paused
+          )
         } { nsStatus =>
           NodAndShuffleProgressMessage(props.obsId,
                                        props.step.id,
                                        fileId,
                                        props.isStopping,
                                        paused,
-                                       nsStatus)
-        }
-      },
+                                       nsStatus
+          )
+        },
       stepControlButtons(props)
     )
 
