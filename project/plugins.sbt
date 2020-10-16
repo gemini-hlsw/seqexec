@@ -29,7 +29,7 @@ addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "1.0.0")
 addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "4.1.1")
 
 // Use NPM modules rather than webjars
-addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.18.0")
+addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.19.0")
 
 // Used to find dependencies
 addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.2")
