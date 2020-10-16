@@ -4,7 +4,7 @@ resolvers  ++= Seq(
 )
 // Gives support for Scala.js compilation
 val scalaJSVersion =
-  Option(System.getenv("SCALAJS_VERSION")).getOrElse("1.2.0")
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("1.3.0")
 
 addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.2.5")
 
