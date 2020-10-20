@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /** Enumerated type for Coma option. */
 sealed trait ComaOption extends Product with Serializable

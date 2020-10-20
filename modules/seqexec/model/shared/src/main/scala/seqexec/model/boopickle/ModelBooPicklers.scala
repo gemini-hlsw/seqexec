@@ -138,7 +138,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit def taggedIntPickler[A]: Pickler[Int @@ A]          =
     transformPickler((s: Int) => tag[A](s))(identity)
   implicit val nsStagePickler                                  = oldEnumeratedPickler[NodAndShuffleStage]
-  implicit val nsActionPickler                                 = oldEnumeratedPickler[NSAction]
+  implicit val nsActionPickler                                 = enumeratedPickler[NSAction]
   implicit val nsSubexposurePickler: Pickler[NSSubexposure]    =
     transformPickler[NSSubexposure, (NsCycles, NsCycles, Int)] {
       case (t: NsCycles, c: NsCycles, i: Int) =>
@@ -202,7 +202,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[BatchCommandState.Run]
     .addConcreteType[BatchCommandState.Stop.type]
 
-  implicit val batchExecStatePickler = oldEnumeratedPickler[BatchExecState]
+  implicit val batchExecStatePickler = enumeratedPickler[BatchExecState]
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
@@ -212,7 +212,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceQueueViewPickler =
     generatePickler[SequencesQueue[SequenceView]]
 
-  implicit val comaPickler = oldEnumeratedPickler[ComaOption]
+  implicit val comaPickler = enumeratedPickler[ComaOption]
 
   implicit val tipTiltSourcePickler  = enumeratedPickler[TipTiltSource]
   implicit val serverLogLevelPickler = enumeratedPickler[ServerLogLevel]

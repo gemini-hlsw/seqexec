@@ -7,7 +7,7 @@ import scala.collection.immutable.SortedMap
 
 import cats.Eq
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
@@ -18,7 +18,7 @@ import seqexec.model.enum.Resource
 
 sealed trait RunOperation extends Product with Serializable
 object RunOperation {
-  case object RunIdle extends RunOperation
+  case object RunIdle     extends RunOperation
   case object RunInFlight extends RunOperation
 
   /** @group Typeclass Instances */
@@ -29,7 +29,7 @@ object RunOperation {
 
 sealed trait StopOperation extends Product with Serializable
 object StopOperation {
-  case object StopIdle extends StopOperation
+  case object StopIdle     extends StopOperation
   case object StopInFlight extends StopOperation
 
   /** @group Typeclass Instances */
@@ -40,7 +40,7 @@ object StopOperation {
 
 sealed trait AbortOperation extends Product with Serializable
 object AbortOperation {
-  case object AbortIdle extends AbortOperation
+  case object AbortIdle     extends AbortOperation
   case object AbortInFlight extends AbortOperation
 
   /** @group Typeclass Instances */
@@ -51,7 +51,7 @@ object AbortOperation {
 
 sealed trait PauseOperation extends Product with Serializable
 object PauseOperation {
-  case object PauseIdle extends PauseOperation
+  case object PauseIdle     extends PauseOperation
   case object PauseInFlight extends PauseOperation
 
   /** @group Typeclass Instances */
@@ -62,7 +62,7 @@ object PauseOperation {
 
 sealed trait CancelPauseOperation extends Product with Serializable
 object CancelPauseOperation {
-  case object CancelPauseIdle extends CancelPauseOperation
+  case object CancelPauseIdle     extends CancelPauseOperation
   case object CancelPauseInFlight extends CancelPauseOperation
 
   /** @group Typeclass Instances */
@@ -73,7 +73,7 @@ object CancelPauseOperation {
 
 sealed trait ResumeOperation extends Product with Serializable
 object ResumeOperation {
-  case object ResumeIdle extends ResumeOperation
+  case object ResumeIdle     extends ResumeOperation
   case object ResumeInFlight extends ResumeOperation
 
   /** @group Typeclass Instances */
@@ -84,7 +84,7 @@ object ResumeOperation {
 
 sealed trait SyncOperation extends Product with Serializable
 object SyncOperation {
-  case object SyncIdle extends SyncOperation
+  case object SyncIdle     extends SyncOperation
   case object SyncInFlight extends SyncOperation
 
   /** @group Typeclass Instances */
@@ -105,12 +105,12 @@ object ResourceRunOperation {
   final case class ResourceRunFailed(stepId: StepId) extends ResourceRunRequested
 
   def fromActionStatus(stepId: StepId): ActionStatus => Option[ResourceRunOperation] = {
-      case ActionStatus.Running   => ResourceRunOperation.ResourceRunInFlight(stepId).some
-      case ActionStatus.Paused    => ResourceRunOperation.ResourceRunInFlight(stepId).some
-      case ActionStatus.Completed => ResourceRunOperation.ResourceRunCompleted(stepId).some
-      case ActionStatus.Failed    => ResourceRunOperation.ResourceRunFailed(stepId).some
-      case _                      => none
-    }
+    case ActionStatus.Running   => ResourceRunOperation.ResourceRunInFlight(stepId).some
+    case ActionStatus.Paused    => ResourceRunOperation.ResourceRunInFlight(stepId).some
+    case ActionStatus.Completed => ResourceRunOperation.ResourceRunCompleted(stepId).some
+    case ActionStatus.Failed    => ResourceRunOperation.ResourceRunFailed(stepId).some
+    case _                      => none
+  }
 
   implicit val eqResourceRunOperation: Eq[ResourceRunOperation] = Eq.instance {
     case (ResourceRunIdle, ResourceRunIdle)                 => true
@@ -124,7 +124,7 @@ object ResourceRunOperation {
 sealed trait StartFromOperation extends Product with Serializable
 object StartFromOperation {
   case object StartFromInFlight extends StartFromOperation
-  case object StartFromIdle extends StartFromOperation
+  case object StartFromIdle     extends StartFromOperation
 
   /** @group Typeclass Instances */
   implicit val StartFromOperationEnumerated: Enumerated[StartFromOperation] =
@@ -133,8 +133,8 @@ object StartFromOperation {
 }
 
 /**
-  * Hold transient states while excuting an operation
-  */
+ * Hold transient states while excuting an operation
+ */
 @Lenses
 final case class TabOperations(
   runRequested:         RunOperation,
@@ -152,7 +152,7 @@ final case class TabOperations(
     resourceRunRequested.exists(_._2 match {
       case ResourceRunOperation.ResourceRunInFlight(sid) if sid === id =>
         true
-      case _ => false
+      case _                                                           => false
     })
 
   // Indicate if any resource is in error
@@ -160,21 +160,21 @@ final case class TabOperations(
     resourceRunRequested.exists(_._2 match {
       case ResourceRunOperation.ResourceRunFailed(sid) if sid === id =>
         true
-      case _ => false
+      case _                                                         => false
     })
 
   // Indicate if any resource has had a run requested (which may be complete or not)
   def resourceRunNotIdle(id: StepId): Boolean =
-  resourceRunRequested.exists(_._2 match {
-    case r: ResourceRunRequested if r.stepId === id => true
-    case _ => false
-  })
+    resourceRunRequested.exists(_._2 match {
+      case r: ResourceRunRequested if r.stepId === id => true
+      case _                                          => false
+    })
 
   def anyResourceInFlight: Boolean =
     resourceRunRequested.exists(_._2 match {
       case ResourceRunOperation.ResourceRunInFlight(_) =>
         true
-      case _ => false
+      case _                                           => false
     })
 
   val stepRequestInFlight: Boolean =
@@ -188,17 +188,17 @@ final case class TabOperations(
 
 object TabOperations {
   implicit val eq: Eq[TabOperations] =
-    Eq.by(
-      x =>
-        (x.runRequested,
-         x.syncRequested,
-         x.pauseRequested,
-         x.cancelPauseRequested,
-         x.resumeRequested,
-         x.stopRequested,
-         x.abortRequested,
-         x.startFromRequested,
-         x.resourceRunRequested)
+    Eq.by(x =>
+      (x.runRequested,
+       x.syncRequested,
+       x.pauseRequested,
+       x.cancelPauseRequested,
+       x.resumeRequested,
+       x.stopRequested,
+       x.abortRequested,
+       x.startFromRequested,
+       x.resourceRunRequested
+      )
     )
 
   def resourceRun(
@@ -226,7 +226,7 @@ object TabOperations {
     TabOperations.resourceRunRequested.modify(_.map {
       case (r, ResourceRunOperation.ResourceRunCompleted(_)) if re === r =>
         r -> ResourceRunOperation.ResourceRunIdle
-      case r => r
+      case r                                                             => r
     })
 
   val Default: TabOperations =

@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.Observer

@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import diode.data._
 import gem.arb.ArbObservation
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
 import gem.data.Zipper
@@ -92,27 +92,20 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         sv  <- arbitrary[Either[SequenceView, SequenceView]]
         to  <- arbitrary[TabOperations]
         se  <- arbitrary[Option[StepId]]
-      } yield
-        InstrumentSequenceTab(
-          i,
-          sv.bimap(tag[InstrumentSequenceTab.CompletedSV][SequenceView],
-                   tag[InstrumentSequenceTab.LoadedSV][SequenceView]),
-          idx,
-          se,
-          to)
+      } yield InstrumentSequenceTab(i,
+                                    sv.bimap(tag[InstrumentSequenceTab.CompletedSV][SequenceView],
+                                             tag[InstrumentSequenceTab.LoadedSV][SequenceView]
+                                    ),
+                                    idx,
+                                    se,
+                                    to
+      )
     }
 
   implicit val istCogen: Cogen[InstrumentSequenceTab] =
-    Cogen[(Instrument,
-           SequenceView,
-           Option[StepId],
-           Option[StepId],
-           TabOperations)].contramap { x =>
-      (x.inst,
-       x.sequence,
-       x.stepConfig,
-       x.selectedStep,
-       x.tabOperations)
+    Cogen[(Instrument, SequenceView, Option[StepId], Option[StepId], TabOperations)].contramap {
+      x =>
+        (x.inst, x.sequence, x.stepConfig, x.selectedStep, x.tabOperations)
     }
 
   implicit val arbPreviewSequenceTab: Arbitrary[PreviewSequenceTab] =
@@ -287,24 +280,29 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =
-    Cogen[(Boolean,
-       Instrument,
-       Observation.Id,
-       TabSelected,
-       StepsTableTypeSelection,
-       SectionVisibilityState,
-       Boolean,
-       Int)]
-      .contramap(
-        x =>
-          (x.canOperate,
-           x.instrument,
-           x.id,
-           x.active,
-           x.tableType,
-           x.logDisplayed,
-           x.isPreview,
-           x.totalSteps))
+    Cogen[
+      (
+        Boolean,
+        Instrument,
+        Observation.Id,
+        TabSelected,
+        StepsTableTypeSelection,
+        SectionVisibilityState,
+        Boolean,
+        Int
+      )
+    ]
+      .contramap(x =>
+        (x.canOperate,
+         x.instrument,
+         x.id,
+         x.active,
+         x.tableType,
+         x.logDisplayed,
+         x.isPreview,
+         x.totalSteps
+        )
+      )
 
   implicit val arbQtcf: Arbitrary[CalQueueTabContentFocus] =
     Arbitrary {
@@ -346,22 +344,20 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val availableTabCogen: Cogen[AvailableTab] =
-    Cogen[(Observation.Id,
-           SequenceState,
-           Instrument,
-           Option[Int],
-           Option[RunningStep],
-           Boolean,
-           TabSelected)]
-      .contramap(
-        x =>
-          (x.id,
-           x.status,
-           x.instrument,
-           x.nextStepToRun,
-           x.runningStep,
-           x.isPreview,
-           x.active))
+    Cogen[
+      (
+        Observation.Id,
+        SequenceState,
+        Instrument,
+        Option[Int],
+        Option[RunningStep],
+        Boolean,
+        TabSelected
+      )
+    ]
+      .contramap(x =>
+        (x.id, x.status, x.instrument, x.nextStepToRun, x.runningStep, x.isPreview, x.active)
+      )
 
   implicit val arbSeqexecTabActive: Arbitrary[SeqexecTabActive] =
     Arbitrary {
@@ -399,14 +395,18 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val sstCogen: Cogen[StepsTableFocus] =
-    Cogen[(Observation.Id,
-       Instrument,
-       SequenceState,
-       List[Step],
-       Option[Int],
-       Option[StepId],
-       Option[StepId],
-       TableState[StepsTable.TableColumn])].contramap { x =>
+    Cogen[
+      (
+        Observation.Id,
+        Instrument,
+        SequenceState,
+        List[Step],
+        Option[Int],
+        Option[StepId],
+        Option[StepId],
+        TableState[StepsTable.TableColumn]
+      )
+    ].contramap { x =>
       (x.id,
        x.instrument,
        x.state,
@@ -514,10 +514,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed),
-                    Either[(Instrument, Observation.Id, StepIdDisplayed),
-                           Either[(Instrument, Observation.Id, Int),
-                                  (Instrument, Observation.Id, Int)]]]]]]]
+    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[
+      (Instrument, Observation.Id, StepIdDisplayed),
+      Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]
+    ]]]]]]
       .contramap {
         case Root                        => None
         case CalibrationQueuePage        => Some(None)
@@ -659,54 +659,58 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         filter             <- arbitrary[SessionQueueFilter]
         sound              <- arbitrary[SoundSelection]
         firstLoad          <- arbitrary[Boolean]
-      } yield
-        SeqexecUIModel(
-          navLocation,
-          user,
-          loginBox,
-          globalLog,
-          sequencesOnDisplay,
-          appTableStates,
-          defaultObserver,
-          notification,
-          prompt,
-          queues,
-          progress,
-          filter,
-          sound,
-          firstLoad
-        )
+      } yield SeqexecUIModel(
+        navLocation,
+        user,
+        loginBox,
+        globalLog,
+        sequencesOnDisplay,
+        appTableStates,
+        defaultObserver,
+        notification,
+        prompt,
+        queues,
+        progress,
+        filter,
+        sound,
+        firstLoad
+      )
     }
 
   implicit val seqUIModelCogen: Cogen[SeqexecUIModel] =
-    Cogen[(Pages.SeqexecPages,
-       Option[UserDetails],
-       SectionVisibilityState,
-       GlobalLog,
-       SequencesOnDisplay,
-       AppTableStates,
-       Observer,
-       UserNotificationState,
-       CalibrationQueues,
-       AllObservationsProgressState,
-       SessionQueueFilter,
-       SoundSelection,
-       Boolean)]
-      .contramap(
-        x =>
-          (x.navLocation,
-           x.user,
-           x.loginBox,
-           x.globalLog,
-           x.sequencesOnDisplay,
-           x.appTableStates,
-           x.defaultObserver,
-           x.notification,
-           x.queues,
-           x.obsProgress,
-           x.sessionQueueFilter,
-           x.sound,
-           x.firstLoad))
+    Cogen[
+      (
+        Pages.SeqexecPages,
+        Option[UserDetails],
+        SectionVisibilityState,
+        GlobalLog,
+        SequencesOnDisplay,
+        AppTableStates,
+        Observer,
+        UserNotificationState,
+        CalibrationQueues,
+        AllObservationsProgressState,
+        SessionQueueFilter,
+        SoundSelection,
+        Boolean
+      )
+    ]
+      .contramap(x =>
+        (x.navLocation,
+         x.user,
+         x.loginBox,
+         x.globalLog,
+         x.sequencesOnDisplay,
+         x.appTableStates,
+         x.defaultObserver,
+         x.notification,
+         x.queues,
+         x.obsProgress,
+         x.sessionQueueFilter,
+         x.sound,
+         x.firstLoad
+        )
+      )
 
   implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =
     Arbitrary {
@@ -726,7 +730,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
       for {
         navLocation          <- arbitrary[Pages.SeqexecPages]
         sequences            <- arbitrary[SequencesQueue[SequenceView]]
-        resourceRunRequested <- arbitrary[Map[Observation.Id, SortedMap[Resource, ResourceRunOperation]]]
+        resourceRunRequested <-
+          arbitrary[Map[Observation.Id, SortedMap[Resource, ResourceRunOperation]]]
         user                 <- arbitrary[Option[UserDetails]]
         observer             <- arbitrary[Observer]
         clientId             <- arbitrary[Option[ClientId]]
@@ -735,43 +740,48 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         serverVer            <- arbitrary[Option[String]]
         guideConf            <- arbitrary[TelescopeGuideConfig]
         acStep               <- arbitrary[AlignAndCalibStep]
-      } yield
-        WebSocketsFocus(navLocation,
-                        sequences,
-                        resourceRunRequested,
-                        user,
-                        observer,
-                        clientId,
-                        site,
-                        sound,
-                        serverVer,
-                        guideConf,
-                        acStep)
+      } yield WebSocketsFocus(navLocation,
+                              sequences,
+                              resourceRunRequested,
+                              user,
+                              observer,
+                              clientId,
+                              site,
+                              sound,
+                              serverVer,
+                              guideConf,
+                              acStep
+      )
     }
 
   implicit val wsfCogen: Cogen[WebSocketsFocus] =
-    Cogen[(Pages.SeqexecPages,
-           SequencesQueue[SequenceView],
-           Option[UserDetails],
-           Observer,
-           Option[ClientId],
-           Option[Site],
-           SoundSelection,
-           Option[String],
-           TelescopeGuideConfig,
-           AlignAndCalibStep)]
-      .contramap(
-        x =>
-          (x.location,
-           x.sequences,
-           x.user,
-           x.defaultObserver,
-           x.clientId,
-           x.site,
-           x.sound,
-           x.serverVersion,
-           x.guideConfig,
-           x.alignAndCalib))
+    Cogen[
+      (
+        Pages.SeqexecPages,
+        SequencesQueue[SequenceView],
+        Option[UserDetails],
+        Observer,
+        Option[ClientId],
+        Option[Site],
+        SoundSelection,
+        Option[String],
+        TelescopeGuideConfig,
+        AlignAndCalibStep
+      )
+    ]
+      .contramap(x =>
+        (x.location,
+         x.sequences,
+         x.user,
+         x.defaultObserver,
+         x.clientId,
+         x.site,
+         x.sound,
+         x.serverVersion,
+         x.guideConfig,
+         x.alignAndCalib
+        )
+      )
 
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {
@@ -798,12 +808,40 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         version   <- arbitrary[Option[String]]
         guideConf <- arbitrary[TelescopeGuideConfig]
         acStep    <- arbitrary[AlignAndCalibStep]
-      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf, acStep, None)
+      } yield SeqexecAppRootModel(sequences,
+                                  ws,
+                                  site,
+                                  clientId,
+                                  uiModel,
+                                  version,
+                                  guideConf,
+                                  acStep,
+                                  None
+      )
     }
 
   implicit val seqexecAppRootModelCogen: Cogen[SeqexecAppRootModel] =
-    Cogen[(SequencesQueue[SequenceView], WebSocketConnection, Option[Site], Option[ClientId], SeqexecUIModel, Option[String], TelescopeGuideConfig, AlignAndCalibStep)].contramap { x =>
-      (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion, x.guideConfig, x.alignAndCalib)
+    Cogen[
+      (
+        SequencesQueue[SequenceView],
+        WebSocketConnection,
+        Option[Site],
+        Option[ClientId],
+        SeqexecUIModel,
+        Option[String],
+        TelescopeGuideConfig,
+        AlignAndCalibStep
+      )
+    ].contramap { x =>
+      (x.sequences,
+       x.ws,
+       x.site,
+       x.clientId,
+       x.uiModel,
+       x.serverVersion,
+       x.guideConfig,
+       x.alignAndCalib
+      )
     }
 
   implicit val arbAppTableStates: Arbitrary[AppTableStates] =
@@ -817,10 +855,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
     }
 
   implicit val appTableStatesCogen: Cogen[AppTableStates] =
-    Cogen[(TableState[SessionQueueTable.TableColumn],
-           TableState[StepConfigTable.TableColumn],
-           List[(Observation.Id, TableState[StepsTable.TableColumn])],
-           List[(QueueId, TableState[CalQueueTable.TableColumn])])]
+    Cogen[
+      (
+        TableState[SessionQueueTable.TableColumn],
+        TableState[StepConfigTable.TableColumn],
+        List[(Observation.Id, TableState[StepsTable.TableColumn])],
+        List[(QueueId, TableState[CalQueueTable.TableColumn])]
+      )
+    ]
       .contramap { x =>
         (x.sessionQueueTable, x.stepConfigTable, x.stepsTables.toList, x.queueTables.toList)
       }

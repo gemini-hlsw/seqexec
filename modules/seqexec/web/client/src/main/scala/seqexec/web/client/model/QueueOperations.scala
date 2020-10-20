@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 
 sealed trait AddDayCalOperation extends Product with Serializable
