@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.tabs
 
-import gem.enum.Site
+import lucuma.core.enum.Site
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
@@ -19,8 +19,8 @@ import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.reusability._
 
 /**
-  * Top level container of the tabs area
-  */
+ * Top level container of the tabs area
+ */
 final case class TabsArea(router: RouterCtl[SeqexecPages], site: Site)
     extends ReactProps[TabsArea](TabsArea.component)
 
@@ -42,7 +42,7 @@ object TabsArea {
               x().toList.collect {
                 case t: SequenceTabContentFocus =>
                   SequenceTabContent(p.router, t): VdomNode
-                case t =>
+                case t                          =>
                   CalQueueTabContent(
                     CalQueueTabContent.Props(t.canOperate, t.active, t.logDisplayed)
                   ): VdomNode

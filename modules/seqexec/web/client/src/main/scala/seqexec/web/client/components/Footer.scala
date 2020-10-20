@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import scala.concurrent.duration._
 
-import gem.enum.Site
+import lucuma.core.enum.Site
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl

@@ -42,32 +42,17 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap
 
-  def oldSourceIndex[A: gem.util.Enumerated]: Map[Int, A] =
-    gem.util.Enumerated[A].all.zipWithIndex.map(_.swap).toMap
-
   def sourceIndex[A: Enumerated]: Map[Int, A] =
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
-  def oldValuesMapPickler[A: Eq: gem.util.Enumerated, B: Monoid: Pickler](
-    valuesMap: Map[B, A]
-  ): Pickler[A]                                                    =
-    transformPickler((t: B) =>
-      valuesMap
-        .get(t)
-        .getOrElse(throw new RuntimeException(s"Failed to decode value"))
-    )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
-
   def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
-  ): Pickler[A]                                                    =
+  ): Pickler[A]                                        =
     transformPickler((t: B) =>
       valuesMap
         .get(t)
         .getOrElse(throw new RuntimeException(s"Failed to decode value"))
     )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
-
-  def oldEnumeratedPickler[A: Eq: gem.util.Enumerated]: Pickler[A] =
-    oldValuesMapPickler[A, Int](oldSourceIndex[A])
 
   def enumeratedPickler[A: Eq: Enumerated]: Pickler[A] =
     valuesMapPickler[A, Int](sourceIndex[A])
@@ -137,7 +122,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val standardStepPickler                             = generatePickler[StandardStep]
   implicit def taggedIntPickler[A]: Pickler[Int @@ A]          =
     transformPickler((s: Int) => tag[A](s))(identity)
-  implicit val nsStagePickler                                  = oldEnumeratedPickler[NodAndShuffleStage]
+  implicit val nsStagePickler                                  = enumeratedPickler[NodAndShuffleStage]
   implicit val nsActionPickler                                 = enumeratedPickler[NSAction]
   implicit val nsSubexposurePickler: Pickler[NSSubexposure]    =
     transformPickler[NSSubexposure, (NsCycles, NsCycles, Int)] {
@@ -151,7 +136,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val nsRunningStatePickler                           = generatePickler[NSRunningState]
   implicit val nsStatusPickler                                 = generatePickler[NodAndShuffleStatus]
   implicit val nsPendObsCmdPickler: Pickler[PendingObserveCmd] =
-    oldEnumeratedPickler[PendingObserveCmd]
+    enumeratedPickler[PendingObserveCmd]
   implicit val nsStepPickler                                   = generatePickler[NodAndShuffleStep]
 
   implicit val stepPickler = compositePickler[Step]
@@ -285,7 +270,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val userPromptNotPickler               = generatePickler[UserPromptNotification]
   implicit val guideConfigPickler                 = generatePickler[GuideConfigUpdate]
   implicit val queueUpdatedPickler                = generatePickler[QueueUpdated]
-  implicit val observationStagePickler            = oldEnumeratedPickler[ObserveStage]
+  implicit val observationStagePickler            = enumeratedPickler[ObserveStage]
   implicit val observationProgressPickler         = generatePickler[ObservationProgress]
   implicit val nsobseProgressPickler              = generatePickler[NSObservationProgress]
   implicit val progressPickler                    = compositePickler[Progress]

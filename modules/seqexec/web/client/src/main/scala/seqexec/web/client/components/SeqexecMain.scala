@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import cats.implicits._
 import diode.react.ReactPot._
-import gem.enum.Site
+import lucuma.core.enum.Site
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent

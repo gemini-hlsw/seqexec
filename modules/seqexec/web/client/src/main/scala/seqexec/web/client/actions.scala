@@ -7,7 +7,7 @@ import cats.Show
 import cats.syntax.all._
 import diode.Action
 import gem.Observation
-import gem.enum.Site
+import lucuma.core.enum.Site
 import org.scalajs.dom.WebSocket
 import pprint.PPrinter
 import seqexec.model.Notification.RequestFailed
@@ -85,7 +85,8 @@ object actions {
     resource: Resource,
     msg:      String
   )                                    extends Action
-  final case class RequestRunFrom(qid: Observation.Id, step: StepId, options: RunOptions) extends Action
+  final case class RequestRunFrom(qid: Observation.Id, step: StepId, options: RunOptions)
+      extends Action
   final case class RunFromComplete(id: Observation.Id, step: StepId) extends Action
   final case class RunFromFailed(id: Observation.Id, step: StepId) extends Action
 

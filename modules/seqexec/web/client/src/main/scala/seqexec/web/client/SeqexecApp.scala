@@ -9,7 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 import cats.effect.Sync
 import cats.effect._
-import gem.enum.Site
+import lucuma.core.enum.Site
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
 import seqexec.web.client.actions.Initialize
@@ -20,8 +20,8 @@ import seqexec.web.client.services.SeqexecWebClient
 import typings.loglevel.mod.{ ^ => logger }
 
 /**
-  * Seqexec WebApp entry point
-  */
+ * Seqexec WebApp entry point
+ */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
   // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
 
@@ -54,9 +54,9 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
 }
 
 /**
-  * Seqexec WebApp entry point
-  * Exposed to the js world
-  */
+ * Seqexec WebApp entry point
+ * Exposed to the js world
+ */
 @JSExportTopLevel("SeqexecApp")
 object SeqexecApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {

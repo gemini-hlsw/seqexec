@@ -8,7 +8,7 @@ import cats.effect._
 import cats.syntax.all._
 import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer
-import gem.enum.Site
+import lucuma.core.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger

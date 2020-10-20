@@ -5,16 +5,14 @@ package seqexec.model.config
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.config.arb.ArbSystemsControlConfiguration._
 
 /**
-  * Tests config classes
-  */
+ * Tests config classes
+ */
 final class ConfigModelSpec extends CatsSuite {
-  checkAll("Eq[SystemsControlConfiguration]",
-           EqTests[SystemsControlConfiguration].eqv)
+  checkAll("Eq[SystemsControlConfiguration]", EqTests[SystemsControlConfiguration].eqv)
   checkAll("Eq[Mode]", EqTests[Mode].eqv)
-  // TODO when https 0.21 is made available
   // checkAll("Eq[AuthenticationConfig]", EqTests[AuthenticationConfig].eqv)
 }

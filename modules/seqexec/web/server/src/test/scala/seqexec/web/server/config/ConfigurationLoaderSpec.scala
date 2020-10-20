@@ -3,8 +3,8 @@
 
 package seqexec.web.server.config
 
-import cats.effect.{Blocker, ContextShift, IO}
-import gem.enum.Site
+import cats.effect.{ Blocker, ContextShift, IO }
+import lucuma.core.enum.Site
 import java.nio.file.Paths
 import org.http4s.Uri
 import org.http4s.Uri._
@@ -16,31 +16,37 @@ import cats.tests.CatsSuite
 import scala.concurrent.ExecutionContext
 
 class ConfigurationLoaderSpec extends CatsSuite {
-  val gcal =
+  val gcal   =
     SmartGcalConfiguration(uri("gsodbtest.gemini.edu"), Paths.get("/tmp/smartgcal"))
-  val tls  = TLSConfig(Paths.get("file.jks"), "key", "cert")
-  val auth  = AuthenticationConfig(2.hour, "SeqexecToken", "somekey", false, List(uri("ldap://sbfdc-wv1.gemini.edu:3268")))
-  val ws  = WebServerConfiguration("0.0.0.0", 7070, 7071, "localhost", Some(tls))
-  val server  = SeqexecEngineConfiguration(
+  val tls    = TLSConfig(Paths.get("file.jks"), "key", "cert")
+  val auth   = AuthenticationConfig(2.hour,
+                                  "SeqexecToken",
+                                  "somekey",
+                                  false,
+                                  List(uri("ldap://sbfdc-wv1.gemini.edu:3268"))
+  )
+  val ws     = WebServerConfiguration("0.0.0.0", 7070, 7071, "localhost", Some(tls))
+  val server = SeqexecEngineConfiguration(
     uri("localhost"),
     uri("http://cpodhsxx:9090/axis2/services/dhs/images"),
     SystemsControlConfiguration(
-      altair =   ControlStrategy.Simulated,
-      gems =     ControlStrategy.Simulated,
-      dhs =      ControlStrategy.Simulated,
-      f2 =       ControlStrategy.Simulated,
-      gcal =     ControlStrategy.Simulated,
-      gmos =     ControlStrategy.Simulated,
-      gnirs =    ControlStrategy.Simulated,
-      gpi =      ControlStrategy.Simulated,
-      gpiGds =   ControlStrategy.Simulated,
-      ghost =    ControlStrategy.Simulated,
+      altair = ControlStrategy.Simulated,
+      gems = ControlStrategy.Simulated,
+      dhs = ControlStrategy.Simulated,
+      f2 = ControlStrategy.Simulated,
+      gcal = ControlStrategy.Simulated,
+      gmos = ControlStrategy.Simulated,
+      gnirs = ControlStrategy.Simulated,
+      gpi = ControlStrategy.Simulated,
+      gpiGds = ControlStrategy.Simulated,
+      ghost = ControlStrategy.Simulated,
       ghostGds = ControlStrategy.Simulated,
-      gsaoi =    ControlStrategy.Simulated,
-      gws =      ControlStrategy.Simulated,
-      nifs =     ControlStrategy.Simulated,
-      niri =     ControlStrategy.Simulated,
-      tcs =      ControlStrategy.Simulated),
+      gsaoi = ControlStrategy.Simulated,
+      gws = ControlStrategy.Simulated,
+      nifs = ControlStrategy.Simulated,
+      niri = ControlStrategy.Simulated,
+      tcs = ControlStrategy.Simulated
+    ),
     true,
     false,
     2,
@@ -52,11 +58,12 @@ class ConfigurationLoaderSpec extends CatsSuite {
     "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:",
     Some("127.0.0.1"),
     5.seconds,
-    10.seconds)
-  val ref = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
+    10.seconds
+  )
+  val ref    = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
 
   implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-  val blocker = Blocker.liftExecutionContext(ExecutionContext.global)
+  val blocker                                 = Blocker.liftExecutionContext(ExecutionContext.global)
   test("read config") {
     assert(
       loadConfiguration[IO](ConfigSource.string(conf), blocker).unsafeRunSync() === ref

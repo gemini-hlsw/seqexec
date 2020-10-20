@@ -3,7 +3,7 @@
 
 package seqexec.model.config
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /**
  * Operating mode of the seqexec, development or production
@@ -11,7 +11,7 @@ import gem.util.Enumerated
 sealed trait Mode extends Product with Serializable
 
 object Mode {
-  case object Production extends Mode
+  case object Production  extends Mode
   case object Development extends Mode
 
   implicit val ModeEnumerated: Enumerated[Mode] =

@@ -15,7 +15,7 @@ package object gmos {
 
 package gmos {
 
-  import gem.util.Enumerated
+  import lucuma.core.util.Enumerated
 
   sealed trait NSPartial extends PartialVal {
     def ongoingAction: NSAction

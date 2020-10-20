@@ -9,7 +9,7 @@ import diode.data._
 import gem.arb.ArbObservation
 import lucuma.core.util.arb.ArbEnumerated._
 import gem.Observation
-import gem.enum.Site
+import lucuma.core.enum.Site
 import gem.data.Zipper
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument

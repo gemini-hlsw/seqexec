@@ -3,7 +3,7 @@
 
 package seqexec.model.config.arb
 
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
@@ -11,8 +11,7 @@ import seqexec.model.config._
 
 trait ArbSystemsControlConfiguration {
 
-  implicit val arbSystemsControlConfiguration
-    : Arbitrary[SystemsControlConfiguration] =
+  implicit val arbSystemsControlConfiguration: Arbitrary[SystemsControlConfiguration] =
     Arbitrary {
       for {
         altair   <- arbitrary[ControlStrategy]
@@ -31,27 +30,26 @@ trait ArbSystemsControlConfiguration {
         nifs     <- arbitrary[ControlStrategy]
         niri     <- arbitrary[ControlStrategy]
         tcs      <- arbitrary[ControlStrategy]
-      } yield
-        SystemsControlConfiguration(altair,
-                                    gems,
-                                    dhs,
-                                    f2,
-                                    gcal,
-                                    gmos,
-                                    gnirs,
-                                    gpi,
-                                    gpiGds,
-                                    ghost,
-                                    ghostGds,
-                                    gsaoi,
-                                    gws,
-                                    nifs,
-                                    niri,
-                                    tcs)
+      } yield SystemsControlConfiguration(altair,
+                                          gems,
+                                          dhs,
+                                          f2,
+                                          gcal,
+                                          gmos,
+                                          gnirs,
+                                          gpi,
+                                          gpiGds,
+                                          ghost,
+                                          ghostGds,
+                                          gsaoi,
+                                          gws,
+                                          nifs,
+                                          niri,
+                                          tcs
+      )
     }
 
-  implicit val systemsControlConfigurationCogen
-    : Cogen[SystemsControlConfiguration] =
+  implicit val systemsControlConfigurationCogen: Cogen[SystemsControlConfiguration] =
     Cogen[
       (
         ControlStrategy,
@@ -71,25 +69,25 @@ trait ArbSystemsControlConfiguration {
         ControlStrategy,
         ControlStrategy
       )
-    ].contramap(
-        x =>
-          (x.altair,
-           x.gems,
-           x.dhs,
-           x.f2,
-           x.gcal,
-           x.gmos,
-           x.gnirs,
-           x.gpi,
-           x.gpiGds,
-           x.ghost,
-           x.ghostGds,
-           x.gsaoi,
-           x.gws,
-           x.nifs,
-           x.niri,
-           x.tcs)
+    ].contramap(x =>
+      (x.altair,
+       x.gems,
+       x.dhs,
+       x.f2,
+       x.gcal,
+       x.gmos,
+       x.gnirs,
+       x.gpi,
+       x.gpiGds,
+       x.ghost,
+       x.ghostGds,
+       x.gsaoi,
+       x.gws,
+       x.nifs,
+       x.niri,
+       x.tcs
       )
+    )
 
 }
 

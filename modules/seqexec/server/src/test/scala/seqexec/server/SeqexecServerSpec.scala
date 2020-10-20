@@ -5,11 +5,11 @@ package seqexec.server
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 
 /**
-  * Tests SeqexecServer typeclasses
-  */
+ * Tests SeqexecServer typeclasses
+ */
 final class SeqexecServerSpec extends CatsSuite with SeqexecServerArbitraries {
   checkAll("Eq[EpicsHealth]", EqTests[EpicsHealth].eqv)
 }

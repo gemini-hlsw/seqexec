@@ -4,13 +4,13 @@
 package seqexec.server
 
 import cats.syntax.all._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait EpicsHealth extends Product with Serializable
 
 object EpicsHealth {
   case object Good extends EpicsHealth
-  case object Bad extends EpicsHealth
+  case object Bad  extends EpicsHealth
   implicit def fromInt(v: Int): EpicsHealth = if (v === 0) Good else Bad
 
   implicit val EpicsHealthEnumerated: Enumerated[EpicsHealth] =

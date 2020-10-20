@@ -14,7 +14,7 @@ import scala.scalajs.js
 import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
-import gem.enum.Site
+import lucuma.core.enum.Site
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -55,8 +55,8 @@ import seqexec.web.client.reusability._
 import web.client.table._
 
 /**
-  * Area to display a sequence's log
-  */
+ * Area to display a sequence's log
+ */
 object CopyLogToClipboard {
   private val component = ScalaComponent
     .builder[String]("CopyLogToClipboard")
@@ -73,8 +73,8 @@ object CopyLogToClipboard {
 }
 
 /**
-  * Area to display a sequence's log
-  */
+ * Area to display a sequence's log
+ */
 object LogArea {
   type Backend = RenderScope[Props, State, Unit]
 
@@ -83,8 +83,8 @@ object LogArea {
 
   sealed trait TableColumn
   case object TimestampColumn extends TableColumn
-  case object LevelColumn extends TableColumn
-  case object MsgColumn extends TableColumn
+  case object LevelColumn     extends TableColumn
+  case object MsgColumn       extends TableColumn
   case object ClipboardColumn extends TableColumn
 
   object TableColumn {
@@ -108,11 +108,11 @@ object LogArea {
 
     def apply(local: String, timestamp: Instant, level: ServerLogLevel, msg: String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
-      p.local     = local
+      p.local = local
       p.timestamp = timestamp
-      p.level     = level
-      p.msg       = msg
-      p.clip      = ""
+      p.level = level
+      p.msg = msg
+      p.clip = ""
       p
     }
 
@@ -166,7 +166,7 @@ object LogArea {
 
     private val DefaultTableState: TableState[TableColumn] =
       TableState[TableColumn](
-        userModified   = NotModified,
+        userModified = NotModified,
         scrollPosition = 0,
         columns =
           NonEmptyList.of(TimestampColumnMeta, LevelColumnMeta, MsgColumnMeta, ClipboardColumnMeta)
@@ -174,7 +174,8 @@ object LogArea {
 
     val Default: State =
       State(SortedMap(ServerLogLevel.ServerLogLevelEnumerated.all.map(_ -> true): _*),
-            DefaultTableState)
+            DefaultTableState
+      )
   }
 
   private val ClipboardWidth    = 41.0
@@ -184,41 +185,41 @@ object LogArea {
 
   private val TimestampColumnMeta: ColumnMeta[TableColumn] =
     ColumnMeta[TableColumn](
-      column  = TimestampColumn,
-      name    = "local",
-      label   = "Timestamp",
+      column = TimestampColumn,
+      name = "local",
+      label = "Timestamp",
       visible = true,
-      width   = VariableColumnWidth.unsafeFromDouble(0.2, TimestampMinWidth)
+      width = VariableColumnWidth.unsafeFromDouble(0.2, TimestampMinWidth)
     )
 
   private val LevelColumnMeta: ColumnMeta[TableColumn] =
     ColumnMeta[TableColumn](
-      column     = LevelColumn,
-      name       = "level",
-      label      = "Level",
-      visible    = true,
-      grow       = 1,
+      column = LevelColumn,
+      name = "level",
+      label = "Level",
+      visible = true,
+      grow = 1,
       removeable = 2,
-      width      = VariableColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
+      width = VariableColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
     )
 
   private val MsgColumnMeta: ColumnMeta[TableColumn] =
     ColumnMeta[TableColumn](
-      column  = MsgColumn,
-      name    = "msg",
-      label   = "Message",
+      column = MsgColumn,
+      name = "msg",
+      label = "Message",
       visible = true,
-      grow    = 10,
-      width   = VariableColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
+      grow = 10,
+      width = VariableColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
     )
 
   private val ClipboardColumnMeta: ColumnMeta[TableColumn] =
     ColumnMeta[TableColumn](
-      column  = ClipboardColumn,
-      name    = "clip",
-      label   = "",
+      column = ClipboardColumn,
+      name = "clip",
+      label = "",
       visible = true,
-      width   = FixedColumnWidth.unsafeFromDouble(ClipboardWidth)
+      width = FixedColumnWidth.unsafeFromDouble(ClipboardWidth)
     )
 
   private val columnWidths: TableColumn => Option[Double] = {
@@ -241,27 +242,28 @@ object LogArea {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>
         Column(
           Column.propsNoFlex(
-            width           = ClipboardWidth,
-            dataKey         = meta.name,
-            headerRenderer  = clipboardHeaderRenderer,
-            cellRenderer    = clipboardCellRenderer(b.props.site),
-            className       = SeqexecStyles.clipboardIconDiv.htmlClass,
+            width = ClipboardWidth,
+            dataKey = meta.name,
+            headerRenderer = clipboardHeaderRenderer,
+            cellRenderer = clipboardCellRenderer(b.props.site),
+            className = SeqexecStyles.clipboardIconDiv.htmlClass,
             headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
           )
         )
-      case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn =>
+      case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn   =>
         Column(
-          Column.propsNoFlex(width     = width,
-                             dataKey   = meta.name,
-                             label     = meta.label,
-                             className = LogColumnStyle)
+          Column.propsNoFlex(width = width,
+                             dataKey = meta.name,
+                             label = meta.label,
+                             className = LogColumnStyle
+          )
         )
-      case ColumnRenderArgs(meta, _, width, _) =>
+      case ColumnRenderArgs(meta, _, width, _)                                =>
         Column(
           Column.propsNoFlex(
-            width   = width,
+            width = width,
             dataKey = meta.name,
-            label   = meta.label,
+            label = meta.label,
             headerRenderer = resizableHeaderRenderer(
               b.state.tableState
                 .resizeColumn(meta.column, size, b.setStateL(State.tableState)(_))
@@ -284,23 +286,23 @@ object LogArea {
   // Style for each row
   private def rowClassName(b: Backend)(i: Int): String =
     ((i, b.props.rowGetter(b.state)(i)) match {
-      case (-1, _) =>
+      case (-1, _)                                    =>
         SeqexecStyles.headerRowStyle
-      case (_, LogRow(_, ServerLogLevel.INFO, _, _)) =>
+      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.infoLog
-      case (_, LogRow(_, ServerLogLevel.WARN, _, _)) =>
+      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.warningLog
       case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.errorLog
-      case _ =>
+      case _                                          =>
         SeqexecStyles.stepRow
     }).htmlClass
 
   /**
-    * Build the table log
-    */
+   * Build the table log
+   */
   private def table(b: Backend)(size: Size): VdomNode =
-    if (size.width.toInt > 0) {
+    if (size.width.toInt > 0)
       Table(
         Table.props(
           disableHeader = false,
@@ -310,20 +312,19 @@ object LogArea {
               "No log entries"
             ),
           overscanRowCount = SeqexecStyles.overscanRowCount,
-          height           = 200,
-          rowCount         = b.props.rowCount(b.state),
-          rowHeight        = SeqexecStyles.rowHeight,
-          rowClassName     = rowClassName(b) _,
-          width            = max(1, size.width.toInt),
-          rowGetter        = b.props.rowGetter(b.state) _,
-          headerClassName  = SeqexecStyles.tableHeader.htmlClass,
-          headerHeight     = SeqexecStyles.headerHeight
+          height = 200,
+          rowCount = b.props.rowCount(b.state),
+          rowHeight = SeqexecStyles.rowHeight,
+          rowClassName = rowClassName(b) _,
+          width = max(1, size.width.toInt),
+          rowGetter = b.props.rowGetter(b.state) _,
+          headerClassName = SeqexecStyles.tableHeader.htmlClass,
+          headerHeight = SeqexecStyles.headerHeight
         ),
         b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
       ).vdomElement
-    } else {
+    else
       <.div()
-    }
 
   private def onResize(b: Backend): Size => Callback =
     s => b.modStateL(State.tableState)(_.recalculateWidths(s, _ => true, columnWidths))
@@ -338,11 +339,12 @@ object LogArea {
     .builder[Props]("LogArea")
     .initialState(State.Default)
     .render { b =>
-      val p = b.props
-      val s = b.state
-      val toggleIcon = if (p.log.display === SectionOpen) {
-        IconDoubleDown
-      } else { IconDoubleUp }
+      val p          = b.props
+      val s          = b.state
+      val toggleIcon =
+        if (p.log.display === SectionOpen)
+          IconDoubleDown
+        else IconDoubleUp
       val toggleText =
         (p.log.display === SectionOpen).fold("Hide Log", "Show Log")
       GridColumn(width = Sixteen, clazz = SeqexecStyles.logSegment)(
@@ -350,11 +352,12 @@ object LogArea {
           Grid(
             GridRow(clazz = SeqexecStyles.logControlRow)(
               GridColumn(width = Six)(
-                Button(icon          = true,
+                Button(icon = true,
                        labelPosition = LabelPosition.Left,
-                       compact       = true,
-                       size          = Small,
-                       onClick       = SeqexecCircuit.dispatchCB(ToggleLogArea))(toggleIcon, toggleText)
+                       compact = true,
+                       size = Small,
+                       onClick = SeqexecCircuit.dispatchCB(ToggleLogArea)
+                )(toggleIcon, toggleText)
               ),
               GridColumn(width = Ten)(
                 Form(
@@ -363,7 +366,7 @@ object LogArea {
                       case (l, s) =>
                         FormField(inline = true)(
                           Checkbox(
-                            label   = l.show,
+                            label = l.show,
                             checked = s,
                             onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
                               (onLevelChange(b, l)(p.checked.getOrElse(false)))
