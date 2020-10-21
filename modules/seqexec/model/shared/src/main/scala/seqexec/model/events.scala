@@ -7,7 +7,6 @@ import java.time.Instant
 
 import cats._
 import cats.implicits._
-import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum._
 

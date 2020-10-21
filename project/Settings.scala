@@ -82,8 +82,8 @@ object Settings {
     // Gemini Libraries
     val gspMath    = "0.2.8"
     val gspCore    = "0.2.8"
-    val lucumaCore = "0.5.1"
-    val lucumaUI   = "0.4.2"
+    val lucumaCore = "0.6.4"
+    val lucumaUI   = "0.5.2"
   }
 
   /**

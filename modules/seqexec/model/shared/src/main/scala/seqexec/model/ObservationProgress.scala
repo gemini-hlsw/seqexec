@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.util.Enumerated
 import monocle.Iso
 import monocle.Prism

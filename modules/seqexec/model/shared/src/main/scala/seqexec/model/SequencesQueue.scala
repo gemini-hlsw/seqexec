@@ -7,7 +7,7 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Getter
 import monocle.Traversal
 import monocle.function.Each._

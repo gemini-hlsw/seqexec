@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Traversal
 import monocle.function.Each._
 import monocle.macros.Lenses

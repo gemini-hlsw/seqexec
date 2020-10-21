@@ -172,7 +172,7 @@ object GuideConfigDb {
     c.downField("on").as[Boolean].flatMap {
       if (_) for {
         srcs <- c.downField("sources").as[Set[TipTiltSource]]
-        coma <- c.downField("comaOn").as[ComaOption]
+        coma <- c.downField("comaOn").as[ComaOption](comaDecoder)
       } yield M2GuideOn(coma, srcs)
       else Right(M2GuideOff)
     }
