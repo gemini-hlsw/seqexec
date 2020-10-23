@@ -142,7 +142,7 @@ lazy val web_client_common = project
   .in(file("modules/shared/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
-  .settings(gspScalaJsSettings: _*)
+  .settings(lucumaScalaJsSettings: _*)
   .settings(
     scalacOptions ~= (_.filterNot(
       Set(
@@ -204,7 +204,7 @@ lazy val seqexec_web_client = project
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .settings(gspScalaJsSettings: _*)
+  .settings(lucumaScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
@@ -341,7 +341,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     commonSettings,
     libraryDependencies += Http4sCore
   )
-  .jsSettings(gspScalaJsSettings)
+  .jsSettings(lucumaScalaJsSettings)
   .jsSettings(
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
