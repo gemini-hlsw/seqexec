@@ -37,7 +37,7 @@ object Settings {
     val unboundId      = "3.2.1"
     val jwt            = "4.3.0"
     val slf4j          = "1.7.30"
-    val log4s          = "1.8.2"
+    val log4s          = "1.9.0"
     val log4cats       = "1.1.1"
     val log4catsLevel  = "0.1.1"
     val logback        = "1.2.3"
