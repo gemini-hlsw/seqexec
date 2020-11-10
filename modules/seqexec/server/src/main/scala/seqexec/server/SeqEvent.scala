@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.ClientId
 import seqexec.model.Conditions
 import seqexec.model.Notification

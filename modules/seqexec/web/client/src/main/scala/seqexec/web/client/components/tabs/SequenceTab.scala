@@ -4,7 +4,7 @@
 package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._

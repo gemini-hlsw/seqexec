@@ -10,7 +10,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import diode._
 import diode.react.ReactConnector
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.Callback
 import monocle.Prism
 import seqexec.model._

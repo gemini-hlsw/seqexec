@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import cats.effect.IO
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.function.Index._

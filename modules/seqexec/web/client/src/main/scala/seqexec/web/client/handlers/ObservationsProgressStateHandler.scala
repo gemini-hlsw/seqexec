@@ -9,7 +9,7 @@ import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.NSObservationProgress
 import seqexec.model.ObservationProgress
 import seqexec.model.ObserveStage

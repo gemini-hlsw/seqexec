@@ -8,7 +8,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
-import gem.Observation
 import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
 import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
 import lucuma.core.util.arb.ArbEnumerated._

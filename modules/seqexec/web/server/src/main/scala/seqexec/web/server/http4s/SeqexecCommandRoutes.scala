@@ -5,7 +5,7 @@ package seqexec.web.server.http4s
 
 import cats.effect.Sync
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip

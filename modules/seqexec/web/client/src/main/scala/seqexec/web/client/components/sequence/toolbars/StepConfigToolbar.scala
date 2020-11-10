@@ -5,7 +5,7 @@ package seqexec.web.client.components.sequence.toolbars
 
 import cats.implicits._
 import diode.react.ReactConnectProxy
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted

@@ -3,9 +3,7 @@
 
 package seqexec.model.arb
 
-import gem.Observation
 import lucuma.core.util.arb.ArbEnumerated._
-import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
@@ -13,10 +11,13 @@ import org.scalacheck.Cogen
 import seqexec.model.StepId
 import seqexec.model.Notification
 import seqexec.model.Notification._
+import seqexec.model.Observation
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 
-trait ArbNotification extends ArbObservation {
+trait ArbNotification {
+  import ArbObservationId._
+
   implicit val rcArb = Arbitrary[ResourceConflict] {
     for {
       id <- arbitrary[Observation.Id]

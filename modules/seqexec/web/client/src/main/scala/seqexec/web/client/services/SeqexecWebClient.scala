@@ -13,7 +13,7 @@ import boopickle.Default.Pickle
 import boopickle.Default.Pickler
 import boopickle.Default.Unpickle
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.ext.Ajax
 import seqexec.common.HttpStatusCodes

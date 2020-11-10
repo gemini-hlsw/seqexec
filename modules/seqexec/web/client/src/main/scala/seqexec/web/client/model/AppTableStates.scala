@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Lens
 import monocle.function.At._
 import monocle.macros.Lenses

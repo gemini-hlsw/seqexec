@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import scala.collection.immutable.SortedMap
 
 import cats.Eq
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism

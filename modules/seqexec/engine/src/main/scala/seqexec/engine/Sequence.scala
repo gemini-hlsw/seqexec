@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Lens
 import monocle.macros.GenLens
 import seqexec.engine.Action.ActionState

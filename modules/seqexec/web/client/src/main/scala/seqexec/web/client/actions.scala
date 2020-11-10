@@ -6,7 +6,7 @@ package seqexec.web.client
 import cats.Show
 import cats.syntax.all._
 import diode.Action
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
 import org.scalajs.dom.WebSocket
 import pprint.PPrinter

@@ -6,7 +6,7 @@ package seqexec.web.client.components.sequence.steps
 import scala.math.max
 
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._

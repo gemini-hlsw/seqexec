@@ -8,7 +8,7 @@ import scala.scalajs.js.timers._
 
 import cats._
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
 import monocle.Getter
 import monocle.Lens

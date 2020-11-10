@@ -6,7 +6,7 @@ package seqexec.engine
 import cats.effect.{ContextShift, IO}
 import cats.data.NonEmptyList
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import java.util.UUID
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.Logger

@@ -6,7 +6,7 @@ package seqexec.web.client
 import scala.collection.immutable.SortedMap
 
 import diode.data.PotState
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability

@@ -4,7 +4,7 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Getter
 import monocle.macros.Lenses
 import seqexec.model.QueueId

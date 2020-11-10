@@ -4,7 +4,7 @@
 package seqexec.web.server
 
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import org.http4s.QueryParamDecoder
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import seqexec.model.ClientId

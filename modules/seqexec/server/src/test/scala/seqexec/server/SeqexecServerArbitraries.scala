@@ -5,8 +5,8 @@ package seqexec.server
 
 import cats.effect.IO
 import lucuma.core.util.arb.ArbEnumerated._
-import gem.Observation
-import gem.arb.ArbObservation._
+import seqexec.model.Observation
+import seqexec.model.arb.ArbObservationId._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{ Arbitrary, Cogen }
 import seqexec.model.BatchCommandState

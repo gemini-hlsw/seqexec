@@ -10,7 +10,7 @@ import cats.effect.Concurrent
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl

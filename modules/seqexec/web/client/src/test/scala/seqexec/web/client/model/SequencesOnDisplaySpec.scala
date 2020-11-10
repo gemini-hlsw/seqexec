@@ -4,7 +4,7 @@
 package seqexec.web.client
 
 import cats.tests.CatsSuite
-import gem.Observation
+import seqexec.model.Observation
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.SequenceMetadata

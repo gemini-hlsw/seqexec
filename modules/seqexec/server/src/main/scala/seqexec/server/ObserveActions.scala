@@ -9,7 +9,7 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
 import seqexec.model.dhs._

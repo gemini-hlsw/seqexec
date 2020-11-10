@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.Monoid
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import gem.enum.GpiDisperser
 import gem.enum.GpiFilter
 import gem.enum.GpiObservingMode

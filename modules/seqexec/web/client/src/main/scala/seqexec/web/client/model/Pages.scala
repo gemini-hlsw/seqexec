@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats._
 import cats.syntax.all._
 import diode.Action
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.extra.router._
 import monocle.Prism

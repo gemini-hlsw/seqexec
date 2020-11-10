@@ -30,6 +30,7 @@ object Settings {
     val shapelessVersion    = "2.3.3"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
+    val catsTime            = "0.3.4"
 
     val http4sVersion  = "0.21.11"
     val squants        = "1.7.0"
@@ -53,8 +54,8 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.0.0"
-    lazy val munitVersion           = "0.7.14"
-    lazy val munitDisciplineVersion = "0.3.0"
+    lazy val munitVersion           = "0.7.16"
+    lazy val munitDisciplineVersion = "1.0.1"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
@@ -82,8 +83,8 @@ object Settings {
     // Gemini Libraries
     val gspMath    = "0.2.8"
     val gspCore    = "0.2.8"
-    val lucumaCore = "0.6.4"
-    val lucumaUI   = "0.5.2"
+    val lucumaCore = "0.6.6"
+    val lucumaUI   = "0.7.1"
   }
 
   /**
@@ -121,6 +122,7 @@ object Settings {
     val Slf4j            = "org.slf4j"      % "slf4j-api"    % LibraryVersions.slf4j
     val JuliSlf4j        = "org.slf4j"      % "jul-to-slf4j" % LibraryVersions.slf4j
     val NopSlf4j         = "org.slf4j"      % "slf4j-nop"    % LibraryVersions.slf4j
+    val CatsTime         = Def.setting("io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test")
     val Log4Cats         = Def.setting("io.chrisdavenport" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Log4CatsNoop     =
       Def.setting("io.chrisdavenport" %%% "log4cats-noop" % LibraryVersions.log4cats % "test")

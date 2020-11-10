@@ -8,7 +8,7 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import io.chrisdavenport.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._

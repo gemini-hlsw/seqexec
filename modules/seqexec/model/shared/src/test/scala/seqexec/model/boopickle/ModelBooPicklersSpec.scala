@@ -3,11 +3,8 @@
 
 package seqexec.model.boopickle
 
-import cats.tests.CatsSuite
-import gem.Observation
-import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
+import gem.arb.ArbEnumerated.{ arbEnumerated => oldArbEnumerated }
 import lucuma.core.util.arb.ArbEnumerated._
-import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
 import seqexec.model._
@@ -16,11 +13,25 @@ import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
 import seqexec.model.arb.all._
 import squants.time.Time
+import java.time._
+import io.chrisdavenport.cats.time.instances.all._
+import io.chrisdavenport.cats.time.instances.TimeArbitraries._
+import lucuma.core.math.Index
+import lucuma.core.math.arb.ArbIndex._
+import seqexec.model.arb._
 
 /**
- * Tests Serialization/Deserialization using BooPickle
- */
-final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObservation {
+  * Tests Serialization/Deserialization using BooPickle
+  */
+final class BoopicklingSpec extends munit.DisciplineSuite with ModelBooPicklers {
+  import ArbProgramId._
+  import ArbObservationId._
+
+  checkAll("Pickler[Year]", PicklerTests[Year].pickler)
+  checkAll("Pickler[LocalDate]", PicklerTests[LocalDate].pickler)
+  checkAll("Pickler[Index]", PicklerTests[Index].pickler)
+  checkAll("Pickler[ProgramId]", PicklerTests[ProgramId].pickler)
+  checkAll("Pickler[Observation.Id]", PicklerTests[Observation.Id].pickler)
 
   checkAll("Pickler[UserDetails]", PicklerTests[UserDetails].pickler)
   checkAll("Pickler[SequenceView]", PicklerTests[SequenceView].pickler)

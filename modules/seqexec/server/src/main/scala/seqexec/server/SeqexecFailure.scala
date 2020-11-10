@@ -4,7 +4,7 @@
 package seqexec.server
 
 import edu.gemini.seqexec.odb.SeqFailure
-import gem.Observation
+import seqexec.model.Observation
 import org.http4s.Uri
 import seqexec.model.dhs._
 

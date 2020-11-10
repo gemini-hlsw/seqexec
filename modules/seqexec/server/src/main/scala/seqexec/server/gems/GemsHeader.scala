@@ -6,8 +6,8 @@ package seqexec.server.gems
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
-import gem.Observation
-import gem.enum.KeywordName
+import seqexec.model.Observation
+import lucuma.core.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem

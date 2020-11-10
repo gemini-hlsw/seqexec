@@ -7,7 +7,7 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.Optional

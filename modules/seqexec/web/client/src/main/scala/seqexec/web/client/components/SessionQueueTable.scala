@@ -9,7 +9,7 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability

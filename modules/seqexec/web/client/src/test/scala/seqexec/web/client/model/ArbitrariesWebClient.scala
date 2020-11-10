@@ -6,11 +6,12 @@ package seqexec.web.client
 import cats.data.NonEmptyList
 import cats.implicits._
 import diode.data._
-import gem.arb.ArbObservation
+import seqexec.model.arb.ArbObservationId
 import lucuma.core.util.arb.ArbEnumerated._
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
-import gem.data.Zipper
+import lucuma.core.data.Zipper
+import lucuma.core.data.arb.ArbZipper._
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
@@ -43,7 +44,7 @@ import org.scalajs.dom.WebSocket
 import web.client.table.TableArbitraries
 import web.client.table.TableState
 
-trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with ArbTabOperations {
+trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with ArbTabOperations {
 
   implicit val arbQueueOperations: Arbitrary[QueueOperations] =
     Arbitrary {

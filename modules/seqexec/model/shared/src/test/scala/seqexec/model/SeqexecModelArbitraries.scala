@@ -5,11 +5,9 @@ package seqexec.model
 
 import cats.syntax.all._
 import java.util.UUID
-import gem.Observation
 import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
 import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
 import lucuma.core.util.arb.ArbEnumerated._
-import gem.arb.ArbObservation._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
@@ -18,8 +16,7 @@ import scala.collection.immutable.SortedMap
 import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
-import seqexec.model.arb.ArbStep._
-import seqexec.model.arb.ArbClientId._
+import seqexec.model.arb.all._
 
 trait SeqexecModelArbitraries {
 

@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import cats.effect._
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger

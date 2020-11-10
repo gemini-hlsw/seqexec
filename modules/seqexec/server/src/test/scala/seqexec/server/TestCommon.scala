@@ -13,7 +13,7 @@ import io.chrisdavenport.log4cats.Logger
 import java.util.UUID
 
 import edu.gemini.spModel.core.Peer
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient

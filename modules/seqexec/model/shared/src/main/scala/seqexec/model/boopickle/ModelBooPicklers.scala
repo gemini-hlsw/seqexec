@@ -36,17 +36,19 @@ import squants.time.TimeConversions._
 import lucuma.core.math.Index
 
 /**
- * Contains boopickle implicit picklers of model objects
- * Boopickle can auto derive encoders but it is preferred to make
- * them explicitly
- */
+  * Contains boopickle implicit picklers of model objects
+  * Boopickle can auto derive encoders but it is preferred to make
+  * them explicitly
+  */
 trait ModelBooPicklers extends BooPicklerSyntax {
-  implicit val yearPickler:          Pickler[Year]           = transformPickler(Year.of)(_.getValue)
-  implicit val localDatePickler:     Pickler[LocalDate]      = transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)
-  implicit val programIdPickler:     Pickler[ProgramId]      = ProgramId.fromString.toPickler
-  implicit val indexPickler:         Pickler[Index]          = Index.fromShort.toPickler
-  implicit val observationIdPickler: Pickler[Observation.Id] = generatePickler[Observation.Id]
-  implicit val lObservationIdPickler: Pickler[List[Observation.Id]] = iterablePickler[Observation.Id, List]
+  implicit val yearPickler: Pickler[Year]                           = transformPickler(Year.of)(_.getValue)
+  implicit val localDatePickler: Pickler[LocalDate]                 =
+    transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)
+  implicit val programIdPickler: Pickler[ProgramId]                 = ProgramId.fromString.toPickler
+  implicit val indexPickler: Pickler[Index]                         = Index.fromShort.toPickler
+  implicit val observationIdPickler: Pickler[Observation.Id]        = generatePickler[Observation.Id]
+  implicit val lObservationIdPickler: Pickler[List[Observation.Id]] =
+    iterablePickler[Observation.Id, List]
 
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap

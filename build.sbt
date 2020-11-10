@@ -337,9 +337,10 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       GspCoreTestkit.value,
       Squants.value,
       Mouse.value,
-      BooPickle.value
-    ) ++ Monocle.value ++ LucumaCore.value,
-    Test / libraryDependencies += GspMathTestkit.value
+      BooPickle.value,
+      CatsTime.value
+    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value,
+    Test / libraryDependencies ++= Seq(GspMathTestkit.value, CatsTime.value)
   )
   .jvmSettings(
     commonSettings,
@@ -359,7 +360,11 @@ lazy val seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     scalacOptions += "-Ymacro-annotations",
-    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s.value, Log4Cats.value) ++ Monocle.value
+    libraryDependencies ++= Seq(Fs2,
+                                CatsEffect.value,
+                                Log4s.value,
+                                Log4Cats.value
+    ) ++ Monocle.value ++ MUnit.value
   )
 
 lazy val acm = project

@@ -8,7 +8,7 @@ import java.time.Instant
 import cats.effect.Sync
 import cats.syntax.all._
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
 import seqexec.model.ClientId

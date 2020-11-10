@@ -10,7 +10,7 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._

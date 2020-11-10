@@ -10,7 +10,7 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo

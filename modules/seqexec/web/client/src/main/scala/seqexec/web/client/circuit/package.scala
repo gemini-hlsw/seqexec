@@ -7,7 +7,7 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import diode._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Getter
 import monocle.Lens
 import monocle.macros.Lenses

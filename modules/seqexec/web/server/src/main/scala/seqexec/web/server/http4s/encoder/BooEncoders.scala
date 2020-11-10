@@ -4,7 +4,7 @@
 package seqexec.web.server.http4s.encoder
 
 import cats.effect.Sync
-import gem.Observation
+import seqexec.model.Observation
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.booPickle._

@@ -5,37 +5,35 @@ package seqexec.engine
 
 import cats.Id
 import cats.data.NonEmptyList
-import org.scalatest.matchers.should.Matchers
 import seqexec.model.ActionType
-import org.scalatest.flatspec.AnyFlatSpec
 
-class ExecutionSpec extends AnyFlatSpec with Matchers {
+class ExecutionSpec extends munit.FunSuite {
 
   private object DummyResult extends Result.RetVal
-  private val ok: Result[Nothing] = Result.OK(DummyResult)
-  private val completedAction: Action[Id] = fromF[Id](ActionType.Observe, ok).copy(state =
-    Action.State(Action.ActionState.Completed(DummyResult), Nil))
-  private val action: Action[Id] = fromF[Id](ActionType.Observe, ok)
-  private val curr: Execution[Id] = Execution(List(completedAction, action))
+  private val ok: Result[Nothing]         = Result.OK(DummyResult)
+  private val completedAction: Action[Id] = fromF[Id](ActionType.Observe, ok)
+    .copy(state = Action.State(Action.ActionState.Completed(DummyResult), Nil))
+  private val action: Action[Id]          = fromF[Id](ActionType.Observe, ok)
+  private val curr: Execution[Id]         = Execution(List(completedAction, action))
 
-  "currentify" should "be None only when an Execution is empty" in {
+  test("currentify be None only when an Execution is empty") {
     assert(Execution.currentify(NonEmptyList.of(action, action)).nonEmpty)
   }
 
-  "uncurrentify" should "be None when not all actions are completed" in {
+  test("uncurrentify be None when not all actions are completed") {
     assert(Execution(Nil).uncurrentify.isEmpty)
   }
 
-  "uncurrentify2" should "be None when not all actions are completed" in {
+  test("uncurrentify2 be None when not all actions are completed") {
     assert(curr.uncurrentify.isEmpty)
   }
 
-  "marking an index out of bounds" should "not modify the execution" in {
-    assert(curr.mark(3)(Result.Error("")) === curr)
+  test("marking an index out of bounds not modify the execution") {
+    assert(curr.mark(3)(Result.Error("")) == curr)
   }
 
-  "marking an index inbound" should "modify the execution" in {
-    assert(curr.mark(1)(Result.Error("")) !== curr)
+  test("marking an index inbound modify the execution") {
+    assert(curr.mark(1)(Result.Error("")) != curr)
   }
 
 }

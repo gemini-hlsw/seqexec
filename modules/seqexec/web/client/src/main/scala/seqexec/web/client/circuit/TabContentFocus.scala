@@ -6,7 +6,7 @@ package seqexec.web.client.circuit
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Getter
 import seqexec.model.enum._
 import seqexec.web.client.model._

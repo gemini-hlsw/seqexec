@@ -8,7 +8,7 @@ import scala.scalajs.js.timers.SetTimeoutHandle
 import cats.effect.Sync
 import cats.syntax.all._
 import diode.ModelRO
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.MonocleReact._

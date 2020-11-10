@@ -8,7 +8,7 @@ import cats.syntax.all._
 import cats.effect._
 import cats.data.NonEmptyList
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import lucuma.core.enum.Site
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 

@@ -26,7 +26,6 @@ import edu.gemini.spModel.obsclass.ObsClass
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
-import gem.Observation
 import lucuma.core.enum.Site
 import io.chrisdavenport.log4cats.Logger
 import monocle.Monocle.index
@@ -44,6 +43,7 @@ import seqexec.model.NodAndShuffleStep.StopGracefully
 import seqexec.model.Notification._
 import seqexec.model.StepId
 import seqexec.model.UserDetails
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.config._
 import seqexec.model.enum._

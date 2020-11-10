@@ -6,8 +6,8 @@ package seqexec.server
 import cats.Eq
 import cats.tests.CatsSuite
 import edu.gemini.spModel.config2.{Config, ItemKey}
-import gem.arb.ArbObservation
-import gem.Observation
+import seqexec.model.arb.ArbObservationId
+import seqexec.model.Observation
 import monocle.law.discipline.LensTests
 import seqexec.model.enum.Instrument
 import seqexec.engine
@@ -18,7 +18,7 @@ import cats.effect.IO
 /**
   * Tests SeqexecServer Lenses
   */
-final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitraries with ArbObservation {
+final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitraries with ArbObservationId {
 
   implicit val eqItemKeys: Eq[Map[ItemKey, AnyRef]] = Eq.fromUniversalEquals
   implicit val eqLegacyConfig: Eq[Config] = Eq.fromUniversalEquals

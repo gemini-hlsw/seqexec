@@ -7,7 +7,7 @@ import java.time.Instant
 
 import cats.implicits._
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.ClientId
 import seqexec.model.StepId
 import seqexec.model.UserDetails

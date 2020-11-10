@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import gem.Observation
+import seqexec.model.Observation
 import mouse.all._
 import seqexec.engine.Action
 import seqexec.engine.ActionCoordsInSeq

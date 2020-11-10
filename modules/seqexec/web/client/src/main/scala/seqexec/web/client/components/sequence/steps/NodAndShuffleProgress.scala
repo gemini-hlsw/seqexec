@@ -7,7 +7,7 @@ import scala.math.max
 
 import cats.syntax.all._
 import diode.react.ReactConnectProxy
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala
 import japgolly.scalajs.react.extra.TimerSupport

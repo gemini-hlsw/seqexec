@@ -7,7 +7,7 @@ import scala.collection.immutable.SortedMap
 import scala.scalajs.js
 
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactMouseEvent
 import japgolly.scalajs.react.Reusability

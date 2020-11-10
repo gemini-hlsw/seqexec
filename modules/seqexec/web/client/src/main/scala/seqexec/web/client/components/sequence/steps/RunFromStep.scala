@@ -4,7 +4,7 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent

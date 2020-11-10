@@ -6,7 +6,7 @@ package seqexec.server
 import cats.effect.IO
 import cats.syntax.all._
 import fs2.concurrent.Queue
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Monocle.index
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers

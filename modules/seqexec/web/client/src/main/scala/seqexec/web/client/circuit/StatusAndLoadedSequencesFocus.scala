@@ -5,7 +5,7 @@ package seqexec.web.client.circuit
 
 import cats.Eq
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import monocle.Getter
 import seqexec.model._
 import seqexec.model.enum._
