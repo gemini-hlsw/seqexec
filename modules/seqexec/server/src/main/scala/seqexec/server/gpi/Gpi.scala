@@ -20,8 +20,8 @@ import edu.gemini.spModel.obsclass.ObsClass
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
-import gem.enum.GpiReadMode
-import gem.enum.LightSinkName
+import lucuma.core.enum.GpiReadMode
+import lucuma.core.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument

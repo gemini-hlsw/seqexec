@@ -15,7 +15,7 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
-import gem.enum.LightSinkName
+import lucuma.core.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import monocle.Lens
 import mouse.boolean._

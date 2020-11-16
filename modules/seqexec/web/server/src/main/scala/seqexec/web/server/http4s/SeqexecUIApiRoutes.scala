@@ -16,7 +16,7 @@ import cats.syntax.all._
 import fs2.Pipe
 import fs2.Stream
 import fs2.concurrent.Topic
-import gem.enum.GiapiStatus
+import lucuma.core.enum.GiapiStatus
 import lucuma.core.enum.Site
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue

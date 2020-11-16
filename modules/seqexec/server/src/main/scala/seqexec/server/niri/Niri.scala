@@ -20,7 +20,7 @@ import edu.gemini.spModel.gemini.niri.Niri.{ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import gem.enum.LightSinkName
+import lucuma.core.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument

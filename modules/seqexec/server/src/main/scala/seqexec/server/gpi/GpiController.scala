@@ -19,8 +19,8 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
-import gem.enum.GiapiStatusApply._
-import gem.enum.GpiReadMode
+import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enum.GpiReadMode
 import giapi.client.GiapiStatusDb
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration

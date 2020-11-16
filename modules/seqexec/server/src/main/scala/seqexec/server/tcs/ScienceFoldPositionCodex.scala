@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import atto.Atto._
 import atto._
 import cats.syntax.all._
-import gem.enum.LightSinkName
+import lucuma.core.enum.LightSinkName
 import seqexec.server.EpicsCodex.DecodeEpicsValue
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.tcs.ScienceFold.Parked

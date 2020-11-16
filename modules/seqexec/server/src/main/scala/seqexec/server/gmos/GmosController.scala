@@ -11,7 +11,7 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import lucuma.core.util.Enumerated
-import gsp.math.Offset
+import lucuma.core.math.Offset
 import seqexec.model.GmosParameters._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding

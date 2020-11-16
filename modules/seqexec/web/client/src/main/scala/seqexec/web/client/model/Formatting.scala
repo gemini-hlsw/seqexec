@@ -7,8 +7,8 @@ import scala.math.max
 
 import cats.Eq
 import cats.syntax.all._
-import gsp.math.Angle
-import gsp.math.Axis
+import lucuma.core.math.Angle
+import lucuma.core.math.Axis
 import seqexec.model.NodAndShuffleStep
 import seqexec.model.OffsetFormat
 import seqexec.model.OffsetType

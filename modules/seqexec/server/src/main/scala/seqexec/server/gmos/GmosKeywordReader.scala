@@ -11,8 +11,8 @@ import cats.syntax.all._
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.USE_NS_PROP
-import gsp.math.Angle
-import gsp.math.Offset
+import lucuma.core.math.Angle
+import lucuma.core.math.Offset
 import monocle.Getter
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage.StageA

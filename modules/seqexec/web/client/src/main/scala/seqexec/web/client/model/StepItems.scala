@@ -7,10 +7,10 @@ import cats.Eq
 import cats.Monoid
 import cats.syntax.all._
 import seqexec.model.Observation
-import gem.enum.GpiDisperser
-import gem.enum.GpiFilter
-import gem.enum.GpiObservingMode
-import gsp.math.Offset
+import lucuma.core.enum.GpiDisperser
+import lucuma.core.enum.GpiFilter
+import lucuma.core.enum.GpiObservingMode
+import lucuma.core.math.Offset
 import seqexec.model.NodAndShuffleStatus
 import seqexec.model.NodAndShuffleStep
 import seqexec.model.OffsetConfigResolver

@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import gsp.math.Axis
+import lucuma.core.math.Axis
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._

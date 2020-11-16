@@ -33,8 +33,6 @@ import shapeless.tag.@@
 import squants.Time
 
 package object reusability {
-  implicit def oldEnumeratedReuse[A <: AnyRef: gem.util.Enumerated]: Reusability[A] =
-    Reusability.byRef
   implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A]                                  =

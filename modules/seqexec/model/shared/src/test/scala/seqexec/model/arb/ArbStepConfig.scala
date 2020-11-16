@@ -7,11 +7,11 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck._
 import org.scalacheck.Cogen._
-import gem.arb._
+import lucuma.core.arb._
 import lucuma.core.util.arb.ArbEnumerated._
-import gsp.math.Angle
-import gsp.math.Offset
-import gsp.math.arb.ArbOffset._
+import lucuma.core.math.Angle
+import lucuma.core.math.Offset
+import lucuma.core.math.arb.ArbOffset._
 import seqexec.model._
 import seqexec.model.enum._
 

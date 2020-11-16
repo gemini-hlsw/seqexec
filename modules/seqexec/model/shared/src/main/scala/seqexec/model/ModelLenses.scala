@@ -5,10 +5,10 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import gsp.math.Angle
-import gsp.math.Offset
-import gsp.math.optics.Format
-import gsp.math.syntax.all._
+import lucuma.core.math.Angle
+import lucuma.core.math.Offset
+import lucuma.core.optics.Format
+import lucuma.core.syntax.all._
 import monocle._
 import monocle.function.At.at
 import monocle.function.At.atMap

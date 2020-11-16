@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats._
 import cats.syntax.all._
-import gem.enum.LightSinkName
+import lucuma.core.enum.LightSinkName
 import seqexec.server.tcs.TcsController._
 
 sealed trait ScienceFold extends Product with Serializable

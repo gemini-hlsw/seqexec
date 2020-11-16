@@ -3,7 +3,6 @@
 
 package seqexec.model.boopickle
 
-import gem.arb.ArbEnumerated.{ arbEnumerated => oldArbEnumerated }
 import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._

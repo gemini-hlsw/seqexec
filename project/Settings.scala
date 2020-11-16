@@ -3,8 +3,8 @@ import java.lang.{ Runtime => JRuntime }
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 /**
- * Application settings and dependencies
- */
+  * Application settings and dependencies
+  */
 object Settings {
 
   /** Library versions */
@@ -54,8 +54,8 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.0.0"
-    lazy val munitVersion           = "0.7.16"
-    lazy val munitDisciplineVersion = "1.0.1"
+    lazy val munitVersion           = "0.7.17"
+    lazy val munitDisciplineVersion = "1.0.2"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
@@ -81,19 +81,17 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val gspMath    = "0.2.8"
-    val gspCore    = "0.2.8"
-    val lucumaCore = "0.6.6"
+    val lucumaCore = "0.7.1"
     val lucumaUI   = "0.7.1"
   }
 
   /**
-   * Global libraries
-   */
+    * Global libraries
+    */
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "edu.gemini" %%% "gsp-math-testkit" % LibraryVersions.gspMath % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.0.0" % "test"
     )
     val MUnit          = Def.setting(
       Seq(
@@ -122,7 +120,9 @@ object Settings {
     val Slf4j            = "org.slf4j"      % "slf4j-api"    % LibraryVersions.slf4j
     val JuliSlf4j        = "org.slf4j"      % "jul-to-slf4j" % LibraryVersions.slf4j
     val NopSlf4j         = "org.slf4j"      % "slf4j-nop"    % LibraryVersions.slf4j
-    val CatsTime         = Def.setting("io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test")
+    val CatsTime         = Def.setting(
+      "io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
+    )
     val Log4Cats         = Def.setting("io.chrisdavenport" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Log4CatsNoop     =
       Def.setting("io.chrisdavenport" %%% "log4cats-noop" % LibraryVersions.log4cats % "test")
@@ -169,7 +169,8 @@ object Settings {
       Seq(
         "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
         "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
-        "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion
+        "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion,
+        "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocleVersion
       )
     )
     val Circe   = Def.setting(
@@ -268,21 +269,14 @@ object Settings {
       "edu.gemini.aspen.gmp" % "gmp-commands-jms-bridge" % LibraryVersions.gmpCmdClientBridge
     val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
 
-    // Gemini Libraries
-    val GspMath        = Def.setting("edu.gemini" %%% "gsp-math" % LibraryVersions.gspMath)
-    val GspMathTestkit =
-      Def.setting("edu.gemini" %%% "gsp-math-testkit" % LibraryVersions.gspMath % "test")
-    val GspCoreModel   = Def.setting("edu.gemini" %%% "gsp-core-model" % LibraryVersions.gspCore)
-    val GspCoreTestkit =
-      Def.setting("edu.gemini" %%% "gsp-core-testkit" % LibraryVersions.gspCore % "test")
-    val GspCoreOcs2Api = Def.setting("edu.gemini" %%% "gsp-core-ocs2-api" % LibraryVersions.gspCore)
-    val LucumaCore     = Def.setting(
+    // Lucuma Libraries
+    val LucumaCore = Def.setting(
       Seq(
         "edu.gemini" %%% "lucuma-core"         % LibraryVersions.lucumaCore,
         "edu.gemini" %%% "lucuma-core-testkit" % LibraryVersions.lucumaCore
       )
     )
-    val LucumaUI       = Def.setting("edu.gemini" %%% "lucuma-ui" % LibraryVersions.lucumaUI)
+    val LucumaUI   = Def.setting("edu.gemini" %%% "lucuma-ui" % LibraryVersions.lucumaUI)
   }
 
   object PluginVersions {

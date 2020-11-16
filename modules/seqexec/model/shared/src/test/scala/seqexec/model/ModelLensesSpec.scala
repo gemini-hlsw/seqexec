@@ -5,10 +5,10 @@ package seqexec.model
 
 import cats.tests.CatsSuite
 import lucuma.core.util.arb.ArbEnumerated._
-import gsp.math.laws.discipline.FormatTests
-import gsp.math.arb.ArbOffset._
-import gsp.math.arb.ArbAngle._
-import gsp.math.Axis
+import lucuma.core.optics.laws.discipline.FormatTests
+import lucuma.core.math.arb.ArbOffset._
+import lucuma.core.math.arb.ArbAngle._
+import lucuma.core.math.Axis
 import monocle.law.discipline._
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._

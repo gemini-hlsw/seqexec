@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 import cats.data.Kleisli
 import fs2.Stream
-import gem.enum.LightSinkName
+import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult

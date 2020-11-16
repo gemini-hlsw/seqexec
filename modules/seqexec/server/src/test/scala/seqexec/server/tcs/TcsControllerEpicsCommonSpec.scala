@@ -8,7 +8,7 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.core.Wavelength
-import gem.enum.LightSinkName.Gmos
+import lucuma.core.enum.LightSinkName.Gmos
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import org.scalatest.PrivateMethodTester

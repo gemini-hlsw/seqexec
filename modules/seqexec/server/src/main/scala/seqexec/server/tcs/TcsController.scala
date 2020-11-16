@@ -8,7 +8,7 @@ import cats.data.NonEmptySet
 import cats.data.OneAnd
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
-import gem.enum._
+import lucuma.core.enum._
 import monocle.macros.Lenses
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.InstrumentGuide

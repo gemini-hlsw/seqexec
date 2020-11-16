@@ -133,7 +133,8 @@ lazy val web_server_common = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging.value)
+    libraryDependencies ++= CatsEffect.value +: (Http4s ++ MUnit.value ++ Logging.value),
+    testFrameworks += new TestFramework("munit.Framework")
   )
 
 // Common utilities for web client projects
@@ -165,6 +166,17 @@ lazy val web_client_common = project
     ) ++ MUnit.value ++ ReactScalaJS.value ++ Monocle.value
   )
 
+lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("modules/ocs2_api"))
+  .settings(commonSettings)
+  .settings(
+    name := "ocs2-api",
+    libraryDependencies ++= Seq(CatsTime.value) ++
+      LucumaCore.value
+  )
+  .dependsOn(seqexec_model)
+
 // Project for the server side application
 lazy val seqexec_web_server = project
   .in(file("modules/seqexec/web/server"))
@@ -173,9 +185,7 @@ lazy val seqexec_web_server = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(GspCoreModel.value,
-                                GspCoreTestkit.value,
-                                UnboundId,
+    libraryDependencies ++= Seq(UnboundId,
                                 JwtCore,
                                 JwtCirce,
                                 Http4sPrometheus,
@@ -296,7 +306,6 @@ lazy val seqexec_server = project
     addCompilerPlugin(Plugins.betterMonadicForPlugin),
     libraryDependencies ++=
       Seq(
-        GspCoreOcs2Api.value,
         Http4sCirce,
         Squants.value,
         // OCS bundles
@@ -321,6 +330,7 @@ lazy val seqexec_server = project
   )
   .dependsOn(seqexec_engine % "compile->compile;test->test",
              giapi,
+             ocs2_api.jvm,
              seqexec_model.jvm % "compile->compile;test->test",
              acm % "compile->compile;test->test")
 
@@ -333,14 +343,11 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .settings(
     scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(
-      GspCoreModel.value,
-      GspCoreTestkit.value,
       Squants.value,
       Mouse.value,
       BooPickle.value,
       CatsTime.value
-    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value,
-    Test / libraryDependencies ++= Seq(GspMathTestkit.value, CatsTime.value)
+    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value
   )
   .jvmSettings(
     commonSettings,
@@ -349,7 +356,8 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .jsSettings(lucumaScalaJsSettings)
   .jsSettings(
     // And add a custom one
-    libraryDependencies += JavaTimeJS.value
+    libraryDependencies += JavaTimeJS.value,
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
   )
 
 lazy val seqexec_engine = project

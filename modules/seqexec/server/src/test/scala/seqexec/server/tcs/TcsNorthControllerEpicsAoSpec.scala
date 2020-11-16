@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
-import gem.enum.LightSinkName.Gmos
+import lucuma.core.enum.LightSinkName.Gmos
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.should.Matchers._
 import seqexec.model.enum._

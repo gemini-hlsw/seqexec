@@ -6,8 +6,6 @@ package seqexec.model.arb
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
-import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
 import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.model.enum._

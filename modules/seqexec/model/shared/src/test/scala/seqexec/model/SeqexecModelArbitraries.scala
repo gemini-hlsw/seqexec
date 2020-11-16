@@ -5,8 +5,6 @@ package seqexec.model
 
 import cats.syntax.all._
 import java.util.UUID
-import gem.arb.ArbEnumerated.{arbEnumerated => oldArbEnumerated}
-import gem.arb.ArbEnumerated.{cogEnumerated => oldCogEnumerated}
 import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen

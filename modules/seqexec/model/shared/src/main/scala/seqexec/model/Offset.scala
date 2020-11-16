@@ -3,8 +3,8 @@
 
 package seqexec.model
 
-import gsp.math.Axis
 import seqexec.model.enum.SystemName
+import lucuma.core.math.Axis
 
 object OffsetType {
   type Telescope
