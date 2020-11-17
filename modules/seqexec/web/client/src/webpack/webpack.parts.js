@@ -6,7 +6,7 @@ const path = require("path");
 
 const Webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require("terser-webpack-plugin");
 const cssnano = require("cssnano");
 
@@ -94,8 +94,10 @@ exports.autoprefix = () => {
   return {
     loader: "postcss-loader",
     options: {
-      autoprefixer: module.exports.browsers,
-      plugins: () => [require("autoprefixer")()]
+      postcssOptions: {
+        autoprefixer: module.exports.browsers,
+        plugins: [require("autoprefixer")()]
+      }
     }
   };
 };
@@ -131,13 +133,12 @@ module.exports.resolveSemanticUI = {
 
 // Support css minifications
 exports.minifyCSS = ({ options }) => ({
-  plugins: [
-    new OptimizeCSSAssetsPlugin({
-      cssProcessor: cssnano,
-      cssProcessorOptions: options,
-      canPrint: false
-    })
-  ]
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new CssMinimizerPlugin()
+    ],
+  }
 });
 
 // Support js minification

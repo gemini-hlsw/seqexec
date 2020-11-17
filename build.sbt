@@ -213,8 +213,8 @@ lazy val seqexec_web_client = project
     webpackBundlingMode in fullOptJS := BundlingMode.Application,
     webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort := 9090,
-    version in webpack := "4.41.2",
-    version in startWebpackDevServer := "3.9.0",
+    version in webpack := "4.44.1",
+    version in startWebpackDevServer := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS := Some(
       baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"
@@ -234,27 +234,31 @@ lazy val seqexec_web_client = project
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
       "semantic-ui-less" -> LibraryVersions.semanticUI,
-      "prop-types" -> "15.7.2"
+      "prop-types"       -> "15.7.2",
+      "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
     ),
+    Compile / fastOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
+    Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     // NPM libs for development, mostly to let webpack do its magic
     npmDevDependencies in Compile ++= Seq(
-      "postcss-loader" -> "3.0.0",
-      "autoprefixer" -> "9.7.1",
-      "url-loader" -> "4.1.0",
-      "file-loader" -> "4.2.0",
-      "css-loader" -> "3.2.0",
-      "style-loader" -> "1.0.0",
-      "less" -> "2.7.2",
-      "less-loader" -> "4.1.0",
-      "webpack-merge" -> "4.2.2",
-      "mini-css-extract-plugin" -> "0.8.0",
+      "postcss"                       -> "8.1.1",
+      "postcss-loader"                -> "4.0.3",
+      "autoprefixer"                  -> "10.0.1",
+      "url-loader"                    -> "4.1.0",
+      "file-loader"                   -> "6.0.0",
+      "css-loader"                    -> "3.5.3",
+      "style-loader"                  -> "1.2.1",
+      "less"                          -> "2.7.2",
+      "less-loader"                   -> "4.1.0",
+      "webpack-merge"                 -> "4.2.2",
+      "mini-css-extract-plugin"       -> "0.8.0",
       "webpack-dev-server-status-bar" -> "1.1.0",
-      "cssnano" -> "4.1.10",
-      "terser-webpack-plugin" -> "3.0.6",
-      "html-webpack-plugin" -> "3.2.0",
-      "optimize-css-assets-webpack-plugin" -> "5.0.3",
-      "favicons-webpack-plugin" -> "1.0.2",
-      "@packtracker/webpack-plugin" -> "2.3.0"
+      "cssnano"                       -> "4.1.10",
+      "terser-webpack-plugin"         -> "3.0.6",
+      "html-webpack-plugin"           -> "4.3.0",
+      "css-minimizer-webpack-plugin"  -> "1.1.5",
+      "favicons-webpack-plugin"       -> "4.2.0",
+      "@packtracker/webpack-plugin"   -> "2.3.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,
