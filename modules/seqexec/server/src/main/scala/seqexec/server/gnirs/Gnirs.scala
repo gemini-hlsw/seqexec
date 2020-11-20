@@ -242,4 +242,8 @@ object Gnirs {
         .getOrElse(ContentError(s"Invalid value for focus ($v)").asLeft)
     }
 
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Gnirs
+  }
+
 }

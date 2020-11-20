@@ -3,11 +3,10 @@
 
 package seqexec.server.gmos
 
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
 
 import scala.concurrent.duration._
-
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -30,6 +29,7 @@ import lucuma.core.math.Angle
 import lucuma.core.math.Offset
 import lucuma.core.syntax.string._
 import seqexec.model.GmosParameters._
+import seqexec.model.`enum`.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.model.enum.NodAndShuffleStage
@@ -173,20 +173,6 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       ns <- Gmos.nsConfig(config)
       dc <- dcConfigFromSequenceConfig(config, ns)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
-
-  override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
-    val stdType = SequenceConfiguration.calcStepType(config, isNightSeq)
-    if (Gmos.isNodAndShuffle(config)) {
-      stdType.flatMap {
-        case StepType.ExclusiveDarkOrBias(_) => StepType.DarkOrBiasNS(instrument).asRight
-        case StepType.CelestialObject(_)     => StepType.NodAndShuffle(instrument).asRight
-        case st                              => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
-          .asLeft
-      }
-    } else {
-      stdType
-    }
-  }
 
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
@@ -371,4 +357,18 @@ object Gmos {
 
   def nsCmdRef[F[_]: Sync]: F[Ref[F, Option[NSObserveCommand]]] = Ref.of(none)
 
- }
+  def calcStepType(instrument: Instrument, config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
+    val stdType = SequenceConfiguration.calcStepType(config, isNightSeq)
+    if (Gmos.isNodAndShuffle(config)) {
+      stdType.flatMap {
+        case StepType.ExclusiveDarkOrBias(_) => StepType.DarkOrBiasNS(instrument).asRight
+        case StepType.CelestialObject(_)     => StepType.NodAndShuffle(instrument).asRight
+        case st                              => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
+          .asLeft
+      }
+    } else {
+      stdType
+    }
+  }
+
+}

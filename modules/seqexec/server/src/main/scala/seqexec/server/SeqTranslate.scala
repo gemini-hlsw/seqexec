@@ -148,12 +148,12 @@ object SeqTranslate {
       }
 
       for {
-        inst      <- MonadError[F, Throwable].fromEither(extractInstrument(config))
-        is        <- toInstrumentSys(inst)
-        stepType  <- is.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
-        dataId    <- dataIdFromConfig[F](config)
-        systems   <- calcSystems(config, stepType, is)
-        headers   <- calcHeaders(config, stepType, is)
+        inst     <- MonadError[F, Throwable].fromEither(extractInstrument(config))
+        stepType <- instrumentSpecs(inst).calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
+        dataId   <- dataIdFromConfig[F](config)
+        is       <- toInstrumentSys(inst)
+        systems  <- calcSystems(config, stepType, is)
+        headers  <- calcHeaders(config, stepType, is)
       } yield buildStep(dataId, is, systems, headers, stepType)
     }
 
@@ -330,7 +330,18 @@ object SeqTranslate {
       case Instrument.Niri  => Niri(systems.niri, systems.dhs).pure[F].widen[InstrumentSystem[F]]
       case Instrument.Nifs  => Nifs(systems.nifs, systems.dhs).pure[F].widen[InstrumentSystem[F]]
       case Instrument.Gsaoi => Gsaoi(systems.gsaoi, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-      case _                => Unexpected(s"Instrument $inst not supported.").raiseError[F, InstrumentSystem[F]]
+    }
+
+    def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
+      case Instrument.F2    => Flamingos2.specifics
+      case Instrument.GmosS => GmosSouth.specifics
+      case Instrument.GmosN => GmosNorth.specifics
+      case Instrument.Gnirs => Gnirs.specifics
+      case Instrument.Gpi   => Gpi.specifics
+      case Instrument.Ghost => Ghost.specifics
+      case Instrument.Niri  => Niri.specifics
+      case Instrument.Nifs  => Nifs.specifics
+      case Instrument.Gsaoi => Gsaoi.specifics
     }
 
     private def calcResources(sys: List[System[F]]): Set[Resource] = sys.map(_.resource).toSet

@@ -184,10 +184,13 @@ object Flamingos2 {
       s <- config.extractInstAs[Decker](DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = ( for {
+  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = for {
       p <- ccConfigFromSequenceConfig(config)
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)
-   )
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.F2
+  }
 
 }

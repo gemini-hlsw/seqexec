@@ -14,9 +14,8 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigUtilOps, InstrumentSpecifics, SeqexecFailure, StepType}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.NorthTypes
@@ -70,4 +69,12 @@ object GmosNorth {
     dhsClient: DhsClient[F],
     nsCmdR: Ref[F, Option[NSObserveCommand]]
   ): GmosNorth[F] = new GmosNorth[F](c, dhsClient, nsCmdR)
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.GmosN
+
+    override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
+      Gmos.calcStepType(instrument, config, isNightSeq)
+  }
+
 }

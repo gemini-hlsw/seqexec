@@ -23,18 +23,13 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentActions
-import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
-import seqexec.server.Progress
-import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -233,5 +228,9 @@ object Nifs {
       cc <- getCCConfig(config).adaptExtractFailure
       dc <- getDCConfig(config).adaptExtractFailure
     } yield NifsConfig(cc, dc)
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Nifs
+  }
 
 }

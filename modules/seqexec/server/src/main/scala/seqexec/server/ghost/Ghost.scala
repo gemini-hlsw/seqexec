@@ -142,4 +142,8 @@ object Ghost {
       }
     }.widenRethrowT
   }
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Ghost
+  }
 }

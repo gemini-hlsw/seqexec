@@ -56,13 +56,6 @@ final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[
 
   override val contributorName: String = "gpi"
 
-  override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
-    if (Gpi.isAlignAndCalib(config)) {
-      StepType.AlignAndCalib.asRight
-    } else {
-      SequenceConfiguration.calcStepType(config, isNightSeq)
-    }
-
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable
 
@@ -224,5 +217,16 @@ object Gpi {
     ApplicativeError[F, Throwable]
       .catchNonFatal(isAlignAndCalib(config))
       .ifM(alignAndCalibConfig[F], regularSequenceConfig[F](config))
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Gpi
+
+    override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
+      if (Gpi.isAlignAndCalib(config)) {
+        StepType.AlignAndCalib.asRight
+      } else {
+        SequenceConfiguration.calcStepType(config, isNightSeq)
+      }
+  }
 
 }
