@@ -16,7 +16,7 @@ object Settings {
     val diode                   = "1.1.13"
     val javaTimeJS              = "2.0.0"
     val scalaJSReactCommon      = "0.11.1"
-    val scalaJSSemanticUI       = "0.9.1"
+    val scalaJSSemanticUI       = "0.10.0"
     val scalaJSReactVirtualized = "0.11.1"
     val scalaJSReactClipboard   = "1.4.1"
     val scalaJSReactDraggable   = "0.11.1"
