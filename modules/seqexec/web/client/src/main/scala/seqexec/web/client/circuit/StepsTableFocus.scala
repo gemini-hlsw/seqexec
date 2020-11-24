@@ -5,9 +5,9 @@ package seqexec.web.client.circuit
 
 import cats._
 import cats.implicits._
-import gem.Observation
 import monocle.Getter
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.components.sequence.steps.StepsTable

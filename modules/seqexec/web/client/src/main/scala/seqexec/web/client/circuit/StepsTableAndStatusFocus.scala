@@ -5,8 +5,8 @@ package seqexec.web.client.circuit
 
 import cats.Eq
 import cats.syntax.all._
-import gem.Observation
 import monocle.Getter
+import seqexec.model.Observation
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.model._

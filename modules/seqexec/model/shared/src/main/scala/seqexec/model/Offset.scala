@@ -3,7 +3,7 @@
 
 package seqexec.model
 
-import gsp.math.Axis
+import lucuma.core.math.Axis
 import seqexec.model.enum.SystemName
 
 object OffsetType {

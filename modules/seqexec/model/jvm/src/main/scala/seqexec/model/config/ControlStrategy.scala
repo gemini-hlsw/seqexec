@@ -4,7 +4,7 @@
 package seqexec.model.config
 
 import cats.syntax.all._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait ControlStrategy extends Product with Serializable
 

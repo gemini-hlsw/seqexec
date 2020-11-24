@@ -10,7 +10,7 @@ import cats.data.NonEmptyList
 import cats.tests.CatsSuite
 import fs2.concurrent.Queue
 import fs2.Stream
-import gem.Observation
+import seqexec.model.Observation
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import java.util.UUID

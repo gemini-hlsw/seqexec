@@ -3,12 +3,12 @@
 
 package seqexec.server.keywords
 
-import gem.enum.KeywordName
-import gem.arb.ArbEnumerated
+import lucuma.core.enum.KeywordName
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
+import lucuma.core.util.arb.ArbEnumerated
 
 trait KeywordArbitraries extends ArbEnumerated {
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {

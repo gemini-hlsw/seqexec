@@ -3,9 +3,10 @@
 
 package seqexec.server.ghost
 
-import gsp.math.Coordinates
-import gsp.math.arb.{ ArbCoordinates, ArbTime }
-import gem.arb.ArbEnumerated._
+import lucuma.core.math.Coordinates
+import lucuma.core.math.arb.ArbCoordinates
+import lucuma.core.arb.ArbTime
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen

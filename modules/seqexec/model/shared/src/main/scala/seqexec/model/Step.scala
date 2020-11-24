@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism
@@ -89,7 +89,7 @@ object Step {
       case s: NodAndShuffleStep => s.nsStatus.observing.some
     } { n => a =>
       a match {
-        case s: StandardStep => StandardStep.observeStatus.set(n)(s)
+        case s: StandardStep      => StandardStep.observeStatus.set(n)(s)
         case s: NodAndShuffleStep =>
           (NodAndShuffleStep.nsStatus ^|-> NodAndShuffleStatus.observing).set(n)(s)
       }
@@ -108,26 +108,28 @@ object Step {
 
   implicit val equal: Eq[Step] =
     Eq.instance {
-      case (x: StandardStep, y: StandardStep) =>
+      case (x: StandardStep, y: StandardStep)           =>
         x === y
       case (x: NodAndShuffleStep, y: NodAndShuffleStep) =>
         x === y
-      case _ =>
+      case _                                            =>
         false
     }
 
   implicit class StepOps(val s: Step) extends AnyVal {
-    def flipBreakpoint: Step = s match {
-      case st: StandardStep      => StandardStep.breakpoint.negate(st)
-      case st: NodAndShuffleStep => NodAndShuffleStep.breakpoint.negate(st)
-      case st                    => st
-    }
+    def flipBreakpoint: Step =
+      s match {
+        case st: StandardStep      => StandardStep.breakpoint.negate(st)
+        case st: NodAndShuffleStep => NodAndShuffleStep.breakpoint.negate(st)
+        case st                    => st
+      }
 
-    def flipSkip: Step = s match {
-      case st: StandardStep      => StandardStep.skip.negate(st)
-      case st: NodAndShuffleStep => NodAndShuffleStep.skip.negate(st)
-      case st                    => st
-    }
+    def flipSkip: Step =
+      s match {
+        case st: StandardStep      => StandardStep.skip.negate(st)
+        case st: NodAndShuffleStep => NodAndShuffleStep.skip.negate(st)
+        case st                    => st
+      }
 
     def file: Option[String] = None
 
@@ -142,23 +144,26 @@ object Step {
 
     def runningOrComplete: Boolean = s.status.runningOrComplete
 
-    def isObserving: Boolean = s match {
-      case x: StandardStep      => x.observeStatus === ActionStatus.Running
-      case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Running
-      case _                    => false
-    }
+    def isObserving: Boolean =
+      s match {
+        case x: StandardStep      => x.observeStatus === ActionStatus.Running
+        case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Running
+        case _                    => false
+      }
 
-    def isObservePaused: Boolean = s match {
-      case x: StandardStep      => x.observeStatus === ActionStatus.Paused
-      case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Paused
-      case _                    => false
-    }
+    def isObservePaused: Boolean =
+      s match {
+        case x: StandardStep      => x.observeStatus === ActionStatus.Paused
+        case x: NodAndShuffleStep => x.nsStatus.observing === ActionStatus.Paused
+        case _                    => false
+      }
 
-    def isConfiguring: Boolean = s match {
-      case x: StandardStep      => x.configStatus.count(_._2 === ActionStatus.Running) > 0
-      case x: NodAndShuffleStep => x.configStatus.count(_._2 === ActionStatus.Running) > 0
-      case _                    => false
-    }
+    def isConfiguring: Boolean =
+      s match {
+        case x: StandardStep      => x.configStatus.count(_._2 === ActionStatus.Running) > 0
+        case x: NodAndShuffleStep => x.configStatus.count(_._2 === ActionStatus.Running) > 0
+        case _                    => false
+      }
 
     def isFinished: Boolean = s.status.isFinished
 
@@ -168,10 +173,11 @@ object Step {
 
     def canConfigure: Boolean = s.status.canConfigure
 
-    def isMultiLevel: Boolean = s match {
-      case _: NodAndShuffleStep => true
-      case _                    => false
-    }
+    def isMultiLevel: Boolean =
+      s match {
+        case _: NodAndShuffleStep => true
+        case _                    => false
+      }
   }
 }
 
@@ -188,16 +194,8 @@ final case class StandardStep(
 ) extends Step
 
 object StandardStep {
-  implicit val equalStandardStep: Eq[StandardStep] = Eq.by(
-    x =>
-      (x.id,
-       x.config,
-       x.status,
-       x.breakpoint,
-       x.skip,
-       x.fileId,
-       x.configStatus,
-       x.observeStatus)
+  implicit val equalStandardStep: Eq[StandardStep] = Eq.by(x =>
+    (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.observeStatus)
   )
 }
 
@@ -216,22 +214,15 @@ final case class NodAndShuffleStep(
 ) extends Step
 
 object NodAndShuffleStep {
-  implicit val equalNodAndShuffleStop: Eq[NodAndShuffleStep] = Eq.by(
-    x =>
-      (x.id,
-       x.config,
-       x.status,
-       x.breakpoint,
-       x.skip,
-       x.fileId,
-       x.configStatus,
-       x.nsStatus)
+  implicit val equalNodAndShuffleStop: Eq[NodAndShuffleStep] = Eq.by(x =>
+    (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.nsStatus)
   )
 
   sealed trait PendingObserveCmd extends Product with Serializable
-  case object PauseGracefully extends PendingObserveCmd
-  case object StopGracefully extends PendingObserveCmd
+  case object PauseGracefully    extends PendingObserveCmd
+  case object StopGracefully     extends PendingObserveCmd
 
-  implicit val enumPendingObserveCmd: Enumerated[PendingObserveCmd] = Enumerated.of(PauseGracefully, StopGracefully)
+  implicit val enumPendingObserveCmd: Enumerated[PendingObserveCmd] =
+    Enumerated.of(PauseGracefully, StopGracefully)
 
 }

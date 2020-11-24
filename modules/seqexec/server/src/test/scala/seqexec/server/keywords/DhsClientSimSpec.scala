@@ -4,27 +4,26 @@
 package seqexec.server.keywords
 
 import cats.effect.IO
-import gem.enum.KeywordName
+import lucuma.core.enum.KeywordName
 import io.chrisdavenport.log4cats.noop.NoOpLogger
 import java.time.LocalDate
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.server.keywords.DhsClient.Permanent
 
-class DhsClientSimSpec extends AnyFlatSpec with Matchers {
+class DhsClientSimSpec extends munit.FunSuite {
   private implicit def logger = NoOpLogger.impl[IO]
 
-  "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).flatMap(_.createImage(DhsClient.ImageParameters(Permanent, Nil))).unsafeRunSync() should matchPattern {
-        case "S20160415S0001" =>
+  test("produce data labels for today") {
+      (DhsClientSim[IO](LocalDate.of(2016, 4, 15)).flatMap(_.createImage(DhsClient.ImageParameters(Permanent, Nil))).unsafeRunSync(): String) match {
+        case "S20160415S0001" => assert(true)
+        case _ => fail("Bad id")
       }
     }
-  it should "accept keywords" in {
-    (for {
+  test("accept keywords") {
+    assertEquals((for {
       client <- DhsClientSim.apply[IO]
       id     <- client.createImage(DhsClient.ImageParameters(Permanent, Nil))
       _      <- client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true)
-    } yield ()).unsafeRunSync() shouldEqual (())
+    } yield ()).unsafeRunSync(), ())
   }
 
 }

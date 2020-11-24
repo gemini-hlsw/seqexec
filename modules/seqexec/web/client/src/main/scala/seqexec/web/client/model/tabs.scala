@@ -7,14 +7,14 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.syntax.all._
-import gem.Observation
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
 import monocle.std.either._
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
@@ -24,33 +24,35 @@ import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag.@@
 
-final case class AvailableTab(id:            Observation.Id,
-                              status:        SequenceState,
-                              instrument:    Instrument,
-                              runningStep:   Option[RunningStep],
-                              nextStepToRun: Option[Int],
-                              isPreview:     Boolean,
-                              active:        TabSelected,
-                              loading:       Boolean,
-                              resourceOperations: SortedMap[Resource, ResourceRunOperation])
+final case class AvailableTab(
+  id:                 Observation.Id,
+  status:             SequenceState,
+  instrument:         Instrument,
+  runningStep:        Option[RunningStep],
+  nextStepToRun:      Option[Int],
+  isPreview:          Boolean,
+  active:             TabSelected,
+  loading:            Boolean,
+  resourceOperations: SortedMap[Resource, ResourceRunOperation]
+)
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =
-    Eq.by(
-      x =>
-        (x.id,
-         x.status,
-         x.instrument,
-         x.runningStep,
-         x.nextStepToRun,
-         x.isPreview,
-         x.active,
-         x.loading,
-         x.resourceOperations))
+    Eq.by(x =>
+      (x.id,
+       x.status,
+       x.instrument,
+       x.runningStep,
+       x.nextStepToRun,
+       x.isPreview,
+       x.active,
+       x.loading,
+       x.resourceOperations
+      )
+    )
 }
 
-final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab,
-                                           active:         TabSelected)
+final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab, active: TabSelected)
 
 object CalibrationQueueTabActive {
   implicit val eq: Eq[CalibrationQueueTabActive] =
@@ -59,7 +61,7 @@ object CalibrationQueueTabActive {
 
 sealed trait TabSelected extends Product with Serializable
 object TabSelected {
-  case object Selected extends TabSelected
+  case object Selected   extends TabSelected
   case object Background extends TabSelected
 
   def fromBoolean(b: Boolean): TabSelected = if (b) Selected else Background
@@ -90,13 +92,13 @@ object SeqexecTab {
       case _                                                => false
     }
 
-  val previewTab: Prism[SeqexecTab, PreviewSequenceTab] =
+  val previewTab: Prism[SeqexecTab, PreviewSequenceTab]       =
     GenPrism[SeqexecTab, PreviewSequenceTab]
   val instrumentTab: Prism[SeqexecTab, InstrumentSequenceTab] =
     GenPrism[SeqexecTab, InstrumentSequenceTab]
-  val calibrationTab: Prism[SeqexecTab, CalibrationQueueTab] =
+  val calibrationTab: Prism[SeqexecTab, CalibrationQueueTab]  =
     GenPrism[SeqexecTab, CalibrationQueueTab]
-  val sequenceTab: Prism[SeqexecTab, SequenceTab] =
+  val sequenceTab: Prism[SeqexecTab, SequenceTab]             =
     Prism.partial[SeqexecTab, SequenceTab] {
       case p: PreviewSequenceTab    => p
       case i: InstrumentSequenceTab => i
@@ -105,17 +107,14 @@ object SeqexecTab {
 }
 
 @Lenses
-final case class CalibrationQueueTab(
-  state:      BatchExecState,
-  observer:   Option[Observer])
+final case class CalibrationQueueTab(state: BatchExecState, observer: Option[Observer])
     extends SeqexecTab {
   val isPreview: Boolean = false
 }
 
 object CalibrationQueueTab {
   val Empty: CalibrationQueueTab =
-    CalibrationQueueTab(BatchExecState.Idle,
-                        None)
+    CalibrationQueueTab(BatchExecState.Idle, None)
 
   implicit val eq: Eq[CalibrationQueueTab] =
     Eq.by(x => (x.state, x.observer))
@@ -123,50 +122,64 @@ object CalibrationQueueTab {
 
 sealed trait SequenceTab extends SeqexecTab {
   val tabOperations: TabOperations
-  def instrument: Instrument = this match {
-    case i: InstrumentSequenceTab => i.inst
-    case i: PreviewSequenceTab    => i.currentSequence.metadata.instrument
-  }
+  def instrument: Instrument =
+    this match {
+      case i: InstrumentSequenceTab => i.inst
+      case i: PreviewSequenceTab    => i.currentSequence.metadata.instrument
+    }
 
-  def sequence: SequenceView = this match {
-    // Returns the current sequence or if empty the last completed one
-    case i: InstrumentSequenceTab => i.seq
-    case i: PreviewSequenceTab    => i.currentSequence
-  }
+  def sequence: SequenceView =
+    this match {
+      // Returns the current sequence or if empty the last completed one
+      case i: InstrumentSequenceTab => i.seq
+      case i: PreviewSequenceTab    => i.currentSequence
+    }
 
   def obsId: Observation.Id = sequence.id
 
-  def stepConfigDisplayed: Option[Int] = this match {
-    case i: InstrumentSequenceTab => i.stepConfig
-    case i: PreviewSequenceTab    => i.stepConfig
-  }
+  def stepConfigDisplayed: Option[Int] =
+    this match {
+      case i: InstrumentSequenceTab => i.stepConfig
+      case i: PreviewSequenceTab    => i.stepConfig
+    }
 
-  def isPreview: Boolean = this match {
-    case _: InstrumentSequenceTab => false
-    case _                        => true
-  }
+  def isPreview: Boolean =
+    this match {
+      case _: InstrumentSequenceTab => false
+      case _                        => true
+    }
 
-  def isComplete: Boolean = this match {
-    case InstrumentSequenceTab(_, Left(_: InstrumentSequenceTab.CompletedSequenceView), _, _, _) => true
-    case _                                              => false
-  }
+  def isComplete: Boolean =
+    this match {
+      case InstrumentSequenceTab(_,
+                                 Left(_: InstrumentSequenceTab.CompletedSequenceView),
+                                 _,
+                                 _,
+                                 _
+          ) =>
+        true
+      case _ => false
+    }
 
-  def runningStep: Option[RunningStep] = this match {
-    case _: InstrumentSequenceTab => sequence.runningStep
-    case _                        => none
-  }
+  def runningStep: Option[RunningStep] =
+    this match {
+      case _: InstrumentSequenceTab => sequence.runningStep
+      case _                        => none
+    }
 
   def nextStepToRun: Option[Int] = sequence.nextStepToRun
 
-  def loading: Boolean = this match {
-    case _: InstrumentSequenceTab => false
-    case p: PreviewSequenceTab    => p.isLoading
-  }
+  def loading: Boolean =
+    this match {
+      case _: InstrumentSequenceTab => false
+      case p: PreviewSequenceTab    => p.isLoading
+    }
 
-  def selectedStep: Option[StepId] = this match {
-    case i: InstrumentSequenceTab => i.selected
-    case _                        => none
-  }
+  def selectedStep: Option[StepId] =
+    this match {
+      case i: InstrumentSequenceTab => i.selected
+      case _                        => none
+    }
 }
 
 object SequenceTab {
@@ -186,18 +199,20 @@ object SequenceTab {
         a match {
           case t: InstrumentSequenceTab => t.copy(stepConfig = n)
           case t: PreviewSequenceTab    => t.copy(stepConfig = n)
-    })
+        }
+    )
 
   val tabOperationsL: Lens[SequenceTab, TabOperations] =
     Lens[SequenceTab, TabOperations] {
       case t: InstrumentSequenceTab => t.tabOperations
       case t: PreviewSequenceTab    => t.tabOperations
     }(n =>
-        a =>
-          a match {
-            case t: InstrumentSequenceTab => t.copy(tabOperations = n)
-            case t: PreviewSequenceTab    => t.copy(tabOperations = n)
-          })
+      a =>
+        a match {
+          case t: InstrumentSequenceTab => t.copy(tabOperations = n)
+          case t: PreviewSequenceTab    => t.copy(tabOperations = n)
+        }
+    )
 
   val resourcesRunOperationsL: Lens[SequenceTab, SortedMap[Resource, ResourceRunOperation]] =
     SequenceTab.tabOperationsL ^|-> TabOperations.resourceRunRequested
@@ -205,13 +220,15 @@ object SequenceTab {
 
 @Lenses
 final case class InstrumentSequenceTab(
-  inst: Instrument,
-  curSequence: Either[InstrumentSequenceTab.CompletedSequenceView,
-                      InstrumentSequenceTab.LoadedSequenceView],
+  inst:          Instrument,
+  curSequence:   Either[
+    InstrumentSequenceTab.CompletedSequenceView,
+    InstrumentSequenceTab.LoadedSequenceView
+  ],
   stepConfig:    Option[StepId],
   selected:      Option[StepId],
-  tabOperations: TabOperations)
-    extends SequenceTab {
+  tabOperations: TabOperations
+) extends SequenceTab {
   val seq: SequenceView = curSequence match {
     case Right(x) => x
     case Left(x)  => x
@@ -230,20 +247,12 @@ object InstrumentSequenceTab {
   private implicit val completedEq: Eq[CompletedSequenceView] = Eq.by(identity)
 
   implicit val eq: Eq[InstrumentSequenceTab] =
-    Eq.by(
-      x =>
-        (x.instrument,
-         x.sequence,
-         x.stepConfig,
-         x.selected,
-         x.tabOperations))
+    Eq.by(x => (x.instrument, x.sequence, x.stepConfig, x.selected, x.tabOperations))
 
-  implicit val completedSequence
-    : Optional[InstrumentSequenceTab, CompletedSequenceView] =
+  implicit val completedSequence: Optional[InstrumentSequenceTab, CompletedSequenceView] =
     InstrumentSequenceTab.curSequence ^<-? stdLeft
 
-  implicit val loadedSequence
-    : Optional[InstrumentSequenceTab, LoadedSequenceView] =
+  implicit val loadedSequence: Optional[InstrumentSequenceTab, LoadedSequenceView] =
     InstrumentSequenceTab.curSequence ^<-? stdRight
 }
 
@@ -252,15 +261,10 @@ final case class PreviewSequenceTab(
   currentSequence: SequenceView,
   stepConfig:      Option[Int],
   isLoading:       Boolean,
-  tabOperations:   TabOperations)
-    extends SequenceTab
+  tabOperations:   TabOperations
+) extends SequenceTab
 
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
-    Eq.by(
-      x =>
-        (x.currentSequence,
-         x.stepConfig,
-         x.isLoading,
-         x.tabOperations))
+    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tabOperations))
 }

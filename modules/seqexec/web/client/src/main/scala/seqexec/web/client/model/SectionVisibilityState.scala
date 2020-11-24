@@ -3,13 +3,13 @@
 
 package seqexec.web.client.model
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 // UI model
 sealed trait SectionVisibilityState extends Product with Serializable
 
 object SectionVisibilityState {
-  case object SectionOpen extends SectionVisibilityState
+  case object SectionOpen   extends SectionVisibilityState
   case object SectionClosed extends SectionVisibilityState
 
   /** @group Typeclass Instances */

@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import cats.syntax.all._
-import gem.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
@@ -13,6 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import mouse.all._
 import react.common._
 import react.semanticui.colors._
+import seqexec.model.Observation
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
 import seqexec.web.client.actions.RequestRun

@@ -6,7 +6,7 @@ package seqexec.web.client
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import diode.data._
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import monocle.law.discipline.LensTests
 import monocle.law.discipline.PrismTests
 import monocle.law.discipline.OptionalTests
@@ -20,8 +20,8 @@ import seqexec.web.client.model.Formatting.OffsetsDisplay
 import web.client.table.TableState
 
 /**
-  * Tests Client typeclasses
-  */
+ * Tests Client typeclasses
+ */
 final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
 
   checkAll("Eq[OffsetsDisplay]", EqTests[OffsetsDisplay].eqv)
@@ -41,14 +41,15 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[GlobalLog]", EqTests[GlobalLog].eqv)
   checkAll("Eq[UserNotificationState]", EqTests[UserNotificationState].eqv)
   checkAll("Eq[CalibrationQueues]", EqTests[CalibrationQueues].eqv)
-  checkAll("Eq[AllObservationsProgressState]",
-           EqTests[AllObservationsProgressState].eqv)
+  checkAll("Eq[AllObservationsProgressState]", EqTests[AllObservationsProgressState].eqv)
   checkAll("Eq[SessionQueueFilter]", EqTests[SessionQueueFilter].eqv)
   checkAll("Eq[SectionVisibilityState]", EqTests[SectionVisibilityState].eqv)
   checkAll("Eq[TableState[StepConfigTable.TableColumn]",
-           EqTests[TableState[StepConfigTable.TableColumn]].eqv)
+           EqTests[TableState[StepConfigTable.TableColumn]].eqv
+  )
   checkAll("Eq[TableState[SessionQueueTable.TableColumn]",
-           EqTests[TableState[SessionQueueTable.TableColumn]].eqv)
+           EqTests[TableState[SessionQueueTable.TableColumn]].eqv
+  )
   checkAll("Eq[SoundSelection]", EqTests[SoundSelection].eqv)
   checkAll("Eq[StepsTableTypeSelection]", EqTests[StepsTableTypeSelection].eqv)
   checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
@@ -65,8 +66,6 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("SeqexecTab.previewTab", PrismTests(SeqexecTab.previewTab))
   checkAll("SeqexecTab.instrumentTab", PrismTests(SeqexecTab.instrumentTab))
   checkAll("SeqexecTab.sequenceTab", PrismTests(SeqexecTab.sequenceTab))
-  checkAll("SequencesOn.focusSequence",
-           OptionalTests(SequencesOnDisplay.focusSequence))
-  checkAll("SequencesOnDisplay.previewTab",
-           TraversalTests(SequencesOnDisplay.previewTab))
+  checkAll("SequencesOn.focusSequence", OptionalTests(SequencesOnDisplay.focusSequence))
+  checkAll("SequencesOnDisplay.previewTab", TraversalTests(SequencesOnDisplay.previewTab))
 }

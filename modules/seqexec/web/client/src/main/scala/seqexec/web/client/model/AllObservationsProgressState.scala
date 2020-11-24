@@ -6,7 +6,6 @@ package seqexec.web.client.model
 import scala.collection.immutable.SortedMap
 
 import cats.Eq
-import gem.Observation
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism
@@ -14,6 +13,7 @@ import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import monocle.macros.Lenses
 import monocle.std.option.some
+import seqexec.model.Observation
 import seqexec.model.Progress
 import seqexec.model.StepId
 

@@ -23,4 +23,4 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
       - name: Run tests
-        run: csbt headerCheck test:headerCheck scalastyle compile seqexec_modelJVM/test seqexec_modelJS/test seqexec_engine/test seqexec_server/test seqexec_web_server/test seqexec_web_client/test
+        run: sbt headerCheck test:headerCheck compile seqexec_modelJVM/test seqexec_modelJS/test seqexec_engine/test seqexec_server/test seqexec_web_server/test seqexec_web_client/test

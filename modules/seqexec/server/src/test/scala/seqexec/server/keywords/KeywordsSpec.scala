@@ -5,7 +5,7 @@ package seqexec.server.keywords
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
-import gem.enum.KeywordName
+import lucuma.core.enum.KeywordName
 
 final class KeywordsSpec extends CatsSuite with KeywordArbitraries {
   checkAll("Eq[KeywordName]", EqTests[KeywordName].eqv)

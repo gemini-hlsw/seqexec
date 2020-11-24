@@ -3,7 +3,7 @@
 
 package seqexec.server.keywords
 
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 
 /**

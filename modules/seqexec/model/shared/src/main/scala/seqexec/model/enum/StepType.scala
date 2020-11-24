@@ -5,10 +5,9 @@ package seqexec.model.enum
 
 import cats._
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
-sealed abstract class StepType(val label: String)
-  extends Product with Serializable
+sealed abstract class StepType(val label: String) extends Product with Serializable
 
 object StepType {
 
@@ -30,6 +29,15 @@ object StepType {
 
   /** @group Typeclass Instances */
   implicit val StepTypeEnumerated: Enumerated[StepType] =
-    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib, NodAndShuffle, NodAndShuffleDark)
+    Enumerated.of(Object,
+                  Arc,
+                  Flat,
+                  Bias,
+                  Dark,
+                  Calibration,
+                  AlignAndCalib,
+                  NodAndShuffle,
+                  NodAndShuffleDark
+    )
 
 }

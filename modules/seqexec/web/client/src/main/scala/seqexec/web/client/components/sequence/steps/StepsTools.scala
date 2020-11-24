@@ -4,12 +4,12 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import gem.Observation
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.elements.icon.IconRotated
+import seqexec.model.Observation
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles

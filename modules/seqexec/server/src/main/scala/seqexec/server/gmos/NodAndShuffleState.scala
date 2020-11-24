@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait NodAndShuffleState extends Product with Serializable
 
@@ -11,7 +11,7 @@ sealed trait NodAndShuffleState extends Product with Serializable
 object NodAndShuffleState {
   // Names taken from the old seqexec
   case object NodShuffle extends NodAndShuffleState
-  case object Classic extends NodAndShuffleState
+  case object Classic    extends NodAndShuffleState
 
   /** @group Typeclass Instances */
   implicit val NSStageEnumerated: Enumerated[NodAndShuffleState] =

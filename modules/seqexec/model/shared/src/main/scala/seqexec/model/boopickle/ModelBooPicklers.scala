@@ -3,7 +3,7 @@
 
 package seqexec.model.boopickle
 
-import java.time.Instant
+import java.time._
 
 import boopickle.Default.Pickler
 import boopickle.Default.UUIDPickler
@@ -14,16 +14,18 @@ import boopickle.Default.generatePickler
 import boopickle.Default.intPickler
 import boopickle.Default.longPickler
 import boopickle.Default.optionPickler
+import boopickle.Default.shortPickler
 import boopickle.Default.stringPickler
 import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
 import cats._
 import cats.implicits._
-import gem.Observation
-import gem.util.Enumerated
+import lucuma.core.math.Index
+import lucuma.core.util.Enumerated
 import seqexec.model.GmosParameters._
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
+import seqexec.model.Observation
 import seqexec.model.UserPrompt.TargetCheckOverride
 import seqexec.model._
 import seqexec.model.dhs._
@@ -34,27 +36,34 @@ import shapeless.tag.@@
 import squants.time.TimeConversions._
 
 /**
- * Contains boopickle implicit picklers of model objects
- * Boopickle can auto derive encoders but it is preferred to make
- * them explicitly
- */
-trait ModelBooPicklers extends GemModelBooPicklers {
+  * Contains boopickle implicit picklers of model objects
+  * Boopickle can auto derive encoders but it is preferred to make
+  * them explicitly
+  */
+trait ModelBooPicklers extends BooPicklerSyntax {
+  implicit val yearPickler: Pickler[Year]                           = transformPickler(Year.of)(_.getValue)
+  implicit val localDatePickler: Pickler[LocalDate]                 =
+    transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)
+  implicit val programIdPickler: Pickler[ProgramId]                 = ProgramId.fromString.toPickler
+  implicit val indexPickler: Pickler[Index]                         = Index.fromShort.toPickler
+  implicit val observationIdPickler: Pickler[Observation.Id]        = generatePickler[Observation.Id]
+  implicit val lObservationIdPickler: Pickler[List[Observation.Id]] =
+    iterablePickler[Observation.Id, List]
+
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap
 
   def sourceIndex[A: Enumerated]: Map[Int, A] =
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
-  // scalastyle:off
   def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
-  ): Pickler[A] =
+  ): Pickler[A]                                        =
     transformPickler((t: B) =>
       valuesMap
         .get(t)
         .getOrElse(throw new RuntimeException(s"Failed to decode value"))
     )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
-  // scalastyle:on
 
   def enumeratedPickler[A: Eq: Enumerated]: Pickler[A] =
     valuesMapPickler[A, Int](sourceIndex[A])

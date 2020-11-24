@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
 sealed trait MountGuideOption extends Product with Serializable

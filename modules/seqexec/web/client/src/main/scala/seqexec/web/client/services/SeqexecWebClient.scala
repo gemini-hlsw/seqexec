@@ -13,11 +13,11 @@ import boopickle.Default.Pickle
 import boopickle.Default.Pickler
 import boopickle.Default.Unpickle
 import cats.syntax.all._
-import gem.Observation
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.ext.Ajax
 import seqexec.common.HttpStatusCodes
 import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.QueueId

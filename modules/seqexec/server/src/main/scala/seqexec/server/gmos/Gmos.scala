@@ -24,11 +24,11 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import gem.enum.LightSinkName
-import gsp.math.Angle
-import gsp.math.Offset
-import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.LightSinkName
+import lucuma.core.math.Angle
+import lucuma.core.math.Offset
+import lucuma.core.syntax.string._
 import seqexec.model.GmosParameters._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding

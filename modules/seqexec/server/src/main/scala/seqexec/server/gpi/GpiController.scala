@@ -19,13 +19,13 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
-import gem.enum.GiapiStatusApply._
-import gem.enum.GpiReadMode
 import giapi.client.GiapiStatusDb
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enum.GpiReadMode
 import mouse.boolean._
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController

@@ -4,13 +4,13 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import diode.react.ReactConnectProxy
-import gem.Observation
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.collections.grid._
 import react.semanticui.floats._
 import react.semanticui.widths._
+import seqexec.model.Observation
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 

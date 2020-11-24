@@ -5,11 +5,11 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
-import gem.Observation
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.Iso
 import monocle.Prism
 import monocle.macros.GenPrism
+import seqexec.model.Observation
 import squants.Time
 
 sealed trait Progress extends Product with Serializable {

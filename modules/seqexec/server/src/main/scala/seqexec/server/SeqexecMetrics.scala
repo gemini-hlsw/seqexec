@@ -5,13 +5,13 @@ package seqexec.server
 
 import cats.effect.Sync
 import cats.syntax.all._
-import gem.enum.Site
 import io.prometheus.client._
+import lucuma.core.enum.Site
 import seqexec.model.enum.Instrument
 
 final case class SeqexecMetrics private (
-  site: Site,
-  private val qs: Gauge,  // Amount of items on the list of queues
+  site:           Site,
+  private val qs: Gauge, // Amount of items on the list of queues
   private val ss: Counter // Sequences started
 )
 
@@ -34,7 +34,8 @@ object SeqexecMetrics {
           .help("Sequence started.")
           .labelNames("site", "instrument")
           .register(c)
-      ))
+      )
+    )
 
   implicit class SeqexecMetricsOps(val m: SeqexecMetrics) extends AnyVal {
 

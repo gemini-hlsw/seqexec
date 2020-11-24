@@ -10,7 +10,6 @@ import cats.effect.Concurrent
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import gem.Observation
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
@@ -19,6 +18,7 @@ import org.http4s.client.middleware.RetryPolicy
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.scalaxml._
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
 

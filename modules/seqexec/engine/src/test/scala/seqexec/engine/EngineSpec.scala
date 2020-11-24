@@ -5,9 +5,8 @@ package seqexec.engine
 
 import cats.Eq
 import cats.effect.IO
-import cats.tests.CatsSuite
-import gem.Observation
-import gem.arb.ArbObservation
+import seqexec.model.Observation
+import seqexec.model.arb.ArbObservationId
 import monocle.law.discipline.OptionalTests
 import org.scalacheck.{Arbitrary, Cogen}
 import org.scalacheck.Arbitrary._
@@ -15,13 +14,14 @@ import seqexec.engine.TestUtil.TestState
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceState
 
-final class EngineSpec extends CatsSuite with ArbObservation {
+final class EngineSpec extends munit.DisciplineSuite {
+  import ArbObservationId._
   implicit val seqstateEq: Eq[Sequence.State[IO]] = Eq.fromUniversalEquals
   implicit val execstateEq: Eq[TestState] = Eq.by(x => x.sequences)
 
   implicit val sequenceArb: Arbitrary[Sequence[IO]] = Arbitrary{
     for{
-      id <- arbitrary[Observation.Id](ArbObservation.arbObservationId)
+      id <- arbitrary[Observation.Id](ArbObservationId.arbObservationId)
     } yield Sequence(id, List())
   }
 

@@ -8,13 +8,13 @@ import scala.concurrent.duration._
 import cats.Eq
 import cats.effect.Sync
 import cats.syntax.all._
-import gem.util.Enumerated
 import giapi.client.GiapiConfig
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.syntax.giapiconfig._
-import gsp.math.Coordinates
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.math.Coordinates
+import lucuma.core.util.Enumerated
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure

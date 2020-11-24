@@ -4,7 +4,7 @@
 package seqexec.model.enum
 
 import cats.Show
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait BatchExecState extends Product with Serializable {
   val running: Boolean = this match {

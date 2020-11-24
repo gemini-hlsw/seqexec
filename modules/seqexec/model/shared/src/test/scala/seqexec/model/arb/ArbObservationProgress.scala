@@ -3,9 +3,8 @@
 
 package seqexec.model.arb
 
-import gem.Observation
-import gem.arb.ArbEnumerated._
-import gem.arb.ArbObservation._
+import seqexec.model.Observation
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
@@ -17,6 +16,8 @@ import seqexec.model.ObserveStage.observeStageEnum
 import squants.time._
 
 trait ArbObservationProgress {
+  import ArbObservationId._
+
   implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
     Arbitrary {
       for {
@@ -54,7 +55,7 @@ trait ArbObservationProgress {
         o <- arbitrary[ObservationProgress]
         n <- arbitrary[NSObservationProgress]
         p <- Gen.oneOf(o, n)
-      } yield  p
+      } yield p
     }
 
   implicit val progressCogen: Cogen[Progress] =

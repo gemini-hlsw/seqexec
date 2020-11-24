@@ -5,7 +5,7 @@ package seqexec.model.config
 
 import cats.Eq
 import cats.implicits._
-import gem.enum.Site
+import lucuma.core.enum.Site
 
 /**
  * Top configuration of the seqexec
@@ -27,13 +27,5 @@ final case class SeqexecConfiguration(
 
 object SeqexecConfiguration {
   implicit val eqSeqexecConfiguration: Eq[SeqexecConfiguration] =
-    Eq.by(
-      x =>
-        (x.site,
-         x.mode,
-         x.seqexecEngine,
-         x.webServer,
-         x.smartGcal,
-         x.authentication)
-    )
+    Eq.by(x => (x.site, x.mode, x.seqexecEngine, x.webServer, x.smartGcal, x.authentication))
 }

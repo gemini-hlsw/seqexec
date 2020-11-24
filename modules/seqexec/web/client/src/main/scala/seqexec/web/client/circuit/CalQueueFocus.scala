@@ -7,7 +7,6 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.implicits._
-import gem.Observation
 import monocle.Getter
 import monocle.Lens
 import monocle.Traversal
@@ -16,6 +15,7 @@ import monocle.function.Each.listEach
 import monocle.function.FilterIndex.filterIndex
 import monocle.macros.Lenses
 import seqexec.model.ExecutionQueueView
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model.QueueManipulationOp
 import seqexec.web.client.components.queue.CalQueueTable

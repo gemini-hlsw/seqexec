@@ -3,10 +3,10 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import gsp.math.Axis
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.math.Axis
 import react.common._
 import react.semanticui.colors._
 import react.semanticui.sizes._

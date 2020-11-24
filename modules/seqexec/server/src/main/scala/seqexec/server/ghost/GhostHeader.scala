@@ -4,7 +4,7 @@
 package seqexec.server.ghost
 
 import cats.Applicative
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 

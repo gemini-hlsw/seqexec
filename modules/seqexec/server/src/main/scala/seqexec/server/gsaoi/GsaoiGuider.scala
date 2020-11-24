@@ -3,7 +3,7 @@
 
 package seqexec.server.gsaoi
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 trait GsaoiGuider[F[_]] {
   import GsaoiGuider._

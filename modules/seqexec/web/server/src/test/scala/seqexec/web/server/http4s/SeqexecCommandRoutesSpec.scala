@@ -5,9 +5,8 @@ package seqexec.web.server.http4s
 
 import cats.effect.IO
 import cats.tests.CatsSuite
-import gem.Observation
-import gem.arb.ArbObservation._
-import gem.arb.ArbEnumerated._
+import seqexec.model.Observation
+import lucuma.core.util.arb.ArbEnumerated._
 import java.net.URLEncoder
 import org.http4s._
 import org.scalamock.scalatest.MockFactory
@@ -18,6 +17,7 @@ import seqexec.web.server.http4s.encoder._
 import seqexec.model.ClientId
 import seqexec.model.enum._
 import seqexec.model.arb.ArbClientId._
+import seqexec.model.arb.ArbObservationId._
 
 class SeqexecCommandRoutesSpec
     extends CatsSuite

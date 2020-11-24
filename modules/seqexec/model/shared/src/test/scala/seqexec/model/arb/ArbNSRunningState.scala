@@ -6,7 +6,7 @@ package seqexec.model.arb
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.arb.ArbNSSubexposure._

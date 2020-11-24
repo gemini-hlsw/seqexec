@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 /** Enumerated type for Tip/Tilt Source. */
 sealed trait TipTiltSource extends Product with Serializable

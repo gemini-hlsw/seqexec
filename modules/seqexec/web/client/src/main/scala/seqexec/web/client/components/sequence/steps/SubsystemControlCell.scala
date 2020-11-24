@@ -7,7 +7,6 @@ import scala.collection.immutable.SortedMap
 import scala.scalajs.js
 
 import cats.implicits._
-import gem.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactMouseEvent
 import japgolly.scalajs.react.Reusability
@@ -22,6 +21,7 @@ import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.icon.Icon
 import react.semanticui.modules.popup.Popup
 import react.semanticui.sizes._
+import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions.RequestResourceRun

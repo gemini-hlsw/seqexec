@@ -3,7 +3,7 @@
 
 package seqexec.web.client.model
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 // UI model
 sealed trait UserPromptResult extends Product with Serializable

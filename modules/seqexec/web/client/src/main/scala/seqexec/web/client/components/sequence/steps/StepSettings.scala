@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import gem.Observation
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -14,6 +13,7 @@ import react.common._
 import react.semanticui.SemanticSize
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
+import seqexec.model.Observation
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.model.enum.Instrument

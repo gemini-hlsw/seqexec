@@ -3,12 +3,12 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import gem.Observation
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.semanticui.colors._
+import seqexec.model.Observation
 import seqexec.model.Step
 import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.actions.FlipSkipStep

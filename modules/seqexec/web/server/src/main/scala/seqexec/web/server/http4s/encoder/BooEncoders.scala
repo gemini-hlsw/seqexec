@@ -4,11 +4,11 @@
 package seqexec.web.server.http4s.encoder
 
 import cats.effect.Sync
-import gem.Observation
 import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.booPickle._
 import seqexec.model.Conditions
+import seqexec.model.Observation
 import seqexec.model.Operator
 import seqexec.model._
 import seqexec.model.boopickle.ModelBooPicklers

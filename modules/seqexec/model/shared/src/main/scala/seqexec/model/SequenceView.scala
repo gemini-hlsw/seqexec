@@ -5,10 +5,10 @@ package seqexec.model
 
 import cats._
 import cats.implicits._
-import gem.Observation
 import monocle.Traversal
 import monocle.function.Each._
 import monocle.macros.Lenses
+import seqexec.model.Observation
 
 @Lenses
 final case class SequenceView (

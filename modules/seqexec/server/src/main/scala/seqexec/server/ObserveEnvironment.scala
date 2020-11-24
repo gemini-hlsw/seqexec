@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import gem.Observation
+import seqexec.model.Observation
 import seqexec.model.dhs.DataId
 import seqexec.server.keywords._
 import seqexec.server.tcs.Tcs

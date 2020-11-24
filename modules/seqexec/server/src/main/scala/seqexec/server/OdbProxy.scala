@@ -13,8 +13,8 @@ import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.core.Peer
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.wdba.xmlrpc.ServiceException
-import gem.Observation
 import io.chrisdavenport.log4cats.Logger
+import seqexec.model.Observation
 import seqexec.model.dhs._
 
 sealed trait OdbCommands[F[_]] {

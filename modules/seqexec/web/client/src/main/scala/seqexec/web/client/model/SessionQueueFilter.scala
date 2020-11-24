@@ -5,7 +5,7 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.model.SequenceView
 import seqexec.web.client.circuit.SequenceInSessionQueue

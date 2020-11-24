@@ -4,10 +4,9 @@
 package seqexec.model.enum
 
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
-sealed abstract class Guiding(val configValue: String)
-  extends Product with Serializable
+sealed abstract class Guiding(val configValue: String) extends Product with Serializable
 
 object Guiding {
 

@@ -4,7 +4,6 @@
 package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
-import gem.Observation
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -19,6 +18,7 @@ import react.semanticui.elements.icon._
 import react.semanticui.elements.label.Label
 import react.semanticui.modules.popup.Popup
 import react.semanticui.sizes._
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState

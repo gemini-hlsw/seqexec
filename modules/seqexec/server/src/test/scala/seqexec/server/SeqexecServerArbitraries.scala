@@ -4,21 +4,21 @@
 package seqexec.server
 
 import cats.effect.IO
-import gem.arb.ArbEnumerated._
-import gem.Observation
-import gem.arb.ArbObservation._
+import lucuma.core.util.arb.ArbEnumerated._
+import seqexec.model.Observation
+import seqexec.model.arb.ArbObservationId._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Cogen}
+import org.scalacheck.{ Arbitrary, Cogen }
 import seqexec.model.BatchCommandState
 import seqexec.model.enum.Instrument
-import seqexec.model.{Conditions, Operator}
+import seqexec.model.{ Conditions, Operator }
 import seqexec.model.SeqexecModelArbitraries._
 
 trait SeqexecServerArbitraries {
 
   implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
     Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
-  implicit val engineStateArb: Arbitrary[EngineState[IO]] = Arbitrary {
+  implicit val engineStateArb: Arbitrary[EngineState[IO]]            = Arbitrary {
     for {
       q <- arbitrary[ExecutionQueues]
       s <- arbitrary[Map[Instrument, Observation.Id]]

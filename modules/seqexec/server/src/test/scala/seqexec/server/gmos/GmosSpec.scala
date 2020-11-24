@@ -5,12 +5,12 @@ package seqexec.server.gmos
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.server.gmos.GmosController.Config._
 
 /**
-  * Tests Gmos Config typeclasses
-  */
+ * Tests Gmos Config typeclasses
+ */
 final class GmosSpec extends CatsSuite {
   checkAll("Eq[ShutterState]", EqTests[ShutterState].eqv)
   checkAll("Eq[Beam]", EqTests[Beam].eqv)

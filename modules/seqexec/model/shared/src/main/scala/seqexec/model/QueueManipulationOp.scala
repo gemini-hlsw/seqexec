@@ -5,7 +5,7 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 
 sealed trait QueueManipulationOp extends Product with Serializable {
   val qid: QueueId

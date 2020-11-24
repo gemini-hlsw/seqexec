@@ -4,7 +4,7 @@
 package seqexec.model.enum
 
 import cats.data.NonEmptyList
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait NodAndShuffleStage extends Product with Serializable {
   val symbol: Symbol

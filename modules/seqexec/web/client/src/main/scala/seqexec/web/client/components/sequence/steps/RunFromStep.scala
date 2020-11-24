@@ -4,8 +4,8 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import gem.Observation
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ReactMouseEvent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
@@ -13,13 +13,14 @@ import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.modules.popup.Popup
-import seqexec.web.client.actions.{ RequestRunFrom, RunOptions }
+import seqexec.model.Observation
+import seqexec.web.client.actions.RequestRunFrom
+import seqexec.web.client.actions.RunOptions
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.reusability._
-import japgolly.scalajs.react.ReactMouseEvent
 
 /**
  * Contains the control to start a step from an arbitrary point

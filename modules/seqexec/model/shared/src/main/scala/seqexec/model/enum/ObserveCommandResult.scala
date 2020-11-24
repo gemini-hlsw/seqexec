@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 
 sealed trait ObserveCommandResult extends Product with Serializable
 

@@ -4,8 +4,8 @@
 package seqexec.server
 
 import edu.gemini.seqexec.odb.SeqFailure
-import gem.Observation
 import org.http4s.Uri
+import seqexec.model.Observation
 import seqexec.model.dhs._
 
 sealed trait SeqexecFailure extends Exception with Product with Serializable

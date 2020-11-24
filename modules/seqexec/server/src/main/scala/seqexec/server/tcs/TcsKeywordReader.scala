@@ -11,7 +11,7 @@ import cats.data.Nested
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
-import gsp.math.syntax.string._
+import lucuma.core.syntax.string._
 import monocle.Prism
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope

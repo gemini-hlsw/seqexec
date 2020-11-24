@@ -5,8 +5,8 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
-import gem.Observation
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model.enum.BatchExecState
 
 @Lenses

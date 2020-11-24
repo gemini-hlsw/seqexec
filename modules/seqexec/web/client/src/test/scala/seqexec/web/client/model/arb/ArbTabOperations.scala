@@ -3,25 +3,26 @@
 
 package seqexec.web.client.arb
 
+import cats._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import scala.collection.immutable.SortedMap
-import gem.arb.ArbEnumerated._
+import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.enum.Resource
 import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
 
 trait ArbTabOperations {
-  implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] = {
+  implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] =
     Arbitrary {
       for {
         i <- arbitrary[Int]
         s <- Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
                        ResourceRunOperation.ResourceRunInFlight(i),
-                       ResourceRunOperation.ResourceRunCompleted(i))
+                       ResourceRunOperation.ResourceRunCompleted(i)
+             )
       } yield s
     }
-  }
 
   implicit val rroCogen: Cogen[ResourceRunOperation] =
     Cogen[Option[Either[Int, Either[Int, Int]]]].contramap {
@@ -33,7 +34,7 @@ trait ArbTabOperations {
 
   implicit val arbTabOperations: Arbitrary[TabOperations] = {
     implicit val ordering: Ordering[Resource] =
-      cats.Order[Resource].toOrdering
+      Order[Resource].toOrdering
 
     Arbitrary {
       for {
@@ -50,28 +51,31 @@ trait ArbTabOperations {
     }
   }
 
-  implicit val toCogen: Cogen[TabOperations] = {
-    Cogen[(RunOperation,
-           SyncOperation,
-           PauseOperation,
-           CancelPauseOperation,
-           ResumeOperation,
-           StopOperation,
-           AbortOperation,
-           StartFromOperation,
-           List[(Resource, ResourceRunOperation)])].contramap(
-      x =>
-        (x.runRequested,
-         x.syncRequested,
-         x.pauseRequested,
-         x.cancelPauseRequested,
-         x.resumeRequested,
-         x.stopRequested,
-         x.abortRequested,
-         x.startFromRequested,
-         x.resourceRunRequested.toList)
+  implicit val toCogen: Cogen[TabOperations] =
+    Cogen[
+      (
+        RunOperation,
+        SyncOperation,
+        PauseOperation,
+        CancelPauseOperation,
+        ResumeOperation,
+        StopOperation,
+        AbortOperation,
+        StartFromOperation,
+        List[(Resource, ResourceRunOperation)]
+      )
+    ].contramap(x =>
+      (x.runRequested,
+       x.syncRequested,
+       x.pauseRequested,
+       x.cancelPauseRequested,
+       x.resumeRequested,
+       x.stopRequested,
+       x.abortRequested,
+       x.startFromRequested,
+       x.resourceRunRequested.toList
+      )
     )
-  }
 
 }
 

@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import gem.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
@@ -15,6 +14,7 @@ import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon._
 import react.semanticui.modules.popup.Popup
 import react.semanticui.modules.popup.PopupPosition
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.operations.Operations._

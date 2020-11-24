@@ -4,10 +4,10 @@
 package seqexec.web.server
 
 import cats.syntax.all._
-import gem.Observation
 import org.http4s.QueryParamDecoder
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.QueueId

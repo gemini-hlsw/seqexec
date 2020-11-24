@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
+
 import cats._
 import cats.data.StateT
 import cats.effect.Concurrent
@@ -17,14 +18,15 @@ import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
-import edu.gemini.spModel.obscomp.InstConstants.{OBSERVE_TYPE_PROP, OBS_CLASS_PROP, SCIENCE_OBSERVE_TYPE}
 import edu.gemini.spModel.obsclass.ObsClass
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
+import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
-import gem.Observation
-import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.Site
 import monocle.Monocle.index
 import monocle.Optional
 import mouse.all._
@@ -38,13 +40,14 @@ import seqexec.model.NodAndShuffleStep.PauseGracefully
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.NodAndShuffleStep.StopGracefully
 import seqexec.model.Notification._
+import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.UserDetails
 import seqexec.model._
 import seqexec.model.config._
 import seqexec.model.enum._
-import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.server.SeqEvent._
+import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.EngineState.atSequence
 

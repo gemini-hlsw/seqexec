@@ -3,10 +3,8 @@
 
 package seqexec.common
 
-import cats.data.NonEmptyList
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
-import gem.data.Zipper
 
 trait ArbitrariesCommon {
 
@@ -22,19 +20,6 @@ trait ArbitrariesCommon {
 
   implicit def fixedLengthBufferCogen[A: Cogen]: Cogen[FixedLengthBuffer[A]] =
     Cogen[(Int, Vector[A])].contramap(x => (x.maxLength, x.toChain.toVector))
-
-  implicit def arbZipper[A: Arbitrary]: Arbitrary[Zipper[A]] =
-    Arbitrary {
-      val maxSize = 100
-      for {
-        h <- arbitrary[A]
-        l <- Gen.choose(0, maxSize)
-        d <- Gen.listOfN(l, arbitrary[A])
-      } yield Zipper.fromNel(NonEmptyList.of(h, d: _*))
-    }
-
-  implicit def zipperCogen[A: Cogen]: Cogen[Zipper[A]] =
-    Cogen[List[A]].contramap(_.toList)
 
 }
 

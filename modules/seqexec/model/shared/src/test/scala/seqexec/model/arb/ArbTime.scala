@@ -5,7 +5,7 @@ package seqexec.model.arb
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
-import gsp.math.arb.ArbTime.arbSDuration
+import lucuma.core.arb.ArbTime.arbSDuration
 import squants.time._
 
 trait ArbTime {

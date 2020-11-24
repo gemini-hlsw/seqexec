@@ -9,9 +9,9 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import gem.Observation
 import io.chrisdavenport.log4cats.Logger
 import seqexec.engine._
+import seqexec.model.Observation
 import seqexec.model.dhs._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem._

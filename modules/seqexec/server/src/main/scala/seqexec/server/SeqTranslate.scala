@@ -21,12 +21,12 @@ import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Stream
-import gem.Observation
-import gem.enum.Site
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.Site
 import mouse.all._
 import seqexec.engine.Action.ActionState
 import seqexec.engine._
+import seqexec.model.Observation
 import seqexec.model.dhs._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource

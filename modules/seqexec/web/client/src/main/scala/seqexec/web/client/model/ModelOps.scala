@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats.Show
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import gem.enum.Site
+import lucuma.core.enum.Site
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.Step
@@ -15,8 +15,8 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 
 /**
-  * Contains useful operations for the seqexec model
-  */
+ * Contains useful operations for the seqexec model
+ */
 object ModelOps {
 
   implicit val sequenceStateShow: Show[SequenceState] =
@@ -74,13 +74,13 @@ object ModelOps {
       s.steps match {
         case x if x.forall(s => s.status === StepState.Pending && !s.skip) =>
           Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.isFinished) => None // All steps have been executed
-        case x if x.exists(_.hasError) =>
+        case x if x.forall(_.isFinished)                                   => None // All steps have been executed
+        case x if x.exists(_.hasError)                                     =>
           Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =!= -1)
-        case x if x.exists(s => s.status === StepState.Paused && !s.skip) =>
+        case x if x.exists(s => s.status === StepState.Paused && !s.skip)  =>
           Option(x.indexWhere((s: Step) => s.status === StepState.Paused))
             .filter(_ =!= -1)
-        case x =>
+        case x                                                             =>
           Option(x.indexWhere((s: Step) => !s.isFinished && !s.skip))
             .filter(_ =!= -1)
       }
@@ -91,10 +91,11 @@ object ModelOps {
 
   implicit class SiteOps(val s: Site) extends AnyVal {
 
-    def instruments: NonEmptyList[Instrument] = s match {
-      case Site.GN => Instrument.gnInstruments
-      case Site.GS => Instrument.gsInstruments
-    }
+    def instruments: NonEmptyList[Instrument] =
+      s match {
+        case Site.GN => Instrument.gnInstruments
+        case Site.GS => Instrument.gsInstruments
+      }
   }
 
   sealed trait InstrumentProperties
@@ -114,64 +115,72 @@ object ModelOps {
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
 
-    def displayItems: Set[InstrumentProperties] = i match {
-      case Instrument.F2 =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Filter,
-            InstrumentProperties.Offsets,
-            InstrumentProperties.FPU)
-      case Instrument.Nifs =>
-        Set(
-          InstrumentProperties.Exposure,
-          InstrumentProperties.Filter,
-          InstrumentProperties.Offsets,
-          InstrumentProperties.Disperser,
-          InstrumentProperties.FPU,
-          InstrumentProperties.ImagingMirror
-        )
-      case Instrument.GmosS =>
-        Set(InstrumentProperties.Exposure,
+    def displayItems: Set[InstrumentProperties] =
+      i match {
+        case Instrument.F2    =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Filter,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.FPU
+          )
+        case Instrument.Nifs  =>
+          Set(
+            InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
             InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
-            InstrumentProperties.FPU)
-      case Instrument.GmosN =>
-        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.FPU,
+            InstrumentProperties.ImagingMirror
+          )
+        case Instrument.GmosS =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Filter,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.Disperser,
+              InstrumentProperties.FPU
+          )
+        case Instrument.GmosN =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Filter,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.Disperser,
+              InstrumentProperties.FPU
+          )
+        case Instrument.Gnirs =>
+          Set(
+            InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
             InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
-            InstrumentProperties.FPU)
-      case Instrument.Gnirs =>
-        Set(
-          InstrumentProperties.Exposure,
-          InstrumentProperties.Filter,
-          InstrumentProperties.Offsets,
-          InstrumentProperties.Disperser,
-          InstrumentProperties.Decker,
-          InstrumentProperties.FPU
-        )
-      case Instrument.Gpi =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Filter,
-            InstrumentProperties.ObservingMode,
-            InstrumentProperties.Disperser)
-      case Instrument.Niri =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Offsets,
-            InstrumentProperties.Filter,
-            InstrumentProperties.Camera)
-      case Instrument.Gsaoi =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Offsets,
-            InstrumentProperties.Filter,
-            InstrumentProperties.ReadMode)
-      case Instrument.Ghost => Set.empty
-      case _                =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Filter,
-            InstrumentProperties.Offsets,
-            InstrumentProperties.FPU)
-    }
+            InstrumentProperties.Decker,
+            InstrumentProperties.FPU
+          )
+        case Instrument.Gpi   =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Filter,
+              InstrumentProperties.ObservingMode,
+              InstrumentProperties.Disperser
+          )
+        case Instrument.Niri  =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.Filter,
+              InstrumentProperties.Camera
+          )
+        case Instrument.Gsaoi =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.Filter,
+              InstrumentProperties.ReadMode
+          )
+        case Instrument.Ghost => Set.empty
+        case _                =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Filter,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.FPU
+          )
+      }
   }
 
 }

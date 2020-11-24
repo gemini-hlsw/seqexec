@@ -7,10 +7,10 @@ import scala.math.max
 
 import cats.Show
 import cats.implicits._
-import gem.util.Enumerated
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.colors._
@@ -34,16 +34,17 @@ object ACProgressBar {
   final case class State(counter: Int, msg: String)
 
   object State {
-    def initialStateFromProps(p: Props): State = p.step match {
-      case Done => State(0, "Preparing...")
-      case x    => State(stepsOrdering.indexOf(x), x.show)
-    }
+    def initialStateFromProps(p: Props): State =
+      p.step match {
+        case Done => State(0, "Preparing...")
+        case x    => State(stepsOrdering.indexOf(x), x.show)
+      }
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  val acSteps = Enumerated[AlignAndCalibStep]
+  val acSteps                                   = Enumerated[AlignAndCalibStep]
   implicit val showACS: Show[AlignAndCalibStep] = Show.show {
     case NoAction           => ""
     case StartGuiding       => "Start Guiding"
@@ -104,9 +105,10 @@ object ACProgressBar {
 }
 
 /**
-  * Component to wrap the progress bar
-  */
-final case class AlignAndCalibProgress(state: StepStateSummary) extends ReactProps[AlignAndCalibProgress](AlignAndCalibProgress.component) {
+ * Component to wrap the progress bar
+ */
+final case class AlignAndCalibProgress(state: StepStateSummary)
+    extends ReactProps[AlignAndCalibProgress](AlignAndCalibProgress.component) {
 
   protected[steps] val connect =
     SeqexecCircuit.connect(SeqexecCircuit.acProgressRW)

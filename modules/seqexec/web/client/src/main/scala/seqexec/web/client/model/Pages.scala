@@ -6,10 +6,10 @@ package seqexec.web.client.model
 import cats._
 import cats.syntax.all._
 import diode.Action
-import gem.Observation
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.extra.router._
 import monocle.Prism
+import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions._

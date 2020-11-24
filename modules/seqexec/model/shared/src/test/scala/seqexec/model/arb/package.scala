@@ -23,4 +23,6 @@ package object arb {
     with ArbNSRunningState
     with ArbObservationProgress
     with ArbUserPrompt
+    with ArbObservationId
+    with ArbProgramId
 }

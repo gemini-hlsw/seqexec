@@ -15,13 +15,13 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
-import gem.enum.DhsKeywordName
 import io.chrisdavenport.log4cats.Logger
 import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.syntax._
+import lucuma.core.enum.DhsKeywordName
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client

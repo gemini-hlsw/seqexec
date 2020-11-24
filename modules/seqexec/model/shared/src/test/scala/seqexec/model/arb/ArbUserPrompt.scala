@@ -3,16 +3,15 @@
 
 package seqexec.model.arb
 
-import gem.Observation
-import gem.arb.ArbEnumerated._
-import gem.arb.ArbObservation
+import seqexec.model.Observation
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import seqexec.model.{StepId, UserPrompt}
 import seqexec.model.UserPrompt.TargetCheckOverride
 
-trait ArbUserPrompt extends ArbObservation {
+trait ArbUserPrompt {
+  import ArbObservationId._
 
   implicit val targetCheckOverrideArb = Arbitrary[TargetCheckOverride] {
     for {

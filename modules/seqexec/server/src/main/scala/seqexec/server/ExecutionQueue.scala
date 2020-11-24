@@ -4,9 +4,9 @@
 package seqexec.server
 
 import cats.Eq
-import gem.Observation
 import monocle.macros.Lenses
 import seqexec.model.BatchCommandState
+import seqexec.model.Observation
 
 @Lenses
 final case class ExecutionQueue(name:      String,

@@ -5,18 +5,18 @@ package seqexec.server.gpi
 
 import cats._
 import cats.syntax.all._
-import gem.enum.GiapiStatus
-import gem.enum.GiapiStatusApply
-import gem.enum.GiapiStatusApply._
-import gem.enum.GiapiType
-import gem.enum.Instrument
-import gem.ocs2.Parsers
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.commands.Configuration
 import giapi.client.syntax.status._
-import gsp.math.Angle
-import gsp.math.syntax.all._
+import lucuma.core.enum.GiapiStatus
+import lucuma.core.enum.GiapiStatusApply
+import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enum.GiapiType
+import lucuma.core.enum.Instrument
+import lucuma.core.math.Angle
+import lucuma.core.syntax.all._
+import ocs2.Parsers
 
 object GpiStatusApply extends GpiLookupTables {
   val allGpiApply: List[GiapiStatusApply] = GiapiStatusApply.all.filter {

@@ -4,9 +4,9 @@
 package seqexec.server.gnirs
 
 import cats.effect.Sync
-import gem.Observation
-import gem.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.KeywordName
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._

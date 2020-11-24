@@ -4,11 +4,11 @@
 package seqexec.engine
 
 import cats.implicits._
-import gem.Observation
 import monocle.Lens
 import monocle.macros.GenLens
 import seqexec.engine.Action.ActionState
 import seqexec.engine.Result.RetVal
+import seqexec.model.Observation
 import seqexec.model.SequenceState
 import seqexec.model.StepId
 

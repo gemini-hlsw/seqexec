@@ -8,8 +8,7 @@ import scala.scalajs.js.timers._
 
 import cats._
 import cats.implicits._
-import gem.Observation
-import gem.enum.Site
+import lucuma.core.enum.Site
 import monocle.Getter
 import monocle.Lens
 import monocle.Traversal
@@ -24,6 +23,7 @@ import seqexec.model.Conditions
 import seqexec.model.ExecutionQueueView
 import seqexec.model.M1GuideConfig._
 import seqexec.model.M2GuideConfig._
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
@@ -35,8 +35,8 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.table._
 
 /**
-  * Root of the UI Model of the application
-  */
+ * Root of the UI Model of the application
+ */
 @Lenses
 final case class SeqexecAppRootModel(
   sequences:     SequencesQueue[SequenceView],
@@ -52,11 +52,7 @@ final case class SeqexecAppRootModel(
 
 object SeqexecAppRootModel {
   val NoSequencesLoaded: SequencesQueue[SequenceView] =
-    SequencesQueue[SequenceView](Map.empty,
-                                 Conditions.Default,
-                                 none,
-                                 SortedMap.empty,
-                                 Nil)
+    SequencesQueue[SequenceView](Map.empty, Conditions.Default, none, SortedMap.empty, Nil)
 
   val Initial: SeqexecAppRootModel = SeqexecAppRootModel(
     NoSequencesLoaded,
@@ -72,11 +68,11 @@ object SeqexecAppRootModel {
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.globalLog  ^|->
+      SeqexecUIModel.globalLog ^|->
       GlobalLog.display
 
   val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
-    SeqexecAppRootModel.uiModel         ^|->
+    SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.sessionQueueFilter
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
@@ -101,29 +97,26 @@ object SeqexecAppRootModel {
   val soundSettingL: Lens[SeqexecAppRootModel, SoundSelection] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sound
 
-  val configTableStateL
-    : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
+  val configTableStateL: Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.stepConfigTable
 
   def executionQueuesT(
     id: QueueId
-  ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
-    SeqexecAppRootModel.sequences               ^|->
-      SequencesQueue.queues                     ^|->>
+  ): Traversal[SeqexecAppRootModel, ExecutionQueueView]           =
+    SeqexecAppRootModel.sequences ^|->
+      SequencesQueue.queues ^|->>
       filterIndex((qid: QueueId) => qid === id)
 
   val queuesT: Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues       ^|->>
+      SequencesQueue.queues ^|->>
       each
 
   val dayCalG: Getter[SeqexecAppRootModel, Option[ExecutionQueueView]] =
-    (SeqexecAppRootModel.sequences     ^|->
-      SequencesQueue.queues            ^|->
+    (SeqexecAppRootModel.sequences ^|->
+      SequencesQueue.queues ^|->
       at(CalibrationQueueId)).asGetter
 
   implicit val eq: Eq[SeqexecAppRootModel] =
-    Eq.by(
-      x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion)
-    )
+    Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion))
 }

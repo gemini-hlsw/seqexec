@@ -8,10 +8,10 @@ import cats.data.Nested
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
-import gem.Observation
-import gem.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.KeywordName
 import seqexec.model.Conditions
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.dhs.ImageFileId

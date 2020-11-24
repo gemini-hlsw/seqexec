@@ -4,7 +4,7 @@
 package seqexec.web.server.config
 
 import cats.tests.CatsSuite
-import gem.enum.Site
+import lucuma.core.enum.Site
 import pureconfig._
 import pureconfig.generic.auto._
 

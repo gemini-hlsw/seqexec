@@ -15,8 +15,8 @@ import cats.syntax.all._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import gem.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
