@@ -15,7 +15,7 @@ import seqexec.model.enum.DailyProgramType
 
 import Atto._
 
-/** Parsers for [[gem.ProgramId]]. */
+/** Parsers for ProgramId. */
 trait ProgramIdParsers {
   import lucuma.core.enum.parser.EnumParsers._
   import lucuma.core.model.parser.SemesterParsers._

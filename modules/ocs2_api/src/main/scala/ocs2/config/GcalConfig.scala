@@ -19,7 +19,7 @@ import monocle.std.either.{ stdLeft, stdRight }
 import scala.collection.immutable.SortedSet
 
 /**
-  * Additional configuration information for [[gem.Step.Gcal Gcal]] steps.
+  * Additional configuration information for Gcal steps.
   * @group Configurations
   */
 final case class GcalConfig(

@@ -20,9 +20,10 @@ import seqexec.model.enum.DailyProgramType
 import seqexec.model.parser.ProgramIdParsers
 
 /**
- * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
- * programs; [[gem.ProgramId.Science Science]] for standard daily engineering and calibration
- * programs; and [[gem.ProgramId.Nonstandard Nonstandard]]` for all others.
+ * A science program id, which has three constructors:
+ * for standard programs
+ * for standard daily engineering and calibration programs
+ * and for all others.
  * @group Program Model
  */
 sealed trait ProgramId extends Product with Serializable {

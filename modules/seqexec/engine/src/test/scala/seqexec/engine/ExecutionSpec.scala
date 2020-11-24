@@ -16,23 +16,23 @@ class ExecutionSpec extends munit.FunSuite {
   private val action: Action[Id]          = fromF[Id](ActionType.Observe, ok)
   private val curr: Execution[Id]         = Execution(List(completedAction, action))
 
-  test("currentify be None only when an Execution is empty") {
+  test("currentify should be None only when an Execution is empty") {
     assert(Execution.currentify(NonEmptyList.of(action, action)).nonEmpty)
   }
 
-  test("uncurrentify be None when not all actions are completed") {
+  test("uncurrentify should be None when not all actions are completed") {
     assert(Execution(Nil).uncurrentify.isEmpty)
   }
 
-  test("uncurrentify2 be None when not all actions are completed") {
+  test("uncurrentify2 should be None when not all actions are completed") {
     assert(curr.uncurrentify.isEmpty)
   }
 
-  test("marking an index out of bounds not modify the execution") {
+  test("marking an index out of bounds should not modify the execution") {
     assert(curr.mark(3)(Result.Error("")) == curr)
   }
 
-  test("marking an index inbound modify the execution") {
+  test("marking an index inbound should modify the execution") {
     assert(curr.mark(1)(Result.Error("")) != curr)
   }
 

@@ -9,7 +9,7 @@ import lucuma.core.enum.ProgramType
 import lucuma.core.util.Enumerated
 
 /**
- * Enumerated type for the subset of [[ProgramType]] allowed for daily science programs.
+ * Enumerated type for the subset of ProgramType allowed for daily science programs.
  * @group Enumerations
  */
 sealed abstract class DailyProgramType(
