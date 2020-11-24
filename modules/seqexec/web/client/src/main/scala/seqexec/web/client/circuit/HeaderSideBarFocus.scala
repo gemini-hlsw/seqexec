@@ -4,9 +4,9 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
-import seqexec.model.Observation
 import monocle.Getter
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model._
 import seqexec.model.enum.Instrument

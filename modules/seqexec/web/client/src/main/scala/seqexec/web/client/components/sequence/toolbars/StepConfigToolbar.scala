@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.toolbars
 
 import cats.implicits._
 import diode.react.ReactConnectProxy
-import seqexec.model.Observation
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -22,6 +21,7 @@ import react.semanticui.floats._
 import react.semanticui.sizes._
 import react.semanticui.verticalalignment.Bottom
 import react.semanticui.widths._
+import seqexec.model.Observation
 import seqexec.model.RunningStep
 import seqexec.model.enum.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit

@@ -9,8 +9,8 @@ import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import seqexec.model.Observation
 import seqexec.model.NSObservationProgress
+import seqexec.model.Observation
 import seqexec.model.ObservationProgress
 import seqexec.model.ObserveStage
 import seqexec.model.Progress

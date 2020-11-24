@@ -14,9 +14,9 @@ import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
-import seqexec.model.Observation
-import lucuma.core.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.KeywordName
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem

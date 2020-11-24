@@ -19,9 +19,9 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.LightSinkName
 import lucuma.core.syntax.string._
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult

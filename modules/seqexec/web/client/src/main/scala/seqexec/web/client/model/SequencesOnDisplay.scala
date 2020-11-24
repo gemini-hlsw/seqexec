@@ -8,7 +8,7 @@ import scala.collection.immutable.SortedMap
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
-import seqexec.model.Observation
+import lucuma.core.data.Zipper
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
@@ -16,6 +16,7 @@ import monocle.macros.Lenses
 import monocle.std
 import seqexec.model.BatchCommandState
 import seqexec.model.CalibrationQueueId
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
@@ -25,7 +26,6 @@ import seqexec.web.client.circuit.DayCalObserverFocus
 import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag
-import lucuma.core.data.Zipper
 
 // Model for the tabbed area of sequences
 @Lenses

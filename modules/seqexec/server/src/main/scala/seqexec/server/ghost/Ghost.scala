@@ -15,12 +15,12 @@ import cats.syntax.all._
 import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
+import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.LightSinkName
 import lucuma.core.math.Coordinates
 import lucuma.core.math.Declination
 import lucuma.core.math.RightAscension
 import lucuma.core.optics.Format
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult

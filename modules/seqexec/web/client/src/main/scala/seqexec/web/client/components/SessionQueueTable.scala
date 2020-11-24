@@ -9,7 +9,6 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import seqexec.model.Observation
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
@@ -28,6 +27,7 @@ import react.semanticui.elements.icon.Icon
 import react.semanticui.sizes._
 import react.virtualized._
 import seqexec.model.CalibrationQueueId
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState

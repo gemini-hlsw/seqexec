@@ -8,7 +8,6 @@ import scala.scalajs.js.timers._
 
 import cats._
 import cats.implicits._
-import seqexec.model.Observation
 import lucuma.core.enum.Site
 import monocle.Getter
 import monocle.Lens
@@ -24,6 +23,7 @@ import seqexec.model.Conditions
 import seqexec.model.ExecutionQueueView
 import seqexec.model.M1GuideConfig._
 import seqexec.model.M2GuideConfig._
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue

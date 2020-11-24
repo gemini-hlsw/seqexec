@@ -7,8 +7,8 @@ import java.time.Instant
 
 import cats.implicits._
 import fs2.Stream
-import seqexec.model.Observation
 import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.UserDetails
 

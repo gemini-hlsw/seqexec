@@ -4,10 +4,10 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import seqexec.model.Observation
 import monocle.Lens
 import monocle.function.At._
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.queue.CalQueueTable

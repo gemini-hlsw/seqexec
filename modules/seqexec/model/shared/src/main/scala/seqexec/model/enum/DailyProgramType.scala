@@ -3,10 +3,10 @@
 
 package seqexec.model.enum
 
-import cats.syntax.eq._
 import cats.instances.string._
-import lucuma.core.util.Enumerated
+import cats.syntax.eq._
 import lucuma.core.enum.ProgramType
+import lucuma.core.util.Enumerated
 
 /**
  * Enumerated type for the subset of [[ProgramType]] allowed for daily science programs.

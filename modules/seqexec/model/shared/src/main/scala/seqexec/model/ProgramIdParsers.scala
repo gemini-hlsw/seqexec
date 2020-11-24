@@ -4,12 +4,16 @@
 package seqexec.model
 package parser
 
-import atto._, Atto._
+import atto._
 import cats.implicits._
-import seqexec.model.enum.DailyProgramType
-import lucuma.core.enum.{ ProgramType, Site }
-import lucuma.core.parser.{ MiscParsers, TimeParsers }
+import lucuma.core.enum.ProgramType
+import lucuma.core.enum.Site
 import lucuma.core.model.Semester
+import lucuma.core.parser.MiscParsers
+import lucuma.core.parser.TimeParsers
+import seqexec.model.enum.DailyProgramType
+
+import Atto._
 
 /** Parsers for [[gem.ProgramId]]. */
 trait ProgramIdParsers {

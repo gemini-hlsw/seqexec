@@ -14,13 +14,13 @@ import scala.scalajs.js
 import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
-import lucuma.core.enum.Site
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.enum.Site
 import monocle.Lens
 import monocle.function.At.at
 import monocle.function.At.atSortedMap

@@ -5,7 +5,6 @@ package seqexec.server
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import seqexec.model.Observation
 import mouse.all._
 import seqexec.engine.Action
 import seqexec.engine.ActionCoordsInSeq
@@ -13,6 +12,7 @@ import seqexec.engine.ActionIndex
 import seqexec.engine.ExecutionIndex
 import seqexec.engine.ParallelActions
 import seqexec.engine.{Step => EngineStep}
+import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.dhs.DataId
 import seqexec.model.dhs.ImageFileId

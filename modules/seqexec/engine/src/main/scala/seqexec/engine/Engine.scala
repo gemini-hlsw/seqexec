@@ -8,7 +8,6 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.implicits._
 import fs2.Stream
-import seqexec.model.Observation
 import io.chrisdavenport.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._
@@ -20,6 +19,7 @@ import seqexec.engine.Result.PartialVal
 import seqexec.engine.Result.RetVal
 import seqexec.engine.SystemEvent._
 import seqexec.engine.UserEvent._
+import seqexec.model.Observation
 import seqexec.model.SequenceState
 import seqexec.model.StepId
 

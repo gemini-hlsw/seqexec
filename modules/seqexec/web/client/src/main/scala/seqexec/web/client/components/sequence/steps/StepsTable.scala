@@ -10,7 +10,6 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
-import seqexec.model.Observation
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -26,6 +25,7 @@ import react.common.implicits._
 import react.semanticui.sizes._
 import react.semanticui.{ SemanticSize => SSize }
 import react.virtualized._
+import seqexec.model.Observation
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
 import seqexec.model.Step
@@ -657,6 +657,9 @@ object StepsTable extends Columns {
       case (_, StepRow(s), _, _)                                   =>
         // Regular row
         SeqexecStyles.stepRow |+| stepRowStyle(s)
+      case _                                   =>
+        // Regular row
+        SeqexecStyles.stepRow
     }).htmlClass
 
   /**

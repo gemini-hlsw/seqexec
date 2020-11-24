@@ -7,7 +7,6 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.syntax.all._
-import seqexec.model.Observation
 import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.Optional
@@ -15,6 +14,7 @@ import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
 import monocle.std.either._
+import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState

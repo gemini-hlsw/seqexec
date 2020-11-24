@@ -21,16 +21,16 @@ import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Stream
-import seqexec.model.Observation
-import lucuma.core.enum.Site
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.Site
 import mouse.all._
 import seqexec.engine.Action.ActionState
 import seqexec.engine._
+import seqexec.model.Observation
 import seqexec.model.dhs._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import seqexec.model.{ Progress => _, _ }
+import seqexec.model.{Progress => _, _}
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentSystem._
@@ -68,122 +68,98 @@ import squants.time.TimeConversions._
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 
-  def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
-    cio:              Concurrent[F],
-    tio:              Timer[F]
+  def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
+    implicit cio: Concurrent[F], tio: Timer[F]
   ): F[(List[Throwable], Option[SequenceGen[F]])]
 
-  def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-    cio:                 Concurrent[F],
-    tio:                 Timer[F]
+  def stopObserve(seqId: Observation.Id, graceful: Boolean)(
+    implicit cio: Concurrent[F], tio: Timer[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
-  def abortObserve(seqId: Observation.Id)(implicit
-    cio:                  Concurrent[F],
-    tio:                  Timer[F]
+  def abortObserve(seqId: Observation.Id)(
+    implicit cio: Concurrent[F], tio: Timer[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
-  def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-    tio:                  Timer[F],
-    cio:                  Concurrent[F]
+  def pauseObserve(seqId: Observation.Id, graceful: Boolean)(
+    implicit tio: Timer[F], cio: Concurrent[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
-  def resumePaused(seqId: Observation.Id)(implicit
-    cio:                  Concurrent[F],
-    tio:                  Timer[F]
+  def resumePaused(seqId: Observation.Id)(
+    implicit cio: Concurrent[F], tio: Timer[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
 }
 
 object SeqTranslate {
-  private class SeqTranslateImpl[F[_]: Sync: Logger](
-    site:      Site,
-    systems:   Systems[F],
-    gmosNsCmd: Ref[F, Option[NSObserveCommand]]
-  ) extends SeqTranslate[F] {
+  private class SeqTranslateImpl[F[_]: Sync: Logger](site: Site,
+                                                     systems: Systems[F],
+                                                     gmosNsCmd: Ref[F, Option[NSObserveCommand]]
+                                                    ) extends SeqTranslate[F] {
 
-    private def step(
-      obsId:      Observation.Id,
-      i:          StepId,
-      config:     CleanConfig,
-      nextToRun:  StepId,
-      datasets:   Map[Int, ExecutedDataset],
-      isNightSeq: Boolean
-    )(implicit
-      cio:        Concurrent[F],
-      tio:        Timer[F]
-    ): F[SequenceGen.StepGen[F]] = {
+    private def step(obsId: Observation.Id, i: StepId, config: CleanConfig, nextToRun: StepId,
+                     datasets: Map[Int, ExecutedDataset], isNightSeq: Boolean)(
+                       implicit cio: Concurrent[F],
+                                tio: Timer[F]
+                     ): F[SequenceGen.StepGen[F]] = {
       def buildStep(
-        dataId:   DataId,
-        inst:     InstrumentSystem[F],
-        sys:      List[System[F]],
-        headers:  HeaderExtraData => List[Header[F]],
+        dataId: DataId,
+        inst: InstrumentSystem[F],
+        sys: List[System[F]],
+        headers: HeaderExtraData => List[Header[F]],
         stepType: StepType
       ): SequenceGen.StepGen[F] = {
         val ia = inst.instrumentActions(config)
 
         val configs: Map[Resource, Action[F]] = sys.map { x =>
-          val res  = x.resource
+          val res = x.resource
           val kind = ActionType.Configure(res)
 
           res -> x.configure(config).as(Response.Configured(res)).toAction(kind)
         }.toMap
 
         def rest(ctx: HeaderExtraData): List[ParallelActions[F]] = {
-          val env = ObserveEnvironment(systems,
-                                       config,
-                                       stepType,
-                                       obsId,
-                                       dataId,
-                                       inst,
-                                       sys.filterNot(inst.equals),
-                                       headers,
-                                       ctx
-          )
+          val env = ObserveEnvironment(systems, config, stepType, obsId, dataId, inst, sys.filterNot(inst.equals), headers, ctx)
           // Request the instrument to build the observe actions and merge them with the progress
           // Also catches any errors in the process of runnig an observation
           ia.observeActions(env)
         }
 
         extractStatus(config) match {
-          case StepState.Pending if i >= nextToRun =>
-            SequenceGen.PendingStepGen(
-              i,
-              dataId,
-              config,
-              calcResources(sys),
-              StepActionsGen(List.empty, configs, rest)
-            )
-          case StepState.Pending                   =>
-            SequenceGen.SkippedStepGen(
-              i,
-              dataId,
-              config
-            )
+          case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
+            i,
+            dataId,
+            config,
+            calcResources(sys),
+            StepActionsGen(List.empty, configs, rest)
+          )
+          case StepState.Pending                   => SequenceGen.SkippedStepGen(
+            i,
+            dataId,
+            config
+          )
           // TODO: This case should be for completed Steps only. Fail when step status is unknown.
-          case _                                   =>
-            SequenceGen.CompletedStepGen(
-              i,
-              dataId,
-              config,
-              datasets.get(i + 1).map(_.filename).map(toImageFileId)
-            )
+          case _                                   => SequenceGen.CompletedStepGen(
+            i,
+            dataId,
+            config,
+            datasets.get(i + 1).map(_.filename).map(toImageFileId)
+          )
         }
       }
 
       for {
-        inst     <- MonadError[F, Throwable].fromEither(extractInstrument(config))
-        is       <- toInstrumentSys(inst)
-        stepType <- is.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
-        dataId   <- dataIdFromConfig[F](config)
-        systems  <- calcSystems(config, stepType, is)
-        headers  <- calcHeaders(config, stepType, is)
+        inst      <- MonadError[F, Throwable].fromEither(extractInstrument(config))
+        is        <- toInstrumentSys(inst)
+        stepType  <- is.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
+        dataId    <- dataIdFromConfig[F](config)
+        systems   <- calcSystems(config, stepType, is)
+        headers   <- calcHeaders(config, stepType, is)
       } yield buildStep(dataId, is, systems, headers, stepType)
     }
 
-    override def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
-      cio:                       Concurrent[F],
-      tio:                       Timer[F]
+    override def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
+      implicit cio: Concurrent[F],
+               tio: Timer[F]
     ): F[(List[Throwable], Option[SequenceGen[F]])] = {
 
       // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
@@ -197,59 +173,53 @@ object SeqTranslate {
         .map(extractStatus)
         .lastIndexWhere(_.isFinished) + 1
 
-      val steps = configs.zipWithIndex
-        .map {
-          case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets, isNightSeq).attempt
-        }
-        .sequence
-        .map(_.separate)
+      val steps = configs.zipWithIndex.map {
+        case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets, isNightSeq).attempt
+      }.sequence.map(_.separate)
 
-      val instName = configs.headOption
+      val instName = configs
+        .headOption
         .map(extractInstrument)
         .getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
 
       steps.map { sts =>
-        instName.fold(e => (List(e), none),
-                      i =>
-                        sts match {
-                          case (errs, ss) =>
-                            (
-                              errs,
-                              ss.headOption.map { _ =>
-                                SequenceGen(
-                                  obsId,
-                                  sequence.title,
-                                  i,
-                                  ss
-                                )
-                              }
-                            )
-                        }
-        )
+        instName.fold(e => (List(e), none), i =>
+          sts match {
+            case (errs, ss) => (
+              errs,
+              ss.headOption.map { _ =>
+                SequenceGen(
+                  obsId,
+                  sequence.title,
+                  i,
+                  ss
+                )
+              }
+            )
+          })
       }
     }
 
-    private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[F] => F[Unit])(
-      st:                                EngineState[F]
-    )(implicit
-      tio:                               Timer[F],
-      cio:                               Concurrent[F]
+    private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[F] => F[Unit])(st: EngineState[F])(
+      implicit tio: Timer[F], cio: Concurrent[F]
     ): Option[Stream[F, EventType[F]]] = {
 
-      def isObserving(v: Action[F]): Boolean =
-        v.kind === ActionType.Observe && v.state.runState.started
+      def isObserving(v: Action[F]): Boolean = v.kind === ActionType.Observe && v.state.runState.started
 
       for {
         obsSeq <- st.sequences.get(seqId)
         stId   <- obsSeq.seq.currentStep.map(_.id)
         cfg    <- obsSeq.seqGen.steps.find(_.id === stId).map(_.config)
-        a       = cfg //workaround for scala/bug#11175
-        if obsSeq.seq.current.execution
+        a = cfg //workaround for scala/bug#11175
+        if obsSeq.seq
+          .current
+          .execution
           .exists(isObserving)
       } yield Stream.eval(
         toInstrumentSys(obsSeq.seqGen.instrument)
-          .flatMap { i =>
-            f(i.observeControl(cfg)).attempt
+          .flatMap{ i =>
+            f(i.observeControl(cfg))
+              .attempt
               .flatMap(handleError)
           }
       )
@@ -257,147 +227,111 @@ object SeqTranslate {
 
     private def handleError: Either[Throwable, Unit] => F[EventType[F]] = {
       case Left(e: SeqexecFailure) => Event.logErrorMsgF(SeqexecFailure.explain(e))
-      case Left(e: Throwable)      =>
-        Event.logErrorMsgF(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+      case Left(e: Throwable)      => Event.logErrorMsgF(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
       case _                       => Event.nullEvent[F].pure[F].widen[EventType[F]]
     }
 
-    override def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-      cio:                          Concurrent[F],
-      tio:                          Timer[F]
-    ): EngineState[F] => Option[Stream[F, EventType[F]]] =
-      st => {
-        def f(oc: ObserveControl[F]): F[Unit] =
-          oc match {
-            case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop(graceful)
-            case UnpausableControl(StopObserveCmd(stop), _)           => stop(graceful)
-            case _                                                    => Applicative[F].unit
-          }
-        deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
+    override def stopObserve(seqId: Observation.Id, graceful: Boolean)(
+      implicit cio: Concurrent[F],
+               tio: Timer[F]
+    ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
+      def f(oc: ObserveControl[F]): F[Unit] = oc match {
+        case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop(graceful)
+        case UnpausableControl(StopObserveCmd(stop), _)           => stop(graceful)
+        case _                                                    => Applicative[F].unit
+      }
+      deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
+    }
+
+    override def abortObserve(seqId: Observation.Id)(
+      implicit cio: Concurrent[F],
+               tio: Timer[F]
+    ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
+      def f(oc: ObserveControl[F]): F[Unit] = oc match {
+        case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
+        case UnpausableControl(_, AbortObserveCmd(abort))           => abort
+        case _                                                      => Applicative[F].unit
       }
 
-    override def abortObserve(seqId: Observation.Id)(implicit
-      cio:                           Concurrent[F],
-      tio:                           Timer[F]
-    ): EngineState[F] => Option[Stream[F, EventType[F]]] =
-      st => {
-        def f(oc: ObserveControl[F]): F[Unit] =
-          oc match {
-            case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
-            case UnpausableControl(_, AbortObserveCmd(abort))           => abort
-            case _                                                      => Applicative[F].unit
-          }
+      deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
+    }
 
-        deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
-      }
-
-    override def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-      tio:                           Timer[F],
-      cio:                           Concurrent[F]
+    override def pauseObserve(seqId: Observation.Id, graceful: Boolean)(
+      implicit tio: Timer[F], cio: Concurrent[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = {
-      def f(oc: ObserveControl[F]): F[Unit] =
-        oc match {
-          case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause(graceful)
-          case _                                                      => Applicative[F].unit
-        }
+      def f(oc: ObserveControl[F]): F[Unit] = oc match {
+        case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause(graceful)
+        case _                                                      => Applicative[F].unit
+      }
       deliverObserveCmd(seqId, f)
     }
 
-    override def resumePaused(seqId: Observation.Id)(implicit
-      cio:                           Concurrent[F],
-      tio:                           Timer[F]
-    ): EngineState[F] => Option[Stream[F, EventType[F]]] =
-      (st: EngineState[F]) => {
-        val observeIndex: Option[(ObserveContext[F], Option[Time], Int)] =
-          st.sequences
-            .get(seqId)
-            .flatMap(
-              _.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
-                case (a, i) =>
-                  a.state.runState match {
-                    case ActionState.Paused(c: ObserveContext[F]) =>
-                      (c,
-                       a.state.partials.collectFirst {
-                         case x: Progress => x.progress
-                       },
-                       i
-                      ).some
-                    case _                                        => none
-                  }
-              }
-            )
-
-        (st.sequences.get(seqId), observeIndex).mapN {
-          case (seq, (obCtx, t, i)) =>
-            Stream.eval(
-              toInstrumentSys(seq.seqGen.instrument)
-                .map { ins =>
-                  Event.actionResume[F, EngineState[F], SeqEvent](
-                    seqId,
-                    i,
-                    ins
-                      .observeProgress(obCtx.expTime, ElapsedTime(t.getOrElse(0.0.seconds)))
-                      .map(Result.Partial(_))
-                      .widen[Result[F]]
-                      .mergeHaltR(obCtx.resumePaused(obCtx.expTime))
-                      .handleErrorWith(catchObsErrors[F])
-                  )
-                }
-            )
-        }
-      }
-
-    private def endPaused(seqId: Observation.Id, l: ObserveContext[F] => Stream[F, Result[F]])(
-      st:                        EngineState[F]
-    ): Option[Stream[F, EventType[F]]] =
-      st.sequences
-        .get(seqId)
-        .flatMap(
-          _.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
-            case (a, i) =>
-              a.state.runState match {
-                case ActionState.Paused(c: ObserveContext[F]) =>
-                  Stream
-                    .eval(
-                      Event.actionResume(seqId, i, l(c).handleErrorWith(catchObsErrors[F])).pure[F]
-                    )
-                    .some
-                case _                                        => none
-              }
+    override def resumePaused(seqId: Observation.Id)(
+      implicit cio: Concurrent[F],
+               tio: Timer[F]
+    ): EngineState[F] => Option[Stream[F, EventType[F]]] = (st: EngineState[F]) => {
+      val observeIndex: Option[(ObserveContext[F], Option[Time], Int)] =
+        st.sequences.get(seqId)
+          .flatMap(_.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
+            case (a, i) => a.state.runState match {
+              case ActionState.Paused(c: ObserveContext[F]) => (c, a.state.partials.collectFirst{
+                case x: Progress => x.progress}, i).some
+              case _ => none
+            }
           }
         )
 
-    private def stopPaused(
-      seqId: Observation.Id
-    ): EngineState[F] => Option[Stream[F, EventType[F]]] =
+      (st.sequences.get(seqId), observeIndex).mapN{
+        case (seq, (obCtx, t, i)) => Stream.eval(
+          toInstrumentSys(seq.seqGen.instrument)
+            .map{ ins =>
+              Event.actionResume[F, EngineState[F], SeqEvent](
+                seqId,
+                i,
+                ins.observeProgress(obCtx.expTime, ElapsedTime(t.getOrElse(0.0.seconds)))
+                  .map(Result.Partial(_))
+                  .widen[Result[F]]
+                  .mergeHaltR(obCtx.resumePaused(obCtx.expTime))
+                  .handleErrorWith(catchObsErrors[F])
+              )
+            }
+        )
+      }
+    }
+
+    private def endPaused(seqId: Observation.Id, l: ObserveContext[F] => Stream[F, Result[F]])(st: EngineState[F])
+    : Option[Stream[F, EventType[F]]] =
+      st.sequences.get(seqId)
+        .flatMap(
+          _.seq.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
+            case (a, i) => a.state.runState match {
+              case ActionState.Paused(c: ObserveContext[F]) =>
+                Stream.eval(Event.actionResume(seqId, i, l(c).handleErrorWith(catchObsErrors[F])).pure[F]).some
+              case _                                         => none
+            }
+          }
+        )
+
+    private def stopPaused(seqId: Observation.Id): EngineState[F] => Option[Stream[F, EventType[F]]] =
       endPaused(seqId, _.stopPaused)
 
-    private def abortPaused(
-      seqId: Observation.Id
-    ): EngineState[F] => Option[Stream[F, EventType[F]]] =
+    private def abortPaused(seqId: Observation.Id): EngineState[F] => Option[Stream[F, EventType[F]]] =
       endPaused(seqId, _.abortPaused)
 
-    def toInstrumentSys(inst: Instrument)(implicit
-      ev:                     Timer[F],
-      cio:                    Concurrent[F]
-    ): F[InstrumentSystem[F]] =
-      inst match {
-        case Instrument.F2    =>
-          Flamingos2(systems.flamingos2, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.GmosS =>
-          GmosSouth(systems.gmosSouth, systems.dhs, gmosNsCmd).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.GmosN =>
-          GmosNorth(systems.gmosNorth, systems.dhs, gmosNsCmd).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Gnirs =>
-          Gnirs(systems.gnirs, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Gpi   => Gpi(systems.gpi).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Ghost => Ghost(systems.ghost).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Niri  => Niri(systems.niri, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Nifs  => Nifs(systems.nifs, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-        case Instrument.Gsaoi =>
-          Gsaoi(systems.gsaoi, systems.dhs).pure[F].widen[InstrumentSystem[F]]
-        case _                => Unexpected(s"Instrument $inst not supported.").raiseError[F, InstrumentSystem[F]]
-      }
+    def toInstrumentSys(inst: Instrument)(
+      implicit ev: Timer[F], cio: Concurrent[F]
+    ): F[InstrumentSystem[F]] = inst match {
+      case Instrument.F2    => Flamingos2(systems.flamingos2, systems.dhs).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.GmosS => GmosSouth(systems.gmosSouth, systems.dhs, gmosNsCmd).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.GmosN => GmosNorth(systems.gmosNorth, systems.dhs, gmosNsCmd).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Gnirs => Gnirs(systems.gnirs, systems.dhs).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Gpi   => Gpi(systems.gpi).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Ghost => Ghost(systems.ghost).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Niri  => Niri(systems.niri, systems.dhs).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Nifs  => Nifs(systems.nifs, systems.dhs).pure[F].widen[InstrumentSystem[F]]
+      case Instrument.Gsaoi => Gsaoi(systems.gsaoi, systems.dhs).pure[F].widen[InstrumentSystem[F]]
+      case _                => Unexpected(s"Instrument $inst not supported.").raiseError[F, InstrumentSystem[F]]
+    }
 
     private def calcResources(sys: List[System[F]]): Set[Resource] = sys.map(_.resource).toSet
 
@@ -408,185 +342,127 @@ object SeqTranslate {
 
     private def tryWavelength(inst: Instrument, config: CleanConfig): F[Option[Wavelength]] =
       extractWavelength(config) match {
-        case Left(x)  =>
-          Logger[F]
-            .error(s"Cannot decode the wavelength for ${inst.label}") *> MonadError[F, Throwable]
-            .raiseError(
-              new SeqexecFailure.Execution(s"Cannot decode the wavelength from the sequence $x")
-            )
+        case Left(x) => Logger[F].error(s"Cannot decode the wavelength for ${inst.label}") *> MonadError[F, Throwable].raiseError(new SeqexecFailure.Execution(s"Cannot decode the wavelength from the sequence $x"))
         case Right(w) => w.pure[F]
       }
 
-    private def getTcs(
-      subs:    NonEmptySet[TcsController.Subsystem],
-      useGaos: Boolean,
-      inst:    InstrumentSystem[F],
-      lsource: LightSource,
-      config:  CleanConfig
-    ): F[System[F]] =
-      tryWavelength(inst.instrument, config).flatMap { w =>
-        site match {
-          case Site.GS =>
-            if (useGaos)
-              Gems
-                .fromConfig[F](systems.gems, systems.guideDb)(config)
-                .map(a =>
-                  TcsSouth.fromConfig[F](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
-                    config,
-                    LightPath(lsource, inst.sfName(config)),
-                    w
-                  )
-                )
+    private def getTcs(subs: NonEmptySet[TcsController.Subsystem], useGaos: Boolean, inst: InstrumentSystem[F],
+                       lsource: LightSource, config: CleanConfig): F[System[F]] =
+      tryWavelength(inst.instrument, config).flatMap{w => site match {
+          case Site.GS => if(useGaos)
+            Gems.fromConfig[F](systems.gems, systems.guideDb)(config).map(a =>
+              TcsSouth.fromConfig[F](systems.tcsSouth, subs, a.some, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              )
+            )
             else
-              TcsSouth
-                .fromConfig[F](systems.tcsSouth, subs, None, inst, systems.guideDb)(
-                  config,
-                  LightPath(lsource, inst.sfName(config)),
-                  w
+            TcsSouth.fromConfig[F](systems.tcsSouth, subs, None, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              ).pure[F].widen[System[F]]
+          case Site.GN => if(useGaos)
+              Altair.fromConfig(config, systems.altair).map(a =>
+                TcsNorth.fromConfig[F](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
+                  config, LightPath(lsource, inst.sfName(config)), w
                 )
-                .pure[F]
-                .widen[System[F]]
-          case Site.GN =>
-            if (useGaos)
-              Altair
-                .fromConfig(config, systems.altair)
-                .map(a =>
-                  TcsNorth.fromConfig[F](systems.tcsNorth, subs, a.some, inst, systems.guideDb)(
-                    config,
-                    LightPath(lsource, inst.sfName(config)),
-                    w
-                  )
-                )
+              )
             else
-              TcsNorth
-                .fromConfig[F](systems.tcsNorth, subs, none, inst, systems.guideDb)(
-                  config,
-                  LightPath(lsource, inst.sfName(config)),
-                  w
-                )
-                .pure[F]
-                .widen[System[F]]
+              TcsNorth.fromConfig[F](systems.tcsNorth, subs, none, inst, systems.guideDb)(
+                config, LightPath(lsource, inst.sfName(config)), w
+              ).pure[F].widen[System[F]]
         }
       }
 
     private def calcSystems(
-      config:   CleanConfig,
+      config: CleanConfig,
       stepType: StepType,
-      sys:      InstrumentSystem[F]
-    ): F[List[System[F]]] =
+      sys: InstrumentSystem[F]
+    ): F[List[System[F]]] = {
       stepType match {
-        case StepType.CelestialObject(inst) =>
-          getTcs(
-            inst.hasOI.fold(allButGaos, allButGaosNorOi),
-            useGaos = false,
-            sys,
-            TcsController.LightSource.Sky,
-            config
-          ).map(List(sys, _, Gcal.defaultGcal(systems.gcal)))
+        case StepType.CelestialObject(inst)  => getTcs(
+          inst.hasOI.fold(allButGaos, allButGaosNorOi),
+          useGaos = false,
+          sys,
+          TcsController.LightSource.Sky,
+          config
+        ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-        case StepType.NodAndShuffle(inst)   =>
-          getTcs(
-            inst.hasOI.fold(allButGaos, allButGaosNorOi),
-            useGaos = false,
-            sys,
-            TcsController.LightSource.Sky,
-            config
-          ).map(List(sys, _, Gcal.defaultGcal(systems.gcal)))
+        case StepType.NodAndShuffle(inst)    => getTcs(
+          inst.hasOI.fold(allButGaos, allButGaosNorOi),
+          useGaos = false,
+          sys,
+          TcsController.LightSource.Sky,
+          config
+        ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-        case StepType.FlatOrArc(inst)       =>
-          for {
-            tcs  <- getTcs(flatOrArcTcsSubsystems(inst),
-                           useGaos = false,
-                           sys,
-                           TcsController.LightSource.GCAL,
-                           config
-                    )
-            gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-          } yield List(sys, tcs, gcal)
+        case StepType.FlatOrArc(inst)        => for {
+          tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, sys, TcsController.LightSource.GCAL, config)
+          gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+        } yield List(sys, tcs, gcal)
 
-        case StepType.NightFlatOrArc(_)     =>
-          for {
-            tcs  <- getTcs(NonEmptySet.of(AGUnit, OIWFS, M2, M1, Mount),
-                           useGaos = false,
-                           sys,
-                           TcsController.LightSource.GCAL,
-                           config
-                    )
-            gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
-          } yield List(sys, tcs, gcal)
+        case StepType.NightFlatOrArc(_)   => for {
+          tcs  <- getTcs(NonEmptySet.of(AGUnit, OIWFS, M2, M1, Mount), useGaos = false, sys,
+            TcsController.LightSource.GCAL, config
+          )
+          gcal <- Gcal.fromConfig(systems.gcal, site == Site.GS)(config)
+        } yield List(sys, tcs, gcal)
 
-        case StepType.DarkOrBias(_)         => List(sys: System[F]).pure[F]
+        case StepType.DarkOrBias(_) => List(sys:System[F]).pure[F]
 
         case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) =>
           List(sys, Gcal.defaultGcal[F](systems.gcal)).pure[F]
 
-        case StepType.AltairObs(inst)                                   =>
-          getTcs(
-            inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
-            useGaos = true,
-            sys,
-            TcsController.LightSource.AO,
-            config
-          ).map(List(sys, _, Gcal.defaultGcal(systems.gcal)))
+        case StepType.AltairObs(inst)        => getTcs(
+          inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+          useGaos = true,
+          sys,
+          TcsController.LightSource.AO,
+          config
+        ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-        case StepType.AlignAndCalib                                     => List(sys: System[F]).pure[F]
+        case StepType.AlignAndCalib          => List(sys:System[F]).pure[F]
 
-        case StepType.Gems(inst) =>
-          getTcs(
-            inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
-            useGaos = true,
-            sys,
-            TcsController.LightSource.AO,
-            config
-          ).map(List(sys, _, Gcal.defaultGcal(systems.gcal)))
+        case StepType.Gems(inst)             => getTcs(
+          inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
+          useGaos = true,
+          sys,
+          TcsController.LightSource.AO,
+          config
+        ).map{ List(sys, _, Gcal.defaultGcal(systems.gcal)) }
 
-        case _                   =>
+        case _                               =>
           Unexpected(s"Unsupported step type $stepType").raiseError[F, List[System[F]]]
       }
+    }
 
     private def calcInstHeader(
       config: CleanConfig,
-      sys:    InstrumentSystem[F]
-    ): F[Header[F]] =
+      sys: InstrumentSystem[F]
+    ): F[Header[F]] = {
       sys.resource match {
-        case Instrument.F2                       =>
-          Flamingos2Header
-            .header[F](sys, Flamingos2Header.ObsKeywordsReaderODB(config), systems.tcsKeywordReader)
-            .pure[F]
-        case Instrument.GmosS | Instrument.GmosN =>
-          GmosHeader
-            .header[F](sys,
-                       GmosObsKeywordsReader(config),
-                       systems.gmosKeywordReader,
-                       systems.tcsKeywordReader
-            )
-            .pure[F]
-        case Instrument.Gnirs                    =>
+        case Instrument.F2     =>
+          Flamingos2Header.header[F](sys, Flamingos2Header.ObsKeywordsReaderODB(config), systems.tcsKeywordReader).pure[F]
+        case Instrument.GmosS |
+             Instrument.GmosN  =>
+          GmosHeader.header[F](sys, GmosObsKeywordsReader(config), systems.gmosKeywordReader, systems.tcsKeywordReader).pure[F]
+        case Instrument.Gnirs  =>
           GnirsHeader.header[F](sys, systems.gnirsKeywordReader, systems.tcsKeywordReader).pure[F]
-        case Instrument.Gpi                      =>
-          GpiHeader
-            .header[F](systems.gpi.gdsClient,
-                       systems.tcsKeywordReader,
-                       ObsKeywordReader[F](config, site)
-            )
-            .pure[F]
-        case Instrument.Ghost                    =>
+        case Instrument.Gpi    =>
+          GpiHeader.header[F](systems.gpi.gdsClient, systems.tcsKeywordReader, ObsKeywordReader[F](config, site)).pure[F]
+        case Instrument.Ghost  =>
           GhostHeader.header[F].pure[F]
-        case Instrument.Niri                     =>
+        case Instrument.Niri   =>
           NiriHeader.header[F](sys, systems.niriKeywordReader, systems.tcsKeywordReader).pure[F]
-        case Instrument.Nifs                     =>
+        case Instrument.Nifs   =>
           NifsHeader.header[F](sys, systems.nifsKeywordReader, systems.tcsKeywordReader).pure[F]
-        case Instrument.Gsaoi                    =>
+        case Instrument.Gsaoi   =>
           GsaoiHeader.header[F](sys, systems.tcsKeywordReader, systems.gsaoiKeywordReader).pure[F]
-        case _                                   =>
+        case _                 =>
           Unexpected(s"Instrument ${sys.resource} not supported.").raiseError[F, Header[F]]
       }
+    }
 
-    private def commonHeaders(
-      config:        CleanConfig,
-      tcsSubsystems: List[TcsController.Subsystem],
-      inst:          InstrumentSystem[F]
-    )(ctx:           HeaderExtraData): Header[F] =
+    private def commonHeaders(config: CleanConfig, tcsSubsystems: List[TcsController.Subsystem],
+                              inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
       new StandardHeader(
         inst,
         ObsKeywordReader[F](config, site),
@@ -595,8 +471,7 @@ object SeqTranslate {
         tcsSubsystems
       )
 
-    private def gwsHeaders(i: InstrumentSystem[F]): Header[F] =
-      GwsHeader.header(i, systems.gwsKeywordReader)
+    private def gwsHeaders(i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i, systems.gwsKeywordReader)
 
     private def gcalHeader(i: InstrumentSystem[F]): Header[F] =
       GcalHeader.header(i, systems.gcalKeywordReader)
@@ -608,96 +483,71 @@ object SeqTranslate {
         systems.tcsKeywordReader
       )
 
-    private def altairLgsHeader(
-      guideStar:  GuideStarType,
-      instrument: InstrumentSystem[F]
-    ): Header[F] =
-      if (guideStar === GuideStarType.LGS)
+    private def altairLgsHeader(guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
+      if (guideStar === GuideStarType.LGS) {
         AltairLgsHeader.header(instrument, systems.altairKeywordReader)
-      else
+      } else {
         dummyHeader[F]
+      }
 
-    private def gemsHeaders(
-      instrument: InstrumentSystem[F],
-      obsKReader: ObsKeywordsReader[F],
-      tcsKReader: TcsKeywordsReader[F]
-    ): Header[F] =
-      GemsHeader.header[F](
-        instrument,
-        systems.gemsKeywordsReader,
-        obsKReader,
-        tcsKReader
-      )
+    private def gemsHeaders(instrument: InstrumentSystem[F],
+                            obsKReader: ObsKeywordsReader[F],
+                            tcsKReader: TcsKeywordsReader[F])
+    : Header[F] = GemsHeader.header[F](
+      instrument,
+      systems.gemsKeywordsReader,
+      obsKReader,
+      tcsKReader
+    )
 
     private def calcHeaders(
-      config:   CleanConfig,
+      config: CleanConfig,
       stepType: StepType,
-      sys:      InstrumentSystem[F]
-    ): F[HeaderExtraData => List[Header[F]]] =
+      sys: InstrumentSystem[F]
+    ): F[HeaderExtraData => List[Header[F]]] = {
       stepType match {
-        case StepType.CelestialObject(_) | StepType.NodAndShuffle(_)                             =>
-          calcInstHeader(config, sys).map(h =>
-            ctx => List(commonHeaders(config, allButGaos.toList, sys)(ctx), gwsHeaders(sys), h)
-          )
+        case StepType.CelestialObject(_) | StepType.NodAndShuffle(_) =>
+            calcInstHeader(config, sys).map(h => ctx =>
+              List(commonHeaders(config, allButGaos.toList, sys)(ctx), gwsHeaders(sys), h))
 
-        case StepType.AltairObs(_)                                                               =>
+        case StepType.AltairObs(_)    =>
           for {
             gst  <- Altair.guideStarType[F](config)
-            read <- calcInstHeader(config, sys).map(h =>
-                      (ctx: HeaderExtraData) =>
-                        // Order is important
-                        List(commonHeaders(config, allButGaos.toList, sys)(ctx),
-                             altairHeader(sys),
-                             altairLgsHeader(gst, sys),
-                             gwsHeaders(sys),
-                             h
-                        )
-                    )
+            read <- calcInstHeader(config, sys).map(h => (ctx: HeaderExtraData) =>
+                      // Order is important
+                      List(
+                        commonHeaders(config, allButGaos.toList, sys)(ctx),
+                        altairHeader(sys),
+                        altairLgsHeader(gst, sys),
+                        gwsHeaders(sys), h))
           } yield read
 
-        case StepType.FlatOrArc(inst)                                                            =>
-          calcInstHeader(config, sys).map(h =>
-            ctx =>
-              List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx),
-                   gcalHeader(sys),
-                   gwsHeaders(sys),
-                   h
-              )
-          )
+        case StepType.FlatOrArc(inst) =>
+            calcInstHeader(config, sys).map(h => ctx =>
+              List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h))
 
-        case StepType.NightFlatOrArc(_)                                                          =>
-          calcInstHeader(config, sys).map(h =>
-            ctx =>
-              List(commonHeaders(config, List(AGUnit, OIWFS, M2, M1, Mount), sys)(ctx),
-                   gcalHeader(sys),
-                   gwsHeaders(sys),
-                   h
-              )
-          )
+        case StepType.NightFlatOrArc(_) =>
+            calcInstHeader(config, sys).map(h => ctx =>
+              List(commonHeaders(config, List(AGUnit, OIWFS, M2, M1, Mount), sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h))
 
         case StepType.DarkOrBias(_) | StepType.DarkOrBiasNS(_) | StepType.ExclusiveDarkOrBias(_) =>
-          calcInstHeader(config, sys).map(h =>
-            (ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h))
-          )
+            calcInstHeader(config, sys).map(h => (ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
 
-        case StepType.AlignAndCalib                                                              =>
-          ((_: HeaderExtraData) => List.empty[Header[F]]).pure[F] // No headers for A&C
+        case StepType.AlignAndCalib   => ((_: HeaderExtraData) => List.empty[Header[F]]).pure[F] // No headers for A&C
 
-        case StepType.Gems(_)                                                                    =>
+        case StepType.Gems(_)         =>
           val obsKReader = ObsKeywordReader[F](config, site)
-          calcInstHeader(config, sys).map(h =>
-            ctx =>
-              List(commonHeaders(config, allButGaos.toList, sys)(ctx),
-                   gwsHeaders(sys),
-                   gemsHeaders(sys, obsKReader, systems.tcsKeywordReader),
-                   h
-              )
+          calcInstHeader(config, sys).map(h => ctx =>
+            List(commonHeaders(config, allButGaos.toList, sys)(ctx),
+              gwsHeaders(sys),
+              gemsHeaders(sys, obsKReader, systems.tcsKeywordReader), h
+            )
           )
 
-        case st                                                                                  =>
-          Unexpected(s"Unsupported step type $st")
-            .raiseError[F, HeaderExtraData => List[Header[F]]]
+        case st                       => Unexpected(s"Unsupported step type $st")
+          .raiseError[F, HeaderExtraData => List[Header[F]]]
       }
+    }
 
   }
 

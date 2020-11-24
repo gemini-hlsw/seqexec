@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.steps
 
 import cats.data.Nested
 import cats.implicits._
-import seqexec.model.Observation
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -14,6 +13,7 @@ import react.semanticui.SemanticColor
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
 import react.semanticui.modules.popup.Popup
+import seqexec.model.Observation
 import seqexec.model.SequenceState
 import seqexec.model.Step
 import seqexec.model.StepId

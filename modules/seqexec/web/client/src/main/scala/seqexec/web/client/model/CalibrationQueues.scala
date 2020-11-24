@@ -7,7 +7,6 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.implicits._
-import seqexec.model.Observation
 import monocle.Optional
 import monocle.Traversal
 import monocle.function.At.at
@@ -16,6 +15,7 @@ import monocle.function.Each.each
 import monocle.macros.Lenses
 import monocle.std
 import seqexec.model.CalibrationQueueId
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model.QueueManipulationOp
 import seqexec.web.client.components.queue.CalQueueTable

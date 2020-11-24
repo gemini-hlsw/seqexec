@@ -5,12 +5,12 @@ package seqexec.web.client.components
 
 import cats.implicits._
 import diode.react.ReactPot._
-import lucuma.core.enum.Site
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.enum.Site
 import react.common._
 import react.common.implicits._
 import react.semanticui.collections.grid._

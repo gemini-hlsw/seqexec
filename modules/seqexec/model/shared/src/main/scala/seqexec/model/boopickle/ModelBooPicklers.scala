@@ -13,19 +13,20 @@ import boopickle.Default.doublePickler
 import boopickle.Default.generatePickler
 import boopickle.Default.intPickler
 import boopickle.Default.longPickler
-import boopickle.Default.shortPickler
 import boopickle.Default.optionPickler
+import boopickle.Default.shortPickler
 import boopickle.Default.stringPickler
 import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
 import cats._
 import cats.implicits._
+import lucuma.core.math.Index
 import lucuma.core.util.Enumerated
 import seqexec.model.GmosParameters._
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
-import seqexec.model.UserPrompt.TargetCheckOverride
 import seqexec.model.Observation
+import seqexec.model.UserPrompt.TargetCheckOverride
 import seqexec.model._
 import seqexec.model.dhs._
 import seqexec.model.enum._
@@ -33,7 +34,6 @@ import seqexec.model.events._
 import shapeless.tag
 import shapeless.tag.@@
 import squants.time.TimeConversions._
-import lucuma.core.math.Index
 
 /**
   * Contains boopickle implicit picklers of model objects

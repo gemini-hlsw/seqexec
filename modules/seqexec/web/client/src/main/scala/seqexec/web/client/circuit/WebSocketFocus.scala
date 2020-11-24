@@ -7,10 +7,10 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.implicits._
-import seqexec.model.Observation
 import lucuma.core.enum.Site
 import monocle.Lens
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.enum.Resource
 import seqexec.web.client.model.AlignAndCalibStep

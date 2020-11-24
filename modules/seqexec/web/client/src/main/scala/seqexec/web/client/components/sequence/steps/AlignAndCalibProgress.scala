@@ -7,10 +7,10 @@ import scala.math.max
 
 import cats.Show
 import cats.implicits._
-import lucuma.core.util.Enumerated
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.colors._

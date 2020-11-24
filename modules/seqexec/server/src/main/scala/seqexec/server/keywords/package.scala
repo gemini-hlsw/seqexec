@@ -5,9 +5,9 @@ package seqexec.server
 
 import cats._
 import cats.syntax.all._
-import seqexec.model.Observation
-import lucuma.core.enum.KeywordName
 import io.chrisdavenport.log4cats.Logger
+import lucuma.core.enum.KeywordName
+import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 
 package keywords {

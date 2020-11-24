@@ -6,13 +6,13 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.Monoid
 import cats.syntax.all._
-import seqexec.model.Observation
 import lucuma.core.enum.GpiDisperser
 import lucuma.core.enum.GpiFilter
 import lucuma.core.enum.GpiObservingMode
 import lucuma.core.math.Offset
 import seqexec.model.NodAndShuffleStatus
 import seqexec.model.NodAndShuffleStep
+import seqexec.model.Observation
 import seqexec.model.OffsetConfigResolver
 import seqexec.model.SequenceState
 import seqexec.model.Step

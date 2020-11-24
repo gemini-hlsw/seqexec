@@ -4,7 +4,6 @@
 package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
-import seqexec.model.Observation
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -16,6 +15,7 @@ import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
 import seqexec.model.CalibrationQueueId
+import seqexec.model.Observation
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.actions.RequestAddSeqCal
 import seqexec.web.client.circuit.SeqexecCircuit

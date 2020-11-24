@@ -7,7 +7,6 @@ import scala.math.max
 
 import cats.syntax.all._
 import diode.react.ReactConnectProxy
-import seqexec.model.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala
 import japgolly.scalajs.react.extra.TimerSupport
@@ -18,6 +17,7 @@ import react.semanticui.SemanticColor
 import react.semanticui.colors._
 import seqexec.model.NSObservationProgress
 import seqexec.model.NodAndShuffleStatus
+import seqexec.model.Observation
 import seqexec.model.ObserveStage
 import seqexec.model.StepId
 import seqexec.model.dhs.ImageFileId

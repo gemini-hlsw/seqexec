@@ -6,11 +6,11 @@ package seqexec.web.client
 import cats.Show
 import cats.syntax.all._
 import diode.Action
-import seqexec.model.Observation
 import lucuma.core.enum.Site
 import org.scalajs.dom.WebSocket
 import pprint.PPrinter
 import seqexec.model.Notification.RequestFailed
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._

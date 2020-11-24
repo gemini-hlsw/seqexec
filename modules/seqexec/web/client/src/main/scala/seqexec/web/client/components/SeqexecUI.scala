@@ -8,13 +8,13 @@ import scala.scalajs.js.timers.SetTimeoutHandle
 import cats.effect.Sync
 import cats.syntax.all._
 import diode.ModelRO
-import seqexec.model.Observation
-import lucuma.core.enum.Site
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.enum.Site
 import monocle.Prism
+import seqexec.model.Observation
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.NavigateSilentTo
 import seqexec.web.client.actions.RequestSoundEcho

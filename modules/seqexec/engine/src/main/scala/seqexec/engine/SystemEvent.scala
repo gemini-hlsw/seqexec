@@ -3,9 +3,9 @@
 
 package seqexec.engine
 
-import seqexec.model.Observation
 import seqexec.engine.Result._
 import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.StepId
 
 /**

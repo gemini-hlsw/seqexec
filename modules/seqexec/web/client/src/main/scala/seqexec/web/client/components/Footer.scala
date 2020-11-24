@@ -5,11 +5,11 @@ package seqexec.web.client.components
 
 import scala.concurrent.duration._
 
-import lucuma.core.enum.Site
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.enum.Site
 import react.clipboard.CopyToClipboard
 import react.common._
 import react.semanticui.collections.menu._

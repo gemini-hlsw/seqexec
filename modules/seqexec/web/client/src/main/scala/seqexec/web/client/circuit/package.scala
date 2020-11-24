@@ -7,10 +7,10 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import diode._
-import seqexec.model.Observation
 import monocle.Getter
 import monocle.Lens
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._

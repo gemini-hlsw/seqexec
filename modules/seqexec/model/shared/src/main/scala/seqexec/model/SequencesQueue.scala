@@ -7,11 +7,11 @@ import scala.collection.immutable.SortedMap
 
 import cats._
 import cats.implicits._
-import seqexec.model.Observation
 import monocle.Getter
 import monocle.Traversal
 import monocle.function.Each._
 import monocle.macros.Lenses
+import seqexec.model.Observation
 import seqexec.model.enum.Instrument
 
 /**

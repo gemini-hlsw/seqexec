@@ -3,10 +3,10 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import seqexec.model.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
+import seqexec.model.Observation
 import seqexec.model.ObservationProgress
 import seqexec.model.StepId
 import seqexec.web.client.circuit.SeqexecCircuit

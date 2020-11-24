@@ -10,7 +10,6 @@ import scala.scalajs.js
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import seqexec.model.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo
@@ -30,6 +29,7 @@ import react.semanticui.elements.button.Button
 import react.semanticui.sizes._
 import react.sortable._
 import react.virtualized._
+import seqexec.model.Observation
 import seqexec.model.QueueId
 import seqexec.model.QueueManipulationOp
 import seqexec.model.SequenceState

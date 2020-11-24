@@ -24,5 +24,3 @@ jobs:
           key: sbt-${{ hashFiles('**/build.sbt') }}
       - name: Run tests
         run: sbt headerCheck test:headerCheck compile seqexec_modelJVM/test seqexec_modelJS/test seqexec_engine/test seqexec_server/test seqexec_web_server/test seqexec_web_client/test
-        env:
-          SBT_OPTS: "-Xmx4096M -Xss2M -XX:ReservedCodeCacheSize=256M -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"

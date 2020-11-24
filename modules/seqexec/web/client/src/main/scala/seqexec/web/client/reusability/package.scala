@@ -6,13 +6,13 @@ package seqexec.web.client
 import scala.collection.immutable.SortedMap
 
 import diode.data.PotState
-import seqexec.model.Observation
-import lucuma.core.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
+import lucuma.core.util.Enumerated
 import react.common._
 import react.semanticui.SemanticColor
 import react.semanticui.SemanticSize
+import seqexec.model.Observation
 import seqexec.model._
 import seqexec.model.dhs._
 import seqexec.model.enum.Resource

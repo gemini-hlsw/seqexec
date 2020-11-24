@@ -5,8 +5,8 @@ package seqexec.model
 
 import cats.Eq
 import cats.implicits._
-import seqexec.model.enum.Resource
 import seqexec.model.Observation
+import seqexec.model.enum.Resource
 
 sealed trait SingleActionOp extends Product with Serializable {
   val sid: Observation.Id

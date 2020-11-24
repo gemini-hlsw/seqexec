@@ -5,10 +5,10 @@ package seqexec.web.client.circuit
 
 import cats._
 import cats.implicits._
-import seqexec.model.Observation
 import monocle.Getter
 import monocle.macros.Lenses
 import monocle.std
+import seqexec.model.Observation
 import seqexec.model.SequenceMetadata
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView

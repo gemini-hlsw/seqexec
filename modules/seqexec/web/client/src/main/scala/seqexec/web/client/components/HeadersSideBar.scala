@@ -7,13 +7,14 @@ import scala.concurrent.duration._
 
 import cats.Eq
 import cats.syntax.all._
-import lucuma.ui.forms._
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.vdom.html_<^._
+import lucuma.core.util.Display
+import lucuma.ui.forms._
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.collections.form._
@@ -29,7 +30,6 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
-import lucuma.core.util.Display
 
 /**
   * Container for a table with the steps
