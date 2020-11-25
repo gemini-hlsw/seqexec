@@ -11,7 +11,7 @@ object Settings {
   object LibraryVersions {
     // ScalaJS libraries
     val scalaDom                = "1.1.0"
-    val scalajsReact            = "1.7.6"
+    val scalajsReact            = "1.7.7"
     val booPickle               = "1.3.3"
     val diode                   = "1.1.13"
     val javaTimeJS              = "2.0.0"
@@ -54,8 +54,8 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.0.0"
-    lazy val munitVersion           = "0.7.18"
-    lazy val munitDisciplineVersion = "1.0.2"
+    lazy val munitVersion           = "0.7.19"
+    lazy val munitDisciplineVersion = "1.0.3"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
