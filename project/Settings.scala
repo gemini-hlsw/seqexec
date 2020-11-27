@@ -15,10 +15,10 @@ object Settings {
     val booPickle               = "1.3.3"
     val diode                   = "1.1.13"
     val javaTimeJS              = "2.0.0"
-    val scalaJSReactCommon      = "0.11.1"
+    val scalaJSReactCommon      = "0.11.2"
     val scalaJSSemanticUI       = "0.10.0"
-    val scalaJSReactVirtualized = "0.11.1"
-    val scalaJSReactClipboard   = "1.4.1"
+    val scalaJSReactVirtualized = "0.11.2"
+    val scalaJSReactClipboard   = "1.4.2"
     val scalaJSReactDraggable   = "0.11.1"
     val scalaJSReactSortable    = "0.4.2"
 
@@ -82,7 +82,7 @@ object Settings {
 
     // Gemini Libraries
     val lucumaCore = "0.7.1"
-    val lucumaUI   = "0.7.1"
+    val lucumaUI   = "0.7.2"
   }
 
   /**
