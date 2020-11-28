@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 
 import cats.Order
 import cats.Show
-import cats.implicits._
+import cats.syntax.all._
 import io.chrisdavenport.cats.time.instances.all._
 import lucuma.core.enum.ProgramType
 import lucuma.core.enum.Site

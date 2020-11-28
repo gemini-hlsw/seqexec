@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._

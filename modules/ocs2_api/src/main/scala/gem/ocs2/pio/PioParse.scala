@@ -7,7 +7,7 @@ import lucuma.core.util.Enumerated
 import lucuma.core.syntax.string._
 
 import cats.Functor
-import cats.implicits._
+import cats.syntax.all._
 import java.time.{ Duration, Instant }
 
 final case class PioParse[A](run: String => Option[A]) {

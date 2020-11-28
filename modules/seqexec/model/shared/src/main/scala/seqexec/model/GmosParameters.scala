@@ -7,7 +7,6 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.SECONDS
 
 import cats.Eq
-import cats.implicits._
 import shapeless.tag.@@
 
 trait GmosParameters {

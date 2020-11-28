@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.util.Enumerated
 import monocle.Iso
 import monocle.Prism

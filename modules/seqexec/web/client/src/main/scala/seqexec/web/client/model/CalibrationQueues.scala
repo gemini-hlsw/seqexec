@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import scala.collection.immutable.SortedMap
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Optional
 import monocle.Traversal
 import monocle.function.At.at

@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.implicits._
+import cats.syntax.all._
 import giapi.client.commands._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen

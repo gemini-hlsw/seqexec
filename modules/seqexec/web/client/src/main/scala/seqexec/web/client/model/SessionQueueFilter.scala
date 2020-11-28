@@ -4,7 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.model.SequenceView

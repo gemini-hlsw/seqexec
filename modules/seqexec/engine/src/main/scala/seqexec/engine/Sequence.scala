@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Lens
 import monocle.macros.GenLens
 import seqexec.engine.Action.ActionState

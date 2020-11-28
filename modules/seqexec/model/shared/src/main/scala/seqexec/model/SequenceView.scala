@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Traversal
 import monocle.function.Each._
 import monocle.macros.Lenses

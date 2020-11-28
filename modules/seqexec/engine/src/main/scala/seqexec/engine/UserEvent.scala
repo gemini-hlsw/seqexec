@@ -5,7 +5,7 @@ package seqexec.engine
 
 import java.time.Instant
 
-import cats.implicits._
+import cats.syntax.all._
 import fs2.Stream
 import seqexec.model.ClientId
 import seqexec.model.Observation

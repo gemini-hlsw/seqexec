@@ -5,7 +5,6 @@ package seqexec.model
 
 import cats.Order
 import cats.Show
-import cats.implicits._
 import lucuma.core.math.Index
 
 object Observation {

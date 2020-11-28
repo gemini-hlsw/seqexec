@@ -8,7 +8,6 @@ import io.chrisdavenport.cats.time.instances.all._
 import lucuma.core.math.{ Offset, Wavelength }
 
 import cats.{ Eq, Order }
-import cats.implicits._
 import java.time.Duration
 import monocle._
 

@@ -6,7 +6,6 @@ package seqexec.model.config
 import scala.concurrent.duration.FiniteDuration
 
 import cats.Eq
-import cats.implicits._
 import org.http4s.Uri
 import shapeless.tag.@@
 

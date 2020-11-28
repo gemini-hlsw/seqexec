@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.math.Angle
 import lucuma.core.math.Offset
 import lucuma.core.optics.Format
