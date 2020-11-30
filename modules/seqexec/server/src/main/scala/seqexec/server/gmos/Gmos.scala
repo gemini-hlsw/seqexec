@@ -23,9 +23,9 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import gsp.math.Angle
-import gsp.math.Offset
-import gsp.math.syntax.string._
+import lucuma.core.math.Angle
+import lucuma.core.math.Offset
+import lucuma.core.syntax.string._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.GmosParameters._
 import seqexec.model.`enum`.Instrument

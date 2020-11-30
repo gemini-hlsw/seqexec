@@ -1,6 +1,6 @@
 package seqexec.server
 
-import gem.`enum`.LightSinkName
+import lucuma.core.enum.LightSinkName
 import squants.Length
 
 trait InstrumentSpecifics extends InstrumentGuide {

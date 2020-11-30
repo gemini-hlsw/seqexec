@@ -2,7 +2,7 @@ package seqexec.server.ghost
 
 import cats.Applicative
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SystemOverrides.overrideLogMessage

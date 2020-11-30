@@ -2,7 +2,7 @@ package seqexec.server.gpi
 
 import cats.Applicative
 import cats.implicits._
-import gem.Observation
+import seqexec.model.Observation
 import giapi.client.GiapiStatusDb
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
