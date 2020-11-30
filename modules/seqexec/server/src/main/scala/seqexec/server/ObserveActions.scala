@@ -29,11 +29,11 @@ trait ObserveActions {
     * Actions to perform when an observe is aborted
     */
   def abortTail[F[_]: MonadError[*[_], Throwable]](
-    systems:     Systems[F],
+    odb:         OdbProxy[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId
   ): F[Result[F]] =
-    systems.odb
+    odb
       .obsAbort(obsId, imageFileId)
       .ensure(
         SeqexecFailure
@@ -44,12 +44,12 @@ trait ObserveActions {
     * Send the datasetStart command to the odb
     */
   private def sendDataStart[F[_]: MonadError[*[_], Throwable]](
-    systems:     Systems[F],
+    odb:         OdbProxy[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
     dataId:      DataId
   ): F[Unit] =
-    systems.odb
+    odb
       .datasetStart(obsId, dataId, imageFileId)
       .ensure(
         SeqexecFailure.Unexpected("Unable to send DataStart message to ODB.")
@@ -60,12 +60,12 @@ trait ObserveActions {
     * Send the datasetEnd command to the odb
     */
   private def sendDataEnd[F[_]: MonadError[*[_], Throwable]](
-    systems:     Systems[F],
+    odb:         OdbProxy[F],
     obsId:       Observation.Id,
     imageFileId: ImageFileId,
     dataId:      DataId
   ): F[Unit] =
-    systems.odb
+    odb
       .datasetComplete(obsId, dataId, imageFileId)
       .ensure(
         SeqexecFailure.Unexpected("Unable to send DataEnd message to ODB.")
@@ -113,7 +113,7 @@ trait ObserveActions {
     env:    ObserveEnvironment[F]
   ): F[ObserveCommandResult] =
     for {
-      _ <- sendDataStart(env.systems, env.obsId, fileId, env.dataId)
+      _ <- sendDataStart(env.odb, env.obsId, fileId, env.dataId)
       _ <- notifyObserveStart(env)
       _ <- env.headers(env.ctx).traverse(_.sendBefore(env.obsId, fileId))
       _ <- info(s"Start ${env.inst.resource.show} observation ${env.obsId.format} with label $fileId")
@@ -135,7 +135,7 @@ trait ObserveActions {
       _ <- notifyObserveEnd(env)
       _ <- env.headers(env.ctx).reverseIterator.toList.traverse(_.sendAfter(fileId))
       _ <- closeImage(fileId, env)
-      _ <- sendDataEnd[F](env.systems, env.obsId, fileId, env.dataId)
+      _ <- sendDataEnd[F](env.odb, env.obsId, fileId, env.dataId)
     } yield
       if (stopped) Result.OKStopped(Response.Observed(fileId))
       else Result.OK(Response.Observed(fileId))
@@ -153,22 +153,27 @@ trait ObserveActions {
       case ObserveCommandResult.Stopped =>
         okTail(fileId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
-        abortTail(env.systems, env.obsId, fileId)
+        abortTail(env.odb, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
         env.inst.calcObserveTime(env.config)
           .flatMap(totalTime => env.inst.observeControl(env.config) match {
             case c: CompleteControl[F] =>
-            val resumePaused: Time => Stream[F, Result[F]] =
-                (elapsed: Time) => Stream.eval{
+              val resumePaused: Time => Stream[F, Result[F]] =
+                (remaining: Time) => Stream.eval{
                   c.continue
-                    .self(elapsed)
+                    .self(remaining)
                 }.flatMap(observeTail(fileId, env))
-            val stopPaused: Stream[F, Result[F]] =
+              val progress: ElapsedTime => Stream[F, Result[F]] =
+                (elapsed: ElapsedTime) =>
+                  env.inst.observeProgress(totalTime, elapsed)
+                    .map(Result.Partial(_))
+                    .widen[Result[F]]
+              val stopPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.stopPaused
                     .self
                 }.flatMap(observeTail(fileId, env))
-            val abortPaused: Stream[F, Result[F]] =
+              val abortPaused: Stream[F, Result[F]] =
                 Stream.eval{
                   c.abortPaused
                     .self
@@ -177,6 +182,7 @@ trait ObserveActions {
              Result.Paused(
               ObserveContext[F](
                 resumePaused,
+                progress,
                 stopPaused,
                 abortPaused,
                 totalTime

@@ -10,14 +10,7 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
-import seqexec.server.keywords.Header
-import seqexec.server.keywords.KeywordBag
-import seqexec.server.keywords.ObsKeywordsReader
-import seqexec.server.keywords.buildDouble
-import seqexec.server.keywords.buildInt32
-import seqexec.server.keywords.buildString
-import seqexec.server.keywords.sendKeywords
+import seqexec.server.keywords.{Header, KeywordBag, KeywordsClient, ObsKeywordsReader, buildDouble, buildInt32, buildString, sendKeywords}
 import seqexec.server.tcs.CRFollow
 import seqexec.server.tcs.GemsSource
 import seqexec.server.tcs.TargetKeywordsReader
@@ -25,10 +18,10 @@ import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GemsHeader {
-  def header[F[_]: Sync: Logger](inst: InstrumentSystem[F],
-                         gemsReader: GemsKeywordReader[F],
-                         obsReader: ObsKeywordsReader[F],
-                         tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F]{
+  def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F],
+                                 gemsReader: GemsKeywordReader[F],
+                                 obsReader: ObsKeywordsReader[F],
+                                 tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F]{
 
     // Extra keywords added to GeMS target keywords. They depend on the type of guider
     private def extraGemsKeywords(baseName: String, g: GemsSource): List[KeywordBag => F[KeywordBag]] = g match {
@@ -94,7 +87,7 @@ object GemsHeader {
           KeywordName.fromTag(s"${baseName}WAV").map(buildDouble(target.wavelength, _))
         ).flattenOption
 
-        sendKeywords[F](id, inst, keywords).whenA(g.isActive)
+        sendKeywords[F](id, kwClient, keywords).whenA(g.isActive)
       }.handleError(_ => ())
 
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
@@ -142,12 +135,12 @@ object GemsHeader {
         buildDouble(gemsReader.cnSquare1, KeywordName.CNSQARE6)
       )
 
-      sendKeywords[F](id, inst, keywords) *>
+      sendKeywords[F](id, kwClient, keywords) *>
         tcsReader.gwfsMap.flatMap{
           _.toList.map{
             case (v, gs) => guideWith(gs).map(cntKeywords(v, gs, _))
           }.sequence
-        }.map(_.flattenOption).flatMap(sendKeywords(id, inst, _))
+        }.map(_.flattenOption).flatMap(sendKeywords(id, kwClient, _))
 
     }
   }

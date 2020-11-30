@@ -57,7 +57,7 @@ object Gcal {
 
   implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
 
-  def fromConfig[F[_]: Sync: Logger](controller: GcalController[F], isCP: Boolean)(config: CleanConfig): F[Gcal[F]] = {
+  def fromConfig[F[_]: Sync: Logger](isCP: Boolean, config: CleanConfig): F[GcalController[F] => Gcal[F]] = {
       val lamps: Either[ConfigUtilOps.ExtractFailure, List[Lamp]] = config.extractCalibrationAs[JSet[Lamp]](LAMP_PROP)
         .map(_.asScala.toList)
         .recover{ case ConfigUtilOps.KeyNotFound(_) => List.empty[Lamp] }
@@ -85,10 +85,11 @@ object Gcal {
         sht  <- shutter
         flt  <- filter
         dif  <- diffuser
-      } yield new Gcal[F](controller,
-        if(lamps.isEmpty && sht === Shutter.CLOSED ) GcalConfig.GcalOff
-        else GcalConfig.GcalOn(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
-      )
+      } yield { controller: GcalController[F] => new Gcal[F](controller,
+          if(lamps.isEmpty && sht === Shutter.CLOSED ) GcalConfig.GcalOff
+          else GcalConfig.GcalOn(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
+        )
+      }
     }.toF[F]
 
   // GCAL that always turn off its lamps except for the IR lamp. Used to assure GCAL light does not interfere in a non

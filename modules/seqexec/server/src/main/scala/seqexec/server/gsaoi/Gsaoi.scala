@@ -44,8 +44,6 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
 
   import Gsaoi._
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
-
   override val contributorName: String = "GSAOI"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
@@ -78,8 +76,6 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
     elapsed: InstrumentSystem.ElapsedTime
   ): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
-
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "GSAOI"
 
@@ -173,6 +169,11 @@ object Gsaoi {
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Gsaoi
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
+
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
   }
 
 }

@@ -13,7 +13,6 @@ sealed trait StepType {
 
 object StepType {
   final case class CelestialObject(override val instrument: Instrument) extends StepType
-  final case class Dark(override val instrument: Instrument) extends StepType
   final case class NodAndShuffle(override val instrument: Instrument) extends StepType
   final case class Gems(override val instrument: Instrument) extends StepType
   final case class AltairObs(override val instrument: Instrument) extends StepType
@@ -30,7 +29,6 @@ object StepType {
 
   implicit val eqStepType: Eq[StepType] = Eq.instance {
     case (CelestialObject(i), CelestialObject(j))         => i === j
-    case (Dark(i), Dark(j))                               => i === j
     case (NodAndShuffle(i), NodAndShuffle(j))             => i === j
     case (Gems(i), Gems(j))                               => i === j
     case (AltairObs(i), AltairObs(j))                     => i === j

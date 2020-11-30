@@ -83,7 +83,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     val x = for {
       seq <- stateL.sequenceStateIndex(c.sid).getOption(st)
       if (seq.status.isIdle || seq.status.isError) && !seq.getSingleState(c.actCoords).active
-      act <- seq.getSingleAction(c.actCoords)
+      act <- seq.rollback.getSingleAction(c.actCoords)
     } yield act.gen
 
     x.map(p =>

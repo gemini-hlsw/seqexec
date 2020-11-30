@@ -9,18 +9,17 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 
 object AltairLgsHeader {
 
-  def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], altairReader: AltairKeywordReader[F]): Header[F] =
+  def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F], altairReader: AltairKeywordReader[F]): Header[F] =
     new Header[F] {
 
       override def sendAfter(id: ImageFileId): F[Unit] =
         sendKeywords(
           id,
-          inst,
+          kwClient,
           List(
             buildDouble(altairReader.lgdfocus, KeywordName.LGDFOCUS),
             buildDouble(altairReader.lgttcnts, KeywordName.LGTTCNTS),

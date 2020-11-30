@@ -28,8 +28,12 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
   implicit def actStateEq[F[_]]: Eq[Action.State[F]] = Eq.fromUniversalEquals
   implicit def actionEq[F[_]]: Eq[Action[F]] = Eq.by(x => (x.kind, x.state))
-  implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[ParallelActions[F]]] = Eq.fromUniversalEquals
-  implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.pre, x.configs, x.post))
+  // Formally, to probe equality between two functions it must be probed that they produce the same result for all
+  // possible inputs. We settle for the `UniversalEquals` instead.
+  implicit def steplEq[F[_]]: Eq[HeaderExtraData => List[ParallelActions[F]]] = Eq.fromUniversalEquals
+  implicit def stepmEq[F[_]]: Eq[(HeaderExtraData, SystemOverrides) => List[ParallelActions[F]]] = Eq.fromUniversalEquals
+  implicit def stepnEq[F[_]]: Eq[SystemOverrides => Action[F]] = Eq.fromUniversalEquals
+  implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.configs, x.post))
   implicit def pndstepgEq[F[_]]: Eq[PendingStepGen[F]] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
   implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))

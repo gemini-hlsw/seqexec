@@ -52,8 +52,6 @@ final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[
 
   override val resource: Instrument = Instrument.Gpi
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gpi
-
   override val contributorName: String = "gpi"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
@@ -227,6 +225,9 @@ object Gpi {
       } else {
         SequenceConfiguration.calcStepType(config, isNightSeq)
       }
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gpi
+
   }
 
 }

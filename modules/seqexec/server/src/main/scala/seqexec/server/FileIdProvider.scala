@@ -10,7 +10,7 @@ object FileIdProvider {
 
   def fileId[F[_]](env: ObserveEnvironment[F]): F[ImageFileId] =
     // All instruments ask the DHS for an ImageFileId
-    env.systems.dhs.createImage(
+    env.dhs.createImage(
       DhsClient.ImageParameters(DhsClient.Permanent,
                                 List(env.inst.contributorName, "dhs-http"))
     )

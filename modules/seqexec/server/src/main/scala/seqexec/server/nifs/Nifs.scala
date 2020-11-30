@@ -49,8 +49,6 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
 
   import Nifs._
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Nifs
-
   override val contributorName: String = "NIFS"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
@@ -78,8 +76,6 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
     elapsed: InstrumentSystem.ElapsedTime
   ): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
-
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "NIFS"
 
@@ -231,6 +227,11 @@ object Nifs {
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Nifs
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Nifs
+
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
   }
 
 }

@@ -20,6 +20,10 @@ sealed trait SeqEvent extends Product with Serializable
 object SeqEvent {
   final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
   final case class SetObserver(id: Observation.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
+  final case class SetTcsEnabled(id: Observation.Id, user: Option[UserDetails], enabled: Boolean) extends SeqEvent
+  final case class SetGcalEnabled(id: Observation.Id, user: Option[UserDetails], enabled: Boolean) extends SeqEvent
+  final case class SetInstrumentEnabled(id: Observation.Id, user: Option[UserDetails], enabled: Boolean) extends SeqEvent
+  final case class SetDhsEnabled(id: Observation.Id, user: Option[UserDetails], enabled: Boolean) extends SeqEvent
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
   final case class LoadSequence(sid: Observation.Id) extends SeqEvent
   final case class UnloadSequence(id: Observation.Id) extends SeqEvent

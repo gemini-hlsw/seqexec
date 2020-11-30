@@ -43,8 +43,6 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
 
   override val resource: Instrument = Instrument.Ghost
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Ghost
-
   override val contributorName: String = "ghost"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
@@ -145,5 +143,8 @@ object Ghost {
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Ghost
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Ghost
+
   }
 }

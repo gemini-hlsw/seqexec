@@ -3,9 +3,8 @@
 
 package seqexec.server.gems
 
-import cats.Eq
-import cats.MonadError
-import cats.syntax.all._
+import cats.{Eq, Applicative, MonadError}
+import cats.implicits._
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -46,7 +45,7 @@ trait Gems[F[_]] extends Gaos[F] {
 
 object Gems {
 
-  private class GemsImpl[F[_]: MonadError[?[_], Throwable]] (controller: GemsController[F],
+  private class GemsImpl[F[_]: MonadError[*[_], Throwable]] (controller: GemsController[F],
                                                              config: GemsConfig,
                                                              guideConfigDb: GuideConfigDb[F]
                                                             ) extends Gems[F] {
@@ -83,9 +82,8 @@ object Gems {
     OIUsage.fromBoolean(opConfig.isOIUsed && stepConfig.isOIUsed)
   )
 
-  def fromConfig[F[_]: MonadError[?[_], Throwable]](controller: GemsController[F], guideConfigDb: GuideConfigDb[F])
-                                                         (config: CleanConfig)
-  : F[Gems[F]] = {
+  def fromConfig[F[_]: MonadError[*[_], Throwable]](guideConfigDb: GuideConfigDb[F], config: CleanConfig)
+  : F[GemsController[F] => Gems[F]] = {
     for {
       p1    <- config.extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
       oi    =  config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP).toOption
@@ -96,21 +94,23 @@ object Gems {
       odgw2 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
       odgw3 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
       odgw4 <- config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
-    } yield new GemsImpl[F](controller,
-      GemsController.GemsOn(
-        Cwfs1Usage.fromBoolean(cwfs1.isActive),
-        Cwfs2Usage.fromBoolean(cwfs2.isActive),
-        Cwfs3Usage.fromBoolean(cwfs3.isActive),
-        Odgw1Usage.fromBoolean(odgw1.isActive),
-        Odgw2Usage.fromBoolean(odgw2.isActive),
-        Odgw3Usage.fromBoolean(odgw3.isActive),
-        Odgw4Usage.fromBoolean(odgw4.isActive),
-        P1Usage.fromBoolean(p1.isActive),
-        OIUsage.fromBoolean(oi.exists(_.isActive))
-      ),
-      guideConfigDb
-    )
-  }.toF[F].widen[Gems[F]]
+    } yield { c: GemsController[F] =>
+      new GemsImpl[F](c,
+        GemsController.GemsOn(
+          Cwfs1Usage.fromBoolean(cwfs1.isActive),
+          Cwfs2Usage.fromBoolean(cwfs2.isActive),
+          Cwfs3Usage.fromBoolean(cwfs3.isActive),
+          Odgw1Usage.fromBoolean(odgw1.isActive),
+          Odgw2Usage.fromBoolean(odgw2.isActive),
+          Odgw3Usage.fromBoolean(odgw3.isActive),
+          Odgw4Usage.fromBoolean(odgw4.isActive),
+          P1Usage.fromBoolean(p1.isActive),
+          OIUsage.fromBoolean(oi.exists(_.isActive))
+        ),
+        guideConfigDb
+      ):Gems[F]
+    }
+  }.toF[F]
 
   trait DetectorStateOps[T] {
     val trueVal: T
@@ -211,8 +211,16 @@ object Gems {
                                        odgw4: F[Odgw4DetectorState]
   )
 
+  object GemsWfsState {
+    def allOff[F[_]: Applicative]: GemsWfsState[F] = GemsWfsState(
+      Cwfs1DetectorState.Off.pure[F].widen[Cwfs1DetectorState],
+      Cwfs2DetectorState.Off.pure[F].widen[Cwfs2DetectorState],
+      Cwfs3DetectorState.Off.pure[F].widen[Cwfs3DetectorState],
+      Odgw1DetectorState.Off.pure[F].widen[Odgw1DetectorState],
+      Odgw2DetectorState.Off.pure[F].widen[Odgw2DetectorState],
+      Odgw3DetectorState.Off.pure[F].widen[Odgw3DetectorState],
+      Odgw4DetectorState.Off.pure[F].widen[Odgw4DetectorState]
+    )
+  }
+
 }
-
-
-
-

@@ -109,9 +109,10 @@ object ODBSequencesLoader {
 
   private def toEngineSequence[F[_]](
     id:  Observation.Id,
+    overrides: SystemOverrides,
     seq: SequenceGen[F],
     d:   HeaderExtraData
-  ): Sequence[F] = Sequence(id, toStepList(seq, d))
+  ): Sequence[F] = Sequence(id, toStepList(seq, overrides, d))
 
   private[server] def loadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
     seqId: Observation.Id,
@@ -123,10 +124,12 @@ object ODBSequencesLoader {
         ss =>
           ss + (seqId -> SequenceData[F](
             None,
+            SystemOverrides.allEnabled,
             seqg,
             execEngine.load(
               toEngineSequence(
                 seqId,
+                SystemOverrides.allEnabled,
                 seqg,
                 HeaderExtraData(st.conditions, st.operator, None)
               )
@@ -151,6 +154,11 @@ object ODBSequencesLoader {
                 sd.seq,
                 toStepList(
                   seqg,
-                  HeaderExtraData(st.conditions, st.operator, sd.observer)))))(st)
+                  sd.overrides,
+                  HeaderExtraData(st.conditions, st.operator, sd.observer)
+                )
+              )
+            )
+        )(st)
 
 }

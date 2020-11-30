@@ -47,8 +47,6 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
 
   override val resource: Instrument = Instrument.F2
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2
-
   override val contributorName: String = "flamingos2"
 
   override val dhsInstrumentName: String = "F2"
@@ -87,9 +85,6 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
-  // TODO Use different value if using electronic offsets
-  override val oiOffsetGuideThreshold: Option[Length] =
-    (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
 
 object Flamingos2 {
@@ -191,6 +186,13 @@ object Flamingos2 {
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.F2
+
+    // TODO Use different value if using electronic offsets
+    override val oiOffsetGuideThreshold: Option[Length] =
+      (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2
+
   }
 
 }

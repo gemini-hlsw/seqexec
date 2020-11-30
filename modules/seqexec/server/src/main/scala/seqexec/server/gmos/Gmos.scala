@@ -23,11 +23,10 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import gsp.math.Angle
+import gsp.math.Offset
+import gsp.math.syntax.string._
 import io.chrisdavenport.log4cats.Logger
-import lucuma.core.enum.LightSinkName
-import lucuma.core.math.Angle
-import lucuma.core.math.Offset
-import lucuma.core.syntax.string._
 import seqexec.model.GmosParameters._
 import seqexec.model.`enum`.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -57,8 +56,6 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
 (configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
-
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gmos
 
   override val contributorName: String = "gmosdc"
 

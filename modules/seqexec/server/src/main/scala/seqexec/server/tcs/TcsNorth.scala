@@ -17,12 +17,9 @@ import seqexec.model.enum.M1Source
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
 import seqexec.model.enum.TipTiltSource
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentGuide, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentSystem
-import seqexec.server.SeqexecFailure
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.tcs.TcsController._
@@ -33,7 +30,7 @@ import shapeless.tag.@@
 import squants.Angle
 import squants.space.Arcseconds
 
-class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]: Logger] private(tcsController: TcsNorthController[F],
+class TcsNorth[F[_]: Sync: MonadError[*[_], Throwable]: Logger] private(tcsController: TcsNorthController[F],
                                                                         subsystems: NonEmptySet[Subsystem],
                                                                         gaos: Option[Altair[F]],
                                                                         guideDb: GuideConfigDb[F]
@@ -69,7 +66,7 @@ class TcsNorth[F[_]: Sync: MonadError[?[_], Throwable]: Logger] private(tcsContr
 
   override def notifyObserveEnd: F[Unit] = tcsController.notifyObserveEnd
 
-  val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+  val defaultGuiderConf: GuiderConfig = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
     guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
       .getOrElse(defaultGuiderConf)
@@ -160,13 +157,13 @@ object TcsNorth {
                                        offsetA: Option[InstrumentOffset],
                                        wavelA: Option[Wavelength],
                                        lightPath: LightPath,
-                                       instrument: InstrumentSystem[F]
+                                       instrument: InstrumentGuide
                                      )
 
   def fromConfig[F[_]: Sync: Logger](controller: TcsNorthController[F],
                              subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Altair[F]],
-                             instrument: InstrumentSystem[F],
+                             instrument: InstrumentGuide,
                              guideConfigDb: GuideConfigDb[F]
                             )(config: CleanConfig,
                               lightPath: LightPath,
@@ -182,7 +179,7 @@ object TcsNorth {
     val offsetq = config.extractTelescopeAs[String](Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
-    val tcsSeqCfg = TcsSeqConfig(
+    val tcsSeqCfg = TcsSeqConfig[F](
       gwp1,
       gwp2,
       gwoi,

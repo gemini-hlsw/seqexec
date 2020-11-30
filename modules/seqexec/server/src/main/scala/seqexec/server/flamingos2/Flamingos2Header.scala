@@ -22,20 +22,19 @@ import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentSystem
 import seqexec.server.SeqexecFailure
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 
 object Flamingos2Header {
-  def header[F[_]: Sync: Logger](inst:              InstrumentSystem[F],
+  def header[F[_]: Sync: Logger](kwClient:  KeywordsClient[F],
                          f2ObsReader:       Flamingos2Header.ObsKeywordsReader[F],
                          tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(
           id,
-          inst,
+          kwClient,
           List(
             buildBoolean(f2ObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue),
             buildString(

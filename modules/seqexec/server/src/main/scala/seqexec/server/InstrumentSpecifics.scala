@@ -1,11 +1,15 @@
 package seqexec.server
 
-import seqexec.model.enum.Instrument
+import gem.`enum`.LightSinkName
+import squants.Length
 
-trait InstrumentSpecifics {
-  val instrument: Instrument
-
+trait InstrumentSpecifics extends InstrumentGuide {
   def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
     SequenceConfiguration.calcStepType(config, isNightSeq)
+
+  override val oiOffsetGuideThreshold: Option[Length] = None
+
+  // The name used for this instrument in the science fold configuration
+  def sfName(config: CleanConfig): LightSinkName
 
 }

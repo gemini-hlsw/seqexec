@@ -8,7 +8,6 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
 import seqexec.server.keywords.Header
 import seqexec.server.keywords._
 import seqexec.server.keywords.buildDouble
@@ -16,10 +15,10 @@ import seqexec.server.keywords.buildString
 import seqexec.server.tcs.TcsKeywordsReader
 
 object NiriHeader {
-  def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
-             tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
+  def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F], instReader: NiriKeywordReader[F],
+                                 tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-      sendKeywords(id, inst, List(
+      sendKeywords(id, kwClient, List(
         buildString(instReader.arrayId, KeywordName.ARRAYID),
         buildString(instReader.arrayType, KeywordName.ARRAYTYP),
         buildString(instReader.camera, KeywordName.CAMERA),
@@ -57,7 +56,7 @@ object NiriHeader {
       ))
 
     override def sendAfter(id: ImageFileId): F[Unit] =
-      sendKeywords(id, inst, List(
+      sendKeywords(id, kwClient, List(
         buildDouble(instReader.detectorTemperature, KeywordName.A_TDETABS),
         buildDouble(instReader.mountTemperature, KeywordName.A_TMOUNT),
         buildDouble(instReader.cl1VoltageDD, KeywordName.A_VDDCL1),

@@ -12,12 +12,14 @@ import seqexec.server.tcs.Tcs
   * Describes the parameters for an observation
   */
 final case class ObserveEnvironment[F[_]](
-  systems:  Systems[F],
+  odb:      OdbProxy[F],
+  dhs:      DhsClient[F],
   config:   CleanConfig,
   stepType: StepType,
   obsId:    Observation.Id,
   dataId:   DataId,
   inst:     InstrumentSystem[F],
+  insSpecs: InstrumentSpecifics,
   otherSys: List[System[F]],
   headers:  HeaderExtraData => List[Header[F]],
   ctx:      HeaderExtraData

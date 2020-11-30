@@ -217,7 +217,7 @@ object TcsSouthControllerEpicsAo {
       val becauseP1 = distanceSquared.exists(dd => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.PWFS1, M1Source.PWFS1)
         && dd > pwfs1OffsetThreshold * pwfs1OffsetThreshold )
 
-      val beacauseOi = demand.inst.oiOffsetGuideThreshold.exists(t =>
+      val becauseOi = demand.inst.oiOffsetGuideThreshold.exists(t =>
         Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && distanceSquared.exists(_ > t*t ))
 
       val becauseAo = demand.gc.m1Guide match {
@@ -225,7 +225,7 @@ object TcsSouthControllerEpicsAo {
         case _                        => false
       }
 
-      beacauseOi || becauseP1 || becauseAo
+      becauseOi || becauseP1 || becauseAo
     }
 
     def calcAoPauseConditions(current: EpicsTcsAoConfig, baseAoConfig: GemsConfig, demand: TcsSouthAoConfig): PauseConditionSet =

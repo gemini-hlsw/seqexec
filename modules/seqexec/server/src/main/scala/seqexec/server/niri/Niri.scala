@@ -47,13 +47,6 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
 
   import Niri._
 
-  override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config).map{
-    case Camera.F6     => LightSinkName.Niri_f6
-    case Camera.F14    => LightSinkName.Niri_f14
-    case Camera.F32 |
-         Camera.F32_PV => LightSinkName.Niri_f32
-  }.getOrElse(LightSinkName.Niri_f6)
-
   override val contributorName: String = "mko-dc-data-niri"
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     UnpausableControl(
@@ -75,8 +68,6 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
   : fs2.Stream[F, Progress] = controller.observeProgress(total)
-
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "NIRI"
 
@@ -177,6 +168,16 @@ object Niri {
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Niri
+
+    override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config).map{
+      case Camera.F6     => LightSinkName.Niri_f6
+      case Camera.F14    => LightSinkName.Niri_f14
+      case Camera.F32 |
+           Camera.F32_PV => LightSinkName.Niri_f32
+    }.getOrElse(LightSinkName.Niri_f6)
+
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
   }
 
 }
