@@ -135,7 +135,7 @@ trait ObserveActions {
       _ <- notifyObserveEnd(env)
       _ <- env.headers(env.ctx).reverseIterator.toList.traverse(_.sendAfter(fileId))
       _ <- closeImage(fileId, env)
-      _ <- sendDataEnd[F](env.odb, env.obsId, fileId, env.dataId)
+      _ <- sendDataEnd(env.odb, env.obsId, fileId, env.dataId)
     } yield
       if (stopped) Result.OKStopped(Response.Observed(fileId))
       else Result.OK(Response.Observed(fileId))

@@ -30,7 +30,6 @@ import seqexec.model.dhs._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 import seqexec.model.{Progress => _, _}
-import seqexec.server
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentSystem._
@@ -148,7 +147,7 @@ object SeqTranslate {
         insSpecs = instrumentSpecs(inst)
         stepType <- insSpecs.calcStepType(config, isNightSeq).fold(_.raiseError[F, StepType], _.pure[F])
         dataId   <- dataIdFromConfig[F](config)
-        is       <- toInstrumentSys(inst)
+        is       = toInstrumentSys(inst)
         systems  <- calcSystems(config, stepType, insSpecs)
         headers  <- calcHeaders(config, stepType, inst)
       } yield buildStep(
@@ -317,34 +316,25 @@ object SeqTranslate {
 
     def toInstrumentSys(inst: Instrument)(
       implicit ev: Timer[F], cio: Concurrent[F]
-    ): F[SystemOverrides => InstrumentSystem[F]] = inst match {
-      case Instrument.F2    => { ov:SystemOverrides =>
+    ): SystemOverrides => InstrumentSystem[F] = inst match {
+      case Instrument.F2    => ov:SystemOverrides =>
         Flamingos2(overriddenSystems.flamingos2(ov), overriddenSystems.dhs(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.GmosS => { ov:SystemOverrides =>
+      case Instrument.GmosS => ov:SystemOverrides =>
         GmosSouth(overriddenSystems.gmosSouth(ov), overriddenSystems.dhs(ov), gmosNsCmd):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.GmosN => { ov:SystemOverrides =>
+      case Instrument.GmosN => ov:SystemOverrides =>
         GmosNorth(overriddenSystems.gmosNorth(ov), overriddenSystems.dhs(ov), gmosNsCmd):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Gnirs => { ov:SystemOverrides =>
+      case Instrument.Gnirs => ov:SystemOverrides =>
         Gnirs(overriddenSystems.gnirs(ov), overriddenSystems.dhs(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Gpi   => { ov:SystemOverrides =>
+      case Instrument.Gpi   => ov:SystemOverrides =>
         Gpi(overriddenSystems.gpi(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Ghost => { ov:SystemOverrides =>
+      case Instrument.Ghost => ov:SystemOverrides =>
         Ghost(overriddenSystems.ghost(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Niri  => { ov:SystemOverrides =>
+      case Instrument.Niri  => ov:SystemOverrides =>
         Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Nifs  => { ov:SystemOverrides =>
+      case Instrument.Nifs  => ov:SystemOverrides =>
         Nifs(overriddenSystems.nifs(ov), overriddenSystems.dhs(ov)):InstrumentSystem[F]
-      }.pure[F]
-      case Instrument.Gsaoi => { ov:SystemOverrides =>
+      case Instrument.Gsaoi => ov:SystemOverrides =>
         Gsaoi(overriddenSystems.gsaoi(ov), overriddenSystems.dhs(ov)):InstrumentSystem[F]
-      }.pure[F]
     }
 
     def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
@@ -406,6 +396,10 @@ object SeqTranslate {
       stepType: StepType,
       instSpec: InstrumentSpecifics
     ): F[Map[Resource, SystemOverrides => System[F]]] = {
+
+      def adaptGcal(b: GcalController[F] => Gcal[F])(ov: SystemOverrides): Gcal[F] = b(overriddenSystems.gcal(ov))
+      def defaultGcal: SystemOverrides => Gcal[F] = adaptGcal(Gcal.defaultGcal)
+
       stepType match {
         case StepType.CelestialObject(inst)  => getTcs(
           inst.hasOI.fold(allButGaos, allButGaosNorOi),
@@ -416,7 +410,7 @@ object SeqTranslate {
         ).map{ x =>
           Map(
             Resource.TCS -> x,
-            Resource.Gcal -> { ov: server.SystemOverrides => Gcal.defaultGcal(overriddenSystems.gcal(ov)) }
+            Resource.Gcal -> defaultGcal
           )
         }
 
@@ -429,27 +423,27 @@ object SeqTranslate {
         ).map{ x =>
           Map(
             Resource.TCS -> x,
-            Resource.Gcal -> { ov:server.SystemOverrides => Gcal.defaultGcal(overriddenSystems.gcal(ov))}
+            Resource.Gcal -> defaultGcal
           )
         }
 
         case StepType.FlatOrArc(inst)        => for {
           tcs  <- getTcs(flatOrArcTcsSubsystems(inst), useGaos = false, instSpec, TcsController.LightSource.GCAL, config)
           gcal <- Gcal.fromConfig(site == Site.GS, config)
-        } yield Map(Resource.TCS -> tcs, Resource.Gcal -> {ov: SystemOverrides => gcal(overriddenSystems.gcal(ov))})
+        } yield Map(Resource.TCS -> tcs, Resource.Gcal -> adaptGcal(gcal) _)
 
         case StepType.NightFlatOrArc(_)   => for {
           tcs  <- getTcs(NonEmptySet.of(AGUnit, OIWFS, M2, M1, Mount), useGaos = false, instSpec,
             TcsController.LightSource.GCAL, config
           )
           gcal <- Gcal.fromConfig(site == Site.GS, config)
-        } yield Map(Resource.TCS -> tcs, Resource.Gcal -> {ov: SystemOverrides => gcal(overriddenSystems.gcal(ov))})
+        } yield Map(Resource.TCS -> tcs, Resource.Gcal -> adaptGcal(gcal) _)
 
         case StepType.DarkOrBias(_) => Map.empty[Resource, SystemOverrides => System[F]].pure[F]
 
         case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) =>
           Map[Resource, SystemOverrides => System[F]](
-            Resource.Gcal -> {ov: server.SystemOverrides => Gcal.defaultGcal[F](overriddenSystems.gcal(ov))}
+            Resource.Gcal -> defaultGcal
           ).pure[F]
 
         case StepType.AltairObs(inst)        => getTcs(
@@ -461,7 +455,7 @@ object SeqTranslate {
         ).map{ x =>
           Map(
             Resource.TCS -> x,
-            Resource.Gcal -> {ov: SystemOverrides => Gcal.defaultGcal(overriddenSystems.gcal(ov))}
+            Resource.Gcal -> defaultGcal
           )
         }
 
@@ -476,7 +470,7 @@ object SeqTranslate {
         ).map { x =>
           Map(
             Resource.TCS -> x,
-            Resource.Gcal -> { ov: SystemOverrides => Gcal.defaultGcal(overriddenSystems.gcal(ov)) }
+            Resource.Gcal -> defaultGcal
           )
         }
       }

@@ -21,7 +21,7 @@ trait SystemOverrides {
 }
 
 object SystemOverrides {
-  val allEnabled: SystemOverrides = SystemOverridesImpl(
+  val AllEnabled: SystemOverrides = SystemOverridesImpl(
     isTcsEnabled = true,
     isInstrumentEnabled = true,
     isGcalEnabled = true,
