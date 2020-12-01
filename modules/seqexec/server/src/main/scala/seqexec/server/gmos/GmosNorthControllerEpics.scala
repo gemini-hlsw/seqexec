@@ -98,6 +98,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
     case Disperser.R150_G5308  => "R150+_G5308"
     case Disperser.B600_G5303  => "B600+_G5303"
     case Disperser.R150_G5306  => "R150+_G5306"
+    case Disperser.B480_G5309  => "B480+_G5309"
   }
 
   override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {

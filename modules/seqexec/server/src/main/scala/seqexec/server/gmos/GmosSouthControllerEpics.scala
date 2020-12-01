@@ -29,6 +29,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Disperser.R600_G5324  => "R600+_G5324"
     case Disperser.R400_G5325  => "R400+_G5325"
     case Disperser.R150_G5326  => "R150+_G5326"
+    case Disperser.B480_G5327  => "B480+_G5327"
   }
 
   override val fpu: EncodeEpicsValue[SouthTypes#FPU, (Option[String], Option[String])] = EncodeEpicsValue{ a => {
