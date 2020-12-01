@@ -13,7 +13,7 @@ object Settings {
     val scalaDom                = "1.1.0"
     val scalajsReact            = "1.7.7"
     val booPickle               = "1.3.3"
-    val diode                   = "1.1.13"
+    val diode                   = "1.1.14"
     val javaTimeJS              = "2.0.0"
     val scalaJSReactCommon      = "0.11.2"
     val scalaJSSemanticUI       = "0.10.1"
@@ -43,7 +43,7 @@ object Settings {
     val log4catsLevel  = "0.1.1"
     val logback        = "1.2.3"
     val janino         = "3.1.2"
-    val logstash       = "6.4"
+    val logstash       = "6.5"
     val pureConfig     = "0.14.0"
     val monocleVersion = "2.1.0"
     val circeVersion   = "0.13.0"
@@ -81,8 +81,8 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.1"
-    val lucumaUI   = "0.10.2"
+    val lucumaCore = "0.7.2"
+    val lucumaUI   = "0.7.2"
   }
 
   /**
