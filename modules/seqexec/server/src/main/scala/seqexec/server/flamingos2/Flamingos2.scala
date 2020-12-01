@@ -47,8 +47,6 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
 
   override val resource: Instrument = Instrument.F2
 
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2
-
   override val contributorName: String = "flamingos2"
 
   override val dhsInstrumentName: String = "F2"
@@ -87,9 +85,6 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
 
-  // TODO Use different value if using electronic offsets
-  override val oiOffsetGuideThreshold: Option[Length] =
-    (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
 
 object Flamingos2 {
@@ -184,10 +179,20 @@ object Flamingos2 {
       s <- config.extractInstAs[Decker](DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = ( for {
+  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = for {
       p <- ccConfigFromSequenceConfig(config)
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)
-   )
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.F2
+
+    // TODO Use different value if using electronic offsets
+    override val oiOffsetGuideThreshold: Option[Length] =
+      (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2
+
+  }
 
 }

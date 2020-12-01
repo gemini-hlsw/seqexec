@@ -7,18 +7,15 @@ import scala.concurrent.duration._
 
 import cats.data.Kleisli
 import fs2.Stream
-import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.KeywordsClient
-import squants.Length
 import squants.Time
 
-trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
+trait InstrumentSystem[F[_]] extends System[F] {
   override val resource: Instrument
-  // The name used for this instrument in the science fold configuration
-  def sfName(config: CleanConfig): LightSinkName
+
   val contributorName: String
 
   def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F]
@@ -35,13 +32,6 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 
   def instrumentActions(config: CleanConfig): InstrumentActions[F]
-
-  def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
-    SequenceConfiguration.calcStepType(config, isNightSeq)
-
-  override val oiOffsetGuideThreshold: Option[Length] = None
-
-  override def instrument: Instrument = resource
 
 }
 

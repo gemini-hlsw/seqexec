@@ -352,10 +352,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
               )
             ),
             resources = resources,
+            _ => InstrumentSystem.Uncontrollable,
             generator = SequenceGen.StepActionsGen(
-              pre = Nil,
-              configs = resources.map(r => r -> pendingAction[IO](r)).toMap,
-              post = _ => Nil
+              configs = resources.map(r => r -> {_:SystemOverrides => pendingAction[IO](r)}).toMap,
+              post = (_, _) => Nil
             )
           )
       }

@@ -9,21 +9,20 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 
 object NifsHeader {
 
   def header[F[_]: MonadError[?[_], Throwable]: Logger](
-    inst:              InstrumentSystem[F],
-    instReader:        NifsKeywordReader[F],
-    tcsKeywordsReader: TcsKeywordsReader[F]
+                                                         kwClient:          KeywordsClient[F],
+                                                         instReader:        NifsKeywordReader[F],
+                                                         tcsKeywordsReader: TcsKeywordsReader[F]
   ): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
       sendKeywords(
         id,
-        inst,
+        kwClient,
         List(
           buildString(instReader.grating, KeywordName.GRATING),
           buildString(instReader.aperture, KeywordName.APERTURE),
@@ -50,7 +49,7 @@ object NifsHeader {
 
     override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id,
-                   inst,
+                   kwClient,
                    List(
                      buildDouble(instReader.exposureTime, KeywordName.EXPTIME)
                    ))

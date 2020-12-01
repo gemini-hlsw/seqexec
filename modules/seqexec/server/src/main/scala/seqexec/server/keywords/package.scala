@@ -290,15 +290,14 @@ package object keywords {
 
   def sendKeywords[F[_]: MonadError[*[_], Throwable]: Logger](
       id: ImageFileId,
-      inst: InstrumentSystem[F],
+      keywClient: KeywordsClient[F],
       b: List[KeywordBag => F[KeywordBag]]): F[Unit] =
-    inst
-      .keywordsClient
+    keywClient
       .keywordsBundler
       .bundleKeywords(b)
       .redeemWith(e => Logger[F].error(e.getMessage) *> KeywordBag.empty.pure[F], _.pure[F])
       .flatMap { bag =>
-        inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
+        keywClient.setKeywords(id, bag, finalFlag = false)
       }
 
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {

@@ -25,19 +25,13 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigResult
-import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentActions
-import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
-import seqexec.server.Progress
-import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -52,13 +46,6 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
   extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Niri._
-
-  override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config).map{
-    case Camera.F6     => LightSinkName.Niri_f6
-    case Camera.F14    => LightSinkName.Niri_f14
-    case Camera.F32 |
-         Camera.F32_PV => LightSinkName.Niri_f32
-  }.getOrElse(LightSinkName.Niri_f6)
 
   override val contributorName: String = "mko-dc-data-niri"
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
@@ -81,8 +68,6 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
   : fs2.Stream[F, Progress] = controller.observeProgress(total)
-
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "NIRI"
 
@@ -180,5 +165,19 @@ object Niri {
     cc <- getCCConfig(config)
     dc <- getDCConfig(config)
   } yield NiriConfig(cc, dc)
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Niri
+
+    override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config).map{
+      case Camera.F6     => LightSinkName.Niri_f6
+      case Camera.F14    => LightSinkName.Niri_f14
+      case Camera.F32 |
+           Camera.F32_PV => LightSinkName.Niri_f32
+    }.getOrElse(LightSinkName.Niri_f6)
+
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
+  }
 
 }

@@ -18,12 +18,9 @@ import seqexec.model.enum.M1Source
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
 import seqexec.model.enum.TipTiltSource
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigResult, InstrumentGuide, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentSystem
-import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.TcsController.AGConfig
@@ -189,11 +186,11 @@ object TcsSouth {
     offsetA: Option[InstrumentOffset],
     wavelA: Option[Wavelength],
     lightPath: LightPath,
-    instrument: InstrumentSystem[F]
+    instrument: InstrumentGuide
   )
 
   def fromConfig[F[_]: Sync: Logger](controller: TcsSouthController[F], subsystems: NonEmptySet[Subsystem],
-                             gaos: Option[Gems[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
+                                     gaos: Option[Gems[F]], instrument: InstrumentGuide, guideConfigDb: GuideConfigDb[F])(
     config: CleanConfig, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): TcsSouth[F] = {
 
@@ -212,7 +209,7 @@ object TcsSouth {
     val offsetq = config.extractTelescopeAs[String](Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
-    val tcsSeqCfg = TcsSeqConfig(
+    val tcsSeqCfg = TcsSeqConfig[F](
       gwp1,
       gwp2,
       gwoi,

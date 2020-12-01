@@ -17,6 +17,7 @@ import seqexec.model.enum.Guiding
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentActions._
+import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.ObserveActions._
 import seqexec.server._
 import seqexec.server.gmos.GmosController.Config._
@@ -56,7 +57,7 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
       case ObserveCommandResult.Stopped =>
         okTail(fileId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
-        abortTail(env.systems, env.obsId, fileId)
+        abortTail(env.odb, env.obsId, fileId)
       case ObserveCommandResult.Paused =>
         env.inst
           .calcObserveTime(env.config)
@@ -66,6 +67,7 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
                 .Paused(
                   ObserveContext(
                     (_: Time) => resumeObserve(fileId, env, nsCfg),
+                    (_: ElapsedTime) => observationProgressStream(env),
                     stopPausedObserve(fileId, env, nsCfg),
                     abortPausedObserve(fileId, env, nsCfg),
                     e

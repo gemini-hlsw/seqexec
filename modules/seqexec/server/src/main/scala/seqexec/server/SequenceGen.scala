@@ -29,7 +29,7 @@ final case class SequenceGen[F[_]](id: Observation.Id, title: String,
                              steps: List[SequenceGen.StepGen[F]]) {
   val resources: Set[Resource] = steps.collect{
     case p: SequenceGen.PendingStepGen[F] => p.resources
-  }.foldMap(identity(_))
+  }.foldMap(identity)
 
   def configActionCoord(stepId: StepId, r: Resource): Option[ActionCoordsInSeq] =
     steps.find(_.id === stepId)
@@ -52,28 +52,27 @@ object SequenceGen {
   }
 
   object StepGen {
-    def generate[F[_]](stepGen: StepGen[F], ctx: HeaderExtraData): EngineStep[F] = stepGen match {
-      case p: PendingStepGen[F]          => EngineStep.init[F](stepGen.id, p.generator.generate(ctx))
-      case SkippedStepGen(id, _, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
-      case CompletedStepGen(id, _, _, _) => EngineStep.init[F](id, Nil)
-    }
+    def generate[F[_]](stepGen: StepGen[F], systemOverrides: SystemOverrides, ctx: HeaderExtraData): EngineStep[F] =
+      stepGen match {
+        case p: PendingStepGen[F]          => EngineStep.init[F](stepGen.id, p.generator.generate(ctx, systemOverrides))
+        case SkippedStepGen(id, _, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
+        case CompletedStepGen(id, _, _, _) => EngineStep.init[F](id, Nil)
+      }
   }
 
-  final case class StepActionsGen[F[_]](pre: List[ParallelActions[F]],
-                                  configs: Map[Resource, Action[F]],
-                                  post: HeaderExtraData => List[ParallelActions[F]]) {
-    def generate(ctx: HeaderExtraData): List[ParallelActions[F]] =
-      pre ++
-        NonEmptyList.fromList(configs.values.toList).toList ++
-        post(ctx)
+  final case class StepActionsGen[F[_]](configs: Map[Resource, SystemOverrides => Action[F]],
+                                        post: (HeaderExtraData, SystemOverrides) => List[ParallelActions[F]]) {
+    def generate(ctx: HeaderExtraData, overrides: SystemOverrides): List[ParallelActions[F]] =
+      NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
+        post(ctx, overrides)
 
     def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {
       val i = configs.keys.toIndexedSeq.indexOf(r)
       (i>=0).option(i)
-        .map(i => (ExecutionIndex(pre.length.toLong), ActionIndex(i.toLong)))
+        .map(i => (ExecutionIndex(0), ActionIndex(i.toLong)))
     }
     def resourceAtCoords(ex: ExecutionIndex, ac: ActionIndex): Option[Resource] =
-      if (ex.self === pre.length.toLong) configs.keys.toList.get(ac.self)
+      if (ex.self === 0) configs.keys.toList.get(ac.self)
       else None
 
   }
@@ -82,6 +81,7 @@ object SequenceGen {
                                         override val dataId: DataId,
                                         override val config: CleanConfig,
                                         resources: Set[Resource],
+                                        obsControl: SystemOverrides => InstrumentSystem.ObserveControl[F],
                                         generator: StepActionsGen[F]
                                        ) extends StepGen[F]
 

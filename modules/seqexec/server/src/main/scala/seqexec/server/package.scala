@@ -35,6 +35,9 @@ import seqexec.server.SequenceGen.StepGen
 import squants.Time
 
 package server {
+
+  import seqexec.server.InstrumentSystem.ElapsedTime
+
   @Lenses
   final case class EngineState[F[_]](
     queues: ExecutionQueues,
@@ -84,6 +87,7 @@ package server {
 
   final case class ObserveContext[F[_]](
     resumePaused: Time => Stream[F, Result[F]],
+    progress: ElapsedTime => Stream[F, Result[F]],
     stopPaused: Stream[F, Result[F]],
     abortPaused: Stream[F, Result[F]],
     expTime: Time
@@ -109,7 +113,7 @@ package object server {
 
   type EventQueue[F[_]] = Queue[F, EventType[F]]
 
-  implicit class EitherTFailureOps[F[_]: MonadError[?[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
+  implicit class EitherTFailureOps[F[_]: MonadError[*[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
     def liftF: F[A] =
       s.value.flatMap(_.liftTo[F])
   }
@@ -163,11 +167,11 @@ package object server {
       StateT[F, EngineState[F], A]{ st => f(st).pure[F] }.toHandle
   }
 
-  def toStepList[F[_]](seq: SequenceGen[F], d: HeaderExtraData): List[engine.Step[F]] =
-    seq.steps.map(StepGen.generate(_, d))
+  def toStepList[F[_]](seq: SequenceGen[F], overrides: SystemOverrides, d: HeaderExtraData): List[engine.Step[F]] =
+    seq.steps.map(StepGen.generate(_, overrides, d))
 
   // If f is true continue, otherwise fail
-  def failUnlessM[F[_]: MonadError[?[_], Throwable]](f: F[Boolean], err: Exception): F[Unit] =
+  def failUnlessM[F[_]: MonadError[*[_], Throwable]](f: F[Boolean], err: Exception): F[Unit] =
     f.flatMap {
       MonadError[F, Throwable].raiseError(err).unlessA
     }
@@ -179,7 +183,7 @@ package object server {
     }, r => Result.OK(r))
   }
 
-  implicit class RecoverResultErrorOps[F[_]: ApplicativeError[?[_], Throwable]](r: F[Result[F]]) {
+  implicit class RecoverResultErrorOps[F[_]: ApplicativeError[*[_], Throwable]](r: F[Result[F]]) {
     def safeResult: F[Result[F]] = r.recover {
       case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
       case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
@@ -195,7 +199,7 @@ package object server {
       Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
   }
 
-  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[?[_], Throwable], A <: Response](val x: F[A]) {
+  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[*[_], Throwable], A <: Response](val x: F[A]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
   }
 

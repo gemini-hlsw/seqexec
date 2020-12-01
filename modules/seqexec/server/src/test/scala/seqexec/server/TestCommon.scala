@@ -170,78 +170,58 @@ object TestCommon {
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
 
-  private val gpiSim: IO[GpiController[IO]] = GpiClient
-    .simulatedGpiClient[IO]
-    .use(x =>
-      IO(
-        GpiController(
-          x,
-          new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))
-        )
-      )
-    )
+  private val gpiSim: IO[GpiController[IO]] = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
+    GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
 
-  private val ghostSim: IO[GhostController[IO]] = GhostClient
-    .simulatedGhostClient[IO]
-    .use(x =>
-      IO(
-        GhostController(
-          x,
-          new GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))
-        )
-      )
-    )
+  private val ghostSim : IO[GhostController[IO]] = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
+    GdsClient(GdsClient.alwaysOkClient[IO], uri("http://localhost:8888/xmlrpc"))))
+  )
 
-  val defaultSystems: Systems[IO] = (DhsClientSim[IO],
-                                     Flamingos2ControllerSim[IO],
-                                     GmosControllerSim.south[IO],
-                                     GmosControllerSim.north[IO],
-                                     GnirsControllerSim[IO],
-                                     GsaoiControllerSim[IO],
-                                     gpiSim,
-                                     ghostSim,
-                                     NiriControllerSim[IO],
-                                     NifsControllerSim[IO]
-  ).mapN { (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
-    Systems[IO](
-      OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
-      dhs,
-      TcsSouthControllerSim[IO],
-      TcsNorthControllerSim[IO],
-      GcalControllerSim[IO],
-      f2,
-      gmosS,
-      gmosN,
-      gnirs,
-      gsaoi,
-      gpi,
-      ghost,
-      niri,
-      nifs,
-      AltairControllerSim[IO],
-      GemsControllerSim[IO],
-      GuideConfigDb.constant[IO],
-      DummyTcsKeywordsReader[IO],
-      DummyGcalKeywordsReader[IO],
-      GmosKeywordReaderDummy[IO],
-      GnirsKeywordReaderDummy[IO],
-      NiriKeywordReaderDummy[IO],
-      NifsKeywordReaderDummy[IO],
-      GsaoiKeywordReaderDummy[IO],
-      AltairKeywordReaderDummy[IO],
-      GemsKeywordReaderDummy[IO],
-      DummyGwsKeywordsReader[IO]
-    )
-  }.unsafeRunSync()
+  val defaultSystems: Systems[IO] = (
+    DhsClientSim[IO],
+    Flamingos2ControllerSim[IO],
+    GmosControllerSim.south[IO],
+    GmosControllerSim.north[IO],
+    GnirsControllerSim[IO],
+    GsaoiControllerSim[IO],
+    gpiSim,
+    ghostSim,
+    NiriControllerSim[IO],
+    NifsControllerSim[IO]).mapN{ (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+      Systems[IO](
+        OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
+        dhs,
+        TcsSouthControllerSim[IO],
+        TcsNorthControllerSim[IO],
+        GcalControllerSim[IO],
+        f2,
+        gmosS,
+        gmosN,
+        gnirs,
+        gsaoi,
+        gpi,
+        ghost,
+        niri,
+        nifs,
+        AltairControllerSim[IO],
+        GemsControllerSim[IO],
+        GuideConfigDb.constant[IO],
+        DummyTcsKeywordsReader[IO],
+        DummyGcalKeywordsReader[IO],
+        GmosKeywordReaderDummy[IO],
+        GnirsKeywordReaderDummy[IO],
+        NiriKeywordReaderDummy[IO],
+        NifsKeywordReaderDummy[IO],
+        GsaoiKeywordReaderDummy[IO],
+        AltairKeywordReaderDummy[IO],
+        GemsKeywordReaderDummy[IO],
+        DummyGwsKeywordsReader[IO]
+      )}.unsafeRunSync()
 
-  val seqexecEngine: SeqexecEngine[IO] =
-    SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync()
+  val seqexecEngine: SeqexecEngine[IO] = SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync()
 
-  def advanceOne(
-    q:   EventQueue[IO],
-    s0:  EngineState[IO],
-    put: IO[Unit]
-  ): IO[Option[EngineState[IO]]] =
+  def advanceOne(q: EventQueue[IO], s0: EngineState[IO], put: IO[Unit]): IO[Option[EngineState[IO]]] =
     advanceN(q, s0, put, 1L)
 
   def advanceN(
@@ -258,83 +238,71 @@ object TestCommon {
   val seqObsId2: Observation.Id = Observation.Id.unsafeFromString(seqId2)
   val seqId3: String            = "GS-2018B-Q-0-3"
   val seqObsId3: Observation.Id = Observation.Id.unsafeFromString(seqId3)
-  val clientId                  = ClientId(UUID.randomUUID)
+  val clientId = ClientId(UUID.randomUUID)
 
-  def sequence(id: Observation.Id): SequenceGen[IO] =
-    SequenceGen[IO](
-      id = id,
-      title = "",
-      instrument = Instrument.F2,
-      steps = List(
-        SequenceGen.PendingStepGen(
-          id = 1,
+  def sequence(id: Observation.Id): SequenceGen[IO] = SequenceGen[IO](
+    id = id,
+    title = "",
+    instrument = Instrument.F2,
+    steps = List(SequenceGen.PendingStepGen(
+      id = 1,
+      Monoid.empty[DataId],
+      config = CleanConfig.empty,
+      resources = Set.empty,
+      _ => InstrumentSystem.Uncontrollable,
+      generator = SequenceGen.StepActionsGen(
+        configs = Map(),
+        post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
+    )))
+  )
+
+  def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen[IO] = SequenceGen[IO](
+    id = id,
+    title = "",
+    instrument = Instrument.F2,
+    steps =
+      List
+        .range(1, n)
+        .map(SequenceGen.PendingStepGen(
+          _,
           Monoid.empty[DataId],
           config = CleanConfig.empty,
           resources = Set.empty,
+          _ => InstrumentSystem.Uncontrollable,
           generator = SequenceGen.StepActionsGen(
-            pre = Nil,
-            configs = Map(),
-            post = _ => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
-          )
+            configs = Map.empty,
+            post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
+    )))
+  )
+
+  def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen[IO] = SequenceGen[IO](
+    id = id,
+    title = "",
+    instrument = ins,
+    steps = List(
+      SequenceGen.PendingStepGen(
+        id = 1,
+        Monoid.empty[DataId],
+        config = CleanConfig.empty,
+        resources = resources,
+        _ => InstrumentSystem.Uncontrollable,
+        generator = SequenceGen.StepActionsGen(
+          configs = resources.map(r => r -> {_:SystemOverrides => pendingAction[IO](r)}).toMap,
+          post = (_, _) => Nil
+        )
+      ),
+      SequenceGen.PendingStepGen(
+        id = 2,
+        Monoid.empty[DataId],
+        config = CleanConfig.empty,
+        resources = resources,
+        _ => InstrumentSystem.Uncontrollable,
+        generator = SequenceGen.StepActionsGen(
+          configs = resources.map(r => r -> {_:SystemOverrides => pendingAction[IO](r)}).toMap,
+          post = (_, _) =>Nil
         )
       )
     )
-
-  def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen[IO] =
-    SequenceGen[IO](
-      id = id,
-      title = "",
-      instrument = Instrument.F2,
-      steps = List
-        .range(1, n)
-        .map(
-          SequenceGen.PendingStepGen(
-            _,
-            Monoid.empty[DataId],
-            config = CleanConfig.empty,
-            resources = Set.empty,
-            generator = SequenceGen.StepActionsGen(
-              pre = Nil,
-              configs = Map(),
-              post = _ => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
-            )
-          )
-        )
-    )
-
-  def sequenceWithResources(
-    id:        Observation.Id,
-    ins:       Instrument,
-    resources: Set[Resource]
-  ): SequenceGen[IO] =
-    SequenceGen[IO](
-      id = id,
-      title = "",
-      instrument = ins,
-      steps = List(
-        SequenceGen.PendingStepGen(
-          id = 1,
-          Monoid.empty[DataId],
-          config = CleanConfig.empty,
-          resources = resources,
-          generator = SequenceGen.StepActionsGen(
-            pre = Nil,
-            configs = resources.map(r => r -> pendingAction[IO](r)).toMap,
-            post = _ => Nil
-          )
-        ),
-        SequenceGen.PendingStepGen(
-          id = 2,
-          Monoid.empty[DataId],
-          config = CleanConfig.empty,
-          resources = resources,
-          generator = SequenceGen.StepActionsGen(
-            pre = Nil,
-            configs = resources.map(r => r -> pendingAction[IO](r)).toMap,
-            post = _ => Nil
-          )
-        )
-      )
-    )
+  )
 
 }

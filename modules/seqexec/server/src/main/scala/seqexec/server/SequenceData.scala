@@ -10,6 +10,7 @@ import seqexec.model.Observer
 
 @Lenses
 final case class SequenceData[F[_]](observer: Option[Observer],
+                                    overrides: SystemOverrides,
                                     seqGen: SequenceGen[F],
                                     seq: Sequence.State[F],
                                     pendingObsCmd: Option[PendingObserveCmd])

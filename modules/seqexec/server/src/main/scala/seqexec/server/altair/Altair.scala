@@ -5,7 +5,6 @@ package seqexec.server.altair
 
 import cats.ApplicativeError
 import cats.effect.Sync
-import cats.syntax.all._
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
@@ -76,12 +75,12 @@ object Altair {
 
   }
 
-  def fromConfig[F[_]: Sync](config: CleanConfig, controller: AltairController[F]): F[Altair[F]] =
-    config.extractAOAs[FieldLens](FIELD_LENSE_PROP).map { fieldLens =>
-      new AltairImpl[F](controller, fieldLens)
-    }.toF[F].widen[Altair[F]]
+  def fromConfig[F[_]: Sync](config: CleanConfig): F[AltairController[F] => Altair[F]] =
+    config.extractAOAs[FieldLens](FIELD_LENSE_PROP).map { fieldLens => (controller: AltairController[F]) =>
+      new AltairImpl[F](controller, fieldLens):Altair[F]
+    }.toF[F]
 
-  def guideStarType[F[_]: ApplicativeError[?[_], Throwable]](config: CleanConfig): F[GuideStarType] =
+  def guideStarType[F[_]: ApplicativeError[*[_], Throwable]](config: CleanConfig): F[GuideStarType] =
     config.extractAOAs[GuideStarType](GUIDESTAR_TYPE_PROP).toF[F]
 
 }

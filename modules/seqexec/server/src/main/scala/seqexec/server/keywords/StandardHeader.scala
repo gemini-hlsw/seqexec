@@ -15,7 +15,6 @@ import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
 import seqexec.server.OcsBuildInfo
 import seqexec.server.tcs.TargetKeywordsReader
 import seqexec.server.tcs.TcsController
@@ -37,11 +36,11 @@ final case class StateKeywordsReader[F[_]: Applicative](
 }
 
 class StandardHeader[F[_]: Sync: Logger](
-  inst: InstrumentSystem[F],
-  obsReader: ObsKeywordsReader[F],
-  tcsReader: TcsKeywordsReader[F],
-  stateReader: StateKeywordsReader[F],
-  tcsSubsystems: List[TcsController.Subsystem]) extends Header[F] with ObsKeywordsReaderConstants {
+                                          kwClient: KeywordsClient[F],
+                                          obsReader: ObsKeywordsReader[F],
+                                          tcsReader: TcsKeywordsReader[F],
+                                          stateReader: StateKeywordsReader[F],
+                                          tcsSubsystems: List[TcsController.Subsystem]) extends Header[F] with ObsKeywordsReaderConstants {
 
   val obsObject: F[String] = for {
     obsType   <- obsReader.obsType
@@ -142,7 +141,7 @@ class StandardHeader[F[_]: Sync: Logger](
 
     (timingWindows.map(_.length), windows).mapN {(l, w) =>
       val windowsCount = buildInt32(l.pure[F], KeywordName.NUMREQTW)
-      sendKeywords(id, inst, windowsCount :: w.flatten)
+      sendKeywords(id, kwClient, windowsCount :: w.flatten)
     }.flatten
   }
 
@@ -158,7 +157,7 @@ class StandardHeader[F[_]: Sync: Logger](
         case (keyword, value) =>
           requestedConditions.get(value).map(v => buildString(v.pure[F], keyword))
       }.mapFilter(identity)
-      sendKeywords(id, inst, requested).whenA(requested.nonEmpty)
+      sendKeywords(id, kwClient, requested).whenA(requested.nonEmpty)
     }
   }
 
@@ -173,7 +172,7 @@ class StandardHeader[F[_]: Sync: Logger](
         case (keyword, value) =>
           airMassAngle.get(value).map(v => buildDouble(v.pure[F], keyword))
       }.mapFilter(identity)
-      sendKeywords[F](id, inst, requested).whenA(requested.nonEmpty)
+      sendKeywords[F](id, kwClient, requested).whenA(requested.nonEmpty)
     }
   }
 
@@ -195,7 +194,7 @@ class StandardHeader[F[_]: Sync: Logger](
       KeywordName.fromTag(s"${baseName}APARAL").map(buildDouble(target.parallax, _))
     ).mapFilter(identity)
 
-    sendKeywords[F](id, inst, keywords ++ extras).whenA(g.isActive)
+    sendKeywords[F](id, kwClient, keywords ++ extras).whenA(g.isActive)
   }
   .handleError(_ => ()) // Errors on guideWith are caught here
 
@@ -217,7 +216,7 @@ class StandardHeader[F[_]: Sync: Logger](
 
     val aowfsKeywords = standardGuiderKeywords(id, obsReader.aowfsGuide, "AO", tcsReader.aowfsTarget, Nil)
 
-    sendKeywords(id, inst, baseKeywords) *>
+    sendKeywords(id, kwClient, baseKeywords) *>
       requestedConditions(id) *>
       requestedAirMassAngle(id) *>
       timingWindows(id) *>
@@ -227,7 +226,7 @@ class StandardHeader[F[_]: Sync: Logger](
       aowfsKeywords
   }
 
-  override def sendAfter(id: ImageFileId): F[Unit] = sendKeywords[F](id, inst,
+  override def sendAfter(id: ImageFileId): F[Unit] = sendKeywords[F](id, kwClient,
     List(
       buildDouble(tcsReader.airMass, KeywordName.AIRMASS),
       buildDouble(tcsReader.startAirMass, KeywordName.AMSTART),

@@ -20,17 +20,11 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigResult
-import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.InstrumentActions
-import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem._
-import seqexec.server.Progress
-import seqexec.server.SeqexecFailure
 import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
@@ -49,8 +43,6 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
     with InstrumentSystem[F] {
 
   import Gsaoi._
-
-  override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
 
   override val contributorName: String = "GSAOI"
 
@@ -84,8 +76,6 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
     elapsed: InstrumentSystem.ElapsedTime
   ): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
-
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "GSAOI"
 
@@ -176,5 +166,14 @@ object Gsaoi {
       cc <- readCCConfig(config).adaptExtractFailure
       dc <- readDCConfig(config).adaptExtractFailure
     } yield GsaoiConfig(cc, dc)
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.Gsaoi
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
+
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
+  }
 
 }

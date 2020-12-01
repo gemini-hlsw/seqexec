@@ -9,11 +9,10 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 
 object GcalHeader {
-  implicit def header[F[_]: Sync: Logger](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
+  implicit def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F], gcalReader: GcalKeywordReader[F]): Header[F] =
     new Header[F] {
       private val gcalKeywords = List(
         buildString(gcalReader.lamp, KeywordName.GCALLAMP),
@@ -24,7 +23,7 @@ object GcalHeader {
 
       override def sendBefore(obsId: Observation.Id,
                               id: ImageFileId): F[Unit] =
-        sendKeywords(id, inst, gcalKeywords)
+        sendKeywords(id, kwClient, gcalKeywords)
 
       override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
     }

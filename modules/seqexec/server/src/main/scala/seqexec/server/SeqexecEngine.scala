@@ -78,6 +78,27 @@ trait SeqexecEngine[F[_]] {
                   user: UserDetails,
                   name: Observer): F[Unit]
 
+  // Systems overrides
+  def setTcsEnabled(q: EventQueue[F],
+                    seqId: Observation.Id,
+                    user: UserDetails,
+                    enabled: Boolean): F[Unit]
+
+  def setGcalEnabled(q: EventQueue[F],
+                     seqId: Observation.Id,
+                     user: UserDetails,
+                     enabled: Boolean): F[Unit]
+
+  def setInstrumentEnabled(q: EventQueue[F],
+                           seqId: Observation.Id,
+                           user: UserDetails,
+                           enabled: Boolean): F[Unit]
+
+  def setDhsEnabled(q: EventQueue[F],
+                 seqId: Observation.Id,
+                 user: UserDetails,
+                 enabled: Boolean): F[Unit]
+
   def selectSequence(q: EventQueue[F], i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): F[Unit]
 
   def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit]
@@ -710,7 +731,7 @@ object SeqexecEngine {
 
     private def updateSequenceEndo(seqId: Observation.Id, obsseq: SequenceData[F])
     : Endo[EngineState[F]] = st =>
-      executeEngine.update(seqId, toStepList(obsseq.seqGen, HeaderExtraData(st.conditions,
+      executeEngine.update(seqId, toStepList(obsseq.seqGen, obsseq.overrides, HeaderExtraData(st.conditions,
         st.operator, obsseq.observer)))(st)
 
     private def refreshSequence(id: Observation.Id): Endo[EngineState[F]] = (st:EngineState[F]) => {
@@ -721,6 +742,41 @@ object SeqexecEngine {
       st.sequences.map{ case (id, obsseq) => updateSequenceEndo(id, obsseq) }.foldLeft(st){case (s, f) => f(s)}
     }
 
+    override def setTcsEnabled(q: EventQueue[F], seqId: Observation.Id, user: UserDetails, enabled: Boolean): F[Unit] =
+      logDebugEvent(q, s"SeqexecEngine: Setting TCS enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}") *>
+        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+          ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
+            x => if(enabled) x.enableTcs else x.disableTcs
+          }) >>>
+            refreshSequence(seqId) withEvent SetTcsEnabled(seqId, user.some, enabled)).toHandle
+        ))
+
+    override def setGcalEnabled(q: EventQueue[F], seqId: Observation.Id, user: UserDetails, enabled: Boolean): F[Unit] =
+      logDebugEvent(q, s"SeqexecEngine: Setting Gcal enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}") *>
+        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+          ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
+            x => if(enabled) x.enableGcal else x.disableGcal
+          }) >>>
+            refreshSequence(seqId) withEvent SetGcalEnabled(seqId, user.some, enabled)).toHandle
+        ))
+
+    override def setInstrumentEnabled(q: EventQueue[F], seqId: Observation.Id, user: UserDetails, enabled: Boolean): F[Unit] =
+      logDebugEvent(q, s"SeqexecEngine: Setting instrument enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}") *>
+        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+          ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
+            x => if(enabled) x.enableInstrument else x.disableInstrument
+          }) >>>
+            refreshSequence(seqId) withEvent SetInstrumentEnabled(seqId, user.some, enabled)).toHandle
+        ))
+
+    override def setDhsEnabled(q: EventQueue[F], seqId: Observation.Id, user: UserDetails, enabled: Boolean): F[Unit] =
+      logDebugEvent(q, s"SeqexecEngine: Setting DHS enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}") *>
+        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
+          ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
+            x => if(enabled) x.enableDhs else x.disableDhs
+          }) >>>
+            refreshSequence(seqId) withEvent SetDhsEnabled(seqId, user.some, enabled)).toHandle
+        ))
   }
 
   def createTranslator[F[_]: Sync: Logger](site: Site, systems: Systems[F])
@@ -869,6 +925,10 @@ object SeqexecEngine {
       case NullSeqEvent                       => Stream.empty
       case SetOperator(_, _)                  => Stream.emit(OperatorUpdated(svs))
       case SetObserver(_, _, _)               => Stream.emit(ObserverUpdated(svs))
+      case SetTcsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
+      case SetGcalEnabled(_, _, _)            => Stream.empty //TODO: Put proper SeqexecModelUpdate
+      case SetInstrumentEnabled(_, _, _)      => Stream.empty //TODO: Put proper SeqexecModelUpdate
+      case SetDhsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
       case AddLoadedSequence(i, s, _, c)      => Stream.emit(LoadSequenceUpdated(i, s, svs, c))
       case ClearLoadedSequences(_)            => Stream.emit(ClearLoadedSequencesUpdated(svs))
       case SetConditions(_, _)                => Stream.emit(ConditionsUpdated(svs))

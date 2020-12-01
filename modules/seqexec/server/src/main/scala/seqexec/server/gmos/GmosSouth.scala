@@ -12,11 +12,11 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.FPU_PROP_NAME
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
+import lucuma.core.enum.LightSinkName
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Instrument
-import seqexec.server.CleanConfig
+import seqexec.server.{CleanConfig, ConfigUtilOps, InstrumentSpecifics, SeqexecFailure, StepType}
 import seqexec.server.CleanConfig.extractItem
-import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.SouthTypes
@@ -58,9 +58,6 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
 )(southConfigTypes) {
   override val resource: Instrument = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
-
-  // TODO Use different value if using electronic offsets
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
 
 object GmosSouth {
@@ -71,4 +68,18 @@ object GmosSouth {
     dhsClient: DhsClient[F],
     nsCmdR: Ref[F, Option[NSObserveCommand]]
   ): GmosSouth[F] = new GmosSouth[F](c, dhsClient, nsCmdR)
+
+  object specifics extends InstrumentSpecifics {
+    override val instrument: Instrument = Instrument.GmosS
+
+    override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
+      Gmos.calcStepType(instrument, config, isNightSeq)
+
+    override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gmos
+
+    // TODO Use different value if using electronic offsets
+    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
+  }
+
 }
