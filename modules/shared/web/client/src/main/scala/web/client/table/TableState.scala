@@ -9,7 +9,7 @@ import scala.math.min
 
 import cats.Eq
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens

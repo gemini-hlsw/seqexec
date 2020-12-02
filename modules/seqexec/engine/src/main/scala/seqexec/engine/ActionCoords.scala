@@ -4,7 +4,6 @@
 package seqexec.engine
 
 import cats.Eq
-import cats.implicits._
 import seqexec.model.Observation
 import seqexec.model.StepId
 

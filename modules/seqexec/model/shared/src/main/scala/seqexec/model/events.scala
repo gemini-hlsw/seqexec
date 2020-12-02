@@ -6,7 +6,7 @@ package seqexec.model
 import java.time.Instant
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum._
 

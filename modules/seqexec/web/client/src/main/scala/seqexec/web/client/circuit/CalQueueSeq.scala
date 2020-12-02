@@ -4,7 +4,7 @@
 package seqexec.web.client.circuit
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import monocle.Getter
 import monocle.macros.Lenses
 import monocle.std

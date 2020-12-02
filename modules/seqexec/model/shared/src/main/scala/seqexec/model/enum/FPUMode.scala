@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.util.Enumerated
 
 sealed abstract class FPUMode(val label: String) extends Product with Serializable

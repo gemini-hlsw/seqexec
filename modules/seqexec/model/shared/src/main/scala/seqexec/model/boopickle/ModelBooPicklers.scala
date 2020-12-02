@@ -20,7 +20,7 @@ import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.math.Index
 import lucuma.core.util.Enumerated
 import seqexec.model.GmosParameters._

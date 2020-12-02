@@ -7,7 +7,7 @@ import scala.scalajs.LinkingInfo
 
 import cats._
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import diode._
 import diode.react.ReactConnector
 import japgolly.scalajs.react.Callback

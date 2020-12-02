@@ -8,7 +8,7 @@ import cats.Endo
 import cats.MonadError
 import cats.effect.Concurrent
 import cats.effect.Timer
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY

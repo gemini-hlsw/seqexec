@@ -4,7 +4,6 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.model.enum._
 

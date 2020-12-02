@@ -4,7 +4,6 @@
 package ocs2
 
 import cats.{ Order, Show }
-import cats.implicits._
 import io.chrisdavenport.cats.time.instances.instant.instantInstances
 import seqexec.model.Observation
 import lucuma.core.syntax.string._

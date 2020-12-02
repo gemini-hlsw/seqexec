@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._

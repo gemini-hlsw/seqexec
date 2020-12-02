@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.enum.Instrument
 
 sealed trait StepType {

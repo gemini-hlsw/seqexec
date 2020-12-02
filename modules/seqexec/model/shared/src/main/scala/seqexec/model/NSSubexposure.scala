@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.GmosParameters._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._

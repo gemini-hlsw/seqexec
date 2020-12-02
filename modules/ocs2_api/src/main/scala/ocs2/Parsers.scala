@@ -3,7 +3,7 @@
 
 package ocs2
 
-import cats.implicits._
+import cats.syntax.all._
 import seqexec.model.Observation
 import seqexec.model.Program
 import lucuma.core.enum._

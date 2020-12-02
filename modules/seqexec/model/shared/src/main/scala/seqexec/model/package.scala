@@ -6,7 +6,6 @@ package seqexec
 import java.util.UUID
 
 import cats._
-import cats.implicits._
 import seqexec.model.enum._
 import squants.time.Time
 import squants.time.TimeUnit

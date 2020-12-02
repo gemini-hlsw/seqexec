@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components
 
-import cats.implicits._
+import cats.syntax.all._
 import diode.react.ReactPot._
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability

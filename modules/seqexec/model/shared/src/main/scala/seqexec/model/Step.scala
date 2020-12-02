@@ -4,7 +4,7 @@
 package seqexec.model
 
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.Optional

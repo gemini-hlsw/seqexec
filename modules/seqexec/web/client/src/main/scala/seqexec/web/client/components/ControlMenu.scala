@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components
 
-import cats.implicits._
+import cats.syntax.all._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent

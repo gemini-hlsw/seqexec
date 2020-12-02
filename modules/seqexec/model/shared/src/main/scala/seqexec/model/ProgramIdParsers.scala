@@ -5,7 +5,7 @@ package seqexec.model
 package parser
 
 import atto._
-import cats.implicits._
+import cats.syntax.all._
 import lucuma.core.enum.ProgramType
 import lucuma.core.enum.Site
 import lucuma.core.model.Semester

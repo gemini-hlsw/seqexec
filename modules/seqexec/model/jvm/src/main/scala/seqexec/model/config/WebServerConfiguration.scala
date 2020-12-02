@@ -6,7 +6,6 @@ package seqexec.model.config
 import java.nio.file.Path
 
 import cats.Eq
-import cats.implicits._
 
 /**
   * Configuration for the TLS server

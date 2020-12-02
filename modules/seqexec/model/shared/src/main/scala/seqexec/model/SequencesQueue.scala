@@ -6,7 +6,6 @@ package seqexec.model
 import scala.collection.immutable.SortedMap
 
 import cats._
-import cats.implicits._
 import monocle.Getter
 import monocle.Traversal
 import monocle.function.Each._

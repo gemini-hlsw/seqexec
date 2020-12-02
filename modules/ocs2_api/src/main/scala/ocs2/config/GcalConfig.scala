@@ -12,7 +12,7 @@ import GcalConfig.{ GcalArcs, GcalLamp }
 
 import cats.Eq
 import cats.data.NonEmptySet
-import cats.implicits._
+import cats.syntax.all._
 import java.time.Duration
 import monocle._
 import monocle.std.either.{ stdLeft, stdRight }
