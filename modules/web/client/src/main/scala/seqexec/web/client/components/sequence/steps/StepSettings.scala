@@ -25,9 +25,10 @@ import seqexec.web.client.model.StepItems._
 import seqexec.web.client.reusability._
 
 /**
-  * Component to display an item of a sequence
-  */
-final case class StepItemCell(value: Option[String]) extends ReactProps[StepItemCell](StepItemCell.component)
+ * Component to display an item of a sequence
+ */
+final case class StepItemCell(value: Option[String])
+    extends ReactProps[StepItemCell](StepItemCell.component)
 
 object StepItemCell {
   type Props = StepItemCell
@@ -48,9 +49,10 @@ object StepItemCell {
 }
 
 /**
-  * Component to display the exposure time and coadds
-  */
-final case class ExposureTimeCell(s: Step, i: Instrument) extends ReactProps[ExposureTimeCell](ExposureTimeCell.component)
+ * Component to display the exposure time and coadds
+ */
+final case class ExposureTimeCell(s: Step, i: Instrument)
+    extends ReactProps[ExposureTimeCell](ExposureTimeCell.component)
 
 object ExposureTimeCell {
   type Props = ExposureTimeCell
@@ -71,7 +73,8 @@ object ExposureTimeCell {
         <.span(^.display := "inline-block",
                ^.verticalAlign := "none",
                ^.fontStyle := "italic",
-               "s"),
+               "s"
+        ),
         <.span(^.display := "inline-block", "]")
       )
 
@@ -82,9 +85,9 @@ object ExposureTimeCell {
             <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"),
             <.span(^.display := "inline-block", s"$e")
           ) ::: seconds).toTagMod
-        case (_, Some(e)) =>
+        case (_, Some(e))                    =>
           ((s"$e": VdomNode) :: seconds).toTagMod
-        case _ => EmptyVdom
+        case _                               => EmptyVdom
       }
 
       <.div(
@@ -96,8 +99,8 @@ object ExposureTimeCell {
 }
 
 /**
-  * Component to display the step id
-  */
+ * Component to display the step id
+ */
 object StepIdCell {
   private val component = ScalaComponent
     .builder[Int]("StepIdCell")
@@ -110,8 +113,8 @@ object StepIdCell {
 }
 
 /**
-  * Component to link to the settings
-  */
+ * Component to link to the settings
+ */
 final case class SettingsCell(
   ctl:        RouterCtl[Pages.SeqexecPages],
   instrument: Instrument,
@@ -137,15 +140,16 @@ object SettingsCell {
       <.div(SeqexecStyles.settingsCell,
             p.ctl.link(page)(
               IconCaretRight.color(Black)(^.onClick --> p.ctl.setUrlAndDispatchCB(page))
-            ))
+            )
+      )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
 
 /**
-  * Component to display the object type
-  */
+ * Component to display the object type
+ */
 final case class ObjectTypeCell(
   instrument: Instrument,
   step:       Step,

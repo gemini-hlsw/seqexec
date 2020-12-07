@@ -17,25 +17,26 @@ import seqexec.server.tcs.TcsKeywordsReader
 object GpiHeader {
 
   def header[F[_]: Sync](
-             gdsClient: GdsClient[F],
-             tcsKeywordsReader: TcsKeywordsReader[F],
-             obsKeywordsReader: ObsKeywordsReader[F]): Header[F] =
+    gdsClient:         GdsClient[F],
+    tcsKeywordsReader: TcsKeywordsReader[F],
+    obsKeywordsReader: ObsKeywordsReader[F]
+  ): Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): F[Unit] = {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords(
           List(
-            buildDouble(tcsKeywordsReader.parallacticAngle.map(_.toDegrees),
-                        KeywordName.PAR_ANG),
-            buildInt32(tcsKeywordsReader.gpiInstPort,
-                       KeywordName.INPORT),
+            buildDouble(tcsKeywordsReader.parallacticAngle.map(_.toDegrees), KeywordName.PAR_ANG),
+            buildInt32(tcsKeywordsReader.gpiInstPort, KeywordName.INPORT),
             buildBoolean(obsKeywordsReader.astrometicField,
-                         KeywordName.ASTROMTC, DefaultHeaderValue.FalseDefaultValue),
+                         KeywordName.ASTROMTC,
+                         DefaultHeaderValue.FalseDefaultValue
+            ),
             buildString(Nested(tcsKeywordsReader.crFollow)
                           .map(CRFollow.keywordValue)
                           .value
                           .orDefault,
-                        KeywordName.CRFOLLOW)
+                        KeywordName.CRFOLLOW
+            )
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

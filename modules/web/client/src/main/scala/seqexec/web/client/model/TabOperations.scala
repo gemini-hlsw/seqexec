@@ -208,8 +208,8 @@ object TabOperations {
 
   // Set the resource operations in the map to idle.
   def clearAllResourceOperations: TabOperations => TabOperations =
-    TabOperations.resourceRunRequested.modify(_.map {
-      case (r, _) => r -> ResourceRunOperation.ResourceRunIdle
+    TabOperations.resourceRunRequested.modify(_.map { case (r, _) =>
+      r -> ResourceRunOperation.ResourceRunIdle
     })
 
   // Set the resource operations in the map to idle.

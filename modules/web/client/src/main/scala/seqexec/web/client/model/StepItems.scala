@@ -157,7 +157,7 @@ object StepItems {
       }
 
     def disperser(i: Instrument): Option[String] = {
-      val disperser = for {
+      val disperser         = for {
         disperser <- instrumentDisperserO.getOption(s)
       } yield disperserNameMapper(i).getOrElse(disperser, disperser)
       val centralWavelength = instrumentDisperserLambdaO.getOption(s)

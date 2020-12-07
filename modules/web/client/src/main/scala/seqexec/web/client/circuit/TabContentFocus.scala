@@ -26,14 +26,13 @@ object TabContentFocus {
       case _                                                        => false
     }
 
-  val tabContentFocusG
-    : Getter[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] = {
+  val tabContentFocusG: Getter[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] = {
     val getter = SeqexecAppRootModel.logDisplayL.asGetter
       .zip(SeqexecAppRootModel.sequencesOnDisplayL.asGetter)
     ClientStatus.canOperateG.zip(getter) >>> { p =>
       val (o, (log, SequencesOnDisplay(tabs))) = p
       NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
-        case (tab: SequenceTab, active) =>
+        case (tab: SequenceTab, active)       =>
           SequenceTabContentFocus(
             o,
             tab.instrument,
@@ -51,36 +50,39 @@ object TabContentFocus {
   }
 }
 
-final case class SequenceTabContentFocus(canOperate:   Boolean,
-                                         instrument:   Instrument,
-                                         id:           Observation.Id,
-                                         active:       TabSelected,
-                                         tableType:    StepsTableTypeSelection,
-                                         logDisplayed: SectionVisibilityState,
-                                         isPreview:    Boolean,
-                                         totalSteps:   Int)
-    extends TabContentFocus {
-      val hasControls: Boolean = canOperate && !isPreview
-    }
+final case class SequenceTabContentFocus(
+  canOperate:   Boolean,
+  instrument:   Instrument,
+  id:           Observation.Id,
+  active:       TabSelected,
+  tableType:    StepsTableTypeSelection,
+  logDisplayed: SectionVisibilityState,
+  isPreview:    Boolean,
+  totalSteps:   Int
+) extends TabContentFocus {
+  val hasControls: Boolean = canOperate && !isPreview
+}
 
 object SequenceTabContentFocus {
   implicit val eq: Eq[SequenceTabContentFocus] =
-    Eq.by(
-      x =>
-        (x.canOperate,
-         x.instrument,
-         x.id,
-         x.active,
-         x.tableType,
-         x.logDisplayed,
-         x.isPreview,
-         x.totalSteps))
+    Eq.by(x =>
+      (x.canOperate,
+       x.instrument,
+       x.id,
+       x.active,
+       x.tableType,
+       x.logDisplayed,
+       x.isPreview,
+       x.totalSteps
+      )
+    )
 }
 
-final case class CalQueueTabContentFocus(canOperate:   Boolean,
-                                         active:       TabSelected,
-                                         logDisplayed: SectionVisibilityState)
-    extends TabContentFocus
+final case class CalQueueTabContentFocus(
+  canOperate:   Boolean,
+  active:       TabSelected,
+  logDisplayed: SectionVisibilityState
+) extends TabContentFocus
 
 object CalQueueTabContentFocus {
   implicit val eq: Eq[CalQueueTabContentFocus] =

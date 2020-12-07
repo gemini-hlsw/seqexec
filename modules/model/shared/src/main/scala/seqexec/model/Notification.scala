@@ -52,5 +52,4 @@ object Notification {
     implicit lazy val eq: Eq[SubsystemBusy] =
       Eq.by(x => (x.oid, x.stepId, x.resource))
   }
-  }
-
+}

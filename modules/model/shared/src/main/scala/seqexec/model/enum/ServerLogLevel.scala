@@ -5,8 +5,7 @@ package seqexec.model.enum
 
 import lucuma.core.util.Enumerated
 
-sealed abstract class ServerLogLevel(val label: String)
-  extends Product with Serializable
+sealed abstract class ServerLogLevel(val label: String) extends Product with Serializable
 
 object ServerLogLevel {
 

@@ -3,8 +3,8 @@
 
 package seqexec.server.niri
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -16,7 +16,7 @@ import edu.gemini.seqexec.server.niri.ReadMode
 import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.Camera
 import edu.gemini.spModel.gemini.niri.Niri.WellDepth
-import edu.gemini.spModel.gemini.niri.Niri.{ReadMode => OCSReadMode}
+import edu.gemini.spModel.gemini.niri.Niri.{ ReadMode => OCSReadMode }
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
@@ -25,13 +25,20 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSpecifics
+import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -42,8 +49,11 @@ import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
 
-final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriController[F], dhsClient: DhsClient[F])
-  extends DhsInstrument[F] with InstrumentSystem[F] {
+final case class Niri[F[_]: Timer: Logger: Concurrent](
+  controller: NiriController[F],
+  dhsClient:  DhsClient[F]
+) extends DhsInstrument[F]
+    with InstrumentSystem[F] {
 
   import Niri._
 
@@ -56,7 +66,8 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
 
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
-      EitherT.fromEither[F](getDCConfig(config))
+      EitherT
+        .fromEither[F](getDCConfig(config))
         .widenRethrowT
         .flatMap(controller.observe(fileId, _))
     }
@@ -66,8 +77,10 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
       .map(controller.calcTotalExposureTime)
       .getOrElse(60.seconds.pure[F])
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
-  : fs2.Stream[F, Progress] = controller.observeProgress(total)
+  override def observeProgress(
+    total:   Time,
+    elapsed: InstrumentSystem.ElapsedTime
+  ): fs2.Stream[F, Progress] = controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "NIRI"
 
@@ -76,10 +89,11 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](controller: NiriControlle
   override val resource: Instrument = Instrument.Niri
 
   /**
-    * Called to configure a system
-    */
+   * Called to configure a system
+   */
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
@@ -102,8 +116,10 @@ object Niri {
   def extractCoadds(config: CleanConfig): Either[ExtractFailure, Int] =
     config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
 
-  def calcReadMode(readMode: OCSReadMode, wellDepth: WellDepth)
-  : Either[ConfigUtilOps.ExtractFailure, NiriController.ReadMode] = {
+  def calcReadMode(
+    readMode:  OCSReadMode,
+    wellDepth: WellDepth
+  ): Either[ConfigUtilOps.ExtractFailure, NiriController.ReadMode] = {
     import OCSReadMode._
     import WellDepth._
     (readMode, wellDepth) match {
@@ -111,9 +127,12 @@ object Niri {
       case (IMAG_1TO25, SHALLOW)     => ReadMode.MedRN.asRight
       case (IMAG_SPEC_3TO5, SHALLOW) => ReadMode.HighRN.asRight
       case (IMAG_1TO25, DEEP)        => ReadMode.MedRNDeep.asRight
-      case (IMAG_SPEC_3TO5, DEEP   ) => ReadMode.ThermalIR.asRight
-      case _                         => ContentError(s"Combination not supported: readMode = " +
-        s"${readMode.displayValue}, wellDepth = ${wellDepth.displayValue}").asLeft
+      case (IMAG_SPEC_3TO5, DEEP)    => ReadMode.ThermalIR.asRight
+      case _                         =>
+        ContentError(
+          s"Combination not supported: readMode = " +
+            s"${readMode.displayValue}, wellDepth = ${wellDepth.displayValue}"
+        ).asLeft
     }
   }
 
@@ -132,34 +151,36 @@ object Niri {
   def getCCIlluminatedConfig(config: CleanConfig): Either[SeqexecFailure, Illuminated] = {
     val filter = (for {
       f  <- config.extractInstAs[Filter](FILTER_PROP)
-      fl <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
-      else f.asRight
+      fl <- if (f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
+            else f.asRight
     } yield fl)
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
     (filter, getCCCommonConfig(config)).mapN(Illuminated)
   }
 
-  def getCCDarkConfig(config: CleanConfig): Either[SeqexecFailure, Dark] = getCCCommonConfig(config).map(Dark)
+  def getCCDarkConfig(config: CleanConfig): Either[SeqexecFailure, Dark] =
+    getCCCommonConfig(config).map(Dark)
 
   def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] =
-    config.extractObsAs[String](OBSERVE_TYPE_PROP)
+    config
+      .extractObsAs[String](OBSERVE_TYPE_PROP)
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-      .flatMap{
+      .flatMap {
         case DARK_OBSERVE_TYPE => getCCDarkConfig(config)
         case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for NIRI").asLeft
         case _                 => getCCIlluminatedConfig(config)
       }
 
   def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] = (for {
-      expTime    <- extractExposureTime(config)
-      coadds     <- extractCoadds(config)
-      rm         <- config.extractInstAs[OCSReadMode](READ_MODE_PROP)
-      wellDepth  <- config.extractInstAs[WellDepth](WELL_DEPTH_PROP)
-      readMode   <- calcReadMode(rm, wellDepth)
-      builtInROI <- config.extractInstAs[BuiltInROI](BUILTIN_ROI_PROP)
-    } yield DCConfig(expTime, coadds, readMode, builtInROI))
-      .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    expTime    <- extractExposureTime(config)
+    coadds     <- extractCoadds(config)
+    rm         <- config.extractInstAs[OCSReadMode](READ_MODE_PROP)
+    wellDepth  <- config.extractInstAs[WellDepth](WELL_DEPTH_PROP)
+    readMode   <- calcReadMode(rm, wellDepth)
+    builtInROI <- config.extractInstAs[BuiltInROI](BUILTIN_ROI_PROP)
+  } yield DCConfig(expTime, coadds, readMode, builtInROI))
+    .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, NiriConfig] = for {
     cc <- getCCConfig(config)
@@ -169,14 +190,16 @@ object Niri {
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Niri
 
-    override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config).map{
-      case Camera.F6     => LightSinkName.Niri_f6
-      case Camera.F14    => LightSinkName.Niri_f14
-      case Camera.F32 |
-           Camera.F32_PV => LightSinkName.Niri_f32
-    }.getOrElse(LightSinkName.Niri_f6)
+    override def sfName(config: CleanConfig): LightSinkName = getCameraConfig(config)
+      .map {
+        case Camera.F6                  => LightSinkName.Niri_f6
+        case Camera.F14                 => LightSinkName.Niri_f14
+        case Camera.F32 | Camera.F32_PV => LightSinkName.Niri_f32
+      }
+      .getOrElse(LightSinkName.Niri_f6)
 
-    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+    override val oiOffsetGuideThreshold: Option[Length] =
+      (Arcseconds(0.01) / FOCAL_PLANE_SCALE).some
 
   }
 

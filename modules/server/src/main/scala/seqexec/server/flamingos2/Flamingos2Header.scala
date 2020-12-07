@@ -27,20 +27,24 @@ import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 
 object Flamingos2Header {
-  def header[F[_]: Sync: Logger](kwClient:  KeywordsClient[F],
-                         f2ObsReader:       Flamingos2Header.ObsKeywordsReader[F],
-                         tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
+  def header[F[_]: Sync: Logger](
+    kwClient:          KeywordsClient[F],
+    f2ObsReader:       Flamingos2Header.ObsKeywordsReader[F],
+    tcsKeywordsReader: TcsKeywordsReader[F]
+  ): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(
           id,
           kwClient,
           List(
-            buildBoolean(f2ObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue),
-            buildString(
-              Sync[F].delay(
-                LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)),
-              KeywordName.DATE_OBS),
+            buildBoolean(f2ObsReader.preimage,
+                         KeywordName.PREIMAGE,
+                         DefaultHeaderValue.FalseDefaultValue
+            ),
+            buildString(Sync[F].delay(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                        KeywordName.DATE_OBS
+            ),
             buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
             buildString(f2ObsReader.readMode, KeywordName.READMODE),
             buildInt32(f2ObsReader.nReads, KeywordName.NREADS)
@@ -61,26 +65,30 @@ object Flamingos2Header {
       new ObsKeywordsReader[F] {
         def getPreimage: F[YesNoType] =
           EitherT(
-            Sync[F].delay(config
-              .extractInstAs[YesNoType](MOS_PREIMAGING_PROP)
-              .leftMap[Throwable](e =>
-                SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))).rethrowT
+            Sync[F].delay(
+              config
+                .extractInstAs[YesNoType](MOS_PREIMAGING_PROP)
+                .leftMap[Throwable](e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            )
+          ).rethrowT
 
         def getReadMode: F[ReadMode] =
           EitherT(
-            Sync[F].delay(config
-              .extractInstAs[ReadMode](READMODE_PROP)
-              .leftMap[Throwable](e =>
-                SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))).rethrowT
+            Sync[F].delay(
+              config
+                .extractInstAs[ReadMode](READMODE_PROP)
+                .leftMap[Throwable](e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            )
+          ).rethrowT
 
         override def preimage: F[Boolean] = getPreimage.map(_.toBoolean)
-        override def readMode: F[String] =
+        override def readMode: F[String]  =
           getReadMode.map {
             case ReadMode.BRIGHT_OBJECT_SPEC => "Bright"
             case ReadMode.MEDIUM_OBJECT_SPEC => "Medium"
             case ReadMode.FAINT_OBJECT_SPEC  => "Dark"
           }
-        override def nReads: F[Int] =
+        override def nReads: F[Int]       =
           getReadMode.map {
             case ReadMode.BRIGHT_OBJECT_SPEC => 1
             case ReadMode.MEDIUM_OBJECT_SPEC => 4

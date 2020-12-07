@@ -105,9 +105,9 @@ object CalibrationQueueTab {
     .builder[Props]("CalibrationQueueTab")
     .initialState(State(None))
     .render { b =>
-      val tab = b.props.tab
+      val tab  = b.props.tab
       val icon = tab.calibrationTab.state match {
-        case BatchExecState.Running =>
+        case BatchExecState.Running   =>
           IconCircleNotched.loading()
         case BatchExecState.Completed => IconCheckmark
         case _                        => IconSelectedRadio

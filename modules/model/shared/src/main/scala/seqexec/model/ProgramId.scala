@@ -217,8 +217,8 @@ object ProgramId {
         .orElse(
           // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
           // that can be formatted and re-parsed as a Science or Daily program id. This is important.
-          ProgramIdParsers.nonstandard.parseExact(s).map {
-            case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
+          ProgramIdParsers.nonstandard.parseExact(s).map { case (os, om, op, t) =>
+            new Nonstandard(os, om, op, t) {}
           }
         )
     } {

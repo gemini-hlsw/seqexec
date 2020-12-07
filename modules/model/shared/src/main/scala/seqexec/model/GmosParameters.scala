@@ -20,8 +20,8 @@ trait GmosParameters {
   type NsCycles          = Int @@ NsCyclesI
   type NsExposureDivider = Int @@ NsExposureDividerI
 
-  implicit val nsPairsEq: Eq[NsPairs] = Eq.by(x => x: Int)
-  implicit val nsRowsEq: Eq[NsRows] = Eq.by(x => x: Int)
+  implicit val nsPairsEq: Eq[NsPairs]   = Eq.by(x => x: Int)
+  implicit val nsRowsEq: Eq[NsRows]     = Eq.by(x => x: Int)
   implicit val nsCyclesEq: Eq[NsCycles] = Eq.by(x => x: Int)
 
   // Remaining time when it is not safe to stop, pause or abort

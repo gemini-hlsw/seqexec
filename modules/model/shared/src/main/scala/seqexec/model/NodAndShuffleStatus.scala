@@ -18,11 +18,11 @@ object NSRunningState {
 
 @Lenses
 final case class NodAndShuffleStatus(
-  observing: ActionStatus,
+  observing:         ActionStatus,
   totalExposureTime: Time,
-  nodExposureTime: Time,
-  cycles: NsCycles,
-  state: Option[NSRunningState]
+  nodExposureTime:   Time,
+  cycles:            NsCycles,
+  state:             Option[NSRunningState]
 )
 
 object NodAndShuffleStatus {

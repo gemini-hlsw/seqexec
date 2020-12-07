@@ -15,14 +15,14 @@ import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.vdom.html_<^._
+import org.scalajs.dom.raw.MouseEvent
 import react.common._
 import react.common.implicits._
 import react.draggable._
+import react.sortable.SortableElement
 import react.virtualized._
 import react.virtualized.raw
 import web.client.utils._
-import org.scalajs.dom.raw.MouseEvent
-import react.sortable.SortableElement
 
 package object table {
   val DragHandleWidth: Int = 12

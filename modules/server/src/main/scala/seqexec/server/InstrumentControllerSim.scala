@@ -49,16 +49,18 @@ sealed trait InstrumentControllerSim[F[_]] {
 object InstrumentControllerSim {
   @Lenses
   final case class ObserveState(
-    stopFlag      : Boolean,
-    abortFlag     : Boolean,
-    pauseFlag     : Boolean,
-    remainingTime : Long
+    stopFlag:      Boolean,
+    abortFlag:     Boolean,
+    pauseFlag:     Boolean,
+    remainingTime: Long
   )
 
   object ObserveState {
-    val Zero: ObserveState = ObserveState(stopFlag = false, abortFlag = false, pauseFlag = false, remainingTime = 0)
+    val Zero: ObserveState =
+      ObserveState(stopFlag = false, abortFlag = false, pauseFlag = false, remainingTime = 0)
 
-    val pauseFalse = (o: ObserveState) => (ObserveState.pauseFlag.set(false)(o), ObserveState.pauseFlag.set(false)(o))
+    val pauseFalse = (o: ObserveState) =>
+      (ObserveState.pauseFlag.set(false)(o), ObserveState.pauseFlag.set(false)(o))
 
     def unsafeRef[F[_]: Sync]: Ref[F, ObserveState] = Ref.unsafe(Zero)
 
@@ -71,7 +73,7 @@ object InstrumentControllerSim {
     readOutDelay:       FiniteDuration,
     stopObserveDelay:   FiniteDuration,
     configurationDelay: FiniteDuration,
-    obsStateRef: Ref[F, ObserveState]
+    obsStateRef:        Ref[F, ObserveState]
   )(implicit val F:     MonadError[?[_], Throwable][F], L: Logger[F], T: Timer[F])
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
@@ -100,18 +102,18 @@ object InstrumentControllerSim {
         val upd = ObserveState.remainingTime.modify(_ - TIC)
         // Use flatMap to ensure we don't stack overflow
         obsStateRef.modify(tupledUpdate(upd)) *>
-        T.sleep(FiniteDuration(TIC.toLong, MILLISECONDS)) *>
+          T.sleep(FiniteDuration(TIC.toLong, MILLISECONDS)) *>
           observeTic(timeout.map(_ - TIC))
       }
     }
 
     def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = {
-      val totalTime = (expTime.millis + readOutDelay.toMillis)
+      val totalTime = expTime.millis + readOutDelay.toMillis
       log(s"Simulate taking $name observation with label $fileId") *> {
         val upd = ObserveState.stopFlag.set(false) >>>
-        ObserveState.pauseFlag.set(false) >>>
-        ObserveState.abortFlag.set(false) >>>
-        ObserveState.remainingTime.set(totalTime)
+          ObserveState.pauseFlag.set(false) >>>
+          ObserveState.abortFlag.set(false) >>>
+          ObserveState.remainingTime.set(totalTime)
         obsStateRef.modify(tupledUpdate(upd))
       } *> observeTic(useTimeout.option(totalTime + 2 * TIC))
     }
@@ -142,7 +144,7 @@ object InstrumentControllerSim {
           ObserveState.pauseFlag.set(false) >>>
           ObserveState.abortFlag.set(false)
         obsStateRef.modify(tupledUpdate(upd))
-      } >>= {s => observeTic(useTimeout.option(s.remainingTime + 2 * TIC))}
+      } >>= { s => observeTic(useTimeout.option(s.remainingTime + 2 * TIC)) }
 
     def stopPaused: F[ObserveCommandResult] =
       log(s"Simulate stopping $name paused observation") *> {
@@ -170,16 +172,16 @@ object InstrumentControllerSim {
 
   }
 
-  def apply[F[_]: Sync: Logger: Timer](name: String): F[InstrumentControllerSim[F]] = {
+  def apply[F[_]: Sync: Logger: Timer](name: String): F[InstrumentControllerSim[F]] =
     InstrumentControllerSim.ObserveState.ref[F].map { obsStateRef =>
       new InstrumentControllerSimImpl[F](name,
                                          false,
                                          FiniteDuration(5, SECONDS),
                                          FiniteDuration(1500, MILLISECONDS),
                                          FiniteDuration(5, SECONDS),
-                                         obsStateRef)
+                                         obsStateRef
+      )
     }
-  }
 
   def unsafeWithTimes[F[_]: Sync: Logger: Timer](
     name:               String,
@@ -193,7 +195,8 @@ object InstrumentControllerSim {
                                        readOutDelay,
                                        stopObserveDelay,
                                        configurationDelay,
-                                       obsStateRef)
+                                       obsStateRef
+    )
   }
 
 }

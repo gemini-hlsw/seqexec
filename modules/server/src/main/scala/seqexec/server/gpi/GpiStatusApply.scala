@@ -46,11 +46,11 @@ object GpiStatusApply extends GpiLookupTables {
     foldConfigM(allGpiApply, db, config)
 
   /**
-    * ObsMode needs a special treatment. It is a meta model thus it sets
-    * the filter, fpm, apodizer and lyot
-    * We need to check that each subsystem matches or we will
-    * falsely not set the obs mode
-    */
+   * ObsMode needs a special treatment. It is a meta model thus it sets
+   * the filter, fpm, apodizer and lyot
+   * We need to check that each subsystem matches or we will
+   * falsely not set the obs mode
+   */
   def overrideObsMode[F[_]: Monad](
     db:        GiapiStatusDb[F],
     gpiConfig: RegularGpiConfig,
@@ -58,7 +58,7 @@ object GpiStatusApply extends GpiLookupTables {
   ): F[Configuration] =
     gpiConfig.mode match {
       case Right(_) => config.pure[F]
-      case Left(o) =>
+      case Left(o)  =>
         Parsers.Gpi
           .observingMode(o.displayValue())
           .map { ob =>
@@ -69,11 +69,10 @@ object GpiStatusApply extends GpiLookupTables {
 
             val ppmCmp = db
               .optional(GpiPPM.statusItem)
-              .map(
-                x =>
-                  x.stringCfg =!= ob.apodizer
-                    .map(_.tag)
-                    .flatMap(apodizerLUTNames.get)
+              .map(x =>
+                x.stringCfg =!= ob.apodizer
+                  .map(_.tag)
+                  .flatMap(apodizerLUTNames.get)
               )
 
             val fpmCmp = db
@@ -89,11 +88,10 @@ object GpiStatusApply extends GpiLookupTables {
               (filterCmp, ppmCmp, fpmCmp, lyotCmp).mapN(_ || _ || _ || _)
 
             subSystemsNotMatching.map {
-              case true =>
+              case true  =>
                 // force the obs mode if a subsystem doesn't match
                 (config.remove(GpiObservationMode.applyItem) |+| Configuration
-                  .single(GpiObservationMode.applyItem,
-                          obsModeLUT.getOrElse(o, UNKNOWN_SETTING)))
+                  .single(GpiObservationMode.applyItem, obsModeLUT.getOrElse(o, UNKNOWN_SETTING)))
               case false =>
                 config
             }
@@ -120,20 +118,25 @@ object GpiStatusApply extends GpiLookupTables {
       removeConfig(statusDb, config, x => compare(x) === config.value(s.applyItem))
 
     private def removeConfigIfPossible[F[_]: Monad, A: Numeric](
-      statusDb: GiapiStatusDb[F],
-      config:   Configuration,
-      compare:  Option[StatusValue] => Option[A],
-      toA:      String => Option[A],
+      statusDb:  GiapiStatusDb[F],
+      config:    Configuration,
+      compare:   Option[StatusValue] => Option[A],
+      toA:       String => Option[A],
       tolerance: A
     ): F[Configuration] = {
       val num = implicitly[Numeric[A]]
-      removeConfig(statusDb, config,
-        x => compare(x).exists{v =>
-          val configValue = config.value(s.applyItem).flatMap(toA)
-          configValue.exists{ c =>
-          val diff = num.abs(num.minus(v, c))
-          num.lteq(diff, tolerance)
-        }})
+      removeConfig(
+        statusDb,
+        config,
+        x =>
+          compare(x).exists { v =>
+            val configValue = config.value(s.applyItem).flatMap(toA)
+            configValue.exists { c =>
+              val diff = num.abs(num.minus(v, c))
+              num.lteq(diff, tolerance)
+            }
+          }
+      )
     }
 
     def removeConfigItem[F[_]: Monad](
@@ -141,39 +144,60 @@ object GpiStatusApply extends GpiLookupTables {
       config:   Configuration
     ): F[Configuration] =
       s.statusType match {
-        case GiapiType.Int =>
-          removeConfigIfPossible(statusDb, config, _.intCfg.flatMap(_.parseIntOption), _.parseIntOption, s.tolerance.foldMap(_.toInt))
+        case GiapiType.Int    =>
+          removeConfigIfPossible(statusDb,
+                                 config,
+                                 _.intCfg.flatMap(_.parseIntOption),
+                                 _.parseIntOption,
+                                 s.tolerance.foldMap(_.toInt)
+          )
         case GiapiType.Double =>
-          removeConfigIfPossible[F, Double](statusDb, config, _.doubleCfg.flatMap(_.parseDoubleOption), _.parseDoubleOption, s.tolerance.foldMap(_.toDouble))
-        case GiapiType.Float =>
-          removeConfigIfPossible[F, Float](statusDb, config, _.floatCfg.flatMap(_.parseDoubleOption.map(_.toFloat)), _.parseDoubleOption.map(_.toFloat), s.tolerance.foldMap(_.toFloat))
+          removeConfigIfPossible[F, Double](statusDb,
+                                            config,
+                                            _.doubleCfg.flatMap(_.parseDoubleOption),
+                                            _.parseDoubleOption,
+                                            s.tolerance.foldMap(_.toDouble)
+          )
+        case GiapiType.Float  =>
+          removeConfigIfPossible[F, Float](statusDb,
+                                           config,
+                                           _.floatCfg.flatMap(_.parseDoubleOption.map(_.toFloat)),
+                                           _.parseDoubleOption.map(_.toFloat),
+                                           s.tolerance.foldMap(_.toFloat)
+          )
         case GiapiType.String =>
           removeConfigIfPossible(statusDb, config, _.stringCfg)
       }
   }
 
   /**
-    * polarizer angle needs a special treatment.
-    */
+   * polarizer angle needs a special treatment.
+   */
   def overridePolAngle[F[_]: Monad](
-    db:        GiapiStatusDb[F],
-    config:    Configuration
+    db:     GiapiStatusDb[F],
+    config: Configuration
   ): F[Configuration] =
     GpiPolarizerAngle.removeConfig[F](
       db,
       config,
       value => {
-        val measuredAngle: Option[Angle] =
+        val measuredAngle: Option[Angle]  =
           value.floatCfg.flatMap(_.parseDoubleOption).map(Angle.fromDoubleDegrees)
         val requestedAngle: Option[Angle] =
-          config.value(GpiPolarizerAngle.applyItem).flatMap(_.parseDoubleOption).map(Angle.fromDoubleDegrees)
-        (measuredAngle, requestedAngle).mapN {(m, r) =>
-          implicit val order: Order[Angle] = Angle.AngleOrder
-          val δ: Angle = m.difference(r)
-          val ε: Option[Angle] = GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble))
-          ε.exists(δ <= _)
-        }.getOrElse(false)
-      })
-
+          config
+            .value(GpiPolarizerAngle.applyItem)
+            .flatMap(_.parseDoubleOption)
+            .map(Angle.fromDoubleDegrees)
+        (measuredAngle, requestedAngle)
+          .mapN { (m, r) =>
+            implicit val order: Order[Angle] = Angle.AngleOrder
+            val δ: Angle                     = m.difference(r)
+            val ε: Option[Angle]             =
+              GpiPolarizerAngle.tolerance.map(t => Angle.fromDoubleDegrees(t.toDouble))
+            ε.exists(δ <= _)
+          }
+          .getOrElse(false)
+      }
+    )
 
 }

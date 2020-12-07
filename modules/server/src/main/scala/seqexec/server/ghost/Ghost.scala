@@ -12,7 +12,7 @@ import cats.effect.Concurrent
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
+import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
@@ -74,7 +74,8 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
 
   override def observeProgress(
     total:   Time,
-    elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
+    elapsed: InstrumentSystem.ElapsedTime
+  ): Stream[F, Progress] = Stream.empty
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
@@ -88,38 +89,43 @@ object Ghost {
   val sfName: String = "GHOST"
 
   def fromSequenceConfig[F[_]: Sync](config: CleanConfig): F[GhostConfig] = {
-    def extractor[A : ClassTag](propName: String): Option[A] =
+    def extractor[A: ClassTag](propName: String): Option[A] =
       config.extractInstAs[A](propName).toOption
 
-    def formatExtractor[A](fmt: Format[String, A]): String => Either[ExtractFailure, Option[A]] = { propName =>
-      // 1. If content is None, trivial success, so Right(None).
-      // 2. If processed content is Some(a), success, so Right(Some(content)).
-      // 3. If processed content is None, failure, so Left(error).
-      extractor[String](propName).map(fmt.getOption).map {
-        case None => Left(ConversionError(INSTRUMENT_KEY / propName, s"Could not parse $propName"))
-        case other => Right(other)
-      }.getOrElse(Right(None))
+    def formatExtractor[A](fmt: Format[String, A]): String => Either[ExtractFailure, Option[A]] = {
+      propName =>
+        // 1. If content is None, trivial success, so Right(None).
+        // 2. If processed content is Some(a), success, so Right(Some(content)).
+        // 3. If processed content is None, failure, so Left(error).
+        extractor[String](propName)
+          .map(fmt.getOption)
+          .map {
+            case None  =>
+              Left(ConversionError(INSTRUMENT_KEY / propName, s"Could not parse $propName"))
+            case other => Right(other)
+          }
+          .getOrElse(Right(None))
     }
 
-    val raExtractor = formatExtractor[RightAscension](RightAscension.fromStringHMS)
+    val raExtractor  = formatExtractor[RightAscension](RightAscension.fromStringHMS)
     val decExtractor = formatExtractor[Declination](Declination.fromStringSignedDMS)
 
     EitherT {
       Sync[F].delay {
         (for {
-          baseRAHMS     <- raExtractor(SPGhost.BASE_RA_HMS)
-          baseDecDMS    <- decExtractor(SPGhost.BASE_DEC_DMS)
+          baseRAHMS  <- raExtractor(SPGhost.BASE_RA_HMS)
+          baseDecDMS <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          fiberAgitator = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
-          srifu1Name    = extractor[String](SPGhost.SRIFU1_NAME)
+          fiberAgitator  = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
+          srifu1Name     = extractor[String](SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
 
-          srifu2Name    = extractor[String](SPGhost.SRIFU2_NAME)
+          srifu2Name     = extractor[String](SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
           srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2_DEC_DMS)
 
-          hrifu1Name    = extractor[String](SPGhost.HRIFU1_NAME)
+          hrifu1Name     = extractor[String](SPGhost.HRIFU1_NAME)
           hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
           hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
 
@@ -127,16 +133,19 @@ object Ghost {
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
 
           config <- GhostConfig(
-            (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
-            1.minute,
-            FiberAgitator.fromBoolean(fiberAgitator.getOrElse(false)),
-            srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
-            srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
-            hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-            hrifu2RAHMS.as("Sky"), (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))
-        } yield {
-          config
-        }).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+                      (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+                      1.minute,
+                      FiberAgitator.fromBoolean(fiberAgitator.getOrElse(false)),
+                      srifu1Name,
+                      (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
+                      srifu2Name,
+                      (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
+                      hrifu1Name,
+                      (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
+                      hrifu2RAHMS.as("Sky"),
+                      (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply)
+                    )
+        } yield config).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }.widenRethrowT
   }

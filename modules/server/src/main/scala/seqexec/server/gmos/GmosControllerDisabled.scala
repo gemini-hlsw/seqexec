@@ -7,15 +7,18 @@ import cats.Applicative
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.`enum`.ObserveCommandResult
+import seqexec.server.InstrumentSystem
+import seqexec.server.Progress
 import seqexec.server.SystemOverrides.overrideLogMessage
-import seqexec.server.{InstrumentSystem, Progress}
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import squants.Time
 
-class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes](name: String) extends GmosController[F, T] {
-  override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit] = overrideLogMessage(name, "applyConfig")
+class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes](name: String)
+    extends GmosController[F, T] {
+  override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit] =
+    overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     overrideLogMessage(name, s"observe $fileId").as(ObserveCommandResult.Success)
@@ -37,7 +40,10 @@ class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes]
   override def abortPaused: F[ObserveCommandResult] =
     overrideLogMessage(name, "abortPaused").as(ObserveCommandResult.Aborted)
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
+  override def observeProgress(
+    total:   Time,
+    elapsed: InstrumentSystem.ElapsedTime
+  ): Stream[F, Progress] = Stream.empty
 
   override def nsCount: F[Int] = 0.pure[F]
 }

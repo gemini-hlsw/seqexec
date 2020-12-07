@@ -51,8 +51,8 @@ final case class CalQueueToolbar(queueId: QueueId, control: CalQueueControlFocus
 }
 
 /**
-  * Toolbar for logged in users
-  */
+ * Toolbar for logged in users
+ */
 object CalQueueToolbar {
 
   type Props = CalQueueToolbar
@@ -76,8 +76,8 @@ object CalQueueToolbar {
       icon =
         if (p.addDayCalRunning) IconRefresh.loading(true)
         else IconCloneOutline,
-      color    = Blue,
-      onClick  = allDayCal(p.queueId),
+      color = Blue,
+      onClick = allDayCal(p.queueId),
       disabled = !p.canOperate || p.anyInFlight || p.queueRunning,
       tooltip =
         if (p.control.selectedSeq > 0)
@@ -93,11 +93,11 @@ object CalQueueToolbar {
       icon =
         if (p.clearCalRunning) IconRefresh.loading(true)
         else IconTrashOutline,
-      color    = Brown,
-      onClick  = clearAllCal(p.queueId),
+      color = Brown,
+      onClick = clearAllCal(p.queueId),
       disabled = !p.canOperate || p.anyInFlight || p.queueRunning,
-      tooltip  = "Remove all sequences on the calibration queue",
-      text     = "Clear"
+      tooltip = "Remove all sequences on the calibration queue",
+      text = "Clear"
     )
 
   private def runButton(p: Props) =
@@ -105,11 +105,11 @@ object CalQueueToolbar {
       icon =
         if (p.runRunning) IconRefresh.loading(true)
         else IconPlay,
-      color    = Blue,
-      onClick  = runCal(p.queueId),
+      color = Blue,
+      onClick = runCal(p.queueId),
       disabled = !p.canOperate || p.anyInFlight,
-      tooltip  = "Run the calibration queue",
-      text     = "Run"
+      tooltip = "Run the calibration queue",
+      text = "Run"
     )
 
   private def stopButton(p: Props) =
@@ -117,11 +117,11 @@ object CalQueueToolbar {
       icon =
         if (p.runRunning) IconRefresh.loading(true)
         else IconStop,
-      color    = Teal,
-      onClick  = stopCal(p.queueId),
+      color = Teal,
+      onClick = stopCal(p.queueId),
       disabled = !p.canOperate || p.anyInFlight,
-      tooltip  = "Stop the calibration queue",
-      text     = "Stop"
+      tooltip = "Stop the calibration queue",
+      text = "Stop"
     )
 
   private val component = ScalaComponent

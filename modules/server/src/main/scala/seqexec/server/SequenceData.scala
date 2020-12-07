@@ -9,8 +9,10 @@ import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.Observer
 
 @Lenses
-final case class SequenceData[F[_]](observer: Option[Observer],
-                                    overrides: SystemOverrides,
-                                    seqGen: SequenceGen[F],
-                                    seq: Sequence.State[F],
-                                    pendingObsCmd: Option[PendingObserveCmd])
+final case class SequenceData[F[_]](
+  observer:      Option[Observer],
+  overrides:     SystemOverrides,
+  seqGen:        SequenceGen[F],
+  seq:           Sequence.State[F],
+  pendingObsCmd: Option[PendingObserveCmd]
+)

@@ -8,7 +8,7 @@ sealed trait AoFold extends Product with Serializable {
   val active: Boolean
 }
 object AoFold {
-  case object In extends AoFold {
+  case object In  extends AoFold {
     override val active: Boolean = true
   }
   case object Out extends AoFold {

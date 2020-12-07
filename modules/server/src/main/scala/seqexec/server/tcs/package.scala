@@ -30,7 +30,7 @@ package tcs {
     override def counter: Length = length
 
     def times(l: Length): Angle = convertToBase(l)
-    def *(l: Length): Angle = times(l)
+    def *(l:     Length): Angle = times(l)
 
     def divide(a: Angle): Length = convertToCounter(a)
   }
@@ -39,12 +39,12 @@ package tcs {
 
     implicit class AngleOps(a: Angle) {
       def dividedBy(fps: FocalPlaneScale): Length = fps.divide(a)
-      def /(fps: FocalPlaneScale): Length = dividedBy(fps)
+      def /(fps:         FocalPlaneScale): Length = dividedBy(fps)
     }
 
     implicit class LengthOps(l: Length) {
       def times(fps: FocalPlaneScale): Angle = fps * l
-      def *(fps: FocalPlaneScale): Angle = times(fps)
+      def *(fps:     FocalPlaneScale): Angle = times(fps)
     }
 
   }
@@ -52,29 +52,29 @@ package tcs {
 }
 
 package object tcs {
-  val BottomPort: Int = 1
+  val BottomPort: Int  = 1
   val InvalidPort: Int = 0
 
-  val tcsTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
-  val agTimeout : FiniteDuration = FiniteDuration(60, SECONDS)
+  val tcsTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
+  val agTimeout: FiniteDuration  = FiniteDuration(60, SECONDS)
 
   val NonStopExposures = -1
 
   // Focal plane scale, expressed with squants quantities.
   val FOCAL_PLANE_SCALE = new FocalPlaneScale(Arcseconds(1.61144), Millimeters(1))
 
-  val pwfs1OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
-  val pwfs2OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val pwfs1OffsetThreshold: Length = Arcseconds(0.01) / FOCAL_PLANE_SCALE
+  val pwfs2OffsetThreshold: Length = Arcseconds(0.01) / FOCAL_PLANE_SCALE
 
-  val AoOffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val AoOffsetThreshold: Length = Arcseconds(0.01) / FOCAL_PLANE_SCALE
 
-  implicit val ooEq: Eq[BinaryOnOff] =
+  implicit val ooEq: Eq[BinaryOnOff]              =
     Eq[Int].contramap(_.ordinal())
-  implicit val ynEq: Eq[BinaryYesNo] =
+  implicit val ynEq: Eq[BinaryYesNo]              =
     Eq[Int].contramap(_.ordinal())
   implicit val endisEq: Eq[BinaryEnabledDisabled] =
     Eq[Int].contramap(_.ordinal())
 
-  def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
+  def tagIso[B, T]: Iso[B @@ T, B] = Iso.apply[B @@ T, B](x => x)(tag[T](_))
 
 }

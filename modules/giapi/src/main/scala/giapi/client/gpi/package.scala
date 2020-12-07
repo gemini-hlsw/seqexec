@@ -9,7 +9,7 @@ import cats.syntax.all._
 sealed trait GpiGuiding extends Product with Serializable
 
 object GpiGuiding {
-  case object Guiding extends GpiGuiding
+  case object Guiding    extends GpiGuiding
   case object NotGuiding extends GpiGuiding
 
   def fromInt(i: Int): GpiGuiding = if (i === 1) Guiding else NotGuiding

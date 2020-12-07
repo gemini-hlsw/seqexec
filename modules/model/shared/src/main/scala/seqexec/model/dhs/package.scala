@@ -29,7 +29,7 @@ package object dhs {
       def combine(x: ImageFileId, y: ImageFileId): ImageFileId =
         toImageFileId(Monoid[String].combine(x, y))
     }
-  implicit val monoidDataId: Monoid[DataId] = new Monoid[DataId] {
+  implicit val monoidDataId: Monoid[DataId]           = new Monoid[DataId] {
     def empty: DataId = toDataId(Monoid[String].empty)
     def combine(x: DataId, y: DataId): DataId =
       toDataId(Monoid[String].combine(x, y))

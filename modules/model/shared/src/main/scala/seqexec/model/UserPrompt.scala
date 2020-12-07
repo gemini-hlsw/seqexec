@@ -36,8 +36,7 @@ object UserPrompt {
     implicit def eq[A: Eq]: Eq[Discrepancy[A]] = Eq.by(x => (x.actual, x.required))
   }
 
-  final case class TargetCheckOverride(self: Discrepancy[String])
-    extends SeqCheck
+  final case class TargetCheckOverride(self: Discrepancy[String]) extends SeqCheck
 
   object TargetCheckOverride {
     implicit lazy val eq: Eq[TargetCheckOverride] =
@@ -45,11 +44,12 @@ object UserPrompt {
   }
 
   // UserPrompt whether to override the observing conditions
-  final case class ObsConditionsCheckOverride(cc: Option[Discrepancy[String]],
-                                              iq: Option[Discrepancy[String]],
-                                              sb: Option[Discrepancy[String]],
-                                              wv: Option[Discrepancy[String]]
-                                             ) extends SeqCheck
+  final case class ObsConditionsCheckOverride(
+    cc: Option[Discrepancy[String]],
+    iq: Option[Discrepancy[String]],
+    sb: Option[Discrepancy[String]],
+    wv: Option[Discrepancy[String]]
+  ) extends SeqCheck
 
   object ObsConditionsCheckOverride {
     implicit lazy val eq: Eq[ObsConditionsCheckOverride] = Eq.by(x => (x.cc, x.iq, x.sb, x.wv))
@@ -62,10 +62,14 @@ object UserPrompt {
     }
 
   // UserPrompt whether to override start checks
-  final case class ChecksOverride(sid: Observation.Id, stepId: StepId, checks: NonEmptyList[SeqCheck]) extends UserPrompt
+  final case class ChecksOverride(
+    sid:    Observation.Id,
+    stepId: StepId,
+    checks: NonEmptyList[SeqCheck]
+  ) extends UserPrompt
 
   object ChecksOverride {
-    implicit lazy val eq: Eq[ChecksOverride] = Eq.by(x => (x.sid, x.stepId, x.checks) )
+    implicit lazy val eq: Eq[ChecksOverride] = Eq.by(x => (x.sid, x.stepId, x.checks))
   }
 
 }

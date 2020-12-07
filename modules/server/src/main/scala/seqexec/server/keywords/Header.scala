@@ -7,9 +7,9 @@ import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 
 /**
-  * Header implementations know what headers sent before and after an observation
-  */
+ * Header implementations know what headers sent before and after an observation
+ */
 trait Header[F[_]] {
   def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit]
-  def sendAfter(id: ImageFileId): F[Unit]
+  def sendAfter(id:     ImageFileId): F[Unit]
 }

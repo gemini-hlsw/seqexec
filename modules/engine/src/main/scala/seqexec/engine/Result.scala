@@ -7,8 +7,8 @@ import cats.Eq
 import cats.syntax.all._
 
 /**
-  * The result of an `Action`.
-  */
+ * The result of an `Action`.
+ */
 sealed trait Result[+F[_]] extends Product with Serializable {
   val errMsg: Option[String] = None
 }

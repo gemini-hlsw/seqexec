@@ -6,17 +6,18 @@ package seqexec.server.keywords
 import seqexec.model.dhs.ImageFileId
 
 /**
-  * Defines the interface for dhs client, with methods, e.g. to request image creation
-  */
+ * Defines the interface for dhs client, with methods, e.g. to request image creation
+ */
 trait DhsClient[F[_]] {
+
   /**
-    * Requests the DHS to create an image returning the obs id if applicable
-    */
+   * Requests the DHS to create an image returning the obs id if applicable
+   */
   def createImage(p: DhsClient.ImageParameters): F[ImageFileId]
 
   /**
-    * Set the keywords for an image
-    */
+   * Set the keywords for an image
+   */
   def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit]
 
 }

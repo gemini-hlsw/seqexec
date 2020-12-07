@@ -12,12 +12,12 @@ import fs2.concurrent.SignallingRef
 sealed trait StatusValue extends Product with Serializable
 
 object StatusValue {
-  final case class IntValue(value:    Int) extends StatusValue
+  final case class IntValue(value: Int) extends StatusValue
   final case class StringValue(value: String) extends StatusValue
-  final case class FloatValue(value:  Float) extends StatusValue
+  final case class FloatValue(value: Float) extends StatusValue
   final case class DoubleValue(value: Double) extends StatusValue
 
-  def intValue(s: StatusValue): Option[Int] = s match {
+  def intValue(s:    StatusValue): Option[Int]    = s match {
     case IntValue(v) => ItemGetter[Int].value(v)
     case _           => none
   }
@@ -25,7 +25,7 @@ object StatusValue {
     case StringValue(v) => ItemGetter[String].value(v)
     case _              => none
   }
-  def floatValue(s: StatusValue): Option[Float] = s match {
+  def floatValue(s:  StatusValue): Option[Float]  = s match {
     case FloatValue(v) => ItemGetter[Float].value(v)
     case _             => none
   }
@@ -56,15 +56,15 @@ object GiapiDb {
 
         def update[A: ItemGetter](i: String, s: A): F[Unit] =
           ItemGetter[A].value(s) match {
-            case Some(a: Int) =>
+            case Some(a: Int)    =>
               ref.update(_ + (i -> StatusValue.IntValue(a)))
             case Some(a: String) =>
               ref.update(_ + (i -> StatusValue.StringValue(a)))
-            case Some(a: Float) =>
+            case Some(a: Float)  =>
               ref.update(_ + (i -> StatusValue.FloatValue(a)))
             case Some(a: Double) =>
               ref.update(_ + (i -> StatusValue.DoubleValue(a)))
-            case _ =>
+            case _               =>
               Applicative[F].unit
           }
 

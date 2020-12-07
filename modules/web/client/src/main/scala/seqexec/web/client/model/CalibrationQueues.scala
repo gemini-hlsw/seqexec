@@ -26,17 +26,15 @@ final case class CalQueueState(
   ops:        QueueOperations,
   tableState: TableState[CalQueueTable.TableColumn],
   seqOps:     SortedMap[Observation.Id, QueueSeqOperations],
-  lastOp:     Option[QueueManipulationOp])
+  lastOp:     Option[QueueManipulationOp]
+)
 
 object CalQueueState {
   implicit val eq: Eq[CalQueueState] =
     Eq.by(x => (x.ops, x.seqOps, x.tableState, x.lastOp))
 
   val Default: CalQueueState =
-    CalQueueState(QueueOperations.Default,
-                  CalQueueTable.State.ROTableState,
-                  SortedMap.empty,
-                  None)
+    CalQueueState(QueueOperations.Default, CalQueueTable.State.ROTableState, SortedMap.empty, None)
 }
 
 @Lenses
@@ -54,8 +52,9 @@ final case class CalibrationQueues(queues: SortedMap[QueueId, CalQueueState]) {
            .get(i)
            .map(CalQueueState.tableState.set)
            .map(_(st))
-           .getOrElse(st))
-      case i => i
+           .getOrElse(st)
+        )
+      case i                              => i
     })
 }
 
@@ -63,14 +62,14 @@ object CalibrationQueues {
   implicit val eq: Eq[CalibrationQueues] =
     Eq.by(_.queues)
 
-  val Default: CalibrationQueues =
+  val Default: CalibrationQueues                =
     CalibrationQueues(SortedMap(CalibrationQueueId -> CalQueueState.Default))
 
   def queueO(
     qid: QueueId
   ): Optional[CalibrationQueues, CalQueueState] =
     CalibrationQueues.queues ^|->
-      at(qid)                ^<-?
+      at(qid) ^<-?
       std.option.some
 
   def calQueueStateL(
@@ -87,21 +86,19 @@ object CalibrationQueues {
     qid: QueueId,
     oid: Observation.Id
   ): Optional[CalibrationQueues, QueueSeqOperations] =
-    queueO(qid)            ^|->
+    queueO(qid) ^|->
       CalQueueState.seqOps ^|->
-      at(oid)              ^<-?
+      at(oid) ^<-?
       std.option.some
 
   def calStateSeqOpsT(
     qid: QueueId
-  ): Optional[CalibrationQueues,
-              SortedMap[Observation.Id, QueueSeqOperations]] =
+  ): Optional[CalibrationQueues, SortedMap[Observation.Id, QueueSeqOperations]] =
     queueO(qid) ^|-> CalQueueState.seqOps
 
-  def tableStatesT
-    : Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
-    CalibrationQueues.queues   ^|->>
-      each                     ^|->
+  def tableStatesT: Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
+    CalibrationQueues.queues ^|->>
+      each ^|->
       CalQueueState.tableState
 
   def runCalL(qid: QueueId): Optional[CalibrationQueues, RunCalOperation] =
@@ -133,7 +130,7 @@ object CalibrationQueues {
             st.seqOps + (oid -> QueueSeqOperations.Default)
           }
           (i, st.copy(seqOps = so))
-        case i => i
+        case i                    => i
       })
 
   def modifyOrAddSeqOps(

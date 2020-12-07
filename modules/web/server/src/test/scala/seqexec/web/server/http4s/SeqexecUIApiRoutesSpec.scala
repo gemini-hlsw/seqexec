@@ -11,17 +11,13 @@ import org.http4s.Uri.uri
 import seqexec.model.UserLoginRequest
 import seqexec.web.server.http4s.encoder._
 
-class SeqexecUIApiRoutesSpec
-    extends CatsSuite
-    with ClientBooEncoders
-    with TestRoutes {
+class SeqexecUIApiRoutesSpec extends CatsSuite with ClientBooEncoders with TestRoutes {
   test("SeqexecUIApiRoutes login: reject requests without body") {
     (for {
       s <- uiRoutes
       r <- Nested(
-        s.apply(Request(method = Method.POST, uri = uri("/seqexec/login")))
-          .value
-      ).map(_.status).value
+             s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value
+           ).map(_.status).value
     } yield assert(r === Some(Status.BadRequest))).unsafeRunSync()
   }
 
@@ -31,8 +27,8 @@ class SeqexecUIApiRoutesSpec
     val r = (for {
       s <- uiRoutes
       r <- Nested(
-        s.apply(Request(method = Method.GET, uri = uri("/seqexec/login"))).value
-      ).map(_.status).value
+             s.apply(Request(method = Method.GET, uri = uri("/seqexec/login"))).value
+           ).map(_.status).value
     } yield r).unsafeRunSync()
     assert(r === Some(Status.NotFound))
   }
@@ -41,14 +37,14 @@ class SeqexecUIApiRoutesSpec
     (for {
       s <- uiRoutes
       r <- s
-        .apply(
-          Request(method = Method.POST, uri = uri("/seqexec/login"))
-            .withEntity(UserLoginRequest("telops", "pwd"))
-        )
-        .value
+             .apply(
+               Request(method = Method.POST, uri = uri("/seqexec/login"))
+                 .withEntity(UserLoginRequest("telops", "pwd"))
+             )
+             .value
       s <- r.map(_.status).pure[IO]
       k <- r.map(_.cookies).orEmpty.pure[IO]
-      t = k.find(_.name === "token")
+      t  = k.find(_.name === "token")
     } yield assert(t.isDefined && s === Some(Status.Ok))).unsafeRunSync()
   }
 
@@ -57,13 +53,13 @@ class SeqexecUIApiRoutesSpec
       s <- uiRoutes
       t <- newLoginToken
       r <- s(
-        Request[IO](method = Method.POST, uri = uri("/seqexec/logout"))
-          .addCookie("token", t)
-      ).value
+             Request[IO](method = Method.POST, uri = uri("/seqexec/logout"))
+               .addCookie("token", t)
+           ).value
       s <- r.map(_.status).pure[IO]
       k <- r.map(_.cookies).orEmpty.pure[IO]
-      t = k.find(_.name === "token")
-      c = t.map(_.content).exists(_ === "") // Cleared cookie
+      t  = k.find(_.name === "token")
+      c  = t.map(_.content).exists(_ === "") // Cleared cookie
     } yield assert(c && s === Some(Status.Ok))).unsafeRunSync()
   }
 
@@ -72,9 +68,9 @@ class SeqexecUIApiRoutesSpec
       s <- uiRoutes
       t <- newLoginToken
       r <- s(
-        Request[IO](method = Method.POST, uri = uri("/seqexec/site"))
-          .addCookie("token", t)
-      ).value
+             Request[IO](method = Method.POST, uri = uri("/seqexec/site"))
+               .addCookie("token", t)
+           ).value
       s <- r.map(_.as[String]).sequence
     } yield assert(s === Some("GS"))).unsafeRunSync()
   }

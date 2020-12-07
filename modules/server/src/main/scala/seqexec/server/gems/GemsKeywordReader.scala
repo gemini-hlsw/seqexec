@@ -51,58 +51,62 @@ trait GemsKeywordReader[F[_]] {
 
 object GemsKeywordReaderDummy {
   def apply[F[_]: Applicative]: GemsKeywordReader[F] = new GemsKeywordReader[F] {
-    override def sadc: F[String] = strDefault[F]
-    override def dichroic: F[Double] = doubleDefault[F]
+    override def sadc: F[String]            = strDefault[F]
+    override def dichroic: F[Double]        = doubleDefault[F]
     override def astrometricMode: F[String] = strDefault[F]
-    override def nadc: F[String] = strDefault[F]
-    override def lgswfs1Counts: F[Double] = doubleDefault[F]
-    override def lgswfs2Counts: F[Double] = doubleDefault[F]
-    override def lgswfs3Counts: F[Double] = doubleDefault[F]
-    override def lgswfs4Counts: F[Double] = doubleDefault[F]
-    override def lgswfs5Counts: F[Double] = doubleDefault[F]
-    override def lgsLoop: F[String] = strDefault[F]
-    override def ttLoop: F[String] = strDefault[F]
-    override def focLoop: F[String] = strDefault[F]
-    override def flexLoop: F[String] = strDefault[F]
-    override def lgsStrhl: F[Double] = doubleDefault[F]
-    override def rZeroVal: F[Double] = doubleDefault[F]
-    override def cnSquare1: F[Double] = doubleDefault[F]
-    override def cnSquare2: F[Double] = doubleDefault[F]
-    override def cnSquare3: F[Double] = doubleDefault[F]
-    override def cnSquare4: F[Double] = doubleDefault[F]
-    override def cnSquare5: F[Double] = doubleDefault[F]
-    override def cnSquare6: F[Double] = doubleDefault[F]
-    override def odgw1X: F[Int] = intDefault[F]
-    override def odgw1Y: F[Int] = intDefault[F]
-    override def odgwSize: F[Int] = intDefault[F]
-    override def odgw1Counts: F[Double] = doubleDefault[F]
-    override def odgw2X: F[Int] = intDefault[F]
-    override def odgw2Y: F[Int] = intDefault[F]
-    override def odgw2Counts: F[Double] = doubleDefault[F]
-    override def odgw3X: F[Int] = intDefault[F]
-    override def odgw3Y: F[Int] = intDefault[F]
-    override def odgw3Counts: F[Double] = doubleDefault[F]
-    override def odgw4X: F[Int] = intDefault[F]
-    override def odgw4Y: F[Int] = intDefault[F]
-    override def odgw4Counts: F[Double] = doubleDefault[F]
-    override def cwfs1Counts: F[Double] = doubleDefault[F]
-    override def cwfs2Counts: F[Double] = doubleDefault[F]
-    override def cwfs3Counts: F[Double] = doubleDefault[F]
+    override def nadc: F[String]            = strDefault[F]
+    override def lgswfs1Counts: F[Double]   = doubleDefault[F]
+    override def lgswfs2Counts: F[Double]   = doubleDefault[F]
+    override def lgswfs3Counts: F[Double]   = doubleDefault[F]
+    override def lgswfs4Counts: F[Double]   = doubleDefault[F]
+    override def lgswfs5Counts: F[Double]   = doubleDefault[F]
+    override def lgsLoop: F[String]         = strDefault[F]
+    override def ttLoop: F[String]          = strDefault[F]
+    override def focLoop: F[String]         = strDefault[F]
+    override def flexLoop: F[String]        = strDefault[F]
+    override def lgsStrhl: F[Double]        = doubleDefault[F]
+    override def rZeroVal: F[Double]        = doubleDefault[F]
+    override def cnSquare1: F[Double]       = doubleDefault[F]
+    override def cnSquare2: F[Double]       = doubleDefault[F]
+    override def cnSquare3: F[Double]       = doubleDefault[F]
+    override def cnSquare4: F[Double]       = doubleDefault[F]
+    override def cnSquare5: F[Double]       = doubleDefault[F]
+    override def cnSquare6: F[Double]       = doubleDefault[F]
+    override def odgw1X: F[Int]             = intDefault[F]
+    override def odgw1Y: F[Int]             = intDefault[F]
+    override def odgwSize: F[Int]           = intDefault[F]
+    override def odgw1Counts: F[Double]     = doubleDefault[F]
+    override def odgw2X: F[Int]             = intDefault[F]
+    override def odgw2Y: F[Int]             = intDefault[F]
+    override def odgw2Counts: F[Double]     = doubleDefault[F]
+    override def odgw3X: F[Int]             = intDefault[F]
+    override def odgw3Y: F[Int]             = intDefault[F]
+    override def odgw3Counts: F[Double]     = doubleDefault[F]
+    override def odgw4X: F[Int]             = intDefault[F]
+    override def odgw4Y: F[Int]             = intDefault[F]
+    override def odgw4Counts: F[Double]     = doubleDefault[F]
+    override def cwfs1Counts: F[Double]     = doubleDefault[F]
+    override def cwfs2Counts: F[Double]     = doubleDefault[F]
+    override def cwfs3Counts: F[Double]     = doubleDefault[F]
   }
 }
 
 object GemsKeywordReaderEpics {
-  def apply[F[_]: Sync](epics: => GemsEpics[F], gsaoiEpics: => GsaoiEpics[F]): GemsKeywordReader[F] = new GemsKeywordReader[F] {
+  def apply[F[_]: Sync](
+    epics:      => GemsEpics[F],
+    gsaoiEpics: => GsaoiEpics[F]
+  ): GemsKeywordReader[F] = new GemsKeywordReader[F] {
 
-    override def sadc: F[String] = epics.scienceAdcLoopActive.map(if(_) "ON" else "OFF").safeValOrDefault
+    override def sadc: F[String] =
+      epics.scienceAdcLoopActive.map(if (_) "ON" else "OFF").safeValOrDefault
 
-    override def dichroic: F[Double] = epics.beamSplitterState.map{
+    override def dichroic: F[Double] = epics.beamSplitterState.map {
       case "1" => 0.85
       case "2" => 1.0
       case _   => DoubleDefault
     }.safeValOrDefault
 
-    override def astrometricMode: F[String] = epics.astroMode.map{
+    override def astrometricMode: F[String] = epics.astroMode.map {
       case "None"    => "off"
       case "Regular" => "regular"
       case "Good"    => "good"
@@ -110,10 +114,11 @@ object GemsKeywordReaderEpics {
       case a         => a
     }.safeValOrDefault
 
-    override def nadc: F[String] = epics.ngsAdcLoopActive.map(if(_) "ON" else "OFF").safeValOrDefault
+    override def nadc: F[String] =
+      epics.ngsAdcLoopActive.map(if (_) "ON" else "OFF").safeValOrDefault
 
-    private def lgswfsFlux(idx: Long): F[Double] = epics.lgsFlux.map(_.get(idx).map(_.toDouble))
-      .safeValOrDefault
+    private def lgswfsFlux(idx: Long): F[Double] =
+      epics.lgsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
 
     override def lgswfs1Counts: F[Double] = lgswfsFlux(1)
 
@@ -137,7 +142,8 @@ object GemsKeywordReaderEpics {
 
     override def rZeroVal: F[Double] = epics.rZero.safeValOrDefault
 
-    private def cnSum(idxs: List[Long]): F[Double] = epics.cnSquare.map{vs => idxs.map(vs.get).combineAll}
+    private def cnSum(idxs: List[Long]): F[Double] = epics.cnSquare
+      .map(vs => idxs.map(vs.get).combineAll)
       .map(_.map(_.toDouble))
       .safeValOrDefault
 
@@ -179,7 +185,8 @@ object GemsKeywordReaderEpics {
 
     override def odgw4Counts: F[Double] = gsaoiEpics.odgw4Counts.safeValOrDefault
 
-    private def cwfsFlux(idx: Long): F[Double] = epics.ngsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
+    private def cwfsFlux(idx: Long): F[Double] =
+      epics.ngsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
 
     override def cwfs1Counts: F[Double] = cwfsFlux(1)
 

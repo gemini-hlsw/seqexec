@@ -3,8 +3,8 @@
 
 package seqexec.server.gnirs
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -40,8 +40,12 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs[F[_]: Logger: Concurrent: Timer](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
-  override val contributorName: String = "ngnirsdc1"
+final case class Gnirs[F[_]: Logger: Concurrent: Timer](
+  controller: GnirsController[F],
+  dhsClient:  DhsClient[F]
+) extends DhsInstrument[F]
+    with InstrumentSystem[F] {
+  override val contributorName: String   = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
 
   override val keywordsClient: KeywordsClient[F] = this
@@ -69,7 +73,8 @@ final case class Gnirs[F[_]: Logger: Concurrent: Timer](controller: GnirsControl
   override val resource: Instrument = Instrument.Gnirs
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
@@ -101,19 +106,21 @@ object Gnirs {
     (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
 
   private def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] = (for {
-    expTime <- extractExposureTime(config)
-    coadds  <- extractCoadds(config)
-    readMode <- config.extractInstAs[ReadMode](READ_MODE_PROP)
+    expTime   <- extractExposureTime(config)
+    coadds    <- extractCoadds(config)
+    readMode  <- config.extractInstAs[ReadMode](READ_MODE_PROP)
     wellDepth <- config.extractInstAs[WellDepth](WELL_DEPTH_PROP)
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] = config.extractObsAs[String](OBSERVE_TYPE_PROP)
-    .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
-    case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
-    case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
-    case _                 => getCCOtherConfig(config)
-  }
+  private def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] = config
+    .extractObsAs[String](OBSERVE_TYPE_PROP)
+    .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    .flatMap {
+      case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
+      case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
+      case _                 => getCCOtherConfig(config)
+    }
 
   // Used for optional keys. If the key is not present, the result is a None. Other extraction errors are passed on.
   private implicit class KeyAttemptToOption[T](v: Either[ExtractFailure, T]) {
@@ -129,35 +136,44 @@ object Gnirs {
     woll    <- config.extractInstAs[WollastonPrism](WOLLASTON_PRISM_PROP)
     mode    <- getCCMode(config, xdisp, woll)
     slit    <- config.extractInstAs[SlitWidth](SLIT_WIDTH_PROP)
-    slitOp = getSlit(slit)
+    slitOp   = getSlit(slit)
     camera  <- config.extractInstAs[Camera](CAMERA_PROP)
     decker  <- getDecker(config, slit, woll, xdisp)
-    wavel   <- config.extractInstAs[Wavelength](CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
+    wavel   <-
+      config.extractInstAs[Wavelength](CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
     focus   <- getFocus(config)
     filter  <- config.extractInstAs[Filter](FILTER_PROP).optionalKey
     hartm   <- config.extractInstAs[HartmannMask](HARTMANN_MASK_PROP).optionalKey
     filter1 <- getFilter1(filter, hartm, slit, decker)
-    filter2 = getFilter2(filter, xdisp)
-  } yield Other(mode, camera, decker, filter1, filter2, focus, wavel, slitOp) )
+    filter2  = getFilter2(filter, xdisp)
+  } yield Other(mode, camera, decker, filter1, filter2, focus, wavel, slitOp))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCMode(config: CleanConfig, xdispersed: CrossDispersed, woll: WollastonPrism)
-  : Either[ExtractFailure, GnirsController.Mode] =
+  private def getCCMode(
+    config:     CleanConfig,
+    xdispersed: CrossDispersed,
+    woll:       WollastonPrism
+  ): Either[ExtractFailure, GnirsController.Mode] =
     for {
-      acq        <- config.extractInstAs[AcquisitionMirror](ACQUISITION_MIRROR_PROP)
-      disperser  <- config.extractInstAs[Disperser](DISPERSER_PROP)
-    } yield {
-      if(acq === AcquisitionMirror.IN) GnirsController.Acquisition
-      else xdispersed match {
-        case CrossDispersed.SXD => GnirsController.CrossDisperserS(disperser)
-        case CrossDispersed.LXD => GnirsController.CrossDisperserL(disperser)
-        case _                  => if(woll === WollastonPrism.YES) GnirsController.Wollaston(disperser)
-                                   else GnirsController.Mirror(disperser)
-      }
-    }
+      acq       <- config.extractInstAs[AcquisitionMirror](ACQUISITION_MIRROR_PROP)
+      disperser <- config.extractInstAs[Disperser](DISPERSER_PROP)
+    } yield
+      if (acq === AcquisitionMirror.IN) GnirsController.Acquisition
+      else
+        xdispersed match {
+          case CrossDispersed.SXD => GnirsController.CrossDisperserS(disperser)
+          case CrossDispersed.LXD => GnirsController.CrossDisperserL(disperser)
+          case _                  =>
+            if (woll === WollastonPrism.YES) GnirsController.Wollaston(disperser)
+            else GnirsController.Mirror(disperser)
+        }
 
-  private def getDecker(config: CleanConfig, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed)
-  : Either[ExtractFailure, GnirsController.Decker] =
+  private def getDecker(
+    config: CleanConfig,
+    slit:   SlitWidth,
+    woll:   WollastonPrism,
+    xdisp:  CrossDispersed
+  ): Either[ExtractFailure, GnirsController.Decker] =
     config.extractInstAs[Decker](DECKER_PROP).orElse {
       for {
         pixScale <- config.extractInstAs[PixelScale](PIXEL_SCALE_PROP)
@@ -166,26 +182,34 @@ object Gnirs {
         case CrossDispersed.SXD => Decker.SHORT_CAM_X_DISP
         case _                  =>
           if (woll === WollastonPrism.YES) Decker.WOLLASTON
-          else pixScale match {
-            case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
-            case PixelScale.PS_015 =>
-              if (slit === SlitWidth.IFU) Decker.IFU
-              else Decker.SHORT_CAM_LONG_SLIT
-          }
+          else
+            pixScale match {
+              case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
+              case PixelScale.PS_015 =>
+                if (slit === SlitWidth.IFU) Decker.IFU
+                else Decker.SHORT_CAM_LONG_SLIT
+            }
       }
     }
 
-  private def getFilter1(filter: Option[Filter], hartmann: Option[HartmannMask], slit: SlitWidth, decker: Decker):
-  Either[ConfigUtilOps.ExtractFailure, GnirsController.Filter1] =
-    if(slit === SlitWidth.PUPIL_VIEWER || decker === Decker.PUPIL_VIEWER) GnirsController.Filter1.PupilViewer.asRight
+  private def getFilter1(
+    filter:   Option[Filter],
+    hartmann: Option[HartmannMask],
+    slit:     SlitWidth,
+    decker:   Decker
+  ): Either[ConfigUtilOps.ExtractFailure, GnirsController.Filter1] =
+    if (slit === SlitWidth.PUPIL_VIEWER || decker === Decker.PUPIL_VIEWER)
+      GnirsController.Filter1.PupilViewer.asRight
     else {
-      val f = filter.map {
-        case Filter.H2_plus_ND100X | Filter.H_plus_ND100X => GnirsController.Filter1.ND100X
-        case Filter.Y => GnirsController.Filter1.Y_MK
-        case Filter.J => GnirsController.Filter1.J_MK
-        case Filter.K => GnirsController.Filter1.K_MK
-        case _ => GnirsController.Filter1.Open
-      }.getOrElse(GnirsController.Filter1.Open)
+      val f = filter
+        .map {
+          case Filter.H2_plus_ND100X | Filter.H_plus_ND100X => GnirsController.Filter1.ND100X
+          case Filter.Y                                     => GnirsController.Filter1.Y_MK
+          case Filter.J                                     => GnirsController.Filter1.J_MK
+          case Filter.K                                     => GnirsController.Filter1.K_MK
+          case _                                            => GnirsController.Filter1.Open
+        }
+        .getOrElse(GnirsController.Filter1.Open)
       val h = hartmann.flatMap {
         case HartmannMask.OUT        => None
         case HartmannMask.LEFT_MASK  => Filter1.LeftMask.some
@@ -194,30 +218,33 @@ object Gnirs {
       (h, f) match {
         case (None, _)               => f.asRight
         case (Some(x), Filter1.Open) => x.asRight
-        case (Some(x), _)            => ContentError(s"Cannot use filter $f and Hartmann mask $x at the same time")
-          .asLeft
+        case (Some(x), _)            =>
+          ContentError(s"Cannot use filter $f and Hartmann mask $x at the same time").asLeft
       }
     }
 
   private def getFilter2(filter: Option[Filter], xdisp: CrossDispersed): GnirsController.Filter2 =
-    filter.map{
-      case Filter.ORDER_1        => GnirsController.Filter2Pos.M
-      case Filter.ORDER_2        => GnirsController.Filter2Pos.L
-      case Filter.ORDER_3        => GnirsController.Filter2Pos.K
-      case Filter.ORDER_4        => GnirsController.Filter2Pos.H
-      case Filter.ORDER_5        => GnirsController.Filter2Pos.J
-      case Filter.ORDER_6        => GnirsController.Filter2Pos.X
-      case Filter.X_DISPERSED    => GnirsController.Filter2Pos.XD
-      case Filter.H2             => GnirsController.Filter2Pos.H2
-      case Filter.H_plus_ND100X  => GnirsController.Filter2Pos.H
-      case Filter.H2_plus_ND100X => GnirsController.Filter2Pos.H2
-      case Filter.PAH            => GnirsController.Filter2Pos.PAH
-      case _                     => GnirsController.Filter2Pos.Open
-    }.map(GnirsController.Manual).getOrElse {
-      if (xdisp === CrossDispersed.NO)
-        GnirsController.Auto
-      else GnirsController.Manual(GnirsController.Filter2Pos.XD)
-    }
+    filter
+      .map {
+        case Filter.ORDER_1        => GnirsController.Filter2Pos.M
+        case Filter.ORDER_2        => GnirsController.Filter2Pos.L
+        case Filter.ORDER_3        => GnirsController.Filter2Pos.K
+        case Filter.ORDER_4        => GnirsController.Filter2Pos.H
+        case Filter.ORDER_5        => GnirsController.Filter2Pos.J
+        case Filter.ORDER_6        => GnirsController.Filter2Pos.X
+        case Filter.X_DISPERSED    => GnirsController.Filter2Pos.XD
+        case Filter.H2             => GnirsController.Filter2Pos.H2
+        case Filter.H_plus_ND100X  => GnirsController.Filter2Pos.H
+        case Filter.H2_plus_ND100X => GnirsController.Filter2Pos.H2
+        case Filter.PAH            => GnirsController.Filter2Pos.PAH
+        case _                     => GnirsController.Filter2Pos.Open
+      }
+      .map(GnirsController.Manual)
+      .getOrElse {
+        if (xdisp === CrossDispersed.NO)
+          GnirsController.Auto
+        else GnirsController.Manual(GnirsController.Filter2Pos.XD)
+      }
 
   private def getSlit(slit: SlitWidth): Option[GnirsController.SlitWidth] = slit match {
     case SlitWidth.ACQUISITION  => GnirsController.SlitWidth.Acquisition.some
@@ -235,10 +262,12 @@ object Gnirs {
   }
 
   private def getFocus(config: CleanConfig): Either[ExtractFailure, GnirsController.Focus] =
-    config.extractInstAs[Focus](FOCUS_PROP).flatMap{ v =>
+    config.extractInstAs[Focus](FOCUS_PROP).flatMap { v =>
       if (v.toString === FocusSuggestion.BEST_FOCUS.displayValue) GnirsController.Focus.Best.asRight
-      else v.toString.parseIntOption.map(GnirsController.Focus.Manual(_).asRight)
-        .getOrElse(ContentError(s"Invalid value for focus ($v)").asLeft)
+      else
+        v.toString.parseIntOption
+          .map(GnirsController.Focus.Manual(_).asRight)
+          .getOrElse(ContentError(s"Invalid value for focus ($v)").asLeft)
     }
 
   object specifics extends InstrumentSpecifics {

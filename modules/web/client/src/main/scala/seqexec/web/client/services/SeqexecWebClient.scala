@@ -58,7 +58,7 @@ object SeqexecWebClient extends ModelBooPicklers {
    */
   def run(id: Observation.Id, clientId: ClientId, options: RunOptions): Future[Unit] = {
     val param = options match {
-      case RunOptions.Normal => ""
+      case RunOptions.Normal         => ""
       case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
     Ajax
@@ -404,9 +404,14 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Runs a step starting at
    */
-  def runFrom(obsId: Observation.Id, stepId: StepId, clientId: ClientId, options: RunOptions): Future[Unit] = {
+  def runFrom(
+    obsId:    Observation.Id,
+    stepId:   StepId,
+    clientId: ClientId,
+    options:  RunOptions
+  ): Future[Unit] = {
     val param = options match {
-      case RunOptions.Normal => ""
+      case RunOptions.Normal         => ""
       case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
     Ajax

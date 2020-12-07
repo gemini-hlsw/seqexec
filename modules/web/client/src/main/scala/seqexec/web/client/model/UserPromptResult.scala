@@ -10,7 +10,7 @@ sealed trait UserPromptResult extends Product with Serializable
 
 object UserPromptResult {
   case object Cancel extends UserPromptResult
-  case object Ok extends UserPromptResult
+  case object Ok     extends UserPromptResult
 
   /** @group Typeclass Instances */
   implicit val SectionVisibilityStateEnumerated: Enumerated[UserPromptResult] =

@@ -16,7 +16,8 @@ trait ArbStepState {
                       StepState.Aborted,
                       StepState.Skipped,
                       StepState.Running,
-                      StepState.Paused)
+                      StepState.Paused
+            )
       v2 <- Gen.alphaStr.map(StepState.Failed.apply)
       r  <- Gen.oneOf(v1, v2)
     } yield r

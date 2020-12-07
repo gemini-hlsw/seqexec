@@ -15,17 +15,21 @@ import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthController[F] {
   val sim = new TcsControllerSim[F]
 
-  override def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem],
-                           gaos: Option[Gems[F]],
-                           tc: TcsSouthConfig): F[Unit] =
+  override def applyConfig(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    gaos:       Option[Gems[F]],
+    tc:         TcsSouthConfig
+  ): F[Unit] =
     sim.applyConfig(subsystems)
 
   override def notifyObserveStart: F[Unit] = sim.notifyObserveStart
 
   override def notifyObserveEnd: F[Unit] = sim.notifyObserveEnd
-  override def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsSouthConfig)
-                  (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean)
-  : F[Unit] = sim.nod(stage, offset, guided)
+  override def nod(
+    subsystems: NonEmptySet[Subsystem],
+    tcsConfig:  TcsSouthConfig
+  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
+    sim.nod(stage, offset, guided)
 }
 
 object TcsSouthControllerSim {

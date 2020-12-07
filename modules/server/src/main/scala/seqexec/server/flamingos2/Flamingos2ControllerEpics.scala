@@ -53,35 +53,36 @@ trait Flamingos2Encoders {
     case Decker.MOS       => "Mos"
   }
 
-  implicit val encodeFPUPosition: EncodeEpicsValue[FocalPlaneUnit, (String, String)] = EncodeEpicsValue {
-    case FocalPlaneUnit.Open        => ("Open", "null")
-    case FocalPlaneUnit.GridSub1Pix => ("sub1-pix_grid", "null")
-    case FocalPlaneUnit.Grid2Pix    => ("2-pix_grid", "null")
-    case FocalPlaneUnit.Slit1Pix    => ("1pix-slit", "null")
-    case FocalPlaneUnit.Slit2Pix    => ("2pix-slit", "null")
-    case FocalPlaneUnit.Slit3Pix    => ("3pix-slit", "null")
-    case FocalPlaneUnit.Slit4Pix    => ("4pix-slit", "null")
-    case FocalPlaneUnit.Slit6Pix    => ("6pix-slit", "null")
-    case FocalPlaneUnit.Slit8Pix    => ("8pix-slit", "null")
-    case FocalPlaneUnit.Custom(s)   => ("null", s)
-  }
+  implicit val encodeFPUPosition: EncodeEpicsValue[FocalPlaneUnit, (String, String)] =
+    EncodeEpicsValue {
+      case FocalPlaneUnit.Open        => ("Open", "null")
+      case FocalPlaneUnit.GridSub1Pix => ("sub1-pix_grid", "null")
+      case FocalPlaneUnit.Grid2Pix    => ("2-pix_grid", "null")
+      case FocalPlaneUnit.Slit1Pix    => ("1pix-slit", "null")
+      case FocalPlaneUnit.Slit2Pix    => ("2pix-slit", "null")
+      case FocalPlaneUnit.Slit3Pix    => ("3pix-slit", "null")
+      case FocalPlaneUnit.Slit4Pix    => ("4pix-slit", "null")
+      case FocalPlaneUnit.Slit6Pix    => ("6pix-slit", "null")
+      case FocalPlaneUnit.Slit8Pix    => ("8pix-slit", "null")
+      case FocalPlaneUnit.Custom(s)   => ("null", s)
+    }
 
   // Removed obsolete filter positions Open and DK_G0807
   implicit val encodeFilterPosition: EncodeEpicsValue[Filter, Option[String]] =
     EncodeEpicsValue.applyO {
-    case Filter.Y       => "Y_G0811"
-    case Filter.F1056   => "F1056"
-    case Filter.F1063   => "F1063"
-    case Filter.J_LOW   => "J-lo_G0801"
-    case Filter.J       => "J_G0802"
-    case Filter.H       => "H_G0803"
-    case Filter.K_LONG  => "K-long_G0812"
-    case Filter.K_SHORT => "Ks_G0804"
-    case Filter.JH      => "JH_G0809"
-    case Filter.HK      => "HK_G0806"
-    case Filter.K_BLUE  => "K-blue_G0814"
-    case Filter.K_RED   => "K-red_G0815"
-  }
+      case Filter.Y       => "Y_G0811"
+      case Filter.F1056   => "F1056"
+      case Filter.F1063   => "F1063"
+      case Filter.J_LOW   => "J-lo_G0801"
+      case Filter.J       => "J_G0802"
+      case Filter.H       => "H_G0803"
+      case Filter.K_LONG  => "K-long_G0812"
+      case Filter.K_SHORT => "Ks_G0804"
+      case Filter.JH      => "JH_G0809"
+      case Filter.HK      => "HK_G0806"
+      case Filter.K_BLUE  => "K-blue_G0814"
+      case Filter.K_RED   => "K-red_G0815"
+    }
 
   implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String] = EncodeEpicsValue {
     case LyotWheel.OPEN       => "f/16_G5830"
@@ -108,9 +109,11 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
   val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
   val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
+  val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
-  def apply[F[_]: Async](sys: => Flamingos2Epics[F])(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+  def apply[F[_]: Async](
+    sys:          => Flamingos2Epics[F]
+  )(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
@@ -120,7 +123,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
     } yield ()
 
     private def setCCConfig(cc: CCConfig): F[Unit] = {
-      val fpu = encode(cc.fpu)
+      val fpu    = encode(cc.fpu)
       val filter = encode(cc.f)
       for {
         _ <- sys.configCmd.setWindowCover(encode(cc.w))
@@ -155,16 +158,21 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
     } yield ()
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] = {
-      val s = ProgressUtil.fromStateTOption[F, Time](_ => StateT[F, Time, Option[Progress]] { st =>
-        val m = if (total >= st) total else st
-        val p = for {
-          obst <- sys.observeState
-          rem <- sys.countdown
-          v <- (sys.dcIsPreparing, sys.dcIsAcquiring, sys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
-        } yield if(obst.isBusy) ObsProgress(m, RemainingTime(rem.seconds), v).some else none
-        p.map(p => (m, p))
-      })
-      s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      val s = ProgressUtil.fromStateTOption[F, Time](_ =>
+        StateT[F, Time, Option[Progress]] { st =>
+          val m = if (total >= st) total else st
+          val p = for {
+            obst <- sys.observeState
+            rem  <- sys.countdown
+            v    <- (sys.dcIsPreparing, sys.dcIsAcquiring, sys.dcIsReadingOut).mapN(
+                      ObserveStage.fromBooleans
+                    )
+          } yield if (obst.isBusy) ObsProgress(m, RemainingTime(rem.seconds), v).some else none
+          p.map(p => (m, p))
+        }
+      )
+      s(total)
+        .dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
         .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
     }
   }

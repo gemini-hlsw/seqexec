@@ -9,8 +9,8 @@ import seqexec.server.keywords._
 import seqexec.server.tcs.Tcs
 
 /**
-  * Describes the parameters for an observation
-  */
+ * Describes the parameters for an observation
+ */
 final case class ObserveEnvironment[F[_]](
   odb:      OdbProxy[F],
   dhs:      DhsClient[F],
@@ -24,5 +24,5 @@ final case class ObserveEnvironment[F[_]](
   headers:  HeaderExtraData => List[Header[F]],
   ctx:      HeaderExtraData
 ) {
-  def getTcs: Option[Tcs[F]] = otherSys.collectFirst{ case x: Tcs[F] => x }
+  def getTcs: Option[Tcs[F]] = otherSys.collectFirst { case x: Tcs[F] => x }
 }

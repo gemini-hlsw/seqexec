@@ -28,10 +28,12 @@ import seqexec.server.EpicsUtil.safeAttributeSListSIntF
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   private val MystTop = tops.getOrElse("myst", "myst:")
-  private val RtcTop = tops.getOrElse("rtc", "rtc:")
+  private val RtcTop  = tops.getOrElse("rtc", "rtc:")
 
   object LoopControl extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::seqLoopCtrl"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gems::seqLoopCtrl")
+    )
 
     def setCommand(v: String): F[Unit] = setParameter(cs.map(_.getString("cmd")), v)
 
@@ -40,24 +42,33 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val mystStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::status")
 
-  private val aniLoopAttr = mystStatus.addEnum("aniLoop", s"${MystTop}aniLoopStatus.VAL", classOf[LoopState],
-    "ANI loop status")
+  private val aniLoopAttr   = mystStatus.addEnum("aniLoop",
+                                               s"${MystTop}aniLoopStatus.VAL",
+                                               classOf[LoopState],
+                                               "ANI loop status"
+  )
   def aniLoop: F[LoopState] = safeAttributeF(aniLoopAttr)
 
   def astrometryReady: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("astromState"))
     .map(_ === ReadyState.Ready.toString)
 
-  private val flexLoopAttr = mystStatus.addEnum("flexLoop", s"${MystTop}flexLoopStatus.VAL", classOf[LoopState],
-    "Flexure loop status")
+  private val flexLoopAttr      = mystStatus.addEnum("flexLoop",
+                                                s"${MystTop}flexLoopStatus.VAL",
+                                                classOf[LoopState],
+                                                "Flexure loop status"
+  )
   def flexureLoop: F[LoopState] = safeAttributeF(flexLoopAttr)
 
-  private val focusLoopAttr = mystStatus.addEnum("focLoop", s"${MystTop}focLoopStatus.VAL", classOf[LoopState],
-    "Focus loop status")
+  private val focusLoopAttr   = mystStatus.addEnum("focLoop",
+                                                 s"${MystTop}focLoopStatus.VAL",
+                                                 classOf[LoopState],
+                                                 "Focus loop status"
+  )
   def focusLoop: F[LoopState] = safeAttributeF(focusLoopAttr)
 
   def lgsFlux: F[List[Float]] = safeAttributeSListSFloatF(mystStatus.getFloatAttribute("lgsFlux"))
 
-  def lgsStrehl: F[Double] =  safeAttributeSDoubleF(mystStatus.getDoubleAttribute("lgsStrehl"))
+  def lgsStrehl: F[Double] = safeAttributeSDoubleF(mystStatus.getDoubleAttribute("lgsStrehl"))
 
   def rZero: F[Double] = safeAttributeSDoubleF(mystStatus.getDoubleAttribute("rZero"))
 
@@ -65,14 +76,18 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def astroMode: F[String] = safeAttributeF(mystStatus.getStringAttribute("astroMode"))
 
-  private val lgsLoopAttr = mystStatus.addEnum("lgsLoop", s"${MystTop}lgsLoopStatus.VAL", classOf[LoopState],
-    "LGS loop status")
+  private val lgsLoopAttr   = mystStatus.addEnum("lgsLoop",
+                                               s"${MystTop}lgsLoopStatus.VAL",
+                                               classOf[LoopState],
+                                               "LGS loop status"
+  )
   def lgsLoop: F[LoopState] = safeAttributeF(lgsLoopAttr)
 
-  private val lgsMatrixAttr = mystStatus.addEnum("lgsMatrix", s"${MystTop}lgsMatrixReady.VAL", classOf[ReadyState])
+  private val lgsMatrixAttr      =
+    mystStatus.addEnum("lgsMatrix", s"${MystTop}lgsMatrixReady.VAL", classOf[ReadyState])
   def lgsMatrixReady: F[Boolean] = safeAttributeF(lgsMatrixAttr).map(_ === ReadyState.Ready)
 
-  val usedStr: String = "Used"
+  val usedStr: String       = "Used"
   def cwfs1Used: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("ngs1"))
     .map(_ === usedStr)
 
@@ -123,14 +138,18 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def oigsMagnitude: F[Double] = safeAttributeF(mystStatus.getStringAttribute("oigsMag"))
     .map(_.toDouble)
 
-  private val scienceStateAttr = mystStatus.addEnum("sciReady", s"${MystTop}sciReady.VAL", classOf[ReadyState])
+  private val scienceStateAttr =
+    mystStatus.addEnum("sciReady", s"${MystTop}sciReady.VAL", classOf[ReadyState])
   def scienceReady: F[Boolean] = safeAttributeF(scienceStateAttr).map(_ === ReadyState.Ready)
 
   def waitForStableLoops(timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(scienceStateAttr, ReadyState.Ready, timeout, "GeMS science ready flag")
 
-  private val ttLoopAttr = mystStatus.addEnum("ttLoop", s"${MystTop}ttLoopStatus.VAL", classOf[LoopState],
-    "TT loop status")
+  private val ttLoopAttr   = mystStatus.addEnum("ttLoop",
+                                              s"${MystTop}ttLoopStatus.VAL",
+                                              classOf[LoopState],
+                                              "TT loop status"
+  )
   def ttLoop: F[LoopState] = safeAttributeF(ttLoopAttr)
 
   val rtcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::rtcsad")
@@ -141,18 +160,18 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def sourceMask: F[Int] = safeAttributeSIntF(rtcStatus.getIntegerAttribute("sourceMask"))
 
-  private val apd1Attr = rtcStatus.addEnum("tt1Active", s"${RtcTop}ngs:apd1.VAL", classOf[ApdState])
+  private val apd1Attr       = rtcStatus.addEnum("tt1Active", s"${RtcTop}ngs:apd1.VAL", classOf[ApdState])
   def apd1Active: F[Boolean] = safeAttributeF(apd1Attr).map(_ === ApdState.ENABLED)
 
-  private val apd2Attr = rtcStatus.addEnum("tt2Active", s"${RtcTop}ngs:apd2.VAL", classOf[ApdState])
+  private val apd2Attr       = rtcStatus.addEnum("tt2Active", s"${RtcTop}ngs:apd2.VAL", classOf[ApdState])
   def apd2Active: F[Boolean] = safeAttributeF(apd2Attr).map(_ === ApdState.ENABLED)
 
-  private val apd3Attr = rtcStatus.addEnum("tt3Active", s"${RtcTop}ngs:apd3.VAL", classOf[ApdState])
+  private val apd3Attr       = rtcStatus.addEnum("tt3Active", s"${RtcTop}ngs:apd3.VAL", classOf[ApdState])
   def apd3Active: F[Boolean] = safeAttributeF(apd3Attr).map(_ === ApdState.ENABLED)
 
   val aomStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::aomsad")
 
-  val closedStr = "CLOSED"
+  val closedStr                        = "CLOSED"
   def scienceAdcLoopActive: F[Boolean] = safeAttributeF(aomStatus.getStringAttribute("adcScLoop"))
     .map(_ === closedStr)
 
@@ -161,17 +180,18 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def scienceAdcState: F[String] = safeAttributeF(aomStatus.getStringAttribute("adcScState"))
 
-  def beamSplitterState: F[String] = safeAttributeF(aomStatus.getStringAttribute("beamSplitterState"))
+  def beamSplitterState: F[String] = safeAttributeF(
+    aomStatus.getStringAttribute("beamSplitterState")
+  )
 
 }
 
 object GemsEpics extends EpicsSystem[GemsEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gems.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GemsEpics[IO]] =
     Sync[F].delay(new GemsEpics[IO](service, tops))
 
 }
-

@@ -19,14 +19,15 @@ class GuideConfigDbRoutes[F[_]: Sync: Logger](db: GuideConfigDb[F]) extends Http
 
   implicit val decoder: EntityDecoder[F, GuideConfig] = jsonOf
 
-  val publicService: HttpRoutes[F] = GZip { HttpRoutes.of {
-    case req @ POST -> Root =>
+  val publicService: HttpRoutes[F] = GZip {
+    HttpRoutes.of { case req @ POST -> Root =>
       req.decode[GuideConfig] { guideConfig =>
         db.set(guideConfig) *>
           Logger[F].info(s"Received guide configuration $guideConfig") *>
           Ok("")
       }
-  } }
+    }
+  }
 
   def service: HttpRoutes[F] = publicService
 

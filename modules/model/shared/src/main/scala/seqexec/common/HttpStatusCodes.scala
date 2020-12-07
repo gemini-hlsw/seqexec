@@ -4,6 +4,6 @@
 package seqexec.common
 
 object HttpStatusCodes {
-  val NotFound: Int = 404
+  val NotFound: Int     = 404
   val Unauthorized: Int = 401
 }

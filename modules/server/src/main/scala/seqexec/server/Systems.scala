@@ -65,12 +65,19 @@ final case class Systems[F[_]](
 
 object Systems {
 
-  final case class Builder(settings: SeqexecEngineConfiguration, service: CaService, tops: Map[String, String])(implicit L: Logger[IO], T: Timer[IO]) {
-    def odbProxy[F[_] : Sync : Logger]: OdbProxy[F] = OdbProxy[F](new Peer(settings.odb.renderString, 8443, null),
-      if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[F](new Peer(settings.odb.renderString, 8442, null))
-      else new OdbProxy.DummyOdbCommands[F])
+  final case class Builder(
+    settings:   SeqexecEngineConfiguration,
+    service:    CaService,
+    tops:       Map[String, String]
+  )(implicit L: Logger[IO], T: Timer[IO]) {
+    def odbProxy[F[_]: Sync: Logger]: OdbProxy[F] = OdbProxy[F](
+      new Peer(settings.odb.renderString, 8443, null),
+      if (settings.odbNotifications)
+        OdbProxy.OdbCommandsImpl[F](new Peer(settings.odb.renderString, 8442, null))
+      else new OdbProxy.DummyOdbCommands[F]
+    )
 
-    def dhs[F[_]: Concurrent : Timer : Logger](httpClient: Client[F]): F[DhsClient[F]] =
+    def dhs[F[_]: Concurrent: Timer: Logger](httpClient: Client[F]): F[DhsClient[F]] =
       if (settings.systemControl.dhs.command)
         DhsClientHttp[F](httpClient, settings.dhsServer).pure[F]
       else
@@ -78,46 +85,75 @@ object Systems {
 
     // TODO make instruments controllers generalized on F
     def gcal: IO[(GcalController[IO], GcalKeywordReader[IO])] =
-      if (settings.systemControl.gcal.realKeywords) GcalEpics.instance[IO](service, tops).map(epicsSys => (
-        if (settings.systemControl.gcal.command) GcalControllerEpics(epicsSys) else GcalControllerSim[IO],
-        GcalKeywordsReaderEpics(epicsSys)
-      ))
+      if (settings.systemControl.gcal.realKeywords)
+        GcalEpics
+          .instance[IO](service, tops)
+          .map(epicsSys =>
+            (
+              if (settings.systemControl.gcal.command) GcalControllerEpics(epicsSys)
+              else GcalControllerSim[IO],
+              GcalKeywordsReaderEpics(epicsSys)
+            )
+          )
       else (GcalControllerSim[IO], DummyGcalKeywordsReader[IO]).pure[IO]
 
-    def tcsSouth(tcsEpicsO: => Option[TcsEpics[IO]], site: Site, gcdb: GuideConfigDb[IO]): TcsSouthController[IO] =
-      tcsEpicsO.map{ tcsEpics =>
-          if (settings.systemControl.tcs.command && site === Site.GS) TcsSouthControllerEpics(tcsEpics, gcdb)
+    def tcsSouth(
+      tcsEpicsO: => Option[TcsEpics[IO]],
+      site:      Site,
+      gcdb:      GuideConfigDb[IO]
+    ): TcsSouthController[IO] =
+      tcsEpicsO
+        .map { tcsEpics =>
+          if (settings.systemControl.tcs.command && site === Site.GS)
+            TcsSouthControllerEpics(tcsEpics, gcdb)
           else TcsSouthControllerSim[IO]
-      }.getOrElse(TcsSouthControllerSim[IO])
+        }
+        .getOrElse(TcsSouthControllerSim[IO])
 
     def tcsNorth(tcsEpicsO: => Option[TcsEpics[IO]], site: Site): TcsNorthController[IO] =
-      tcsEpicsO.map{ tcsEpics =>
-        if (settings.systemControl.tcs.command && site === Site.GN) TcsNorthControllerEpics(tcsEpics)
-        else TcsNorthControllerSim[IO]
-      }.getOrElse(TcsNorthControllerSim[IO])
+      tcsEpicsO
+        .map { tcsEpics =>
+          if (settings.systemControl.tcs.command && site === Site.GN)
+            TcsNorthControllerEpics(tcsEpics)
+          else TcsNorthControllerSim[IO]
+        }
+        .getOrElse(TcsNorthControllerSim[IO])
 
-    def altair(tcsEpicsO: => Option[TcsEpics[IO]]): IO[(AltairController[IO], AltairKeywordReader[IO])] =
-      if(settings.systemControl.altair.realKeywords)
+    def altair(
+      tcsEpicsO: => Option[TcsEpics[IO]]
+    ): IO[(AltairController[IO], AltairKeywordReader[IO])] =
+      if (settings.systemControl.altair.realKeywords)
         AltairEpics.instance[IO](service, tops).map { altairEpics =>
-          tcsEpicsO.map { tcsEpics =>
-            if (settings.systemControl.altair.command && settings.systemControl.tcs.command)
-              AltairControllerEpics.apply(altairEpics, tcsEpics)
-            else
-              AltairControllerSim[IO]
-          }.map((_, AltairKeywordReaderEpics(altairEpics)))
+          tcsEpicsO
+            .map { tcsEpics =>
+              if (settings.systemControl.altair.command && settings.systemControl.tcs.command)
+                AltairControllerEpics.apply(altairEpics, tcsEpics)
+              else
+                AltairControllerSim[IO]
+            }
+            .map((_, AltairKeywordReaderEpics(altairEpics)))
             .getOrElse((AltairControllerSim[IO], AltairKeywordReaderEpics(altairEpics)))
         }
       else
         (AltairControllerSim[IO], AltairKeywordReaderDummy[IO]).pure[IO]
 
-    def tcsObjects(gcdb: GuideConfigDb[IO], site: Site)
-    : IO[(TcsNorthController[IO], TcsSouthController[IO], TcsKeywordsReader[IO], AltairController[IO], AltairKeywordReader[IO])] =
+    def tcsObjects(gcdb: GuideConfigDb[IO], site: Site): IO[
+      (
+        TcsNorthController[IO],
+        TcsSouthController[IO],
+        TcsKeywordsReader[IO],
+        AltairController[IO],
+        AltairKeywordReader[IO]
+      )
+    ] =
       for {
-        tcsEpicsO             <- settings.systemControl.tcs.realKeywords.option(TcsEpics.instance[IO](service, tops)).sequence
+        tcsEpicsO             <- settings.systemControl.tcs.realKeywords
+                                   .option(TcsEpics.instance[IO](service, tops))
+                                   .sequence
         (altairCtr, altairKR) <- altair(tcsEpicsO)
-        tcsNCtr = tcsNorth(tcsEpicsO, site)
-        tcsSCtr = tcsSouth(tcsEpicsO, site, gcdb)
-        tcsKR = tcsEpicsO.map(TcsKeywordsReaderEpics[IO]).getOrElse(DummyTcsKeywordsReader[IO])
+        tcsNCtr                = tcsNorth(tcsEpicsO, site)
+        tcsSCtr                = tcsSouth(tcsEpicsO, site, gcdb)
+        tcsKR                  = tcsEpicsO.map(TcsKeywordsReaderEpics[IO]).getOrElse(DummyTcsKeywordsReader[IO])
       } yield (
         tcsNCtr,
         tcsSCtr,
@@ -126,38 +162,50 @@ object Systems {
         altairKR
       )
 
-    def gems(gsaoiController: GsaoiGuider[IO], gsaoiEpicsO: => Option[GsaoiEpics[IO]])
-    : IO[(GemsController[IO], GemsKeywordReader[IO])] =
-      if(settings.systemControl.gems.realKeywords)
+    def gems(
+      gsaoiController: GsaoiGuider[IO],
+      gsaoiEpicsO:     => Option[GsaoiEpics[IO]]
+    ): IO[(GemsController[IO], GemsKeywordReader[IO])] =
+      if (settings.systemControl.gems.realKeywords)
         GemsEpics.instance[IO](service, tops).map { gemsEpics =>
-          gsaoiEpicsO.map { gsaoiEpics => (
-            if (settings.systemControl.gems.command && settings.systemControl.tcs.command)
-              GemsControllerEpics(gemsEpics, gsaoiController)
-            else
-              GemsControllerSim[IO],
-            GemsKeywordReaderEpics[IO](gemsEpics, gsaoiEpics)
-          ) }
-            .getOrElse((GemsControllerEpics(gemsEpics, gsaoiController), GemsKeywordReaderDummy[IO]))
-          }
+          gsaoiEpicsO
+            .map { gsaoiEpics =>
+              (
+                if (settings.systemControl.gems.command && settings.systemControl.tcs.command)
+                  GemsControllerEpics(gemsEpics, gsaoiController)
+                else
+                  GemsControllerSim[IO],
+                GemsKeywordReaderEpics[IO](gemsEpics, gsaoiEpics)
+              )
+            }
+            .getOrElse(
+              (GemsControllerEpics(gemsEpics, gsaoiController), GemsKeywordReaderDummy[IO])
+            )
+        }
       else (GemsControllerSim[IO], GemsKeywordReaderDummy[IO]).pure[IO]
 
-    def gsaoi(gsaoiEpicsO: => Option[GsaoiEpics[IO]])
-    : IO[(GsaoiFullHandler[IO], GsaoiKeywordReader[IO])] =
-      gsaoiEpicsO.map{ gsaoiEpics => (
-          if (settings.systemControl.gsaoi.command) GsaoiControllerEpics(gsaoiEpics).pure[IO]
-          else GsaoiControllerSim[IO]
-        ).map((_, GsaoiKeywordReaderEpics(gsaoiEpics)))
-      }
-      .getOrElse(GsaoiControllerSim[IO].map((_, GsaoiKeywordReaderDummy[IO])))
+    def gsaoi(
+      gsaoiEpicsO: => Option[GsaoiEpics[IO]]
+    ): IO[(GsaoiFullHandler[IO], GsaoiKeywordReader[IO])] =
+      gsaoiEpicsO
+        .map { gsaoiEpics =>
+          (
+            if (settings.systemControl.gsaoi.command) GsaoiControllerEpics(gsaoiEpics).pure[IO]
+            else GsaoiControllerSim[IO]
+          ).map((_, GsaoiKeywordReaderEpics(gsaoiEpics)))
+        }
+        .getOrElse(GsaoiControllerSim[IO].map((_, GsaoiKeywordReaderDummy[IO])))
 
-    def gemsObjects
-    : IO[(GemsController[IO], GemsKeywordReader[IO], GsaoiController[IO], GsaoiKeywordReader[IO])] =
-      for{
-        gsaoiEpicsO         <- settings.systemControl.gsaoi.realKeywords.option(GsaoiEpics.instance[IO](service, tops)).sequence
+    def gemsObjects: IO[
+      (GemsController[IO], GemsKeywordReader[IO], GsaoiController[IO], GsaoiKeywordReader[IO])
+    ] =
+      for {
+        gsaoiEpicsO         <- settings.systemControl.gsaoi.realKeywords
+                                 .option(GsaoiEpics.instance[IO](service, tops))
+                                 .sequence
         (gsaoiCtr, gsaoiKR) <- gsaoi(gsaoiEpicsO)
         (gemsCtr, gemsKR)   <- gems(gsaoiCtr, gsaoiEpicsO)
       } yield (gemsCtr, gemsKR, gsaoiCtr, gsaoiKR)
-
 
     /*
      * Type parameters are
@@ -166,15 +214,15 @@ object Systems {
      * K: Instrument keyword reader class
      */
     def instObjects[F[_]: Monad, E, C, K](
-      ctrl: ControlStrategy,
-      epicsBuilder: (CaService, Map[String, String]) => F[E],
-      realCtrlBuilder: (=> E) => C,
-      simCtrlBuilder: => F[C],
+      ctrl:                 ControlStrategy,
+      epicsBuilder:         (CaService, Map[String, String]) => F[E],
+      realCtrlBuilder:      (=> E) => C,
+      simCtrlBuilder:       => F[C],
       realKeyReaderBuilder: E => K,
-      simKeyReaderBuilder: => K
+      simKeyReaderBuilder:  => K
     ): F[(C, K)] =
-      if(ctrl.realKeywords)
-        epicsBuilder(service, tops).flatMap( epicsSys =>
+      if (ctrl.realKeywords)
+        epicsBuilder(service, tops).flatMap(epicsSys =>
           (
             if (ctrl.command) realCtrlBuilder(epicsSys).pure[F]
             else simCtrlBuilder
@@ -214,59 +262,81 @@ object Systems {
       )
 
     def gmosSouth(gmosEpicsO: Option[GmosEpics[IO]], site: Site): IO[GmosSouthController[IO]] =
-      gmosEpicsO.filter( _ => settings.systemControl.gmos.command && site === Site.GS)
+      gmosEpicsO
+        .filter(_ => settings.systemControl.gmos.command && site === Site.GS)
         .map(GmosSouthControllerEpics.apply[IO](_).pure[IO])
         .getOrElse(GmosControllerSim.south[IO])
 
     def gmosNorth(gmosEpicsO: Option[GmosEpics[IO]], site: Site): IO[GmosNorthController[IO]] =
-      gmosEpicsO.filter( _ => settings.systemControl.gmos.command && site === Site.GN)
+      gmosEpicsO
+        .filter(_ => settings.systemControl.gmos.command && site === Site.GN)
         .map(GmosNorthControllerEpics.apply[IO](_).pure[IO])
         .getOrElse(GmosControllerSim.north[IO])
 
-    def gmosObjects(site: Site): IO[(GmosSouthController[IO], GmosNorthController[IO], GmosKeywordReader[IO])] =
-      for{
-        gmosEpicsO   <- settings.systemControl.gmos.realKeywords.option(GmosEpics.instance[IO](service, tops)).sequence
+    def gmosObjects(
+      site: Site
+    ): IO[(GmosSouthController[IO], GmosNorthController[IO], GmosKeywordReader[IO])] =
+      for {
+        gmosEpicsO   <- settings.systemControl.gmos.realKeywords
+                          .option(GmosEpics.instance[IO](service, tops))
+                          .sequence
         gmosSouthCtr <- gmosSouth(gmosEpicsO, site)
         gmosNorthCtr <- gmosNorth(gmosEpicsO, site)
-        gmosKR = gmosEpicsO.map(GmosKeywordReaderEpics[IO]).getOrElse(GmosKeywordReaderDummy[IO])
+        gmosKR        = gmosEpicsO.map(GmosKeywordReaderEpics[IO]).getOrElse(GmosKeywordReaderDummy[IO])
       } yield (gmosSouthCtr, gmosNorthCtr, gmosKR)
 
     def flamingos2: IO[Flamingos2Controller[IO]] =
-      if (settings.systemControl.f2.command) Flamingos2Epics.instance[IO](service, tops).map(Flamingos2ControllerEpics(_))
+      if (settings.systemControl.f2.command)
+        Flamingos2Epics.instance[IO](service, tops).map(Flamingos2ControllerEpics(_))
       else if (settings.instForceError) Flamingos2ControllerSimBad[IO](settings.failAt)
       else Flamingos2ControllerSim[IO]
 
-    def gpi[F[_]: ConcurrentEffect: Timer: Logger](httpClient: Client[F]): Resource[F, GpiController[F]] = {
+    def gpi[F[_]: ConcurrentEffect: Timer: Logger](
+      httpClient: Client[F]
+    ): Resource[F, GpiController[F]] = {
       def gpiClient: Resource[F, GpiClient[F]] =
-        if (settings.systemControl.gpi.command) GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
+        if (settings.systemControl.gpi.command)
+          GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
         else GpiClient.simulatedGpiClient[F]
 
       def gpiGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
-        Resource.pure[F, GdsClient[F]](GdsClient(
-          if (settings.systemControl.gpiGds.command) httpClient else GdsClient.alwaysOkClient[F],
-          settings.gpiGDS))
+        Resource.pure[F, GdsClient[F]](
+          GdsClient(if (settings.systemControl.gpiGds.command) httpClient
+                    else GdsClient.alwaysOkClient[F],
+                    settings.gpiGDS
+          )
+        )
 
       (gpiClient, gpiGDS(httpClient)).mapN(GpiController(_, _))
     }
 
-    def ghost[F[_] : ConcurrentEffect : Timer: Logger](httpClient: Client[F]): Resource[F, GhostController[F]] = {
+    def ghost[F[_]: ConcurrentEffect: Timer: Logger](
+      httpClient: Client[F]
+    ): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
-        if (settings.systemControl.ghost.command) GhostClient.ghostClient[F](settings.ghostUrl.renderString)
+        if (settings.systemControl.ghost.command)
+          GhostClient.ghostClient[F](settings.ghostUrl.renderString)
         else GhostClient.simulatedGhostClient
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
-        Resource.pure[F, GdsClient[F]](GdsClient(
-          if (settings.systemControl.ghostGds.command) httpClient else GdsClient.alwaysOkClient[F],
-          settings.ghostGDS))
+        Resource.pure[F, GdsClient[F]](
+          GdsClient(if (settings.systemControl.ghostGds.command) httpClient
+                    else GdsClient.alwaysOkClient[F],
+                    settings.ghostGDS
+          )
+        )
 
       (ghostClient, ghostGDS(httpClient)).mapN(GhostController(_, _))
     }
 
     def gws: IO[GwsKeywordReader[IO]] =
-      if(settings.systemControl.gws.realKeywords) GwsEpics.instance[IO](service, tops).map(GwsKeywordsReaderEpics[IO])
+      if (settings.systemControl.gws.realKeywords)
+        GwsEpics.instance[IO](service, tops).map(GwsKeywordsReaderEpics[IO])
       else DummyGwsKeywordsReader[IO].pure[IO]
 
-    def build(site: Site, httpClient: Client[IO])(implicit C: ContextShift[IO]): Resource[IO, Systems[IO]] = {
+    def build(site: Site, httpClient: Client[IO])(implicit
+      C:            ContextShift[IO]
+    ): Resource[IO, Systems[IO]] =
       for {
         odbProxy                                   <- Resource.pure[IO, OdbProxy[IO]](odbProxy[IO])
         dhsClient                                  <- Resource.liftF(dhs[IO](httpClient))
@@ -282,49 +352,50 @@ object Systems {
         gpiController                              <- gpi[IO](httpClient)
         ghostController                            <- ghost[IO](httpClient)
         gwsKR                                      <- Resource.liftF(gws)
-      } yield
-        Systems[IO](
-          odbProxy,
-          dhsClient,
-          tcsGS,
-          tcsGN,
-          gcalCtr,
-          f2Controller,
-          gmosSouthCtr,
-          gmosNorthCtr,
-          gnirsCtr,
-          gsaoiCtr,
-          gpiController,
-          ghostController,
-          niriCtr,
-          nifsCtr,
-          altairCtr,
-          gemsCtr,
-          gcdb,
-          tcsKR,
-          gcalKR,
-          gmosKR,
-          gnirsKR,
-          niriKR,
-          nifsKR,
-          gsaoiKR,
-          altairKR,
-          gemsKR,
-          gwsKR
-        )
-    }
+      } yield Systems[IO](
+        odbProxy,
+        dhsClient,
+        tcsGS,
+        tcsGN,
+        gcalCtr,
+        f2Controller,
+        gmosSouthCtr,
+        gmosNorthCtr,
+        gnirsCtr,
+        gsaoiCtr,
+        gpiController,
+        ghostController,
+        niriCtr,
+        nifsCtr,
+        altairCtr,
+        gemsCtr,
+        gcdb,
+        tcsKR,
+        gcalKR,
+        gmosKR,
+        gnirsKR,
+        niriKR,
+        nifsKR,
+        gsaoiKR,
+        altairKR,
+        gemsKR,
+        gwsKR
+      )
   }
 
   private def decodeTops(s: String): Map[String, String] =
-    s.split("=|,").grouped(2).collect {
-      case Array(k, v) => k.trim -> v.trim
-    }.toMap
+    s.split("=|,")
+      .grouped(2)
+      .collect { case Array(k, v) =>
+        k.trim -> v.trim
+      }
+      .toMap
 
   def build(
-     site: Site,
-     httpClient: Client[IO],
-     settings: SeqexecEngineConfiguration,
-     service: CaService
-   )(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] =
+    site:       Site,
+    httpClient: Client[IO],
+    settings:   SeqexecEngineConfiguration,
+    service:    CaService
+  )(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] =
     Builder(settings, service, decodeTops(settings.tops)).build(site, httpClient)
 }

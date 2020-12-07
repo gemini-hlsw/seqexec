@@ -4,6 +4,6 @@
 package seqexec.web.client.services
 
 object HtmlConstants {
-  val nbsp: String = "\u00a0"
+  val nbsp: String      = "\u00a0"
   val iconEmpty: String = nbsp * 2
 }

@@ -3,11 +3,17 @@
 
 package giapi.client
 
-import cats.effect.{ Timer, ContextShift, IO, Resource }
+import cats.effect.{ ContextShift, IO, Resource, Timer }
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
-import edu.gemini.aspen.giapi.commands.{Activity, Command => JCommand, SequenceCommand, CompletionListener, HandlerResponse}
+import edu.gemini.aspen.giapi.commands.{
+  Activity,
+  Command => JCommand,
+  SequenceCommand,
+  CompletionListener,
+  HandlerResponse
+}
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesBridgeImpl
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesConsumer
@@ -27,19 +33,23 @@ object GmpCommands {
     s"vm://$name?marshal=false&broker.persistent=false&create=false"
 
   /**
-    * Setup a mini gmp that can store and provide status items
-    */
+   * Setup a mini gmp that can store and provide status items
+   */
   def createGmpCommands(amqUrl: String, handleCommands: Boolean): IO[GmpCommands] = IO.apply {
     // Local in memory broker
-    val amq = new ActiveMQJmsProvider(amqUrl)
+    val amq                     = new ActiveMQJmsProvider(amqUrl)
     amq.startConnection()
-    val cs = new CommandSender() {
+    val cs                      = new CommandSender() {
       // This is essentially an instrument simulator
       // we test several possible scenarios
       override def sendCommand(command: JCommand, listener: CompletionListener): HandlerResponse =
         sendCommand(command, listener, 0)
 
-      override def sendCommand(command: JCommand, listener: CompletionListener, timeout: Long): HandlerResponse =
+      override def sendCommand(
+        command:  JCommand,
+        listener: CompletionListener,
+        timeout:  Long
+      ): HandlerResponse =
         command.getSequenceCommand match {
           case SequenceCommand.INIT => HandlerResponse.COMPLETED
           case SequenceCommand.PARK => HandlerResponse.ACCEPTED
@@ -47,7 +57,7 @@ object GmpCommands {
         }
 
     }
-    val cmb = new CommandMessagesBridgeImpl(amq, cs)
+    val cmb                     = new CommandMessagesBridgeImpl(amq, cs)
     val commandMessagesConsumer = new CommandMessagesConsumer(cmb)
     if (handleCommands) {
       commandMessagesConsumer.startJms(amq)
@@ -63,8 +73,8 @@ object GmpCommands {
 }
 
 /**
-  * Tests of the giapi api
-  */
+ * Tests of the giapi api
+ */
 final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
   implicit val ioContextShift: ContextShift[IO] =
@@ -75,33 +85,51 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
   def client(amqUrl: String, handleCommands: Boolean): Resource[IO, Giapi[IO]] =
     for {
-      _ <- Resource.make(GmpCommands.createGmpCommands(amqUrl, handleCommands))(GmpCommands.closeGmpCommands)
+      _ <- Resource.make(GmpCommands.createGmpCommands(amqUrl, handleCommands))(
+             GmpCommands.closeGmpCommands
+           )
       c <- Resource.make(Giapi.giapiConnection[IO](amqUrl).connect)(_.close)
     } yield c
 
   ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly
-    client(GmpCommands.amqUrl("test1"), false).use { c =>
-      c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    }.unsafeRunSync() shouldBe Left(CommandResultException(Response.ERROR, "Message cannot be null"))
+    client(GmpCommands.amqUrl("test1"), false)
+      .use { c =>
+        c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second)
+          .attempt
+      }
+      .unsafeRunSync() shouldBe Left(
+      CommandResultException(Response.ERROR, "Message cannot be null")
+    )
   }
 
   test("Test sending a command with no answer") {
-    client(GmpCommands.amqUrl("test2"), true).use { c =>
-      c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    }.unsafeRunSync() shouldBe Left(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
+    client(GmpCommands.amqUrl("test2"), true)
+      .use { c =>
+        c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second)
+          .attempt
+      }
+      .unsafeRunSync() shouldBe Left(
+      CommandResultException(Response.NOANSWER, "No answer from the instrument")
+    )
   }
 
   test("Test sending a command with immediate answer") {
-    client(GmpCommands.amqUrl("test3"), true).use { c =>
-      c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt
-    }.unsafeRunSync() shouldBe Right(CommandResult(Response.COMPLETED))
+    client(GmpCommands.amqUrl("test3"), true)
+      .use { c =>
+        c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second)
+          .attempt
+      }
+      .unsafeRunSync() shouldBe Right(CommandResult(Response.COMPLETED))
   }
 
   test("Test sending a command with accepted but never completed answer") {
     val timeout = 1.second
-    client(GmpCommands.amqUrl("test4"), true).use { c =>
-      c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt
-    }.unsafeRunSync() shouldBe Left(CommandResultException.timedOut(timeout))
+    client(GmpCommands.amqUrl("test4"), true)
+      .use { c =>
+        c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout)
+          .attempt
+      }
+      .unsafeRunSync() shouldBe Left(CommandResultException.timedOut(timeout))
   }
 
 }

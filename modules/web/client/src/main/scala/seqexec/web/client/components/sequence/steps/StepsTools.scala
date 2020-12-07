@@ -19,8 +19,8 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 
 /**
-  * Component to display an icon for the state
-  */
+ * Component to display an icon for the state
+ */
 final case class StepToolsCell(
   clientStatus:       ClientStatus,
   step:               Step,
@@ -39,9 +39,7 @@ object StepToolsCell {
   type Props = StepToolsCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]("heightChangeCB",
-                                       "breakPointEnterCB",
-                                       "breakPointLeaveCB")
+    Reusability.caseClassExcept[Props]("heightChangeCB", "breakPointEnterCB", "breakPointLeaveCB")
 
   protected val component = ScalaComponent
     .builder[Props]("StepToolsCell")
@@ -73,8 +71,8 @@ object StepToolsCell {
 }
 
 /**
-  * Component to display an icon for the state
-  */
+ * Component to display an icon for the state
+ */
 final case class StepIconCell(
   status:    StepState,
   skip:      Boolean,
@@ -92,12 +90,12 @@ object StepIconCell {
       case StepState.Completed => IconCheckmark
       case StepState.Running   => IconCircleNotched.loading(true)
       case StepState.Failed(_) => IconAttention
-      case StepState.Skipped =>
+      case StepState.Skipped   =>
         IconReply.copy(fitted = true, rotated = IconRotated.CounterClockwise)
-      case _ if p.skip =>
+      case _ if p.skip         =>
         IconReply.copy(fitted = true, rotated = IconRotated.CounterClockwise)
-      case _ if p.nextToRun => IconChevronRight
-      case _                => iconEmpty
+      case _ if p.nextToRun    => IconChevronRight
+      case _                   => iconEmpty
     }
 
   private def stepStyle(p: Props): Css =

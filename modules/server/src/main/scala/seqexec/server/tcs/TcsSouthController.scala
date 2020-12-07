@@ -17,16 +17,20 @@ import shapeless.tag.@@
 trait TcsSouthController[F[_]] {
   import TcsSouthController._
 
-  def applyConfig(subsystems: NonEmptySet[Subsystem],
-                  gaos: Option[Gems[F]],
-                  tc: TcsSouthConfig): F[Unit]
+  def applyConfig(
+    subsystems: NonEmptySet[Subsystem],
+    gaos:       Option[Gems[F]],
+    tc:         TcsSouthConfig
+  ): F[Unit]
 
   def notifyObserveStart: F[Unit]
 
   def notifyObserveEnd: F[Unit]
 
-  def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsSouthConfig)
-         (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
+  def nod(
+    subsystems: NonEmptySet[Subsystem],
+    tcsConfig:  TcsSouthConfig
+  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
 
 }
 
@@ -41,16 +45,16 @@ object TcsSouthController {
   trait ODGW4Config
 
   final case class GemsGuiders(
-                                cwfs1: GuiderConfig@@CWFS1Config,
-                                cwfs2: GuiderConfig@@CWFS2Config,
-                                cwfs3: GuiderConfig@@CWFS3Config,
-                                odgw1: GuiderConfig@@ODGW1Config,
-                                odgw2: GuiderConfig@@ODGW2Config,
-                                odgw3: GuiderConfig@@ODGW3Config,
-                                odgw4: GuiderConfig@@ODGW4Config
+    cwfs1: GuiderConfig @@ CWFS1Config,
+    cwfs2: GuiderConfig @@ CWFS2Config,
+    cwfs3: GuiderConfig @@ CWFS3Config,
+    odgw1: GuiderConfig @@ ODGW1Config,
+    odgw2: GuiderConfig @@ ODGW2Config,
+    odgw3: GuiderConfig @@ ODGW3Config,
+    odgw4: GuiderConfig @@ ODGW4Config
   )
 
-  type TcsSouthConfig = TcsConfig[GemsGuiders, GemsConfig]
+  type TcsSouthConfig   = TcsConfig[GemsGuiders, GemsConfig]
   type TcsSouthAoConfig = AoTcsConfig[GemsGuiders, GemsConfig]
 
 }

@@ -32,59 +32,61 @@ import seqexec.server.GiapiInstrumentController
 import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.GdsClient
 
-final case class AOFlags(useAo:      Boolean,
-                         useCal:     Boolean,
-                         aoOptimize: Boolean,
-                         alignFpm:   Boolean,
-                         magH:       Double,
-                         magI:       Double)
+final case class AOFlags(
+  useAo:      Boolean,
+  useCal:     Boolean,
+  aoOptimize: Boolean,
+  alignFpm:   Boolean,
+  magH:       Double,
+  magI:       Double
+)
 
 object AOFlags {
   implicit val eq: Eq[AOFlags]     = Eq.fromUniversalEquals
   implicit val show: Show[AOFlags] = Show.fromToString
 }
 
-final case class ArtificialSources(ir:          LegacyArtificialSource,
-                                   vis:         LegacyArtificialSource,
-                                   sc:          LegacyArtificialSource,
-                                   attenuation: Double)
+final case class ArtificialSources(
+  ir:          LegacyArtificialSource,
+  vis:         LegacyArtificialSource,
+  sc:          LegacyArtificialSource,
+  attenuation: Double
+)
 
 object ArtificialSources extends GpiConfigEq {
-  implicit val eq: Eq[ArtificialSources] =
+  implicit val eq: Eq[ArtificialSources]     =
     Eq.by(x => (x.ir, x.vis, x.sc, x.attenuation))
   implicit val show: Show[ArtificialSources] = Show.fromToString
 }
 
-final case class Shutters(entranceShutter:     LegacyShutter,
-                          calEntranceShutter:  LegacyShutter,
-                          calScienceShutter:   LegacyShutter,
-                          calReferenceShutter: LegacyShutter)
+final case class Shutters(
+  entranceShutter:     LegacyShutter,
+  calEntranceShutter:  LegacyShutter,
+  calScienceShutter:   LegacyShutter,
+  calReferenceShutter: LegacyShutter
+)
 
 object Shutters extends GpiConfigEq {
-  implicit val eq: Eq[Shutters] = Eq.by(
-    x =>
-      (x.entranceShutter,
-       x.calEntranceShutter,
-       x.calScienceShutter,
-       x.calReferenceShutter))
+  implicit val eq: Eq[Shutters]     = Eq.by(x =>
+    (x.entranceShutter, x.calEntranceShutter, x.calScienceShutter, x.calReferenceShutter)
+  )
   implicit val show: Show[Shutters] = Show.fromToString
 }
 
-final case class NonStandardModeParams(apodizer: LegacyApodizer,
-                                       fpm:      LegacyFPM,
-                                       lyot:     LegacyLyot,
-                                       filter:   LegacyFilter)
+final case class NonStandardModeParams(
+  apodizer: LegacyApodizer,
+  fpm:      LegacyFPM,
+  lyot:     LegacyLyot,
+  filter:   LegacyFilter
+)
 
 object NonStandardModeParams extends GpiConfigEq {
-  implicit val eq: Eq[NonStandardModeParams] =
+  implicit val eq: Eq[NonStandardModeParams]     =
     Eq.by(x => (x.apodizer, x.fpm, x.lyot, x.filter))
   implicit val show: Show[NonStandardModeParams] = Show.fromToString
 }
 
-sealed abstract class ReadoutArea(val startX: Int,
-                                  val startY: Int,
-                                  val endX: Int,
-                                  val endY: Int)
+sealed abstract class ReadoutArea(val startX: Int, val startY: Int, val endX: Int, val endY: Int)
 
 object ReadoutArea {
   val MinValue: Int = 0
@@ -102,10 +104,8 @@ object ReadoutArea {
       none
     }
 
-  implicit val eqRa: Eq[ReadoutArea] = Eq.by(x =>
-    (x.startX, x.startY, x.endX, x.endY))
+  implicit val eqRa: Eq[ReadoutArea] = Eq.by(x => (x.startX, x.startY, x.endX, x.endY))
 }
-
 
 sealed trait GpiConfig extends Product with Serializable
 
@@ -121,23 +121,25 @@ final case class RegularGpiConfig(
   shutters:       Shutters,
   asu:            ArtificialSources,
   pc:             LegacyPupilCamera,
-  aoFlags:        AOFlags) extends GpiConfig
+  aoFlags:        AOFlags
+) extends GpiConfig
 
 object RegularGpiConfig extends GpiConfigEq {
-  implicit val eq: Eq[RegularGpiConfig] = Eq.by(
-    x =>
-      (x.adc,
-       x.expTime,
-       x.coAdds,
-       x.readMode,
-       x.area,
-       x.mode,
-       x.disperser,
-       x.disperserAngle,
-       x.shutters,
-       x.asu,
-       x.pc,
-       x.aoFlags))
+  implicit val eq: Eq[RegularGpiConfig] = Eq.by(x =>
+    (x.adc,
+     x.expTime,
+     x.coAdds,
+     x.readMode,
+     x.area,
+     x.mode,
+     x.disperser,
+     x.disperserAngle,
+     x.shutters,
+     x.asu,
+     x.pc,
+     x.aoFlags
+    )
+  )
 }
 
 case object AlignAndCalibConfig extends GpiConfig {
@@ -184,20 +186,17 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
     config.mode.fold(
       m =>
         Configuration.single(GpiObservationMode.applyItem,
-                             obsModeLUT.getOrElse(m, UNKNOWN_SETTING)),
-      params => {
+                             obsModeLUT.getOrElse(m, UNKNOWN_SETTING)
+        ),
+      params =>
         Configuration.single(GpiPPM.applyItem,
-                             apodizerLUT.getOrElse(params.apodizer,
-                                                   UNKNOWN_SETTING)) |+|
-          Configuration.single(
-            GpiFPM.applyItem,
-            fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING)) |+|
-          Configuration.single(
-            GpiLyot.applyItem,
-            lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING)) |+|
-          Configuration.single(GpiIFSFilter.applyItem,
-                               params.filter.displayValue)
-      }
+                             apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING)
+        ) |+|
+          Configuration.single(GpiFPM.applyItem, fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING)) |+|
+          Configuration.single(GpiLyot.applyItem,
+                               lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING)
+          ) |+|
+          Configuration.single(GpiIFSFilter.applyItem, params.filter.displayValue)
     )
 
   private def gpiConfiguration(config: GpiConfig): Configuration =
@@ -208,65 +207,73 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
 
   private def regularGpiConfiguration(config: RegularGpiConfig): Configuration =
     Configuration.single(GpiAdc.applyItem,
-      (config.adc === LegacyAdc.IN)
-        .fold(1, 0)) |+|
+                         (config.adc === LegacyAdc.IN)
+                           .fold(1, 0)
+    ) |+|
       Configuration.single(GpiUseAo.applyItem,
-        config.aoFlags.useAo
-          .fold(1, 0)) |+|
+                           config.aoFlags.useAo
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiUseCal.applyItem,
-        config.aoFlags.useCal
-          .fold(1, 0)) |+|
+                           config.aoFlags.useCal
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiFpmPinholeBias.applyItem,
-        config.aoFlags.alignFpm
-          .fold(1, 0)) |+|
+                           config.aoFlags.alignFpm
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiAoOptimize.applyItem,
-        config.aoFlags.aoOptimize
-          .fold(1, 0)) |+|
-      Configuration.single(GpiIntegrationTime.applyItem,
-        config.expTime.toMillis / 1000.0) |+|
-      Configuration.single(GpiNumCoadds.applyItem,   config.coAdds) |+|
+                           config.aoFlags.aoOptimize
+                             .fold(1, 0)
+      ) |+|
+      Configuration.single(GpiIntegrationTime.applyItem, config.expTime.toMillis / 1000.0) |+|
+      Configuration.single(GpiNumCoadds.applyItem, config.coAdds) |+|
       Configuration.single(GpiIFSReadMode.applyItem, config.readMode.value) |+|
-      Configuration.single(GpiIFSStartX.applyItem,   config.area.startX) |+|
-      Configuration.single(GpiIFSStartY.applyItem,   config.area.startY) |+|
-      Configuration.single(GpiIFSEndX.applyItem,     config.area.endX) |+|
-      Configuration.single(GpiIFSEndY.applyItem,     config.area.endY) |+|
-      Configuration.single(GpiMagI.applyItem,        config.aoFlags.magI) |+|
-      Configuration.single(GpiMagH.applyItem,        config.aoFlags.magH) |+|
-      Configuration.single(
-        GpiCalEntranceShutter.applyItem,
-        (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        GpiCalReferenceShutter.applyItem,
-        (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        GpiCalScienceShutter.applyItem,
-        (config.shutters.calScienceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        GpiEntranceShutter.applyItem,
-        (config.shutters.entranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
+      Configuration.single(GpiIFSStartX.applyItem, config.area.startX) |+|
+      Configuration.single(GpiIFSStartY.applyItem, config.area.startY) |+|
+      Configuration.single(GpiIFSEndX.applyItem, config.area.endX) |+|
+      Configuration.single(GpiIFSEndY.applyItem, config.area.endY) |+|
+      Configuration.single(GpiMagI.applyItem, config.aoFlags.magI) |+|
+      Configuration.single(GpiMagH.applyItem, config.aoFlags.magH) |+|
+      Configuration.single(GpiCalEntranceShutter.applyItem,
+                           (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
+                             .fold(1, 0)
+      ) |+|
+      Configuration.single(GpiCalReferenceShutter.applyItem,
+                           (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
+                             .fold(1, 0)
+      ) |+|
+      Configuration.single(GpiCalScienceShutter.applyItem,
+                           (config.shutters.calScienceShutter === LegacyShutter.OPEN)
+                             .fold(1, 0)
+      ) |+|
+      Configuration.single(GpiEntranceShutter.applyItem,
+                           (config.shutters.entranceShutter === LegacyShutter.OPEN)
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiPupilCamera.applyItem,
                            (config.pc === LegacyPupilCamera.IN)
-                             .fold(1, 0)) |+|
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiSCAttenuation.applyItem, config.asu.attenuation) |+|
       Configuration.single(GpiSCPower.applyItem,
                            (config.asu.sc === LegacyArtificialSource.ON)
-                             .fold(100.0, 0.0)) |+|
+                             .fold(100.0, 0.0)
+      ) |+|
       Configuration.single(GpiSrcVis.applyItem,
                            (config.asu.vis === LegacyArtificialSource.ON)
-                             .fold(1, 0)) |+|
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiSrcIR.applyItem,
                            (config.asu.ir === LegacyArtificialSource.ON)
-                             .fold(1, 0)) |+|
+                             .fold(1, 0)
+      ) |+|
       Configuration.single(GpiPolarizerDeplay.applyItem,
                            (config.disperser === LegacyDisperser.WOLLASTON)
-                             .fold(1, 0)) |+|
+                             .fold(1, 0)
+      ) |+|
       (if (config.disperser === LegacyDisperser.WOLLASTON)
-         Configuration.single(GpiPolarizerAngle.applyItem,
-                              config.disperserAngle)
+         Configuration.single(GpiPolarizerAngle.applyItem, config.disperserAngle)
        else Configuration.Zero) |+|
       obsModeConfiguration(config)
 
@@ -287,7 +294,7 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
     gds:    GdsClient[F]
   ): GpiController[F] =
     new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
-    with GpiController[F] {
+      with GpiController[F] {
       private implicit val eqResponse: Eq[Response] = Eq.fromUniversalEquals
       override val gdsClient: GdsClient[F]          = gds
 
@@ -296,10 +303,10 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
       override def alignAndCalib: F[Unit] =
         client.alignAndCalib
           .ensure(SeqexecFailure.Execution("Failure executing Align And Calib"))(
-            _.response =!= Response.ERROR)
-          .adaptError {
-            case CommandResultException(_, message) =>
-              SeqexecFailure.Execution(message)
+            _.response =!= Response.ERROR
+          )
+          .adaptError { case CommandResultException(_, message) =>
+            SeqexecFailure.Execution(message)
           }
           .void
 

@@ -28,8 +28,8 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
 
 /**
-  * Content of a single tab with a sequence
-  */
+ * Content of a single tab with a sequence
+ */
 final case class SequenceTabContent(
   router:  RouterCtl[SeqexecPages],
   content: SequenceTabContentFocus
@@ -44,11 +44,11 @@ object SequenceTabContent {
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
     Reusability.derive[SequenceTabContentFocus]
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.content)
+  implicit val propsReuse: Reusability[Props]                  = Reusability.by(_.content)
 
   private def toolbar(p: Props) =
     p.content.tableType match {
-      case StepsTableTypeSelection.StepsTableSelected =>
+      case StepsTableTypeSelection.StepsTableSelected         =>
         SequenceDefaultToolbar(p.content.id)
           .when(p.content.canOperate && !p.content.isPreview)
       case StepsTableTypeSelection.StepConfigTableSelected(s) =>
@@ -57,7 +57,8 @@ object SequenceTabContent {
                           p.content.id,
                           s,
                           p.content.totalSteps,
-                          p.content.isPreview): TagMod
+                          p.content.isPreview
+        ): TagMod
     }
 
   def stepsTable(p: Props): VdomElement =
@@ -111,8 +112,9 @@ object SequenceTabContent {
         ).combineAll
 
       TabPane(active = p.content.isActive,
-              as     = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
-              clazz  = tabClazz)(
+              as = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
+              clazz = tabClazz
+      )(
         dataTab := instrument.show,
         <.div(
           ^.height := "100%",

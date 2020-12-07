@@ -13,11 +13,11 @@ import seqexec.model.Observation
 import squants.Time
 
 sealed trait Progress extends Product with Serializable {
-  val obsId:     Observation.Id
-  val stepId:    StepId
-  val total:     Time
+  val obsId: Observation.Id
+  val stepId: StepId
+  val total: Time
   val remaining: Time
-  val stage:     ObserveStage
+  val stage: ObserveStage
 }
 
 object Progress {
@@ -39,11 +39,13 @@ object Progress {
     Iso.id[Progress].asPrism
 }
 
-final case class ObservationProgress(obsId:     Observation.Id,
-                                     stepId:    StepId,
-                                     total:     Time,
-                                     remaining: Time,
-                                     stage:     ObserveStage) extends Progress
+final case class ObservationProgress(
+  obsId:     Observation.Id,
+  stepId:    StepId,
+  total:     Time,
+  remaining: Time,
+  stage:     ObserveStage
+) extends Progress
 
 object ObservationProgress {
 
@@ -52,12 +54,14 @@ object ObservationProgress {
 
 }
 
-final case class NSObservationProgress(obsId:     Observation.Id,
-                                       stepId:    StepId,
-                                       total:     Time,
-                                       remaining: Time,
-                                       stage:     ObserveStage,
-                                       sub:       NSSubexposure) extends Progress
+final case class NSObservationProgress(
+  obsId:     Observation.Id,
+  stepId:    StepId,
+  total:     Time,
+  remaining: Time,
+  stage:     ObserveStage,
+  sub:       NSSubexposure
+) extends Progress
 
 object NSObservationProgress {
 
@@ -70,17 +74,18 @@ sealed trait ObserveStage extends Product with Serializable
 
 object ObserveStage {
 
-  case object Idle extends ObserveStage
-  case object Preparing extends ObserveStage
-  case object Acquiring extends ObserveStage
+  case object Idle       extends ObserveStage
+  case object Preparing  extends ObserveStage
+  case object Acquiring  extends ObserveStage
   case object ReadingOut extends ObserveStage
 
-  implicit val observeStageEnum: Enumerated[ObserveStage] = Enumerated.of(Idle, Preparing, Acquiring, ReadingOut)
+  implicit val observeStageEnum: Enumerated[ObserveStage] =
+    Enumerated.of(Idle, Preparing, Acquiring, ReadingOut)
 
   def fromBooleans(prep: Boolean, acq: Boolean, rdout: Boolean): ObserveStage =
-    if(prep) Preparing
-    else if(acq) Acquiring
-    else if(rdout) ReadingOut
+    if (prep) Preparing
+    else if (acq) Acquiring
+    else if (rdout) ReadingOut
     else Idle
 
 }

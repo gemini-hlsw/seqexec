@@ -19,17 +19,18 @@ import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
 
 @Lenses
-final case class CalQueueControlFocus(canOperate:  Boolean,
-                                      state:       BatchCommandState,
-                                      execState:   BatchExecState,
-                                      ops:         QueueOperations,
-                                      queueSize:   Int,
-                                      selectedSeq: Int)
+final case class CalQueueControlFocus(
+  canOperate:  Boolean,
+  state:       BatchCommandState,
+  execState:   BatchExecState,
+  ops:         QueueOperations,
+  queueSize:   Int,
+  selectedSeq: Int
+)
 
 object CalQueueControlFocus {
   implicit val eq: Eq[CalQueueControlFocus] =
-    Eq.by(x =>
-      (x.canOperate, x.state, x.execState, x.ops, x.queueSize, x.selectedSeq))
+    Eq.by(x => (x.canOperate, x.state, x.execState, x.ops, x.queueSize, x.selectedSeq))
 
   val allQueues: Getter[SeqexecAppRootModel, Int] =
     (SeqexecAppRootModel.sequences ^|-> SequencesQueue.queues).asGetter >>> {
@@ -38,10 +39,10 @@ object CalQueueControlFocus {
 
   def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
     SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.queues     ^|->
-      CalibrationQueues.queues  ^|->
-      at(id)                    ^<-?
-      std.option.some           ^|->
+      SeqexecUIModel.queues ^|->
+      CalibrationQueues.queues ^|->
+      at(id) ^<-?
+      std.option.some ^|->
       CalQueueState.ops
 
   def cmdStateT(
@@ -61,12 +62,15 @@ object CalQueueControlFocus {
       Getter(optQueue(id).getOption)
         .zip(
           Getter(cmdStateT(id).headOption)
-            .zip(Getter(execStateT(id).headOption)
-              .zip(allQueues.zip(
-                StatusAndLoadedSequencesFocus.filteredSequencesG))))) >>> {
+            .zip(
+              Getter(execStateT(id).headOption)
+                .zip(allQueues.zip(StatusAndLoadedSequencesFocus.filteredSequencesG))
+            )
+        )
+    ) >>> {
       case (status, (Some(c), (Some(s), (Some(e), (qs, f))))) =>
         CalQueueControlFocus(status, s, e, c, qs, f.length).some
-      case _ =>
+      case _                                                  =>
         none
     }
 }

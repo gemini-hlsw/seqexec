@@ -32,19 +32,19 @@ import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
 
 /**
-  * Container for a table with the steps
-  */
+ * Container for a table with the steps
+ */
 final case class HeadersSideBar(model: HeaderSideBarFocus)
     extends ReactProps[HeadersSideBar](HeadersSideBar.component) {
 
-  def canOperate: Boolean = model.status.canOperate
+  def canOperate: Boolean                                                                    = model.status.canOperate
   def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
     model.observer
 }
 
 /**
-  * Display to show headers per sequence
-  */
+ * Display to show headers per sequence
+ */
 object HeadersSideBar {
   implicit val eqHeadersSideBar: Eq[HeadersSideBar]    = Eq.by(_.model)
   implicit val propsReuse: Reusability[HeadersSideBar] = Reusability.byEq
@@ -63,8 +63,8 @@ object HeadersSideBar {
 
   @Lenses
   final case class State(
-    operator: Option[Operator],
-    observer: Option[Observer],
+    operator:     Option[Operator],
+    observer:     Option[Observer],
     prevOperator: Option[Operator],
     prevObserver: Option[Observer]
   )
@@ -87,9 +87,9 @@ object HeadersSideBar {
         (p.selectedObserver match {
           case Right(Right(a)) =>
             SeqexecCircuit.dispatchCB(UpdateObserver(a.obsId, name))
-          case Right(Left(_)) =>
+          case Right(Left(_))  =>
             SeqexecCircuit.dispatchCB(UpdateCalTabObserver(name))
-          case Left(_) =>
+          case Left(_)         =>
             SeqexecCircuit.dispatchCB(UpdateDefaultObserver(name))
         }).when_(p.canOperate)
       }
@@ -105,34 +105,32 @@ object HeadersSideBar {
       setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
 
     def submitIfChangedOp: Callback =
-      ($.state.zip($.props)) >>= {
-        case (s, p) =>
-          s.operator
-            .map(updateOperator)
-            .getOrEmpty
-            .when_(p.model.operator =!= s.operator)
+      ($.state.zip($.props)) >>= { case (s, p) =>
+        s.operator
+          .map(updateOperator)
+          .getOrEmpty
+          .when_(p.model.operator =!= s.operator)
       }
 
     def submitIfChangedOb: Callback =
-      ($.state.zip($.props)) >>= {
-        case (s, p) =>
-          p.selectedObserver match {
-            case Right(Right(a)) =>
-              s.observer
-                .map(updateObserver)
-                .getOrEmpty
-                .when_(a.observer.forall(_.some =!= s.observer))
-            case Right(Left(a)) =>
-              s.observer
-                .map(updateObserver)
-                .getOrEmpty
-                .when_(a.observer.forall(_.some =!= s.observer))
-            case Left(o) =>
-              s.observer
-                .map(updateObserver)
-                .getOrEmpty
-                .when_(o.some =!= s.observer)
-          }
+      ($.state.zip($.props)) >>= { case (s, p) =>
+        p.selectedObserver match {
+          case Right(Right(a)) =>
+            s.observer
+              .map(updateObserver)
+              .getOrEmpty
+              .when_(a.observer.forall(_.some =!= s.observer))
+          case Right(Left(a))  =>
+            s.observer
+              .map(updateObserver)
+              .getOrEmpty
+              .when_(a.observer.forall(_.some =!= s.observer))
+          case Left(o)         =>
+            s.observer
+              .map(updateObserver)
+              .getOrEmpty
+              .when_(o.some =!= s.observer)
+        }
       }
 
     def iqChanged(iq: ImageQuality): Callback =
@@ -148,15 +146,15 @@ object HeadersSideBar {
       SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
     def render(p: HeadersSideBar, s: State): VdomNode = {
-      val enabled = p.model.status.canOperate
-      val operatorEV =
+      val enabled       = p.model.status.canOperate
+      val operatorEV    =
         StateSnapshot[Operator](s.operator.getOrElse(Operator.Zero))(updateStateOp)
-      val observerEV =
+      val observerEV    =
         StateSnapshot[Observer](s.observer.getOrElse(Observer.Zero))(updateStateOb)
-      val instrument = p.selectedObserver
+      val instrument    = p.selectedObserver
         .map(i => i.fold(_ => "Daycal", _.instrument.show))
         .getOrElse("Default")
-      val obsCompleted =
+      val obsCompleted  =
         p.selectedObserver.map(_.fold(_ => false, _.completed)).getOrElse(false)
       val observerField = s"Observer - $instrument"
 
@@ -170,10 +168,10 @@ object HeadersSideBar {
                 "operator",
                 "operator",
                 operatorEV,
-format =                 InputFormat.fromIso(Operator.valueI.reverse),
+                format = InputFormat.fromIso(Operator.valueI.reverse),
                 placeholder = "Operator...",
-                disabled    = !enabled,
-                onBlur      = _ => submitIfChangedOp
+                disabled = !enabled,
+                onBlur = _ => submitIfChangedOp
               )
             ),
             <.div(
@@ -185,8 +183,8 @@ format =                 InputFormat.fromIso(Operator.valueI.reverse),
                 observerEV,
                 format = InputFormat.fromIso(Observer.valueI.reverse),
                 placeholder = "Observer...",
-                disabled    = !enabled || obsCompleted,
-                onBlur      = _ => submitIfChangedOb
+                disabled = !enabled || obsCompleted,
+                onBlur = _ => submitIfChangedOb
               )
             )
           ),
@@ -195,24 +193,28 @@ format =                 InputFormat.fromIso(Operator.valueI.reverse),
                                      p.model.conditions.iq.some,
                                      "Select",
                                      disabled = !enabled,
-                                     iqChanged),
+                                     iqChanged
+            ),
             EnumSelect[CloudCover]("Cloud Cover",
                                    p.model.conditions.cc.some,
                                    "Select",
                                    disabled = !enabled,
-                                   ccChanged)
+                                   ccChanged
+            )
           ),
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
             EnumSelect[WaterVapor]("Water Vapor",
                                    p.model.conditions.wv.some,
                                    "Select",
                                    disabled = !enabled,
-                                   wvChanged),
+                                   wvChanged
+            ),
             EnumSelect[SkyBackground]("Sky Background",
                                       p.model.conditions.sb.some,
                                       "Select",
                                       disabled = !enabled,
-                                      sbChanged)
+                                      sbChanged
+            )
           )
         )
       )
@@ -221,7 +223,7 @@ format =                 InputFormat.fromIso(Operator.valueI.reverse),
 
   private val component = ScalaComponent
     .builder[HeadersSideBar]
-    .getDerivedStateFromPropsAndState[State]{ (p, sOpt) =>
+    .getDerivedStateFromPropsAndState[State] { (p, sOpt) =>
       val operator = p.model.operator
       val observer =
         p.selectedObserver match {
@@ -230,7 +232,7 @@ format =                 InputFormat.fromIso(Operator.valueI.reverse),
           case Left(o)         => o.some
         }
 
-      sOpt.fold(State(operator, observer)){ s =>
+      sOpt.fold(State(operator, observer)) { s =>
         Function.chain(
           List(
             State.operator.set(operator),
@@ -238,12 +240,12 @@ format =                 InputFormat.fromIso(Operator.valueI.reverse),
           ).some
             .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
             .orEmpty :::
-          List(
-            State.observer.set(observer),
-            State.prevObserver.set(observer)
-          ).some
-            .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
-            .orEmpty
+            List(
+              State.observer.set(observer),
+              State.prevObserver.set(observer)
+            ).some
+              .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
+              .orEmpty
         )(s)
       }
     }

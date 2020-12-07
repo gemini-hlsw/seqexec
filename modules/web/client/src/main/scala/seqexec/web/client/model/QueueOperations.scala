@@ -9,7 +9,7 @@ import monocle.macros.Lenses
 
 sealed trait AddDayCalOperation extends Product with Serializable
 object AddDayCalOperation {
-  case object AddDayCalIdle extends AddDayCalOperation
+  case object AddDayCalIdle     extends AddDayCalOperation
   case object AddDayCalInFlight extends AddDayCalOperation
 
   implicit val AddDayCalOperationEnumerated: Enumerated[AddDayCalOperation] =
@@ -19,7 +19,7 @@ object AddDayCalOperation {
 
 sealed trait ClearAllCalOperation extends Product with Serializable
 object ClearAllCalOperation {
-  case object ClearAllCalIdle extends ClearAllCalOperation
+  case object ClearAllCalIdle     extends ClearAllCalOperation
   case object ClearAllCalInFlight extends ClearAllCalOperation
 
   implicit val ClearAllCalOperationEnumerated: Enumerated[ClearAllCalOperation] =
@@ -29,7 +29,7 @@ object ClearAllCalOperation {
 
 sealed trait RunCalOperation extends Product with Serializable
 object RunCalOperation {
-  case object RunCalIdle extends RunCalOperation
+  case object RunCalIdle     extends RunCalOperation
   case object RunCalInFlight extends RunCalOperation
 
   implicit val RunCalOperationEnumerated: Enumerated[RunCalOperation] =
@@ -39,7 +39,7 @@ object RunCalOperation {
 
 sealed trait StopCalOperation extends Product with Serializable
 object StopCalOperation {
-  case object StopCalIdle extends StopCalOperation
+  case object StopCalIdle     extends StopCalOperation
   case object StopCalInFlight extends StopCalOperation
 
   implicit val StopCalOperationEnumerated: Enumerated[StopCalOperation] =
@@ -48,26 +48,26 @@ object StopCalOperation {
 }
 
 /**
-  * Hold transient states while excuting an operation on the queue
-  */
+ * Hold transient states while excuting an operation on the queue
+ */
 @Lenses
-final case class QueueOperations(addDayCalRequested:   AddDayCalOperation,
-                                 clearAllCalRequested: ClearAllCalOperation,
-                                 runCalRequested:      RunCalOperation,
-                                 stopCalRequested:     StopCalOperation)
+final case class QueueOperations(
+  addDayCalRequested:   AddDayCalOperation,
+  clearAllCalRequested: ClearAllCalOperation,
+  runCalRequested:      RunCalOperation,
+  stopCalRequested:     StopCalOperation
+)
 
 object QueueOperations {
   implicit val eq: Eq[QueueOperations] =
-    Eq.by(
-      x =>
-        (x.addDayCalRequested,
-         x.clearAllCalRequested,
-         x.runCalRequested,
-         x.stopCalRequested))
+    Eq.by(x =>
+      (x.addDayCalRequested, x.clearAllCalRequested, x.runCalRequested, x.stopCalRequested)
+    )
 
   val Default: QueueOperations =
     QueueOperations(AddDayCalOperation.AddDayCalIdle,
                     ClearAllCalOperation.ClearAllCalIdle,
                     RunCalOperation.RunCalIdle,
-                    StopCalOperation.StopCalIdle)
+                    StopCalOperation.StopCalIdle
+    )
 }

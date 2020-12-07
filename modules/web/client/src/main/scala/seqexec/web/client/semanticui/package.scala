@@ -32,10 +32,11 @@ package object semanticui {
   ): VdomNode =
     Popup(content = tooltip,
           trigger = Button(
-            icon          = true,
+            icon = true,
             labelPosition = LabelPosition.Left,
-            onClick       = onClick,
-            color         = color,
-            disabled      = disabled
-          )(icon, text))
+            onClick = onClick,
+            color = color,
+            disabled = disabled
+          )(icon, text)
+    )
 }

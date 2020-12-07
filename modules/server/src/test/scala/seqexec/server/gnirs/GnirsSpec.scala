@@ -9,8 +9,8 @@ import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
 
 /**
-  * Tests GNIRS typeclasses
-  */
+ * Tests GNIRS typeclasses
+ */
 final class GnirsSpec extends CatsSuite with GnirsArbitraries {
   checkAll("Eq[AcquisitionMirror]", EqTests[AcquisitionMirror].eqv)
   checkAll("Eq[WollastonPrism]", EqTests[WollastonPrism].eqv)

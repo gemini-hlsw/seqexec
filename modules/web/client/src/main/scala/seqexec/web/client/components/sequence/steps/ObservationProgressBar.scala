@@ -34,7 +34,7 @@ trait ProgressLabel {
       val remainingStr  = if (remainingSecs > 1) s"$remainingSecs seconds" else "1 second"
       s" - $remainingStr left"
     }
-    val stageStr =
+    val stageStr    =
       stage match {
         case ObserveStage.Preparing  => "Preparing".some
         case ObserveStage.ReadingOut => "Reading out...".some
@@ -46,7 +46,7 @@ trait ProgressLabel {
     else
       stageStr match {
         case Some(stage) => s"$fileId - $stage"
-        case _ =>
+        case _           =>
           remainingMillis.fold(fileId) { millis =>
             if (millis > 0) s"$fileId$durationStr" else s"$fileId - Reading out..."
           }
@@ -55,8 +55,8 @@ trait ProgressLabel {
 }
 
 /**
-  * Component to wrap the progress bar
-  */
+ * Component to wrap the progress bar
+ */
 final case class ObservationProgressBar(
   obsId:    Observation.Id,
   stepId:   StepId,
@@ -91,16 +91,16 @@ object ObservationProgressBar {
                 p.paused,
                 stage
               )
-            case _ =>
+            case _                                                        =>
               val msg = if (p.paused) s"${p.fileId} - Paused" else p.fileId
 
               React.Fragment(
                 Progress(
                   indicating = true,
-                  total      = 100,
-                  value      = 0,
-                  color      = Blue,
-                  clazz      = SeqexecStyles.observationProgressBar
+                  total = 100,
+                  value = 0,
+                  color = Blue,
+                  clazz = SeqexecStyles.observationProgressBar
                 )(msg)
               )
           }

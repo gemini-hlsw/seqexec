@@ -12,18 +12,19 @@ import seqexec.model._
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model._
 
-final case class SequenceObserverFocus(instrument: Instrument,
-                                       obsId:      Observation.Id,
-                                       completed:  Boolean,
-                                       observer:   Option[Observer])
+final case class SequenceObserverFocus(
+  instrument: Instrument,
+  obsId:      Observation.Id,
+  completed:  Boolean,
+  observer:   Option[Observer]
+)
 
 object SequenceObserverFocus {
   implicit val eq: Eq[SequenceObserverFocus] =
     Eq.by(x => (x.instrument, x.obsId, x.completed, x.observer))
 }
 
-final case class DayCalObserverFocus(queueId:  QueueId,
-                                     observer: Option[Observer])
+final case class DayCalObserverFocus(queueId: QueueId, observer: Option[Observer])
 
 object DayCalObserverFocus {
   implicit val eq: Eq[DayCalObserverFocus] =
@@ -35,8 +36,8 @@ final case class HeaderSideBarFocus(
   status:     ClientStatus,
   conditions: Conditions,
   operator:   Option[Operator],
-  observer: Either[Observer,
-                   Either[DayCalObserverFocus, SequenceObserverFocus]])
+  observer:   Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]]
+)
 
 object HeaderSideBarFocus {
   implicit val eq: Eq[HeaderSideBarFocus] =
@@ -45,11 +46,8 @@ object HeaderSideBarFocus {
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
       val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      val obs = c.uiModel.sequencesOnDisplay.selectedObserver
+      val obs          = c.uiModel.sequencesOnDisplay.selectedObserver
         .toRight(c.uiModel.defaultObserver)
-      HeaderSideBarFocus(clientStatus,
-                         c.sequences.conditions,
-                         c.sequences.operator,
-                         obs)
+      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, obs)
     }
 }

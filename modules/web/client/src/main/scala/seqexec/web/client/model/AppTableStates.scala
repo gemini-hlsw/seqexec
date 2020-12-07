@@ -23,7 +23,8 @@ final case class AppTableStates(
   sessionQueueTable: TableState[SessionQueueTable.TableColumn],
   stepConfigTable:   TableState[StepConfigTable.TableColumn],
   stepsTables:       Map[Observation.Id, TableState[StepsTable.TableColumn]],
-  queueTables:       Map[QueueId, TableState[CalQueueTable.TableColumn]])
+  queueTables:       Map[QueueId, TableState[CalQueueTable.TableColumn]]
+)
 
 object AppTableStates {
 

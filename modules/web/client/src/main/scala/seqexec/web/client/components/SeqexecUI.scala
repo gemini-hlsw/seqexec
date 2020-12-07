@@ -41,9 +41,8 @@ object SeqexecUI {
   private def configPageP(
     instrumentNames: Map[String, Instrument]
   ): Prism[(String, String, Int), SequenceConfigPage] =
-    Prism[(String, String, Int), SequenceConfigPage] {
-      case (i, s, step) =>
-        (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequenceConfigPage(_, _, step))
+    Prism[(String, String, Int), SequenceConfigPage] { case (i, s, step) =>
+      (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequenceConfigPage(_, _, step))
     } { p =>
       (p.instrument.show, p.obsId.format, p.step)
     }
@@ -52,10 +51,9 @@ object SeqexecUI {
   private def sequencePageSP(
     instrumentNames: Map[String, Instrument]
   ): Prism[(String, String, Option[Int]), SequencePage] =
-    Prism[(String, String, Option[Int]), SequencePage] {
-      case (i, s, st) =>
-        (instrumentNames.get(i), Observation.Id.fromString(s))
-          .mapN(SequencePage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
+    Prism[(String, String, Option[Int]), SequencePage] { case (i, s, st) =>
+      (instrumentNames.get(i), Observation.Id.fromString(s))
+        .mapN(SequencePage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
     } { p =>
       (p.instrument.show, p.obsId.format, (p.step.step + 1).some)
     }
@@ -64,10 +62,9 @@ object SeqexecUI {
   private def previewPageSP(
     instrumentNames: Map[String, Instrument]
   ): Prism[(String, String, Option[Int]), PreviewPage] =
-    Prism[(String, String, Option[Int]), PreviewPage] {
-      case (i, s, st) =>
-        (instrumentNames.get(i), Observation.Id.fromString(s))
-          .mapN(PreviewPage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
+    Prism[(String, String, Option[Int]), PreviewPage] { case (i, s, st) =>
+      (instrumentNames.get(i), Observation.Id.fromString(s))
+        .mapN(PreviewPage(_, _, StepIdDisplayed(st.foldMap(_ - 1))))
     } { p =>
       (p.instrument.show, p.obsId.format, (p.step.step + 1).some)
     }
@@ -76,9 +73,8 @@ object SeqexecUI {
   private def previewConfigPageP(
     instrumentNames: Map[String, Instrument]
   ): Prism[(String, String, Int), PreviewConfigPage] =
-    Prism[(String, String, Int), PreviewConfigPage] {
-      case (i, s, step) =>
-        (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewConfigPage(_, _, step))
+    Prism[(String, String, Int), PreviewConfigPage] { case (i, s, step) =>
+      (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewConfigPage(_, _, step))
     } { p =>
       (p.instrument.show, p.obsId.format, p.step)
     }

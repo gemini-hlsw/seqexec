@@ -6,8 +6,9 @@ package ocs2.config
 import cats.Eq
 import lucuma.core.enum.F2Fpu
 
-/** Additional type hierarchy over the low-level F2 enums.
-  */
+/**
+ * Additional type hierarchy over the low-level F2 enums.
+ */
 object F2Config {
 
   /** Focal plane unit choice, custom or builtin. */

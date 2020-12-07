@@ -23,8 +23,7 @@ import squants.time.TimeConversions._
 final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControllerSim[F])
     extends Flamingos2Controller[F] {
 
-  override def observe(fileId:  ImageFileId,
-                       expTime: Time): F[ObserveCommandResult] =
+  override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
   override def applyConfig(config: Flamingos2Config): F[Unit] =
@@ -43,23 +42,27 @@ object Flamingos2ControllerSim {
 }
 
 /**
-  * This controller will run correctly but fail at step `failAt`
-  */
-final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: Logger] private (failAt: Int, sim: InstrumentControllerSim[F], counter: Ref[F, Int])
-    extends Flamingos2Controller[F] {
+ * This controller will run correctly but fail at step `failAt`
+ */
+final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: Logger] private (
+  failAt:  Int,
+  sim:     InstrumentControllerSim[F],
+  counter: Ref[F, Int]
+) extends Flamingos2Controller[F] {
   private val L = Logger[F]
 
-  override def observe(fileId:  ImageFileId,
-                       expTime: Time): F[ObserveCommandResult] =
+  override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
   override def applyConfig(config: Flamingos2Config): F[Unit] =
     L.info(s"Applying Flamingos-2 configuration $config") *>
-      counter.modify(x => (x + 1, x + 1)) >>= {c => {
+      counter.modify(x => (x + 1, x + 1)) >>= { c =>
+      {
         counter.set(0) *>
-        L.error(s"Error applying Flamingos-2 configuration") *>
-        MonadError[F, Throwable].raiseError(Execution("simulated error"))
-      }.whenA(c === failAt)}
+          L.error(s"Error applying Flamingos-2 configuration") *>
+          MonadError[F, Throwable].raiseError(Execution("simulated error"))
+      }.whenA(c === failAt)
+    }
 
   override def endObserve: F[Unit] = sim.endObserve
 

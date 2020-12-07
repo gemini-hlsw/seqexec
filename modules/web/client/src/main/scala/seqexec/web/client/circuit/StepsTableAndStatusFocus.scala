@@ -16,20 +16,28 @@ final case class StepsTableAndStatusFocus(
   status:           ClientStatus,
   stepsTable:       Option[StepsTableFocus],
   tableState:       TableState[StepsTable.TableColumn],
-  configTableState: TableState[StepConfigTable.TableColumn])
+  configTableState: TableState[StepConfigTable.TableColumn]
+)
 
 object StepsTableAndStatusFocus {
   implicit val eq: Eq[StepsTableAndStatusFocus] =
     Eq.by(x => (x.status, x.stepsTable, x.tableState, x.configTableState))
 
   def stepsTableAndStatusFocusG(
-    id: Observation.Id): Getter[SeqexecAppRootModel, StepsTableAndStatusFocus] =
+    id: Observation.Id
+  ): Getter[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     ClientStatus.clientStatusFocusL.asGetter
       .zip(
         StepsTableFocus
           .stepsTableG(id)
-          .zip(SeqexecAppRootModel.stepsTableStateL(id).asGetter.zip(SeqexecAppRootModel.configTableStateL.asGetter))) >>> {
-      case (s, (f, (a, t))) => StepsTableAndStatusFocus(s, f, a.getOrElse(StepsTable.State.InitialTableState), t)
+          .zip(
+            SeqexecAppRootModel
+              .stepsTableStateL(id)
+              .asGetter
+              .zip(SeqexecAppRootModel.configTableStateL.asGetter)
+          )
+      ) >>> { case (s, (f, (a, t))) =>
+      StepsTableAndStatusFocus(s, f, a.getOrElse(StepsTable.State.InitialTableState), t)
     }
 
 }

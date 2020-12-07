@@ -19,8 +19,8 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.reusability._
 
 /**
-  * Component to display an icon for the state
-  */
+ * Component to display an icon for the state
+ */
 final case class StepBreakStopCell(
   clientStatus:       ClientStatus,
   step:               Step,
@@ -36,9 +36,7 @@ object StepBreakStopCell {
   type Props = StepBreakStopCell
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.caseClassExcept[Props]("heightChangeCB",
-                                       "breakPointEnterCB",
-                                       "breakPointLeaveCB")
+    Reusability.caseClassExcept[Props]("heightChangeCB", "breakPointEnterCB", "breakPointLeaveCB")
 
   // Request a to flip the breakpoint
   def flipBreakpoint(p: Props)(e: ReactEvent): Callback =
@@ -63,7 +61,7 @@ object StepBreakStopCell {
     .render_P { p =>
       val canSetBreakpoint = p.clientStatus.canOperate && p.step
         .canSetBreakpoint(p.step.id, p.firstRunnableIndex)
-      val canSetSkipMark = p.clientStatus.canOperate && p.step.canSetSkipmark
+      val canSetSkipMark   = p.clientStatus.canOperate && p.step.canSetSkipmark
       <.div(
         SeqexecStyles.gutterCell,
         ^.height := p.rowHeight.px,

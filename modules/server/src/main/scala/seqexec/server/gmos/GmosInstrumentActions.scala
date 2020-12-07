@@ -31,9 +31,12 @@ import squants.Time
 import squants.space.AngleConversions._
 
 /**
-  * Gmos needs different actions for N&S
-  */
-class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController.SiteDependentTypes](
+ * Gmos needs different actions for N&S
+ */
+class GmosInstrumentActions[
+  F[_]: Concurrent: Timer: Logger,
+  A <: GmosController.SiteDependentTypes
+](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {
@@ -58,29 +61,28 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
         okTail(fileId, stopped = true, env)
       case ObserveCommandResult.Aborted =>
         abortTail(env.odb, env.obsId, fileId)
-      case ObserveCommandResult.Paused =>
+      case ObserveCommandResult.Paused  =>
         env.inst
           .calcObserveTime(env.config)
-          .map(
-            e =>
-              Result
-                .Paused(
-                  ObserveContext(
-                    (_: Time) => resumeObserve(fileId, env, nsCfg),
-                    (_: ElapsedTime) => observationProgressStream(env),
-                    stopPausedObserve(fileId, env, nsCfg),
-                    abortPausedObserve(fileId, env, nsCfg),
-                    e
-                  )
+          .map(e =>
+            Result
+              .Paused(
+                ObserveContext(
+                  (_: Time) => resumeObserve(fileId, env, nsCfg),
+                  (_: ElapsedTime) => observationProgressStream(env),
+                  stopPausedObserve(fileId, env, nsCfg),
+                  abortPausedObserve(fileId, env, nsCfg),
+                  e
                 )
+              )
           )
     }
 
   private def initialObserve(
-    fileId: ImageFileId,
-    env:    ObserveEnvironment[F],
-    nsCfg:  NSConfig.NodAndShuffle,
-    subExp: NSSubexposure,
+    fileId:   ImageFileId,
+    env:      ObserveEnvironment[F],
+    nsCfg:    NSConfig.NodAndShuffle,
+    subExp:   NSSubexposure,
     nsObsCmd: Ref[F, Option[NSObserveCommand]]
   ): F[Result[F]] =
     // Essentially the same as default observation but with a custom tail
@@ -103,38 +105,42 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
     } yield t).safeResult
 
   private def continueResult(
-    fileId: ImageFileId,
-    env:    ObserveEnvironment[F],
-    nsCfg:  NSConfig.NodAndShuffle,
-    subExp: NSSubexposure,
-    nsObsCmd: Option[NSObserveCommand])(obsResult: ObserveCommandResult): F[Result[F]] =
+    fileId:    ImageFileId,
+    env:       ObserveEnvironment[F],
+    nsCfg:     NSConfig.NodAndShuffle,
+    subExp:    NSSubexposure,
+    nsObsCmd:  Option[NSObserveCommand]
+  )(obsResult: ObserveCommandResult): F[Result[F]] =
     (nsObsCmd, obsResult) match {
       case (Some(PauseImmediately), ObserveCommandResult.Paused) |
-           (_, ObserveCommandResult.Success) |
-           (_, ObserveCommandResult.Aborted) |
-           (_, ObserveCommandResult.Stopped)                     => observeTail(fileId, env, nsCfg)(obsResult)
+          (_, ObserveCommandResult.Success) | (_, ObserveCommandResult.Aborted) |
+          (_, ObserveCommandResult.Stopped) =>
+        observeTail(fileId, env, nsCfg)(obsResult)
 
       // Pause if this was the last subexposure of a cycle
-      case (Some(PauseGracefully), ObserveCommandResult.Paused) if subExp.stageIndex === NsSequence.length - 1
-                                                                 => observeTail(fileId, env, nsCfg)(obsResult)
+      case (Some(PauseGracefully), ObserveCommandResult.Paused)
+          if subExp.stageIndex === NsSequence.length - 1 =>
+        observeTail(fileId, env, nsCfg)(obsResult)
 
-      case (Some(StopImmediately), ObserveCommandResult.Paused)  => inst.controller.stopPaused
-        .flatMap(observeTail(fileId, env, nsCfg))
+      case (Some(StopImmediately), ObserveCommandResult.Paused) =>
+        inst.controller.stopPaused
+          .flatMap(observeTail(fileId, env, nsCfg))
 
       // Stop if this was the last subexposure of a cycle
       case (Some(StopGracefully), ObserveCommandResult.Paused)
-        if subExp.stageIndex === NsSequence.length - 1
-                                                                 => inst.controller.stopPaused
-        .flatMap(observeTail(fileId, env, nsCfg))
+          if subExp.stageIndex === NsSequence.length - 1 =>
+        inst.controller.stopPaused
+          .flatMap(observeTail(fileId, env, nsCfg))
 
-      case (Some(AbortImmediately), ObserveCommandResult.Paused) => inst.controller.abortPaused
-        .flatMap(observeTail(fileId, env, nsCfg))
+      case (Some(AbortImmediately), ObserveCommandResult.Paused) =>
+        inst.controller.abortPaused
+          .flatMap(observeTail(fileId, env, nsCfg))
 
       // Abort if this was the last subexposure of a cycle
       case (Some(AbortGracefully), ObserveCommandResult.Paused)
-        if subExp.stageIndex === NsSequence.length - 1
-                                                                 => inst.controller.abortPaused
-        .flatMap(observeTail(fileId, env, nsCfg))
+          if subExp.stageIndex === NsSequence.length - 1 =>
+        inst.controller.abortPaused
+          .flatMap(observeTail(fileId, env, nsCfg))
 
       // We reach here only if the result was Paused and no command made it stop/pause/abort
       case _                                                     => Result.Partial(NSContinue).pure[F].widen[Result[F]]
@@ -142,13 +148,13 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
     }
 
   private def continueObserve(
-    fileId: ImageFileId,
-    env:    ObserveEnvironment[F],
-    nsCfg:  NSConfig.NodAndShuffle,
-    subExp: NSSubexposure,
+    fileId:      ImageFileId,
+    env:         ObserveEnvironment[F],
+    nsCfg:       NSConfig.NodAndShuffle,
+    subExp:      NSSubexposure,
     nsObsCmdRef: Ref[F, Option[NSObserveCommand]]
   ): F[Result[F]] = (
-    for{
+    for {
       t     <- inst.calcObserveTime(env.config)
       r     <- inst.controller.resumePaused(t)
       nsCmd <- nsObsCmdRef.get
@@ -157,8 +163,8 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   ).safeResult
 
   /**
-    * Stream of actions of one sub exposure
-    */
+   * Stream of actions of one sub exposure
+   */
   def oneSubExposure(
     fileId:    ImageFileId,
     sub:       NSSubexposure,
@@ -167,39 +173,39 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
     nsCfg:     NSConfig.NodAndShuffle,
     nsCmd:     Ref[F, Option[NSObserveCommand]]
   ): Stream[F, Result[F]] = {
-    val nsPositionO   = positions.find(_.stage === sub.stage)
+    val nsPositionO = positions.find(_.stage === sub.stage)
     // TCS Nod
-    (env.getTcs, nsPositionO).mapN {
-      case (tcs, nsPos) =>
-        Stream.emit(Result.Partial(NSTCSNodStart(sub))) ++
-          Stream.eval(
-            tcs
-              .nod(
-                sub.stage,
-                InstrumentOffset(
-                  tag[OffsetP](nsPos.offset.p.toSignedDoubleRadians.radians),
-                  tag[OffsetQ](nsPos.offset.q.toSignedDoubleRadians.radians)
-                ),
-                nsPos.guide === Guiding.Guide
-              )
-              .as(Result.Partial(NSTCSNodComplete(sub)))
-              .widen[Result[F]]
-              .safeResult
-          )
+    (env.getTcs, nsPositionO).mapN { case (tcs, nsPos) =>
+      Stream.emit(Result.Partial(NSTCSNodStart(sub))) ++
+        Stream.eval(
+          tcs
+            .nod(
+              sub.stage,
+              InstrumentOffset(
+                tag[OffsetP](nsPos.offset.p.toSignedDoubleRadians.radians),
+                tag[OffsetQ](nsPos.offset.q.toSignedDoubleRadians.radians)
+              ),
+              nsPos.guide === Guiding.Guide
+            )
+            .as(Result.Partial(NSTCSNodComplete(sub)))
+            .widen[Result[F]]
+            .safeResult
+        )
     }.orEmpty ++
-    // Observes for each subexposure
+      // Observes for each subexposure
       observationProgressStream(env)
         .mergeHaltR(
           Stream.emit(Result.Partial(NSSubexposureStart(sub))) ++
             (if (sub.firstSubexposure) {
                Stream.eval(initialObserve(fileId, env, nsCfg, sub, nsCmd))
-            } else if (sub.lastSubexposure) {
+             } else if (sub.lastSubexposure) {
                Stream.eval(lastObserve(fileId, env, nsCfg))
-            } else {
+             } else {
                Stream.eval(continueObserve(fileId, env, nsCfg, sub, nsCmd))
-            }) ++
+             }) ++
             Stream.emit(Result.Partial(NSSubexposureEnd(sub)))
-        ).handleErrorWith(catchObsErrors[F])
+        )
+        .handleErrorWith(catchObsErrors[F])
   }
 
   private def doObserve(
@@ -209,9 +215,9 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
     Gmos
       .nsConfig(config)
       .foldMap {
-        case NSConfig.NoNodAndShuffle =>
+        case NSConfig.NoNodAndShuffle                            =>
           Stream.empty
-        case c@NSConfig.NodAndShuffle(cycles, _, positions, _) =>
+        case c @ NSConfig.NodAndShuffle(cycles, _, positions, _) =>
           val nsZero =
             NSSubexposure
               .subexposures(cycles)
@@ -225,8 +231,8 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
 
           // Clean NS command Ref
           Stream.eval(inst.nsCmdRef.set(none)) *>
-          // Initial notification of N&S Starting
-          Stream.emit(Result.Partial(NSStart(nsZero))) ++
+            // Initial notification of N&S Starting
+            Stream.emit(Result.Partial(NSStart(nsZero))) ++
             // each subexposure actions
             NSSubexposure
               .subexposures(cycles)
@@ -240,19 +246,19 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
       }
 
   def resumeObserve(
-    fileId:  ImageFileId,
-    env:     ObserveEnvironment[F],
+    fileId:   ImageFileId,
+    env:      ObserveEnvironment[F],
     nsConfig: NSConfig.NodAndShuffle
   ): Stream[F, Result[F]] = {
 
-      val nsLast =
-        NSSubexposure
-          .subexposures(nsConfig.cycles)
-          .lastOption
-          .getOrElse(NSSubexposure.Zero)
+    val nsLast =
+      NSSubexposure
+        .subexposures(nsConfig.cycles)
+        .lastOption
+        .getOrElse(NSSubexposure.Zero)
 
-      Stream.eval(inst.nsCount).flatMap { cnt =>
-        Stream.eval(inst.nsCmdRef.set(none)) *>
+    Stream.eval(inst.nsCount).flatMap { cnt =>
+      Stream.eval(inst.nsCmdRef.set(none)) *>
         NSSubexposure
           .subexposures(nsConfig.cycles)
           .map {
@@ -261,9 +267,9 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
           .drop(cnt)
           .reduceOption(_ ++ _)
           .orEmpty ++
-          Stream.emit(Result.Partial(NSComplete(nsLast))) ++
-          Stream.emit(Result.OK(Response.Observed(fileId)))
-      }
+        Stream.emit(Result.Partial(NSComplete(nsLast))) ++
+        Stream.emit(Result.OK(Response.Observed(fileId)))
+    }
   }
 
   def stopPausedObserve(
@@ -285,9 +291,12 @@ class GmosInstrumentActions[F[_]: Concurrent: Timer: Logger, A <: GmosController
   def launchObserve(
     env: ObserveEnvironment[F]
   ): Stream[F, Result[F]] =
-    Stream.eval(FileIdProvider.fileId(env)).flatMap { fileId =>
-      Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env)
-    }.handleErrorWith(catchObsErrors[F])
+    Stream
+      .eval(FileIdProvider.fileId(env))
+      .flatMap { fileId =>
+        Stream.emit(Result.Partial(FileIdAllocated(fileId))) ++ doObserve(fileId, env)
+      }
+      .handleErrorWith(catchObsErrors[F])
 
   override def observeActions(
     env: ObserveEnvironment[F]

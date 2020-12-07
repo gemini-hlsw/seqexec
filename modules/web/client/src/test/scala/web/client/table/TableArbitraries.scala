@@ -46,7 +46,7 @@ trait TableArbitraries {
 
   implicit val columnWidthCogen: Cogen[ColumnWidth] =
     Cogen[Either[FixedColumnWidth, VariableColumnWidth]].contramap {
-      case x: FixedColumnWidth      => x.asLeft
+      case x: FixedColumnWidth    => x.asLeft
       case x: VariableColumnWidth => x.asRight
     }
 
@@ -56,7 +56,8 @@ trait TableArbitraries {
                         arbitrary[Short],
                         arbitrary[Int],
                         arbitrary[Float],
-                        arbitrary[Double])
+                        arbitrary[Double]
+    )
   }
 
   implicit val jsNumberCogen: Cogen[JsNumber] =
@@ -83,7 +84,8 @@ trait TableArbitraries {
 
   implicit def columnMetaCogen[A: Cogen]: Cogen[ColumnMeta[A]] =
     Cogen[(A, String, String, Boolean, ColumnWidth)].contramap(x =>
-      (x.column, x.name, x.label, x.visible, x.width))
+      (x.column, x.name, x.label, x.visible, x.width)
+    )
 
   implicit def tableStateArb[A: Arbitrary: Eq]: Arbitrary[TableState[A]] =
     Arbitrary {
@@ -96,7 +98,8 @@ trait TableArbitraries {
 
   implicit def tableStateCogen[A: Cogen]: Cogen[TableState[A]] =
     Cogen[(UserModified, Double, List[ColumnMeta[A]])].contramap(x =>
-      (x.userModified, x.scrollPosition.toDouble, x.columns.toList))
+      (x.userModified, x.scrollPosition.toDouble, x.columns.toList)
+    )
 
   implicit def columnMetaNelArb[A: Arbitrary: Eq]: Arbitrary[NonEmptyList[ColumnMeta[A]]] =
     Arbitrary {

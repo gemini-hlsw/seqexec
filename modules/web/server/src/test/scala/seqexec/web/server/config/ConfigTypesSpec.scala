@@ -9,14 +9,14 @@ import pureconfig._
 import pureconfig.generic.auto._
 
 /**
-  * Tests of config classes
-  */
+ * Tests of config classes
+ */
 final class ConfigTypesSpec extends CatsSuite {
   test("Test site config") {
     final case class TestConf(site: Site)
 
     ConfigSource.string("{ site: GS }").load[TestConf] shouldEqual TestConf(Site.GS).asRight
     ConfigSource.string("{ site: GN }").load[TestConf] shouldEqual TestConf(Site.GN).asRight
-    ConfigSource.string("{ site: G }").load[TestConf].isLeft shouldBe(true)
+    ConfigSource.string("{ site: G }").load[TestConf].isLeft shouldBe true
   }
 }

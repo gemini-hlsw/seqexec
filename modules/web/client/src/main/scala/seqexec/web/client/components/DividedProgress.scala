@@ -15,8 +15,8 @@ import react.semanticui.modules.progress.Progress
 import seqexec.web.client.reusability._
 
 /**
-  * Progress bar divided in steps
-  */
+ * Progress bar divided in steps
+ */
 final case class DividedProgress(
   sections:             List[DividedProgress.Label],
   sectionTotal:         DividedProgress.Quantity,
@@ -79,11 +79,11 @@ object DividedProgress {
         sectionInfo.toTagMod {
           case (((label, (sectionValue, sectionColor)), sectionProgressStyle), sectionBarStyle) =>
             Progress(
-              total      = p.sectionTotal,
-              value      = sectionValue,
+              total = p.sectionTotal,
+              value = sectionValue,
               indicating = p.indicating,
-              progress   = p.progress,
-              color      = sectionColor.orUndefined,
+              progress = p.progress,
+              color = sectionColor.orUndefined,
               clazz =
                 p.progressCls |+| sectionProgressStyle |+| sectionBarStyle |+| SeqexecStyles.dividedProgressBar
             )(label)

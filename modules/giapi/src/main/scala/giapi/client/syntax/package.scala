@@ -4,8 +4,8 @@
 package giapi.client
 
 /**
-  * Syntax classes for GIAPI clients, organized like Cats.
-  */
+ * Syntax classes for GIAPI clients, organized like Cats.
+ */
 package object syntax {
   object all extends ToGiapiConfigOps
 }

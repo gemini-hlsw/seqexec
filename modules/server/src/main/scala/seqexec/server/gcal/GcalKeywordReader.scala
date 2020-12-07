@@ -48,16 +48,16 @@ object GcalKeywordsReaderEpics {
         thAr <- sys.lampThAr.map(onCheck(_).option("ThAr"))
         qh   <- sys.lampQH.map(onCheck(_).option("QH"))
         ir   <- sys.lampIr.map {
-          case BinaryOnOff.ON => "IRhigh".some
-          case _ => "IRlow".some
-        }
+                  case BinaryOnOff.ON => "IRhigh".some
+                  case _              => "IRlow".some
+                }
       } yield ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
     }.safeValOrDefault
 
     def shutter: F[String] = sys.shutter.map {
-      case "OPEN" => "OPEN"
+      case "OPEN"  => "OPEN"
       case "CLOSE" => "CLOSED"
-      case _ => "INDEF"
+      case _       => "INDEF"
     }.safeValOrDefault
   }
 }

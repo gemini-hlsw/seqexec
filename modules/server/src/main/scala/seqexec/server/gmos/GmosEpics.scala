@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 
 import scala.concurrent.duration._
 
@@ -30,7 +30,9 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def post(timeout: FiniteDuration): F[ApplyCommandResult] = configCmd.post(timeout)
 
   object configCmd extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::config")
+    )
 
     val disperserMode: Option[CaParameter[String]] = cs.map(_.getString("disperserMode"))
     def setDisperserMode(v: String): F[Unit] = setParameter(disperserMode, v)
@@ -41,8 +43,13 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     val stageMode: Option[CaParameter[String]] = cs.map(_.getString("stageMode"))
     def setStageMode(v: String): F[Unit] = setParameter(stageMode, v)
 
-    val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(_.addInteger
-    ("useElectronicOffsetting", s"${GmosTop}wfs:followA.K", "Enable electronic Offsets", false))
+    val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(
+      _.addInteger("useElectronicOffsetting",
+                   s"${GmosTop}wfs:followA.K",
+                   "Enable electronic Offsets",
+                   false
+      )
+    )
     def setElectronicOffsetting(v: Integer): F[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
@@ -69,20 +76,35 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   }
 
   object endObserveCmd extends EpicsCommandBase {
-    override protected val cs:Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::endObserve"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::endObserve")
+    )
   }
 
   object pauseCmd extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::pause"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::pause")
+    )
   }
 
-  private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::stop"))
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
-      s"${GmosTop}apply", s"${GmosTop}applyC", s"${GmosTop}dc:observeC", false, s"${GmosTop}stop", s"${GmosTop}abort", ""))
+  private val stopCS: Option[CaCommandSender]  = Option(epicsService.getCommandSender("gmos::stop"))
+  private val observeAS: Option[CaApplySender] = Option(
+    epicsService.createObserveSender("gmos::observeCmd",
+                                     s"${GmosTop}apply",
+                                     s"${GmosTop}applyC",
+                                     s"${GmosTop}dc:observeC",
+                                     false,
+                                     s"${GmosTop}stop",
+                                     s"${GmosTop}abort",
+                                     ""
+    )
+  )
 
   object continueCmd extends ObserveCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::continue"))
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::continue")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
   object stopCmd extends EpicsCommandBase {
@@ -91,10 +113,12 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   object stopAndWaitCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::abort"))
+  private val abortCS: Option[CaCommandSender] = Option(
+    epicsService.getCommandSender("gmos::abort")
+  )
 
   object abortCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = abortCS
@@ -102,25 +126,31 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   object abortAndWait extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = abortCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
   object observeCmd extends ObserveCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::observe"))
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::observe")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
   object configDCCmd extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gmos::dcconfig")
+    )
 
     private val roiNumUsed: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("roiNumUsed", s"${GmosTop}dc:roiNumrois", "Number of ROI used", false))
-    def setRoiNumUsed(v: Int): F[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
+    def setRoiNumUsed(v: Int): F[Unit] =
+      setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
 
-    val rois: Map[Int, RoiParameters[F]] = (1 to 5).iterator.map(i => i -> RoiParameters[F](cs, i)).toMap
+    val rois: Map[Int, RoiParameters[F]]                  =
+      (1 to 5).iterator.map(i => i -> RoiParameters[F](cs, i)).toMap
 
     private val shutterState: Option[CaParameter[String]] =
       cs.map(_.getString("shutterState"))
@@ -128,7 +158,8 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
     private val exposureTime: Option[CaParameter[JDouble]] =
       cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Duration): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v.toSeconds.toDouble))
+    def setExposureTime(v: Duration): F[Unit] =
+      setParameter(exposureTime, JDouble.valueOf(v.toSeconds.toDouble))
 
     private val ampCount: Option[CaParameter[String]] =
       cs.map(_.getString("ampCount"))
@@ -144,11 +175,13 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
     private val ccdXBinning: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("ccdXBinning", s"${GmosTop}dc:roiXBin", "CCD X Binning Value", false))
-    def setCcdXBinning(v: Int): F[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
+    def setCcdXBinning(v: Int): F[Unit] =
+      setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
 
     private val ccdYBinning: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("ccdYBinning", s"${GmosTop}dc:roiYBin", "CCD Y Binning Value", false))
-    def setCcdYBinning(v: Int): F[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble))
+    def setCcdYBinning(v: Int): F[Unit] =
+      setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble))
 
     private val nsPairs: Option[CaParameter[Integer]] =
       cs.map(_.getInteger("nsPairs"))
@@ -181,7 +214,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def rois: F[Map[Int, RoiStatus[F]]] =
     Sync[F].delay((1 to 5).map(i => i -> RoiStatus[F](dcState, i)).toMap)
 
-  def ccdXBinning: F[Int] = dcReadD("ccdXBinning").map(_.toInt)
+  def ccdXBinning: F[Int]             = dcReadD("ccdXBinning").map(_.toInt)
 
   def ccdYBinning: F[Int] = dcReadD("ccdYBinning").map(_.toInt)
 
@@ -225,9 +258,9 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def dcIsReadingOut: F[Boolean] = dcReadI("readingOut").map(_ =!= 0)
 
-  private val observeCAttr: CaAttribute[CarState] = dcState.addEnum("observeC",
-    s"${GmosTop}dc:observeC", classOf[CarState])
-  def observeState: F[CarState] = safeAttributeF(observeCAttr)
+  private val observeCAttr: CaAttribute[CarState] =
+    dcState.addEnum("observeC", s"${GmosTop}dc:observeC", classOf[CarState])
+  def observeState: F[CarState]                   = safeAttributeF(observeCAttr)
 
   // CC status values
   val state: CaStatusAcceptor = epicsService.getStatusAcceptor("gmos::status")
@@ -304,7 +337,9 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def dtaXCenter: F[Double] = read("dtaXCenter")
     .map(_.parseDoubleOption)
     .ensure(NullEpicsError("dtaXCenter"))(_.isDefined) // equivalent to a null check
-    .map{_.getOrElse(0.0)} // getOrElse lets us typecheck but it will never be used due to the `ensure` call above
+    .map {
+      _.getOrElse(0.0)
+    }                                                  // getOrElse lets us typecheck but it will never be used due to the `ensure` call above
 
   def gratingWavel: F[Double] = readD("adjgrwlen")
 
@@ -323,7 +358,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
 object GmosEpics extends EpicsSystem[GmosEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gmos.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GmosEpics[IO]] =
@@ -349,8 +384,8 @@ object GmosEpics extends EpicsSystem[GmosEpics[IO]] {
 
     def ccdXstart: F[Int] = readI(s"ccdXstart$i")
     def ccdYstart: F[Int] = readI(s"ccdYstart$i")
-    def ccdXsize: F[Int] = readI(s"ccdXsize$i")
-    def ccdYsize: F[Int] = readI(s"ccdYsize$i")
+    def ccdXsize: F[Int]  = readI(s"ccdXsize$i")
+    def ccdYsize: F[Int]  = readI(s"ccdYsize$i")
   }
 
 }

@@ -23,23 +23,27 @@ trait Tcs[F[_]] extends System[F] {
 object Tcs {
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
-  def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
-    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+  def calcGuiderConfig(
+    inUse:     Boolean,
+    guideWith: Option[StandardGuideOptions.Value]
+  ): GuiderConfig =
+    guideWith
+      .flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
       .getOrElse(defaultGuiderConf)
 
   // Shouldn't these be defined somewhere ?
   val GUIDE_WITH_PWFS1_PROP: String = "guideWithPWFS1"
   val GUIDE_WITH_PWFS2_PROP: String = "guideWithPWFS2"
   val GUIDE_WITH_AOWFS_PROP: String = "guideWithAOWFS"
-  val P_OFFSET_PROP: String = "p"
-  val Q_OFFSET_PROP: String = "q"
+  val P_OFFSET_PROP: String         = "p"
+  val Q_OFFSET_PROP: String         = "q"
 
   // Conversions from ODB model values to TCS configuration values
   implicit class GuideWithOps(guideWith: StandardGuideOptions.Value) {
     val toProbeTracking: ProbeTrackingConfig = guideWith match {
-      case StandardGuideOptions.Value.park => ProbeTrackingConfig.Parked
+      case StandardGuideOptions.Value.park   => ProbeTrackingConfig.Parked
       case StandardGuideOptions.Value.freeze => ProbeTrackingConfig.Frozen
-      case StandardGuideOptions.Value.guide => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+      case StandardGuideOptions.Value.guide  => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     }
 
     val toGuideSensorOption: GuiderSensorOption = {
@@ -48,12 +52,16 @@ object Tcs {
     }
   }
 
-  def calcGuiderInUse(telGuide: TelescopeGuideConfig, tipTiltSource: TipTiltSource, m1Source: M1Source): Boolean = {
+  def calcGuiderInUse(
+    telGuide:      TelescopeGuideConfig,
+    tipTiltSource: TipTiltSource,
+    m1Source:      M1Source
+  ): Boolean = {
     val usedByM1: Boolean = telGuide.m1Guide match {
       case M1GuideConfig.M1GuideOn(src) => src === m1Source
       case _                            => false
     }
-    val usedByM2 = telGuide.m2Guide match {
+    val usedByM2          = telGuide.m2Guide match {
       case M2GuideConfig.M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
       case _                                => false
     }

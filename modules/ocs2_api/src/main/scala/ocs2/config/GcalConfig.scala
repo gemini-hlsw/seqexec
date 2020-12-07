@@ -4,24 +4,30 @@
 package ocs2
 package config
 
-import ocs2.CoAdds
-import lucuma.core.enum.{ GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter }
-import io.chrisdavenport.cats.time.instances.all._
+import java.time.Duration
 
-import GcalConfig.{ GcalArcs, GcalLamp }
+import scala.collection.immutable.SortedSet
 
 import cats.Eq
 import cats.data.NonEmptySet
 import cats.syntax.all._
-import java.time.Duration
+import io.chrisdavenport.cats.time.instances.all._
+import lucuma.core.enum.GcalArc
+import lucuma.core.enum.GcalContinuum
+import lucuma.core.enum.GcalDiffuser
+import lucuma.core.enum.GcalFilter
+import lucuma.core.enum.GcalShutter
 import monocle._
-import monocle.std.either.{ stdLeft, stdRight }
-import scala.collection.immutable.SortedSet
+import monocle.std.either.stdLeft
+import monocle.std.either.stdRight
+import ocs2.CoAdds
+
+import GcalConfig.{ GcalArcs, GcalLamp }
 
 /**
-  * Additional configuration information for Gcal steps.
-  * @group Configurations
-  */
+ * Additional configuration information for Gcal steps.
+ * @group Configurations
+ */
 final case class GcalConfig(
   lamp:         GcalLamp,
   filter:       GcalFilter,

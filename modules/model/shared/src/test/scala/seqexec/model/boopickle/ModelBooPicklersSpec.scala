@@ -20,8 +20,8 @@ import lucuma.core.math.arb.ArbIndex._
 import seqexec.model.arb._
 
 /**
-  * Tests Serialization/Deserialization using BooPickle
-  */
+ * Tests Serialization/Deserialization using BooPickle
+ */
 final class BoopicklingSpec extends munit.DisciplineSuite with ModelBooPicklers {
   import ArbProgramId._
   import ArbObservationId._

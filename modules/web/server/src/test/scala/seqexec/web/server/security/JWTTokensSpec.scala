@@ -13,17 +13,18 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 class JWTTokensSpec extends CatsSuite {
-  private implicit def logger = NoOpLogger.impl[IO]
+  private implicit def logger     = NoOpLogger.impl[IO]
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
-  private val config = AuthenticationConfig(FiniteDuration(8, HOURS), "token", "key", useSSL = false, Nil)
+  private val config      =
+    AuthenticationConfig(FiniteDuration(8, HOURS), "token", "key", useSSL = false, Nil)
   private val authService = AuthenticationService[IO](Mode.Production, config)
 
   test("JWT Tokens: encode/decode") {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
-      val token = authService.buildToken(userDetails).unsafeRunSync()
+      val token       = authService.buildToken(userDetails).unsafeRunSync()
       Right(userDetails) shouldEqual authService.decodeToken(token)
     }
   }

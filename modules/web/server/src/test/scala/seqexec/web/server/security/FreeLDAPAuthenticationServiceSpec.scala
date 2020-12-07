@@ -15,7 +15,8 @@ class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
   case class MockAuthDB(users: Map[UID, (String, DisplayName)], acceptEmptyPwd: Boolean) {
     def authenticate(u: String, p: String): UID =
       // This checks if the username and password but lets it bypass it
-      if (users.contains(u) && ((u === p && p.nonEmpty) || acceptEmptyPwd)) u else throw new RuntimeException()
+      if (users.contains(u) && ((u === p && p.nonEmpty) || acceptEmptyPwd)) u
+      else throw new RuntimeException()
 
     def displayName(uid: UID): DisplayName = users.get(uid).map(_._2).getOrElse("")
   }
@@ -25,10 +26,10 @@ class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
     new (LdapOp ~> Id) {
       def apply[A](fa: LdapOp[A]) =
         fa match {
-          case LdapOp.AuthenticateOp(u, p)       => db.authenticate(u, p)
-          case LdapOp.UserDisplayNameOp(uid)     => db.displayName(uid)
-          case LdapOp.DisplayNameGrpThumbOp(_)   => ("", Nil, None)
-      }
+          case LdapOp.AuthenticateOp(u, p)     => db.authenticate(u, p)
+          case LdapOp.UserDisplayNameOp(uid)   => db.displayName(uid)
+          case LdapOp.DisplayNameGrpThumbOp(_) => ("", Nil, None)
+        }
     }
 
   def runMock[A](a: LdapM[A], db: MockAuthDB): A =

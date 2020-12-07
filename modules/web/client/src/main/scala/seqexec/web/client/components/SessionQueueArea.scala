@@ -13,8 +13,8 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 
 /**
-  * Container for the queue table
-  */
+ * Container for the queue table
+ */
 object SessionQueueTableSection {
   private val sequencesConnect =
     SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequencesReader)
@@ -22,15 +22,15 @@ object SessionQueueTableSection {
   private val component = ScalaComponent
     .builder[RouterCtl[SeqexecPages]]("SessionQueueTableSection")
     .stateless
-    .render_P(
-      p =>
-        React.Fragment(
-          <.div(
-            SeqexecStyles.queueListPane,
-            sequencesConnect(c => SessionQueueTable(p, c()))
-          ),
-          SessionQueueTableFilter()
-      ))
+    .render_P(p =>
+      React.Fragment(
+        <.div(
+          SeqexecStyles.queueListPane,
+          sequencesConnect(c => SessionQueueTable(p, c()))
+        ),
+        SessionQueueTableFilter()
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 

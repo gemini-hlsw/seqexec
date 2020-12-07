@@ -35,8 +35,8 @@ import squants.Time
 import squants.time.TimeConversions._
 
 /**
-  * Keep track of the current execution state
-  */
+ * Keep track of the current execution state
+ */
 @Lenses
 final case class NSCurrent(
   fileId:        ImageFileId,
@@ -63,8 +63,8 @@ object NSCurrent {
 }
 
 /**
-  * Used to keep the internal state of NS
-  */
+ * Used to keep the internal state of NS
+ */
 @Lenses
 final case class NSObsState(config: NSConfig, current: Option[NSCurrent])
 
@@ -96,7 +96,7 @@ object GmosControllerSim {
         expTime: Time
       ): F[ObserveCommandResult] =
         nsConfig.modify {
-          case s @ NSObsState(NSConfig.NoNodAndShuffle, _) =>
+          case s @ NSObsState(NSConfig.NoNodAndShuffle, _)                =>
             (s, s)
           case s @ NSObsState(NSConfig.NodAndShuffle(cycles, _, _, _), _) =>
             // Initialize the current state
@@ -108,7 +108,7 @@ object GmosControllerSim {
             sim.log(s"Simulate Gmos N&S observation ${curr.show}") *>
               // Initial N&S obs
               sim.observe(fileId, expTime).as(ObserveCommandResult.Paused)
-          case NSObsState(_, _) =>
+          case NSObsState(_, _)                                           =>
             sim.observe(fileId, expTime) // Regular observation
         }
 
@@ -139,11 +139,10 @@ object GmosControllerSim {
               if !curr.lastSubexposure =>
             sim.log(s"Next Nod ${curr.show}") *>
               sim.observe(curr.fileId, expTime).as(ObserveCommandResult.Paused)
-          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr))
-              if curr.lastSubexposure =>
+          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) if curr.lastSubexposure =>
             sim.log(s"Final Nod ${curr.show}") *>
               sim.observe(curr.fileId, expTime)
-          case _ =>
+          case _                                                                                  =>
             // Regular observation
             sim.resumePaused
         }
@@ -160,18 +159,20 @@ object GmosControllerSim {
       private def nsObserveProgress(
         total:   Time,
         elapsed: ElapsedTime,
-        curr: NSCurrent
+        curr:    NSCurrent
       ): Stream[F, Progress] = (
-        if(curr.firstSubexposure) Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)) ++
-              countdown[F](total, elapsed.self)
-        else if(curr.lastSubexposure) countdown[F](total, elapsed.self) ++
-          Stream.emit(ObsProgress(total, RemainingTime(0.0.seconds), ObserveStage.ReadingOut))
+        if (curr.firstSubexposure)
+          Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)) ++
+            countdown[F](total, elapsed.self)
+        else if (curr.lastSubexposure)
+          countdown[F](total, elapsed.self) ++
+            Stream.emit(ObsProgress(total, RemainingTime(0.0.seconds), ObserveStage.ReadingOut))
         else countdown[F](total, elapsed.self)
-      ).map{ p =>
-        val sub = NSSubexposure(
-          tag[NsCyclesI][Int](curr.totalCycles),
-          tag[NsCyclesI][Int](curr.cycle),
-          curr.stageIndex)
+      ).map { p =>
+        val sub = NSSubexposure(tag[NsCyclesI][Int](curr.totalCycles),
+                                tag[NsCyclesI][Int](curr.cycle),
+                                curr.stageIndex
+        )
         p.toNSProgress(sub.getOrElse(NSSubexposure.Zero))
       }
 
@@ -179,21 +180,22 @@ object GmosControllerSim {
         total:   Time,
         elapsed: ElapsedTime
       ): Stream[F, Progress] =
-        Stream.eval(nsConfig.get).flatMap{
-          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) => nsObserveProgress(total, elapsed, curr)
-          case _ => classicObserveProgress(total, elapsed)
+        Stream.eval(nsConfig.get).flatMap {
+          case NSObsState(NSConfig.NodAndShuffle(_, _, _, _), Some(curr)) =>
+            nsObserveProgress(total, elapsed, curr)
+          case _                                                          => classicObserveProgress(total, elapsed)
         }
 
       override def nsCount: F[Int] = nsConfig.get.map(_.current.foldMap(_.exposureCount))
     }
 
   def south[F[_]: Sync: Logger: Timer]: F[GmosController[F, SouthTypes]] =
-    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS South")).mapN {(nsConfig, sim) =>
+    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS South")).mapN { (nsConfig, sim) =>
       GmosControllerSim[F, SouthTypes](sim, nsConfig)
     }
 
   def north[F[_]: Sync: Logger: Timer]: F[GmosController[F, NorthTypes]] =
-    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS North")).mapN {(nsConfig, sim) =>
+    (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS North")).mapN { (nsConfig, sim) =>
       GmosControllerSim[F, NorthTypes](sim, nsConfig)
     }
 }

@@ -3,17 +3,19 @@
 
 package ocs2
 
-import cats.{ Order, Show }
-import io.chrisdavenport.cats.time.instances.instant.instantInstances
-import seqexec.model.Observation
-import lucuma.core.syntax.string._
-import lucuma.core.optics.Format
 import java.time.Instant
 
+import cats.Order
+import cats.Show
+import io.chrisdavenport.cats.time.instances.instant.instantInstances
+import lucuma.core.optics.Format
+import lucuma.core.syntax.string._
+import seqexec.model.Observation
+
 /**
-  * A labeled, timestamped data file.
-  * @group Sequence Model
-  */
+ * A labeled, timestamped data file.
+ * @group Sequence Model
+ */
 final case class Dataset(
   label:     Dataset.Label,
   filename:  String,
@@ -23,9 +25,9 @@ final case class Dataset(
 object Dataset {
 
   /**
-    * Datasets are labeled by observation and index.
-    * @group Data Types
-    */
+   * Datasets are labeled by observation and index.
+   * @group Data Types
+   */
   final case class Label(observationId: Observation.Id, index: Int) {
     override def toString =
       Label.fromString.productToString(this)
@@ -34,9 +36,9 @@ object Dataset {
   object Label extends LabelOptics {
 
     /**
-      * Labels are ordered by observation and index.
-      * @group Typeclass Instances
-      */
+     * Labels are ordered by observation and index.
+     * @group Typeclass Instances
+     */
     implicit val LabelOrder: Order[Label] =
       Order.by(a => (a.observationId, a.index))
 
@@ -66,10 +68,10 @@ object Dataset {
   }
 
   /**
-    * Datasets are ordered by their labels, which are normally unique. For completeness they are further
-    * ordered by timestamp and filename.
-    * @group Typeclass Instances
-    */
+   * Datasets are ordered by their labels, which are normally unique. For completeness they are further
+   * ordered by timestamp and filename.
+   * @group Typeclass Instances
+   */
   implicit val DatasetOrder: Order[Dataset] =
     Order.by(a => (a.label, a.timestamp, a.filename))
 

@@ -15,10 +15,10 @@ object SeqexecFailure {
   /** Seqexec does not know how to deal with instrument in sequence. */
   final case class UnrecognizedInstrument(name: String) extends SeqexecFailure
 
-  /** Something went wrong while running a sequence. **/
+  /** Something went wrong while running a sequence. * */
   final case class Execution(errMsg: String) extends SeqexecFailure
 
-  /** Aborted sequence **/
+  /** Aborted sequence * */
   // TODO Reconsider if abort should be handled as an error
   final case class Aborted(obsId: Observation.Id) extends SeqexecFailure
 
@@ -26,8 +26,7 @@ object SeqexecFailure {
   final case class SeqexecException(ex: Throwable) extends SeqexecFailure
 
   /** Exception thrown while running a sequence. */
-  final case class SeqexecExceptionWhile(context: String, ex: Throwable)
-      extends SeqexecFailure
+  final case class SeqexecExceptionWhile(context: String, ex: Throwable) extends SeqexecFailure
 
   /** Invalid operation on a Sequence */
   final case class InvalidOp(errMsg: String) extends SeqexecFailure

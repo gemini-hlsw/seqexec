@@ -3,14 +3,14 @@
 
 package seqexec.server.gnirs
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
+import edu.gemini.seqexec.server.gnirs.{ DetectorState => JDetectorState }
 import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsSystem
@@ -24,7 +24,9 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   val GnirsTop: String = tops.getOrElse("nirs", "nirs:")
 
   object configCCCmd extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::config"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("nirs::config")
+    )
 
     private val cover: Option[CaParameter[String]] = cs.map(_.getString("cover"))
     def setCover(v: String): F[Unit] = setParameter(cover, v)
@@ -50,8 +52,10 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     private val focusbest: Option[CaParameter[String]] = cs.map(_.getString("focusbest"))
     def setFocusBest(v: String): F[Unit] = setParameter(focusbest, v)
 
-    private val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
-    def setCentralWavelength(v: Double): F[Unit] = setParameter(centralWavelength, JDouble.valueOf(v))
+    private val centralWavelength: Option[CaParameter[JDouble]] =
+      cs.map(_.getDouble("centralWavelength"))
+    def setCentralWavelength(v: Double): F[Unit] =
+      setParameter(centralWavelength, JDouble.valueOf(v))
 
     private val camera: Option[CaParameter[String]] = cs.map(_.getString("camera"))
     def setCamera(v: String): F[Unit] = setParameter(camera, v)
@@ -74,7 +78,9 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   }
 
   object configDCCmd extends EpicsCommandBase {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::dcconfig"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("nirs::dcconfig")
+    )
 
     private val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
     def setLowNoise(v: Int): F[Unit] = setParameter(lowNoise, Integer.valueOf(v))
@@ -97,13 +103,23 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   }
 
   object endObserveCmd extends EpicsCommandBase {
-    override protected val cs:Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::endObserve"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("nirs::endObserve")
+    )
   }
 
-  private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::stop"))
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "nirs::observeCmd", s"${GnirsTop}dc:apply", s"${GnirsTop}dc:applyC", s"${GnirsTop}dc:observeC",
-    true, s"${GnirsTop}dc:stop", s"${GnirsTop}dc:abort", ""))
+  private val stopCS: Option[CaCommandSender]  = Option(epicsService.getCommandSender("nirs::stop"))
+  private val observeAS: Option[CaApplySender] = Option(
+    epicsService.createObserveSender("nirs::observeCmd",
+                                     s"${GnirsTop}dc:apply",
+                                     s"${GnirsTop}dc:applyC",
+                                     s"${GnirsTop}dc:observeC",
+                                     true,
+                                     s"${GnirsTop}dc:stop",
+                                     s"${GnirsTop}dc:abort",
+                                     ""
+    )
+  )
 
   object stopCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = stopCS
@@ -111,10 +127,12 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   object stopAndWaitCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::abort"))
+  private val abortCS: Option[CaCommandSender] = Option(
+    epicsService.getCommandSender("nirs::abort")
+  )
 
   object abortCmd extends EpicsCommandBase {
     override protected val cs: Option[CaCommandSender] = abortCS
@@ -122,18 +140,20 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   object abortAndWait extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = abortCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
   object observeCmd extends ObserveCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::observe"))
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("nirs::observe")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  private val state: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::status")
+  private val state: CaStatusAcceptor   = epicsService.getStatusAcceptor("nirs::status")
   private val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::dcstatus")
 
   def arrayId: F[String] = safeAttributeF(dcState.getStringAttribute("arrayid"))
@@ -156,10 +176,13 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def lowNoise: F[Int] = safeAttributeSIntF(dcState.getIntegerAttribute("lowNoise"))
 
-  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("dhsConnected")).map(_ =!= 0)
+  def dhsConnected: F[Boolean] =
+    safeAttributeSIntF(dcState.getIntegerAttribute("dhsConnected")).map(_ =!= 0)
 
   val arrayActiveAttr: CaAttribute[JDetectorState] = dcState.addEnum(
-    "arrayState", s"${GnirsTop}dc:activate", classOf[JDetectorState]
+    "arrayState",
+    s"${GnirsTop}dc:activate",
+    classOf[JDetectorState]
   )
 
   def arrayActive: F[Boolean] = safeAttributeF(arrayActiveAttr).map(_.getActive)
@@ -168,11 +191,14 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def dettemp: F[Double] = safeAttributeSDoubleF(dcState.getDoubleAttribute("dettemp"))
 
-  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("prepObs")).map(_ =!= 0)
+  def dcIsPreparing: F[Boolean] =
+    safeAttributeSIntF(dcState.getIntegerAttribute("prepObs")).map(_ =!= 0)
 
-  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("acqObs")).map(_ =!= 0)
+  def dcIsAcquiring: F[Boolean] =
+    safeAttributeSIntF(dcState.getIntegerAttribute("acqObs")).map(_ =!= 0)
 
-  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(dcState.getIntegerAttribute("readingOut")).map(_ =!= 0)
+  def dcIsReadingOut: F[Boolean] =
+    safeAttributeSIntF(dcState.getIntegerAttribute("readingOut")).map(_ =!= 0)
 
   def prism: F[String] = safeAttributeF(state.getStringAttribute("prism"))
 
@@ -196,7 +222,9 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def decker: F[String] = safeAttributeF(state.getStringAttribute("decker"))
 
-  def centralWavelength: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("centralWavelength"))
+  def centralWavelength: F[Double] = safeAttributeSDoubleF(
+    state.getDoubleAttribute("centralWavelength")
+  )
 
   def gratingTilt: F[Double] = safeAttributeSDoubleF(state.getDoubleAttribute("grattilt"))
 
@@ -223,7 +251,7 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
 object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gnirs.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GnirsEpics[IO]] =

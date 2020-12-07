@@ -21,15 +21,17 @@ import squants.time.Time
 
 trait GiapiInstrumentController[F[_], CFG] {
   def applyConfig(config: CFG): F[Unit]
-  def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId]
+  def observe(fileId:     ImageFileId, expTime: Time): F[ImageFileId]
   def endObserve: F[Unit]
 }
 
 /**
-  * Superclass for all GIAPI instrument controllers.
-  */
-private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C)(
-  implicit L: Logger[F]
+ * Superclass for all GIAPI instrument controllers.
+ */
+private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[
+  F
+]](client: C)(implicit
+  L:       Logger[F]
 ) extends GiapiInstrumentController[F, CFG] {
 
   def name: String
@@ -39,8 +41,8 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     // The GMP sends these cryptic messages but we can do better
     case CommandResultException(_, "Message cannot be null") =>
       Execution("Unhandled Apply command")
-    case CommandResultException(_, m) => Execution(m)
-    case f                            => SeqexecException(f)
+    case CommandResultException(_, m)                        => Execution(m)
+    case f                                                   => SeqexecException(f)
   }
 
   private def configure(config: CFG): F[CommandResult] = {
@@ -48,7 +50,8 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     val isEmpty               = cfg.map(_.config.isEmpty)
     isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
                   .pure[F]),
-                cfg.flatMap(client.genericApply))
+                cfg.flatMap(client.genericApply)
+    )
   }.adaptError(adaptGiapiError)
 
   override def applyConfig(config: CFG): F[Unit] =
@@ -61,7 +64,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     L.debug(s"Send observe to $name, file id $fileId") *>
       client.observe(fileId: String, expTime.toMilliseconds.milliseconds) *>
       L.debug(s"Completed $name observe")
-    )
+  )
     .as(fileId)
     .adaptError(adaptGiapiError)
 

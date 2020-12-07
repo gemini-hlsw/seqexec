@@ -28,18 +28,21 @@ class InstrumentControllerSimSpec extends CatsSuite {
   val tick = FiniteDuration(250, MILLISECONDS)
 
   def simulator(implicit t: Timer[IO]) =
-     InstrumentControllerSim.unsafeWithTimes[IO]("sim",
-                                            FiniteDuration(10, MILLISECONDS),
-                                            FiniteDuration(5, MILLISECONDS),
-                                            FiniteDuration(1, SECONDS))
+    InstrumentControllerSim.unsafeWithTimes[IO]("sim",
+                                                FiniteDuration(10, MILLISECONDS),
+                                                FiniteDuration(5, MILLISECONDS),
+                                                FiniteDuration(1, SECONDS)
+    )
 
   // Needed for IO.start to do a logical thread fork
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   test("simulation doesn't stack overflow") {
     implicit val tio = noWaitTio
-    val obsStateRef = Ref.unsafe[IO, InstrumentControllerSim.ObserveState](InstrumentControllerSim.ObserveState(false, false, false, Int.MaxValue))
-    val sim = new InstrumentControllerSim.InstrumentControllerSimImpl[IO](
+    val obsStateRef  = Ref.unsafe[IO, InstrumentControllerSim.ObserveState](
+      InstrumentControllerSim.ObserveState(false, false, false, Int.MaxValue)
+    )
+    val sim          = new InstrumentControllerSim.InstrumentControllerSimImpl[IO](
       "sim",
       false,
       FiniteDuration(10, MILLISECONDS),
@@ -48,19 +51,19 @@ class InstrumentControllerSimSpec extends CatsSuite {
       obsStateRef
     )
     // We make a very long observation here to ensure we don't stack overflow
-    val result =
+    val result       =
       sim.observeTic(None).unsafeRunSync()
     assert(result === ObserveCommandResult.Success)
   }
   test("normal observation") {
     implicit val tio = noWaitTio
-    val result = simulator.observe(toImageFileId("S001"), 5.seconds).unsafeRunSync()
+    val result       = simulator.observe(toImageFileId("S001"), 5.seconds).unsafeRunSync()
     assert(result === ObserveCommandResult.Success)
   }
   test("pause observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 2.seconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
@@ -70,8 +73,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("abort observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 2.seconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.abortObserve
@@ -81,8 +84,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("stop observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 2.seconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.stopObserve
@@ -92,8 +95,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("pause/stop pause observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 900.milliseconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
@@ -106,8 +109,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("pause/resume observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 900.milliseconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
@@ -119,8 +122,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("pause/stop observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 2.seconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
@@ -136,8 +139,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("pause/abort paused observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 900.milliseconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve
@@ -150,8 +153,8 @@ class InstrumentControllerSimSpec extends CatsSuite {
   }
   test("pause/abort observation") {
     implicit val tio = IO.timer(ExecutionContext.global)
-    val sim = simulator
-    val result = (for {
+    val sim          = simulator
+    val result       = (for {
       f <- sim.observe(toImageFileId("S001"), 2.seconds).start
       _ <- tio.sleep(tick) // give it enough time for at least one tick
       _ <- sim.pauseObserve

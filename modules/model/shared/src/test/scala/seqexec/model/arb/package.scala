@@ -5,24 +5,25 @@ package seqexec.model
 
 package object arb {
 
-  object all extends ArbClientId
-    with ArbRunningStep
-    with ArbNotification
-    with ArbM2GuideConfig
-    with ArbM1GuideConfig
-    with ArbTelescopeGuideConfig
-    with ArbStep
-    with ArbStandardStep
-    with ArbNodAndShuffleStep
-    with ArbStepState
-    with ArbStepConfig
-    with ArbDhsTypes
-    with ArbTime
-    with ArbNSSubexposure
-    with ArbGmosParameters
-    with ArbNSRunningState
-    with ArbObservationProgress
-    with ArbUserPrompt
-    with ArbObservationId
-    with ArbProgramId
+  object all
+      extends ArbClientId
+      with ArbRunningStep
+      with ArbNotification
+      with ArbM2GuideConfig
+      with ArbM1GuideConfig
+      with ArbTelescopeGuideConfig
+      with ArbStep
+      with ArbStandardStep
+      with ArbNodAndShuffleStep
+      with ArbStepState
+      with ArbStepConfig
+      with ArbDhsTypes
+      with ArbTime
+      with ArbNSSubexposure
+      with ArbGmosParameters
+      with ArbNSRunningState
+      with ArbObservationProgress
+      with ArbUserPrompt
+      with ArbObservationId
+      with ArbProgramId
 }

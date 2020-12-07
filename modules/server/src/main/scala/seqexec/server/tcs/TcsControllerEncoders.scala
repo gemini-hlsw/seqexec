@@ -13,7 +13,7 @@ import seqexec.server.tcs.TcsController._
 trait TcsControllerEncoders {
   // Encoders
   implicit val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] =
-    EncodeEpicsValue{
+    EncodeEpicsValue {
       case MountGuideOption.MountGuideOn  => "on"
       case MountGuideOption.MountGuideOff => "off"
     }
@@ -55,7 +55,7 @@ trait TcsControllerEncoders {
     }
 
   implicit val encodeHrwfsPickupPosition: EncodeEpicsValue[HrwfsPickupPosition, String] =
-    EncodeEpicsValue{
+    EncodeEpicsValue {
       case HrwfsPickupPosition.IN     => "IN"
       case HrwfsPickupPosition.OUT    => "OUT"
       case HrwfsPickupPosition.Parked => "park-pos."

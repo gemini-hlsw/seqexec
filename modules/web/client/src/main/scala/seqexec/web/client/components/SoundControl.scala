@@ -17,11 +17,12 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.services.WebpackResources._
 import web.client.Audio
 
-final case class SoundControl(sound: SoundSelection) extends ReactProps[SoundControl](SoundControl.component)
+final case class SoundControl(sound: SoundSelection)
+    extends ReactProps[SoundControl](SoundControl.component)
 
 /**
-  * Button to toggle sound on/off
-  */
+ * Button to toggle sound on/off
+ */
 object SoundControl {
   private val SoundOn =
     Audio.selectPlayable(new Audio(SoundOnMP3.resource), new Audio(SoundOnWebM.resource))
@@ -35,7 +36,7 @@ object SoundControl {
     .builder[SoundControl]("SoundControl")
     .stateless
     .render_P { p =>
-      val icon = p.sound match {
+      val icon       = p.sound match {
         case SoundSelection.SoundOn  => Icon("volume up")
         case SoundSelection.SoundOff => Icon("volume off")
       }

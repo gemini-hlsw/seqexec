@@ -16,7 +16,7 @@ object ScienceFold {
 
   implicit val positionEq: Eq[Position] = Eq.by(x => (x.source, x.sink, x.port))
 
-  implicit val eq: Eq[ScienceFold] = Eq.instance{
+  implicit val eq: Eq[ScienceFold] = Eq.instance {
     case (Parked, Parked)           => true
     case (a: Position, b: Position) => a === b
     case _                          => false

@@ -23,7 +23,9 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
   def post(timeout: FiniteDuration): F[ApplyCommandResult] = configCmd.post(timeout)
 
   object dcConfigCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::dcconfig"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::dcconfig")
+    )
 
     private val biasMode = cs.map(_.getString("biasMode"))
     def setBiasMode(v: String): F[Unit] = setParameter(biasMode, v)
@@ -34,35 +36,51 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
     private val readoutMode = cs.map(_.getString("readoutMode"))
     def setReadoutMode(v: String): F[Unit] = setParameter(readoutMode, v)
 
-    private val exposureTime: Option[CaParameter[java.lang.Double]] = cs.map(_.getDouble("exposureTime"))
+    private val exposureTime: Option[CaParameter[java.lang.Double]] =
+      cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): F[Unit] = setParameter[F, java.lang.Double](exposureTime, v)
 
   }
 
   object abortCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::abort"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::abort")
+    )
   }
 
   object stopCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::stop"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::stop")
+    )
   }
 
   object observeCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::observe"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::observe")
+    )
 
     private val label = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
   object endObserveCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::endObserve"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::endObserve")
+    )
   }
 
   object configCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::config"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("flamingos2::config")
+    )
 
-    private val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting",
-      s"${F2Top}wfs:followA.K", "Enable electronic Offsets", false))
+    private val useElectronicOffsetting = cs.map(
+      _.addInteger("useElectronicOffsetting",
+                   s"${F2Top}wfs:followA.K",
+                   "Enable electronic Offsets",
+                   false
+      )
+    )
     def setUseElectronicOffsetting(v: Integer): F[Unit] = setParameter(useElectronicOffsetting, v)
 
     private val filter = cs.map(_.getString("filter"))
@@ -146,9 +164,12 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 
 object Flamingos2Epics extends EpicsSystem[Flamingos2Epics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Flamingos2.xml"
 
-  override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[Flamingos2Epics[IO]] =
+  override def build[F[_]: Sync](
+    service: CaService,
+    tops:    Map[String, String]
+  ): F[Flamingos2Epics[IO]] =
     Sync[F].delay(new Flamingos2Epics[IO](service, tops))
 }

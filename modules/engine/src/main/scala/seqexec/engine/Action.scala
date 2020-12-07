@@ -77,13 +77,13 @@ object Action {
 
   object ActionState {
 
-    case object Idle extends ActionState[Nothing] {
+    case object Idle    extends ActionState[Nothing] {
       override val isIdle: Boolean = true
     }
     case object Started extends ActionState[Nothing]
-    final case class Paused[F[_]](ctx:         PauseContext[F]) extends ActionState[F]
+    final case class Paused[F[_]](ctx: PauseContext[F]) extends ActionState[F]
     final case class Completed[V <: RetVal](r: V) extends ActionState[Nothing]
-    final case class Failed(e:                 Error) extends ActionState[Nothing]
+    final case class Failed(e: Error) extends ActionState[Nothing]
     case object Aborted extends ActionState[Nothing] {
       override val isIdle: Boolean = true
     }

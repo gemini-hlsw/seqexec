@@ -61,7 +61,7 @@ final case class StepProgressCell(
 object StepProgressCell {
   type Props = StepProgressCell
 
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props]                           = Reusability.derive[Props]
   implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
     ControlButtonResolver.build(p => (p.clientStatus, p.state, p.step))
 
@@ -208,24 +208,24 @@ object StepProgressCell {
       case (f, s) if s.status === StepState.Running && s.fileId.isEmpty && f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isEmpty                        =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused && s.fileId.isDefined =>
+      case (_, s) if s.isObservePaused && s.fileId.isDefined                                   =>
         // Case for exposure paused, label and control buttons
         stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = true)
-      case (_, s) if s.status === StepState.Running && s.fileId.isDefined =>
+      case (_, s) if s.status === StepState.Running && s.fileId.isDefined                      =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, s.fileId.orEmpty, paused = false)
-      case (_, s) if s.wasSkipped =>
+      case (_, s) if s.wasSkipped                                                              =>
         <.p("Skipped")
-      case (_, _) if props.step.skip =>
+      case (_, _) if props.step.skip                                                           =>
         <.p("Skip")
-      case (_, s) if s.status === StepState.Completed && s.fileId.isDefined =>
+      case (_, s) if s.status === StepState.Completed && s.fileId.isDefined                    =>
         <.p(SeqexecStyles.componentLabel, s.fileId.orEmpty)
-      case (_, s) if props.stepSelected(s.id) && s.canConfigure =>
+      case (_, s) if props.stepSelected(s.id) && s.canConfigure                                =>
         stepSubsystemControl(props)
-      case _ =>
+      case _                                                                                   =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 

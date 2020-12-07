@@ -10,9 +10,8 @@ sealed trait BatchCommandState extends Product with Serializable
 
 object BatchCommandState {
   case object Idle extends BatchCommandState
-  final case class Run(observer: Observer,
-                       user: UserDetails,
-                       clientId: ClientId) extends BatchCommandState
+  final case class Run(observer: Observer, user: UserDetails, clientId: ClientId)
+      extends BatchCommandState
   case object Stop extends BatchCommandState
 
   implicit val equal: Eq[BatchCommandState] = Eq.instance {

@@ -3,14 +3,14 @@
 
 package edu.gemini.epics.acm
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit }
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.scalatest.funsuite.AnyFunSuite
 
 /**
-  * Tests of the observe state machine timeouts
-  */
+ * Tests of the observe state machine timeouts
+ */
 final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMocks {
 
   val executor: ScheduledExecutorService = new ScheduledThreadPoolExecutor(2)
@@ -18,27 +18,27 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
   test("NIRI no response should timeout") {
     val (epicsReader, epicsWriter) = niriMocks
 
-    val observe = new CaObserveSenderImpl(
-      "niri::observeCmd",
-      "niri:dc:apply",
-      "niri:dc:applyC",
-      "niri:dc:observeC",
-      "niri:dc:stop",
-      "niri:dc:abort",
-      "NIRI Observe",
-      classOf[CarState],
-      epicsReader,
-      epicsWriter,
-      executor)
+    val observe = new CaObserveSenderImpl("niri::observeCmd",
+                                          "niri:dc:apply",
+                                          "niri:dc:applyC",
+                                          "niri:dc:observeC",
+                                          "niri:dc:stop",
+                                          "niri:dc:abort",
+                                          "NIRI Observe",
+                                          classOf[CarState],
+                                          epicsReader,
+                                          epicsWriter,
+                                          executor
+    )
 
     observe.setTimeout(5, TimeUnit.SECONDS)
     // Start idle
     assert(observe.applyState().isIdle)
-    val observeErrorCount = new AtomicInteger()
-    val observePauseCount = new AtomicInteger()
+    val observeErrorCount   = new AtomicInteger()
+    val observePauseCount   = new AtomicInteger()
     val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    val l = observe.post()
+    val l                   = observe.post()
     l.setCallback(new CaCommandListener() {
       def onFailure(ex: Exception): Unit = {
         observeErrorCount.incrementAndGet()
@@ -90,26 +90,26 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
   test("GSAOI apply no response should timeout") {
 
     val (epicsReader, epicsWriter) = gsaoiMocks
-    val observe = new CaSimpleObserveSenderImpl(
-      "gsaoi::observeCmd",
-      "gsaoi:dc:obsapply",
-      "gsaoi:dc:observeC",
-      "gsaoi:dc:stop",
-      "gsaoi:dc:abort",
-      "GSAOI Observe",
-      classOf[CarState],
-      epicsReader,
-      epicsWriter,
-      executor)
+    val observe                    = new CaSimpleObserveSenderImpl("gsaoi::observeCmd",
+                                                "gsaoi:dc:obsapply",
+                                                "gsaoi:dc:observeC",
+                                                "gsaoi:dc:stop",
+                                                "gsaoi:dc:abort",
+                                                "GSAOI Observe",
+                                                classOf[CarState],
+                                                epicsReader,
+                                                epicsWriter,
+                                                executor
+    )
     observe.setTimeout(5, TimeUnit.SECONDS)
     // Start idle
     assert(observe.applyState().isIdle)
 
-    val observeErrorCount = new AtomicInteger()
-    val observePauseCount = new AtomicInteger()
+    val observeErrorCount   = new AtomicInteger()
+    val observePauseCount   = new AtomicInteger()
     val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    val l = observe.post()
+    val l                   = observe.post()
     l.setCallback(new CaCommandListener() {
       def onFailure(ex: Exception): Unit = {
         observeErrorCount.incrementAndGet()

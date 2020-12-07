@@ -21,29 +21,29 @@ import squants.space.Degrees
 import squants.thermal.Celsius
 
 /**
-  * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.
-  * It has all the objects used to read TCS status values and execute TCS commands.
-  */
+ * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.
+ * It has all the objects used to read TCS status values and execute TCS commands.
+ */
 final class GwsEpics[F[_]: Sync] private (epicsService: CaService) {
   private val state = epicsService.getStatusAcceptor("gws::state")
 
   private def readD(name: String): F[Double] =
     safeAttributeSDoubleF[F](state.getDoubleAttribute(name))
-  private def readI(name: String): F[Int] =
+  private def readI(name: String): F[Int]    =
     safeAttributeSIntF[F](state.getIntegerAttribute(name))
 
-  def humidity: F[Double] = readD("humidity").map(_.doubleValue)
+  def humidity: F[Double]       = readD("humidity").map(_.doubleValue)
   def windVelocity: F[Velocity] =
     readD("windspee").map(v => MetersPerSecond(v.doubleValue))
-  def airPressure: F[Pressure] =
+  def airPressure: F[Pressure]  =
     readD("pressure").map(v => Bars(v.doubleValue * Milli))
-  def ambientT: F[Temperature] =
+  def ambientT: F[Temperature]  =
     readD("tambient").map(v => Celsius(v.doubleValue))
-  def health: F[EpicsHealth] =
+  def health: F[EpicsHealth]    =
     readI("health").map(h => EpicsHealth.fromInt(h.intValue))
-  def dewPoint: F[Temperature] =
+  def dewPoint: F[Temperature]  =
     readD("dewpoint").map(v => Celsius(v.doubleValue))
-  def windDirection: F[Angle] =
+  def windDirection: F[Angle]   =
     readD("winddire").map(v => Degrees(v.doubleValue))
 
 }

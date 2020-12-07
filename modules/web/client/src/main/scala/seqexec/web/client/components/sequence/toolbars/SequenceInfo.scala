@@ -17,11 +17,12 @@ import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 
-final case class SequenceInfo(p: SequenceInfoFocus) extends ReactProps[SequenceInfo](SequenceInfo.component)
+final case class SequenceInfo(p: SequenceInfoFocus)
+    extends ReactProps[SequenceInfo](SequenceInfo.component)
 
 /**
-  * Display the name of the sequence and the observer
-  */
+ * Display the name of the sequence and the observer
+ */
 object SequenceInfo {
   type Props = SequenceInfo
 
@@ -31,9 +32,9 @@ object SequenceInfo {
       .stateless
       .render_P { p =>
         val SequenceInfoFocus(isLogged, obsName, status, tName) = p.p
-        val unknownTargetName: TagMod =
+        val unknownTargetName: TagMod                           =
           Label(basic = true)(UnknownTargetName)
-        val targetName = tName
+        val targetName                                          = tName
           .filter(_.nonEmpty)
           .fold(unknownTargetName)(t => Label(basic = true)(t))
         Form(

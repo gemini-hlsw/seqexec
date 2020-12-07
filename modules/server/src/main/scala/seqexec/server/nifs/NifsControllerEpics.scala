@@ -15,13 +15,13 @@ import cats.effect.Async
 import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.nifs.DhsConnected
-import edu.gemini.seqexec.server.nifs.{ReadMode => EReadMode}
-import edu.gemini.seqexec.server.nifs.{TimeMode => ETimeMode}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Disperser => LegacyDisperser}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{EngReadMode => LegacyEngReadMode}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Filter => LegacyFilter}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{Mask => LegacyMask}
-import edu.gemini.spModel.gemini.nifs.NIFSParams.{ReadMode => LegacyReadMode}
+import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
+import edu.gemini.seqexec.server.nifs.{ TimeMode => ETimeMode }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Disperser => LegacyDisperser }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ EngReadMode => LegacyEngReadMode }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
 import io.chrisdavenport.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
@@ -101,9 +101,8 @@ object NifsControllerEpics extends NifsEncoders {
   private implicit val filterEq: Eq[LegacyFilter]       = Eq.by(_.displayValue)
   private implicit val disperserEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
 
-  private val ConfigTimeout: FiniteDuration = FiniteDuration(400, SECONDS)
+  private val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-
 
   import NifsController._
   import NifsLookupTables._
@@ -112,14 +111,15 @@ object NifsControllerEpics extends NifsEncoders {
     rm: Either[EngReadMode, ReadMode]
   ): Option[NumberOfFowSamples] =
     rm.map {
-        case LegacyReadMode.BRIGHT_OBJECT_SPEC => 1
-        case LegacyReadMode.MEDIUM_OBJECT_SPEC => 4
-        case LegacyReadMode.FAINT_OBJECT_SPEC  => 16
-      }
-      .map(tag[NumberOfFowSamplesI][Int])
+      case LegacyReadMode.BRIGHT_OBJECT_SPEC => 1
+      case LegacyReadMode.MEDIUM_OBJECT_SPEC => 4
+      case LegacyReadMode.FAINT_OBJECT_SPEC  => 16
+    }.map(tag[NumberOfFowSamplesI][Int])
       .toOption
 
-  def apply[F[_]: Timer: Async](epicsSys: => NifsEpics[F])(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
+  def apply[F[_]: Timer: Async](
+    epicsSys:   => NifsEpics[F]
+  )(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
 
     private val unit = Applicative[F].unit
 
@@ -134,7 +134,7 @@ object NifsControllerEpics extends NifsEncoders {
 
     private def setReadMode(rm: Either[EngReadMode, ReadMode]): F[Unit] =
       rm.pure[F].flatMap {
-        case Left(e) =>
+        case Left(e)  =>
           engineeringReadModeLUT
             .get(e)
             .map(epicsSys.dcConfigCmd.setReadMode)
@@ -186,20 +186,20 @@ object NifsControllerEpics extends NifsEncoders {
         case cfg: StdCCConfig =>
           if (cfg.filter === LegacyFilter.SAME_AS_DISPERSER) {
             cfg.disperser match {
-              case LegacyDisperser.Z | LegacyDisperser.J           =>
+              case LegacyDisperser.Z | LegacyDisperser.J =>
                 LegacyFilter.ZJ_FILTER.pure[F]
 
-              case LegacyDisperser.H                               =>
+              case LegacyDisperser.H =>
                 LegacyFilter.JH_FILTER.pure[F]
 
-              case LegacyDisperser.MIRROR | LegacyDisperser.K |
-                  LegacyDisperser.K_SHORT | LegacyDisperser.K_LONG =>
+              case LegacyDisperser.MIRROR | LegacyDisperser.K | LegacyDisperser.K_SHORT |
+                  LegacyDisperser.K_LONG =>
                 LegacyFilter.HK_FILTER.pure[F]
 
-              case _                                               =>
+              case _ =>
                 ApplicativeError[F, Throwable].raiseError(
-                  SeqexecFailure.InvalidOp(
-                    "cannot set filter based on the disperser ($disperser)"))
+                  SeqexecFailure.InvalidOp("cannot set filter based on the disperser ($disperser)")
+                )
             }
           } else cfg.filter.pure[F]
       }
@@ -215,9 +215,7 @@ object NifsControllerEpics extends NifsEncoders {
         case DarkCCConfig     => none.pure[F]
         case cfg: StdCCConfig =>
           val im = cfg.imagingMirror.displayValue
-          smartSetParamF(im,
-                         epicsSys.imagingMirror,
-                         epicsSys.ccConfigCmd.setImagingMirror(im))
+          smartSetParamF(im, epicsSys.imagingMirror, epicsSys.ccConfigCmd.setImagingMirror(im))
       }
 
     private def setWindowCover(cfg: CCConfig): F[Option[F[Unit]]] = {
@@ -227,10 +225,8 @@ object NifsControllerEpics extends NifsEncoders {
         case cfg: StdCCConfig =>
           cfg.windowCover
       }
-      val wc = encode(wcPosition)
-      smartSetParamF(wc,
-                     epicsSys.windowCover,
-                     epicsSys.ccConfigCmd.setWindowCover(wc))
+      val wc         = encode(wcPosition)
+      smartSetParamF(wc, epicsSys.windowCover, epicsSys.ccConfigCmd.setWindowCover(wc))
     }
 
     private def setDisperser(cfg: CCConfig): F[Option[F[Unit]]] =
@@ -288,7 +284,7 @@ object NifsControllerEpics extends NifsEncoders {
       }
 
       cfg match {
-        case DarkCCConfig =>
+        case DarkCCConfig     =>
           epicsSys.mask
             .map(_ =!= encode(LegacyMask.BLOCKED))
             .ifM(setMaskEpics(LegacyMask.BLOCKED), none.pure[F])
@@ -329,8 +325,10 @@ object NifsControllerEpics extends NifsEncoders {
                            setImagingMirror(cfg),
                            setDisperser(cfg),
                            setWindowCover(cfg),
-                           setMask(cfg)),
-                      postCcConfig)
+                           setMask(cfg)
+                      ),
+                      postCcConfig
+      )
 
     // When calculating how different the current pos is from demanded, want to check if have
     // things within some small delta. Technically this delta should be of the order of 1ustep.
@@ -341,8 +339,7 @@ object NifsControllerEpics extends NifsEncoders {
     private val MaskOffsetTolerance        = 0.002
 
     private def secondCCPass(cfg: CCConfig): F[Unit] =
-      executeIfNeeded(List(setCentralWavelength(cfg), setMaskOffset(cfg)),
-                      postCcConfig)
+      executeIfNeeded(List(setCentralWavelength(cfg), setMaskOffset(cfg)), postCcConfig)
 
     private def configCC(cfg: CCConfig): F[Unit] =
       firstCCPass(cfg) *>
@@ -354,17 +351,17 @@ object NifsControllerEpics extends NifsEncoders {
         L.debug("Completed NIFS configuration")
 
     private val checkDhs =
-      failUnlessM(
-        epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
-                  SeqexecFailure.Execution("NIFS is not connected to DHS"))
+      failUnlessM(epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
+                  SeqexecFailure.Execution("NIFS is not connected to DHS")
+      )
 
-    override def observe(fileId: ImageFileId,
-                         cfg:    DCConfig): F[ObserveCommandResult] = {
+    override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
       L.debug(s"Start NIFS observe, file id $fileId") *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
-        epicsSys.observeCmd.post(calcObserveTimeout(cfg)).flatTap{ _ => L.debug("Completed NIFS observe") }
-    }
+        epicsSys.observeCmd.post(calcObserveTimeout(cfg)).flatTap { _ =>
+          L.debug("Completed NIFS observe")
+        }
 
     override def endObserve: F[Unit] =
       L.debug("Send endObserve to NIFS") *>
@@ -382,8 +379,12 @@ object NifsControllerEpics extends NifsEncoders {
         epicsSys.abortCmd.post(DefaultTimeout).void
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-      ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
-        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+      ProgressUtil.obsCountdownWithObsStage[F](
+        total,
+        0.seconds,
+        (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(
+          ObserveStage.fromBooleans
+        )
       )
 
     def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {

@@ -10,25 +10,39 @@ import org.scalacheck.Gen
 import seqexec.server.gcal.GcalController._
 
 trait GcalArbitraries {
-  implicit val gcalLampArb: Arbitrary[GcalController.LampState] = Arbitrary(Gen.oneOf(GcalController.LampState.On, GcalController.LampState.Off))
-  implicit val gcalLampCogen: Cogen[GcalController.LampState] =
+  implicit val gcalLampArb: Arbitrary[GcalController.LampState]         = Arbitrary(
+    Gen.oneOf(GcalController.LampState.On, GcalController.LampState.Off)
+  )
+  implicit val gcalLampCogen: Cogen[GcalController.LampState]           =
     Cogen[String].contramap(_.productPrefix)
-  implicit val gcalArLampArb: Arbitrary[GcalController.ArLampState] = Arbitrary(arbitrary[GcalController.LampState].map(ArLampState.apply))
-  implicit val gcalArLampCogen: Cogen[GcalController.ArLampState] =
+  implicit val gcalArLampArb: Arbitrary[GcalController.ArLampState]     = Arbitrary(
+    arbitrary[GcalController.LampState].map(ArLampState.apply)
+  )
+  implicit val gcalArLampCogen: Cogen[GcalController.ArLampState]       =
     Cogen[GcalController.LampState].contramap(_.self)
-  implicit val gcalCuArLampArb: Arbitrary[GcalController.CuArLampState] = Arbitrary(arbitrary[GcalController.LampState].map(CuArLampState.apply))
-  implicit val gcalCuArLampCogen: Cogen[GcalController.CuArLampState] =
+  implicit val gcalCuArLampArb: Arbitrary[GcalController.CuArLampState] = Arbitrary(
+    arbitrary[GcalController.LampState].map(CuArLampState.apply)
+  )
+  implicit val gcalCuArLampCogen: Cogen[GcalController.CuArLampState]   =
     Cogen[GcalController.LampState].contramap(_.self)
-  implicit val gcalQhLampArb: Arbitrary[GcalController.QHLampState] = Arbitrary(arbitrary[GcalController.LampState].map(QHLampState.apply))
-  implicit val gcalQhLampCogen: Cogen[GcalController.QHLampState] =
+  implicit val gcalQhLampArb: Arbitrary[GcalController.QHLampState]     = Arbitrary(
+    arbitrary[GcalController.LampState].map(QHLampState.apply)
+  )
+  implicit val gcalQhLampCogen: Cogen[GcalController.QHLampState]       =
     Cogen[GcalController.LampState].contramap(_.self)
-  implicit val gcalThArLampArb: Arbitrary[GcalController.ThArLampState] = Arbitrary(arbitrary[GcalController.LampState].map(ThArLampState.apply))
-  implicit val gcalThArLampCogen: Cogen[GcalController.ThArLampState] =
+  implicit val gcalThArLampArb: Arbitrary[GcalController.ThArLampState] = Arbitrary(
+    arbitrary[GcalController.LampState].map(ThArLampState.apply)
+  )
+  implicit val gcalThArLampCogen: Cogen[GcalController.ThArLampState]   =
     Cogen[GcalController.LampState].contramap(_.self)
-  implicit val gcalXeLampArb: Arbitrary[GcalController.XeLampState] = Arbitrary(arbitrary[GcalController.LampState].map(XeLampState.apply))
-  implicit val gcalXeLampCogen: Cogen[GcalController.XeLampState] =
+  implicit val gcalXeLampArb: Arbitrary[GcalController.XeLampState]     = Arbitrary(
+    arbitrary[GcalController.LampState].map(XeLampState.apply)
+  )
+  implicit val gcalXeLampCogen: Cogen[GcalController.XeLampState]       =
     Cogen[GcalController.LampState].contramap(_.self)
-  implicit val gcalIrLampArb: Arbitrary[GcalController.IrLampState] = Arbitrary(arbitrary[GcalController.LampState].map(IrLampState.apply))
-  implicit val gcalIrLampCogen: Cogen[GcalController.IrLampState] =
+  implicit val gcalIrLampArb: Arbitrary[GcalController.IrLampState]     = Arbitrary(
+    arbitrary[GcalController.LampState].map(IrLampState.apply)
+  )
+  implicit val gcalIrLampCogen: Cogen[GcalController.IrLampState]       =
     Cogen[GcalController.LampState].contramap(_.self)
-  }
+}

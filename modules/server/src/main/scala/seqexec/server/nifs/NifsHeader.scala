@@ -15,11 +15,11 @@ import seqexec.server.tcs.TcsKeywordsReader
 object NifsHeader {
 
   def header[F[_]: MonadError[?[_], Throwable]: Logger](
-                                                         kwClient:          KeywordsClient[F],
-                                                         instReader:        NifsKeywordReader[F],
-                                                         tcsKeywordsReader: TcsKeywordsReader[F]
+    kwClient:          KeywordsClient[F],
+    instReader:        NifsKeywordReader[F],
+    tcsKeywordsReader: TcsKeywordsReader[F]
   ): Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(
         id,
         kwClient,
@@ -45,13 +45,13 @@ object NifsHeader {
           buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS)
         )
       )
-    }
 
     override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id,
                    kwClient,
                    List(
                      buildDouble(instReader.exposureTime, KeywordName.EXPTIME)
-                   ))
+                   )
+      )
   }
 }

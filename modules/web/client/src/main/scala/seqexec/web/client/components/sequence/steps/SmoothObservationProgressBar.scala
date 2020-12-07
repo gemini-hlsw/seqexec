@@ -22,7 +22,9 @@ final case class SmoothObservationProgressBar(
   stopping: Boolean,
   paused:   Boolean,
   stage:    ObserveStage
-) extends SmoothProgressBarProps[SmoothObservationProgressBar](SmoothObservationProgressBar.component) {
+) extends SmoothProgressBarProps[SmoothObservationProgressBar](
+      SmoothObservationProgressBar.component
+    ) {
 
   override val maxValue = total
 }
@@ -54,4 +56,3 @@ object SmoothObservationProgressBar
     .configure(Reusability.shouldComponentUpdate)
     .build
 }
-

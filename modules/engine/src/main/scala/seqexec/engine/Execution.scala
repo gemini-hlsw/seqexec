@@ -11,10 +11,9 @@ import mouse.boolean._
 import seqexec.engine.Action.ActionState
 
 /**
-  * This structure holds the current `Execution` under execution. It carries
-  * information about which `Action`s have been completed.
-  *
-  */
+ * This structure holds the current `Execution` under execution. It carries
+ * information about which `Action`s have been completed.
+ */
 final case class Execution[F[_]](execution: List[Action[F]]) {
 
   import Execution._
@@ -29,9 +28,8 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
     NonEmptyList.fromList(execution).toList
 
   /**
-    * Calculate `Execution` `Status` based on the underlying `Action`s.
-    *
-    */
+   * Calculate `Execution` `Status` based on the underlying `Action`s.
+   */
   def status: Status =
     if (execution.forall(_.state.runState.isIdle)) Status.Waiting
     // Empty execution is handled here
@@ -40,17 +38,16 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
     else Status.Running
 
   /**
-    * Obtain the resulting `Execution` only if all actions have been completed.
-    *
-    */
+   * Obtain the resulting `Execution` only if all actions have been completed.
+   */
   val uncurrentify: Option[List[Action[F]]] =
     (execution.nonEmpty && finished(this)).option(results)
 
   /**
-    * Set the `Result` for the given `Action` index in `Current`.
-    *
-    * If the index doesn't exist, `Current` is returned unmodified.
-    */
+   * Set the `Result` for the given `Action` index in `Current`.
+   *
+   * If the index doesn't exist, `Current` is returned unmodified.
+   */
   def mark(i: Int)(r: Result[F]): Execution[F] =
     Execution((execution &|-? index(i) ^|-> Action.state).modify(actionStateFromResult(r)))
 
@@ -63,9 +60,9 @@ object Execution {
   def empty[F[_]]: Execution[F] = Execution[F](Nil)
 
   /**
-    * Make an `Execution` `Current` only if all the `Action`s in the execution
-    * are pending.
-    */
+   * Make an `Execution` `Current` only if all the `Action`s in the execution
+   * are pending.
+   */
   def currentify[F[_]](as: ParallelActions[F]): Option[Execution[F]] =
     as.forall(_.state.runState.isIdle).option(Execution(as.toList))
 
@@ -83,12 +80,13 @@ object Execution {
   def progressRatio[F[_]](ex: Execution[F]): (Int, Int) = (ex.results.length, ex.execution.length)
 
   def actionStateFromResult[F[_]](r: Result[F]): (Action.State[F] => Action.State[F]) =
-    s => r match {
-      case Result.OK(x)         => s.copy(runState = ActionState.Completed(x))
-      case Result.OKStopped(x)  => s.copy(runState = ActionState.Completed(x))
-      case Result.OKAborted(_)  => s.copy(runState = ActionState.Aborted)
-      case Result.Partial(x)    => s.copy(partials = x :: s.partials)
-      case e@Result.Error(_)    => s.copy(runState = ActionState.Failed(e))
-      case c: Result.Paused[F]  => s.copy(runState = ActionState.Paused(c.ctx))
-    }
+    s =>
+      r match {
+        case Result.OK(x)        => s.copy(runState = ActionState.Completed(x))
+        case Result.OKStopped(x) => s.copy(runState = ActionState.Completed(x))
+        case Result.OKAborted(_) => s.copy(runState = ActionState.Aborted)
+        case Result.Partial(x)   => s.copy(partials = x :: s.partials)
+        case e @ Result.Error(_) => s.copy(runState = ActionState.Failed(e))
+        case c: Result.Paused[F] => s.copy(runState = ActionState.Paused(c.ctx))
+      }
 }

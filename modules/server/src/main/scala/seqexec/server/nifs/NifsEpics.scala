@@ -3,7 +3,7 @@
 
 package seqexec.server.nifs
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 
 import cats.effect.Async
 import cats.effect.IO
@@ -24,7 +24,7 @@ import seqexec.server.ObserveCommand
 class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")
 
-  object ccConfigCmd extends EpicsCommandBase[F]{
+  object ccConfigCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::config"))
 
@@ -47,11 +47,12 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setMask(v: String): F[Unit] = setParameter(mask, v)
 
     val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
-    def setCentralWavelength(v: Double): F[Unit] = setParameter(centralWavelength, JDouble.valueOf(v))
+    def setCentralWavelength(v: Double): F[Unit] =
+      setParameter(centralWavelength, JDouble.valueOf(v))
 
   }
 
-  object dcConfigCmd extends EpicsCommandBase[F]{
+  object dcConfigCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
@@ -61,7 +62,8 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
-    private val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
+    private val fowlerSamples: Option[CaParameter[Integer]] =
+      cs.map(_.getInteger("numberOfFowSamples"))
     def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
 
     private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
@@ -72,11 +74,13 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     )
     def setReadMode(v: ReadMode): F[Unit] = setParameter(readMode, v)
 
-    private val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
+    private val numberOfResets: Option[CaParameter[Integer]] =
+      cs.map(_.getInteger("numberOfResets"))
     def setnumberOfResets(v: Int): F[Unit] =
       setParameter(numberOfResets, Integer.valueOf(v))
 
-    private val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
+    private val numberOfPeriods: Option[CaParameter[Integer]] =
+      cs.map(_.getInteger("numberOfPeriods"))
     def setnumberOfPeriods(v: Int): F[Unit] =
       setParameter(numberOfPeriods, Integer.valueOf(v))
 
@@ -89,42 +93,54 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
 
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
-    false, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
+  private val observeAS: Option[CaApplySender] = Option(
+    epicsService.createObserveSender("nifs::observeCmd",
+                                     s"${NifsTop}dc:nifsApply",
+                                     s"${NifsTop}dc:applyC",
+                                     s"${NifsTop}dc:observeC",
+                                     false,
+                                     s"${NifsTop}dc:stop",
+                                     s"${NifsTop}dc:abort",
+                                     ""
+    )
+  )
 
-  object stopCmd extends EpicsCommandBase[F]{
+  object stopCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
   object stopAndWaitCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::abort"))
+  private val abortCS: Option[CaCommandSender] = Option(
+    epicsService.getCommandSender("nifs::abort")
+  )
 
-  object abortCmd extends EpicsCommandBase[F]{
+  object abortCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
   object abortAndWait extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = abortCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
   object observeCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("nifs::observe"))
-    override protected val os: Option[CaApplySender] = observeAS
+      epicsService.getCommandSender("nifs::observe")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase[F]{
+  object endObserveCmd extends EpicsCommandBase[F] {
     override val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("nifs::endObserve"))
+      epicsService.getCommandSender("nifs::endObserve")
+    )
   }
 
   private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::dcstatus")
@@ -160,7 +176,8 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     safeAttributeF(dcStatus.getStringAttribute("timeMode"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
-    dcStatus.addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
+    dcStatus
+      .addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
 
   def dhsConnected: F[DhsConnected] =
     safeAttributeF(dhsConnectedAttr)
@@ -206,17 +223,20 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def windowCover: F[String] =
     safeAttributeF(ccStatus.getStringAttribute("windowCover"))
 
-  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notPrepObs")).map(_ === 0)
+  def dcIsPreparing: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("notPrepObs")).map(_ === 0)
 
-  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notAcqObs")).map(_ === 0)
+  def dcIsAcquiring: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("notAcqObs")).map(_ === 0)
 
-  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("notReadingOut")).map(_ === 0)
+  def dcIsReadingOut: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("notReadingOut")).map(_ === 0)
 
 }
 
 object NifsEpics extends EpicsSystem[NifsEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Nifs.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[NifsEpics[IO]] =

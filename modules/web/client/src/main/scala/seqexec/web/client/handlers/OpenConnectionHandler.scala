@@ -13,8 +13,8 @@ import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.web.client.model.CalibrationQueues
 
 /**
-  * Updates internal states when the connection opens
-  */
+ * Updates internal states when the connection opens
+ */
 class OpenConnectionHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     extends ActionHandler(modelRW)
     with Handlers[M, CalibrationQueues] {

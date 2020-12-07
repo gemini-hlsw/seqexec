@@ -18,21 +18,21 @@ import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 
 /**
-  * Handles actions related to opening/closing the login box
-  */
+ * Handles actions related to opening/closing the login box
+ */
 class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[UserDetails]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box
-      val effect = Effect(Future(CloseLoginBox))
+      val effect    = Effect(Future(CloseLoginBox))
       // Close the websocket and reconnect
       val reconnect = Effect(Future(Reconnect))
       updated(Some(u), reconnect + effect)
 
     case VerifyLoggedStatus =>
-      val effect    = Effect(SeqexecWebClient.ping().map{
+      val effect = Effect(SeqexecWebClient.ping().map {
         case HttpStatusCodes.Unauthorized if value.isDefined => Logout
         case _                                               => NoAction
       })

@@ -5,7 +5,9 @@ package web.client.table
 
 import japgolly.scalajs.react.raw.JsNumber
 
-final case class ColumnRenderArgs[A](meta:      ColumnMeta[A],
-                                     index:     Int,
-                                     width:     JsNumber,
-                                     resizable: Boolean)
+final case class ColumnRenderArgs[A](
+  meta:      ColumnMeta[A],
+  index:     Int,
+  width:     JsNumber,
+  resizable: Boolean
+)

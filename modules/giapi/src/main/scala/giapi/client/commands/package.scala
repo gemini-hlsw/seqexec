@@ -23,15 +23,14 @@ import giapi.client.syntax.giapiconfig._
 
 package commands {
 
-  final case class CommandResult(response:          Response)
+  final case class CommandResult(response: Response)
   final case class CommandResultException(response: Response, message: String)
       extends RuntimeException
 
   object CommandResultException {
 
     def timedOut(after: FiniteDuration): CommandResultException =
-      CommandResultException(Response.ERROR,
-                             s"Timed out response after: $after")
+      CommandResultException(Response.ERROR, s"Timed out response after: $after")
   }
 
   final case class Configuration(config: Map[ConfigPath, String]) {
@@ -65,9 +64,11 @@ package commands {
     }
   }
 
-  final case class Command(sequenceCommand: SequenceCommand,
-                           activity:        Activity,
-                           config:          Configuration) {
+  final case class Command(
+    sequenceCommand: SequenceCommand,
+    activity:        Activity,
+    config:          Configuration
+  ) {
 
     def toGiapi: GiapiCommand =
       new GiapiCommand(sequenceCommand, activity, config.toGiapi)
@@ -78,23 +79,25 @@ package commands {
 package object commands {
   val DataLabelCfg = "DATA_LABEL"
 
-  implicit val responseEq: Eq[Response] = Eq.instance {
-    case (a, b) => a.name === b.name
+  implicit val responseEq: Eq[Response] = Eq.instance { case (a, b) =>
+    a.name === b.name
   }
 
   implicit val scEq: Eq[SequenceCommand] = Eq.fromUniversalEquals
 
   /**
-    * Send a command over giapi
-    * @param commandsClient Client interface to send the command to the client and await the response
-    * @param command The actual command sent
-    * @param timeout Timeout to await a response, often 2 seconds
-    * @tparam F Effect type
-    * @return the result of the operation
-    */
-  def sendCommand[F[_]: Async](commandsClient: CommandSenderClient,
-                               command:        Command,
-                               timeout:        Duration): F[CommandResult] =
+   * Send a command over giapi
+   * @param commandsClient Client interface to send the command to the client and await the response
+   * @param command The actual command sent
+   * @param timeout Timeout to await a response, often 2 seconds
+   * @tparam F Effect type
+   * @return the result of the operation
+   */
+  def sendCommand[F[_]: Async](
+    commandsClient: CommandSenderClient,
+    command:        Command,
+    timeout:        Duration
+  ): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
         command.toGiapi,
@@ -114,7 +117,10 @@ package object commands {
             CommandResultException(hr.getResponse,
                                    if (hr.getResponse === Response.NOANSWER)
                                      "No answer from the instrument"
-                                   else hr.getMessage)))
+                                   else hr.getMessage
+            )
+          )
+        )
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(CommandResult(hr.getResponse)))
       }

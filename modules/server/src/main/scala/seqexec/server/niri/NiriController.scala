@@ -31,29 +31,31 @@ trait NiriController[F[_]] {
 
 object NiriController {
   type ExposureTime = Time
-  type Coadds = Int
-  type Camera = edu.gemini.spModel.gemini.niri.Niri.Camera
+  type Coadds       = Int
+  type Camera       = edu.gemini.spModel.gemini.niri.Niri.Camera
   type BeamSplitter = edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
-  type BuiltInROI = edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
-  type Filter = edu.gemini.spModel.gemini.niri.Niri.Filter
-  type Focus = edu.gemini.spModel.gemini.niri.Niri.Focus
-  type Disperser = edu.gemini.spModel.gemini.niri.Niri.Disperser
-  type Mask = edu.gemini.spModel.gemini.niri.Niri.Mask
-  type ReadMode = edu.gemini.seqexec.server.niri.ReadMode
+  type BuiltInROI   = edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
+  type Filter       = edu.gemini.spModel.gemini.niri.Niri.Filter
+  type Focus        = edu.gemini.spModel.gemini.niri.Niri.Focus
+  type Disperser    = edu.gemini.spModel.gemini.niri.Niri.Disperser
+  type Mask         = edu.gemini.spModel.gemini.niri.Niri.Mask
+  type ReadMode     = edu.gemini.seqexec.server.niri.ReadMode
 
-  final case class DCConfig(exposureTime: ExposureTime,
-                            coadds: Coadds,
-                            readMode: ReadMode,
-                            builtInROI: BuiltInROI
-                           )
+  final case class DCConfig(
+    exposureTime: ExposureTime,
+    coadds:       Coadds,
+    readMode:     ReadMode,
+    builtInROI:   BuiltInROI
+  )
   sealed trait CCConfig
 
-  final case class Common(camera: Camera,
-                          beamSplitter: BeamSplitter,
-                          focus: Focus,
-                          disperser: Disperser,
-                          mask: Mask
-                         )
+  final case class Common(
+    camera:       Camera,
+    beamSplitter: BeamSplitter,
+    focus:        Focus,
+    disperser:    Disperser,
+    mask:         Mask
+  )
 
   // All components are included because the instrument scientist requested that every component be
   // configured for Darks

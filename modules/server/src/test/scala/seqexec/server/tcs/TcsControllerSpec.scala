@@ -8,8 +8,8 @@ import cats.tests.CatsSuite
 import seqexec.server.tcs.TcsController._
 
 /**
-  * Tests TcsController typeclasses
-  */
+ * Tests TcsController typeclasses
+ */
 final class TcsControllerSpec extends CatsSuite with TcsArbitraries {
   checkAll("Eq[Beam]", EqTests[Beam].eqv)
   checkAll("Eq[NodAndChop]", EqTests[NodChop].eqv)

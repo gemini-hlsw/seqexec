@@ -12,35 +12,35 @@ import seqexec.model.events.SeqexecEvent
 
 package boopickle {
 
-  trait BooPicklerSyntax {
+  trait BooPicklerSyntax                          {
     implicit class PicklerPrismOps[A, B <: AnyRef](p: Prism[A, B])(implicit PA: Pickler[A]) {
       def toPickler: Pickler[B] =
         new Pickler[B] {
-          override def pickle(obj: B)(implicit state: PickleState): Unit = {
+          override def pickle(obj: B)(implicit state: PickleState): Unit =
             state.identityRefFor(obj) match {
               case Some(idx) =>
                 state.enc.writeInt(-idx)
                 ()
-              case None =>
+              case None      =>
                 // We need a marker
                 state.enc.writeInt(0)
                 // Use the prism to get a representatative for the A and encode it
                 PA.pickle(p.reverseGet(obj))
                 state.addIdentityRef(obj)
             }
-          }
 
-          override def unpickle(implicit state: UnpickleState): B = {
+          override def unpickle(implicit state: UnpickleState): B =
             state.dec.readInt match {
               case idx if idx < 0 =>
                 state.identityFor[B](-idx)
-              case _ =>
+              case _              =>
                 val a = PA.unpickle(state)
-                val c = p.getOption(a).getOrElse(throw new IllegalArgumentException("Invalid coding for prism"))
+                val c = p
+                  .getOption(a)
+                  .getOrElse(throw new IllegalArgumentException("Invalid coding for prism"))
                 state.addIdentityRef(c)
                 c
             }
-          }
         }
     }
   }
@@ -50,9 +50,9 @@ package boopickle {
 package object boopickle extends ModelBooPicklers {
 
   /**
-    * In most cases http4s will use the limit of a byte buffer but not for websockets
-    * This method trims the binary array to be sent on the WS channel
-    */
+   * In most cases http4s will use the limit of a byte buffer but not for websockets
+   * This method trims the binary array to be sent on the WS channel
+   */
   def trimmedArray(e: SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes      = new Array[Byte](byteBuffer.limit())

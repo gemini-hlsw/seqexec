@@ -16,15 +16,15 @@ import seqexec.model.SequencesQueue
 import seqexec.model.enum.Instrument
 
 @Lenses
-final case class CalQueueSeq(id:     Observation.Id,
-                             i:      Instrument,
-                             status: SequenceState)
+final case class CalQueueSeq(id: Observation.Id, i: Instrument, status: SequenceState)
 
 object CalQueueSeq {
   implicit val eq: Eq[CalQueueSeq] =
     Eq.by(x => (x.id, x.id, x.status))
 
-  def calQueueSeqG(id: Observation.Id): Getter[SequencesQueue[SequenceView], Option[CalQueueSeq]] = {
+  def calQueueSeqG(
+    id: Observation.Id
+  ): Getter[SequencesQueue[SequenceView], Option[CalQueueSeq]] = {
     val seqO =
       SequencesQueue.queueItemG[SequenceView](_.id === id) ^<-?
         std.option.some

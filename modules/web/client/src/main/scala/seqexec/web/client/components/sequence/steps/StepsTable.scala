@@ -457,7 +457,7 @@ object StepsTable extends Columns {
       p
     }
 
-    def unapply(l: StepRow): Option[(Step)] =
+    def unapply(l: StepRow): Option[Step] =
       Some((l.step))
 
     val Zero: StepRow =
@@ -657,7 +657,7 @@ object StepsTable extends Columns {
       case (_, StepRow(s), _, _)                                   =>
         // Regular row
         SeqexecStyles.stepRow |+| stepRowStyle(s)
-      case _                                   =>
+      case _                                                       =>
         // Regular row
         SeqexecStyles.stepRow
     }).htmlClass
@@ -959,20 +959,19 @@ object StepsTable extends Columns {
                 else
                   List.empty
 
-              rowComponents.zipWithIndex.toTagMod {
-                case (rowComponent, rowIdx) =>
-                  <.div(
-                    ^.key := s"$key-subRow-$rowIdx",
-                    SeqexecStyles.expandedBottomRow,
-                    SeqexecStyles.tableDetailRow,
-                    SeqexecStyles.tableDetailRowWithGutter
-                      .when(p.status.isLogged)
-                      .unless(p.isPreview),
-                    ^.height := SeqexecStyles.runningRowHeight.px,
-                    ^.onMouseDown ==> allowedClick(p, index, onRowClick),
-                    ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
-                    rowComponent(s)
-                  )
+              rowComponents.zipWithIndex.toTagMod { case (rowComponent, rowIdx) =>
+                <.div(
+                  ^.key := s"$key-subRow-$rowIdx",
+                  SeqexecStyles.expandedBottomRow,
+                  SeqexecStyles.tableDetailRow,
+                  SeqexecStyles.tableDetailRowWithGutter
+                    .when(p.status.isLogged)
+                    .unless(p.isPreview),
+                  ^.height := SeqexecStyles.runningRowHeight.px,
+                  ^.onMouseDown ==> allowedClick(p, index, onRowClick),
+                  ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+                  rowComponent(s)
+                )
               }
             }
           )
@@ -1133,16 +1132,15 @@ object StepsTable extends Columns {
                                          s.prevSequenceState,
                                          p.sequenceState
       )(
-        _.map {
-          case (stepId, scroll) =>
-            Function.chain(
-              State.selected
-                .set(stepId.some)
-                .some
-                .filter(_ => p.canControlSubsystems(stepId))
-                .toList :+
-                State.runNewStep.set((stepId, scroll).some)
-            )
+        _.map { case (stepId, scroll) =>
+          Function.chain(
+            State.selected
+              .set(stepId.some)
+              .some
+              .filter(_ => p.canControlSubsystems(stepId))
+              .toList :+
+              State.runNewStep.set((stepId, scroll).some)
+          )
         }
       )
 
@@ -1178,12 +1176,11 @@ object StepsTable extends Columns {
       scrollToCB(prevP, currP) *>
         currP.obsId
           .zip($.currentState.runNewStep)
-          .map {
-            case (obsId, (stepId, scroll)) =>
-              updateStep(obsId, stepId) *> scrollTo(stepId).when(scroll).void *>
-                $.setStateL(State.runNewStep)(
-                  none
-                ) // This does't cause a loop because runNewStep is not in State reusability.
+          .map { case (obsId, (stepId, scroll)) =>
+            updateStep(obsId, stepId) *> scrollTo(stepId).when(scroll).void *>
+              $.setStateL(State.runNewStep)(
+                none
+              ) // This does't cause a loop because runNewStep is not in State reusability.
           }
           .getOrEmpty *>
         $.currentState.recomputeFrom.map(recomputeRowHeightsCB).getOrEmpty *>

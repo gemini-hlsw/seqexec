@@ -32,7 +32,7 @@ object UserPromptBox {
   def title(n: UserPrompt): String =
     n match {
       case ChecksOverride(sid, _, checks) =>
-        if(checks.length > 1)
+        if (checks.length > 1)
           s"Warning! There are problems running sequence ${sid.format}:"
         else
           s"Warning! There is a problem running sequence ${sid.format}:"
@@ -62,19 +62,19 @@ object UserPromptBox {
     n match {
       case ChecksOverride(_, _, checks) =>
         checks.toList.flatMap {
-          case TargetCheckOverride(self)  =>
+          case TargetCheckOverride(self)                  =>
             List("Targets in sequence and TCS do not match",
-              s"- Target in the sequence: ${self.required}, target in the TCS: ${self.actual}"
+                 s"- Target in the sequence: ${self.required}, target in the TCS: ${self.actual}"
             )
           case ObsConditionsCheckOverride(cc, iq, sb, wv) =>
             List("Observing conditions do not match") ++
-            List(
-              cc.map(x => s"- Required Cloud Cover: ${x.required}, Actual: ${x.actual}"),
-              iq.map(x => s"- Required Image Quality: ${x.required}, Actual: ${x.actual}"),
-              sb.map(x => s"- Required Sky Background: ${x.required}, Actual: ${x.actual}"),
-              wv.map(x => s"- Required Water Vapor: ${x.required}, Actual: ${x.actual}")
-            ).collect{ case Some(x) => x }
-      }
+              List(
+                cc.map(x => s"- Required Cloud Cover: ${x.required}, Actual: ${x.actual}"),
+                iq.map(x => s"- Required Image Quality: ${x.required}, Actual: ${x.actual}"),
+                sb.map(x => s"- Required Sky Background: ${x.required}, Actual: ${x.actual}"),
+                wv.map(x => s"- Required Water Vapor: ${x.required}, Actual: ${x.actual}")
+              ).collect { case Some(x) => x }
+        }
     }
 
   type Props = UserPromptBox

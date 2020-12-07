@@ -29,11 +29,17 @@ object Progress {
   }
 }
 
-final case class ObsProgress(total: Time, remaining: RemainingTime, stage: ObserveStage) extends Progress {
+final case class ObsProgress(total: Time, remaining: RemainingTime, stage: ObserveStage)
+    extends Progress {
   val progress: Time = total - remaining.self
 }
 
-final case class NSProgress(total: Time, remaining: RemainingTime, stage: ObserveStage, sub: NSSubexposure) extends Progress {
+final case class NSProgress(
+  total:     Time,
+  remaining: RemainingTime,
+  stage:     ObserveStage,
+  sub:       NSSubexposure
+) extends Progress {
   val progress: Time = total - remaining.self
 }
 

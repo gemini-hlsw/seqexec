@@ -35,15 +35,17 @@ import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import seqexec.server.keywords.DhsClient.ImageParameters
 
 /**
-  * Implementation of DhsClient that interfaces with the real DHS over the http interface
-  */
-class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
+ * Implementation of DhsClient that interfaces with the real DHS over the http interface
+ */
+class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F])
+    extends DhsClient[F]
+    with Http4sClientDsl[F] {
   import DhsClientHttp._
 
   private val clientWithRetry = {
-    val max = 4
+    val max             = 4
     var attemptsCounter = 1
-    val policy = RetryPolicy[F] { attempts: Int =>
+    val policy          = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {
         attemptsCounter = attemptsCounter + 1
@@ -58,31 +60,37 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       Json.obj("createImage" := p.asJson),
       baseURI
     )
-    clientWithRetry.expect[Either[SeqexecFailure, ImageFileId]](req)(jsonOf[F, Either[SeqexecFailure, ImageFileId]])
+    clientWithRetry
+      .expect[Either[SeqexecFailure, ImageFileId]](req)(
+        jsonOf[F, Either[SeqexecFailure, ImageFileId]]
+      )
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
-      .flatMap(EitherT.fromEither(_)).liftF
+      .flatMap(EitherT.fromEither(_))
+      .liftF
   }
 
   override def setKeywords(
-    id: ImageFileId,
-    keywords: KeywordBag,
+    id:        ImageFileId,
+    keywords:  KeywordBag,
     finalFlag: Boolean
   ): F[Unit] = {
     val req = PUT(
-      Json.obj("setKeywords" :=
-        Json.obj(
-          "final" := finalFlag,
-          "keywords" := keywords.keywords
-        )
+      Json.obj(
+        "setKeywords" :=
+          Json.obj(
+            "final" := finalFlag,
+            "keywords" := keywords.keywords
+          )
       ),
       baseURI / id / "keywords"
     )
-    val cl = if(finalFlag) base else clientWithRetry
+    val cl  = if (finalFlag) base else clientWithRetry
     cl.expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
-      .flatMap(EitherT.fromEither(_)).liftF
+      .flatMap(EitherT.fromEither(_))
+      .liftF
   }
 
 }
@@ -90,66 +98,70 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
 object DhsClientHttp {
 
   sealed case class ErrorType(str: String)
-  object BadRequest extends ErrorType("BAD_REQUEST")
-  object DhsError extends ErrorType("DHS_ERROR")
+  object BadRequest          extends ErrorType("BAD_REQUEST")
+  object DhsError            extends ErrorType("DHS_ERROR")
   object InternalServerError extends ErrorType("INTERNAL_SERVER_ERROR")
 
-  implicit def errorTypeDecode: Decoder[ErrorType] = Decoder.instance[ErrorType](c =>  c
-    .as[String]
-    .map {
-      case BadRequest.str          => BadRequest
-      case DhsError.str            => DhsError
-      case InternalServerError.str => InternalServerError
-      case _                       => InternalServerError
-    }
+  implicit def errorTypeDecode: Decoder[ErrorType] = Decoder.instance[ErrorType](c =>
+    c
+      .as[String]
+      .map {
+        case BadRequest.str          => BadRequest
+        case DhsError.str            => DhsError
+        case InternalServerError.str => InternalServerError
+        case _                       => InternalServerError
+      }
   )
 
-  implicit def errorDecode: Decoder[Error] = Decoder.instance[Error]( c =>
+  implicit def errorDecode: Decoder[Error] = Decoder.instance[Error](c =>
     for {
       t   <- c.downField("type").as[ErrorType]
       msg <- c.downField("message").as[String]
     } yield Error(t, msg)
   )
 
-  implicit def obsIdDecode: Decoder[Either[SeqexecFailure, ImageFileId]] = Decoder.instance[Either[SeqexecFailure, ImageFileId]](
-    c => {
+  implicit def obsIdDecode: Decoder[Either[SeqexecFailure, ImageFileId]] =
+    Decoder.instance[Either[SeqexecFailure, ImageFileId]] { c =>
       val r = c.downField("response")
       val s = r.downField("status").as[String]
       s.flatMap {
         case "success" =>
           r.downField("result").as[String].map(i => toImageFileId(i).asRight)
         case "error"   =>
-          r.downField("errors").as[List[Error]].map(l =>
-            SeqexecFailure.Unexpected(l.mkString(", ")).asLeft
-          )
+          r.downField("errors")
+            .as[List[Error]]
+            .map(l => SeqexecFailure.Unexpected(l.mkString(", ")).asLeft)
         case r         =>
           Left(DecodingFailure(s"Unknown response: $r", c.history))
       }
-    } )
-
-  implicit def unitDecode: Decoder[Either[SeqexecFailure, Unit]] = Decoder.instance[Either[SeqexecFailure, Unit]]( c => {
-    val r = c.downField("response")
-    val s = r.downField("status").as[String]
-    s flatMap {
-      case "success" =>
-        ().asRight.asRight
-      case "error"   =>
-        r.downField("errors").as[List[Error]].map(
-          l => SeqexecFailure.Unexpected(l.mkString(", ")).asLeft[Unit]
-        )
-      case r         =>
-        Left(DecodingFailure(s"Unknown response: $r", c.history))
     }
-  } )
+
+  implicit def unitDecode: Decoder[Either[SeqexecFailure, Unit]] =
+    Decoder.instance[Either[SeqexecFailure, Unit]] { c =>
+      val r = c.downField("response")
+      val s = r.downField("status").as[String]
+      s.flatMap {
+        case "success" =>
+          ().asRight.asRight
+        case "error"   =>
+          r.downField("errors")
+            .as[List[Error]]
+            .map(l => SeqexecFailure.Unexpected(l.mkString(", ")).asLeft[Unit])
+        case r         =>
+          Left(DecodingFailure(s"Unknown response: $r", c.history))
+      }
+    }
 
   implicit def imageParametersEncode: Encoder[DhsClient.ImageParameters] =
-    Encoder.instance[DhsClient.ImageParameters](p => Json.obj(
-      "lifetime" := p.lifetime.str,
-      "contributors" := p.contributors
-    ))
+    Encoder.instance[DhsClient.ImageParameters](p =>
+      Json.obj(
+        "lifetime" := p.lifetime.str,
+        "contributors" := p.contributors
+      )
+    )
 
   implicit def keywordEncode: Encoder[InternalKeyword] =
-    Encoder.instance[InternalKeyword]( k =>
+    Encoder.instance[InternalKeyword](k =>
       Json.obj(
         "name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name),
         "type" := KeywordType.dhsKeywordType(k.keywordType),
@@ -161,18 +173,20 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] = new DhsClientHttp[F](client, uri)
+  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] =
+    new DhsClientHttp[F](client, uri)
 }
 
 /**
-  * Implementation of the Dhs client that simulates a dhs without external dependencies
-  */
-private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[F, Int]) extends DhsClient[F] {
+ * Implementation of the Dhs client that simulates a dhs without external dependencies
+ */
+private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[F, Int])
+    extends DhsClient[F] {
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): F[ImageFileId] =
-    counter.modify(x => (x  + 1, x + 1)).map {c =>
+    counter.modify(x => (x + 1, x + 1)).map { c =>
       toImageFileId(f"S${date.format(format)}S${c}%04d")
     }
 

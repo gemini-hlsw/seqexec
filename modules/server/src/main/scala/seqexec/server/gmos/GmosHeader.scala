@@ -14,20 +14,27 @@ import seqexec.server.tcs.TcsKeywordsReader
 
 object GmosHeader {
   def header[F[_]: Sync: Logger](
-                                  kwClient:          KeywordsClient[F],
-                                  gmosObsReader:     GmosObsKeywordsReader[F],
-                                  gmosReader:        GmosKeywordReader[F],
-                                  tcsKeywordsReader: TcsKeywordsReader[F]
+    kwClient:          KeywordsClient[F],
+    gmosObsReader:     GmosObsKeywordsReader[F],
+    gmosReader:        GmosKeywordReader[F],
+    tcsKeywordsReader: TcsKeywordsReader[F]
   ): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         nsBeforeKeywords.flatMap(nsKs =>
-          sendKeywords(id, kwClient, List(
-            buildInt32(tcsKeywordsReader.gmosInstPort, KeywordName.INPORT),
-            buildString(gmosReader.ccName, KeywordName.GMOSCC),
-            buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
-            buildBoolean(gmosObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue)
-          ) ::: nsKs )
+          sendKeywords(
+            id,
+            kwClient,
+            List(
+              buildInt32(tcsKeywordsReader.gmosInstPort, KeywordName.INPORT),
+              buildString(gmosReader.ccName, KeywordName.GMOSCC),
+              buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
+              buildBoolean(gmosObsReader.preimage,
+                           KeywordName.PREIMAGE,
+                           DefaultHeaderValue.FalseDefaultValue
+              )
+            ) ::: nsKs
+          )
         )
 
       private def adcKeywords: F[List[KeywordBag => F[KeywordBag]]] =
@@ -41,19 +48,21 @@ object GmosHeader {
             buildDouble(gmosReader.adcPrismExtMe, KeywordName.ADCEXPME),
             buildDouble(gmosReader.adcWavelength1, KeywordName.ADCWLEN1),
             buildDouble(gmosReader.adcWavelength2, KeywordName.ADCWLEN2)
-          ).pure[F]
-        , List.empty.pure[F])
+          ).pure[F],
+          List.empty.pure[F]
+        )
 
       private def roiKeywords: F[List[KeywordBag => F[KeywordBag]]] =
-        gmosReader.roiValues.map { _.flatMap {
-          case (i, rv) =>
+        gmosReader.roiValues.map {
+          _.flatMap { case (i, rv) =>
             List(
               KeywordName.fromTag(s"DETRO${i}X").map(buildInt32(rv.xStart.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}XS").map(buildInt32(rv.xSize.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}Y").map(buildInt32(rv.yStart.pure[F], _)),
               KeywordName.fromTag(s"DETRO${i}YS").map(buildInt32(rv.ySize.pure[F], _))
             ).flattenOption
-        } }
+          }
+        }
 
       private def nsBeforeKeywords: F[List[KeywordBag => F[KeywordBag]]] =
         gmosObsReader.isNS.ifM(
@@ -79,7 +88,7 @@ object GmosHeader {
           List.empty.pure[F]
         )
 
-      private val InBeam: Int = 0
+      private val InBeam: Int             = 0
       private def readMaskName: F[String] =
         gmosReader.maskLoc
           .map(_ === InBeam)
@@ -89,7 +98,7 @@ object GmosHeader {
         id:          ImageFileId,
         adcKeywords: List[KeywordBag => F[KeywordBag]],
         roiKeywords: List[KeywordBag => F[KeywordBag]],
-        nsKeywords: List[KeywordBag => F[KeywordBag]]
+        nsKeywords:  List[KeywordBag => F[KeywordBag]]
       ): F[Unit] =
         sendKeywords(
           id,
@@ -106,8 +115,7 @@ object GmosHeader {
             buildString(gmosReader.grating, KeywordName.GRATING),
             buildInt32(gmosReader.gratingId, KeywordName.GRATID),
             buildDouble(gmosReader.gratingWavelength, KeywordName.GRWLEN),
-            buildDouble(gmosReader.gratingAdjustedWavelength,
-                         KeywordName.CENTWAVE),
+            buildDouble(gmosReader.gratingAdjustedWavelength, KeywordName.CENTWAVE),
             buildInt32(gmosReader.gratingOrder, KeywordName.GRORDER),
             buildDouble(gmosReader.gratingTilt, KeywordName.GRTILT),
             buildDouble(gmosReader.gratingStep, KeywordName.GRSTEP),
@@ -122,12 +130,14 @@ object GmosHeader {
             buildString(gmosReader.dcName, KeywordName.GMOSDC),
             buildString(gmosReader.detectorType, KeywordName.DETTYPE),
             buildString(gmosReader.detectorId, KeywordName.DETID),
-            buildDouble(
-              gmosObsReader.isNS.ifM(
-                (gmosObsReader.nodCount, gmosReader.exposureTime).mapN{ case (c, t) => 2 * c * t },
-                gmosReader.exposureTime
-              ),
-              KeywordName.EXPOSURE),
+            buildDouble(gmosObsReader.isNS.ifM(
+                          (gmosObsReader.nodCount, gmosReader.exposureTime).mapN { case (c, t) =>
+                            2 * c * t
+                          },
+                          gmosReader.exposureTime
+                        ),
+                        KeywordName.EXPOSURE
+            ),
             buildInt32(gmosReader.adcUsed, KeywordName.ADCUSED),
             buildInt32(gmosReader.detNRoi, KeywordName.DETNROI)
           ) ::: adcKeywords ::: roiKeywords ::: nsKeywords

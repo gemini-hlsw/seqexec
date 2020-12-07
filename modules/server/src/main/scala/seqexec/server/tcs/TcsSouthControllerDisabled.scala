@@ -11,15 +11,20 @@ import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 
 class TcsSouthControllerDisabled[F[_]: Logger] extends TcsSouthController[F] {
-  override def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem], gaos: Option[Gems[F]], tc: TcsSouthConfig)
-  : F[Unit] =
+  override def applyConfig(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    gaos:       Option[Gems[F]],
+    tc:         TcsSouthConfig
+  ): F[Unit] =
     overrideLogMessage("TCS", "applyConfig")
 
   override def notifyObserveStart: F[Unit] = overrideLogMessage("TCS", "notifyObserveStart")
 
   override def notifyObserveEnd: F[Unit] = overrideLogMessage("TCS", "notifyObserveEnd")
 
-  override def nod(subsystems: NonEmptySet[TcsController.Subsystem], tcsConfig: TcsSouthConfig)
-                  (stage: NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean)
-  : F[Unit] = overrideLogMessage("TCS", s"nod(${stage.symbol})")
+  override def nod(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    tcsConfig:  TcsSouthConfig
+  )(stage:      NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean): F[Unit] =
+    overrideLogMessage("TCS", s"nod(${stage.symbol})")
 }

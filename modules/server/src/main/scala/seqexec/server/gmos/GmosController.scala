@@ -55,7 +55,7 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 }
 
 object GmosController {
-  sealed abstract class Config[T<:SiteDependentTypes] {
+  sealed abstract class Config[T <: SiteDependentTypes] {
     import Config._
 
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
@@ -65,44 +65,44 @@ object GmosController {
       case object Mirror extends GmosDisperser
       case class Order0(disperser: T#Disperser) extends GmosDisperser
       case class OrderN(disperser: T#Disperser, order: DisperserOrder, lambda: Length)
-        extends GmosDisperser
+          extends GmosDisperser
     }
 
     val mirror: T#Disperser
     def isMirror(v: T#Disperser): Boolean
 
     case class CCConfig(
-      filter: T#Filter,
-      disperser: GmosDisperser,
-      fpu: GmosFPU,
-      stage: T#GmosStageMode,
-      dtaX: DTAX,
-      adc: ADC,
+      filter:              T#Filter,
+      disperser:           GmosDisperser,
+      fpu:                 GmosFPU,
+      stage:               T#GmosStageMode,
+      dtaX:                DTAX,
+      adc:                 ADC,
       useElectronicOffset: ElectronicOffset,
-      isDarkOrBias: Boolean
+      isDarkOrBias:        Boolean
     )
 
   }
 
   object Config {
-    type DTAX                = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
-    type ADC                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
-    type DisperserOrder      = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
-    type Binning             = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
-    type AmpReadMode         = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
-    type AmpGain             = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
-    type AmpCount            = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
-    type BuiltinROI          = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-    type ROI                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
-    type ExposureTime        = Duration
-    type PosAngle            = edu.gemini.spModel.core.Angle
+    type DTAX           = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
+    type ADC            = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
+    type DisperserOrder = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
+    type Binning        = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
+    type AmpReadMode    = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+    type AmpGain        = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+    type AmpCount       = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
+    type BuiltinROI     = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+    type ROI            = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
+    type ExposureTime   = Duration
+    type PosAngle       = edu.gemini.spModel.core.Angle
 
     // Used for the shutterState
     sealed trait ShutterState extends Product with Serializable
 
     object ShutterState {
       case object UnsetShutter extends ShutterState
-      case object OpenShutter extends ShutterState
+      case object OpenShutter  extends ShutterState
       case object CloseShutter extends ShutterState
 
       /** @group Typeclass Instances */
@@ -113,7 +113,7 @@ object GmosController {
     sealed trait Beam extends Product with Serializable
 
     object Beam {
-      case object InBeam extends Beam
+      case object InBeam    extends Beam
       case object OutOfBeam extends Beam
 
       /** @group Typeclass Instances */
@@ -124,7 +124,7 @@ object GmosController {
     sealed trait ElectronicOffset extends Product with Serializable
 
     object ElectronicOffset {
-      case object On extends ElectronicOffset
+      case object On  extends ElectronicOffset
       case object Off extends ElectronicOffset
 
       def fromBoolean(v: Boolean): ElectronicOffset =
@@ -141,17 +141,19 @@ object GmosController {
 
     final case class CustomMaskFPU(mask: String) extends GmosFPU
 
-    final case class CCDReadout(ampReadMode: AmpReadMode, ampGain: AmpGain, ampCount: AmpCount, gainSetting: Double)
+    final case class CCDReadout(
+      ampReadMode: AmpReadMode,
+      ampGain:     AmpGain,
+      ampCount:    AmpCount,
+      gainSetting: Double
+    )
 
     final case class CCDBinning(x: Binning, y: Binning)
 
     sealed abstract class RegionsOfInterest(val rois: Either[BuiltinROI, List[ROI]])
 
     // Node and shuffle positions
-    final case class NSPosition(
-      stage: NodAndShuffleStage,
-      offset: Offset,
-      guide: Guiding)
+    final case class NSPosition(stage: NodAndShuffleStage, offset: Offset, guide: Guiding)
 
     // Node and shuffle options
     sealed trait NSConfig extends Product with Serializable {
@@ -163,32 +165,37 @@ object GmosController {
 
     object NSConfig {
       case object NoNodAndShuffle extends NSConfig {
-        val nsPairs = tag[NsPairsI][Int](0)
-        val nsRows = tag[NsRowsI][Int](0)
+        val nsPairs         = tag[NsPairsI][Int](0)
+        val nsRows          = tag[NsRowsI][Int](0)
         val exposureDivider = tag[NsExposureDividerI][Int](1)
-        val nsState = NodAndShuffleState.Classic
+        val nsState         = NodAndShuffleState.Classic
       }
 
       final case class NodAndShuffle(
-        cycles: NsCycles,
-        rows: NsRows,
-        positions: Vector[NSPosition],
-        exposureTime: Time) extends NSConfig {
-        val nsPairs = tag[NsPairsI][Int](cycles * NodAndShuffleStage.NsSequence.length / 2)
-        val nsRows = tag[NsRowsI][Int](Gmos.rowsToShuffle(NodAndShuffleStage.NsSequence.head, rows))
-        val exposureDivider = tag[NsExposureDividerI][Int](2)
-        val nsState = NodAndShuffleState.NodShuffle
+        cycles:       NsCycles,
+        rows:         NsRows,
+        positions:    Vector[NSPosition],
+        exposureTime: Time
+      ) extends NSConfig {
+        val nsPairs                 = tag[NsPairsI][Int](cycles * NodAndShuffleStage.NsSequence.length / 2)
+        val nsRows                  = tag[NsRowsI][Int](Gmos.rowsToShuffle(NodAndShuffleStage.NsSequence.head, rows))
+        val exposureDivider         = tag[NsExposureDividerI][Int](2)
+        val nsState                 = NodAndShuffleState.NodShuffle
         val totalExposureTime: Time =
           cycles * exposureTime / exposureDivider.toDouble
-        val nodExposureTime: Time =
+        val nodExposureTime: Time   =
           exposureTime / exposureDivider.toDouble
       }
     }
 
     object RegionsOfInterest {
-      def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): Either[SeqexecFailure, RegionsOfInterest] =
+      def fromOCS(
+        builtIn: BuiltinROI,
+        custom:  List[ROI]
+      ): Either[SeqexecFailure, RegionsOfInterest] =
         (builtIn, custom) match {
-          case (b, r) if b =!= BuiltinROI.CUSTOM && r.isEmpty => new RegionsOfInterest(b.asLeft) {}.asRight
+          case (b, r) if b =!= BuiltinROI.CUSTOM && r.isEmpty =>
+            new RegionsOfInterest(b.asLeft) {}.asRight
           case (BuiltinROI.CUSTOM, r) if r.nonEmpty           => new RegionsOfInterest(r.asRight) {}.asRight
           case _                                              => Unexpected("Inconsistent values for GMOS regions of interest").asLeft
         }
@@ -197,10 +204,10 @@ object GmosController {
     }
 
     final case class DCConfig(
-      t: ExposureTime,
-      s: ShutterState,
-      r: CCDReadout,
-      bi: CCDBinning,
+      t:   ExposureTime,
+      s:   ShutterState,
+      r:   CCDReadout,
+      bi:  CCDBinning,
       roi: RegionsOfInterest
     )
 
@@ -241,14 +248,21 @@ object GmosController {
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
-  final case class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T], val ns: NSConfig) {
+  final case class GmosConfig[T <: SiteDependentTypes] private (
+    val cc: Config[T]#CCConfig,
+    val dc: DCConfig,
+    val c:  Config[T],
+    val ns: NSConfig
+  ) {
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig, ns: NSConfig) = this(cc, dc, c, ns)
   }
 
-  implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
+  implicit def configShow[T <: SiteDependentTypes]: Show[GmosConfig[T]] =
     Show.show { config =>
-      val ccShow = if(config.cc.isDarkOrBias) "DarkOrBias"
-      else s"${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}"
+      val ccShow =
+        if (config.cc.isDarkOrBias) "DarkOrBias"
+        else
+          s"${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}"
 
       s"($ccShow, ${config.dc.t}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois} ${config.ns})"
     }

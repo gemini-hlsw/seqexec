@@ -10,15 +10,15 @@ import diode.ModelRW
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
 
-class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers[M, Pages.SeqexecPages] {
-  def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = {
-    case NavigateTo(page) =>
-      updated(page)
+class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages])
+    extends ActionHandler(modelRW)
+    with Handlers[M, Pages.SeqexecPages] {
+  def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = { case NavigateTo(page) =>
+    updated(page)
   }
 
-  def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
-    case NavigateSilentTo(page) =>
-      updatedSilent(page)
+  def handleSilentTo: PartialFunction[Any, ActionResult[M]] = { case NavigateSilentTo(page) =>
+    updatedSilent(page)
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] =

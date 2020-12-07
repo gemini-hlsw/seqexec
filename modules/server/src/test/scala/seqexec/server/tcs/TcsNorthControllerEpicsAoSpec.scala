@@ -34,7 +34,10 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
-      TelescopeGuideConfig(MountGuideOption.MountGuideOff, M1GuideConfig.M1GuideOff, M2GuideConfig.M2GuideOff),
+      TelescopeGuideConfig(MountGuideOption.MountGuideOff,
+                           M1GuideConfig.M1GuideOff,
+                           M2GuideConfig.M2GuideOff
+      ),
       AoFold.Out,
       false,
       None,
@@ -53,10 +56,13 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     ProbeTrackingConfig.Off
   )
 
-  private val baseConfig = AoTcsConfig[GuiderConfig@@AoGuide, AltairController.AltairConfig](
-    TelescopeGuideConfig(MountGuideOption.MountGuideOff, M1GuideConfig.M1GuideOff, M2GuideConfig.M2GuideOff),
+  private val baseConfig = AoTcsConfig[GuiderConfig @@ AoGuide, AltairController.AltairConfig](
+    TelescopeGuideConfig(MountGuideOption.MountGuideOff,
+                         M1GuideConfig.M1GuideOff,
+                         M2GuideConfig.M2GuideOff
+    ),
     TelescopeConfig(None, None),
-    AoGuidersConfig[GuiderConfig@@AoGuide](
+    AoGuidersConfig[GuiderConfig @@ AoGuide](
       tag[P1Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
       tag[AoGuide](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff))
@@ -75,16 +81,18 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
-        (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](niriAoThreshold * 2.0),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
-        ) >>>
+        (AoTcsConfig
+          .tc[GuiderConfig @@ AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA)
+          .set(
+            InstrumentOffset(
+              tag[OffsetP](niriAoThreshold * 2.0),
+              tag[OffsetQ](Arcseconds(0.0))
+            ).some
+          ) >>>
           (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
             M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
           ) >>>
-          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig@@AoGuide]).set(
+          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig @@ AoGuide]).set(
             tag[AoGuide](
               GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             )
@@ -96,16 +104,18 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
-        (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](niriAoThreshold * 2.0),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
-        ) >>>
+        (AoTcsConfig
+          .tc[GuiderConfig @@ AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA)
+          .set(
+            InstrumentOffset(
+              tag[OffsetP](niriAoThreshold * 2.0),
+              tag[OffsetQ](Arcseconds(0.0))
+            ).some
+          ) >>>
           (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
             M1GuideConfig.M1GuideOn(M1Source.GAOS)
           ) >>>
-          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig@@AoGuide]).set(
+          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig @@ AoGuide]).set(
             tag[AoGuide](
               GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             )
@@ -118,16 +128,18 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
     TcsNorthControllerEpicsAo.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
-        (AoTcsConfig.tc[GuiderConfig@@AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](niriAoThreshold / 2.0),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
-        ) >>>
+        (AoTcsConfig
+          .tc[GuiderConfig @@ AoGuide, AltairController.AltairConfig] ^|-> TelescopeConfig.offsetA)
+          .set(
+            InstrumentOffset(
+              tag[OffsetP](niriAoThreshold / 2.0),
+              tag[OffsetQ](Arcseconds(0.0))
+            ).some
+          ) >>>
           (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
             M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
           ) >>>
-          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig@@AoGuide]).set(
+          (AoTcsConfig.gds ^|-> AoGuidersConfig.aoguide[GuiderConfig @@ AoGuide]).set(
             tag[AoGuide](
               GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             )

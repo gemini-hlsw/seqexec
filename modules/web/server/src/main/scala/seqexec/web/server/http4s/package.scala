@@ -82,5 +82,6 @@ trait QueryParams {
 }
 
 package object http4s extends Var with QueryParams {
-  object OptionalRunOverride extends OptionalQueryParamDecoderMatcher[RunOverride]("overrideTargetCheck")
+  object OptionalRunOverride
+      extends OptionalQueryParamDecoderMatcher[RunOverride]("overrideTargetCheck")
 }

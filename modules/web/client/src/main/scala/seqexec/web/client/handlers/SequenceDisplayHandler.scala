@@ -13,15 +13,14 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 
 /**
-  * Handles actions related to the changing the selection of the displayed sequence
-  */
+ * Handles actions related to the changing the selection of the displayed sequence
+ */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesFocus] {
   def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
     case SelectIdToDisplay(i, id, _) =>
-      updatedL(
-        SequencesFocus.sod.modify(_.focusOnSequence(i, id).hideStepConfig))
+      updatedL(SequencesFocus.sod.modify(_.focusOnSequence(i, id).hideStepConfig))
 
     case SelectSequencePreview(i, id, _) =>
       val seq = SequencesQueue
@@ -52,24 +51,19 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
         .get(value.sequences)
       seq
         .map { s =>
-          updatedL(
-            SequencesFocus.sod.modify(
-              _.previewSequence(i, s).showStepConfig(id, step - 1)))
+          updatedL(SequencesFocus.sod.modify(_.previewSequence(i, s).showStepConfig(id, step - 1)))
         }
         .getOrElse {
           noChange
         }
 
     case ShowStepConfig(i, id, step) =>
-      updatedL(
-        SequencesFocus.sod.modify(
-          _.focusOnSequence(i, id).showStepConfig(id, step - 1)))
+      updatedL(SequencesFocus.sod.modify(_.focusOnSequence(i, id).showStepConfig(id, step - 1)))
 
   }
 
-  private def handleClean: PartialFunction[Any, ActionResult[M]] = {
-    case CleanSequences =>
-      noChange
+  private def handleClean: PartialFunction[Any, ActionResult[M]] = { case CleanSequences =>
+    noChange
   }
 
   private def handleLoadFailed: PartialFunction[Any, ActionResult[M]] = {
@@ -82,5 +76,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
          handleShowHideStep,
          handleLoadFailed,
          handleClean,
-         handleCalTabObserver).combineAll
+         handleCalTabObserver
+    ).combineAll
 }

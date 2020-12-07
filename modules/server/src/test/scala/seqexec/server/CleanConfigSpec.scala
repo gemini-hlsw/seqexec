@@ -3,17 +3,17 @@
 
 package seqexec.server
 
-import edu.gemini.spModel.config2.{DefaultConfig, ItemEntry, ItemKey}
+import edu.gemini.spModel.config2.{ DefaultConfig, ItemEntry, ItemKey }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import ConfigUtilOps._
 
 class CleanConfigSpec extends AnyFlatSpec with Matchers {
 
-  val k1: ItemKey = new ItemKey("instrument:param1")
-  val k2: ItemKey = new ItemKey("instrument:param2")
-  val k3: ItemKey = new ItemKey("instrument:param3")
-  val strVal: String = "dummy"
+  val k1: ItemKey                = new ItemKey("instrument:param1")
+  val k2: ItemKey                = new ItemKey("instrument:param2")
+  val k3: ItemKey                = new ItemKey("instrument:param3")
+  val strVal: String             = "dummy"
   val jIntVal: java.lang.Integer = 1234
 
   class Daddy
@@ -30,12 +30,12 @@ class CleanConfigSpec extends AnyFlatSpec with Matchers {
     )
   )
 
-   ignore must "fail construction if given a set of overrides with conflicting types" in {
-    an [java.lang.AssertionError] shouldBe thrownBy {
+  ignore must "fail construction if given a set of overrides with conflicting types" in {
+    an[java.lang.AssertionError] shouldBe thrownBy {
       new CleanConfig(
         testConfig,
         Map(
-          k1 -> (jIntVal:AnyRef)
+          k1 -> (jIntVal: AnyRef)
         )
       )
     }

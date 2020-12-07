@@ -24,10 +24,10 @@ object TabFocus {
     val getter = SeqexecAppRootModel.uiModel.composeGetter(
       (SeqexecUIModel.sequencesOnDisplay
         .composeGetter(SequencesOnDisplay.availableTabsG))
-        .zip(SeqexecUIModel.defaultObserverG))
-    ClientStatus.canOperateG.zip(getter) >>> {
-      case (o, (t, ob)) =>
-        TabFocus(o, t, ob)
+        .zip(SeqexecUIModel.defaultObserverG)
+    )
+    ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
+      TabFocus(o, t, ob)
     }
   }
 

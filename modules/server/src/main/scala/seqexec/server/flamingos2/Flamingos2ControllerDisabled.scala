@@ -5,10 +5,10 @@ package seqexec.server.flamingos2
 
 import cats.Functor
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
 import fs2.Stream
-import seqexec.model.`enum`.ObserveCommandResult
+import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.server.Progress
 import seqexec.server.SystemOverrides.overrideLogMessage
 import squants.Time

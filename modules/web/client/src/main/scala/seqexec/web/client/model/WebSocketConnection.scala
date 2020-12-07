@@ -9,10 +9,12 @@ import cats._
 import diode.data.Pot
 import org.scalajs.dom.WebSocket
 
-final case class WebSocketConnection(ws:            Pot[WebSocket],
-                                     nextAttempt:   Int,
-                                     autoReconnect: Boolean,
-                                     pingInterval:  Option[SetIntervalHandle])
+final case class WebSocketConnection(
+  ws:            Pot[WebSocket],
+  nextAttempt:   Int,
+  autoReconnect: Boolean,
+  pingInterval:  Option[SetIntervalHandle]
+)
 
 object WebSocketConnection {
   val Empty: WebSocketConnection =

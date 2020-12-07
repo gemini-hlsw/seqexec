@@ -40,11 +40,11 @@ package server {
 
   @Lenses
   final case class EngineState[F[_]](
-    queues: ExecutionQueues,
-    selected: Map[Instrument, Observation.Id],
+    queues:     ExecutionQueues,
+    selected:   Map[Instrument, Observation.Id],
     conditions: Conditions,
-    operator: Option[Operator],
-    sequences: Map[Observation.Id, SequenceData[F]]
+    operator:   Option[Operator],
+    sequences:  Map[Observation.Id, SequenceData[F]]
   )
 
   object EngineState {
@@ -62,7 +62,7 @@ package server {
     ): Lens[EngineState[F], Option[Observation.Id]] =
       GenLens[EngineState[F]](_.selected) ^|-> at(instrument)
 
-    def atSequence[F[_]](sid:Observation.Id): Optional[EngineState[F], SequenceData[F]] =
+    def atSequence[F[_]](sid: Observation.Id): Optional[EngineState[F], SequenceData[F]] =
       EngineState.sequences ^|-? index(sid)
 
     def sequenceStateIndex[F[_]](sid: Observation.Id): Optional[EngineState[F], Sequence.State[F]] =
@@ -70,27 +70,31 @@ package server {
 
     def engineState[F[_]]: Engine.State[F, EngineState[F]] = new Engine.State[F, EngineState[F]] {
       override def sequenceStateIndex(
-                                       sid: Observation.Id
-                                     ): Optional[EngineState[F], Sequence.State[F]] =
+        sid: Observation.Id
+      ): Optional[EngineState[F], Sequence.State[F]] =
         EngineState.sequenceStateIndex(sid)
     }
 
     implicit final class WithEventOps[F[_]](val f: Endo[EngineState[F]]) extends AnyVal {
-      def withEvent(ev: SeqEvent): EngineState[F] => (EngineState[F], SeqEvent) = f >>> {(_, ev)}
+      def withEvent(ev: SeqEvent): EngineState[F] => (EngineState[F], SeqEvent) = f >>> { (_, ev) }
     }
   }
 
-  final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
+  final case class HeaderExtraData(
+    conditions: Conditions,
+    operator:   Option[Operator],
+    observer:   Option[Observer]
+  )
   object HeaderExtraData {
     val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
   }
 
   final case class ObserveContext[F[_]](
     resumePaused: Time => Stream[F, Result[F]],
-    progress: ElapsedTime => Stream[F, Result[F]],
-    stopPaused: Stream[F, Result[F]],
-    abortPaused: Stream[F, Result[F]],
-    expTime: Time
+    progress:     ElapsedTime => Stream[F, Result[F]],
+    stopPaused:   Stream[F, Result[F]],
+    abortPaused:  Stream[F, Result[F]],
+    expTime:      Time
   ) extends PauseContext[F]
 
 }
@@ -113,15 +117,17 @@ package object server {
 
   type EventQueue[F[_]] = Queue[F, EventType[F]]
 
-  implicit class EitherTFailureOps[F[_]: MonadError[*[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
+  implicit class EitherTFailureOps[F[_]: MonadError[*[_], Throwable], A](
+    s: EitherT[F, SeqexecFailure, A]
+  ) {
     def liftF: F[A] =
       s.value.flatMap(_.liftTo[F])
   }
 
-  implicit class EitherTOps[F[_],  A, B](fa: EitherT[F, A, B]) {
-    def widenRethrowT[T](
-      implicit me: MonadError[F, T],
-               at: A <:< T
+  implicit class EitherTOps[F[_], A, B](fa: EitherT[F, A, B]) {
+    def widenRethrowT[T](implicit
+      me: MonadError[F, T],
+      at: A <:< T
     ): F[B] =
       fa.leftMap(at).rethrowT
   }
@@ -140,34 +146,42 @@ package object server {
 
   implicit class ExecutionQueueOps[F[_]](val q: ExecutionQueue) extends AnyVal {
     def status(st: EngineState[F]): BatchExecState = {
-      val statuses: Seq[SequenceState] = q.queue.map(sid => st.sequences.get(sid))
-        .collect{ case Some(x) => x }
+      val statuses: Seq[SequenceState] = q.queue
+        .map(sid => st.sequences.get(sid))
+        .collect { case Some(x) => x }
         .map(_.seq.status)
 
       q.cmdState match {
         case BatchCommandState.Idle         => BatchExecState.Idle
-        case BatchCommandState.Run(_, _, _) => if(statuses.forall(_.isCompleted)) BatchExecState.Completed
-                                               else if(statuses.exists(_.isRunning)) BatchExecState.Running
-                                                    else BatchExecState.Waiting
-        case BatchCommandState.Stop         => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
-                                               else BatchExecState.Idle
+        case BatchCommandState.Run(_, _, _) =>
+          if (statuses.forall(_.isCompleted)) BatchExecState.Completed
+          else if (statuses.exists(_.isRunning)) BatchExecState.Running
+          else BatchExecState.Waiting
+        case BatchCommandState.Stop         =>
+          if (statuses.exists(_.isRunning)) BatchExecState.Stopping
+          else BatchExecState.Idle
       }
     }
 
-    def addSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue :+ sid)
-    def addSeqs(sids: List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
+    def addSeq(sid:    Observation.Id): ExecutionQueue       = q.copy(queue = q.queue :+ sid)
+    def addSeqs(sids:  List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
     def removeSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue.filter(_ =!= sid))
-    def moveSeq(sid:Observation.Id, delta: Int): ExecutionQueue = q.copy(queue = moveElement(q.queue, sid, delta))
+    def moveSeq(sid:   Observation.Id, delta: Int): ExecutionQueue =
+      q.copy(queue = moveElement(q.queue, sid, delta))
     def clear: ExecutionQueue = q.copy(queue = List.empty)
   }
 
   implicit final class ToHandle[F[_]: Applicative, A](f: EngineState[F] => (EngineState[F], A)) {
     import Handle.StateToHandle
     def toHandle: HandleType[F, A] =
-      StateT[F, EngineState[F], A]{ st => f(st).pure[F] }.toHandle
+      StateT[F, EngineState[F], A](st => f(st).pure[F]).toHandle
   }
 
-  def toStepList[F[_]](seq: SequenceGen[F], overrides: SystemOverrides, d: HeaderExtraData): List[engine.Step[F]] =
+  def toStepList[F[_]](
+    seq:       SequenceGen[F],
+    overrides: SystemOverrides,
+    d:         HeaderExtraData
+  ): List[engine.Step[F]] =
     seq.steps.map(StepGen.generate(_, overrides, d))
 
   // If f is true continue, otherwise fail
@@ -177,10 +191,15 @@ package object server {
     }
 
   implicit class ResponseToResult(val r: Either[Throwable, Response]) extends AnyVal {
-    def toResult[F[_]]: Result[F] = r.fold(e => e match {
-      case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
-      case e: Throwable      => Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
-    }, r => Result.OK(r))
+    def toResult[F[_]]: Result[F] = r.fold(
+      e =>
+        e match {
+          case e: SeqexecFailure => Result.Error(SeqexecFailure.explain(e))
+          case e: Throwable      =>
+            Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e)))
+        },
+      r => Result.OK(r)
+    )
   }
 
   implicit class RecoverResultErrorOps[F[_]: ApplicativeError[*[_], Throwable]](r: F[Result[F]]) {
@@ -193,23 +212,27 @@ package object server {
   def catchObsErrors[F[_]](t: Throwable)(implicit L: Logger[F]): Stream[F, Result[F]] = t match {
     case e: SeqexecFailure =>
       Stream.eval(L.error(e)(s"Observation error: ${SeqexecFailure.explain(e)}")) *>
-      Stream.emit(Result.Error(SeqexecFailure.explain(e)))
-    case e: Throwable =>
+        Stream.emit(Result.Error(SeqexecFailure.explain(e)))
+    case e: Throwable      =>
       Stream.eval(L.error(e)(s"Observation error: ${e.getMessage}")) *>
-      Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
+        Stream.emit(Result.Error(SeqexecFailure.explain(SeqexecFailure.SeqexecException(e))))
   }
 
-  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[*[_], Throwable], A <: Response](val x: F[A]) {
+  implicit class ActionResponseToAction[F[_]: Functor: ApplicativeError[
+    *[_],
+    Throwable
+  ], A <: Response](val x: F[A]) {
     def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.attempt.map(_.toResult))
   }
 
   implicit class ConfigResultToAction[F[_]: Functor](val x: F[ConfigResult[F]]) {
-    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
+    def toAction(kind: ActionType): Action[F] =
+      fromF[F](kind, x.map(r => Result.OK(Response.Configured(r.sys.resource))))
   }
 
   // Some types defined to avoid repeating long type definitions everywhere
-  type EventType[F[_]] = Event[F, EngineState[F], SeqEvent]
-  type HandleType[F[_], A] = Handle[F, EngineState[F], EventType[F], A]
+  type EventType[F[_]]      = Event[F, EngineState[F], SeqEvent]
+  type HandleType[F[_], A]  = Handle[F, EngineState[F], EventType[F], A]
   type ExecEngineType[F[_]] = Engine[F, EngineState[F], SeqEvent]
 
 }

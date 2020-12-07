@@ -78,7 +78,6 @@ object GcalController {
 
   type Diffuser = edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
 
-
   sealed trait GcalConfig {
     val lampAr: ArLampState
     val lampCuAr: CuArLampState
@@ -91,52 +90,51 @@ object GcalController {
     val diffuserO: Option[Diffuser]
   }
 
-
   object GcalConfig {
 
     final case class GcalOn(
-                             lampAr: ArLampState,
-                             lampCuAr: CuArLampState,
-                             lampQh: QHLampState,
-                             lampThAr: ThArLampState,
-                             lampXe: XeLampState,
-                             lampIrO: Option[IrLampState],
-                             shutter: Shutter,
-                             filter: Filter,
-                             diffuser: Diffuser
-                           ) extends GcalConfig {
-      override val filterO: Option[Filter] = filter.some
+      lampAr:   ArLampState,
+      lampCuAr: CuArLampState,
+      lampQh:   QHLampState,
+      lampThAr: ThArLampState,
+      lampXe:   XeLampState,
+      lampIrO:  Option[IrLampState],
+      shutter:  Shutter,
+      filter:   Filter,
+      diffuser: Diffuser
+    ) extends GcalConfig {
+      override val filterO: Option[Filter]     = filter.some
       override val diffuserO: Option[Diffuser] = diffuser.some
     }
 
     case object GcalOff extends GcalConfig {
-      override val lampAr: ArLampState = ArLampState(LampState.Off)
-      override val lampCuAr: CuArLampState = CuArLampState(LampState.Off)
-      override val lampQh: QHLampState = QHLampState(LampState.Off)
-      override val lampThAr: ThArLampState = ThArLampState(LampState.Off)
-      override val lampXe: XeLampState = XeLampState(LampState.Off)
+      override val lampAr: ArLampState          = ArLampState(LampState.Off)
+      override val lampCuAr: CuArLampState      = CuArLampState(LampState.Off)
+      override val lampQh: QHLampState          = QHLampState(LampState.Off)
+      override val lampThAr: ThArLampState      = ThArLampState(LampState.Off)
+      override val lampXe: XeLampState          = XeLampState(LampState.Off)
       override val lampIrO: Option[IrLampState] = IrLampState(LampState.Off).some
-      override val shutter: Shutter = Shutter.CLOSED
-      override val filterO: Option[Filter] = none
-      override val diffuserO: Option[Diffuser] = none
+      override val shutter: Shutter             = Shutter.CLOSED
+      override val filterO: Option[Filter]      = none
+      override val diffuserO: Option[Diffuser]  = none
     }
 
     // This configuration is for observations that do not use GCAL. It is preferable to not turn off the IR lamp.
     case object GcalOffIgnoringIr extends GcalConfig {
-      override val lampAr: ArLampState = ArLampState(LampState.Off)
-      override val lampCuAr: CuArLampState = CuArLampState(LampState.Off)
-      override val lampQh: QHLampState = QHLampState(LampState.Off)
-      override val lampThAr: ThArLampState = ThArLampState(LampState.Off)
-      override val lampXe: XeLampState = XeLampState(LampState.Off)
+      override val lampAr: ArLampState          = ArLampState(LampState.Off)
+      override val lampCuAr: CuArLampState      = CuArLampState(LampState.Off)
+      override val lampQh: QHLampState          = QHLampState(LampState.Off)
+      override val lampThAr: ThArLampState      = ThArLampState(LampState.Off)
+      override val lampXe: XeLampState          = XeLampState(LampState.Off)
       override val lampIrO: Option[IrLampState] = none
-      override val shutter: Shutter = Shutter.CLOSED
-      override val filterO: Option[Filter] = none
-      override val diffuserO: Option[Diffuser] = none
+      override val shutter: Shutter             = Shutter.CLOSED
+      override val filterO: Option[Filter]      = none
+      override val diffuserO: Option[Diffuser]  = none
     }
 
   }
 
-  implicit val gcalConfigShow: Show[GcalConfig] = Show.show( config =>
+  implicit val gcalConfigShow: Show[GcalConfig] = Show.show(config =>
     List(
       s"lampAr = ${config.lampAr}",
       s"lampCuar = ${config.lampCuAr}",

@@ -9,8 +9,8 @@ trait System[F[_]] {
   val resource: Resource
 
   /**
-    * Called to configure a system
-    */
+   * Called to configure a system
+   */
   def configure(config: CleanConfig): F[ConfigResult[F]]
 
   def notifyObserveStart: F[Unit]

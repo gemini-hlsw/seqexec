@@ -9,11 +9,13 @@ import seqexec.common.FixedLengthBuffer
 import seqexec.model.events._
 
 /**
-  * Keeps a list of log entries for display
-  */
+ * Keeps a list of log entries for display
+ */
 @Lenses
-final case class GlobalLog(log:     FixedLengthBuffer[ServerLogMessage],
-                           display: SectionVisibilityState)
+final case class GlobalLog(
+  log:     FixedLengthBuffer[ServerLogMessage],
+  display: SectionVisibilityState
+)
 
 object GlobalLog {
   implicit val eq: Eq[GlobalLog] = Eq.by(x => (x.log, x.display))

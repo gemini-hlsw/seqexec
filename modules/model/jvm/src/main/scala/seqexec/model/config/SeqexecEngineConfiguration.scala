@@ -52,23 +52,23 @@ object SeqexecEngineConfiguration {
   private implicit def taggedUriEq[A]: Eq[Uri @@ A] = Eq.by(x => x: Uri)
 
   implicit val eqSeqexecEngineConfiguration: Eq[SeqexecEngineConfiguration] =
-    Eq.by(
-      x =>
-        (x.odb,
-         x.dhsServer,
-         x.systemControl,
-         x.odbNotifications,
-         x.instForceError,
-         x.failAt,
-         x.odbQueuePollingInterval,
-         x.gpiUrl,
-         x.gpiGDS,
-         x.ghostUrl,
-         x.ghostGDS,
-         x.tops,
-         x.epicsCaAddrList,
-         x.ioTimeout,
-         x.dhsTimeout)
+    Eq.by(x =>
+      (x.odb,
+       x.dhsServer,
+       x.systemControl,
+       x.odbNotifications,
+       x.instForceError,
+       x.failAt,
+       x.odbQueuePollingInterval,
+       x.gpiUrl,
+       x.gpiGDS,
+       x.ghostUrl,
+       x.ghostGDS,
+       x.tops,
+       x.epicsCaAddrList,
+       x.ioTimeout,
+       x.dhsTimeout
+      )
     )
 
 }

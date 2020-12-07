@@ -6,7 +6,7 @@ package seqexec.server
 import cats.Eq
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
 
-package gsaoi{
+package gsaoi {
   trait GsaoiFullHandler[F[_]] extends GsaoiController[F] with GsaoiGuider[F]
 }
 

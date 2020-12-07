@@ -18,8 +18,9 @@ import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common._
 
-abstract class SmoothProgressBarProps[A](override val component: Scala.Component[A, _, _, CtorType.Props])
-    extends ReactProps[A](component) {
+abstract class SmoothProgressBarProps[A](
+  override val component: Scala.Component[A, _, _, CtorType.Props]
+) extends ReactProps[A](component) {
   val value: Int
   val maxValue: Int
   val stopping: Boolean
@@ -46,7 +47,7 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
     }
 
   protected class Backend(b: BackendScope[P, State]) extends TimerSupport {
-    private val periodUpdate: Int = 50
+    private val periodUpdate: Int       = 50
     // This depends on the server side frequency of updates
     private val remoteUpdatePeriod: Int = 1000
 
@@ -54,11 +55,11 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
       setInterval(tickTotal, periodUpdate.millisecond)
 
     def tickTotal: Callback =
-      b.props.zip(b.state) >>= {
-        case (p, s) =>
-          val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-          (b.setStateL(State.value)(min(p.maxValue, next)))
-            .when(!p.paused && !p.stopping).void
+      b.props.zip(b.state) >>= { case (p, s) =>
+        val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
+        (b.setStateL(State.value)(min(p.maxValue, next)))
+          .when(!p.paused && !p.stopping)
+          .void
       }
   }
 

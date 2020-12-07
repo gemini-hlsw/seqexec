@@ -3,20 +3,20 @@
 
 package seqexec.server.niri
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
-import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
-import edu.gemini.seqexec.server.niri.{Camera => JCamera}
-import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
-import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
-import edu.gemini.seqexec.server.niri.{Mask => JMask}
-import edu.gemini.seqexec.server.niri.{ReadMode => JReadMode}
+import edu.gemini.seqexec.server.niri.{ BeamSplitter => JBeamSplitter }
+import edu.gemini.seqexec.server.niri.{ BuiltInROI => JBuiltInROI }
+import edu.gemini.seqexec.server.niri.{ Camera => JCamera }
+import edu.gemini.seqexec.server.niri.{ DetectorState => JDetectorState }
+import edu.gemini.seqexec.server.niri.{ Disperser => JDisperser }
+import edu.gemini.seqexec.server.niri.{ Mask => JMask }
+import edu.gemini.seqexec.server.niri.{ ReadMode => JReadMode }
 import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsSystem
@@ -28,48 +28,55 @@ import seqexec.server.ObserveCommand
 class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val NiriTop = tops.getOrElse("niri", "niri:")
-  val NisTop = tops.getOrElse("nis", "NIS:")
+  val NisTop  = tops.getOrElse("nis", "NIS:")
 
-  object configCmd extends EpicsCommandBase[F]{
+  object configCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nis::config"))
 
     private val disperser: Option[CaParameter[JDisperser]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("disperser", s"${NisTop}grism:menu", classOf[JDisperser], false)))
+      Option(cmd.addEnum("disperser", s"${NisTop}grism:menu", classOf[JDisperser], false))
+    )
     def setDisperser(v: JDisperser): F[Unit] = setParameter(disperser, v)
 
     private val readMode: Option[CaParameter[JReadMode]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("readmode", s"${NisTop}readmode:menu", classOf[JReadMode], false)))
+      Option(cmd.addEnum("readmode", s"${NisTop}readmode:menu", classOf[JReadMode], false))
+    )
     def setReadMode(v: JReadMode): F[Unit] = setParameter(readMode, v)
 
-    private val coadds: Option[CaParameter[Integer]] = cs.flatMap(cmd => Option(cmd.getInteger("numCoAdds")))
+    private val coadds: Option[CaParameter[Integer]] =
+      cs.flatMap(cmd => Option(cmd.getInteger("numCoAdds")))
     def setCoadds(v: Int): F[Unit] = setParameter(coadds, Integer.valueOf(v))
 
-    private val mask: Option[CaParameter[JMask]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("mask", s"${NisTop}fpmask:menu", classOf[JMask], false)))
+    private val mask: Option[CaParameter[JMask]] =
+      cs.flatMap(cmd => Option(cmd.addEnum("mask", s"${NisTop}fpmask:menu", classOf[JMask], false)))
     def setMask(v: JMask): F[Unit] = setParameter(mask, v)
 
     private val camera: Option[CaParameter[JCamera]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("camera", s"${NisTop}camera:menu", classOf[JCamera], false)))
+      Option(cmd.addEnum("camera", s"${NisTop}camera:menu", classOf[JCamera], false))
+    )
     def setCamera(v: JCamera): F[Unit] = setParameter(camera, v)
 
-    private val beamSplitter: Option[CaParameter[JBeamSplitter]] = cs.flatMap(cmd => Option(
-      cmd.addEnum("beamSplitter", s"${NisTop}beamsplit:menu", classOf[JBeamSplitter], false)))
+    private val beamSplitter: Option[CaParameter[JBeamSplitter]] = cs.flatMap(cmd =>
+      Option(cmd.addEnum("beamSplitter", s"${NisTop}beamsplit:menu", classOf[JBeamSplitter], false))
+    )
     def setBeamSplitter(v: JBeamSplitter): F[Unit] = setParameter(beamSplitter, v)
 
-    private val exposureTime: Option[CaParameter[JDouble]] = cs.flatMap(cmd =>
-      Option(cmd.getDouble("exposureTime")))
+    private val exposureTime: Option[CaParameter[JDouble]] =
+      cs.flatMap(cmd => Option(cmd.getDouble("exposureTime")))
     def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     private val builtInROI: Option[CaParameter[JBuiltInROI]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("builtinROI", s"${NisTop}roi:menu", classOf[JBuiltInROI], false)))
+      Option(cmd.addEnum("builtinROI", s"${NisTop}roi:menu", classOf[JBuiltInROI], false))
+    )
     def setBuiltInROI(v: JBuiltInROI): F[Unit] = setParameter(builtInROI, v)
 
-    private val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString("filter")))
+    private val filter: Option[CaParameter[String]] =
+      cs.flatMap(cmd => Option(cmd.getString("filter")))
     def setFilter(v: String): F[Unit] = setParameter(filter, v)
 
-    private val focus: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString
-    ("focus")))
+    private val focus: Option[CaParameter[String]] =
+      cs.flatMap(cmd => Option(cmd.getString("focus")))
     def setFocus(v: String): F[Unit] = setParameter(focus, v)
 
   }
@@ -78,53 +85,65 @@ class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
    * For some reason the window cover is not include in the IS configuration parameters. It is
    * applied by the IS apply command, nevertheless. This command exists only to set the parameter.
    */
-  object windowCoverConfig extends EpicsCommandBase[F]{
+  object windowCoverConfig extends EpicsCommandBase[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri:config"))
 
-    private val windowCover: Option[CaParameter[String]] = cs.flatMap(cmd =>
-      Option(cmd.getString("windowCover")))
+    private val windowCover: Option[CaParameter[String]] =
+      cs.flatMap(cmd => Option(cmd.getString("windowCover")))
     def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase[F]{
+  object endObserveCmd extends EpicsCommandBase[F] {
     override val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("niri::endObserve"))
+      epicsService.getCommandSender("niri::endObserve")
+    )
   }
 
-  object configDCCmd extends EpicsCommandBase[F]{
+  object configDCCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("niri::obsSetup"))
   }
 
-  private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::stop"))
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "niri::observeCmd", s"${NiriTop}dc:apply", s"${NiriTop}dc:applyC", s"${NiriTop}dc:observeC",
-    true, s"${NiriTop}dc:stop", s"${NiriTop}dc:abort", ""))
+  private val stopCS: Option[CaCommandSender]  = Option(epicsService.getCommandSender("niri::stop"))
+  private val observeAS: Option[CaApplySender] = Option(
+    epicsService.createObserveSender("niri::observeCmd",
+                                     s"${NiriTop}dc:apply",
+                                     s"${NiriTop}dc:applyC",
+                                     s"${NiriTop}dc:observeC",
+                                     true,
+                                     s"${NiriTop}dc:stop",
+                                     s"${NiriTop}dc:abort",
+                                     ""
+    )
+  )
 
-  object stopCmd extends EpicsCommandBase[F]{
+  object stopCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
   object stopAndWaitCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::abort"))
+  private val abortCS: Option[CaCommandSender] = Option(
+    epicsService.getCommandSender("niri::abort")
+  )
 
-  object abortCmd extends EpicsCommandBase[F]{
+  object abortCmd extends EpicsCommandBase[F] {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
   object abortAndWait extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = abortCS
-    override protected val os: Option[CaApplySender] = observeAS
+    override protected val os: Option[CaApplySender]   = observeAS
   }
 
   object observeCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("niri::observe"))
-    override protected val os: Option[CaApplySender] = observeAS
+      epicsService.getCommandSender("niri::observe")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
@@ -154,7 +173,8 @@ class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::dcstatus")
 
-  def dhsConnected: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("dhcConnected")).map(_ === 1)
+  def dhsConnected: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("dhcConnected")).map(_ === 1)
 
   private val arrayActiveAttr: CaAttribute[JDetectorState] =
     dcStatus.addEnum("arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState])
@@ -205,16 +225,19 @@ class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   def mode: F[Int] = safeAttributeSIntF(dcStatus.getIntegerAttribute("MODE"))
 
-  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("prepObs")).map(_ =!= 0)
+  def dcIsPreparing: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("prepObs")).map(_ =!= 0)
 
-  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("acqObs")).map(_ =!= 0)
+  def dcIsAcquiring: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("acqObs")).map(_ =!= 0)
 
-  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(dcStatus.getIntegerAttribute("readingOut")).map(_ =!= 0)
+  def dcIsReadingOut: F[Boolean] =
+    safeAttributeSIntF(dcStatus.getIntegerAttribute("readingOut")).map(_ =!= 0)
 }
 
 object NiriEpics extends EpicsSystem[NiriEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Niri.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[NiriEpics[IO]] =

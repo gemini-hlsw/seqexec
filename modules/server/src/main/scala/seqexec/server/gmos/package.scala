@@ -44,25 +44,30 @@ package gmos {
       override val ongoingAction = NSAction.Done
     }
 
-    case object NSContinue extends InternalPartialVal
+    case object NSContinue  extends InternalPartialVal
     case object NSSubPaused extends InternalPartialVal
-    case object NSFinalObs extends InternalPartialVal
+    case object NSFinalObs  extends InternalPartialVal
 
   }
 
   sealed trait NSObserveCommand extends Product with Serializable
 
   object NSObserveCommand {
-    case object StopGracefully extends NSObserveCommand
-    case object StopImmediately extends NSObserveCommand
-    case object AbortGracefully extends NSObserveCommand
+    case object StopGracefully   extends NSObserveCommand
+    case object StopImmediately  extends NSObserveCommand
+    case object AbortGracefully  extends NSObserveCommand
     case object AbortImmediately extends NSObserveCommand
-    case object PauseGracefully extends NSObserveCommand
+    case object PauseGracefully  extends NSObserveCommand
     case object PauseImmediately extends NSObserveCommand
 
     implicit val nsObserveCommandEnum: Enumerated[NSObserveCommand] =
       Enumerated.of(
-        StopGracefully, StopImmediately,AbortGracefully, AbortImmediately, PauseGracefully, PauseImmediately
+        StopGracefully,
+        StopImmediately,
+        AbortGracefully,
+        AbortImmediately,
+        PauseGracefully,
+        PauseImmediately
       )
   }
 

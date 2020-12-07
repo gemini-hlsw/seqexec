@@ -37,8 +37,7 @@ object AppTitle {
     .render_P(p =>
       Divider(as = "h4",
               horizontal = true,
-              clazz =
-                SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
+              clazz = SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
       )(
         s"Seqexec ${p.site.shortName}",
         p.ws.ws.renderPending(_ =>

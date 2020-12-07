@@ -22,9 +22,9 @@ class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState])
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(UserNotification(not, _)) =>
       // Update the notification state
-      val lens = UserNotificationState.notification.set(not.some)
+      val lens         = UserNotificationState.notification.set(not.some)
       // Request opening the dialog box
-      val openBoxE = Effect(Future(OpenUserNotificationBox))
+      val openBoxE     = Effect(Future(OpenUserNotificationBox))
       // Update the model as load failed
       val modelUpdateE = not match {
         case InstrumentInUse(id, _)  => Effect(Future(SequenceLoadFailed(id)))

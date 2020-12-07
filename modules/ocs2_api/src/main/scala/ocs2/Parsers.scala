@@ -4,15 +4,16 @@
 package ocs2
 
 import cats.syntax.all._
-import seqexec.model.Observation
-import seqexec.model.Program
 import lucuma.core.enum._
-import ocs2.config.GcalConfig.GcalLamp
 import lucuma.core.math._
 import lucuma.core.optics.syntax.prism._
+import ocs2.config.GcalConfig.GcalLamp
+import seqexec.model.Observation
+import seqexec.model.Program
 
-/** String parsers for our model types.
-  */
+/**
+ * String parsers for our model types.
+ */
 object Parsers {
 
   import gem.ocs2.pio.PioParse

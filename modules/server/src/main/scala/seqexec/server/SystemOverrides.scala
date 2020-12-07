@@ -28,10 +28,11 @@ object SystemOverrides {
     isDhsEnabled = true
   )
 
-  private case class SystemOverridesImpl(override val isTcsEnabled: Boolean,
-                                         override val isInstrumentEnabled: Boolean,
-                                         override val isGcalEnabled: Boolean,
-                                         override val isDhsEnabled: Boolean
+  private case class SystemOverridesImpl(
+    override val isTcsEnabled:        Boolean,
+    override val isInstrumentEnabled: Boolean,
+    override val isGcalEnabled:       Boolean,
+    override val isDhsEnabled:        Boolean
   ) extends SystemOverrides {
     override def disableTcs: SystemOverrides = copy(isTcsEnabled = false)
 

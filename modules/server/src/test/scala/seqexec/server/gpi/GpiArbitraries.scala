@@ -3,16 +3,16 @@
 
 package seqexec.server.gpi
 
-import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
-import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
-import edu.gemini.spModel.gemini.gpi.Gpi.{ArtificialSource => LegacyArtificialSource}
-import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
-import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
-import edu.gemini.spModel.gemini.gpi.Gpi.{Filter => LegacyFilter}
-import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
-import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
-import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
-import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Apodizer => LegacyApodizer }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Adc => LegacyAdc }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ ArtificialSource => LegacyArtificialSource }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Disperser => LegacyDisperser }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ FPM => LegacyFPM }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Filter => LegacyFilter }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
+import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
 import lucuma.core.enum.GpiReadMode
 import lucuma.core.util.arb.ArbEnumerated._
 import lucuma.core.arb.ArbTime
@@ -34,7 +34,7 @@ trait GpiArbitraries extends ArbTime {
       magI     <- arbitrary[Double]
     } yield AOFlags(useAo, useCal, aoOpt, alignFpm, magH, magI)
   }
-  implicit val gpiAOFlagsCogen: Cogen[AOFlags] =
+  implicit val gpiAOFlagsCogen: Cogen[AOFlags]   =
     Cogen[(Boolean, Boolean, Boolean, Boolean)]
       .contramap(x => (x.useAo, x.useCal, x.aoOptimize, x.alignFpm))
 
@@ -47,13 +47,10 @@ trait GpiArbitraries extends ArbTime {
         att <- arbitrary[Double]
       } yield ArtificialSources(ir, vis, sc, att)
     }
-  implicit val asCogen: Cogen[LegacyArtificialSource] =
+  implicit val asCogen: Cogen[LegacyArtificialSource]                =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiArtificialSourcesCogen: Cogen[ArtificialSources] =
-    Cogen[(LegacyArtificialSource,
-           LegacyArtificialSource,
-           LegacyArtificialSource,
-           Double)]
+  implicit val gpiArtificialSourcesCogen: Cogen[ArtificialSources]   =
+    Cogen[(LegacyArtificialSource, LegacyArtificialSource, LegacyArtificialSource, Double)]
       .contramap(x => (x.ir, x.vis, x.sc, x.attenuation))
 
   implicit val gpiShuttersArb: Arbitrary[Shutters] = Arbitrary {
@@ -65,16 +62,13 @@ trait GpiArbitraries extends ArbTime {
     } yield Shutters(ent, cal, sci, ref)
   }
 
-  implicit val shutCogen: Cogen[LegacyShutter] =
+  implicit val shutCogen: Cogen[LegacyShutter]   =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiShuttersCogen: Cogen[Shutters] =
     Cogen[(LegacyShutter, LegacyShutter, LegacyShutter, LegacyShutter)]
-      .contramap(
-        x =>
-          (x.entranceShutter,
-           x.calEntranceShutter,
-           x.calScienceShutter,
-           x.calReferenceShutter))
+      .contramap(x =>
+        (x.entranceShutter, x.calEntranceShutter, x.calScienceShutter, x.calReferenceShutter)
+      )
 
   implicit val gpiNonStandardModParamsArb: Arbitrary[NonStandardModeParams] =
     Arbitrary {
@@ -86,13 +80,13 @@ trait GpiArbitraries extends ArbTime {
       } yield NonStandardModeParams(apo, fpm, lyo, fil)
     }
 
-  implicit val apodizerCogen: Cogen[LegacyApodizer] =
+  implicit val apodizerCogen: Cogen[LegacyApodizer]                  =
     Cogen[String].contramap(_.displayValue)
-  implicit val fpmCogen: Cogen[LegacyFPM] =
+  implicit val fpmCogen: Cogen[LegacyFPM]                            =
     Cogen[String].contramap(_.displayValue)
-  implicit val lyotCogen: Cogen[LegacyLyot] =
+  implicit val lyotCogen: Cogen[LegacyLyot]                          =
     Cogen[String].contramap(_.displayValue)
-  implicit val filterCogen: Cogen[LegacyFilter] =
+  implicit val filterCogen: Cogen[LegacyFilter]                      =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiNonStandardModeCogen: Cogen[NonStandardModeParams] =
     Cogen[(LegacyApodizer, LegacyFPM, LegacyLyot, LegacyFilter)]
@@ -107,7 +101,7 @@ trait GpiArbitraries extends ArbTime {
         endY   <- Gen.choose(ReadoutArea.MinValue, ReadoutArea.MaxValue)
       } yield ReadoutArea.fromValues(startX, startY, endX, endY).getOrElse(ReadoutArea.DefaultArea)
     }
-  implicit val readoutAreaCogen: Cogen[ReadoutArea] =
+  implicit val readoutAreaCogen: Cogen[ReadoutArea]   =
     Cogen[(Int, Int, Int, Int)].contramap(x => (x.startX, x.startY, x.endX, x.endY))
 
   implicit val gpiConfigArb: Arbitrary[RegularGpiConfig] = Arbitrary {
@@ -127,33 +121,28 @@ trait GpiArbitraries extends ArbTime {
     } yield RegularGpiConfig(adc, exp, coa, readM, area, obsM, disp, dispA, shut, asu, pc, ao)
   }
 
-  implicit val adcCogen: Cogen[LegacyAdc] =
+  implicit val adcCogen: Cogen[LegacyAdc]               =
     Cogen[String].contramap(_.displayValue)
   implicit val obsModeCogen: Cogen[LegacyObservingMode] =
     Cogen[String].contramap(_.displayValue)
-  implicit val ppCogen: Cogen[LegacyPupilCamera] =
+  implicit val ppCogen: Cogen[LegacyPupilCamera]        =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiConfigCogen: Cogen[RegularGpiConfig] =
-    Cogen[(LegacyAdc,
-       Duration,
-       Int,
-       GpiReadMode,
-       ReadoutArea,
-       Either[LegacyObservingMode, NonStandardModeParams],
-       Shutters,
-       ArtificialSources,
-       LegacyPupilCamera,
-       AOFlags)]
-      .contramap(
-        x =>
-          (x.adc,
-           x.expTime,
-           x.coAdds,
-           x.readMode,
-           x.area,
-           x.mode,
-           x.shutters,
-           x.asu,
-           x.pc,
-           x.aoFlags))
+  implicit val gpiConfigCogen: Cogen[RegularGpiConfig]  =
+    Cogen[
+      (
+        LegacyAdc,
+        Duration,
+        Int,
+        GpiReadMode,
+        ReadoutArea,
+        Either[LegacyObservingMode, NonStandardModeParams],
+        Shutters,
+        ArtificialSources,
+        LegacyPupilCamera,
+        AOFlags
+      )
+    ]
+      .contramap(x =>
+        (x.adc, x.expTime, x.coAdds, x.readMode, x.area, x.mode, x.shutters, x.asu, x.pc, x.aoFlags)
+      )
 }

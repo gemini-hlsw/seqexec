@@ -31,25 +31,26 @@ final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
 
   def containsKey(k: ItemKey): Boolean = itemValue(k).isDefined
 
-  def itemValue(k: ItemKey): Option[AnyRef] = overrides.get(k).orElse(Option(config.getItemValue(k)))
+  def itemValue(k: ItemKey): Option[AnyRef] =
+    overrides.get(k).orElse(Option(config.getItemValue(k)))
 
   private def sanitizeValue(s: Any): String = s match {
     case x: edu.gemini.shared.util.immutable.Some[_] => s"${x.getValue}"
     case _: edu.gemini.shared.util.immutable.None[_] => "None"
-    case _ => s"$s"
+    case _                                           => s"$s"
   }
 
-  def itemEntries: List[ItemEntry] = config.itemEntries.filter(x => !overrides.contains(x.getKey)).toList ++
-    overrides.map{ case (k, v) => new ItemEntry(k, v) }
+  def itemEntries: List[ItemEntry] =
+    config.itemEntries.filter(x => !overrides.contains(x.getKey)).toList ++
+      overrides.map { case (k, v) => new ItemEntry(k, v) }
 
   // config syntax: cfg.toStepConfig
-  def toStepConfig: StepConfig =
-    itemEntries.groupBy(_.getKey.getRoot).map {
-      case (subsystem, entries) =>
-        SystemName.unsafeFromString(subsystem.getName) ->
-          entries.map { e =>
-            (e.getKey.getPath, sanitizeValue(e.getItemValue))
-          }.toMap
+  def toStepConfig: StepConfig     =
+    itemEntries.groupBy(_.getKey.getRoot).map { case (subsystem, entries) =>
+      SystemName.unsafeFromString(subsystem.getName) ->
+        entries.map { e =>
+          (e.getKey.getPath, sanitizeValue(e.getItemValue))
+        }.toMap
     }
 
 }
@@ -66,28 +67,32 @@ object CleanConfig {
 
   // GMOS arcs, flats and biases in a N&S sequence have shuffle parameters, even if that is
   // not supported. The shuffling is automatically disabled by setting the useNS flag to false.
-  val nsWiper: ConfigWiper = cfg => (
-    for {
-      useNS <- cfg.extractInstAs[java.lang.Boolean](USE_NS_PROP)
-      obsType <- cfg.extractObsAs[String](OBSERVE_TYPE_PROP)
-    } yield
-      if (useNS && (obsType === ARC_OBSERVE_TYPE || obsType === FLAT_OBSERVE_TYPE || obsType === BIAS_OBSERVE_TYPE))
-        Map(INSTRUMENT_KEY / USE_NS_PROP -> (java.lang.Boolean.FALSE:AnyRef))
-      else
-        Map.empty[ItemKey, AnyRef]
-  ).getOrElse(Map.empty[ItemKey, AnyRef])
+  val nsWiper: ConfigWiper = cfg =>
+    (
+      for {
+        useNS   <- cfg.extractInstAs[java.lang.Boolean](USE_NS_PROP)
+        obsType <- cfg.extractObsAs[String](OBSERVE_TYPE_PROP)
+      } yield
+        if (
+          useNS && (obsType === ARC_OBSERVE_TYPE || obsType === FLAT_OBSERVE_TYPE || obsType === BIAS_OBSERVE_TYPE)
+        )
+          Map(INSTRUMENT_KEY / USE_NS_PROP -> (java.lang.Boolean.FALSE: AnyRef))
+        else
+          Map.empty[ItemKey, AnyRef]
+    ).getOrElse(Map.empty[ItemKey, AnyRef])
 
   // OIWFS must never guide in a GCAL calibration
-  val oiCalWiper: ConfigWiper = cfg => (
-    for {
-      obsType <- cfg.extractObsAs[String](OBSERVE_TYPE_PROP)
-      oiGuide <- cfg.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP)
-    } yield
-      if(oiGuide.isActive && (obsType === ARC_OBSERVE_TYPE || obsType === FLAT_OBSERVE_TYPE))
-        Map(TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP -> StandardGuideOptions.Value.freeze)
-      else
-        Map.empty[ItemKey, AnyRef]
-  ).getOrElse(Map.empty[ItemKey, AnyRef])
+  val oiCalWiper: ConfigWiper = cfg =>
+    (
+      for {
+        obsType <- cfg.extractObsAs[String](OBSERVE_TYPE_PROP)
+        oiGuide <- cfg.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_OIWFS_PROP)
+      } yield
+        if (oiGuide.isActive && (obsType === ARC_OBSERVE_TYPE || obsType === FLAT_OBSERVE_TYPE))
+          Map(TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP -> StandardGuideOptions.Value.freeze)
+        else
+          Map.empty[ItemKey, AnyRef]
+    ).getOrElse(Map.empty[ItemKey, AnyRef])
 
   def createCleanConfig(config: Config, l: List[ConfigWiper]): CleanConfig =
     new CleanConfig(config, l.map(_(config)).reduce(_ ++ _))

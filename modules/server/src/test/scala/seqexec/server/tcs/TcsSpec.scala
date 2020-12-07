@@ -5,12 +5,12 @@ package seqexec.server.tcs
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import monocle.law.discipline.PrismTests
 
 /**
-  * Tests Tcs typeclasses
-  */
+ * Tests Tcs typeclasses
+ */
 final class TcsSpec extends CatsSuite with TcsArbitraries {
   checkAll("Eq[BinaryYesNo]", EqTests[BinaryYesNo].eqv)
   checkAll("Eq[BinaryOnOff]", EqTests[BinaryOnOff].eqv)

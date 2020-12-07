@@ -10,12 +10,12 @@ import java.time.ZoneId
 class TimeZonesSpec extends AnyFlatSpec with Matchers {
   "TimeZones" should
     "include Santiago" in {
-      ZoneId.of("America/Santiago") should not be(null)
+      ZoneId.of("America/Santiago") should not be null
     }
-    it should "include UTC" in {
-      ZoneId.of("UTC") should not be(null)
-    }
-    it should "include Honolulu" in {
-      ZoneId.of("Pacific/Honolulu") should not be(null)
-    }
+  it should "include UTC" in {
+    ZoneId.of("UTC") should not be null
+  }
+  it should "include Honolulu" in {
+    ZoneId.of("Pacific/Honolulu") should not be null
+  }
 }

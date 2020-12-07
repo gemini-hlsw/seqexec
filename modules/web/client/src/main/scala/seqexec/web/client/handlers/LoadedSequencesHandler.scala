@@ -20,29 +20,32 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.services.SeqexecWebClient
 
 /**
-  * Handles updates to the selected sequences set
-  */
+ * Handles updates to the selected sequences set
+ */
 class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, SODLocationFocus] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(LoadSequenceUpdated(i, sid, view, cid)) =>
       // Update selected and the page
-      val upSelected = if (value.clientId.exists(_ === cid)) {
+      val upSelected    = if (value.clientId.exists(_ === cid)) {
         // if I requested the load also focus on it
         SODLocationFocus.sod.modify(
           _.updateFromQueue(view)
             .loadingComplete(sid, i)
             .unsetPreviewOn(sid)
-            .focusOnSequence(i, sid))
+            .focusOnSequence(i, sid)
+        )
       } else {
         SODLocationFocus.sod.modify(
-          _.updateFromQueue(view).loadingComplete(sid, i).unsetPreviewOn(sid))
+          _.updateFromQueue(view).loadingComplete(sid, i).unsetPreviewOn(sid)
+        )
       }
       val nextStepToRun =
         view.sessionQueue.find(_.id === sid).foldMap(_.nextStepToRun)
-      val upLocation = SODLocationFocus.location.set(
-        SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
+      val upLocation    = SODLocationFocus.location.set(
+        SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply))
+      )
       updatedL(upSelected >>> upLocation)
 
     case ServerMessage(SequenceCompleted(sv)) =>
@@ -50,8 +53,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
       sv.sessionQueue
         .find(_.status === SequenceState.Completed)
         .map { k =>
-          updatedL(
-            SODLocationFocus.sod.modify(_.markCompleted(k).updateFromQueue(sv)))
+          updatedL(SODLocationFocus.sod.modify(_.markCompleted(k).updateFromQueue(sv)))
         }
         .getOrElse {
           noChange
@@ -62,14 +64,15 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
 
     case LoadSequence(observer, i, id) =>
       val loadSequence = value.clientId
-        .map(
-          cid =>
-            Effect(
-              SeqexecWebClient
-                .loadSequence(i, id, observer, cid)
-                .as(NoAction)))
+        .map(cid =>
+          Effect(
+            SeqexecWebClient
+              .loadSequence(i, id, observer, cid)
+              .as(NoAction)
+          )
+        )
         .getOrElse(VoidEffect)
-      val update = SODLocationFocus.sod.modify(_.markAsLoading(id))
+      val update       = SODLocationFocus.sod.modify(_.markAsLoading(id))
       updatedLE(update, loadSequence)
   }
 }

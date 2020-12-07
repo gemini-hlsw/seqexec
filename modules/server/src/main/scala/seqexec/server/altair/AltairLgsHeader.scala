@@ -13,7 +13,10 @@ import seqexec.server.keywords._
 
 object AltairLgsHeader {
 
-  def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F], altairReader: AltairKeywordReader[F]): Header[F] =
+  def header[F[_]: Sync: Logger](
+    kwClient:     KeywordsClient[F],
+    altairReader: AltairKeywordReader[F]
+  ): Header[F] =
     new Header[F] {
 
       override def sendAfter(id: ImageFileId): F[Unit] =

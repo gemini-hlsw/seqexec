@@ -362,16 +362,15 @@ object LogArea {
               GridColumn(width = Ten)(
                 Form(
                   FormGroup(clazz = SeqexecStyles.selectorFields)(
-                    s.selectedLevels.toTagMod {
-                      case (l, s) =>
-                        FormField(inline = true)(
-                          Checkbox(
-                            label = l.show,
-                            checked = s,
-                            onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
-                              (onLevelChange(b, l)(p.checked.getOrElse(false)))
-                          )
+                    s.selectedLevels.toTagMod { case (l, s) =>
+                      FormField(inline = true)(
+                        Checkbox(
+                          label = l.show,
+                          checked = s,
+                          onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
+                            (onLevelChange(b, l)(p.checked.getOrElse(false)))
                         )
+                      )
                     }
                   )
                 )

@@ -13,11 +13,12 @@ import shapeless.tag
 final case class NSSubexposure private (
   totalCycles: NsCycles, // Total amount of cycles for a N&S step
   cycle:       NsCycles, // Cycle for this sub exposure
-  stageIndex:  Int,      // Nod or stage index (between 0 and 3)
+  stageIndex:  Int, // Nod or stage index (between 0 and 3)
   stage:       NodAndShuffleStage // Subexposure stage
 ) {
   val firstSubexposure: Boolean = (cycle: Int) === 0 && stageIndex === 0
-  val lastSubexposure: Boolean  = (cycle: Int) === (totalCycles: Int) - 1 && stageIndex === NsSequence.length - 1
+  val lastSubexposure: Boolean  =
+    (cycle: Int) === (totalCycles: Int) - 1 && stageIndex === NsSequence.length - 1
 }
 
 object NSSubexposure {
@@ -32,8 +33,14 @@ object NSSubexposure {
     cycle:       NsCycles,
     stageIndex:  Int
   ): Option[NSSubexposure] =
-    if (totalCycles >= 0 && cycle >= 0 && cycle <= totalCycles && stageIndex >= 0 && stageIndex < NsSequence.length) {
-      NSSubexposure(totalCycles, cycle, stageIndex, NsSequence.toList.lift(stageIndex).getOrElse(StageA)).some
+    if (
+      totalCycles >= 0 && cycle >= 0 && cycle <= totalCycles && stageIndex >= 0 && stageIndex < NsSequence.length
+    ) {
+      NSSubexposure(totalCycles,
+                    cycle,
+                    stageIndex,
+                    NsSequence.toList.lift(stageIndex).getOrElse(StageA)
+      ).some
     } else none
 
   // Calculate the subexposures
@@ -43,6 +50,9 @@ object NSSubexposure {
     (for {
       i <- 0 until totalCycles
       j <- 0 until NsSequence.length
-    } yield NSSubexposure(tag[NsCyclesI][Int](totalCycles), tag[NsCyclesI][Int](i), j)).toList.flatten
+    } yield NSSubexposure(tag[NsCyclesI][Int](totalCycles),
+                          tag[NsCyclesI][Int](i),
+                          j
+    )).toList.flatten
 
 }

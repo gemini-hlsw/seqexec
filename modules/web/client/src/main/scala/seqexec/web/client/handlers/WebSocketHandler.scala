@@ -35,8 +35,8 @@ import seqexec.web.client.model._
 import typings.loglevel.mod.{ ^ => logger }
 
 /**
-  * Handles the WebSocket connection and performs reconnection if needed
-  */
+ * Handles the WebSocket connection and performs reconnection if needed
+ */
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketConnection]
@@ -46,42 +46,43 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
 
   // Makes a websocket connection and setups event listeners
   def webSocket: Future[Action] = Future[Action] {
-    val host = document.location.host
+    val host     = document.location.host
     val protocol = document.location.protocol.startsWith("https").fold("wss", "ws")
-    val url = s"$protocol://$host/api/seqexec/events"
-    val ws = new WebSocket(url)
+    val url      = s"$protocol://$host/api/seqexec/events"
+    val ws       = new WebSocket(url)
 
     def onOpen(): Unit = {
       logger.info(s"Connected to $url")
       SeqexecCircuit.dispatch(Connected(ws, 0))
     }
 
-    def onMessage(e: MessageEvent): Unit = {
+    def onMessage(e: MessageEvent): Unit =
       e.data match {
         case buffer: ArrayBuffer =>
           val byteBuffer = TypedArrayBuffer.wrap(buffer)
           Either.catchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-            case Right(event: ServerLogMessage) =>
+            case Right(event: ServerLogMessage)         =>
               SeqexecCircuit.dispatch(AppendToLog(event))
             case Right(event: ObservationProgressEvent) =>
               SeqexecCircuit.dispatch(ServerMessage(event))
-            case Right(event)                   =>
+            case Right(event)                           =>
               logger.info(s"Decoding event: ${event.getClass}")
               SeqexecCircuit.dispatch(ServerMessage(event))
-            case Left(t)                       =>
+            case Left(t)                                =>
               logger.warn(s"Error decoding event ${t.getMessage}")
           }
         case _                   =>
           ()
       }
-    }
 
     def onError(): Unit = logger.error("Error on websocket")
 
     def onClose(): Unit =
       // Increase the delay to get exponential backoff with a minimum of 1s and a max of 1m
       if (value.autoReconnect) {
-        SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(1000, value.nextAttempt * 2))))
+        SeqexecCircuit.dispatch(
+          ConnectionRetry(math.min(60000, math.max(1000, value.nextAttempt * 2)))
+        )
       }
 
     ws.binaryType = "arraybuffer"
@@ -90,8 +91,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     ws.onerror = _ => onError()
     ws.onclose = _ => onClose()
     Connecting
-  }.recover {
-    case _: Throwable => NoAction
+  }.recover { case _: Throwable =>
+    NoAction
   }
 
   def connectHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -100,38 +101,46 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
 
     case Reconnect =>
       // Capture the WS, or it maybe invalid during the Future
-      val ws = value.ws
-      val closeCurrent = Effect(
-        Future(ws.foreach(_.close())).as(NoAction))
-      val reConnect = Effect(webSocket)
-      updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeCurrent >> reConnect)
+      val ws           = value.ws
+      val closeCurrent = Effect(Future(ws.foreach(_.close())).as(NoAction))
+      val reConnect    = Effect(webSocket)
+      updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false),
+              closeCurrent >> reConnect
+      )
   }
 
-  def connectingHandler: PartialFunction[Any, ActionResult[M]] = {
-    case Connecting =>
-      noChange
+  def connectingHandler: PartialFunction[Any, ActionResult[M]] = { case Connecting =>
+    noChange
   }
 
-  def connectedCloseHandler: PartialFunction[Any, ActionResult[M]] = {
-    case WSClose =>
-      // Forcefully close the websocket as requested when reloading the code via HMR
-      val ws = value.ws
-      val closeEffect = Effect(Future(ws.foreach(_.close())).as(NoAction))
-      // clear the timer
-      val timerEffect = Effect(Future(value.pingInterval.foreach(clearInterval(_))).as(NoAction))
-      updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false, None), closeEffect + timerEffect)
+  def connectedCloseHandler: PartialFunction[Any, ActionResult[M]] = { case WSClose =>
+    // Forcefully close the websocket as requested when reloading the code via HMR
+    val ws          = value.ws
+    val closeEffect = Effect(Future(ws.foreach(_.close())).as(NoAction))
+    // clear the timer
+    val timerEffect = Effect(Future(value.pingInterval.foreach(clearInterval(_))).as(NoAction))
+    updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false, None),
+            closeEffect + timerEffect
+    )
   }
 
-  def connectedHandler: PartialFunction[Any, ActionResult[M]] = {
-    case Connected(ws, delay) =>
-      // setup a timer to ping every 5 min and detect if the session has expired
-      val handle = setInterval(5.minutes)(SeqexecCircuit.dispatch(VerifyLoggedStatus))
-      updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true, Some(handle)))
+  def connectedHandler: PartialFunction[Any, ActionResult[M]] = { case Connected(ws, delay) =>
+    // setup a timer to ping every 5 min and detect if the session has expired
+    val handle = setInterval(5.minutes)(SeqexecCircuit.dispatch(VerifyLoggedStatus))
+    updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true, Some(handle)))
   }
 
-  def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
-    case ConnectionError(_) =>
-      effectOnly(Effect.action(AppendToLog(ServerLogMessage(ServerLogLevel.ERROR, Instant.now, "Error connecting to the seqexec server"))))
+  def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = { case ConnectionError(_) =>
+    effectOnly(
+      Effect.action(
+        AppendToLog(
+          ServerLogMessage(ServerLogLevel.ERROR,
+                           Instant.now,
+                           "Error connecting to the seqexec server"
+          )
+        )
+      )
+    )
   }
 
   def connectionClosedHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -149,5 +158,6 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
          connectedHandler,
          connectionErrorHandler,
          connectedCloseHandler,
-         connectionClosedHandler).combineAll
+         connectionClosedHandler
+    ).combineAll
 }

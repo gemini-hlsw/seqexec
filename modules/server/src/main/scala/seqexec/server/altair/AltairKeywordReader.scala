@@ -80,7 +80,7 @@ trait AltairKeywordReaderLUT {
 object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
   def apply[F[_]: Sync](sys: AltairEpics[F]): AltairKeywordReader[F] = new AltairKeywordReader[F] {
 
-    override def aofreq: F[Double] =
+    override def aofreq: F[Double]   =
       sys.aoexpt
         .map(1.0 / _.toDouble)
         .safeValOrDefault
@@ -93,7 +93,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
     override def aogain: F[Double]   = sys.aogain.safeValOrDefault
     override def aoncpa: F[String]   = sys.aoncpa.safeValOrDefault
     override def ngndfilt: F[String] = sys.ngndfilt.safeValOrDefault
-    override def astar: F[String] =
+    override def astar: F[String]    =
       sys.astar.safeValOrDefault.map(AOFlensKeywordLUT.getOrElse(_, "OUT"))
     override def aoflex: F[String]   = sys.aoflex.safeValOrDefault
     override def lgustage: F[String] = sys.lgustage.safeValOrDefault
@@ -107,9 +107,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         apd2 <- sys.apd2
         apd3 <- sys.apd3
         apd4 <- sys.apd4
-      } yield
-        (apd1 + apd2 + apd3 + apd4).toDouble
-    ).safeValOrDefault
+      } yield (apd1 + apd2 + apd3 + apd4).toDouble).safeValOrDefault
     override def lgttexp: F[Int]     = sys.lgttexp.safeValOrDefault
     override def lgsfcnts: F[Double] = sys.lgsfcnts.safeValOrDefault
     override def lgsfexp: F[Double]  = sys.lgsfexp.safeValOrDefault
@@ -120,7 +118,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
       val modela: Double = 210.0
       val modelb: Double = 1.01
       val f: Double      = 128.0
-      val r = for {
+      val r              = for {
         roofO <- sys.lgzmpos
         zaO   <- sys.aoza
       } yield {

@@ -9,15 +9,18 @@ import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
 
 /**
-  * Authentication service for testing with a hardcoded list of users
-  * It lets you avoid the LDAP dependency but should not be used in production
-  */
+ * Authentication service for testing with a hardcoded list of users
+ * It lets you avoid the LDAP dependency but should not be used in production
+ */
 class TestAuthenticationService[F[_]: Applicative] extends AuthService[F] {
   private val cannedUsers = List(UserDetails("telops", "Telops") -> "pwd")
 
-  override def authenticateUser(username: String, password: String): F[AuthResult] = {
-    cannedUsers.collectFirst {
-      case (ud@UserDetails(u, _), p) if u === username && p === password => ud
-    }.fold(BadCredentials(username).asLeft[UserDetails])(_.asRight)
-  }.pure[F].widen[AuthResult]
+  override def authenticateUser(username: String, password: String): F[AuthResult] =
+    cannedUsers
+      .collectFirst {
+        case (ud @ UserDetails(u, _), p) if u === username && p === password => ud
+      }
+      .fold(BadCredentials(username).asLeft[UserDetails])(_.asRight)
+      .pure[F]
+      .widen[AuthResult]
 }

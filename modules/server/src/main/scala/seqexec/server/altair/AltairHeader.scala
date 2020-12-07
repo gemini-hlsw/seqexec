@@ -15,9 +15,11 @@ import seqexec.server.tcs.CRFollow
 import seqexec.server.tcs.TcsKeywordsReader
 
 object AltairHeader {
-  def header[F[_]: Sync: Logger](kwClient:  KeywordsClient[F],
-                         altairReader:      AltairKeywordReader[F],
-                         tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
+  def header[F[_]: Sync: Logger](
+    kwClient:          KeywordsClient[F],
+    altairReader:      AltairKeywordReader[F],
+    tcsKeywordsReader: TcsKeywordsReader[F]
+  ): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(
@@ -32,9 +34,10 @@ object AltairHeader {
             buildDouble(altairReader.aowfsz, KeywordName.AOWFSZ),
             buildDouble(altairReader.aogain, KeywordName.AOGAIN),
             buildString(altairReader.aoncpa, KeywordName.AONCPAF),
-            buildString(tcsKeywordsReader.crFollow.map(
-                           _.map(CRFollow.keywordValue).getOrElse("INDEF")),
-                         KeywordName.CRFOLLOW),
+            buildString(
+              tcsKeywordsReader.crFollow.map(_.map(CRFollow.keywordValue).getOrElse("INDEF")),
+              KeywordName.CRFOLLOW
+            ),
             buildString(altairReader.ngndfilt, KeywordName.AONDFILT),
             buildString(altairReader.astar, KeywordName.AOFLENS),
             buildString(altairReader.aoflex, KeywordName.AOFLEXF),

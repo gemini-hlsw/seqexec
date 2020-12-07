@@ -11,15 +11,20 @@ import seqexec.server.altair.Altair
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
 
 class TcsNorthControllerDisabled[F[_]: Logger] extends TcsNorthController[F] {
-  override def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem], gaos: Option[Altair[F]], tc: TcsNorthConfig)
-  : F[Unit] =
+  override def applyConfig(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    gaos:       Option[Altair[F]],
+    tc:         TcsNorthConfig
+  ): F[Unit] =
     overrideLogMessage("TCS", "applyConfig")
 
   override def notifyObserveStart: F[Unit] = overrideLogMessage("TCS", "notifyObserveStart")
 
   override def notifyObserveEnd: F[Unit] = overrideLogMessage("TCS", "notifyObserveEnd")
 
-  override def nod(subsystems: NonEmptySet[TcsController.Subsystem], tcsConfig: TcsNorthConfig)
-                  (stage: NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean)
-  : F[Unit] = overrideLogMessage("TCS", s"nod(${stage.symbol})")
+  override def nod(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    tcsConfig:  TcsNorthConfig
+  )(stage:      NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean): F[Unit] =
+    overrideLogMessage("TCS", s"nod(${stage.symbol})")
 }

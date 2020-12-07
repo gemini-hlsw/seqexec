@@ -12,11 +12,11 @@ import cats.Applicative
 import cats.effect.Async
 import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
-import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
-import edu.gemini.seqexec.server.niri.{Camera => JCamera}
-import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
-import edu.gemini.seqexec.server.niri.{Mask => JMask}
+import edu.gemini.seqexec.server.niri.{ BeamSplitter => JBeamSplitter }
+import edu.gemini.seqexec.server.niri.{ BuiltInROI => JBuiltInROI }
+import edu.gemini.seqexec.server.niri.{ Camera => JCamera }
+import edu.gemini.seqexec.server.niri.{ Disperser => JDisperser }
+import edu.gemini.seqexec.server.niri.{ Mask => JMask }
 import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import edu.gemini.spModel.gemini.niri.Niri.Camera
@@ -39,13 +39,12 @@ import squants.time.TimeConversions._
 
 trait NiriEncoders {
 
-  implicit val focusEncoder: EncodeEpicsValue[Focus, String] = EncodeEpicsValue { _.getStringValue }
+  implicit val focusEncoder: EncodeEpicsValue[Focus, String] = EncodeEpicsValue(_.getStringValue)
 
   implicit val cameraEncoder: EncodeEpicsValue[Camera, JCamera] = EncodeEpicsValue {
-    case Camera.F6     => JCamera.F6
-    case Camera.F14    => JCamera.F14
-    case Camera.F32 |
-         Camera.F32_PV => JCamera.F32
+    case Camera.F6                  => JCamera.F6
+    case Camera.F14                 => JCamera.F14
+    case Camera.F32 | Camera.F32_PV => JCamera.F32
   }
 
   implicit val beamSplitterEncoder: EncodeEpicsValue[BeamSplitter, JBeamSplitter] =
@@ -96,23 +95,22 @@ trait NiriEncoders {
     case Filter.NBF_BRA          => "Br(alpha)"
   }
 
-  implicit val maskEncoder: EncodeEpicsValue[Mask, JMask] = EncodeEpicsValue{
-    case Mask.MASK_IMAGING => JMask.Imaging
-    case Mask.MASK_1       => JMask.F6_2Pix_Center
-    case Mask.MASK_2       => JMask.F6_4Pix_Center
-    case Mask.MASK_3       => JMask.F6_6Pix_Center
-    case Mask.MASK_4       => JMask.F6_2Pix_Blue
-    case Mask.MASK_5       => JMask.F6_4Pix_Blue
-    case Mask.MASK_6       => JMask.F6_6Pix_Blue
-    case Mask.MASK_7 |
-         Mask.MASK_8       => JMask.Polarimetry
-    case Mask.MASK_9       => JMask.F32_4Pix_Center
-    case Mask.MASK_10      => JMask.F32_7Pix_Center
-    case Mask.MASK_11      => JMask.F6_2Pix_Center // f/32 10pix and f/6 2pix use the same mask
-    case Mask.PINHOLE_MASK => JMask.PinHole
+  implicit val maskEncoder: EncodeEpicsValue[Mask, JMask] = EncodeEpicsValue {
+    case Mask.MASK_IMAGING         => JMask.Imaging
+    case Mask.MASK_1               => JMask.F6_2Pix_Center
+    case Mask.MASK_2               => JMask.F6_4Pix_Center
+    case Mask.MASK_3               => JMask.F6_6Pix_Center
+    case Mask.MASK_4               => JMask.F6_2Pix_Blue
+    case Mask.MASK_5               => JMask.F6_4Pix_Blue
+    case Mask.MASK_6               => JMask.F6_6Pix_Blue
+    case Mask.MASK_7 | Mask.MASK_8 => JMask.Polarimetry
+    case Mask.MASK_9               => JMask.F32_4Pix_Center
+    case Mask.MASK_10              => JMask.F32_7Pix_Center
+    case Mask.MASK_11              => JMask.F6_2Pix_Center // f/32 10pix and f/6 2pix use the same mask
+    case Mask.PINHOLE_MASK         => JMask.PinHole
   }
 
-  implicit val disperserEncoder: EncodeEpicsValue[Disperser, JDisperser] = EncodeEpicsValue{
+  implicit val disperserEncoder: EncodeEpicsValue[Disperser, JDisperser] = EncodeEpicsValue {
     case Disperser.NONE      => JDisperser.None
     case Disperser.J         => JDisperser.J
     case Disperser.H         => JDisperser.H
@@ -125,7 +123,7 @@ trait NiriEncoders {
     case Disperser.K_F32     => JDisperser.F32_K
   }
 
-  implicit val builtinRoiEncoder: EncodeEpicsValue[BuiltInROI, JBuiltInROI] = EncodeEpicsValue{
+  implicit val builtinRoiEncoder: EncodeEpicsValue[BuiltInROI, JBuiltInROI] = EncodeEpicsValue {
     case BuiltinROI.FULL_FRAME    => JBuiltInROI.FullFrame
     case BuiltinROI.CENTRAL_768   => JBuiltInROI.Central768
     case BuiltinROI.CENTRAL_512   => JBuiltInROI.Central512
@@ -138,14 +136,17 @@ trait NiriEncoders {
 object NiriControllerEpics extends NiriEncoders {
   import EpicsCodex._
 
-  val WindowOpen = "open"
+  val WindowOpen   = "open"
   val WindowClosed = "closed"
 
-  private val ConfigTimeout: FiniteDuration = FiniteDuration(180, SECONDS)
+  private val ConfigTimeout: FiniteDuration  = FiniteDuration(180, SECONDS)
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
-  def apply[F[_]: Timer: Async](epicsSys: => NiriEpics[F])(implicit L: Logger[F]): NiriController[F] =
-      new NiriController[F] {
+  def apply[F[_]: Timer: Async](
+    epicsSys:   => NiriEpics[F]
+  )(implicit L: Logger[F]): NiriController[F] =
+    new NiriController[F] {
+
       /**
        * The instrument has three filter wheels with a status channel for each one. But it does not have
        * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
@@ -155,7 +156,7 @@ object NiriControllerEpics extends NiriEncoders {
         val filter1 = epicsSys.filter1
         val filter2 = epicsSys.filter2
         val filter3 = epicsSys.filter3
-        val Open = "open"
+        val Open    = "open"
 
         for {
           iof1 <- filter1
@@ -163,7 +164,7 @@ object NiriControllerEpics extends NiriEncoders {
           iof3 <- filter3
         } yield {
           val l = List(iof1, iof2, iof3).filterNot(_ === Open)
-          if(l.length === 1) l.headOption
+          if (l.length === 1) l.headOption
           else none
         }.map(removePartName)
       }
@@ -180,8 +181,10 @@ object NiriControllerEpics extends NiriEncoders {
 
       private def setBeamSplitter(b: BeamSplitter): F[Option[F[Unit]]] = {
         val encoded = encode(b)
-        smartSetParamF(encoded.toString, epicsSys.beamSplitter,
-          epicsSys.configCmd.setBeamSplitter(encoded))
+        smartSetParamF(encoded.toString,
+                       epicsSys.beamSplitter,
+                       epicsSys.configCmd.setBeamSplitter(encoded)
+        )
       }
 
       private def setFilter(f: Filter): F[Option[F[Unit]]] = {
@@ -210,28 +213,24 @@ object NiriControllerEpics extends NiriEncoders {
       }
 
       private def configCommonCC(cfg: Common): List[F[Option[F[Unit]]]] =
-        List(
-          setBeamSplitter(cfg.beamSplitter),
-          setCamera(cfg.camera),
-          setDisperser(cfg.disperser).wrapped,
-          setFocus(cfg.focus),
-          setMask(cfg.mask))
+        List(setBeamSplitter(cfg.beamSplitter),
+             setCamera(cfg.camera),
+             setDisperser(cfg.disperser).wrapped,
+             setFocus(cfg.focus),
+             setMask(cfg.mask)
+        )
 
       private def configDarkCC(cfg: Dark): List[F[Option[F[Unit]]]] =
-        List(
-          setWindowCover(WindowClosed),
-          setBlankFilter) ++
+        List(setWindowCover(WindowClosed), setBlankFilter) ++
           configCommonCC(cfg.common)
 
       private def configCC(cfg: CCConfig): List[F[Option[F[Unit]]]] = cfg match {
-        case d@Dark(_)           => configDarkCC(d)
-        case i@Illuminated(_, _) => configIlluminatedCC(i)
+        case d @ Dark(_)           => configDarkCC(d)
+        case i @ Illuminated(_, _) => configIlluminatedCC(i)
       }
 
       private def configIlluminatedCC(cfg: Illuminated): List[F[Option[F[Unit]]]] =
-        List(
-          setWindowCover(WindowOpen),
-          setFilter(cfg.filter)) ++
+        List(setWindowCover(WindowOpen), setFilter(cfg.filter)) ++
           configCommonCC(cfg.common)
 
       private def setWindowCover(pos: String): F[Option[F[Unit]]] =
@@ -239,17 +238,19 @@ object NiriControllerEpics extends NiriEncoders {
 
       private def setExposureTime(t: ExposureTime): F[Option[F[Unit]]] = {
         val ExposureTimeTolerance = 0.001
-        smartSetDoubleParamF[F](ExposureTimeTolerance)(t.toSeconds, epicsSys.integrationTime,
+        smartSetDoubleParamF[F](ExposureTimeTolerance)(
+          t.toSeconds,
+          epicsSys.integrationTime,
           epicsSys.configCmd.setExposureTime(t.toSeconds)
         )
       }
 
       private def configDC(cfg: DCConfig): List[F[Option[F[Unit]]]] =
-        List(
-          setExposureTime(cfg.exposureTime),
-            setCoadds(cfg.coadds),
-            setReadMode(cfg.readMode).wrapped,
-            setROI(cfg.builtInROI).wrapped)
+        List(setExposureTime(cfg.exposureTime),
+             setCoadds(cfg.coadds),
+             setReadMode(cfg.readMode).wrapped,
+             setROI(cfg.builtInROI).wrapped
+        )
 
       private def setCoadds(n: Coadds): F[Option[F[Unit]]] =
         smartSetParamF(n, epicsSys.coadds, epicsSys.configCmd.setCoadds(n))
@@ -265,9 +266,9 @@ object NiriControllerEpics extends NiriEncoders {
       private def setReadMode(rm: ReadMode): F[Unit] =
         epicsSys.configCmd.setReadMode(rm)
 
-      private def calcObserveTimeout(cfg: DCConfig): F[FiniteDuration] = {
+      private def calcObserveTimeout(cfg: DCConfig): F[FiniteDuration] =
         epicsSys.minIntegration.map { t =>
-          val MinIntTime = t.seconds
+          val MinIntTime    = t.seconds
           val CoaddOverhead = 2.5
           val TotalOverhead = 30.seconds
 
@@ -276,7 +277,6 @@ object NiriControllerEpics extends NiriEncoders {
             MILLISECONDS
           )
         }
-      }
 
       private def actOnDHSNotConected(act: F[Unit]): F[Unit] =
         epicsSys.dhsConnected.ifM(Applicative[F].unit, act)
@@ -285,10 +285,14 @@ object NiriControllerEpics extends NiriEncoders {
         epicsSys.arrayActive.ifM(Applicative[F].unit, act)
 
       private def failOnDHSNotConected: F[Unit] =
-        actOnDHSNotConected(SeqexecFailure.Execution("NIRI is not connected to DHS").raiseError[F, Unit])
+        actOnDHSNotConected(
+          SeqexecFailure.Execution("NIRI is not connected to DHS").raiseError[F, Unit]
+        )
 
       private def failOnArrayNotActive: F[Unit] =
-        actOnArrayNotActive(SeqexecFailure.Execution("NIRI detector array is not active").raiseError[F, Unit])
+        actOnArrayNotActive(
+          SeqexecFailure.Execution("NIRI detector array is not active").raiseError[F, Unit]
+        )
 
       private def warnOnDHSNotConected: F[Unit] =
         actOnDHSNotConected(L.warn("NIRI is not connected to DHS"))
@@ -298,18 +302,20 @@ object NiriControllerEpics extends NiriEncoders {
 
       override def applyConfig(config: NiriController.NiriConfig): F[Unit] = {
         val paramsDC = configDC(config.dc)
-        val params =  paramsDC ++ configCC(config.cc)
+        val params   = paramsDC ++ configCC(config.cc)
 
         val cfgActions1 = executeIfNeeded(
-                            params,
-                            epicsSys.configCmd.post(ConfigTimeout)
-                          )
+          params,
+          epicsSys.configCmd.post(ConfigTimeout)
+        )
         // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
         // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
         // in the IS, trigger the IS apply, and then trigger the DC apply.
-        val cfgActions = if(paramsDC.isEmpty) cfgActions1
-                         else cfgActions1 *>
-                           epicsSys.configDCCmd.post(DefaultTimeout).void
+        val cfgActions  =
+          if (paramsDC.isEmpty) cfgActions1
+          else
+            cfgActions1 *>
+              epicsSys.configDCCmd.post(DefaultTimeout).void
 
         L.debug("Starting NIRI configuration") *>
           warnOnDHSNotConected *>
@@ -323,7 +329,9 @@ object NiriControllerEpics extends NiriEncoders {
           failOnDHSNotConected *>
           failOnArrayNotActive *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.post(_).flatTap{ _ => L.debug("Completed NIRI observe") })
+          calcObserveTimeout(cfg).flatMap(epicsSys.observeCmd.post(_).flatTap { _ =>
+            L.debug("Completed NIRI observe")
+          })
 
       override def endObserve: F[Unit] =
         L.debug("Skipped sending endObserve to NIRI")
@@ -339,8 +347,12 @@ object NiriControllerEpics extends NiriEncoders {
           epicsSys.abortCmd.post(DefaultTimeout).void
 
       override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-        ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
-          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+        ProgressUtil.obsCountdownWithObsStage[F](
+          total,
+          0.seconds,
+          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(
+            ObserveStage.fromBooleans
+          )
         )
 
       override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
@@ -350,5 +362,5 @@ object NiriControllerEpics extends NiriEncoders {
           (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
         }
 
-  }
+    }
 }

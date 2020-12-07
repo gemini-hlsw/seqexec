@@ -3,14 +3,14 @@
 
 package seqexec.server
 
-import java.lang.{Double => JDouble}
-import java.lang.{Float => JFloat}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Float => JFloat }
+import java.lang.{ Integer => JInt }
 import java.util
 import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
-import java.util.{Timer => JTimer}
+import java.util.{ Timer => JTimer }
 
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
@@ -47,17 +47,18 @@ abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
         ccs.postCallback {
           new CaCommandListener {
             override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
-            override def onPause(): Unit = f(ApplyCommandResult.Paused.asRight)
+            override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
             override def onFailure(cause: Exception): Unit = f(cause.asLeft)
           }
         }
       // It should call f on all execution paths, thanks @tpolecat
-      }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+      }.void
+        .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
     }
 
   override def mark: F[Unit] = Sync[F].delay {
-      cs.map(_.mark())
-    }.void
+    cs.map(_.mark())
+  }.void
 
   protected def setTimeout(t: FiniteDuration): F[Unit] =
     Sync[F].delay {
@@ -77,40 +78,53 @@ trait EpicsSystem[T] {
   private var instanceInternal = Option.empty[T]
 
   def instance[F[_]: Logger: Sync](service: CaService, tops: Map[String, String]): F[T] =
-    instanceInternal.map(_.pure[F])
+    instanceInternal
+      .map(_.pure[F])
       .getOrElse(init[F](service, tops))
 
-  def init[F[_]: Logger: Sync](service: CaService, tops: Map[String, String]): F[T] = {
+  def init[F[_]: Logger: Sync](service: CaService, tops: Map[String, String]): F[T] =
     MonadError[F, Throwable].catchNonFatal[Unit](
-      tops.foldLeft((new XMLBuilder).fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
-        .withCaService(service))((b, a) => b.withTop(a._1, a._2)).buildAll()
+      tops
+        .foldLeft(
+          (new XMLBuilder)
+            .fromStream(this.getClass.getResourceAsStream(CA_CONFIG_FILE))
+            .withCaService(service)
+        )((b, a) => b.withTop(a._1, a._2))
+        .buildAll()
     ) *>
-    (for {
-      r <- build[F](service, tops)
-      _ <- Sync[F].delay {
-        instanceInternal = r.some
-      }
-    } yield r
-    ).onError {
-      case c: Throwable =>
+      (for {
+        r <- build[F](service, tops)
+        _ <- Sync[F].delay {
+               instanceInternal = r.some
+             }
+      } yield r).onError { case c: Throwable =>
         Logger[F].warn(c)(s"$className: Problem initializing EPICS service: ${c.getMessage}")
-    }
-  }
+      }
 }
 
 object EpicsCommandBase {
 
-  def setParameter[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] = p.map { ch =>
-    Sync[F].delay {
-      ch.set(f(v))
-    }.adaptError {
-      case e => SeqexecFailure.Unexpected(
-        s"Unable to set parameter on channel ${ch.channel}. Error was ${e.getMessage}"
+  def setParameter[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] = p
+    .map { ch =>
+      Sync[F]
+        .delay {
+          ch.set(f(v))
+        }
+        .adaptError { case e =>
+          SeqexecFailure.Unexpected(
+            s"Unable to set parameter on channel ${ch.channel}. Error was ${e.getMessage}"
+          )
+        }
+        .void
+    }
+    .getOrElse {
+      Sync[F].raiseError(
+        SeqexecFailure.Unexpected("Attempt to write parameter to unconnected channel.")
       )
-    }.void
-  }.getOrElse{Sync[F].raiseError(SeqexecFailure.Unexpected("Attempt to write parameter to unconnected channel."))}
+    }
 
-  def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] = setParameter[F, T, T](p, v, x => x )
+  def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
+    setParameter[F, T, T](p, v, x => x)
 
 }
 
@@ -124,7 +138,7 @@ trait ObserveCommand {
         oos.postCallback {
           new CaCommandListener {
             override def onSuccess(): Unit = f(ObserveCommandResult.Success.asRight)
-            override def onPause(): Unit = f(ObserveCommandResult.Paused.asRight)
+            override def onPause(): Unit   = f(ObserveCommandResult.Paused.asRight)
             override def onFailure(cause: Exception): Unit = cause match {
               case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
               case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
@@ -132,7 +146,8 @@ trait ObserveCommand {
             }
           }
         }
-      }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+      }.void
+        .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
     }
 
   def mark[F[_]: Sync]: F[Unit] = Sync[F].delay {
@@ -152,7 +167,7 @@ object EpicsCodex {
   }
 
   object EncodeEpicsValue {
-    def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = (a: A) => f(a)
+    def apply[A, T](f:  A => T): EncodeEpicsValue[A, T]                        = (a: A) => f(a)
     def applyO[A, T](f: PartialFunction[A, T]): EncodeEpicsValue[A, Option[T]] = (a: A) => f.lift(a)
   }
 
@@ -175,21 +190,23 @@ object EpicsUtil {
   //`locked` gets a piece of code and runs it protected by `lock`
   private def locked[A](lock: ReentrantLock)(f: => A): A = {
     lock.lock()
-    try {
-      f
-    } finally {
-      lock.unlock()
-    }
+    try f
+    finally lock.unlock()
   }
 
-  def waitForValuesF[T, F[_]: Async](attr: CaAttribute[T], vv: Seq[T], timeout: FiniteDuration, name: String): F[T] =
+  def waitForValuesF[T, F[_]: Async](
+    attr:    CaAttribute[T],
+    vv:      Seq[T],
+    timeout: FiniteDuration,
+    name:    String
+  ): F[T] =
     Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
       //The task is created with async. So we do whatever we need to do,
       // and then call `f` to signal the completion of the task.
 
       //`resultGuard` and `lock` are used for synchronization.
       val resultGuard = new AtomicInteger(1)
-      val lock = new ReentrantLock()
+      val lock        = new ReentrantLock()
 
       // First we verify that the attribute doesn't already have the required value.
       // NOTE: It was possible to lose a change to the right value if it happened between here and the line that
@@ -202,10 +219,12 @@ object EpicsUtil {
         // channel. The timer and the listener can both complete the IO. The
         // first one to do it cancels the other.The use of `resultGuard`
         // guarantees that only one of them will complete the IO.
-        val timer = new JTimer
+        val timer          = new JTimer
         val statusListener = new CaAttributeListener[T] {
-          override def onValueChange(newVals: util.List[T]): Unit = {
-            if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1) {
+          override def onValueChange(newVals: util.List[T]): Unit =
+            if (
+              !newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1
+            ) {
               locked(lock) {
                 attr.removeListener(this)
                 timer.cancel()
@@ -214,41 +233,52 @@ object EpicsUtil {
               // the `TrySeq`, but to the result of `IO`.
               f(newVals.get(0).asRight)
             }
-          }
 
           override def onValidityChange(newValidity: Boolean): Unit = {}
         }
 
         locked(lock) {
           if (timeout.toMillis > 0) {
-            timer.schedule(new TimerTask {
-              override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
-                locked(lock) {
-                  attr.removeListener(statusListener)
+            timer.schedule(
+              new TimerTask {
+                override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
+                  locked(lock) {
+                    attr.removeListener(statusListener)
+                  }
+                  f(SeqexecFailure.Timeout(name).asLeft)
                 }
-                f(SeqexecFailure.Timeout(name).asLeft)
-              }
-            }, timeout.toMillis)
+              },
+              timeout.toMillis
+            )
           }
           attr.addListener(statusListener)
         }
       }
     }
 
-  def waitForValueF[T, F[_]: Async](attr: CaAttribute[T], v: T, timeout: FiniteDuration, name: String): F[Unit] =
+  def waitForValueF[T, F[_]: Async](
+    attr:    CaAttribute[T],
+    v:       T,
+    timeout: FiniteDuration,
+    name:    String
+  ): F[Unit] =
     waitForValuesF[T, F](attr, List(v), timeout, name).void
 
   def safeAttribute[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[A]] =
     Sync[F].delay(Option(get.value))
 
-  /** Tries to read a value of type A from a channel
+  /**
+   * Tries to read a value of type A from a channel
    *  Null results are raised as error and other errors are captured
    */
   def safeAttributeWrapF[F[_]: Sync, A >: Null](channel: String, get: => A): F[A] =
-    Sync[F].delay(Option(get)) // Wrap the read on Option to do null check
-      .adaptError{ case e => SeqexecException(e)} // if we have e.g CAException wrap it
+    Sync[F]
+      .delay(Option(get))                           // Wrap the read on Option to do null check
+      .adaptError { case e => SeqexecException(e) } // if we have e.g CAException wrap it
       .ensure(NullEpicsError(channel))(_.isDefined) // equivalent to a null check
-      .map{_.orNull} // orNull lets us typecheck but it will never be used due to the `ensure` call above
+      .map {
+        _.orNull
+      }                                             // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
   def safeAttributeF[F[_]: Sync, A >: Null](get: => CaAttribute[A]): F[A] =
     safeAttributeWrapF(get.channel, get.value)
@@ -289,7 +319,9 @@ object EpicsUtil {
   def safeAttributeSListSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[List[Int]]] =
     Nested(safeAttributeList(get)).map(_.map(_.toInt)).value
 
-  def safeAttributeSListSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[List[Double]]] =
+  def safeAttributeSListSDouble[F[_]: Sync, A](
+    get: => CaAttribute[JDouble]
+  ): F[Option[List[Double]]] =
     Nested(safeAttributeList(get)).map(_.map(_.toDouble)).value
 
   def safeAttributeSListSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[List[Float]]] =
@@ -312,7 +344,7 @@ object EpicsUtil {
    * @param d Value to be set
    */
   private def areValuesDifferentEnough(t: Double, c: Double, d: Double): Boolean =
-    !(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d)/d) > t)
+    !(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d) / d) > t)
 
   /**
    * Decides to set a param comparing the current value and the value to be set with
@@ -324,7 +356,7 @@ object EpicsUtil {
    */
   def applyParamT[F[_]: Functor](
     relTolerance: Double
-  )(c: Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
+  )(c:            Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
     if (areValuesDifferentEnough(relTolerance, c, d)) {
       set(d).some
     } else {
@@ -333,8 +365,7 @@ object EpicsUtil {
 
   // This method takes a list of actions returning possible actions
   // If at least one is defined it will execute them and then executes `after`
-  def executeIfNeeded[F[_]: Monad, A](i:     List[F[Option[F[Unit]]]],
-                                              after: F[A]): F[Unit] =
+  def executeIfNeeded[F[_]: Monad, A](i: List[F[Option[F[Unit]]]], after: F[A]): F[Unit] =
     i.sequence.flatMap { l =>
       val act: List[F[Unit]] = l.mapFilter(identity)
       (act.sequence *> after).whenA(act.nonEmpty)
@@ -354,28 +385,38 @@ object EpicsUtil {
   def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: F[A], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(_ =!= v).map(_.option(set))
 
-  def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
+  def smartSetDoubleParamF[F[_]: Functor](
+    relTolerance: Double
+  )(v:            Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(areValuesDifferentEnough(relTolerance, _, v).option(set))
 
-  def defaultProgress[F[_]: Applicative](time: Time, remaining: RemainingTime, stage: ObserveStage): F[Progress] =
+  def defaultProgress[F[_]: Applicative](
+    time:      Time,
+    remaining: RemainingTime,
+    stage:     ObserveStage
+  ): F[Progress] =
     ObsProgress(time, remaining, stage).pure[F].widen[Progress]
 
   def countdown[F[_]: Monad: Timer](
-                                     total: Time,
-                                     rem: F[Time],
-                                     obsState: F[CarStateGeneric],
-                                     obsStage: F[ObserveStage],
-                                     p: (Time, RemainingTime, ObserveStage) => F[Progress]
-                                   ): Stream[F, Progress] =
-    ProgressUtil.fromFOption[F](_ =>
+    total:    Time,
+    rem:      F[Time],
+    obsState: F[CarStateGeneric],
+    obsStage: F[ObserveStage],
+    p:        (Time, RemainingTime, ObserveStage) => F[Progress]
+  ): Stream[F, Progress] =
+    ProgressUtil
+      .fromFOption[F](_ =>
         for {
           c <- rem
           s <- obsState
           v <- obsStage
-          r <- p(if(total>c) total else c, RemainingTime(c), v)
-        } yield if(s.isBusy) r.some else none
-    ).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
-      .takeThrough(x => x.remaining.self.value > 0.0 || x.stage === ObserveStage.Acquiring ) // drop all tailing zeros but the first one, unless it is still acquiring
+          r <- p(if (total > c) total else c, RemainingTime(c), v)
+        } yield if (s.isBusy) r.some else none
+      )
+      .dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      .takeThrough(x =>
+        x.remaining.self.value > 0.0 || x.stage === ObserveStage.Acquiring
+      ) // drop all tailing zeros but the first one, unless it is still acquiring
 
   // Component names read from instruments usually have a part name as suffix. For example, the
   // instrument may have had two K filters in its lifetime, one identified as K_G0804 and the

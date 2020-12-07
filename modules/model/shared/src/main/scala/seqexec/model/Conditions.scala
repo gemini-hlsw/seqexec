@@ -57,5 +57,4 @@ object Conditions {
   implicit val equalConditions: Eq[Conditions] =
     Eq.by(x => (x.cc, x.iq, x.sb, x.wv))
 
-
 }

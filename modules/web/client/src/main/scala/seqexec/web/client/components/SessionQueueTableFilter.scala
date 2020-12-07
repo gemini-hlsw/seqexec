@@ -19,8 +19,8 @@ import seqexec.web.client.model.ObsClass
 import seqexec.web.client.model.SessionQueueFilter
 
 /**
-  * Container for the queue table
-  */
+ * Container for the queue table
+ */
 object SessionQueueTableFilter {
   private val filterConnect =
     SeqexecCircuit.connect(SeqexecCircuit.sessionQueueFilterReader)
@@ -45,19 +45,22 @@ object SessionQueueTableFilter {
         filterConnect { f =>
           val filter = f()
           <.div(
-            Menu(icon     = MenuIcon.Icon,
+            Menu(icon = MenuIcon.Icon,
                  attached = MenuAttached.Attached,
-                 compact  = true,
-                 size     = Tiny,
-                 clazz    = SeqexecStyles.filterPane)(
-              Item(as    = "a",
-                   clazz = SeqexecStyles.filterActiveButton.when_(filter.dayTimeSelected))(
+                 compact = true,
+                 size = Tiny,
+                 clazz = SeqexecStyles.filterPane
+            )(
+              Item(as = "a",
+                   clazz = SeqexecStyles.filterActiveButton.when_(filter.dayTimeSelected)
+              )(
                 IconSun,
                 ^.onClick --> onlyDayTime,
                 " Daytime"
               ),
-              Item(as    = "a",
-                   clazz = SeqexecStyles.filterActiveButton.when_(filter.nightTimeSelected))(
+              Item(as = "a",
+                   clazz = SeqexecStyles.filterActiveButton.when_(filter.nightTimeSelected)
+              )(
                 IconMoon,
                 ^.onClick --> onlyNightTime,
                 " Nighttime"

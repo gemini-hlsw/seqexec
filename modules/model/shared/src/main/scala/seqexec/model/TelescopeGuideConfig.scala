@@ -9,9 +9,11 @@ import seqexec.model.enum.MountGuideOption
 
 /** Data type for guide config. */
 @Lenses
-final case class TelescopeGuideConfig(mountGuide: MountGuideOption,
-                                      m1Guide:    M1GuideConfig,
-                                      m2Guide:    M2GuideConfig)
+final case class TelescopeGuideConfig(
+  mountGuide: MountGuideOption,
+  m1Guide:    M1GuideConfig,
+  m2Guide:    M2GuideConfig
+)
 
 object TelescopeGuideConfig {
   implicit val eq: Eq[TelescopeGuideConfig] =

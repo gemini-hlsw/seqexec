@@ -14,8 +14,11 @@ import squants.space.Length
 trait AltairController[F[_]] {
   import AltairController._
 
-  def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet, fieldLens: FieldLens)(
-    cfg: AltairConfig): F[PauseResume[F]]
+  def pauseResume(
+    pauseReasons:  PauseConditionSet,
+    resumeReasons: ResumeConditionSet,
+    fieldLens:     FieldLens
+  )(cfg:           AltairConfig): F[PauseResume[F]]
 
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
 
@@ -39,7 +42,7 @@ object AltairController {
   implicit val ngsEq: Eq[Ngs] = Eq.by(_.blend)
   implicit val lgsEq: Eq[Lgs] = Eq.by(x => (x.strap, x.sfo))
 
-  implicit val eq: Eq[AltairConfig] = Eq.instance{
+  implicit val eq: Eq[AltairConfig] = Eq.instance {
     case (AltairOff, AltairOff) => true
     case (a: Lgs, b: Lgs)       => a === b
     case (a: Ngs, b: Ngs)       => a === b

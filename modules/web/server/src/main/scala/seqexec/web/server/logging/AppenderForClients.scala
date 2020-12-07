@@ -27,7 +27,7 @@ class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILog
 
   override def append(event: ILoggingEvent): Unit = {
     // Convert to a seqexec model to send to clients
-    val level = event.getLevel match {
+    val level     = event.getLevel match {
       case Level.INFO  => ServerLogLevel.INFO.some
       case Level.WARN  => ServerLogLevel.WARN.some
       case Level.ERROR => ServerLogLevel.ERROR.some
@@ -37,6 +37,9 @@ class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILog
 
     // Send a message to the clients if level is INFO or higher
     // We are outside the normal execution loop, thus we need to call unsafePerformSync directly
-    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage))).unsafeRunSync()
+    level
+      .filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined))
+      .fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage)))
+      .unsafeRunSync()
   }
 }

@@ -10,11 +10,13 @@ import seqexec.model.Observation
 import seqexec.model.enum.BatchExecState
 
 @Lenses
-final case class ExecutionQueueView(id:        QueueId,
-                                    name:      String,
-                                    cmdState:  BatchCommandState,
-                                    execState: BatchExecState,
-                                    queue:     List[Observation.Id]) {
+final case class ExecutionQueueView(
+  id:        QueueId,
+  name:      String,
+  cmdState:  BatchCommandState,
+  execState: BatchExecState,
+  queue:     List[Observation.Id]
+) {
   val observer: Option[Observer] = cmdState match {
     case BatchCommandState.Run(o, _, _) => o.some
     case _                              => none

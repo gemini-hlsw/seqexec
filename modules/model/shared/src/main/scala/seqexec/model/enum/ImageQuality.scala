@@ -7,14 +7,15 @@ import cats.syntax.all._
 import lucuma.core.util.Enumerated
 
 sealed abstract class ImageQuality(val toInt: Option[Int], val label: String)
-  extends Product with Serializable
+    extends Product
+    with Serializable
 
 object ImageQuality {
 
-  case object Unknown   extends ImageQuality(none,     "Unknown")
-  case object Percent20 extends ImageQuality(20.some,  "20%/Best")
-  case object Percent70 extends ImageQuality(70.some,  "70%/Good")
-  case object Percent85 extends ImageQuality(85.some,  "85%/Poor")
+  case object Unknown   extends ImageQuality(none, "Unknown")
+  case object Percent20 extends ImageQuality(20.some, "20%/Best")
+  case object Percent70 extends ImageQuality(70.some, "70%/Good")
+  case object Percent85 extends ImageQuality(85.some, "85%/Poor")
   case object Any       extends ImageQuality(100.some, "Any")
 
   /** @group Typeclass Instances */

@@ -9,10 +9,10 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FPUnitSouth => FPU}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{FilterSouth => Filter}
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{StageModeSouth => StageMode}
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ DisperserSouth => Disperser }
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ FPUnitSouth => FPU }
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ FilterSouth => Filter }
+import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ StageModeSouth => StageMode }
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.Beam
@@ -21,7 +21,7 @@ import seqexec.server.gmos.GmosController.southConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
 
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
-  override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue{
+  override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue {
     case Disperser.MIRROR      => "mirror"
     case Disperser.B1200_G5321 => "B1200+_G5321"
     case Disperser.R831_G5322  => "R831+_G5322"
@@ -32,34 +32,35 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Disperser.B480_G5327  => "B480+_G5327"
   }
 
-  override val fpu: EncodeEpicsValue[SouthTypes#FPU, (Option[String], Option[String])] = EncodeEpicsValue{ a => {
-    val r = a match {
-      case FPU.FPU_NONE    => (none, Beam.OutOfBeam.some)
-      case FPU.LONGSLIT_1  => ("0.25arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_2  => ("0.5arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_3  => ("0.75arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_4  => ("1.0arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_5  => ("1.5arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_6  => ("2.0arcsec".some, Beam.InBeam.some)
-      case FPU.LONGSLIT_7  => ("5.0arcsec".some, Beam.InBeam.some)
-      case FPU.IFU_1       => ("IFU-2".some, Beam.InBeam.some)
-      case FPU.IFU_2       => ("IFU-B".some, Beam.InBeam.some)
-      case FPU.IFU_3       => ("IFU-R".some, Beam.InBeam.some)
-      case FPU.BHROS       => (none, none)
-      case FPU.IFU_N       => ("IFU-NS-2".some, Beam.InBeam.some)
-      case FPU.IFU_N_B     => ("IFU-NS-B".some, Beam.InBeam.some)
-      case FPU.IFU_N_R     => ("IFU-NS-R".some, Beam.InBeam.some)
-      case FPU.NS_1        => ("NS0.5arcsec".some, Beam.InBeam.some)
-      case FPU.NS_2        => ("NS0.75arcsec".some, Beam.InBeam.some)
-      case FPU.NS_3        => ("NS1.0arcsec".some, Beam.InBeam.some)
-      case FPU.NS_4        => ("NS1.5arcsec".some, Beam.InBeam.some)
-      case FPU.NS_5        => ("NS2.0arcsec".some, Beam.InBeam.some)
-      case FPU.CUSTOM_MASK => (none, none)
+  override val fpu: EncodeEpicsValue[SouthTypes#FPU, (Option[String], Option[String])] =
+    EncodeEpicsValue { a =>
+      val r = a match {
+        case FPU.FPU_NONE    => (none, Beam.OutOfBeam.some)
+        case FPU.LONGSLIT_1  => ("0.25arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_2  => ("0.5arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_3  => ("0.75arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_4  => ("1.0arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_5  => ("1.5arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_6  => ("2.0arcsec".some, Beam.InBeam.some)
+        case FPU.LONGSLIT_7  => ("5.0arcsec".some, Beam.InBeam.some)
+        case FPU.IFU_1       => ("IFU-2".some, Beam.InBeam.some)
+        case FPU.IFU_2       => ("IFU-B".some, Beam.InBeam.some)
+        case FPU.IFU_3       => ("IFU-R".some, Beam.InBeam.some)
+        case FPU.BHROS       => (none, none)
+        case FPU.IFU_N       => ("IFU-NS-2".some, Beam.InBeam.some)
+        case FPU.IFU_N_B     => ("IFU-NS-B".some, Beam.InBeam.some)
+        case FPU.IFU_N_R     => ("IFU-NS-R".some, Beam.InBeam.some)
+        case FPU.NS_1        => ("NS0.5arcsec".some, Beam.InBeam.some)
+        case FPU.NS_2        => ("NS0.75arcsec".some, Beam.InBeam.some)
+        case FPU.NS_3        => ("NS1.0arcsec".some, Beam.InBeam.some)
+        case FPU.NS_4        => ("NS1.5arcsec".some, Beam.InBeam.some)
+        case FPU.NS_5        => ("NS2.0arcsec".some, Beam.InBeam.some)
+        case FPU.CUSTOM_MASK => (none, none)
+      }
+      (r._1, r._2.map(GmosControllerEpics.beamEncoder.encode))
     }
-    (r._1, r._2.map(GmosControllerEpics.beamEncoder.encode))
-  } }
 
-  override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)] = EncodeEpicsValue{
+  override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)] = EncodeEpicsValue {
     case Filter.Z_G0343                 => ("Z_G0343", "open2-8")
     case Filter.Y_G0344                 => ("Y_G0344", "open2-8")
     case Filter.HeII_G0340              => ("HeII_G0340", "open2-8")
@@ -101,14 +102,18 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   }
 
   override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {
-    case BuiltinROI.FULL_FRAME       => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
+    case BuiltinROI.FULL_FRAME       =>
+      ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
     case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)
-    case BuiltinROI.CENTRAL_SPECTRUM => ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
-    case BuiltinROI.CENTRAL_STAMP    => ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
+    case BuiltinROI.CENTRAL_SPECTRUM =>
+      ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1625, ySize = 1024)
+    case BuiltinROI.CENTRAL_STAMP    =>
+      ROIValues.fromInt(xStart = 2923, xSize = 300, yStart = 1987, ySize = 300)
     case _                           => None
   }
 
-  override val autoGain: EncodeEpicsValue[(GmosCommonType.AmpReadMode, GmosCommonType.AmpGain), Int] = {
+  override val autoGain
+    : EncodeEpicsValue[(GmosCommonType.AmpReadMode, GmosCommonType.AmpGain), Int] = {
     // gmosAutoGain.lut
     case (AmpReadMode.SLOW, AmpGain.LOW)  => 0
     case (AmpReadMode.SLOW, AmpGain.HIGH) => 0

@@ -35,25 +35,23 @@ sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 
   def observingMode(mode: String): F[CommandResult]
 
-  def ifsConfigure(integrationTime: Double,
-                   coAdds:          Int,
-                   readoutMode:     Int): F[CommandResult]
+  def ifsConfigure(integrationTime: Double, coAdds: Int, readoutMode: Int): F[CommandResult]
 
   def alignAndCalib: F[CommandResult]
 
   def statusDb: GiapiStatusDb[F]
 }
 
-
 object GpiClient {
   val ALIGN_AND_CALIB_DEFAULT_MODE: Int = 4
 
   /**
-    * Client for GPI
-    */
-  final private class GpiClientImpl[F[_]](override val giapi: Giapi[F],
-                                          val statusDb:       GiapiStatusDb[F])
-      extends GpiClient[F] {
+   * Client for GPI
+   */
+  final private class GpiClientImpl[F[_]](
+    override val giapi: Giapi[F],
+    val statusDb:       GiapiStatusDb[F]
+  ) extends GpiClient[F] {
     import GiapiClient.DefaultCommandTimeout
     // Align and Calib is fairly variable in duration. it can take a long time and still succeed
     // The 6 minutes timeout is based on current practice but if the system is very miss aligned
@@ -84,15 +82,14 @@ object GpiClient {
     ////////////////////////
 
     // TODO Use OCS constants for open/close
-    private def shutter(shutterName: String,
-                        position: Boolean): F[CommandResult] =
-      giapi.command(
-        Command(
-          SequenceCommand.APPLY,
-          Activity.PRESET_START,
-          Configuration.single(s"gpi:selectShutter.$shutterName",
-                               position.fold(1, 0))
-        ), DefaultCommandTimeout)
+    private def shutter(shutterName: String, position: Boolean): F[CommandResult] =
+      giapi.command(Command(
+                      SequenceCommand.APPLY,
+                      Activity.PRESET_START,
+                      Configuration.single(s"gpi:selectShutter.$shutterName", position.fold(1, 0))
+                    ),
+                    DefaultCommandTimeout
+      )
 
     def entranceShutter(position: Boolean): F[CommandResult] =
       shutter("entranceShutter", position)
@@ -110,40 +107,39 @@ object GpiClient {
       shutter("calScienceShutter", position)
 
     def alignAndCalib: F[CommandResult] =
-      giapi.command(
-        Command(
-          SequenceCommand.APPLY,
-          Activity.PRESET_START,
-          Configuration.single("gpi:alignAndCalib.part1", ALIGN_AND_CALIB_DEFAULT_MODE)
-        ), ACCommandTimeout)
+      giapi.command(Command(
+                      SequenceCommand.APPLY,
+                      Activity.PRESET_START,
+                      Configuration.single("gpi:alignAndCalib.part1", ALIGN_AND_CALIB_DEFAULT_MODE)
+                    ),
+                    ACCommandTimeout
+      )
 
     // TODO Use OCS constants
     def observingMode(mode: String): F[CommandResult] =
-      giapi.command(
-        Command(SequenceCommand.APPLY,
-                Activity.PRESET_START,
-                Configuration.single("gpi:observationMode.mode", mode)),
-        DefaultCommandTimeout)
+      giapi.command(Command(SequenceCommand.APPLY,
+                            Activity.PRESET_START,
+                            Configuration.single("gpi:observationMode.mode", mode)
+                    ),
+                    DefaultCommandTimeout
+      )
 
     def ifsFilter(filter: String): F[CommandResult] =
-      giapi.command(
-        Command(
-          SequenceCommand.APPLY,
-          Activity.PRESET_START,
-          Configuration.single("gpi:ifs:selectIfsFilter.maskStr", filter)
-        ),
-        DefaultCommandTimeout)
+      giapi.command(Command(
+                      SequenceCommand.APPLY,
+                      Activity.PRESET_START,
+                      Configuration.single("gpi:ifs:selectIfsFilter.maskStr", filter)
+                    ),
+                    DefaultCommandTimeout
+      )
 
-    def ifsConfigure(integrationTime: Double,
-                     coAdds:          Int,
-                     readoutMode:     Int): F[CommandResult] =
+    def ifsConfigure(integrationTime: Double, coAdds: Int, readoutMode: Int): F[CommandResult] =
       giapi.command(
         Command(
           SequenceCommand.APPLY,
           Activity.PRESET_START,
           List(
-            Configuration.single("gpi:configIfs.integrationTime",
-                                 integrationTime),
+            Configuration.single("gpi:configIfs.integrationTime", integrationTime),
             Configuration.single("gpi:configIfs.numCoadds", coAdds),
             Configuration.single("gpi:configIfs.readoutMode", readoutMode)
           ).combineAll
@@ -153,14 +149,19 @@ object GpiClient {
   }
 
   // Used for simulations
-  def simulatedGpiClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]: Resource[F, GpiClient[F]] =
+  def simulatedGpiClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]
+    : Resource[F, GpiClient[F]] =
     Resource.liftF(
-      Giapi.simulatedGiapiConnection[F].connect.map(new GpiClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
+      Giapi
+        .simulatedGiapiConnection[F]
+        .connect
+        .map(new GpiClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
   def gpiClient[F[_]: Timer: ConcurrentEffect](
     url:               String,
-    statusesToMonitor: List[String]): Resource[F, GpiClient[F]] = {
+    statusesToMonitor: List[String]
+  ): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi.giapiConnection[F](url).connect
@@ -172,7 +173,7 @@ object GpiClient {
           .newStatusDb[F](url, statusesToMonitor)
       )(_.close)
 
-    (giapi, db).mapN { new GpiClientImpl[F](_, _) }.widen[GpiClient[F]]
+    (giapi, db).mapN(new GpiClientImpl[F](_, _)).widen[GpiClient[F]]
   }
 
 }

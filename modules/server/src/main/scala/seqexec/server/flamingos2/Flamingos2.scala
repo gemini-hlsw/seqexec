@@ -3,7 +3,7 @@
 
 package seqexec.server.flamingos2
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.SECONDS
@@ -40,8 +40,9 @@ import squants.time.Time
 
 final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   f2Controller: Flamingos2Controller[F],
-  dhsClient: DhsClient[F]
-) extends DhsInstrument[F] with InstrumentSystem[F] {
+  dhsClient:    DhsClient[F]
+) extends DhsInstrument[F]
+    with InstrumentSystem[F] {
 
   import Flamingos2._
 
@@ -53,7 +54,8 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
+    InstrumentSystem.Uncontrollable
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult] =
@@ -61,10 +63,11 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
       calcObserveTime(config).flatMap { x =>
         f2Controller.observe(fileId, x)
       }
-  }
+    }
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(f2Controller.applyConfig)
       .as(ConfigResult(this))
@@ -76,10 +79,16 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     Sync[F].delay(
-      config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
-        .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360)))
+      config
+        .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+        .map(x => Seconds(x.toDouble))
+        .getOrElse(Seconds(360))
+    )
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] =
+  override def observeProgress(
+    total:   Time,
+    elapsed: InstrumentSystem.ElapsedTime
+  ): Stream[F, Progress] =
     f2Controller.observeProgress(total)
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
@@ -119,15 +128,17 @@ object Flamingos2 {
     val a = FPU_PROP
     val b = FPU_MASK_PROP
 
-    config.extractInstAs[FPUnit](a).flatMap(x =>
-      if(x =!= FPUnit.CUSTOM_MASK) fpuFromFPUnit(x).asRight
-      else config.extractInstAs[String](b).map(FocalPlaneUnit.Custom)
-    )
+    config
+      .extractInstAs[FPUnit](a)
+      .flatMap(x =>
+        if (x =!= FPUnit.CUSTOM_MASK) fpuFromFPUnit(x).asRight
+        else config.extractInstAs[String](b).map(FocalPlaneUnit.Custom)
+      )
   }
 
   def windowCoverFromObserveType(observeType: String): WindowCover = observeType match {
-    case DARK_OBSERVE_TYPE    => WindowCover.CLOSE
-    case _                    => WindowCover.OPEN
+    case DARK_OBSERVE_TYPE => WindowCover.CLOSE
+    case _                 => WindowCover.OPEN
   }
 
   implicit def grismFromSPDisperser(d: Disperser): Grism = d match {
@@ -137,36 +148,41 @@ object Flamingos2 {
     case Disperser.R3000   => Grism.R3000
   }
 
-  private def disperserFromObserveType(observeType: String, d: Disperser): Grism = observeType match {
-    case DARK_OBSERVE_TYPE    => Grism.Dark
-    case _                    => d
-  }
+  private def disperserFromObserveType(observeType: String, d: Disperser): Grism =
+    observeType match {
+      case DARK_OBSERVE_TYPE => Grism.Dark
+      case _                 => d
+    }
 
   // This method deals with engineering parameters that can come as a T or an Option[T]
-  private def extractEngineeringParam[T](item: Extracted[CleanConfig], default: T)(
-    implicit clazz: ClassTag[T]): Either[ExtractFailure, T] = item.as[T].recoverWith {
-      case _:ConfigUtilOps.KeyNotFound     => Right(default)
-      case _:ConfigUtilOps.ConversionError => item.as[edu.gemini.shared.util.immutable.Option[T]]
-                                                .map(_.getOrElse(default))
-    }
+  private def extractEngineeringParam[T](item: Extracted[CleanConfig], default: T)(implicit
+    clazz:                                     ClassTag[T]
+  ): Either[ExtractFailure, T] = item.as[T].recoverWith {
+    case _: ConfigUtilOps.KeyNotFound     => Right(default)
+    case _: ConfigUtilOps.ConversionError =>
+      item
+        .as[edu.gemini.shared.util.immutable.Option[T]]
+        .map(_.getOrElse(default))
+  }
 
   def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] =
     (for {
       obsType <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       // WINDOW_COVER_PROP is optional. It can be a WindowCover, an Option[WindowCover], or not be present. If no
       // value is given, then window cover position is inferred from observe type.
-      p <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP),
-             windowCoverFromObserveType(obsType)
-           )
-      q <- config.extractInstAs[Decker](DECKER_PROP)
-      r <- fpuConfig(config)
-      f <- config.extractInstAs[Filter](FILTER_PROP)
-      s <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
-           else f.asRight
-      t <- config.extractInstAs[LyotWheel](LYOT_WHEEL_PROP)
-      u <- config.extractInstAs[Disperser](DISPERSER_PROP).map(disperserFromObserveType(obsType, _))
-    } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected
-    (ConfigUtilOps.explain(e)))
+      p       <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP),
+                                         windowCoverFromObserveType(obsType)
+                 )
+      q       <- config.extractInstAs[Decker](DECKER_PROP)
+      r       <- fpuConfig(config)
+      f       <- config.extractInstAs[Filter](FILTER_PROP)
+      s       <- if (f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
+                 else f.asRight
+      t       <- config.extractInstAs[LyotWheel](LYOT_WHEEL_PROP)
+      u       <- config.extractInstAs[Disperser](DISPERSER_PROP).map(disperserFromObserveType(obsType, _))
+    } yield CCConfig(p, q, r, s, t, u)).leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
+    )
 
   def dcConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] =
     (for {
@@ -175,21 +191,25 @@ object Flamingos2 {
       a <- config.extractInstAs[ReadMode](READMODE_PROP).map(readsFromReadMode)
       q <- extractEngineeringParam(config.extract(OBSERVE_KEY / READS_PROP), a)
       // Readout mode defaults to SCIENCE if not present.
-      r <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP), ReadoutMode.SCIENCE)
+      r <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP),
+                                   ReadoutMode.SCIENCE
+           )
       s <- config.extractInstAs[Decker](DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): Either[SeqexecFailure, Flamingos2Config] = for {
-      p <- ccConfigFromSequenceConfig(config)
-      q <- dcConfigFromSequenceConfig(config)
-    } yield Flamingos2Config(p, q)
+  def fromSequenceConfig[F[_]: Sync](
+    config: CleanConfig
+  ): Either[SeqexecFailure, Flamingos2Config] = for {
+    p <- ccConfigFromSequenceConfig(config)
+    q <- dcConfigFromSequenceConfig(config)
+  } yield Flamingos2Config(p, q)
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.F2
 
     // TODO Use different value if using electronic offsets
     override val oiOffsetGuideThreshold: Option[Length] =
-      (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+      (Arcseconds(0.01) / FOCAL_PLANE_SCALE).some
 
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2
 

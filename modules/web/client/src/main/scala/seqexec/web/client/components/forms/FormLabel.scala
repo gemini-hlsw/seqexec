@@ -9,7 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import react.common.ReactPropsWithChildren
 
 final case class FormLabel(
-  text: String,
+  text:    String,
   htmlFor: Option[String]
 ) extends ReactPropsWithChildren[FormLabel](FormLabel.component)
 
@@ -18,7 +18,8 @@ object FormLabel {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  protected val component = ScalaComponent.builder[Props]("FormLabel")
+  protected val component = ScalaComponent
+    .builder[Props]("FormLabel")
     .stateless
     .renderPC((_, p, c) =>
       <.label(

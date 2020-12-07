@@ -18,9 +18,9 @@ import seqexec.server.tcs.TcsController.LightSource._
 // put them inside an object
 private[server] trait ScienceFoldPositionCodex {
 
-  private val AO_PREFIX = "ao2"
+  private val AO_PREFIX   = "ao2"
   private val GCAL_PREFIX = "gcal2"
-  private val PARK_POS = "park-pos"
+  private val PARK_POS    = "park-pos"
 
   val lightSink: Parser[LightSinkName] = LightSinkName.all.foldMap(x => string(x.name).as(x))
 
@@ -30,19 +30,23 @@ private[server] trait ScienceFoldPositionCodex {
   val park: Parser[ScienceFold] =
     (string(PARK_POS) <~ many(anyChar)).as(Parked)
 
-  implicit val decodeScienceFold: DecodeEpicsValue[String, Option[ScienceFold]] = DecodeEpicsValue(
-    (t: String) =>
-      (park | prefixed(AO_PREFIX, AO) | prefixed(GCAL_PREFIX, GCAL) | prefixed("", Sky)).parseOnly(t).option  )
+  implicit val decodeScienceFold: DecodeEpicsValue[String, Option[ScienceFold]] =
+    DecodeEpicsValue((t: String) =>
+      (park | prefixed(AO_PREFIX, AO) | prefixed(GCAL_PREFIX, GCAL) | prefixed("", Sky))
+        .parseOnly(t)
+        .option
+    )
 
-  implicit val encodeScienceFold: EncodeEpicsValue[Position, String] = EncodeEpicsValue((a: Position) => {
-    val instAGName = a.sink.name + a.port.toString
+  implicit val encodeScienceFold: EncodeEpicsValue[Position, String] = EncodeEpicsValue {
+    (a: Position) =>
+      val instAGName = a.sink.name + a.port.toString
 
-    a.source match {
-      case Sky  => instAGName
-      case AO   => AO_PREFIX + instAGName
-      case GCAL => GCAL_PREFIX + instAGName
-    }
-  })
+      a.source match {
+        case Sky  => instAGName
+        case AO   => AO_PREFIX + instAGName
+        case GCAL => GCAL_PREFIX + instAGName
+      }
+  }
 
 }
 

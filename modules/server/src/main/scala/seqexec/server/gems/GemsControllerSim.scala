@@ -22,22 +22,22 @@ import seqexec.server.tcs.Gaos.ResumeConditionSet
 object GemsControllerSim {
   def apply[F[_]: Applicative](implicit L: Logger[F]): GemsController[F] =
     new GemsController[F] {
-      override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)
-                              (cfg: GemsConfig)
-      : F[PauseResume[F]] =
+      override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
+        cfg:                                 GemsConfig
+      ): F[PauseResume[F]] =
         PauseResume(
           L.info(s"Simulate pausing GeMS loops because of $pauseReasons").some,
           L.info(s"Simulate restoring GeMS configuration $cfg because of $resumeReasons").some
         ).pure[F]
 
       override val stateGetter: Gems.GemsWfsState[F] = GemsWfsState[F](
-        (Cwfs1DetectorState.Off:Cwfs1DetectorState).pure[F],
-        (Cwfs2DetectorState.Off:Cwfs2DetectorState).pure[F],
-        (Cwfs3DetectorState.Off:Cwfs3DetectorState).pure[F],
-        (Odgw1DetectorState.Off:Odgw1DetectorState).pure[F],
-        (Odgw2DetectorState.Off:Odgw2DetectorState).pure[F],
-        (Odgw3DetectorState.Off:Odgw3DetectorState).pure[F],
-        (Odgw4DetectorState.Off:Odgw4DetectorState).pure[F]
+        (Cwfs1DetectorState.Off: Cwfs1DetectorState).pure[F],
+        (Cwfs2DetectorState.Off: Cwfs2DetectorState).pure[F],
+        (Cwfs3DetectorState.Off: Cwfs3DetectorState).pure[F],
+        (Odgw1DetectorState.Off: Odgw1DetectorState).pure[F],
+        (Odgw2DetectorState.Off: Odgw2DetectorState).pure[F],
+        (Odgw3DetectorState.Off: Odgw3DetectorState).pure[F],
+        (Odgw4DetectorState.Off: Odgw4DetectorState).pure[F]
       )
     }
 }

@@ -22,8 +22,7 @@ object NifsControllerSim {
     InstrumentControllerSim[F](s"NIFS").map { sim =>
       new NifsController[F] {
 
-        override def observe(fileId: ImageFileId,
-                             cfg:    DCConfig): F[ObserveCommandResult] =
+        override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
           sim.observe(fileId, calcTotalExposureTime(cfg))
 
         override def applyConfig(config: NifsConfig): F[Unit] =

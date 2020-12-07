@@ -9,7 +9,7 @@ import _root_.boopickle.Default.Unpickle
 import cats.laws._
 import cats.laws.discipline._
 import cats.kernel.Eq
-import org.scalacheck.{Arbitrary, Prop, Shrink}
+import org.scalacheck.{ Arbitrary, Prop, Shrink }
 import org.typelevel.discipline.Laws
 
 package boopickle {
@@ -33,16 +33,14 @@ package boopickle {
   trait PicklerTests[A] extends Laws {
     def laws: PicklerLaws[A]
 
-    def pickler(implicit
-                arbitraryA: Arbitrary[A],
-                shrinkA: Shrink[A],
-                eqA: Eq[A]): RuleSet = new DefaultRuleSet(
-      name = "codec",
-      parent = None,
-      "roundTrip" -> Prop.forAll { (a: A) =>
-        laws.picklerRoundTrip(a)
-      }
-    )
+    def pickler(implicit arbitraryA: Arbitrary[A], shrinkA: Shrink[A], eqA: Eq[A]): RuleSet =
+      new DefaultRuleSet(
+        name = "codec",
+        parent = None,
+        "roundTrip" -> Prop.forAll { (a: A) =>
+          laws.picklerRoundTrip(a)
+        }
+      )
   }
 
   object PicklerTests {

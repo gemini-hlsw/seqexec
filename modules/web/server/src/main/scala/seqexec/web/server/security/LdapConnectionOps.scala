@@ -28,9 +28,9 @@ object LdapConnectionOps {
 
     def displayName(uid: UID): DisplayName = {
       val dn = for {
-          a <- attributes(uid, List("displayName")).get("displayName")
-          d <- a.headOption
-        } yield d
+        a <- attributes(uid, List("displayName")).get("displayName")
+        d <- a.headOption
+      } yield d
       dn.getOrElse("-")
     }
 
@@ -38,12 +38,12 @@ object LdapConnectionOps {
       val attrs = attributes(uid, List("displayName", "memberOf", "thumbnailPhoto"))
 
       val dn = for {
-          a <- attrs.get("displayName")
-          d <- a.headOption
-        } yield d
+        a <- attrs.get("displayName")
+        d <- a.headOption
+      } yield d
 
       // Read the groups
-      val gr = attrs.getOrElse("memberOf", Nil)
+      val gr     = attrs.getOrElse("memberOf", Nil)
       val groups = gr.map { g =>
         val grDN = new DN(g)
         for {
@@ -54,21 +54,20 @@ object LdapConnectionOps {
 
       // Read the thumbnail if possible
       val thBytes = for {
-          ph <- attrs.get("thumbnailPhoto")
-          th <- ph.headOption
-        } yield th.getBytes
+        ph <- attrs.get("thumbnailPhoto")
+        th <- ph.headOption
+      } yield th.getBytes
 
       (dn.getOrElse("-"), groups.flatten.flatten, thBytes)
     }
 
     // Search for a user and find attributes. All attributes are String in LDAP
     private def attributes(uid: UID, attributes: List[String]): Map[String, List[String]] = {
-      def readAttr(e: SearchResultEntry)(attr: String): Option[(String, List[String])] = {
+      def readAttr(e: SearchResultEntry)(attr: String): Option[(String, List[String])] =
         for {
           a <- Option(e.getAttribute(attr))
           d <- Option(a.getValues.toList)
         } yield attr -> d
-      }
 
       val baseDN = c.getRootDSE.getAttributeValue("namingContexts")
       val filter = Filter.createANDFilter(
@@ -77,7 +76,7 @@ object LdapConnectionOps {
       )
 
       //val attributes = List("displayName", "memberOf", "thumbnailPhoto")
-      val search = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
+      val search       = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
       // Search to read user data, it may throw an exception
       val searchResult = c.search(search)
 

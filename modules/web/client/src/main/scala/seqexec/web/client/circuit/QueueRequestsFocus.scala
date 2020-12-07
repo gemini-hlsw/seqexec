@@ -27,7 +27,8 @@ final case class QueueRequestsFocus(
   sequences:      SequencesQueue[SequenceView],
   calTabObserver: Option[Observer],
   queuesObserver: SortedMap[QueueId, Observer],
-  seqFilter:      SessionQueueFilter)
+  seqFilter:      SessionQueueFilter
+)
 
 object QueueRequestsFocus {
   implicit val eq: Eq[QueueRequestsFocus] =
@@ -40,19 +41,19 @@ object QueueRequestsFocus {
     }: _*)
 
   val calTabObserverL: Optional[SeqexecAppRootModel, Observer] =
-    SeqexecAppRootModel.uiModel         ^|->
+    SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.sequencesOnDisplay ^|-?
       SequencesOnDisplay.calTabObserver
 
   // This lens is read only but a getter is not usable in diode
   val unsafeQueueRequestsFocusL: Lens[SeqexecAppRootModel, QueueRequestsFocus] =
-    Lens[SeqexecAppRootModel, QueueRequestsFocus](
-      m =>
-        QueueRequestsFocus(m.clientId,
-                           m.sequences,
-                           calTabObserverL.getOption(m),
-                           observers(m),
-                           SeqexecAppRootModel.sessionQueueFilterL.get(m)))(v =>
-      m => m.copy(clientId = v.clientId, sequences = v.sequences))
+    Lens[SeqexecAppRootModel, QueueRequestsFocus](m =>
+      QueueRequestsFocus(m.clientId,
+                         m.sequences,
+                         calTabObserverL.getOption(m),
+                         observers(m),
+                         SeqexecAppRootModel.sessionQueueFilterL.get(m)
+      )
+    )(v => m => m.copy(clientId = v.clientId, sequences = v.sequences))
 
 }

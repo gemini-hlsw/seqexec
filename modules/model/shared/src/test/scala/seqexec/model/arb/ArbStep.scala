@@ -22,7 +22,7 @@ trait ArbStep {
 
   implicit val stepCogen: Cogen[Step] =
     Cogen[Either[StandardStep, NodAndShuffleStep]].contramap {
-      case a: StandardStep => Left(a)
+      case a: StandardStep      => Left(a)
       case a: NodAndShuffleStep => Right(a)
     }
 }

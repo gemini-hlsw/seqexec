@@ -12,15 +12,9 @@ import lucuma.core.util.arb.ArbEnumerated
 
 trait KeywordArbitraries extends ArbEnumerated {
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {
-    Gen.oneOf(TypeInt8,
-              TypeInt16,
-              TypeInt32,
-              TypeFloat,
-              TypeDouble,
-              TypeBoolean,
-              TypeString)
+    Gen.oneOf(TypeInt8, TypeInt16, TypeInt32, TypeFloat, TypeDouble, TypeBoolean, TypeString)
   }
-  implicit val keywordTypeCogen: Cogen[KeywordType] =
+  implicit val keywordTypeCogen: Cogen[KeywordType]   =
     Cogen[String].contramap(_.productPrefix)
 
   implicit val internalKeywordArb: Arbitrary[InternalKeyword] = Arbitrary {
@@ -30,13 +24,12 @@ trait KeywordArbitraries extends ArbEnumerated {
       value <- Gen.listOfN(17, Gen.alphaChar)
     } yield InternalKeyword(name, kt, value.mkString)
   }
-  implicit val internalKeywordCogen: Cogen[InternalKeyword] =
-    Cogen[(KeywordName, KeywordType, String)].contramap(x =>
-      (x.name, x.keywordType, x.value))
+  implicit val internalKeywordCogen: Cogen[InternalKeyword]   =
+    Cogen[(KeywordName, KeywordType, String)].contramap(x => (x.name, x.keywordType, x.value))
 
   implicit val keywordBagArb: Arbitrary[KeywordBag] = Arbitrary {
     arbitrary[List[InternalKeyword]].map(KeywordBag.apply)
   }
-  implicit val keywordBagCogen: Cogen[KeywordBag] =
+  implicit val keywordBagCogen: Cogen[KeywordBag]   =
     Cogen[List[InternalKeyword]].contramap(_.keywords)
 }

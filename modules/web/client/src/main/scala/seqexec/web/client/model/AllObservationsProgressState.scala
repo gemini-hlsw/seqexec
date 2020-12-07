@@ -18,11 +18,12 @@ import seqexec.model.Progress
 import seqexec.model.StepId
 
 /**
-  * UI record of the remaining time for observations
-  */
+ * UI record of the remaining time for observations
+ */
 @Lenses
 final case class AllObservationsProgressState(
-  obsProgress: SortedMap[(Observation.Id, StepId), Progress])
+  obsProgress: SortedMap[(Observation.Id, StepId), Progress]
+)
 
 object AllObservationsProgressState {
   val Empty: AllObservationsProgressState =
@@ -32,9 +33,9 @@ object AllObservationsProgressState {
     Eq.by(_.obsProgress)
 
   def progressStateO[P <: Progress](
-    obsId:  Observation.Id,
-    stepId: StepId
-  )(implicit progressPrism: Prism[Progress, P]): Optional[SeqexecAppRootModel, P]  =
+    obsId:                  Observation.Id,
+    stepId:                 StepId
+  )(implicit progressPrism: Prism[Progress, P]): Optional[SeqexecAppRootModel, P] =
     SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.obsProgress ^|-?
       progressByIdO(obsId, stepId)
@@ -46,10 +47,9 @@ object AllObservationsProgressState {
     AllObservationsProgressState.obsProgress ^|-> at((obsId, stepId))
 
   def progressByIdO[P <: Progress](
-    obsId:  Observation.Id,
-    stepId: StepId
-  )(implicit progressPrism: Prism[Progress, P]): Optional[AllObservationsProgressState, P] = {
+    obsId:                  Observation.Id,
+    stepId:                 StepId
+  )(implicit progressPrism: Prism[Progress, P]): Optional[AllObservationsProgressState, P] =
     progressByIdL(obsId, stepId) ^<-? some ^<-? progressPrism
-  }
 
 }

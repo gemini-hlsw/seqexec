@@ -18,21 +18,21 @@ import seqexec.server.EpicsCodex.decode
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.NullEpicsError
 import seqexec.server.gems.Gems.Cwfs1DetectorState
-import seqexec.server.gems.Gems.Cwfs1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs1DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.Cwfs2DetectorState
-import seqexec.server.gems.Gems.Cwfs2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs2DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.Cwfs3DetectorState
-import seqexec.server.gems.Gems.Cwfs3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Cwfs3DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.DetectorStateOps
 import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.gems.Gems.Odgw1DetectorState
-import seqexec.server.gems.Gems.Odgw1DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw1DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.Odgw2DetectorState
-import seqexec.server.gems.Gems.Odgw2DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw2DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.Odgw3DetectorState
-import seqexec.server.gems.Gems.Odgw3DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw3DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.gems.Gems.Odgw4DetectorState
-import seqexec.server.gems.Gems.Odgw4DetectorState.{Off => _, On => _, _}
+import seqexec.server.gems.Gems.Odgw4DetectorState.{ Off => _, On => _, _ }
 import seqexec.server.tcs.GemsSource.Cwfs1
 import seqexec.server.tcs.GemsSource.Cwfs2
 import seqexec.server.tcs.GemsSource.Cwfs3
@@ -54,16 +54,20 @@ import squants.space.Millimeters
 sealed trait TcsConfigRetriever[F[_]] {
   def retrieveBaseConfiguration: F[BaseEpicsTcsConfig]
 
-  def retrieveConfigurationNorth(getAoFollow: F[Boolean]): F[TcsNorthControllerEpicsAo.EpicsTcsAoConfig]
+  def retrieveConfigurationNorth(
+    getAoFollow: F[Boolean]
+  ): F[TcsNorthControllerEpicsAo.EpicsTcsAoConfig]
 
-  def retrieveConfigurationSouth(gemsSt: GemsWfsState[F]): F[TcsSouthControllerEpicsAo.EpicsTcsAoConfig]
+  def retrieveConfigurationSouth(
+    gemsSt: GemsWfsState[F]
+  ): F[TcsSouthControllerEpicsAo.EpicsTcsAoConfig]
 }
 
 object TcsConfigRetriever {
-  private class TcsConfigRetrieverImpl[F[_]: MonadError[?[_], Throwable]](
-    epicsSys: TcsEpics[F]) extends TcsConfigRetriever[F]
-                           with    TcsConfigDecoders
-                           with    ScienceFoldPositionCodex {
+  private class TcsConfigRetrieverImpl[F[_]: MonadError[?[_], Throwable]](epicsSys: TcsEpics[F])
+      extends TcsConfigRetriever[F]
+      with TcsConfigDecoders
+      with ScienceFoldPositionCodex {
 
     private def getGuideConfig: F[TelescopeGuideConfig] = {
       for {
@@ -75,17 +79,32 @@ object TcsConfigRetriever {
         m2oiGuide  <- epicsSys.m2oiGuide.map(decodeGuideSourceOption)
         m2aoGuide  <- epicsSys.m2aoGuide.map(decodeGuideSourceOption)
         m2Coma     <- epicsSys.comaCorrect.map(decode[String, ComaOption])
-        m2Guide    <- epicsSys.m2GuideState.map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
-          (m2p2Guide, TipTiltSource.PWFS2), (m2oiGuide, TipTiltSource.OIWFS),
-          (m2aoGuide, TipTiltSource.GAOS)).foldLeft(Set.empty[TipTiltSource])((s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) => if (v._1) s + v._2 else s)))
+        m2Guide    <- epicsSys.m2GuideState.map(
+                        decodeM2Guide(
+                          _,
+                          m2Coma,
+                          List((m2p1Guide, TipTiltSource.PWFS1),
+                               (m2p2Guide, TipTiltSource.PWFS2),
+                               (m2oiGuide, TipTiltSource.OIWFS),
+                               (m2aoGuide, TipTiltSource.GAOS)
+                          ).foldLeft(Set.empty[TipTiltSource])(
+                            (s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) =>
+                              if (v._1) s + v._2 else s
+                          )
+                        )
+                      )
       } yield TelescopeGuideConfig(mountGuide, m1Guide, m2Guide)
-    }.adaptError{ case e => SeqexecFailure.Unexpected(s"Unable to read guide configuration from TCS: $e")}
+    }.adaptError { case e =>
+      SeqexecFailure.Unexpected(s"Unable to read guide configuration from TCS: $e")
+    }
 
     private def getAoFold: F[AoFold] = epicsSys.aoFoldPosition.map(decode[String, AoFold])
 
     private def decodeNodChopOption(s: Int): Boolean = s =!= 0
 
-    private def getNodChopTrackingConfig(g: TcsEpics.ProbeGuideConfig[F]): F[NodChopTrackingConfig] =
+    private def getNodChopTrackingConfig(
+      g: TcsEpics.ProbeGuideConfig[F]
+    ): F[NodChopTrackingConfig] =
       for {
         aa <- g.nodachopa.map(decodeNodChopOption)
         ab <- g.nodachopb.map(decodeNodChopOption)
@@ -97,10 +116,12 @@ object TcsConfigRetriever {
             NodChopTrackingConfig.Normal
           } else {
             List(
-              (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)),
-              (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B))
-            ) collect {
-              case (true, a) => a
+              (aa, NodChop(Beam.A, Beam.A)),
+              (ab, NodChop(Beam.A, Beam.B)),
+              (ba, NodChop(Beam.B, Beam.A)),
+              (bb, NodChop(Beam.B, Beam.B))
+            ).collect { case (true, a) =>
+              a
             } match {
               case h :: t => NodChopTrackingConfig.Special(OneAnd(h, t))
               case Nil    => NodChopTrackingConfig.AllOff
@@ -108,10 +129,13 @@ object TcsConfigRetriever {
           }
         } else NodChopTrackingConfig.AllOff
 
-    private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-      case (FollowOff, _)                            => ProbeTrackingConfig.Off
-      case (FollowOn, NodChopTrackingConfig.AllOff)  => ProbeTrackingConfig.Frozen
-      case (FollowOn, v:ActiveNodChopTracking)       => ProbeTrackingConfig.On(v)
+    private def calcProbeTrackingConfig(
+      f: FollowOption,
+      t: NodChopTrackingConfig
+    ): ProbeTrackingConfig = (f, t) match {
+      case (FollowOff, _)                           => ProbeTrackingConfig.Off
+      case (FollowOn, NodChopTrackingConfig.AllOff) => ProbeTrackingConfig.Frozen
+      case (FollowOn, v: ActiveNodChopTracking)     => ProbeTrackingConfig.On(v)
     }
 
     private def getPwfs1: F[GuiderConfig] = for {
@@ -119,7 +143,9 @@ object TcsConfigRetriever {
       trk <- getNodChopTrackingConfig(epicsSys.pwfs1ProbeGuideConfig)
       fol <- epicsSys.p1FollowS.map(decode[String, FollowOption])
       wfs <- epicsSys.pwfs1On.map(decode[BinaryYesNo, GuiderSensorOption])
-    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)),
+                         wfs
+    )
 
     private def getPwfs2: F[GuiderConfig] = for {
       prk   <- epicsSys.p2Parked
@@ -127,36 +153,48 @@ object TcsConfigRetriever {
       fol   <- epicsSys.p2FollowS.map(decode[String, FollowOption])
       wfs   <- epicsSys.pwfs2On.map(decode[BinaryYesNo, GuiderSensorOption])
       useAo <- getUseAo
-    } yield if(useAo) GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, NodChopTrackingConfig.AllOff)), wfs)
-            else GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+    } yield
+      if (useAo)
+        GuiderConfig(prk.fold(ProbeTrackingConfig.Parked,
+                              calcProbeTrackingConfig(fol, NodChopTrackingConfig.AllOff)
+                     ),
+                     wfs
+        )
+      else
+        GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
     private def getUseAo: F[Boolean] = epicsSys.useAo.map(_ === BinaryYesNo.Yes)
 
     private def getAowfs(getAoFollow: F[Boolean]): F[ProbeTrackingConfig] = for {
-      aoFol <- getAoFollow.map(if(_) FollowOn else FollowOff)
+      aoFol <- getAoFollow.map(if (_) FollowOn else FollowOff)
       trk   <- getNodChopTrackingConfig(epicsSys.pwfs2ProbeGuideConfig)
       useAo <- getUseAo
-    } yield if(useAo) calcProbeTrackingConfig(aoFol, trk)
-            else calcProbeTrackingConfig(aoFol, NodChopTrackingConfig.AllOff)
+    } yield
+      if (useAo) calcProbeTrackingConfig(aoFol, trk)
+      else calcProbeTrackingConfig(aoFol, NodChopTrackingConfig.AllOff)
 
     private def getOiwfs: F[GuiderConfig] = for {
       prk <- epicsSys.oiParked
       trk <- getNodChopTrackingConfig(epicsSys.oiwfsProbeGuideConfig)
       fol <- epicsSys.oiFollowS.map(decode[String, FollowOption])
       wfs <- epicsSys.oiwfsOn.map(decode[BinaryYesNo, GuiderSensorOption])
-    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)),
+                         wfs
+    )
 
     private def getScienceFoldPosition: F[Option[ScienceFold]] = for {
       sfPos    <- epicsSys.sfName
       sfParked <- epicsSys.sfParked.map(_ =!= 0)
-    } yield if (sfParked) ScienceFold.Parked.some
-            else decode[String, Option[ScienceFold]](sfPos)
+    } yield
+      if (sfParked) ScienceFold.Parked.some
+      else decode[String, Option[ScienceFold]](sfPos)
 
     private def getHrwfsPickupPosition: F[HrwfsPickupPosition] = for {
       hwPos    <- epicsSys.agHwName.map(decode[String, HrwfsPickupPosition])
       hwParked <- epicsSys.agHwParked.map(_ =!= 0)
-    } yield if (hwParked) HrwfsPickupPosition.Parked
-            else hwPos
+    } yield
+      if (hwParked) HrwfsPickupPosition.Parked
+      else hwPos
 
     private def getIAA: F[Angle] = epicsSys.instrAA.map(Degrees(_))
 
@@ -164,7 +202,8 @@ object TcsConfigRetriever {
 
     private def getOffsetY: F[Length] = epicsSys.yoffsetPoA1.map(Millimeters(_))
 
-    private def getWavelength: F[Wavelength] = epicsSys.sourceAWavelength.map(v => Wavelength(Angstroms(v)))
+    private def getWavelength: F[Wavelength] =
+      epicsSys.sourceAWavelength.map(v => Wavelength(Angstroms(v)))
 
     private def getGemsMap: F[Map[GemsSource, VirtualGemsTelescope]] = for {
       v1 <- epicsSys.g1MapName
@@ -176,14 +215,16 @@ object TcsConfigRetriever {
       v2 -> VirtualGemsTelescope.G2,
       v3 -> VirtualGemsTelescope.G3,
       v4 -> VirtualGemsTelescope.G4
-    ).mapFilter{ case (s, v) => s.map((_, v))}.toMap
+    ).mapFilter { case (s, v) => s.map((_, v)) }.toMap
 
-    private def getCwfs[T: DetectorStateOps: Eq](getFollow: F[Boolean])
-                                               (g: VirtualGemsTelescope, active: F[T])
-    : F[GuiderConfig] = for {
+    private def getCwfs[T: DetectorStateOps: Eq](
+      getFollow: F[Boolean]
+    )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
       trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
-      fol <- getFollow.map{if(_) FollowOption.FollowOn else FollowOption.FollowOff}
-      wfs <- active.map{x => if(DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff}
+      fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
+      wfs <- active.map { x =>
+               if (DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff
+             }
     } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
 
     private val getCwfs1: (VirtualGemsTelescope, F[Cwfs1DetectorState]) => F[GuiderConfig] =
@@ -195,14 +236,19 @@ object TcsConfigRetriever {
     private val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs1Follow)
 
-    private def getOdgw[T: DetectorStateOps: Eq](getParked: F[Boolean], getFollow: F[Boolean])
-                                            (g: VirtualGemsTelescope, active: F[T])
-    : F[GuiderConfig] = for {
+    private def getOdgw[T: DetectorStateOps: Eq](
+      getParked: F[Boolean],
+      getFollow: F[Boolean]
+    )(g:         VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
       prk <- getParked
       trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
-      fol <- getFollow.map{ if(_) FollowOption.FollowOn else FollowOption.FollowOff}
-      wfs <- active.map{x => if(DetectorStateOps.isActive[T](x)) GuiderSensorOn else GuiderSensorOff}
-    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
+      fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
+      wfs <- active.map { x =>
+               if (DetectorStateOps.isActive[T](x)) GuiderSensorOn else GuiderSensorOff
+             }
+    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)),
+                         wfs
+    )
 
     private val getOdgw1: (VirtualGemsTelescope, F[Odgw1DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw1Parked, epicsSys.odgw1Follow)
@@ -217,14 +263,14 @@ object TcsConfigRetriever {
       getOdgw(epicsSys.odgw4Parked, epicsSys.odgw4Follow)
 
     private def getInstrumentPorts: F[InstrumentPorts] = for {
-      f2    <- epicsSys.f2Port.recover{case NullEpicsError(_) => InvalidPort}
-      ghost <- epicsSys.ghostPort.recover{case NullEpicsError(_) => InvalidPort}
-      gmos  <- epicsSys.gmosPort.recover{case NullEpicsError(_) => InvalidPort}
-      gnirs <- epicsSys.gnirsPort.recover{case NullEpicsError(_) => InvalidPort}
-      gpi   <- epicsSys.gpiPort.recover{case NullEpicsError(_) => InvalidPort}
-      gsaoi <- epicsSys.gsaoiPort.recover{case NullEpicsError(_) => InvalidPort}
-      nifs  <- epicsSys.nifsPort.recover{case NullEpicsError(_) => InvalidPort}
-      niri  <- epicsSys.niriPort.recover{case NullEpicsError(_) => InvalidPort}
+      f2    <- epicsSys.f2Port.recover { case NullEpicsError(_) => InvalidPort }
+      ghost <- epicsSys.ghostPort.recover { case NullEpicsError(_) => InvalidPort }
+      gmos  <- epicsSys.gmosPort.recover { case NullEpicsError(_) => InvalidPort }
+      gnirs <- epicsSys.gnirsPort.recover { case NullEpicsError(_) => InvalidPort }
+      gpi   <- epicsSys.gpiPort.recover { case NullEpicsError(_) => InvalidPort }
+      gsaoi <- epicsSys.gsaoiPort.recover { case NullEpicsError(_) => InvalidPort }
+      nifs  <- epicsSys.nifsPort.recover { case NullEpicsError(_) => InvalidPort }
+      niri  <- epicsSys.niriPort.recover { case NullEpicsError(_) => InvalidPort }
     } yield InstrumentPorts(
       f2,
       ghost,
@@ -236,18 +282,27 @@ object TcsConfigRetriever {
       niri
     )
 
-    override def retrieveConfigurationNorth(getAoFollow: F[Boolean]): F[TcsNorthControllerEpicsAo.EpicsTcsAoConfig] =
+    override def retrieveConfigurationNorth(
+      getAoFollow: F[Boolean]
+    ): F[TcsNorthControllerEpicsAo.EpicsTcsAoConfig] =
       for {
         base <- retrieveBaseConfiguration
         ao   <- getAowfs(getAoFollow)
       } yield TcsNorthControllerEpicsAo.EpicsTcsAoConfig(base, ao)
 
-    private def retrieveGemsGuider(mapping: Map[GemsSource, VirtualGemsTelescope],
-                                   gemsSource: GemsSource,
-                                   getGuide: VirtualGemsTelescope => F[GuiderConfig]): F[GuiderConfig] =
-      mapping.get(gemsSource).map(getGuide).getOrElse(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff).pure[F])
+    private def retrieveGemsGuider(
+      mapping:    Map[GemsSource, VirtualGemsTelescope],
+      gemsSource: GemsSource,
+      getGuide:   VirtualGemsTelescope => F[GuiderConfig]
+    ): F[GuiderConfig] =
+      mapping
+        .get(gemsSource)
+        .map(getGuide)
+        .getOrElse(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff).pure[F])
 
-    override def retrieveConfigurationSouth(gemsSt: GemsWfsState[F]): F[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
+    override def retrieveConfigurationSouth(
+      gemsSt: GemsWfsState[F]
+    ): F[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
       for {
         base    <- retrieveBaseConfiguration
         mapping <- getGemsMap

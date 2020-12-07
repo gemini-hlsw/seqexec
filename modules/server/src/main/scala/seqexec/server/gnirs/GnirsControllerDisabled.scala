@@ -7,8 +7,8 @@ import cats.Applicative
 import cats.implicits._
 import fs2.Stream
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.server.Progress
 import seqexec.server.SystemOverrides.overrideLogMessage
 import squants.Time
@@ -16,7 +16,8 @@ import squants.Time
 class GnirsControllerDisabled[F[_]: Logger: Applicative] extends GnirsController[F] {
   private val name = "GNIRS"
 
-  override def applyConfig(config: GnirsController.GnirsConfig): F[Unit] = overrideLogMessage(name, "applyConfig")
+  override def applyConfig(config: GnirsController.GnirsConfig): F[Unit] =
+    overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     overrideLogMessage(name, s"observe $fileId").as(ObserveCommandResult.Success)

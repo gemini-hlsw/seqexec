@@ -10,17 +10,17 @@ import shapeless.tag
 import seqexec.model.GmosParameters._
 
 trait ArbGmosParameters {
-  implicit val gmosNsPairsArb: Arbitrary[NsPairs] =
+  implicit val gmosNsPairsArb: Arbitrary[NsPairs]   =
     Arbitrary(arbitrary[Int].map(tag[NsPairsI][Int]))
-  implicit val gmosNsPairsCogen: Cogen[NsPairs] =
+  implicit val gmosNsPairsCogen: Cogen[NsPairs]     =
     Cogen[Int].contramap(identity)
-  implicit val gmosNsRowsArb: Arbitrary[NsRows] =
+  implicit val gmosNsRowsArb: Arbitrary[NsRows]     =
     Arbitrary(arbitrary[Int].map(tag[NsRowsI][Int]))
-  implicit val gmosNsRowsCogen: Cogen[NsRows] =
+  implicit val gmosNsRowsCogen: Cogen[NsRows]       =
     Cogen[Int].contramap(identity)
   implicit val gmosNsCyclesArb: Arbitrary[NsCycles] =
     Arbitrary(arbitrary[Int].map(tag[NsCyclesI][Int]))
-  implicit val gmosNsCyclesCogen: Cogen[NsCycles] =
+  implicit val gmosNsCyclesCogen: Cogen[NsCycles]   =
     Cogen[Int].contramap(identity)
 }
 

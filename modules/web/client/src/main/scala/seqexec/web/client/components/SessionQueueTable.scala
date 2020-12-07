@@ -59,14 +59,14 @@ trait Columns {
   val ObsNameColumnWidth    = 140.0
   val ObsNameMinWidth       = 89.7340 + SeqexecStyles.TableBorderWidth
 
-  sealed trait TableColumn extends Product with Serializable
-  case object IconColumn extends TableColumn
-  case object AddQueueColumn extends TableColumn
-  case object ClassColumn extends TableColumn
-  case object ObsIdColumn extends TableColumn
-  case object StateColumn extends TableColumn
+  sealed trait TableColumn     extends Product with Serializable
+  case object IconColumn       extends TableColumn
+  case object AddQueueColumn   extends TableColumn
+  case object ClassColumn      extends TableColumn
+  case object ObsIdColumn      extends TableColumn
+  case object StateColumn      extends TableColumn
   case object InstrumentColumn extends TableColumn
-  case object ObsNameColumn extends TableColumn
+  case object ObsNameColumn    extends TableColumn
   case object TargetNameColumn extends TableColumn
 
   object TableColumn {
@@ -77,73 +77,73 @@ trait Columns {
 
   val IconColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     IconColumn,
-    name    = "status",
-    label   = "",
+    name = "status",
+    label = "",
     visible = true,
-    width   = FixedColumnWidth.unsafeFromDouble(IconColumnWidth)
+    width = FixedColumnWidth.unsafeFromDouble(IconColumnWidth)
   )
 
   val ClassColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ClassColumn,
-    name    = "class",
-    label   = "",
+    name = "class",
+    label = "",
     visible = true,
-    width   = FixedColumnWidth.unsafeFromDouble(ClassColumnWidth)
+    width = FixedColumnWidth.unsafeFromDouble(ClassColumnWidth)
   )
 
   val AddQueueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     AddQueueColumn,
-    name    = "",
-    label   = "",
+    name = "",
+    label = "",
     visible = true,
-    width   = FixedColumnWidth.unsafeFromDouble(AddQueueColumnWidth)
+    width = FixedColumnWidth.unsafeFromDouble(AddQueueColumnWidth)
   )
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
-    name    = "obsId",
-    label   = "Obs. ID",
+    name = "obsId",
+    label = "Obs. ID",
     visible = true,
-    width   = VariableColumnWidth.unsafeFromDouble(0.2, ObsIdMinWidth)
+    width = VariableColumnWidth.unsafeFromDouble(0.2, ObsIdMinWidth)
   )
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
-    name    = "state",
-    label   = "State",
+    name = "state",
+    label = "State",
     visible = true,
-    grow    = 2,
-    width   = VariableColumnWidth.unsafeFromDouble(0.1, StateMinWidth)
+    grow = 2,
+    width = VariableColumnWidth.unsafeFromDouble(0.1, StateMinWidth)
   )
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
-    name       = "instrument",
-    label      = "Instrument",
-    visible    = true,
+    name = "instrument",
+    label = "Instrument",
+    visible = true,
     removeable = 1,
-    grow       = 0,
-    width      = VariableColumnWidth.unsafeFromDouble(0.2, InstrumentMinWidth)
+    grow = 0,
+    width = VariableColumnWidth.unsafeFromDouble(0.2, InstrumentMinWidth)
   )
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
-    name       = "target",
-    label      = "Target",
-    visible    = true,
-    grow       = 3,
+    name = "target",
+    label = "Target",
+    visible = true,
+    grow = 3,
     removeable = 2,
-    width      = VariableColumnWidth.unsafeFromDouble(0.25, TargetMinWidth)
+    width = VariableColumnWidth.unsafeFromDouble(0.25, TargetMinWidth)
   )
 
   val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsNameColumn,
-    name       = "obsName",
-    label      = "Obs. Name",
-    visible    = true,
+    name = "obsName",
+    label = "Obs. Name",
+    visible = true,
     removeable = 3,
-    grow       = 3,
-    width      = VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth)
+    grow = 3,
+    width = VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth)
   )
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta,
@@ -153,27 +153,28 @@ trait Columns {
                                                                    StateColumnMeta,
                                                                    InstrumentColumnMeta,
                                                                    TargetNameColumnMeta,
-                                                                   ObsNameColumnMeta)
+                                                                   ObsNameColumnMeta
+  )
 
   val allTC = all.map(_.column)
 
   val columnDefaultWidth: Map[TableColumn, Double] = Map(
-    IconColumn -> IconColumnWidth,
-    AddQueueColumn -> AddQueueColumnWidth,
-    ClassColumn -> ClassColumnWidth,
-    ObsIdColumn -> ObsIdColumnWidth,
-    StateColumn -> StateColumnWidth,
+    IconColumn       -> IconColumnWidth,
+    AddQueueColumn   -> AddQueueColumnWidth,
+    ClassColumn      -> ClassColumnWidth,
+    ObsIdColumn      -> ObsIdColumnWidth,
+    StateColumn      -> StateColumnWidth,
     InstrumentColumn -> InstrumentColumnWidth,
     TargetNameColumn -> TargetNameColumnWidth,
-    ObsNameColumn -> ObsNameColumnWidth
+    ObsNameColumn    -> ObsNameColumnWidth
   )
 
   val columnsMinWidth: Map[TableColumn, Double] = Map(
-    ObsIdColumn -> ObsIdMinWidth,
-    StateColumn -> StateMinWidth,
+    ObsIdColumn      -> ObsIdMinWidth,
+    StateColumn      -> StateMinWidth,
     InstrumentColumn -> InstrumentMinWidth,
     TargetNameColumn -> TargetMinWidth,
-    ObsNameColumn -> ObsNameMinWidth
+    ObsNameColumn    -> ObsNameMinWidth
   )
 }
 
@@ -200,7 +201,8 @@ object SessionQueueTable extends Columns {
                           s.loaded,
                           s.nextStepToRun,
                           s.runningStep,
-                          s.inDayCalQueue)
+                          s.inDayCalQueue
+          )
         }
         .getOrElse(SessionQueueRow.Empty)
 
@@ -220,7 +222,7 @@ object SessionQueueTable extends Columns {
       (ObsNameColumn, _.name)
     ).toMap
 
-    private val columnAdjustmens =
+    private val columnAdjustmens                    =
       Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
 
     val columnWidths: TableColumn => Option[Double] =
@@ -230,7 +232,7 @@ object SessionQueueTable extends Columns {
     val visibleColumns: TableColumn => Boolean = {
       case ObsNameColumn | AddQueueColumn | TargetNameColumn =>
         loggedIn
-      case _ => true
+      case _                                                 => true
     }
 
   }
@@ -271,14 +273,15 @@ object SessionQueueTable extends Columns {
   }
 
   // Reusability
-  implicit val sqSeFocusReuse: Reusability[SequenceInSessionQueue] =
+  implicit val sqSeFocusReuse: Reusability[SequenceInSessionQueue]        =
     Reusability.byEq
-  implicit val qfReuse: Reusability[SessionQueueFilter] =
+  implicit val qfReuse: Reusability[SessionQueueFilter]                   =
     Reusability.byEq
   implicit val stSeFocusReuse: Reusability[StatusAndLoadedSequencesFocus] =
     Reusability.by(x => (x.status, x.sequences, x.tableState, x.queueFilter))
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.sequences)
-  implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.tableState ,s.rowLoading, s.lastSize))
+  implicit val propsReuse: Reusability[Props]                             = Reusability.by(_.sequences)
+  implicit val stateReuse: Reusability[State]                             =
+    Reusability.by(s => (s.tableState, s.rowLoading, s.lastSize))
 
   // ScalaJS defined trait
   trait SessionQueueRow extends js.Object {
@@ -311,21 +314,22 @@ object SessionQueueTable extends Columns {
       inDayCalQueue: Boolean
     ): SessionQueueRow = {
       val p = (new js.Object).asInstanceOf[SessionQueueRow]
-      p.obsId         = obsId
-      p.status        = status
-      p.instrument    = instrument
-      p.targetName    = targetName
-      p.name          = name
-      p.obsClass      = obsClass
-      p.active        = active
+      p.obsId = obsId
+      p.status = status
+      p.instrument = instrument
+      p.targetName = targetName
+      p.name = name
+      p.obsClass = obsClass
+      p.active = active
       p.nextStepToRun = nextStepToRun
-      p.runningStep   = runningStep
-      p.loaded        = loaded
+      p.runningStep = runningStep
+      p.loaded = loaded
       p.inDayCalQueue = inDayCalQueue
       p
     }
 
-    def unapply(l: SessionQueueRow): Option[(
+    def unapply(l: SessionQueueRow): Option[
+      (
         Observation.Id,
         SequenceState,
         Instrument,
@@ -350,7 +354,9 @@ object SessionQueueTable extends Columns {
          l.loaded,
          l.nextStepToRun,
          l.runningStep,
-         l.inDayCalQueue))
+         l.inDayCalQueue
+        )
+      )
 
     def Empty: SessionQueueRow =
       apply(
@@ -396,23 +402,24 @@ object SessionQueueTable extends Columns {
     (_, _, _, row: SessionQueueRow, index) => {
       val isFocused         = row.active
       val selectedIconStyle = SeqexecStyles.selectedIcon
-      val icon: TagMod =
+      val icon: TagMod      =
         row.status match {
-          case SequenceState.Completed =>
+          case SequenceState.Completed                     =>
             Icon(name = "checkmark", clazz = selectedIconStyle)
-          case SequenceState.Running(_, _) =>
-            Icon(name    = "circle notched",
-                 fitted  = true,
+          case SequenceState.Running(_, _)                 =>
+            Icon(name = "circle notched",
+                 fitted = true,
                  loading = true,
-                 clazz   = SeqexecStyles.runningIcon)
-          case SequenceState.Failed(_) =>
+                 clazz = SeqexecStyles.runningIcon
+            )
+          case SequenceState.Failed(_)                     =>
             Icon(name = "attention", color = Red, clazz = selectedIconStyle)
           case _ if b.state.rowLoading.exists(_ === index) =>
             // Spinning icon while loading
             IconRefresh.copy(fitted = true, loading = true, clazz = SeqexecStyles.runningIcon)
-          case _ if isFocused =>
+          case _ if isFocused                              =>
             Icon(name = "dot circle outline", clazz = selectedIconStyle)
-          case _ =>
+          case _                                           =>
             <.div()
         }
 
@@ -444,18 +451,20 @@ object SessionQueueTable extends Columns {
         ^.title := title,
         if (row.inDayCalQueue) {
           <.span(
-            Icon(name   = "check circle outline",
-                 size   = Large,
+            Icon(name = "check circle outline",
+                 size = Large,
                  fitted = true,
-                 clazz  = SeqexecStyles.selectedIcon),
+                 clazz = SeqexecStyles.selectedIcon
+            ),
             ^.onClick ==> removeFromQueueE(row.obsId) _
           )
         } else {
           <.span(
-            Icon(name   = "circle outline",
-                 size   = Large,
+            Icon(name = "circle outline",
+                 size = Large,
                  fitted = true,
-                 clazz  = SeqexecStyles.selectedIcon),
+                 clazz = SeqexecStyles.selectedIcon
+            ),
             ^.onClick ==> addToQueueE(row.obsId) _
           )
         }
@@ -468,11 +477,11 @@ object SessionQueueTable extends Columns {
     (_, _, _, row: SessionQueueRow, _) => {
       val icon: TagMod =
         row.obsClass match {
-          case ObsClass.Daytime =>
-            IconSun.clazz (SeqexecStyles.selectedIcon)
+          case ObsClass.Daytime   =>
+            IconSun.clazz(SeqexecStyles.selectedIcon)
           case ObsClass.Nighttime =>
             IconMoon.clazz(SeqexecStyles.selectedIcon)
-          case _ =>
+          case _                  =>
             <.div()
         }
 
@@ -523,17 +532,17 @@ object SessionQueueTable extends Columns {
 
   private def rowClassName(p: Props)(i: Int): String =
     ((i, p.rowGetter(i)) match {
-      case (-1, _) =>
+      case (-1, _)                                                         =>
         SeqexecStyles.headerRowStyle
       case (_, r: SessionQueueRow) if r.status === SequenceState.Completed =>
         draggableRow |+| SeqexecStyles.rowPositive
-      case (_, r: SessionQueueRow) if r.status.isRunning =>
+      case (_, r: SessionQueueRow) if r.status.isRunning                   =>
         draggableRow |+| SeqexecStyles.rowWarning
-      case (_, r: SessionQueueRow) if r.status.isError =>
+      case (_, r: SessionQueueRow) if r.status.isError                     =>
         draggableRow |+| SeqexecStyles.rowNegative
-      case (_, r: SessionQueueRow) if r.active && !r.status.isInProcess =>
+      case (_, r: SessionQueueRow) if r.active && !r.status.isInProcess    =>
         draggableRow |+| SeqexecStyles.rowActive
-      case _ =>
+      case _                                                               =>
         draggableRow
     }).htmlClass
 
@@ -558,7 +567,7 @@ object SessionQueueTable extends Columns {
   private val columnStyle: TableColumn => Option[Css] = {
     case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn | TargetNameColumn =>
       SeqexecStyles.queueTextColumn.some
-    case _ => SeqexecStyles.queueIconColumn.some
+    case _                                                                               => SeqexecStyles.queueIconColumn.some
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
@@ -569,13 +578,16 @@ object SessionQueueTable extends Columns {
     )).unless(pos === 0 && !b.state.tableState.isModified).void
   }
 
-  private def colBuilder(b: Backend, size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = {
+  private def colBuilder(
+    b:    Backend,
+    size: Size
+  ): ColumnRenderArgs[TableColumn] => Table.ColumnArg = {
     case ColumnRenderArgs(meta, _, width, true) =>
       Column(
         Column.propsNoFlex(
-          width        = width,
-          dataKey      = meta.name,
-          label        = meta.label,
+          width = width,
+          dataKey = meta.name,
+          label = meta.label,
           cellRenderer = renderer(meta.column, b),
           headerRenderer = resizableHeaderRenderer(
             b.state.tableState.resizeColumn(
@@ -595,12 +607,12 @@ object SessionQueueTable extends Columns {
     case ColumnRenderArgs(meta, _, width, false) =>
       Column(
         Column.propsNoFlex(
-          width          = width,
-          dataKey        = meta.name,
-          label          = meta.label,
+          width = width,
+          dataKey = meta.name,
+          label = meta.label,
           headerRenderer = fixedHeaderRenderer(meta.column),
-          cellRenderer   = renderer(meta.column, b),
-          className      = columnStyle(meta.column).foldMap(_.htmlClass)
+          cellRenderer = renderer(meta.column, b),
+          className = columnStyle(meta.column).foldMap(_.htmlClass)
         )
       )
   }
@@ -647,47 +659,46 @@ object SessionQueueTable extends Columns {
               "Session queue empty"
             ),
           overscanRowCount = SeqexecStyles.overscanRowCount,
-          height           = 180,
-          rowCount         = b.props.rowCount,
-          rowHeight        = SeqexecStyles.rowHeight,
-          rowClassName     = rowClassName(b.props) _,
-          width            = max(1, size.width.toInt),
-          rowGetter        = b.props.rowGetter _,
-          headerClassName  = SeqexecStyles.tableHeader.htmlClass,
-          scrollTop        = b.state.tableState.scrollPosition,
-          onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
+          height = 180,
+          rowCount = b.props.rowCount,
+          rowHeight = SeqexecStyles.rowHeight,
+          rowClassName = rowClassName(b.props) _,
+          width = max(1, size.width.toInt),
+          rowGetter = b.props.rowGetter _,
+          headerClassName = SeqexecStyles.tableHeader.htmlClass,
+          scrollTop = b.state.tableState.scrollPosition,
+          onScroll = (_, _, pos) => updateScrollPosition(b, pos),
           onRowDoubleClick = doubleClick(b),
-          onRowClick       = singleClick(b),
-          headerHeight     = SeqexecStyles.headerHeight,
-          rowRenderer      = draggableRowRenderer(b)
+          onRowClick = singleClick(b),
+          headerHeight = SeqexecStyles.headerHeight,
+          rowRenderer = draggableRowRenderer(b)
         ),
-        b.state.tableState.columnBuilder(size,
-                                         colBuilder(b, size),
-                                         b.props.columnWidths): _*
+        b.state.tableState.columnBuilder(size, colBuilder(b, size), b.props.columnWidths): _*
       ).vdomElement
     } else {
       <.div()
     }
 
-  def dragStart(b: Backend, obsId: Observation.Id)(
-    e:             ReactDragEvent): Callback =
+  def dragStart(b: Backend, obsId: Observation.Id)(e: ReactDragEvent): Callback =
     Callback {
       e.dataTransfer.setData("text/plain", obsId.format)
     }.when(b.props.canOperate) *> Callback.empty
 
   private def draggableRowRenderer(b: Backend) =
-    (className:        String,
-     columns:          Array[VdomNode],
-     index:            Int,
-     _:                Boolean,
-     key:              String,
-     rowData:          SessionQueueRow,
-     onRowClick:       Option[OnRowClick],
-     onRowDoubleClick: Option[OnRowClick],
-     _:                Option[OnRowClick],
-     _:                Option[OnRowClick],
-     _:                Option[OnRowClick],
-     style:            Style) => {
+    (
+      className:        String,
+      columns:          Array[VdomNode],
+      index:            Int,
+      _:                Boolean,
+      key:              String,
+      rowData:          SessionQueueRow,
+      onRowClick:       Option[OnRowClick],
+      onRowDoubleClick: Option[OnRowClick],
+      _:                Option[OnRowClick],
+      _:                Option[OnRowClick],
+      _:                Option[OnRowClick],
+      style:            Style
+    ) => {
       <.div(
         ^.cls := className,
         ^.draggable := b.props.canOperate,
@@ -704,8 +715,8 @@ object SessionQueueTable extends Columns {
   private def initialState(p: Props): State =
     (
       State.tableState.set(p.sequences.tableState) >>>
-      State.prevObsIds.set(p.obsIds) >>>
-      State.prevLoggedIn.set(p.loggedIn)
+        State.prevObsIds.set(p.obsIds) >>>
+        State.prevLoggedIn.set(p.loggedIn)
     )(State.InitialState)
 
   private def onResize(b: Backend): Size => Callback =
@@ -725,29 +736,32 @@ object SessionQueueTable extends Columns {
       )
     )
     .configure(Reusability.shouldComponentUpdate)
-    .getDerivedStateFromProps{ (props, state) =>
+    .getDerivedStateFromProps { (props, state) =>
       Function.chain(
         ((s: State) => s.resetLoading(props)) ::
-        List( (s: State) =>
-          s.lastSize.fold(s)( ls =>
-            (
-              State.userModified.modify { um =>
-                // If login state changes discard user modifications
-                if (props.loggedIn =!= state.prevLoggedIn) {
-                  NotModified
-                } else um
-              } andThen(
-                State.tableState.modify(
-                  _.recalculateWidths(ls, props.visibleColumns, props.columnWidths)
-                )
-              )
-            )(s)
-          ),
-          State.prevObsIds.set(props.obsIds),
-          State.prevLoggedIn.set(props.loggedIn)
-        ).some
-         .filter(_ => props.obsIds =!= state.prevObsIds || props.loggedIn =!= state.prevLoggedIn)
-         .orEmpty
+          List(
+            (s: State) =>
+              s.lastSize.fold(s)(ls =>
+                (
+                  State.userModified
+                    .modify { um =>
+                      // If login state changes discard user modifications
+                      if (props.loggedIn =!= state.prevLoggedIn) {
+                        NotModified
+                      } else um
+                    }
+                    .andThen(
+                      State.tableState.modify(
+                        _.recalculateWidths(ls, props.visibleColumns, props.columnWidths)
+                      )
+                    )
+                )(s)
+              ),
+            State.prevObsIds.set(props.obsIds),
+            State.prevLoggedIn.set(props.loggedIn)
+          ).some
+            .filter(_ => props.obsIds =!= state.prevObsIds || props.loggedIn =!= state.prevLoggedIn)
+            .orEmpty
       )(state)
     }
     .build

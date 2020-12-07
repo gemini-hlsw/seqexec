@@ -20,11 +20,13 @@ import react.common._
 import react.virtualized._
 
 /**
-  * State of a table
-  */
-final case class TableState[A: Eq](userModified:   UserModified,
-                                   scrollPosition: JsNumber,
-                                   columns:        NonEmptyList[ColumnMeta[A]]) {
+ * State of a table
+ */
+final case class TableState[A: Eq](
+  userModified:   UserModified,
+  scrollPosition: JsNumber,
+  columns:        NonEmptyList[ColumnMeta[A]]
+) {
 
   val isModified: Boolean = userModified === IsModified
 
@@ -36,25 +38,26 @@ final case class TableState[A: Eq](userModified:   UserModified,
 
   // width set aside for fixed width columns
   private def fixedWidth(calculatedWidth: A => Option[Double]): Double =
-    columns.collect {
-      case ColumnMeta(c, _, _, true, FixedColumnWidth(x), _, _) =>
-        calculatedWidth(c).getOrElse(x)
+    columns.collect { case ColumnMeta(c, _, _, true, FixedColumnWidth(x), _, _) =>
+      calculatedWidth(c).getOrElse(x)
     }.sum
 
   // Changes the relative widths when a column is being dragged
   // delta is the change in percentage, negative to the left, positive to the right
-  private def applyOffset(calculatedWidth: A => Option[Double],
-                          column:          A,
-                          Δ:               Double,
-                          s:               Size): TableState[A] = {
+  private def applyOffset(
+    calculatedWidth: A => Option[Double],
+    column:          A,
+    Δ:               Double,
+    s:               Size
+  ): TableState[A] = {
     val cl      = columns.toList
     val indexOf = cl.indexWhere(_.column === column)
     val indexNx = cl.indexWhere((c: ColumnMeta[A]) => c.visible && c.isVariable, indexOf + 1)
     val ω       = s.width.toDouble - fixedWidth(calculatedWidth)
     val refCol  = cl.lift(indexOf)
-    val refO    = (TableState.column[A](indexOf) ^|-> ColumnMeta.width)
+    val refO    = TableState.column[A](indexOf) ^|-> ColumnMeta.width
     val nextCol = cl.lift(indexNx)
-    val nextO   = (TableState.column[A](indexNx) ^|-> ColumnMeta.width)
+    val nextO   = TableState.column[A](indexNx) ^|-> ColumnMeta.width
     val id      = identity[TableState[A]] _
 
     if (Δ === 0.0) {
@@ -64,15 +67,15 @@ final case class TableState[A: Eq](userModified:   UserModified,
       val (rc, nc) = if (Δ < 0) {
         refCol match {
           case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-            val pʹ  = p + Δ // percentage and delta
-            val ωʹ  = ω * pʹ // new width
+            val pʹ  = p + Δ          // percentage and delta
+            val ωʹ  = ω * pʹ         // new width
             val pʹʹ = max(m, ωʹ) / ω // new percentage with limit
-            val Δʹ  = pʹʹ - p // new width with limit
+            val Δʹ  = pʹʹ - p        // new width with limit
             val rcL = refO.set(VariableColumnWidth(pʹʹ, m))
             val ncL = nextCol match {
               case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
                 nextO.set(VariableColumnWidth(p - Δʹ, m))
-              case _ => id
+              case _                                                             => id
             }
             (rcL, ncL)
 
@@ -81,15 +84,15 @@ final case class TableState[A: Eq](userModified:   UserModified,
       } else {
         nextCol match {
           case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-            val pʹ  = p - Δ // percentage and delta
-            val ωʹ  = ω * pʹ // new width
+            val pʹ  = p - Δ          // percentage and delta
+            val ωʹ  = ω * pʹ         // new width
             val pʹʹ = max(m, ωʹ) / ω // new percentage with limit
-            val Δʹ  = pʹʹ - p // new width with limit
+            val Δʹ  = pʹʹ - p        // new width with limit
             val ncL = nextO.set(VariableColumnWidth(pʹʹ, m))
             val rcL = refCol match {
               case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
                 refO.set(VariableColumnWidth(p - Δʹ, m))
-              case _ => id
+              case _                                                             => id
             }
             (rcL, ncL)
 
@@ -101,18 +104,18 @@ final case class TableState[A: Eq](userModified:   UserModified,
   }
 
   // Calculates the minimium variable width
-  private def minVarWidth(calculatedWidth: A => Option[Double],
-                          cols:            List[ColumnMeta[A]]): Double =
-    cols.collect {
-      case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw), _, _) =>
-        calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
+  private def minVarWidth(calculatedWidth: A => Option[Double], cols: List[ColumnMeta[A]]): Double =
+    cols.collect { case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw), _, _) =>
+      calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
     }.sum
 
   // based on the available width drop columns if needed
   @tailrec
-  private def discardUntilUnder(calculatedWidth: A => Option[Double],
-                                cols:            List[ColumnMeta[A]],
-                                allowedWidth:    Double): List[ColumnMeta[A]] = {
+  private def discardUntilUnder(
+    calculatedWidth: A => Option[Double],
+    cols:            List[ColumnMeta[A]],
+    allowedWidth:    Double
+  ): List[ColumnMeta[A]] = {
     val minWidth           = minVarWidth(calculatedWidth, cols)
     val nonRemoveableCount = cols.count(c => c.removeable === 0 && c.visible)
     if (cols.length <= nonRemoveableCount || minWidth < allowedWidth) {
@@ -124,7 +127,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
         .sortBy(_.removeable)
         .lastOption
       hideOne match {
-        case None => cols
+        case None    => cols
         case Some(x) =>
           val updatedCols = cols.map {
             case c if x.column === c.column => ColumnMeta.visible.set(false)(c)
@@ -144,68 +147,65 @@ final case class TableState[A: Eq](userModified:   UserModified,
       this
     } else {
       // list of visible columns
-      val visibleCols = columns.toList
+      val visibleCols        = columns.toList
       // Width according to the suggested sizes
-      val requestedWidth = visibleCols.collect {
-        case ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _) =>
+      val requestedWidth     = visibleCols.collect {
+        case ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _)        =>
           calculatedWidth(c).getOrElse(w)
         case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw), _, _) =>
           calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
       }.sum
       val minWidth           = minVarWidth(calculatedWidth, visibleCols)
       val totalVariableWidth = max(0.0, s.width.toDouble - fixedWidth(calculatedWidth))
-      val cols =
+      val cols               =
         if (totalVariableWidth > requestedWidth) {
           // There is extra space on the table, lets distribute it among the cols
           val unallocatedWidth = totalVariableWidth - minWidth
-          val weights = visibleCols.collect {
-            case ColumnMeta(c, _, _, _, _, g, _) => (c, g)
+          val weights          = visibleCols.collect { case ColumnMeta(c, _, _, _, _, g, _) =>
+            (c, g)
           }.toMap
           // all columns weith
-          val weightsSum = weights.values.sum
+          val weightsSum       = weights.values.sum
           // a segment is pixels per weight
-          val segment = (unallocatedWidth / weightsSum)
+          val segment          = unallocatedWidth / weightsSum
           visibleCols.map {
-            case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _) =>
+            case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _)        =>
               ColumnMeta
                 .width[A]
-                .set(FixedColumnWidth.unsafeFromDouble(
-                  calculatedWidth(c).getOrElse(w)))(m)
+                .set(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
             case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(w, mw), g, _) =>
-              val vc = VariableColumnWidth(
-                calculatedWidth(c)
-                  .map(w => (max(w, mw) + g * segment) / totalVariableWidth)
-                  .getOrElse(w),
-                mw)
+              val vc =
+                VariableColumnWidth(calculatedWidth(c)
+                                      .map(w => (max(w, mw) + g * segment) / totalVariableWidth)
+                                      .getOrElse(w),
+                                    mw
+                )
               ColumnMeta.width[A].set(vc)(m)
-            case x => x
+            case x                                                               => x
           }
         } else {
           // There is less space on the table, we need to shrink
           // Lets drop columns if needed
           val reducedVisibleCols =
             if (totalVariableWidth < minWidth && s.width.toDouble > 0) {
-              discardUntilUnder(calculatedWidth,
-                                visibleCols,
-                                totalVariableWidth)
+              discardUntilUnder(calculatedWidth, visibleCols, totalVariableWidth)
             } else {
               visibleCols
             }
           // Update the columns with the correct percentage.
           reducedVisibleCols.map {
-            case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _) =>
+            case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _)        =>
               ColumnMeta
                 .width[A]
-                .set(FixedColumnWidth.unsafeFromDouble(
-                  calculatedWidth(c).getOrElse(w)))(m)
+                .set(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
             case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(w, mw), _, _) =>
-              val vc = VariableColumnWidth(
-                calculatedWidth(c)
-                  .map(w => min(1.0, max(w, mw) / totalVariableWidth))
-                  .getOrElse(w),
-                mw)
+              val vc = VariableColumnWidth(calculatedWidth(c)
+                                             .map(w => min(1.0, max(w, mw) / totalVariableWidth))
+                                             .getOrElse(w),
+                                           mw
+              )
               ColumnMeta.width[A].set(vc)(m)
-            case x => x
+            case x                                                               => x
           }
         }
       copy(columns = NonEmptyList.fromListUnsafe(cols))
@@ -221,7 +221,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     val cl  = columns.toList.filter(_.visible)
     val vcl = cl.length
     // Last fixed column assuming the last one is indeed fixed
-    val lf = cl.lastOption.filter(c => !c.isVariable) match {
+    val lf  = cl.lastOption.filter(c => !c.isVariable) match {
       case Some(_) => max(0, cl.lastIndexWhere(c => !c.isVariable)) - 1
       case None    => vcl
     }
@@ -230,8 +230,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
         case (m @ ColumnMeta(_, _, _, _, FixedColumnWidth(w), _, _), i) =>
           cb(ColumnRenderArgs(m, i, w, false)).some
 
-        case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _),
-              i) =>
+        case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _), i) =>
           val beforeLast = i < (lf - 1)
           val w          = max((s.width.toDouble - fw) * p, mw)
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
@@ -266,11 +265,11 @@ final case class TableState[A: Eq](userModified:   UserModified,
         case ColumnMeta(_, _, _, true, VariableColumnWidth(p, _), _, _) => p
       }.sum
       (TableState.columns[A] ^|->> each).modify {
-          case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min), _, _) =>
-            c.copy(width = VariableColumnWidth(p / percentagesSum, min))
-          case c =>
-            c
-        }(this)
+        case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min), _, _) =>
+          c.copy(width = VariableColumnWidth(p / percentagesSum, min))
+        case c                                                                =>
+          c
+      }(this)
     } else {
       this
     }
@@ -284,7 +283,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
   ): (String, JsNumber) => Callback =
     (_, dx) => {
       val deltaPct = dx.toDouble / (s.width.toDouble - fixedWidth(calculatedWidth))
-      val st = withVisibleCols(visibleCols)
+      val st       = withVisibleCols(visibleCols)
         .normalizeColumnWidths(s)
         .applyOffset(calculatedWidth, column, deltaPct, s)
       cb(st)
@@ -304,17 +303,14 @@ object TableState {
     Eq.by(x => (x.width.toDouble, x.height.toDouble))
 
   def userModified[A: Eq]: Lens[TableState[A], UserModified] =
-    Lens[TableState[A], UserModified](_.userModified)(n =>
-      a => a.copy(userModified = n))
+    Lens[TableState[A], UserModified](_.userModified)(n => a => a.copy(userModified = n))
 
   def columns[A: Eq]: Lens[TableState[A], NonEmptyList[ColumnMeta[A]]] =
-    Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n =>
-      a => a.copy(columns = n))
+    Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
 
   def column[A: Eq](c: Int): Optional[TableState[A], ColumnMeta[A]] =
     columns[A] ^|-? index(c)
 
   def scrollPosition[A: Eq]: Lens[TableState[A], JsNumber] =
-    Lens[TableState[A], JsNumber](_.scrollPosition)(n =>
-      a => a.copy(scrollPosition = n))
+    Lens[TableState[A], JsNumber](_.scrollPosition)(n => a => a.copy(scrollPosition = n))
 }

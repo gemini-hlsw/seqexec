@@ -3,10 +3,11 @@
 
 package seqexec.server.gmos
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import scala.concurrent.duration._
+
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -23,14 +24,14 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import io.chrisdavenport.log4cats.Logger
 import lucuma.core.math.Angle
 import lucuma.core.math.Offset
 import lucuma.core.syntax.string._
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.GmosParameters._
-import seqexec.model.`enum`.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
+import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum.ObserveCommandResult
@@ -51,9 +52,13 @@ import squants.Time
 import squants.space.Length
 import squants.space.LengthConversions._
 
-abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes]
-(val controller: GmosController[F, T], ss: SiteSpecifics[T], nsCmdR: Ref[F, Option[NSObserveCommand]])
-(configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
+abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes](
+  val controller: GmosController[F, T],
+  ss:             SiteSpecifics[T],
+  nsCmdR:         Ref[F, Option[NSObserveCommand]]
+)(configTypes:    GmosController.Config[T])
+    extends DhsInstrument[F]
+    with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
 
@@ -103,8 +108,8 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       nsCmdRef.set(NSObserveCommand.PauseImmediately.some) *> controller.pauseObserve
 
   protected def fpuFromFPUnit(
-    n: Option[T#FPU],
-    m: Option[String],
+    n:            Option[T#FPU],
+    m:            Option[String],
     isCustomMask: Boolean
   ): GmosFPU =
     if (!isCustomMask)
@@ -126,16 +131,20 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       // Workaround for missing order: Use order 1 as default
       val o = order.getOrElse(GmosCommonType.Order.ONE)
 
-      if(o === GmosCommonType.Order.ZERO)
+      if (o === GmosCommonType.Order.ZERO)
         configTypes.GmosDisperser.Order0(disp).asRight
       else
         wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w).asRight)
           .getOrElse(
-            ConfigUtilOps.ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.").asLeft
+            ConfigUtilOps
+              .ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.")
+              .asLeft
           )
     }
 
-  private def ccConfigFromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, configTypes.CCConfig] =
+  private def ccConfigFromSequenceConfig(
+    config: CleanConfig
+  ): Either[SeqexecFailure, configTypes.CCConfig] =
     (for {
       filter          <- ss.extractFilter(config)
       disp            <- ss.extractDisperser(config)
@@ -164,7 +173,9 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
     ))
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
+  private def fromSequenceConfig(
+    config: CleanConfig
+  ): Either[SeqexecFailure, GmosController.GmosConfig[T]] =
     for {
       cc <- ccConfigFromSequenceConfig(config)
       ns <- Gmos.nsConfig(config)
@@ -242,7 +253,9 @@ object Gmos {
       config
         .extractInstAs[java.lang.Boolean](USE_ELECTRONIC_OFFSETTING_PROP)
         .map(_.booleanValue())
-        .getOrElse(false) // We should always set electronic offset to false unless explicitly enabled
+        .getOrElse(
+          false
+        ) // We should always set electronic offset to false unless explicitly enabled
     )
 
   private def configToAngle(s: String): Either[ExtractFailure, Angle] =
@@ -258,16 +271,25 @@ object Gmos {
         config.extractAs[String](k).flatMap(Guiding.fromString(_).toRight(KeyNotFound(k)))
       }
 
-  private def nsPosition(config: CleanConfig, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
-    NodAndShuffleStage.NSStageEnumerated.all.slice(0, sc).map { s =>
-      for {
-        p <- config.extractInstAs[String](s"nsBeam${s.symbol.name}-p").flatMap(configToAngle).map(Offset.P.apply)
-        q <- config.extractInstAs[String](s"nsBeam${s.symbol.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
-        k = INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-guideWithOIWFS"
-        g <- extractGuiding(config, k)
-      } yield NSPosition(s, Offset(p, q), g)
-    }.toVector.sequence
-  }
+  private def nsPosition(config: CleanConfig, sc: Int): Either[ExtractFailure, Vector[NSPosition]] =
+    NodAndShuffleStage.NSStageEnumerated.all
+      .slice(0, sc)
+      .map { s =>
+        for {
+          p <- config
+                 .extractInstAs[String](s"nsBeam${s.symbol.name}-p")
+                 .flatMap(configToAngle)
+                 .map(Offset.P.apply)
+          q <- config
+                 .extractInstAs[String](s"nsBeam${s.symbol.name}-q")
+                 .flatMap(configToAngle)
+                 .map(Offset.Q.apply)
+          k  = INSTRUMENT_KEY / s"nsBeam${s.symbol.name}-guideWithOIWFS"
+          g <- extractGuiding(config, k)
+        } yield NSPosition(s, Offset(p, q), g)
+      }
+      .toVector
+      .sequence
 
   def nodAndShuffle(config: CleanConfig): Either[ExtractFailure, NSConfig.NodAndShuffle] =
     for {
@@ -275,7 +297,11 @@ object Gmos {
       rows   <- config.extractInstAs[JInt](DETECTOR_ROWS_PROP).map(_.toInt)
       sc     <- config.extractInstAs[JInt](NS_STEP_COUNT_PROP_NAME)
       pos    <- nsPosition(config, sc)
-    } yield NSConfig.NodAndShuffle(tag[NsCyclesI][Int](cycles), tag[NsRowsI][Int](rows), pos, expTime(config))
+    } yield NSConfig.NodAndShuffle(tag[NsCyclesI][Int](cycles),
+                                   tag[NsRowsI][Int](rows),
+                                   pos,
+                                   expTime(config)
+    )
 
   def nsConfig(config: CleanConfig): Either[SeqexecFailure, NSConfig] =
     (for {
@@ -329,12 +355,18 @@ object Gmos {
     s.parseDoubleOption
       .toRight(ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting"))
 
-  private def exposureTime(config: CleanConfig, nsConfig: NSConfig): Either[ExtractFailure, FiniteDuration] =
+  private def exposureTime(
+    config:   CleanConfig,
+    nsConfig: NSConfig
+  ): Either[ExtractFailure, FiniteDuration] =
     config.extractObsAs[JDouble](EXPOSURE_TIME_PROP).map { e =>
       (e / nsConfig.exposureDivider).seconds
     }
 
-  def dcConfigFromSequenceConfig(config: CleanConfig, nsConfig: NSConfig): Either[SeqexecFailure, DCConfig] =
+  def dcConfigFromSequenceConfig(
+    config:   CleanConfig,
+    nsConfig: NSConfig
+  ): Either[SeqexecFailure, DCConfig] =
     (for {
       obsType      <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       shutterState <- shutterStateObserveType(obsType).asRight
@@ -346,22 +378,31 @@ object Gmos {
       xBinning     <- config.extractInstAs[Binning](CCD_X_BIN_PROP)
       yBinning     <- config.extractInstAs[Binning](CCD_Y_BIN_PROP)
       builtInROI   <- config.extractInstAs[BuiltinROI](BUILTIN_ROI_PROP)
-      customROI = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
-      roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
-    } yield
-      DCConfig(exposureTime, shutterState, CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting), CCDBinning(xBinning, yBinning), roi))
-        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      customROI     = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
+      roi          <- RegionsOfInterest
+                        .fromOCS(builtInROI, customROI)
+                        .leftMap(e => ContentError(SeqexecFailure.explain(e)))
+    } yield DCConfig(exposureTime,
+                     shutterState,
+                     CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting),
+                     CCDBinning(xBinning, yBinning),
+                     roi
+    ))
+      .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def nsCmdRef[F[_]: Sync]: F[Ref[F, Option[NSObserveCommand]]] = Ref.of(none)
 
-  def calcStepType(instrument: Instrument, config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] = {
+  def calcStepType(
+    instrument: Instrument,
+    config:     CleanConfig,
+    isNightSeq: Boolean
+  ): Either[SeqexecFailure, StepType] = {
     val stdType = SequenceConfiguration.calcStepType(config, isNightSeq)
     if (Gmos.isNodAndShuffle(config)) {
       stdType.flatMap {
         case StepType.ExclusiveDarkOrBias(_) => StepType.DarkOrBiasNS(instrument).asRight
         case StepType.CelestialObject(_)     => StepType.NodAndShuffle(instrument).asRight
-        case st                              => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st")
-          .asLeft
+        case st                              => SeqexecFailure.Unexpected(s"N&S is not supported for steps of type $st").asLeft
       }
     } else {
       stdType

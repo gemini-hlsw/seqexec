@@ -38,17 +38,17 @@ object UserNotificationBox {
 
   def body(n: Notification): List[String] =
     n match {
-      case ResourceConflict(sid)         =>
+      case ResourceConflict(sid)     =>
         List(
           s"There is a conflict trying to run the sequence '${sid.format}'",
           "Possibly another sequence is being executed on the same instrument"
         )
-      case InstrumentInUse(sid, ins)     =>
+      case InstrumentInUse(sid, ins) =>
         List(
           s"Cannot select sequence '${sid.format}' for instrument '${ins.label}'",
           "Possibly another sequence is being executed on the same instrument"
         )
-      case RequestFailed(msgs)           =>
+      case RequestFailed(msgs)       =>
         s"Request to the seqexec server failed:" :: msgs
 
       case SubsystemBusy(_, _, resource) =>

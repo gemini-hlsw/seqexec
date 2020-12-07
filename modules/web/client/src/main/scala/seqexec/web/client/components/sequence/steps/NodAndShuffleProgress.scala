@@ -62,19 +62,18 @@ object NodAndShuffleProgressMessage extends ProgressLabel {
         SeqexecStyles.progressMessage,
         p.nsStatus.state
           .map[VdomElement] { _ =>
-            s.progressConnect {
-              proxy =>
-                val nsProgress         = proxy()
-                val nodCount           = NodAndShuffleStage.NsSequence.length
-                val nodMillis          = p.nsStatus.nodExposureTime.toMilliseconds.toInt
-                val cycleMillis        = nodMillis * nodCount
-                val remainingCycles    = p.nsStatus.cycles - nsProgress.foldMap(_.sub.cycle - 1)
-                val remainingNods      = nodCount - nsProgress.foldMap(_.sub.stageIndex - 1)
-                val remainingNodMillis = nsProgress.foldMap(_.remaining.toMilliseconds.toInt)
-                val remainingMillis =
-                  remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
-                val stage = nsProgress.map(_.stage).getOrElse(ObserveStage.Idle)
-                <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
+            s.progressConnect { proxy =>
+              val nsProgress         = proxy()
+              val nodCount           = NodAndShuffleStage.NsSequence.length
+              val nodMillis          = p.nsStatus.nodExposureTime.toMilliseconds.toInt
+              val cycleMillis        = nodMillis * nodCount
+              val remainingCycles    = p.nsStatus.cycles - nsProgress.foldMap(_.sub.cycle - 1)
+              val remainingNods      = nodCount - nsProgress.foldMap(_.sub.stageIndex - 1)
+              val remainingNodMillis = nsProgress.foldMap(_.remaining.toMilliseconds.toInt)
+              val remainingMillis    =
+                remainingCycles * cycleMillis + remainingNods * nodMillis + remainingNodMillis
+              val stage              = nsProgress.map(_.stage).getOrElse(ObserveStage.Idle)
+              <.span(label(p.fileId, remainingMillis.some, p.stopping, p.paused, stage))
             }
           }
           .getOrElse(<.span(p.fileId))
@@ -107,12 +106,12 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
       DividedProgress(
-        sections             = p.sections,
-        sectionTotal         = p.sectionTotal,
-        value                = s.value,
+        sections = p.sections,
+        sectionTotal = p.sectionTotal,
+        value = s.value,
         completeSectionColor = p.completeSectionColor.some,
-        ongoingSectionColor  = p.ongoingSectionColor.some,
-        progressCls          = p.progressCls
+        ongoingSectionColor = p.ongoingSectionColor.some,
+        progressCls = p.progressCls
       )
     }
     .componentDidMount(_.backend.setupTimer)
@@ -122,8 +121,9 @@ object SmoothDividedProgressBar extends SmoothProgressBar[SmoothDividedProgressB
     .build
 }
 
-sealed abstract class NodAndShuffleProgressProps[A](override val component: Scala.Component[A, _, _, CtorType.Props])
-    extends ReactProps[A](component) {
+sealed abstract class NodAndShuffleProgressProps[A](
+  override val component: Scala.Component[A, _, _, CtorType.Props]
+) extends ReactProps[A](component) {
   val summary: StepStateSummary
 
   def isStopping: Boolean =
@@ -165,27 +165,32 @@ sealed trait NodAndShuffleProgress {
             (p.total.toMilliseconds.toInt,
              p.remaining.toMilliseconds.toInt,
              p.sub.cycle.toInt,
-             p.sub.stageIndex)
+             p.sub.stageIndex
+            )
           )
-        val elapsedMillis = totalMillis - max(0, remainingMillis)
+        val elapsedMillis                                        = totalMillis - max(0, remainingMillis)
 
         p.summary.nsStatus
           .map[VdomElement] { nsStatus =>
-            val isInError = !p.summary.isNSRunning && p.summary.isNSInError
-            val nodMillis = nsStatus.nodExposureTime.toMilliseconds.toInt
+            val isInError                    = !p.summary.isNSRunning && p.summary.isNSInError
+            val nodMillis                    = nsStatus.nodExposureTime.toMilliseconds.toInt
             val (sectionTotal, currentValue) =
               quantitiesFromNodMillis(cycleIndex, nodIndex, nodMillis)
 
             SmoothDividedProgressBar(
-              sections             = sections(nsStatus),
-              sectionTotal         = sectionTotal,
-              value                = nsStatus.state.foldMap(_ => currentValue + elapsedMillis), // Only advance smooth bar if actually started
-              maxValue             = nsStatus.state.foldMap(_ => currentValue + nodMillis), // Only advance smooth bar if actually started
+              sections = sections(nsStatus),
+              sectionTotal = sectionTotal,
+              value = nsStatus.state.foldMap(_ =>
+                currentValue + elapsedMillis
+              ), // Only advance smooth bar if actually started
+              maxValue = nsStatus.state.foldMap(_ =>
+                currentValue + nodMillis
+              ), // Only advance smooth bar if actually started
               completeSectionColor = if (isInError) Red else Green,
-              ongoingSectionColor  = if (isInError) Red else Blue,
-              progressCls          = SeqexecStyles.observationProgressBar,
-              stopping             = p.isStopping,
-              paused               = p.summary.step.isObservePaused
+              ongoingSectionColor = if (isInError) Red else Blue,
+              progressCls = SeqexecStyles.observationProgressBar,
+              stopping = p.isStopping,
+              paused = p.summary.step.isObservePaused
             )
           }
           .getOrElse(<.div("NodAndShuffleProgress invoked without a Nod&Shuffle step summary"))
@@ -196,7 +201,9 @@ sealed trait NodAndShuffleProgress {
 }
 
 final case class NodAndShuffleCycleProgress(summary: StepStateSummary)
-    extends NodAndShuffleProgressProps[NodAndShuffleCycleProgress](NodAndShuffleCycleProgress.component)
+    extends NodAndShuffleProgressProps[NodAndShuffleCycleProgress](
+      NodAndShuffleCycleProgress.component
+    )
 
 object NodAndShuffleCycleProgress extends NodAndShuffleProgress {
   type Props = NodAndShuffleCycleProgress
@@ -238,7 +245,9 @@ object NodAndShuffleNodProgress extends NodAndShuffleProgress {
   }
 }
 
-sealed abstract class NodAndShuffleRowProps[A](override val component: Scala.Component[A, _, _, CtorType.Props]) extends ReactProps[A](component) {
+sealed abstract class NodAndShuffleRowProps[A](
+  override val component: Scala.Component[A, _, _, CtorType.Props]
+) extends ReactProps[A](component) {
   val clientStatus: ClientStatus
   val stateSummary: StepStateSummary
 }
@@ -285,7 +294,8 @@ final case class NodAndShuffleCycleRowProps(
   stateSummary: StepStateSummary
 ) extends NodAndShuffleRowProps[NodAndShuffleCycleRowProps](NodAndShuffleCycleRow.component)
 
-object NodAndShuffleCycleRow extends NodAndShuffleRow[NodAndShuffleCycleRowProps, OperationLevel.NsCycle] {
+object NodAndShuffleCycleRow
+    extends NodAndShuffleRow[NodAndShuffleCycleRowProps, OperationLevel.NsCycle] {
   def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleCycleRowProps =
     NodAndShuffleCycleRowProps(clientStatus, state)
 
@@ -305,7 +315,8 @@ final case class NodAndShuffleNodRowProps(
   stateSummary: StepStateSummary
 ) extends NodAndShuffleRowProps[NodAndShuffleNodRowProps](NodAndShuffleNodRow.component)
 
-object NodAndShuffleNodRow extends NodAndShuffleRow[NodAndShuffleNodRowProps, OperationLevel.NsNod] {
+object NodAndShuffleNodRow
+    extends NodAndShuffleRow[NodAndShuffleNodRowProps, OperationLevel.NsNod] {
   def apply(clientStatus: ClientStatus)(state: StepStateSummary): NodAndShuffleNodRowProps =
     NodAndShuffleNodRowProps(clientStatus, state)
 

@@ -23,29 +23,30 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
 
 /**
-  * Gemini Data service client
-  */
+ * Gemini Data service client
+ */
 trait GdsClient[F[_]] extends Http4sClientDsl[F] {
+
   /**
-    * Set the keywords for an image
-    */
+   * Set the keywords for an image
+   */
   def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit]
 
-  def openObservation(obsId: Observation.Id,
-                      id: ImageFileId,
-                      ks: KeywordBag): F[Unit]
+  def openObservation(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): F[Unit]
 
   def closeObservation(id: ImageFileId): F[Unit]
 }
 
 object GdsClient {
 
-  def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F]): GdsClient[F] = new GdsClient[F] {
+  def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit
+    timer:                          Timer[F]
+  ): GdsClient[F] = new GdsClient[F] {
 
     private val client = {
-      val max = 2
+      val max             = 2
       var attemptsCounter = 1
-      val policy = RetryPolicy[F] { attempts: Int =>
+      val policy          = RetryPolicy[F] { attempts: Int =>
         if (attempts >= max) None
         else {
           attemptsCounter = attemptsCounter + 1
@@ -70,8 +71,8 @@ object GdsClient {
       </methodCall>
 
     /**
-      * Set the keywords for an image
-      */
+     * Set the keywords for an image
+     */
     override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] = {
       // Build the request
       val xmlRpc      = storeKeywords(id, ks)
@@ -86,9 +87,7 @@ object GdsClient {
     }
 
     // Build an xml rpc request to open an observation
-    private def openObservationRPC(obsId: Observation.Id,
-                                   id: ImageFileId,
-                                   ks: KeywordBag): Elem =
+    private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem =
       <methodCall>
         <methodName>HeaderReceiver.openObservation</methodName>
         <params>
@@ -106,9 +105,11 @@ object GdsClient {
         </params>
       </methodCall>
 
-    override def openObservation(obsId: Observation.Id,
-                        id: ImageFileId,
-                        ks: KeywordBag): F[Unit] = {
+    override def openObservation(
+      obsId: Observation.Id,
+      id:    ImageFileId,
+      ks:    KeywordBag
+    ): F[Unit] = {
       // Build the request
       val xmlRpc      = openObservationRPC(obsId, id, ks)
       val postRequest = POST(xmlRpc, gdsUri)
@@ -153,10 +154,12 @@ object GdsClient {
           <array>
             <data>
               {
-                ks.keywords.map { k =>
-                  <value><string>{s"${k.name},${KeywordType.gdsKeywordType(k.keywordType)},${k.value}"}</string></value>
-                }
-              }
+        ks.keywords.map { k =>
+          <value><string>{
+            s"${k.name},${KeywordType.gdsKeywordType(k.keywordType)},${k.value}"
+          }</string></value>
+        }
+      }
             </data>
           </array>
         </value>
@@ -167,8 +170,6 @@ object GdsClient {
 
   }
 
-
-
   def parseError(e: Elem): Either[String, Elem] = {
     val v = for {
       m <- e \\ "methodResponse" \ "fault" \ "value" \ "struct" \\ "member"
@@ -178,20 +179,19 @@ object GdsClient {
   }
 
   /**
-    * Client for testing always returns ok
-    */
+   * Client for testing always returns ok
+   */
   def alwaysOkClient[F[_]: Sync]: Client[F] = {
-    val service = HttpRoutes.of[F] {
-      case _ =>
-        val response =
-          <methodResponse>
+    val service = HttpRoutes.of[F] { case _ =>
+      val response =
+        <methodResponse>
             <params>
               <param>
                   <value><string>Ok</string></value>
               </param>
             </params>
           </methodResponse>
-        Response[F](Status.Ok).withEntity(response).pure[F]
+      Response[F](Status.Ok).withEntity(response).pure[F]
     }
     Client.fromHttpApp(service.orNotFound)
   }

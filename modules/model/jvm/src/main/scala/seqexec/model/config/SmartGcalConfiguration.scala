@@ -9,10 +9,10 @@ import cats.Eq
 import org.http4s.Uri
 
 /**
-  * Configuration for Smart Gcal
-  * @param smartGCalHost Host where smartgcal runs
-  * @param smartGcalDir Local directory to store cached files
-  */
+ * Configuration for Smart Gcal
+ * @param smartGCalHost Host where smartgcal runs
+ * @param smartGcalDir Local directory to store cached files
+ */
 final case class SmartGcalConfiguration(
   smartGCalHost: Uri,
   smartGCalDir:  Path

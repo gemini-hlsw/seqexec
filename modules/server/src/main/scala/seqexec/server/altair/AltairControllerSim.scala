@@ -17,10 +17,11 @@ object AltairControllerSim {
     private val L = Logger[F]
 
     override def pauseResume(
-      pauseReasons: PauseConditionSet,
+      pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet,
-      fieldLens: FieldLens)(
-    cfg: AltairController.AltairConfig
+      fieldLens:     FieldLens
+    )(
+      cfg:           AltairController.AltairConfig
     ): F[PauseResume[F]] =
       PauseResume(
         L.info(s"Simulate pausing Altair loops because of $pauseReasons").some,

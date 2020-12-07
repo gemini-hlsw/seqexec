@@ -15,8 +15,8 @@ trait utils {
   type Ctx2D  = dom.CanvasRenderingContext2D
 
   def textWidth(text: String, font: String): Double = {
-    val canvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
-    val ctx    = canvas.getContext("2d").asInstanceOf[Ctx2D]
+    val canvas  = dom.document.createElement("canvas").asInstanceOf[Canvas]
+    val ctx     = canvas.getContext("2d").asInstanceOf[Ctx2D]
     ctx.font = font
     val metrics = ctx.measureText(text)
     metrics.width

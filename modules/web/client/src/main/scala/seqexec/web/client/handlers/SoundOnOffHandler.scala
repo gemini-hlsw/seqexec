@@ -12,9 +12,10 @@ import seqexec.web.client.model.SoundSelection
 /**
  * Handles changing the user selection
  */
-class SoundOnOffHandler[M](modelRW: ModelRW[M, SoundSelection]) extends ActionHandler(modelRW) with Handlers[M, SoundSelection] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case FlipSoundOnOff =>
-      updatedL(SoundSelection.flip)
-    }
+class SoundOnOffHandler[M](modelRW: ModelRW[M, SoundSelection])
+    extends ActionHandler(modelRW)
+    with Handlers[M, SoundSelection] {
+  override def handle: PartialFunction[Any, ActionResult[M]] = { case FlipSoundOnOff =>
+    updatedL(SoundSelection.flip)
+  }
 }

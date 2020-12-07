@@ -19,8 +19,8 @@ import seqexec.web.client.model.StepItems._
 import web.client.utils._
 
 /**
-  * Utility methods to format step items
-  */
+ * Utility methods to format step items
+ */
 object Formatting {
   // Used to decide if the offsets are displayed
   sealed trait OffsetsDisplay
@@ -28,9 +28,10 @@ object Formatting {
   object OffsetsDisplay {
     case object NoDisplay extends OffsetsDisplay
     final case class DisplayOffsets(
-      offsetsWidth: Double,
-      axisLabelWidth: Double,
-      nsNodLabelWidth: Double) extends OffsetsDisplay
+      offsetsWidth:    Double,
+      axisLabelWidth:  Double,
+      nsNodLabelWidth: Double
+    )                     extends OffsetsDisplay
     implicit val eq: Eq[OffsetsDisplay] =
       Eq.by {
         case NoDisplay                  => None
@@ -59,30 +60,36 @@ object Formatting {
 
     // Calculate the widest offset step, widest axis label and widest NS nod label
     def sequenceOffsetMaxWidth: (Double, Double, Double) =
-      steps.collect {
-        case s: StandardStep      =>
-          (
-            maxWidth(List(
-              s.offset[OffsetType.Telescope, Axis.P].toAngle,
-              s.offset[OffsetType.Telescope, Axis.Q].toAngle
-              )),
-            max(axisLabelWidth[Axis.P], axisLabelWidth[Axis.Q]),
-            0.0
-          )
-        case s: NodAndShuffleStep =>
-          (
-            maxWidth(List(
-              s.offset[OffsetType.NSNodB, Axis.P].toAngle,
-              s.offset[OffsetType.NSNodB, Axis.Q].toAngle,
-              s.offset[OffsetType.NSNodA, Axis.P].toAngle,
-              s.offset[OffsetType.NSNodA, Axis.Q].toAngle
-              )),
-            max(axisLabelWidth[Axis.P], axisLabelWidth[Axis.Q]),
-            max(nsNodLabelWidth[OffsetType.NSNodB], nsNodLabelWidth[OffsetType.NSNodA])
-          )
-      }.foldLeft((0.0, 0.0, 0.0)) { case ((ow1, aw1, nw1), (ow2, aw2, nw2)) =>
-        ((ow1 max ow2, aw1 max aw2, nw1 max nw2))
-      }
+      steps
+        .collect {
+          case s: StandardStep      =>
+            (
+              maxWidth(
+                List(
+                  s.offset[OffsetType.Telescope, Axis.P].toAngle,
+                  s.offset[OffsetType.Telescope, Axis.Q].toAngle
+                )
+              ),
+              max(axisLabelWidth[Axis.P], axisLabelWidth[Axis.Q]),
+              0.0
+            )
+          case s: NodAndShuffleStep =>
+            (
+              maxWidth(
+                List(
+                  s.offset[OffsetType.NSNodB, Axis.P].toAngle,
+                  s.offset[OffsetType.NSNodB, Axis.Q].toAngle,
+                  s.offset[OffsetType.NSNodA, Axis.P].toAngle,
+                  s.offset[OffsetType.NSNodA, Axis.Q].toAngle
+                )
+              ),
+              max(axisLabelWidth[Axis.P], axisLabelWidth[Axis.Q]),
+              max(nsNodLabelWidth[OffsetType.NSNodB], nsNodLabelWidth[OffsetType.NSNodA])
+            )
+        }
+        .foldLeft((0.0, 0.0, 0.0)) { case ((ow1, aw1, nw1), (ow2, aw2, nw2)) =>
+          ((ow1.max(ow2), aw1.max(aw2), nw1.max(nw2)))
+        }
   }
 
   implicit class ExtraStringOps(val s: String) extends AnyVal {

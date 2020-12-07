@@ -40,9 +40,10 @@ trait GnirsEncoders {
     case ReadMode.VERY_FAINT  => (32, 16)
   }
 
-  implicit val wellDepthEncoder: EncodeEpicsValue[GNIRSParams.WellDepth, Double] = EncodeEpicsValue {
-    w => Millivolts(w.getBias).toVolts
-  }
+  implicit val wellDepthEncoder: EncodeEpicsValue[GNIRSParams.WellDepth, Double] =
+    EncodeEpicsValue { w =>
+      Millivolts(w.getBias).toVolts
+    }
 
   implicit val cameraDecoder: EncodeEpicsValue[Camera, String] = EncodeEpicsValue {
     case Camera.SHORT_RED  => "ShortRed"
@@ -113,28 +114,35 @@ object GnirsControllerEpics extends GnirsEncoders {
       GnirsController.Filter2Pos.K -> 2.70,
       GnirsController.Filter2Pos.L -> 4.30,
       GnirsController.Filter2Pos.M -> 6.0
-    ).map{ case (f, w) => (f, w.nanometers) }
+    ).map { case (f, w) => (f, w.nanometers) }
 
-    table.foldRight[GnirsController.Filter2Pos](GnirsController.Filter2Pos.XD){
-      case (t, v) => if(wavel < t._2) t._1 else v
+    table.foldRight[GnirsController.Filter2Pos](GnirsController.Filter2Pos.XD) { case (t, v) =>
+      if (wavel < t._2) t._1 else v
     }
   }
 
-  def apply[F[_]: Async: Timer](epicsSys: => GnirsEpics[F])(implicit L: Logger[F]): GnirsController[F] =
+  def apply[F[_]: Async: Timer](
+    epicsSys:   => GnirsEpics[F]
+  )(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {
 
       private val ccCmd = epicsSys.configCCCmd
       private val dcCmd = epicsSys.configDCCmd
 
-      private val warnOnDhs = epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
+      private val warnOnDhs =
+        epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
 
       private val warnOnArray =
         epicsSys.arrayActive.flatMap(L.warn("GNIRS detector array is not active").unlessA)
 
-      private val checkDhs = failUnlessM(epicsSys.dhsConnected, SeqexecFailure.Execution("GNIRS is not connected to DHS"))
+      private val checkDhs = failUnlessM(epicsSys.dhsConnected,
+                                         SeqexecFailure.Execution("GNIRS is not connected to DHS")
+      )
 
       private val checkArray =
-        failUnlessM(epicsSys.arrayActive, SeqexecFailure.Execution("GNIRS detector array is not active"))
+        failUnlessM(epicsSys.arrayActive,
+                    SeqexecFailure.Execution("GNIRS detector array is not active")
+        )
 
       private def setAcquisitionMirror(mode: Mode): F[Option[F[Unit]]] = {
         val v = mode match {
@@ -171,13 +179,15 @@ object GnirsControllerEpics extends GnirsEncoders {
 
         List(
           smartSetParamF(v, epicsSys.grating.map(removePartName), ccCmd.setGrating(v)),
-          smartSetParamF(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode)))
+          smartSetParamF(defaultMode, epicsSys.gratingMode, ccCmd.setGratingMode(defaultMode))
+        )
       }
 
-      private def setSpectrographyComponents(mode: Mode, c: Camera): List[F[Option[F[Unit]]]] = mode match {
-        case Acquisition => Nil
-        case s:Spectrography => setGrating(s, c) :+ setPrism(s, c)
-      }
+      private def setSpectrographyComponents(mode: Mode, c: Camera): List[F[Option[F[Unit]]]] =
+        mode match {
+          case Acquisition      => Nil
+          case s: Spectrography => setGrating(s, c) :+ setPrism(s, c)
+        }
 
       private def setPrism(s: Spectrography, c: Camera): F[Option[F[Unit]]] = {
         val cameraStr = c match {
@@ -198,11 +208,15 @@ object GnirsControllerEpics extends GnirsEncoders {
       }
 
       private def setDarkCCParams: List[F[Option[F[Unit]]]] = {
-        val closed = "Closed"
+        val closed     = "Closed"
         val darkFilter = "Dark"
         List(
           smartSetParamF(closed, epicsSys.cover.map(removePartName), ccCmd.setCover(closed)),
-          smartSetParamF(darkFilter, epicsSys.filter1.map(removePartName), ccCmd.setFilter1(darkFilter)))
+          smartSetParamF(darkFilter,
+                         epicsSys.filter1.map(removePartName),
+                         ccCmd.setFilter1(darkFilter)
+          )
+        )
       }
 
       private def setFilter2(f: Filter2, w: Wavelength): F[Option[F[Unit]]] = {
@@ -210,31 +224,53 @@ object GnirsControllerEpics extends GnirsEncoders {
           case Manual(p) => p
           case Auto      => autoFilter(w)
         }
-        smartSetParamF(encode(pos), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(pos)))
+        smartSetParamF(encode(pos),
+                       epicsSys.filter2.map(removePartName),
+                       ccCmd.setFilter2(encode(pos))
+        )
       }
 
       private def setOtherCCParams(config: Other): List[F[Option[F[Unit]]]] = {
-        val open = "Open"
-        val bestFocus = "best focus"
-        val wavelengthTolerance = 0.0001
-        val filter1 = smartSetParamF(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1)))
-        val filter2 = setFilter2(config.filter2, config.wavel)
-        val camera = smartSetParamF(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
-        val spectrographyAndCamera = setSpectrographyComponents(config.mode, config.camera) :+ camera
-        val params: List[F[Option[F[Unit]]]] = List(
-          setAcquisitionMirror(config.mode),
-          filter1,
-          filter2) ::: spectrographyAndCamera
+        val open                             = "Open"
+        val bestFocus                        = "best focus"
+        val wavelengthTolerance              = 0.0001
+        val filter1                          = smartSetParamF(encode(config.filter1),
+                                     epicsSys.filter1.map(removePartName),
+                                     ccCmd.setFilter1(encode(config.filter1))
+        )
+        val filter2                          = setFilter2(config.filter2, config.wavel)
+        val camera                           = smartSetParamF(encode(config.camera),
+                                    epicsSys.camera.map(removePartName),
+                                    ccCmd.setCamera(encode(config.camera))
+        )
+        val spectrographyAndCamera           =
+          setSpectrographyComponents(config.mode, config.camera) :+ camera
+        val params: List[F[Option[F[Unit]]]] =
+          List(setAcquisitionMirror(config.mode), filter1, filter2) ::: spectrographyAndCamera
 
         val focusParam: F[Option[F[Unit]]] = config.focus match {
           case Focus.Best      => Sync[F].delay(ccCmd.setFocusBest(bestFocus).some)
           case Focus.Manual(v) => smartSetParamF(v, epicsSys.focusEng, ccCmd.setFocus(v))
         }
 
-        val cover = smartSetParamF(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open))
-        val slitWidth  = config.slitWidth.map(sl => smartSetParamF(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).getOrElse(none.pure[F])
-        val decker = smartSetParamF(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker)))
-        val centralWavelength = smartSetDoubleParamF(wavelengthTolerance)(encode(config.wavel), epicsSys.centralWavelength, ccCmd.setCentralWavelength(encode(config.wavel)))
+        val cover             = smartSetParamF(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open))
+        val slitWidth         = config.slitWidth
+          .map(sl =>
+            smartSetParamF(encode(sl),
+                           epicsSys.slitWidth.map(removePartName),
+                           ccCmd.setSlitWidth(encode(sl))
+            )
+          )
+          .getOrElse(none.pure[F])
+        val decker            = smartSetParamF(encode(config.decker),
+                                    epicsSys.decker.map(removePartName),
+                                    ccCmd.setDecker(encode(config.decker))
+        )
+        val centralWavelength = smartSetDoubleParamF(wavelengthTolerance)(
+          encode(config.wavel),
+          epicsSys.centralWavelength,
+          ccCmd.setCentralWavelength(encode(config.wavel))
+        )
 
         (cover :: params) :::
           List(focusParam, slitWidth, decker, centralWavelength)
@@ -243,7 +279,7 @@ object GnirsControllerEpics extends GnirsEncoders {
 
       private def setCCParams(config: CCConfig): F[Unit] = {
         val params = config match {
-          case Dark    => setDarkCCParams
+          case Dark     => setDarkCCParams
           case c: Other => setOtherCCParams(c)
         }
         executeIfNeeded(
@@ -257,26 +293,34 @@ object GnirsControllerEpics extends GnirsEncoders {
         val expTimeTolerance = 0.0001
         // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
         // 0.3V bias
-        val biasTolerance = 0.15
+        val biasTolerance    = 0.15
 
         val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
 
-        val expTimeWriter = smartSetDoubleParamF(expTimeTolerance)(config.exposureTime.toSeconds,
-          epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds))
+        val expTimeWriter = smartSetDoubleParamF(expTimeTolerance)(
+          config.exposureTime.toSeconds,
+          epicsSys.exposureTime,
+          dcCmd.setExposureTime(config.exposureTime.toSeconds)
+        )
 
-        val coaddsWriter = smartSetParamF(config.coadds, epicsSys.numCoadds,
-          dcCmd.setCoadds(config.coadds))
+        val coaddsWriter =
+          smartSetParamF(config.coadds, epicsSys.numCoadds, dcCmd.setCoadds(config.coadds))
 
         // Value read from the instrument is the negative of what was set
-        val biasWriter = smartSetDoubleParamF(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
-          dcCmd.setDetBias(encode(config.wellDepth)))
+        val biasWriter = smartSetDoubleParamF(biasTolerance)(
+          -encode(config.wellDepth),
+          epicsSys.detBias,
+          dcCmd.setDetBias(encode(config.wellDepth))
+        )
 
-        val lowNoiseWriter = smartSetParamF(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
+        val lowNoiseWriter =
+          smartSetParamF(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
 
-        val digitalAvgsWriter = smartSetParamF(digitalAvgs, epicsSys.digitalAvgs,
-          dcCmd.setDigitalAvgs(digitalAvgs))
+        val digitalAvgsWriter =
+          smartSetParamF(digitalAvgs, epicsSys.digitalAvgs, dcCmd.setDigitalAvgs(digitalAvgs))
 
-        val params = List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
+        val params =
+          List(expTimeWriter, coaddsWriter, biasWriter, lowNoiseWriter, digitalAvgsWriter)
 
         executeIfNeeded(
           params,
@@ -297,7 +341,9 @@ object GnirsControllerEpics extends GnirsEncoders {
           checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
-          epicsSys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout).flatTap{ _ => L.debug("Completed GNITS observe") }
+          epicsSys.observeCmd
+            .post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
+            .flatTap(_ => L.debug("Completed GNITS observe"))
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
@@ -315,8 +361,12 @@ object GnirsControllerEpics extends GnirsEncoders {
           epicsSys.abortCmd.post(DefaultTimeout).void
 
       override def observeProgress(total: Time): Stream[F, Progress] =
-        ProgressUtil.obsCountdownWithObsStage[F](total, 0.seconds,
-          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(ObserveStage.fromBooleans)
+        ProgressUtil.obsCountdownWithObsStage[F](
+          total,
+          0.seconds,
+          (epicsSys.dcIsPreparing, epicsSys.dcIsAcquiring, epicsSys.dcIsReadingOut).mapN(
+            ObserveStage.fromBooleans
+          )
         )
 
       override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time] =
@@ -325,5 +375,5 @@ object GnirsControllerEpics extends GnirsEncoders {
 
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
   private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
-  private val ConfigTimeout: FiniteDuration = FiniteDuration(240, SECONDS)
+  private val ConfigTimeout: FiniteDuration  = FiniteDuration(240, SECONDS)
 }

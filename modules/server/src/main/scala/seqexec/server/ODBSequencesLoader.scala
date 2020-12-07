@@ -22,8 +22,8 @@ import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.UnrecognizedInstrument
 
 final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
-  odbProxy: OdbProxy[F],
-  translator: SeqTranslate[F]
+  odbProxy:            OdbProxy[F],
+  translator:          SeqTranslate[F]
 )(implicit execEngine: ExecEngineType[F]) {
 
   private def unloadEvent(seqId: Observation.Id): EventType[F] =
@@ -32,25 +32,26 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
         if (execEngine.canUnload(seqId)(st)) {
           (EngineState.sequences[F].modify(ss => ss - seqId) >>>
             EngineState.selected.modify(ss =>
-              ss.toList.filter { case (_, x) => x =!= seqId }.toMap) >>>
-            EngineState.queues.modify(_.view.mapValues(
-              ExecutionQueue.queue.modify(_.filterNot(_ === seqId))).toMap))(st)
+              ss.toList.filter { case (_, x) => x =!= seqId }.toMap
+            ) >>>
+            EngineState.queues.modify(
+              _.view.mapValues(ExecutionQueue.queue.modify(_.filterNot(_ === seqId))).toMap
+            ))(st)
         } else st
       }.withEvent(UnloadSequence(seqId)).toHandle
     )
 
-  def loadEvents(
-    seqId: Observation.Id)(
-    implicit cio: Concurrent[F],
-             tio: Timer[F]
+  def loadEvents(seqId: Observation.Id)(implicit
+    cio:                Concurrent[F],
+    tio:                Timer[F]
   ): F[List[EventType[F]]] = {
     //Three ways of handling errors are mixed here: java exceptions, Either and MonadError
     val t: F[(List[Throwable], Option[SequenceGen[F]])] =
-      odbProxy.read(seqId).flatMap {odbSeq =>
+      odbProxy.read(seqId).flatMap { odbSeq =>
         val configObsId: F[String] =
-          odbSeq
-            .config
-            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP).toF[F]
+          odbSeq.config
+            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP)
+            .toF[F]
 
         // Verify that the program id is valid
         configObsId
@@ -90,10 +91,10 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
       case _                 => SeqexecFailure.explain(SeqexecException(err))
     }
 
-  def refreshSequenceList(odbList: List[Observation.Id], st: EngineState[F])(
-      implicit cio: Concurrent[F],
-               tio: Timer[F]
-    ): F[List[EventType[F]]] = {
+  def refreshSequenceList(odbList: List[Observation.Id], st: EngineState[F])(implicit
+    cio:                           Concurrent[F],
+    tio:                           Timer[F]
+  ): F[List[EventType[F]]] = {
     val seqexecList = st.sequences.keys.toList
 
     val loads = odbList.diff(seqexecList).traverse(loadEvents).map(_.flatten)
@@ -108,20 +109,21 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
 object ODBSequencesLoader {
 
   private def toEngineSequence[F[_]](
-    id:  Observation.Id,
+    id:        Observation.Id,
     overrides: SystemOverrides,
-    seq: SequenceGen[F],
-    d:   HeaderExtraData
+    seq:       SequenceGen[F],
+    d:         HeaderExtraData
   ): Sequence[F] = Sequence(id, toStepList(seq, overrides, d))
 
   private[server] def loadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
-    seqId: Observation.Id,
-    seqg:  SequenceGen[F],
+    seqId:      Observation.Id,
+    seqg:       SequenceGen[F],
     execEngine: ExecEngineType[F]
   ): Endo[EngineState[F]] =
     st =>
-      EngineState.sequences[F].modify(
-        ss =>
+      EngineState
+        .sequences[F]
+        .modify(ss =>
           ss + (seqId -> SequenceData[F](
             None,
             SystemOverrides.AllEnabled,
@@ -136,29 +138,28 @@ object ODBSequencesLoader {
             ),
             none
           ))
-      )(st)
+        )(st)
 
   private[server] def reloadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
-    seqId: Observation.Id,
-    seqg:  SequenceGen[F],
+    seqId:      Observation.Id,
+    seqg:       SequenceGen[F],
     execEngine: ExecEngineType[F]
   ): Endo[EngineState[F]] =
     st =>
       EngineState
         .atSequence[F](seqId)
-        .modify(
-          sd =>
-            sd.copy(
-              seqGen = seqg,
-              seq = execEngine.reload(
-                sd.seq,
-                toStepList(
-                  seqg,
-                  sd.overrides,
-                  HeaderExtraData(st.conditions, st.operator, sd.observer)
-                )
+        .modify(sd =>
+          sd.copy(
+            seqGen = seqg,
+            seq = execEngine.reload(
+              sd.seq,
+              toStepList(
+                seqg,
+                sd.overrides,
+                HeaderExtraData(st.conditions, st.operator, sd.observer)
               )
             )
+          )
         )(st)
 
 }

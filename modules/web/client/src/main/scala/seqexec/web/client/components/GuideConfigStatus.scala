@@ -23,8 +23,8 @@ final case class GuideConfigStatus(config: TelescopeGuideConfig)
     extends ReactProps[GuideConfigStatus](GuideConfigStatus.component)
 
 /**
-  * Alert message when the connection disappears
-  */
+ * Alert message when the connection disappears
+ */
 object GuideConfigStatus {
   type Props = GuideConfigStatus
 
@@ -50,34 +50,40 @@ object GuideConfigStatus {
     .stateless
     .render_P { p =>
       React.Fragment(
-        Header(as   = "span",
+        Header(as = "span",
                size = Small,
                clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide
-                 .when_(p.config.mountGuide === MountGuideOption.MountGuideOn))(
+                 .when_(p.config.mountGuide === MountGuideOption.MountGuideOn)
+        )(
           s"Mount: ${p.config.mountGuide.show}"
         ),
-        Header(as   = "span",
+        Header(as = "span",
                size = Small,
                clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide
-                 .when_(p.config.m1Guide =!= M1GuideConfig.M1GuideOff))(
+                 .when_(p.config.m1Guide =!= M1GuideConfig.M1GuideOff)
+        )(
           s"M1: ${p.config.m1Guide.toString}"
         ),
         p.config.m2Guide match {
           case M2GuideConfig.M2GuideOn(c, s) =>
             React.Fragment(
-              Header(as    = "span",
-                     size  = Small,
-                     clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(s.nonEmpty))(
+              Header(as = "span",
+                     size = Small,
+                     clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(s.nonEmpty)
+              )(
                 s"Tip/Tilt: ${s.map(_.toString).mkString("+")}".when(s.nonEmpty),
                 s"Tip/Tilt: Off".when(s.isEmpty)
               ),
-              Header(as    = "span",
-                     size  = Small,
-                     clazz = SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn))(
+              Header(
+                as = "span",
+                size = Small,
+                clazz =
+                  SeqexecStyles.item |+| SeqexecStyles.activeGuide.when_(c === ComaOption.ComaOn)
+              )(
                 s"Coma: ${c.toString}"
               )
             )
-          case M2GuideConfig.M2GuideOff =>
+          case M2GuideConfig.M2GuideOff      =>
             React.Fragment(
               Header(as = "span", size = Small, clazz = SeqexecStyles.item)(
                 "Tip/Tilt: Off"

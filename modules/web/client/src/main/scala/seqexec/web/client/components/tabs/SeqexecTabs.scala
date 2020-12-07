@@ -17,8 +17,8 @@ import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.Pages._
 
 /**
-  * Menu with tabs
-  */
+ * Menu with tabs
+ */
 final case class SeqexecTabs(
   router: RouterCtl[SeqexecPages]
 ) extends ReactProps[SeqexecTabs](SeqexecTabs.component)
@@ -34,8 +34,8 @@ object SeqexecTabs {
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val tabsL = x().tabs.toList
-        val runningInstruments = tabsL.collect {
+        val tabsL                = x().tabs.toList
+        val runningInstruments   = tabsL.collect {
           case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
             i
         }
@@ -49,7 +49,7 @@ object SeqexecTabs {
             .map {
               case Right(t) =>
                 SequenceTab(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)
-              case Left(t) =>
+              case Left(t)  =>
                 CalibrationQueueTab(p.router, t)
             }
         React.Fragment(

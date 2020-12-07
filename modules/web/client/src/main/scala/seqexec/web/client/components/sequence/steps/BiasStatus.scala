@@ -14,11 +14,11 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 
 case class BiasStatus(
-  obsId: Observation.Id,
-  stepId: StepId,
-  fileId: String,
+  obsId:    Observation.Id,
+  stepId:   StepId,
+  fileId:   String,
   stopping: Boolean,
-  paused: Boolean
+  paused:   Boolean
 ) extends ReactProps[BiasStatus](BiasStatus.component) {
 
   protected[steps] val connect =
@@ -41,7 +41,7 @@ object BiasStatus extends ProgressLabel {
             proxy() match {
               case Some(ObservationProgress(_, _, _, _, stage)) =>
                 label(p.fileId, None, p.stopping, p.paused, stage)
-              case _ =>
+              case _                                            =>
                 if (p.paused) s"${p.fileId} - Paused" else p.fileId
             }
           )

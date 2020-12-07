@@ -9,7 +9,8 @@ import java.time.format.DateTimeFormatter
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import seqexec.model.dhs.{ImageFileId, toImageFileId}
+import seqexec.model.dhs.ImageFileId
+import seqexec.model.dhs.toImageFileId
 import seqexec.server.SystemOverrides.overrideLogMessage
 
 class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
@@ -17,7 +18,7 @@ class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: DhsClient.ImageParameters): F[ImageFileId] = for {
-    _ <- overrideLogMessage("DHS", "setKeywords")
+    _    <- overrideLogMessage("DHS", "setKeywords")
     date <- Sync[F].delay(LocalDate.now)
     time <- Sync[F].delay(System.currentTimeMillis % 1000)
   } yield toImageFileId(f"S${date.format(format)}S${time}%04d")

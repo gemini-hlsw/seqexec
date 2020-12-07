@@ -14,10 +14,10 @@ import seqexec.web.client.circuit.QueueRequestsFocus
 import seqexec.web.client.services.SeqexecWebClient
 
 /**
-  * Handles actions sending requests to the backend
-  *
-  * Note this handler is based on an unsafe lens. Don't change the model from here
-  */
+ * Handles actions sending requests to the backend
+ *
+ * Note this handler is based on an unsafe lens. Don't change the model from here
+ */
 class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, QueueRequestsFocus] {
@@ -29,53 +29,57 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
         requestEffect(qid,
                       SeqexecWebClient.addSequencesToQueue(ids, _),
                       AllDayCalCompleted.apply,
-                      AllDayCalFailed.apply))
+                      AllDayCalFailed.apply
+        )
+      )
   }
 
-  def handleAddDayCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestAddSeqCal(qid, oid) =>
-      effectOnly(
-        requestEffect(qid,
-                      SeqexecWebClient.addSequenceToQueue(oid, _),
-                      AllDayCalCompleted.apply,
-                      AllDayCalFailed.apply))
+  def handleAddDayCal: PartialFunction[Any, ActionResult[M]] = { case RequestAddSeqCal(qid, oid) =>
+    effectOnly(
+      requestEffect(qid,
+                    SeqexecWebClient.addSequenceToQueue(oid, _),
+                    AllDayCalCompleted.apply,
+                    AllDayCalFailed.apply
+      )
+    )
   }
 
-  def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestClearAllCal(qid) =>
-      effectOnly(
-        requestEffect(qid,
-                      SeqexecWebClient.clearQueue,
-                      ClearAllCalCompleted.apply,
-                      ClearAllCalFailed.apply))
+  def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = { case RequestClearAllCal(qid) =>
+    effectOnly(
+      requestEffect(qid,
+                    SeqexecWebClient.clearQueue,
+                    ClearAllCalCompleted.apply,
+                    ClearAllCalFailed.apply
+      )
+    )
   }
 
-  def handleRunCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestRunCal(qid) =>
-      (value.clientId,
-       value.queuesObserver.get(qid).orElse(value.calTabObserver))
-        .mapN { (cid, obs) =>
-          effectOnly(
-            requestEffect2(
-              (qid, cid),
-              SeqexecWebClient.runQueue(_: QueueId, _: ClientId, obs),
-              RunCalCompleted.apply,
-              RunCalFailed.apply))
-        }
-        .getOrElse(noChange)
+  def handleRunCal: PartialFunction[Any, ActionResult[M]] = { case RequestRunCal(qid) =>
+    (value.clientId, value.queuesObserver.get(qid).orElse(value.calTabObserver))
+      .mapN { (cid, obs) =>
+        effectOnly(
+          requestEffect2((qid, cid),
+                         SeqexecWebClient.runQueue(_: QueueId, _: ClientId, obs),
+                         RunCalCompleted.apply,
+                         RunCalFailed.apply
+          )
+        )
+      }
+      .getOrElse(noChange)
   }
 
-  def handleStopCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestStopCal(qid) =>
-      value.clientId
-        .map { cid =>
-          effectOnly(
-            requestEffect2((qid, cid),
-                           SeqexecWebClient.stopQueue,
-                           StopCalCompleted.apply,
-                           StopCalFailed.apply))
-        }
-        .getOrElse(noChange)
+  def handleStopCal: PartialFunction[Any, ActionResult[M]] = { case RequestStopCal(qid) =>
+    value.clientId
+      .map { cid =>
+        effectOnly(
+          requestEffect2((qid, cid),
+                         SeqexecWebClient.stopQueue,
+                         StopCalCompleted.apply,
+                         StopCalFailed.apply
+          )
+        )
+      }
+      .getOrElse(noChange)
   }
 
   def handleRemoveSeqCal: PartialFunction[Any, ActionResult[M]] = {
@@ -86,25 +90,25 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
             requestEffect2((qid, id),
                            SeqexecWebClient.removeSequenceFromQueue,
                            RemoveSeqCalCompleted.apply,
-                           RemoveSeqCalFailed.apply(_: QueueId, id)))
+                           RemoveSeqCalFailed.apply(_: QueueId, id)
+            )
+          )
         }
         .getOrElse(noChange)
   }
 
-  def handleMoveCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestMoveCal(qid, oid, i) =>
-      value.clientId
-        .map { cid =>
-          effectOnly(
-            requestEffect2((qid, cid),
-                           SeqexecWebClient.moveSequenceQueue(_: QueueId,
-                                                              oid,
-                                                              i,
-                                                              _: ClientId),
-                           MoveCalCompleted.apply,
-                           MoveCalFailed.apply(_: QueueId, oid)))
-        }
-        .getOrElse(noChange)
+  def handleMoveCal: PartialFunction[Any, ActionResult[M]] = { case RequestMoveCal(qid, oid, i) =>
+    value.clientId
+      .map { cid =>
+        effectOnly(
+          requestEffect2((qid, cid),
+                         SeqexecWebClient.moveSequenceQueue(_: QueueId, oid, i, _: ClientId),
+                         MoveCalCompleted.apply,
+                         MoveCalFailed.apply(_: QueueId, oid)
+          )
+        )
+      }
+      .getOrElse(noChange)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
@@ -114,6 +118,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
          handleRunCal,
          handleStopCal,
          handleMoveCal,
-         handleRemoveSeqCal).combineAll
+         handleRemoveSeqCal
+    ).combineAll
 
 }

@@ -27,8 +27,8 @@ import seqexec.web.client.model.TabOperations
 import seqexec.web.client.reusability._
 
 /**
-  * Contains a set of control buttons like stop/abort
-  */
+ * Contains a set of control buttons like stop/abort
+ */
 final case class ControlButtons(
   obsId:               Observation.Id,
   operations:          List[Operations[_]],
@@ -80,15 +80,15 @@ object ControlButtons {
     .render_P { p =>
       val pauseGracefullyIcon: VdomNode =
         p.nsPendingObserveCmd
-          .collect {
-            case NodAndShuffleStep.PauseGracefully => requestedIcon(IconPause): VdomNode
+          .collect { case NodAndShuffleStep.PauseGracefully =>
+            requestedIcon(IconPause): VdomNode
           }
           .getOrElse(IconPause)
 
       val stopGracefullyIcon: VdomNode =
         p.nsPendingObserveCmd
-          .collect {
-            case NodAndShuffleStep.StopGracefully => requestedIcon(IconStop): VdomNode
+          .collect { case NodAndShuffleStep.StopGracefully =>
+            requestedIcon(IconStop): VdomNode
           }
           .getOrElse(IconStop)
 
@@ -99,43 +99,43 @@ object ControlButtons {
           ^.cls := "ui icon buttons",
           SeqexecStyles.notInMobile,
           p.operations.map {
-            case PauseObservation =>
+            case PauseObservation            =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Teal,
-                  onClick  = requestObsPause(p.obsId, p.stepId),
+                  icon = true,
+                  color = Teal,
+                  onClick = requestObsPause(p.obsId, p.stepId),
                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
                 )(IconPause)
               )("Pause the current exposure")
-            case StopObservation =>
+            case StopObservation             =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Orange,
-                  onClick  = requestStop(p.obsId, p.stepId),
+                  icon = true,
+                  color = Orange,
+                  onClick = requestStop(p.obsId, p.stepId),
                   disabled = p.requestInFlight || isReadingOut
                 )(IconStop)
               )("Stop the current exposure early")
-            case AbortObservation =>
+            case AbortObservation            =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Red,
-                  onClick  = requestAbort(p.obsId, p.stepId),
+                  icon = true,
+                  color = Red,
+                  onClick = requestAbort(p.obsId, p.stepId),
                   disabled = p.requestInFlight || isReadingOut
                 )(IconTrash)
               )("Abort the current exposure")
-            case ResumeObservation =>
+            case ResumeObservation           =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Blue,
-                  onClick  = requestObsResume(p.obsId, p.stepId),
+                  icon = true,
+                  color = Blue,
+                  onClick = requestObsResume(p.obsId, p.stepId),
                   disabled = p.requestInFlight || !p.isObservePaused || isReadingOut
                 )(IconPlay)
               )("Resume the current exposure")
@@ -144,41 +144,41 @@ object ControlButtons {
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Teal,
-                  basic    = true,
-                  onClick  = requestObsPause(p.obsId, p.stepId),
+                  icon = true,
+                  color = Teal,
+                  basic = true,
+                  onClick = requestObsPause(p.obsId, p.stepId),
                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
                 )(IconPause)
               )("Pause the current exposure immediately")
-            case PauseGracefullyObservation =>
+            case PauseGracefullyObservation  =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon    = true,
-                  color   = Teal,
+                  icon = true,
+                  color = Teal,
                   onClick = requestGracefulObsPause(p.obsId, p.stepId),
                   disabled =
                     p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
                 )(pauseGracefullyIcon)
               )("Pause the current exposure at the end of the cycle")
-            case StopImmediatelyObservation =>
+            case StopImmediatelyObservation  =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon     = true,
-                  color    = Orange,
-                  basic    = true,
-                  onClick  = requestStop(p.obsId, p.stepId),
+                  icon = true,
+                  color = Orange,
+                  basic = true,
+                  onClick = requestStop(p.obsId, p.stepId),
                   disabled = p.requestInFlight || isReadingOut
                 )(IconStop)
               )("Stop the current exposure immediately")
-            case StopGracefullyObservation =>
+            case StopGracefullyObservation   =>
               Popup(
                 position = PopupPosition.TopRight,
                 trigger = Button(
-                  icon    = true,
-                  color   = Orange,
+                  icon = true,
+                  color = Orange,
                   onClick = requestGracefulStop(p.obsId, p.stepId),
                   disabled =
                     p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
@@ -193,8 +193,8 @@ object ControlButtons {
 }
 
 /**
-  * Contains the control buttons like stop/abort at the row level
-  */
+ * Contains the control buttons like stop/abort at the row level
+ */
 final case class StepsControlButtons(
   obsId:           Observation.Id,
   instrument:      Instrument,

@@ -3,8 +3,8 @@
 
 package seqexec.server.gsaoi
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -20,11 +20,18 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{CleanConfig, ConfigResult, ConfigUtilOps, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
+import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSpecifics
+import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem._
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
 import seqexec.server.gsaoi.GsaoiController._
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
@@ -38,8 +45,8 @@ import squants.time.TimeConversions._
 
 final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
   controller: GsaoiController[F],
-  dhsClient:  DhsClient[F])
-    extends DhsInstrument[F]
+  dhsClient:  DhsClient[F]
+) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
   import Gsaoi._
@@ -56,10 +63,11 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
     config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
-      EitherT.fromEither[F]{
-        readDCConfig(config)
-          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-      }
+      EitherT
+        .fromEither[F] {
+          readDCConfig(config)
+            .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+        }
         .widenRethrowT
         .flatMap(x => controller.observe(fileId, x))
     }
@@ -82,10 +90,11 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
   override val resource: Instrument = Instrument.Gsaoi
 
   /**
-    * Called to configure a system
-    */
+   * Called to configure a system
+   */
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
@@ -114,11 +123,10 @@ object Gsaoi {
       filter       <- config.extractInstAs[Filter](FILTER_PROP)
       odgwSize     <- config.extractInstAs[OdgwSize](ODGW_SIZE_PROP)
       utilityWheel <- config.extractInstAs[UtilityWheel](UTILITY_WHEEL_PROP)
-    } yield
-      obsType match {
-        case DARK_OBSERVE_TYPE => CCConfig(Filter.BLOCKED, odgwSize, utilityWheel, WindowCover.Closed)
-        case _ => CCConfig(filter, odgwSize, utilityWheel, WindowCover.Opened)
-      }
+    } yield obsType match {
+      case DARK_OBSERVE_TYPE => CCConfig(Filter.BLOCKED, odgwSize, utilityWheel, WindowCover.Closed)
+      case _                 => CCConfig(filter, odgwSize, utilityWheel, WindowCover.Opened)
+    }
 
   private def extractExposureTime(
     config: CleanConfig
@@ -146,11 +154,13 @@ object Gsaoi {
   private def extractNrOfFowSamples(
     config: CleanConfig
   ): Either[ExtractFailure, NumberOfFowSamples] =
-    extractReadMode(config).map {
-      case ReadMode.BRIGHT      => 1
-      case ReadMode.FAINT       => 4
-      case ReadMode.VERY_FAINT  => 8
-    }.map(tag[NumberOfFowSamplesI][Int])
+    extractReadMode(config)
+      .map {
+        case ReadMode.BRIGHT     => 1
+        case ReadMode.FAINT      => 4
+        case ReadMode.VERY_FAINT => 8
+      }
+      .map(tag[NumberOfFowSamplesI][Int])
 
   private def readDCConfig(config: CleanConfig): Either[ExtractFailure, DCConfig] =
     for {
@@ -172,7 +182,8 @@ object Gsaoi {
 
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gsaoi
 
-    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+    override val oiOffsetGuideThreshold: Option[Length] =
+      (Arcseconds(0.01) / FOCAL_PLANE_SCALE).some
 
   }
 

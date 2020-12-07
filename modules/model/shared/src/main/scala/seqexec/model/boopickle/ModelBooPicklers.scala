@@ -26,7 +26,8 @@ import lucuma.core.util.Enumerated
 import seqexec.model.GmosParameters._
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.Observation
-import seqexec.model.UserPrompt.{ChecksOverride, SeqCheck}
+import seqexec.model.UserPrompt.ChecksOverride
+import seqexec.model.UserPrompt.SeqCheck
 import seqexec.model._
 import seqexec.model.dhs._
 import seqexec.model.enum._
@@ -36,10 +37,10 @@ import shapeless.tag.@@
 import squants.time.TimeConversions._
 
 /**
-  * Contains boopickle implicit picklers of model objects
-  * Boopickle can auto derive encoders but it is preferred to make
-  * them explicitly
-  */
+ * Contains boopickle implicit picklers of model objects
+ * Boopickle can auto derive encoders but it is preferred to make
+ * them explicitly
+ */
 trait ModelBooPicklers extends BooPicklerSyntax {
   implicit val yearPickler: Pickler[Year]                           = transformPickler(Year.of)(_.getValue)
   implicit val localDatePickler: Pickler[LocalDate]                 =
@@ -243,13 +244,13 @@ trait ModelBooPicklers extends BooPicklerSyntax {
       .addConcreteType[Notification.RequestFailed]
       .addConcreteType[Notification.SubsystemBusy]
 
-  implicit val observationCheckOverride          = generatePickler[UserPrompt.ObsConditionsCheckOverride]
-  implicit val targetCheckOverride               = generatePickler[UserPrompt.TargetCheckOverride]
-  implicit val seqCheck                          =
+  implicit val observationCheckOverride               = generatePickler[UserPrompt.ObsConditionsCheckOverride]
+  implicit val targetCheckOverride                    = generatePickler[UserPrompt.TargetCheckOverride]
+  implicit val seqCheck                               =
     compositePickler[SeqCheck]
       .addConcreteType[UserPrompt.TargetCheckOverride]
       .addConcreteType[UserPrompt.ObsConditionsCheckOverride]
-  implicit val checksOverridePickler             = generatePickler[UserPrompt.ChecksOverride]
+  implicit val checksOverridePickler                  = generatePickler[UserPrompt.ChecksOverride]
   implicit val userPromptPickler: Pickler[UserPrompt] =
     compositePickler[UserPrompt]
       .addConcreteType[ChecksOverride]

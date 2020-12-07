@@ -43,8 +43,8 @@ final case class StepConfigToolbar(
 }
 
 /**
-  * Toolbar when displaying a step configuration
-  */
+ * Toolbar when displaying a step configuration
+ */
 object StepConfigToolbar {
   type Props = StepConfigToolbar
 
@@ -73,9 +73,10 @@ object StepConfigToolbar {
           GridColumn(floated = Left, width = Two, clazz = SeqexecStyles.shorterFields)(
             // Back to sequence button
             p.router.link(sequencePage)(
-              Button(icon          = true,
+              Button(icon = true,
                      labelPosition = LabelPosition.Left,
-                     onClick       = p.router.setUrlAndDispatchCB(sequencePage))(IconChevronLeft, "Back")
+                     onClick = p.router.setUrlAndDispatchCB(sequencePage)
+              )(IconChevronLeft, "Back")
             )
           ),
           GridColumn(floated = Left, width = Six, verticalAlign = Bottom, only = GridOnly.Computer)(
@@ -89,10 +90,10 @@ object StepConfigToolbar {
               // Previous step button
               (p.step > 0).option(
                 p.router.link(prevStepPage)(
-                  Button(icon          = true,
+                  Button(icon = true,
                          labelPosition = LabelPosition.Left,
-                         onClick       = p.router.setUrlAndDispatchCB(prevStepPage))(IconChevronLeft,
-                                                                               "Prev")
+                         onClick = p.router.setUrlAndDispatchCB(prevStepPage)
+                  )(IconChevronLeft, "Prev")
                 )
               ),
               Label(size = Large, clazz = SeqexecStyles.labelAsButton)(
@@ -101,10 +102,10 @@ object StepConfigToolbar {
               // Next step button
               (p.step < p.total - 1).option(
                 p.router.link(nextStepPage)(
-                  Button(icon          = true,
+                  Button(icon = true,
                          labelPosition = LabelPosition.Right,
-                         onClick       = p.router.setUrlAndDispatchCB(nextStepPage))(IconChevronRight,
-                                                                               "Next")
+                         onClick = p.router.setUrlAndDispatchCB(nextStepPage)
+                  )(IconChevronRight, "Next")
                 )
               )
             )

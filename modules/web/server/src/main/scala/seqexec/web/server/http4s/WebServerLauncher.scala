@@ -4,7 +4,7 @@
 package seqexec.web.server.http4s
 
 import java.io.FileInputStream
-import java.nio.file.{Path => FilePath}
+import java.nio.file.{ Path => FilePath }
 import java.security.KeyStore
 import java.security.Security
 import javax.net.ssl.KeyManagerFactory
@@ -38,7 +38,7 @@ import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
-import org.http4s.server.middleware.{Logger => Http4sLogger}
+import org.http4s.server.middleware.{ Logger => Http4sLogger }
 import org.http4s.syntax.kleisli._
 import pureconfig._
 import seqexec.model.config._
@@ -83,8 +83,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
     Sync[F].delay(AuthenticationService[F](mode, conf))
 
   def makeContext[F[_]: Sync](tls: TLSConfig): F[SSLContext] = Sync[F].delay {
-    val ksStream = new FileInputStream(tls.keyStore.toFile.getAbsolutePath)
-    val ks       = KeyStore.getInstance("JKS")
+    val ksStream   = new FileInputStream(tls.keyStore.toFile.getAbsolutePath)
+    val ks         = KeyStore.getInstance("JKS")
     ks.load(ksStream, tls.keyStorePwd.toCharArray)
     ksStream.close()
     val trustStore = StoreInfo(tls.keyStore.toFile.getAbsolutePath, tls.keyStorePwd)
@@ -148,9 +148,19 @@ object WebServerLauncher extends IOApp with LogInitialization {
         .flatten
 
     val router = Router[F](
-      "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis, bec).service,
+      "/"                     -> new StaticRoutes(conf.mode === Mode.Development,
+                              OcsBuildInfo.builtAtMillis,
+                              bec
+      ).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.mode, as, se.systems.guideDb, se.systems.gpi.statusDb, clientsDb, outputs).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site,
+                                       conf.mode,
+                                       as,
+                                       se.systems.guideDb,
+                                       se.systems.gpi.statusDb,
+                                       clientsDb,
+                                       outputs
+      ).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
       "/smartgcal"            -> new SmartGcalRoutes[F](cal).service
     )
@@ -159,7 +169,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/ping" -> new PingRoutes(as).service
     )
 
-    val loggedRoutes =
+    val loggedRoutes                                  =
       pingRouter <+> Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router)
     val metricsMiddleware: Resource[F, HttpRoutes[F]] =
       Prometheus.metricsOps[F](cr, "seqexec").map(Metrics[F](_)(loggedRoutes))
@@ -194,7 +204,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
 /____/\___/\__, /\___/_/|_|\___/\___/
              /_/
 """
-    val msg =
+    val msg    =
       s"""Start web server for site ${conf.site} on ${conf.mode} mode, version ${OcsBuildInfo.version}"""
     Logger[F].info(banner + msg)
   }
@@ -208,8 +218,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
     val asyncAppender = new AsyncAppender
     val appender      = new AppenderForClients(out)
     Option(LoggerFactory.getILoggerFactory)
-      .collect {
-        case lc: LoggerContext => lc
+      .collect { case lc: LoggerContext =>
+        lc
       }
       .foreach { ctx =>
         asyncAppender.setContext(ctx)
@@ -218,8 +228,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
       }
 
     Option(LoggerFactory.getLogger("seqexec"))
-      .collect {
-        case l: Logger => l
+      .collect { case l: Logger =>
+        l
       }
       .foreach { l =>
         l.addAppender(asyncAppender)
@@ -233,7 +243,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   def logError[F[_]: Logger]: PartialFunction[Throwable, F[Unit]] = {
     case e: SeqexecFailure =>
       Logger[F].error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")
-    case e: Exception => Logger[F].error(e)("Seqexec global error handler")
+    case e: Exception      => Logger[F].error(e)("Seqexec global error handler")
   }
 
   /** Reads the configuration and launches the seqexec engine and web server */
@@ -287,13 +297,29 @@ object WebServerLauncher extends IOApp with LogInitialization {
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         _      <- Resource.liftF(logToClients(out))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
-        cs     <- Resource.liftF(Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_)))
+        cs     <- Resource.liftF(
+                    Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_))
+                  )
         _      <- Resource.liftF(publishStats(cs).compile.drain.start)
         engine <- engineIO(conf, cli, cr)
         _      <- webServerIO(conf, inq, out, engine, cr, cs, b)
-        _      <- Resource.liftF(inq.size.evalMap(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1)).compile.drain.start)
-        _      <- Resource.liftF(out.subscribers.evalMap(l => Logger[IO].debug(s"Subscribers amount: $l").whenA(l > 1)).compile.drain.start)
-        f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
+        _      <- Resource.liftF(
+                    inq.size
+                      .evalMap(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1))
+                      .compile
+                      .drain
+                      .start
+                  )
+        _      <- Resource.liftF(
+                    out.subscribers
+                      .evalMap(l => Logger[IO].debug(s"Subscribers amount: $l").whenA(l > 1))
+                      .compile
+                      .drain
+                      .start
+                  )
+        f      <- Resource.liftF(
+                    engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start
+                  )
         _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 

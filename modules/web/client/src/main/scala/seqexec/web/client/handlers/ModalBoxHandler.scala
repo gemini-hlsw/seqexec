@@ -12,14 +12,19 @@ import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.model._
 
 /**
-  * Handles actions related to opening/closing a modal
-  */
-class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers[M, SectionVisibilityState] {
+ * Handles actions related to opening/closing a modal
+ */
+class ModalBoxHandler[M](
+  openAction:  Action,
+  closeAction: Action,
+  modelRW:     ModelRW[M, SectionVisibilityState]
+) extends ActionHandler(modelRW)
+    with Handlers[M, SectionVisibilityState] {
   def openModal: PartialFunction[Any, ActionResult[M]] = {
     case x if x == openAction && value === SectionClosed =>
       updated(SectionOpen)
 
-    case x if x == openAction                            =>
+    case x if x == openAction =>
       noChange
   }
 
@@ -27,7 +32,7 @@ class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: Model
     case x if x == closeAction && value === SectionOpen =>
       updated(SectionClosed)
 
-    case x if x == closeAction                          =>
+    case x if x == closeAction =>
       noChange
   }
 

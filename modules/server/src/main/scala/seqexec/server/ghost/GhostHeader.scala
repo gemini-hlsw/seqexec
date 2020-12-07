@@ -12,8 +12,7 @@ object GhostHeader {
 
   def header[F[_]: Applicative]: Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): F[Unit] =
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         Applicative[F].unit
 
       override def sendAfter(id: ImageFileId): F[Unit] =

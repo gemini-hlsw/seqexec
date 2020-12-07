@@ -51,7 +51,9 @@ class SeqTranslateSpec extends AnyFlatSpec {
         config,
         Set(GmosS),
         _ => InstrumentSystem.Uncontrollable,
-        SequenceGen.StepActionsGen(Map.empty, (_, _) => List(observeActions(Action.ActionState.Idle)))
+        SequenceGen.StepActionsGen(Map.empty,
+                                   (_, _) => List(observeActions(Action.ActionState.Idle))
+        )
       )
     )
   )
@@ -76,17 +78,21 @@ class SeqTranslateSpec extends AnyFlatSpec {
     .sequenceStateIndex[IO](seqId)
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(toImageFileId(fileId)))))(baseState)
   // Observe paused
-  private val s4: EngineState[IO] = EngineState.sequenceStateIndex[IO](seqId)
-    .modify(_.mark(0)(
-      Result.Paused(
-        ObserveContext[IO](
-          _ => Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
-          _ => Stream.empty,
-          Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
-          Stream.eval(SeqexecFailure.Aborted(seqId).raiseError[IO, Result[IO]]),
-          Seconds(1))
+  private val s4: EngineState[IO] = EngineState
+    .sequenceStateIndex[IO](seqId)
+    .modify(
+      _.mark(0)(
+        Result.Paused(
+          ObserveContext[IO](
+            _ => Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
+            _ => Stream.empty,
+            Stream.emit(Result.OK(Observed(toImageFileId(fileId)))).covary[IO],
+            Stream.eval(SeqexecFailure.Aborted(seqId).raiseError[IO, Result[IO]]),
+            Seconds(1)
+          )
+        )
       )
-    ))(baseState)
+    )(baseState)
   // Observe failed
   private val s5: EngineState[IO] = EngineState
     .sequenceStateIndex[IO](seqId)

@@ -12,8 +12,7 @@ import org.http4s.headers.Location
 class RedirectToHttpsRoutes[F[_]: Sync](toPort: Int, externalName: String) extends Http4sDsl[F] {
   val baseUri: Uri = Uri.fromString(s"https://$externalName:$toPort").getOrElse(Uri.uri("/"))
 
-  val service: HttpRoutes[F] = HttpRoutes.of[F] {
-    case request =>
-      MovedPermanently(Location(baseUri.withPath(request.uri.path)))
+  val service: HttpRoutes[F] = HttpRoutes.of[F] { case request =>
+    MovedPermanently(Location(baseUri.withPath(request.uri.path)))
   }
 }

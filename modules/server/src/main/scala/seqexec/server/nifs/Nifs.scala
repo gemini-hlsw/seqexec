@@ -3,8 +3,8 @@
 
 package seqexec.server.nifs
 
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import cats.data.EitherT
 import cats.data.Kleisli
@@ -23,13 +23,19 @@ import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.{CleanConfig, ConfigResult, InstrumentActions, InstrumentSpecifics, InstrumentSystem, Progress, SeqexecFailure}
+import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
+import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentActions
+import seqexec.server.InstrumentSpecifics
+import seqexec.server.InstrumentSystem
 import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.Progress
+import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -43,8 +49,8 @@ import squants.time.TimeConversions._
 
 final case class Nifs[F[_]: Logger: Concurrent: Timer](
   controller: NifsController[F],
-  dhsClient:  DhsClient[F])
-    extends DhsInstrument[F]
+  dhsClient:  DhsClient[F]
+) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
   import Nifs._
@@ -53,13 +59,15 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     UnpausableControl(StopObserveCmd(_ => controller.stopObserve),
-      AbortObserveCmd(controller.abortObserve))
+                      AbortObserveCmd(controller.abortObserve)
+    )
 
   override def observe(
     config: CleanConfig
   ): Kleisli[F, ImageFileId, ObserveCommandResult] =
     Kleisli { fileId =>
-      EitherT.fromEither[F](getDCConfig(config).adaptExtractFailure)
+      EitherT
+        .fromEither[F](getDCConfig(config).adaptExtractFailure)
         .widenRethrowT
         .flatMap(controller.observe(fileId, _))
     }
@@ -67,7 +75,8 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
   override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
-      .getOrElse(60.seconds).pure[F]
+      .getOrElse(60.seconds)
+      .pure[F]
 
   override def keywordsClient: KeywordsClient[F] = this
 
@@ -82,10 +91,11 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
   override val resource: Instrument = Instrument.Nifs
 
   /**
-    * Called to configure a system
-    */
+   * Called to configure a system
+   */
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    EitherT.fromEither[F](fromSequenceConfig(config))
+    EitherT
+      .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
@@ -179,8 +189,8 @@ object Nifs {
     config
       .extractInstAs[EngReadMode](ENGINEERING_READMODE_PROP)
       .map(_.some)
-      .recover {
-        case KeyNotFound(_) => none
+      .recover { case KeyNotFound(_) =>
+        none
       }
 
   private def extractReadMode(
@@ -211,13 +221,12 @@ object Nifs {
       readMode  <- extractReadMode(config)
       samples   <- extractNrSamples(config)
       obsType   <- extractObsType(config)
-    } yield
-      obsType match {
-        case ARC_OBSERVE_TYPE | FLAT_OBSERVE_TYPE =>
-          ArcFlatDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples)
-        case _ =>
-          StdDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
-      }
+    } yield obsType match {
+      case ARC_OBSERVE_TYPE | FLAT_OBSERVE_TYPE =>
+        ArcFlatDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples)
+      case _                                    =>
+        StdDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
+    }
 
   def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, NifsConfig] =
     for {
@@ -230,7 +239,8 @@ object Nifs {
 
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Nifs
 
-    override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+    override val oiOffsetGuideThreshold: Option[Length] =
+      (Arcseconds(0.01) / FOCAL_PLANE_SCALE).some
 
   }
 

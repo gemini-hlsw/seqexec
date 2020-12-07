@@ -9,9 +9,11 @@ import seqexec.model.BatchCommandState
 import seqexec.model.Observation
 
 @Lenses
-final case class ExecutionQueue(name:      String,
-                                cmdState:  BatchCommandState,
-                                queue:     List[Observation.Id])
+final case class ExecutionQueue(
+  name:     String,
+  cmdState: BatchCommandState,
+  queue:    List[Observation.Id]
+)
 
 object ExecutionQueue {
   def init(name: String): ExecutionQueue =

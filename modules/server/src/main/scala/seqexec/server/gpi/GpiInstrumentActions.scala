@@ -16,10 +16,9 @@ import seqexec.server.ObserveEnvironment
 import seqexec.server.StepType
 
 /**
-  * Gpi needs different actions for A&C
-  */
-class GpiInstrumentActions[F[_]: Logger: Concurrent: Timer]
-    extends InstrumentActions[F] {
+ * Gpi needs different actions for A&C
+ */
+class GpiInstrumentActions[F[_]: Logger: Concurrent: Timer] extends InstrumentActions[F] {
 
   override def observationProgressStream(
     env: ObserveEnvironment[F]
@@ -27,7 +26,7 @@ class GpiInstrumentActions[F[_]: Logger: Concurrent: Timer]
     ObserveActions.observationProgressStream(env)
 
   override def observeActions(
-    env:  ObserveEnvironment[F]
+    env: ObserveEnvironment[F]
   ): List[ParallelActions[F]] =
     if (env.stepType === StepType.AlignAndCalib) {
       Nil

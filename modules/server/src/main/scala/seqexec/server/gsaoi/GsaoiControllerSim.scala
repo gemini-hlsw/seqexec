@@ -23,8 +23,7 @@ object GsaoiControllerSim {
     InstrumentControllerSim[F]("GSAOI").map { sim =>
       new GsaoiFullHandler[F] {
 
-        override def observe(fileId: ImageFileId,
-                             cfg:    DCConfig): F[ObserveCommandResult] =
+        override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
           calcTotalExposureTime(cfg).flatMap {
             sim.observe(fileId, _)
           }

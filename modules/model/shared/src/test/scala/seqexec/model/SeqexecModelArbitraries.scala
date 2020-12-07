@@ -20,7 +20,7 @@ trait SeqexecModelArbitraries {
 
   private val maxListSize = 2
 
-  implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
+  implicit val opArb = Arbitrary[Operator](Gen.alphaStr.map(Operator.apply))
 
   implicit val conArb = Arbitrary[Conditions] {
     for {
@@ -32,16 +32,16 @@ trait SeqexecModelArbitraries {
   }
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
-  implicit def sequencesQueueArb[A](
-    implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
-    for {
-      b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
-      c <- arbitrary[Conditions]
-      o <- arbitrary[Option[Operator]]
-      // We are already testing serialization of conditions and Strings
-      // Let's reduce the test space by only testing the list of items
-    } yield SequencesQueue(Map.empty, c, o, SortedMap.empty, b)
-  }
+  implicit def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] =
+    Arbitrary {
+      for {
+        b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
+        c <- arbitrary[Conditions]
+        o <- arbitrary[Option[Operator]]
+        // We are already testing serialization of conditions and Strings
+        // Let's reduce the test space by only testing the list of items
+      } yield SequencesQueue(Map.empty, c, o, SortedMap.empty, b)
+    }
 
   implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary {
     arbitrary[UUID].map(QueueId)
@@ -65,7 +65,7 @@ trait SeqexecModelArbitraries {
     } yield UserDetails(u, n)
   }
 
-  implicit val obArb = Arbitrary[Observer] { Gen.alphaStr.map(Observer.apply) }
+  implicit val obArb = Arbitrary[Observer](Gen.alphaStr.map(Observer.apply))
   implicit val smArb = Arbitrary[SequenceMetadata] {
     for {
       i <- arbitrary[Instrument]
@@ -83,15 +83,14 @@ trait SeqexecModelArbitraries {
 
   implicit val sqsArb = Arbitrary[SequenceState] {
     for {
-      f <- Gen.oneOf(SequenceState.Completed,
-                     SequenceState.Idle)
+      f <- Gen.oneOf(SequenceState.Completed, SequenceState.Idle)
       r <- arbitrary[SequenceState.Running]
       a <- arbitrary[String].map(SequenceState.Failed.apply)
       s <- Gen.oneOf(f, r, a)
     } yield s
   }
 
-  implicit val svArb = Arbitrary[SequenceView] {
+  implicit val svArb  = Arbitrary[SequenceView] {
     for {
       id <- arbitrary[Observation.Id]
       m  <- arbitrary[SequenceMetadata]
@@ -118,24 +117,22 @@ trait SeqexecModelArbitraries {
     Cogen[(String, String)].contramap(u => (u.username, u.displayName))
 
   implicit val smCogen: Cogen[SequenceMetadata] =
-    Cogen[(Instrument, Option[Observer], String)].contramap(s =>
-      (s.instrument, s.observer, s.name))
+    Cogen[(Instrument, Option[Observer], String)].contramap(s => (s.instrument, s.observer, s.name))
 
   implicit val svCogen: Cogen[SequenceView] =
-    Cogen[(Observation.Id,
-           SequenceMetadata,
-           SequenceState,
-           List[Step],
-           Option[Int])].contramap(s =>
-      (s.id, s.metadata, s.status, s.steps, s.willStopIn))
+    Cogen[(Observation.Id, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s =>
+      (s.id, s.metadata, s.status, s.steps, s.willStopIn)
+    )
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
     Cogen[(Conditions, Option[Operator], List[A])].contramap(s =>
-      (s.conditions, s.operator, s.sessionQueue))
+      (s.conditions, s.operator, s.sessionQueue)
+    )
 
   implicit val conCogen: Cogen[Conditions] =
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>
-      (c.cc, c.iq, c.sb, c.wv))
+      (c.cc, c.iq, c.sb, c.wv)
+    )
 
   implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {
@@ -146,9 +143,9 @@ trait SeqexecModelArbitraries {
   }
 
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
-    Gen.frequency(
-      (2, Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Stop)),
-      (1, arbitrary[BatchCommandState.Run]))
+    Gen.frequency((2, Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Stop)),
+                  (1, arbitrary[BatchCommandState.Run])
+    )
   )
 
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =
@@ -156,7 +153,7 @@ trait SeqexecModelArbitraries {
       .contramap {
         case r @ BatchCommandState.Run(obs, usd, cid) =>
           (r.productPrefix, obs.some, usd.some, cid.some)
-        case o => (o.productPrefix, None, None, None)
+        case o                                        => (o.productPrefix, None, None, None)
       }
 
   implicit val executionQueueViewArb: Arbitrary[ExecutionQueueView] =
@@ -171,11 +168,7 @@ trait SeqexecModelArbitraries {
     }
 
   implicit val executionQueueViewCogen: Cogen[ExecutionQueueView] =
-    Cogen[(QueueId,
-           String,
-           BatchCommandState,
-           BatchExecState,
-           List[Observation.Id])]
+    Cogen[(QueueId, String, BatchCommandState, BatchExecState, List[Observation.Id])]
       .contramap(x => (x.id, x.name, x.cmdState, x.execState, x.queue))
 
   implicit val arbUserLoginRequest: Arbitrary[UserLoginRequest] =
@@ -191,13 +184,7 @@ trait SeqexecModelArbitraries {
 
   implicit val arbTimeUnit: Arbitrary[TimeUnit] =
     Arbitrary {
-      Gen.oneOf(Nanoseconds,
-                Microseconds,
-                Milliseconds,
-                Seconds,
-                Minutes,
-                Hours,
-                Days)
+      Gen.oneOf(Nanoseconds, Microseconds, Milliseconds, Seconds, Minutes, Hours, Days)
     }
 
   implicit val timeUnitCogen: Cogen[TimeUnit] =
@@ -254,8 +241,7 @@ trait SeqexecModelArbitraries {
   }
 
   implicit val saoCogen: Cogen[SingleActionOp] =
-    Cogen[Either[SingleActionOp.Started,
-                 Either[SingleActionOp.Completed, SingleActionOp.Error]]]
+    Cogen[Either[SingleActionOp.Started, Either[SingleActionOp.Completed, SingleActionOp.Error]]]
       .contramap {
         case s: SingleActionOp.Started   => Left(s)
         case c: SingleActionOp.Completed => Right(Left(c))

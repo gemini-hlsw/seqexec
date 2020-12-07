@@ -27,8 +27,8 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.dataTab
 
 /**
-  * Content of the queue tab
-  */
+ * Content of the queue tab
+ */
 object CalQueueTabContent {
   final case class Props(
     canOperate:   Boolean,
@@ -37,7 +37,7 @@ object CalQueueTabContent {
   ) {
     protected[queue] val dayCalConnectOps =
       SeqexecCircuit.connect(SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
-    protected[queue] val dayCalConnect =
+    protected[queue] val dayCalConnect    =
       SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
 
     val isActive: Boolean =
@@ -48,7 +48,7 @@ object CalQueueTabContent {
 
   private val defaultContent =
     Message(
-      icon    = true,
+      icon = true,
       warning = true
     )(
       IconInbox,
@@ -69,23 +69,23 @@ object CalQueueTabContent {
         ).combineAll
 
       TabPane(active = p.isActive,
-              as     = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
-              clazz  = tabClazz)(
+              as = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
+              clazz = tabClazz
+      )(
         dataTab := "daycal",
         <.div(
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
-              case Some(x) => CalQueueToolbar(CalibrationQueueId, x)
-              case _       => <.div()
-            })
-            .when(p.canOperate),
+            case Some(x) => CalQueueToolbar(CalibrationQueueId, x)
+            case _       => <.div()
+          }).when(p.canOperate),
           p.dayCalConnect(_() match {
             case Some(x) =>
               <.div(
                 ^.height := "100%",
                 CalQueueTable(CalQueueTable.Props(CalibrationQueueId, x))
               )
-            case _ => defaultContent
+            case _       => defaultContent
           })
         ).when(p.isActive)
       )

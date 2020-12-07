@@ -14,11 +14,12 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.reusability._
 
-final case class FooterStatus(status: ClientStatus) extends ReactProps[FooterStatus](FooterStatus.component)
+final case class FooterStatus(status: ClientStatus)
+    extends ReactProps[FooterStatus](FooterStatus.component)
 
 /**
-  * Chooses to display either the guide config or a connection status info
-  */
+ * Chooses to display either the guide config or a connection status info
+ */
 object FooterStatus {
 
   type Props = FooterStatus

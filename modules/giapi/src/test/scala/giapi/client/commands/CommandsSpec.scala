@@ -8,8 +8,8 @@ import cats.tests.CatsSuite
 import giapi.client.GiapiArbitraries
 
 /**
-  * Tests Command typeclasses
-  */
+ * Tests Command typeclasses
+ */
 final class CommandsSpec extends CatsSuite with GiapiArbitraries {
   checkAll("Eq[Configuration]", EqTests[Configuration].eqv)
   checkAll("Monoid[Configuration]", MonoidTests[Configuration].monoid)

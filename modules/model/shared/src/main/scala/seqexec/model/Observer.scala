@@ -23,4 +23,3 @@ object Observer {
 
   val valueI: Iso[Observer, String] = GenIso[Observer, String]
 }
-

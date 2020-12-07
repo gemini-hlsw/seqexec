@@ -14,8 +14,6 @@ final class TableSpec extends CatsSuite with TableArbitraries {
   checkAll("Eq[ColumnWidth]", EqTests[ColumnWidth].eqv)
   checkAll("Eq[ColumnMeta[Int]]", EqTests[ColumnMeta[Int]].eqv)
   checkAll("Eq[TableState[Int]]", EqTests[TableState[Int]].eqv)
-  checkAll("Lens[TableState[A], UserModified]",
-           LensTests(TableState.userModified[Int]))
-  checkAll("Lens[TableState[A], NonEmptyList[ColumnMeta[A]]]",
-           LensTests(TableState.columns[Int]))
+  checkAll("Lens[TableState[A], UserModified]", LensTests(TableState.userModified[Int]))
+  checkAll("Lens[TableState[A], NonEmptyList[ColumnMeta[A]]]", LensTests(TableState.columns[Int]))
 }

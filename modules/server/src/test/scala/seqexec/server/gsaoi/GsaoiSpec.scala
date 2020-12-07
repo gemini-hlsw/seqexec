@@ -7,13 +7,11 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 /**
-  * Tests GSAOI Config typeclasses
-  */
+ * Tests GSAOI Config typeclasses
+ */
 final class GsaoiSpec extends CatsSuite with GsaoiArbitraries {
 
   checkAll("Eq[WindowCover]", EqTests[WindowCover].eqv)
-  checkAll("Eq[GsaoiController.DCConfig]",
-           EqTests[GsaoiController.DCConfig].eqv)
-  checkAll("Eq[GsaoiController.CCConfig]",
-           EqTests[GsaoiController.CCConfig].eqv)
+  checkAll("Eq[GsaoiController.DCConfig]", EqTests[GsaoiController.DCConfig].eqv)
+  checkAll("Eq[GsaoiController.CCConfig]", EqTests[GsaoiController.CCConfig].eqv)
 }

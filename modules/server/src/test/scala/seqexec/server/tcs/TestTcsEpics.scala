@@ -3,12 +3,12 @@
 
 package seqexec.server.tcs
 
-import cats.{Applicative, Eq}
-import cats.effect.{Sync, Timer}
+import cats.{ Applicative, Eq }
+import cats.effect.{ Sync, Timer }
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
-import monocle.{Getter, Lens}
+import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
+import monocle.{ Getter, Lens }
 import monocle.macros.Lenses
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.TestEpicsCommand._
@@ -22,8 +22,10 @@ import java.time.Duration
 
 import scala.concurrent.duration.FiniteDuration
 
-class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, List[TestTcsEpics.TestTcsEvent]])
-  extends TcsEpics[F] {
+class TestTcsEpics[F[_]: Sync](
+  state: Ref[F, TestTcsEpics.State],
+  out:   Ref[F, List[TestTcsEpics.TestTcsEvent]]
+) extends TcsEpics[F] {
   import TestTcsEpics._
 
   val outputF: F[List[TestTcsEvent]] = out.get
@@ -60,36 +62,46 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
       .sequence
       .map(_.find(_ =!= ApplyCommandResult.Completed).getOrElse(ApplyCommandResult.Completed))
 
-  override val m1GuideCmd: M1GuideCmd[F] =
-    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m1GuideCmd, state, out) with M1GuideCmd[F] {
+  override val m1GuideCmd: M1GuideCmd[F]             =
+    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m1GuideCmd, state, out)
+      with M1GuideCmd[F] {
       override def setState(v: String): F[Unit] = setParameter1(v)
 
-      override protected def event(st: State): TestTcsEvent = TestTcsEvent.M1GuideCmd(st.m1GuideCmd.param1)
+      override protected def event(st: State): TestTcsEvent =
+        TestTcsEvent.M1GuideCmd(st.m1GuideCmd.param1)
 
       override protected def cmd(st: State): State =
-        st.copy(m1Guide = if(st.m1GuideCmd.param1 === "on") BinaryOnOff.On else BinaryOnOff.Off)
+        st.copy(m1Guide = if (st.m1GuideCmd.param1 === "on") BinaryOnOff.On else BinaryOnOff.Off)
     }
-  override val m2GuideCmd: M2GuideCmd[F] =
-    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m2GuideCmd, state, out) with M2GuideCmd[F] {
+  override val m2GuideCmd: M2GuideCmd[F]             =
+    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m2GuideCmd, state, out)
+      with M2GuideCmd[F] {
       override def setState(v: String): F[Unit] = setParameter1(v)
 
-      override protected def event(st: State): TestTcsEvent = TestTcsEvent.M2GuideCmd(st.m2GuideCmd.param1)
+      override protected def event(st: State): TestTcsEvent =
+        TestTcsEvent.M2GuideCmd(st.m2GuideCmd.param1)
 
       override protected def cmd(st: State): State =
-        st.copy(m2GuideState = if(st.m2GuideCmd.param1 === "on") BinaryOnOff.On else BinaryOnOff.Off)
+        st.copy(m2GuideState =
+          if (st.m2GuideCmd.param1 === "on") BinaryOnOff.On else BinaryOnOff.Off
+        )
     }
-  override val m2GuideModeCmd: M2GuideModeCmd[F] =
-    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m2GuideModeCmd, state, out) with M2GuideModeCmd[F] {
+  override val m2GuideModeCmd: M2GuideModeCmd[F]     =
+    new TestEpicsCommand1[F, State, TestTcsEvent, String](State.m2GuideModeCmd, state, out)
+      with M2GuideModeCmd[F] {
       override def setComa(v: String): F[Unit] = setParameter1(v)
 
-      override protected def event(st: State): TestTcsEvent = TestTcsEvent.M2GuideModeCmd(st.m2GuideModeCmd.param1)
+      override protected def event(st: State): TestTcsEvent =
+        TestTcsEvent.M2GuideModeCmd(st.m2GuideModeCmd.param1)
 
       override protected def cmd(st: State): State =
-        st.copy(comaCorrect = if(st.m2GuideModeCmd.param1 === "on") "On" else "Off")
+        st.copy(comaCorrect = if (st.m2GuideModeCmd.param1 === "on") "On" else "Off")
     }
   override val m2GuideConfigCmd: M2GuideConfigCmd[F] =
-    new TestEpicsCommand3[F, State, TestTcsEvent, String, String, String](State.m2GuideConfigCmd, state, out)
-      with M2GuideConfigCmd[F] {
+    new TestEpicsCommand3[F, State, TestTcsEvent, String, String, String](State.m2GuideConfigCmd,
+                                                                          state,
+                                                                          out
+    ) with M2GuideConfigCmd[F] {
       override def setSource(v: String): F[Unit] = setParameter1(v)
 
       override def setBeam(v: String): F[Unit] = setParameter2(v)
@@ -104,8 +116,9 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
       override protected def cmd(st: State): State = st
     }
-  override val mountGuideCmd: MountGuideCmd[F] =
-    new TestEpicsCommand2[F, State, TestTcsEvent, String, String](State.mountGuideCmd, state, out) with MountGuideCmd[F] {
+  override val mountGuideCmd: MountGuideCmd[F]       =
+    new TestEpicsCommand2[F, State, TestTcsEvent, String, String](State.mountGuideCmd, state, out)
+      with MountGuideCmd[F] {
       override def setSource(v: String): F[Unit] = setParameter1(v)
 
       override def setP1Weight(v: Double): F[Unit] = Applicative[F].unit
@@ -120,10 +133,11 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
       )
 
       override protected def cmd(st: State): State =
-        st.copy(absorbTipTilt = if(st.mountGuideCmd.param2 === "on") 1 else 0)
+        st.copy(absorbTipTilt = if (st.mountGuideCmd.param2 === "on") 1 else 0)
     }
-  override val offsetACmd: OffsetCmd[F] =
-    new TestEpicsCommand2[F, State, TestTcsEvent, Double, Double](State.offsetACmd, state, out) with OffsetCmd[F] {
+  override val offsetACmd: OffsetCmd[F]              =
+    new TestEpicsCommand2[F, State, TestTcsEvent, Double, Double](State.offsetACmd, state, out)
+      with OffsetCmd[F] {
       override def setX(v: Double): F[Unit] = setParameter1(v)
 
       override def setY(v: Double): F[Unit] = setParameter2(v)
@@ -137,7 +151,7 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
         st.copy(xoffsetPoA1 = st.offsetACmd.param1, yoffsetPoA1 = st.offsetACmd.param2)
     }
 
-  override val offsetBCmd: OffsetCmd[F] =  new DummyCmd[F] with OffsetCmd[F] {
+  override val offsetBCmd: OffsetCmd[F] = new DummyCmd[F] with OffsetCmd[F] {
     override def setX(v: Double): F[Unit] = Applicative[F].unit
     override def setY(v: Double): F[Unit] = Applicative[F].unit
   }
@@ -155,47 +169,68 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
   }
 
   override val pwfs1ProbeGuideCmd: ProbeGuideCmd[F] =
-    probeGuideConfigCmd(State.pwfs1ProbeGuideConfigCmd, State.pwfs1ProbeGuideConfig,
-      TestTcsEvent.Pwfs1ProbeGuideConfig.apply)
+    probeGuideConfigCmd(State.pwfs1ProbeGuideConfigCmd,
+                        State.pwfs1ProbeGuideConfig,
+                        TestTcsEvent.Pwfs1ProbeGuideConfig.apply
+    )
 
   override val pwfs2ProbeGuideCmd: ProbeGuideCmd[F] =
-    probeGuideConfigCmd(State.pwfs2ProbeGuideConfigCmd, State.pwfs2ProbeGuideConfig,
-      TestTcsEvent.Pwfs2ProbeGuideConfig.apply)
+    probeGuideConfigCmd(State.pwfs2ProbeGuideConfigCmd,
+                        State.pwfs2ProbeGuideConfig,
+                        TestTcsEvent.Pwfs2ProbeGuideConfig.apply
+    )
 
   override val oiwfsProbeGuideCmd: ProbeGuideCmd[F] =
-    probeGuideConfigCmd(State.oiwfsProbeGuideConfigCmd, State.oiwfsProbeGuideConfig,
-      TestTcsEvent.OiwfsProbeGuideConfig.apply)
+    probeGuideConfigCmd(State.oiwfsProbeGuideConfigCmd,
+                        State.oiwfsProbeGuideConfig,
+                        TestTcsEvent.OiwfsProbeGuideConfig.apply
+    )
 
-  override val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(State.pwfs1ProbeFollowCmd, State.p1FollowS,
-    State.p1Parked, TestTcsEvent.Pwfs1ProbeFollowCmd)
+  override val pwfs1ProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.pwfs1ProbeFollowCmd,
+    State.p1FollowS,
+    State.p1Parked,
+    TestTcsEvent.Pwfs1ProbeFollowCmd
+  )
 
-  override val pwfs2ProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(State.pwfs2ProbeFollowCmd, State.p2FollowS,
-    State.p2Parked, TestTcsEvent.Pwfs2ProbeFollowCmd)
+  override val pwfs2ProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.pwfs2ProbeFollowCmd,
+    State.p2FollowS,
+    State.p2Parked,
+    TestTcsEvent.Pwfs2ProbeFollowCmd
+  )
 
-  override val oiwfsProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(State.oiwfsProbeFollowCmd, State.oiFollowS,
-    State.oiParked, TestTcsEvent.OiwfsProbeFollowCmd)
+  override val oiwfsProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.oiwfsProbeFollowCmd,
+    State.oiFollowS,
+    State.oiParked,
+    TestTcsEvent.OiwfsProbeFollowCmd
+  )
 
   override val aoProbeFollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
     override def setFollowState(v: String): F[Unit] = Applicative[F].unit
   }
 
-  override val pwfs1Park: EpicsCommand[F] = new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs1ParkCmd, state, out) {
-    override protected def event(st: State): TestTcsEvent = TestTcsEvent.Pwfs1ParkCmd
+  override val pwfs1Park: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs1ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Pwfs1ParkCmd
 
-    override protected def cmd(st: State): State = st.copy(p1FollowS = "Off", p1Parked = true)
-  }
+      override protected def cmd(st: State): State = st.copy(p1FollowS = "Off", p1Parked = true)
+    }
 
-  override val pwfs2Park: EpicsCommand[F] = new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs2ParkCmd, state, out) {
-    override protected def event(st: State): TestTcsEvent = TestTcsEvent.Pwfs2ParkCmd
+  override val pwfs2Park: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs2ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Pwfs2ParkCmd
 
-    override protected def cmd(st: State): State = st.copy(p2FollowS = "Off", p2Parked = true)
-  }
+      override protected def cmd(st: State): State = st.copy(p2FollowS = "Off", p2Parked = true)
+    }
 
-  override val oiwfsPark: EpicsCommand[F] = new TestEpicsCommand0[F, State, TestTcsEvent](State.oiwfsParkCmd, state, out) {
-    override protected def event(st: State): TestTcsEvent = TestTcsEvent.OiwfsParkCmd
+  override val oiwfsPark: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.oiwfsParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.OiwfsParkCmd
 
-    override protected def cmd(st: State): State = st.copy(oiFollowS = "Off", oiParked = true)
-  }
+      override protected def cmd(st: State): State = st.copy(oiFollowS = "Off", oiParked = true)
+    }
 
   override val pwfs1StopObserveCmd: EpicsCommand[F] =
     new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs1StopObserveCmd, state, out) {
@@ -251,7 +286,8 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
     override def setMatrix(v: Int): F[Unit] = Applicative[F].unit
   }
 
-  override val aoPrepareControlMatrix: AoPrepareControlMatrix[F] = new DummyCmd[F] with AoPrepareControlMatrix[F] {
+  override val aoPrepareControlMatrix: AoPrepareControlMatrix[F] = new DummyCmd[F]
+    with AoPrepareControlMatrix[F] {
     override def setX(v: Double): F[Unit] = Applicative[F].unit
 
     override def setY(v: Double): F[Unit] = Applicative[F].unit
@@ -357,16 +393,22 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
   override def agInPosition: F[Double] = state.get.map(_.agInPosition)
 
-  override val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.pwfs1ProbeGuideConfig.asGetter)
+  override val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.pwfs1ProbeGuideConfig.asGetter)
 
-  override val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.pwfs2ProbeGuideConfig.asGetter)
+  override val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.pwfs2ProbeGuideConfig.asGetter)
 
-  override val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
+  override val oiwfsProbeGuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
 
-  override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+  override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
+    T:                                           Timer[F]
+  ): F[Unit] =
     Applicative[F].unit
 
-  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] = Applicative[F].unit
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+    Applicative[F].unit
 
   override def hourAngle: F[String] = state.get.map(_.hourAngle)
 
@@ -602,56 +644,69 @@ class TestTcsEpics[F[_]: Sync](state: Ref[F, TestTcsEpics.State], out: Ref[F, Li
 
   override def g4Wavelength: F[Double] = state.get.map(_.g4Wavelength)
 
-  override val g1GuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.g1GuideConfig.asGetter)
-  override val g2GuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.g2GuideConfig.asGetter)
-  override val g3GuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.g3GuideConfig.asGetter)
-  override val g4GuideConfig: ProbeGuideConfig[F] = probeGuideConfigGetters(state, State.g4GuideConfig.asGetter)
+  override val g1GuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.g1GuideConfig.asGetter)
+  override val g2GuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.g2GuideConfig.asGetter)
+  override val g3GuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.g3GuideConfig.asGetter)
+  override val g4GuideConfig: ProbeGuideConfig[F] =
+    probeGuideConfigGetters(state, State.g4GuideConfig.asGetter)
 
-  private def probeGuideConfigCmd(cmdL: Lens[State, TestEpicsCommand4.State[String, String, String, String]],
-                                  statusL: Lens[State, ProbeGuideConfigVals],
-                                  evBuilder: (String, String, String, String) => TestTcsEvent
-                                 )
-  : ProbeGuideCmd[F] = new TestEpicsCommand4[F, State, TestTcsEvent, String, String, String, String](cmdL, state, out)
-    with ProbeGuideCmd[F] {
-    override def setNodachopa(v: String): F[Unit] = setParameter1(v)
+  private def probeGuideConfigCmd(
+    cmdL:      Lens[State, TestEpicsCommand4.State[String, String, String, String]],
+    statusL:   Lens[State, ProbeGuideConfigVals],
+    evBuilder: (String, String, String, String) => TestTcsEvent
+  ): ProbeGuideCmd[F] =
+    new TestEpicsCommand4[F, State, TestTcsEvent, String, String, String, String](cmdL, state, out)
+      with ProbeGuideCmd[F] {
+      override def setNodachopa(v: String): F[Unit] = setParameter1(v)
 
-    override def setNodachopb(v: String): F[Unit] = setParameter2(v)
+      override def setNodachopb(v: String): F[Unit] = setParameter2(v)
 
-    override def setNodbchopa(v: String): F[Unit] = setParameter3(v)
+      override def setNodbchopa(v: String): F[Unit] = setParameter3(v)
 
-    override def setNodbchopb(v: String): F[Unit] = setParameter4(v)
+      override def setNodbchopb(v: String): F[Unit] = setParameter4(v)
 
-    override protected def event(st: State): TestTcsEvent = evBuilder(
-      cmdL.get(st).param1,
-      cmdL.get(st).param2,
-      cmdL.get(st).param3,
-      cmdL.get(st).param4
-    )
+      override protected def event(st: State): TestTcsEvent = evBuilder(
+        cmdL.get(st).param1,
+        cmdL.get(st).param2,
+        cmdL.get(st).param3,
+        cmdL.get(st).param4
+      )
 
-    override protected def cmd(st: State): State = statusL.set(ProbeGuideConfigVals(
-      if(cmdL.get(st).param1 == "On") 1 else 0,
-      if(cmdL.get(st).param2 == "On") 1 else 0,
-      if(cmdL.get(st).param3 == "On") 1 else 0,
-      if(cmdL.get(st).param4 == "On") 1 else 0
-    ))(st)
-  }
+      override protected def cmd(st: State): State = statusL.set(
+        ProbeGuideConfigVals(
+          if (cmdL.get(st).param1 == "On") 1 else 0,
+          if (cmdL.get(st).param2 == "On") 1 else 0,
+          if (cmdL.get(st).param3 == "On") 1 else 0,
+          if (cmdL.get(st).param4 == "On") 1 else 0
+        )
+      )(st)
+    }
 
-  private def probeFollowCmd(cmdL: Lens[State, TestEpicsCommand1.State[String]],
-                             statusL: Lens[State, String],
-                             parkL: Lens[State, Boolean],
-                             evBuilder: String => TestTcsEvent): ProbeFollowCmd[F] =
+  private def probeFollowCmd(
+    cmdL:      Lens[State, TestEpicsCommand1.State[String]],
+    statusL:   Lens[State, String],
+    parkL:     Lens[State, Boolean],
+    evBuilder: String => TestTcsEvent
+  ): ProbeFollowCmd[F] =
     new TestEpicsCommand1[F, State, TestTcsEvent, String](cmdL, state, out) with ProbeFollowCmd[F] {
       override def setFollowState(v: String): F[Unit] = setParameter1(v)
 
       override protected def event(st: State): TestTcsEvent = evBuilder(cmdL.get(st).param1)
 
       override protected def cmd(st: State): State =
-        (statusL.set(cmdL.get(st).param1) >>> parkL.modify{v => if(cmdL.get(st).param1 === "On") false else v})(st)
+        (statusL.set(cmdL.get(st).param1) >>> parkL.modify { v =>
+          if (cmdL.get(st).param1 === "On") false else v
+        })(st)
     }
 
-  private def wfsObserveCmd(cmdL: Lens[State, TestEpicsCommand1.State[Int]],
-                            statusL: Lens[State, BinaryYesNo],
-                            ev: TestTcsEvent): WfsObserveCmd[F] =
+  private def wfsObserveCmd(
+    cmdL:    Lens[State, TestEpicsCommand1.State[Int]],
+    statusL: Lens[State, BinaryYesNo],
+    ev:      TestTcsEvent
+  ): WfsObserveCmd[F] =
     new TestEpicsCommand1[F, State, TestTcsEvent, Int](cmdL, state, out) with WfsObserveCmd[F] {
       override protected def event(st: State): TestTcsEvent = ev
 
@@ -678,143 +733,143 @@ object TestTcsEpics {
 
   @Lenses
   case class State(
-    absorbTipTilt: Int,
-    m1GuideSource: String,
-    m1Guide: BinaryOnOff,
-    m2p1Guide: String,
-    m2p2Guide: String,
-    m2oiGuide: String,
-    m2aoGuide: String,
-    comaCorrect: String,
-    m2GuideState: BinaryOnOff,
-    xoffsetPoA1: Double,
-    yoffsetPoA1: Double,
-    xoffsetPoB1: Double,
-    yoffsetPoB1: Double,
-    xoffsetPoC1: Double,
-    yoffsetPoC1: Double,
-    sourceAWavelength: Double,
-    sourceBWavelength: Double,
-    sourceCWavelength: Double,
-    chopBeam: String,
-    p1FollowS: String,
-    p2FollowS: String,
-    oiFollowS: String,
-    aoFollowS: String,
-    p1Parked: Boolean,
-    p2Parked: Boolean,
-    oiParked: Boolean,
-    pwfs1On: BinaryYesNo,
-    pwfs2On: BinaryYesNo,
-    oiwfsOn: BinaryYesNo,
-    sfName: String,
-    sfParked: Int,
-    agHwName: String,
-    agHwParked: Int,
-    instrAA: Double,
-    inPosition: String,
-    agInPosition: Double,
-    pwfs1ProbeGuideConfig: ProbeGuideConfigVals,
-    pwfs2ProbeGuideConfig: ProbeGuideConfigVals,
-    oiwfsProbeGuideConfig: ProbeGuideConfigVals,
-    hourAngle: String,
-    localTime: String,
-    trackingFrame: String,
-    trackingEpoch: Double,
-    equinox: Double,
-    trackingEquinox: String,
-    trackingDec: Double,
-    trackingRA: Double,
-    elevation: Double,
-    azimuth: Double,
-    crPositionAngle: Double,
-    ut: String,
-    date: String,
-    m2Baffle: String,
-    m2CentralBaffle: String,
-    st: String,
-    sfRotation: Double,
-    sfTilt: Double,
-    sfLinear: Double,
-    instrPA: Double,
-    targetA: List[Double],
-    aoFoldPosition: String,
-    useAo: BinaryYesNo,
-    airmass: Double,
-    airmassStart: Double,
-    airmassEnd: Double,
-    carouselMode: String,
-    crFollow: Int,
-    sourceATarget: TargetVals,
-    pwfs1Target: TargetVals,
-    pwfs2Target: TargetVals,
-    oiwfsTarget: TargetVals,
-    parallacticAngle: Angle,
-    m2UserFocusOffset: Double,
-    pwfs1IntegrationTime: Double,
-    pwfs2IntegrationTime: Double,
-    oiwfsIntegrationTime: Double,
-    gsaoiPort: Int,
-    gpiPort: Int,
-    f2Port: Int,
-    niriPort: Int,
-    gnirsPort: Int,
-    nifsPort: Int,
-    gmosPort: Int,
-    ghostPort: Int,
-    aoGuideStarX: Double,
-    aoGuideStarY: Double,
-    aoPreparedCMX: Double,
-    aoPreparedCMY: Double,
-    gwfs1Target: TargetVals,
-    gwfs2Target: TargetVals,
-    gwfs3Target: TargetVals,
-    gwfs4Target: TargetVals,
-    cwfs1Follow: Boolean,
-    cwfs2Follow: Boolean,
-    cwfs3Follow: Boolean,
-    odgw1Follow: Boolean,
-    odgw2Follow: Boolean,
-    odgw3Follow: Boolean,
-    odgw4Follow: Boolean,
-    odgw1Parked: Boolean,
-    odgw2Parked: Boolean,
-    odgw3Parked: Boolean,
-    odgw4Parked: Boolean,
-    g1MapName: Option[GemsSource],
-    g2MapName: Option[GemsSource],
-    g3MapName: Option[GemsSource],
-    g4MapName: Option[GemsSource],
-    g1Wavelength: Double,
-    g2Wavelength: Double,
-    g3Wavelength: Double,
-    g4Wavelength: Double,
-    g1GuideConfig: ProbeGuideConfigVals,
-    g2GuideConfig: ProbeGuideConfigVals,
-    g3GuideConfig: ProbeGuideConfigVals,
-    g4GuideConfig: ProbeGuideConfigVals,
-    m1GuideCmd: TestEpicsCommand1.State[String],
-    m2GuideCmd: TestEpicsCommand1.State[String],
-    m2GuideModeCmd: TestEpicsCommand1.State[String],
-    m2GuideConfigCmd: TestEpicsCommand3.State[String, String, String],
-    mountGuideCmd: TestEpicsCommand2.State[String, String],
+    absorbTipTilt:            Int,
+    m1GuideSource:            String,
+    m1Guide:                  BinaryOnOff,
+    m2p1Guide:                String,
+    m2p2Guide:                String,
+    m2oiGuide:                String,
+    m2aoGuide:                String,
+    comaCorrect:              String,
+    m2GuideState:             BinaryOnOff,
+    xoffsetPoA1:              Double,
+    yoffsetPoA1:              Double,
+    xoffsetPoB1:              Double,
+    yoffsetPoB1:              Double,
+    xoffsetPoC1:              Double,
+    yoffsetPoC1:              Double,
+    sourceAWavelength:        Double,
+    sourceBWavelength:        Double,
+    sourceCWavelength:        Double,
+    chopBeam:                 String,
+    p1FollowS:                String,
+    p2FollowS:                String,
+    oiFollowS:                String,
+    aoFollowS:                String,
+    p1Parked:                 Boolean,
+    p2Parked:                 Boolean,
+    oiParked:                 Boolean,
+    pwfs1On:                  BinaryYesNo,
+    pwfs2On:                  BinaryYesNo,
+    oiwfsOn:                  BinaryYesNo,
+    sfName:                   String,
+    sfParked:                 Int,
+    agHwName:                 String,
+    agHwParked:               Int,
+    instrAA:                  Double,
+    inPosition:               String,
+    agInPosition:             Double,
+    pwfs1ProbeGuideConfig:    ProbeGuideConfigVals,
+    pwfs2ProbeGuideConfig:    ProbeGuideConfigVals,
+    oiwfsProbeGuideConfig:    ProbeGuideConfigVals,
+    hourAngle:                String,
+    localTime:                String,
+    trackingFrame:            String,
+    trackingEpoch:            Double,
+    equinox:                  Double,
+    trackingEquinox:          String,
+    trackingDec:              Double,
+    trackingRA:               Double,
+    elevation:                Double,
+    azimuth:                  Double,
+    crPositionAngle:          Double,
+    ut:                       String,
+    date:                     String,
+    m2Baffle:                 String,
+    m2CentralBaffle:          String,
+    st:                       String,
+    sfRotation:               Double,
+    sfTilt:                   Double,
+    sfLinear:                 Double,
+    instrPA:                  Double,
+    targetA:                  List[Double],
+    aoFoldPosition:           String,
+    useAo:                    BinaryYesNo,
+    airmass:                  Double,
+    airmassStart:             Double,
+    airmassEnd:               Double,
+    carouselMode:             String,
+    crFollow:                 Int,
+    sourceATarget:            TargetVals,
+    pwfs1Target:              TargetVals,
+    pwfs2Target:              TargetVals,
+    oiwfsTarget:              TargetVals,
+    parallacticAngle:         Angle,
+    m2UserFocusOffset:        Double,
+    pwfs1IntegrationTime:     Double,
+    pwfs2IntegrationTime:     Double,
+    oiwfsIntegrationTime:     Double,
+    gsaoiPort:                Int,
+    gpiPort:                  Int,
+    f2Port:                   Int,
+    niriPort:                 Int,
+    gnirsPort:                Int,
+    nifsPort:                 Int,
+    gmosPort:                 Int,
+    ghostPort:                Int,
+    aoGuideStarX:             Double,
+    aoGuideStarY:             Double,
+    aoPreparedCMX:            Double,
+    aoPreparedCMY:            Double,
+    gwfs1Target:              TargetVals,
+    gwfs2Target:              TargetVals,
+    gwfs3Target:              TargetVals,
+    gwfs4Target:              TargetVals,
+    cwfs1Follow:              Boolean,
+    cwfs2Follow:              Boolean,
+    cwfs3Follow:              Boolean,
+    odgw1Follow:              Boolean,
+    odgw2Follow:              Boolean,
+    odgw3Follow:              Boolean,
+    odgw4Follow:              Boolean,
+    odgw1Parked:              Boolean,
+    odgw2Parked:              Boolean,
+    odgw3Parked:              Boolean,
+    odgw4Parked:              Boolean,
+    g1MapName:                Option[GemsSource],
+    g2MapName:                Option[GemsSource],
+    g3MapName:                Option[GemsSource],
+    g4MapName:                Option[GemsSource],
+    g1Wavelength:             Double,
+    g2Wavelength:             Double,
+    g3Wavelength:             Double,
+    g4Wavelength:             Double,
+    g1GuideConfig:            ProbeGuideConfigVals,
+    g2GuideConfig:            ProbeGuideConfigVals,
+    g3GuideConfig:            ProbeGuideConfigVals,
+    g4GuideConfig:            ProbeGuideConfigVals,
+    m1GuideCmd:               TestEpicsCommand1.State[String],
+    m2GuideCmd:               TestEpicsCommand1.State[String],
+    m2GuideModeCmd:           TestEpicsCommand1.State[String],
+    m2GuideConfigCmd:         TestEpicsCommand3.State[String, String, String],
+    mountGuideCmd:            TestEpicsCommand2.State[String, String],
     pwfs1ProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
     pwfs2ProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
     oiwfsProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
-    pwfs1ProbeFollowCmd: TestEpicsCommand1.State[String],
-    pwfs2ProbeFollowCmd: TestEpicsCommand1.State[String],
-    oiwfsProbeFollowCmd: TestEpicsCommand1.State[String],
-    offsetACmd: TestEpicsCommand2.State[Double, Double],
-    pwfs1ParkCmd: TestEpicsCommand0.State,
-    pwfs2ParkCmd: TestEpicsCommand0.State,
-    oiwfsParkCmd: TestEpicsCommand0.State,
-    pwfs1ObserveCmd: TestEpicsCommand1.State[Int],
-    pwfs2ObserveCmd: TestEpicsCommand1.State[Int],
-    oiwfsObserveCmd: TestEpicsCommand1.State[Int],
-    pwfs1StopObserveCmd: TestEpicsCommand0.State,
-    pwfs2StopObserveCmd: TestEpicsCommand0.State,
-    oiwfsStopObserveCmd: TestEpicsCommand0.State,
-)
+    pwfs1ProbeFollowCmd:      TestEpicsCommand1.State[String],
+    pwfs2ProbeFollowCmd:      TestEpicsCommand1.State[String],
+    oiwfsProbeFollowCmd:      TestEpicsCommand1.State[String],
+    offsetACmd:               TestEpicsCommand2.State[Double, Double],
+    pwfs1ParkCmd:             TestEpicsCommand0.State,
+    pwfs2ParkCmd:             TestEpicsCommand0.State,
+    oiwfsParkCmd:             TestEpicsCommand0.State,
+    pwfs1ObserveCmd:          TestEpicsCommand1.State[Int],
+    pwfs2ObserveCmd:          TestEpicsCommand1.State[Int],
+    oiwfsObserveCmd:          TestEpicsCommand1.State[Int],
+    pwfs1StopObserveCmd:      TestEpicsCommand0.State,
+    pwfs2StopObserveCmd:      TestEpicsCommand0.State,
+    oiwfsStopObserveCmd:      TestEpicsCommand0.State
+  )
 
   @Lenses
   final case class ProbeGuideConfigVals(
@@ -824,26 +879,26 @@ object TestTcsEpics {
     nodbchopb: Int
   )
 
-  object ProbeGuideConfigVals{
+  object ProbeGuideConfigVals {
     val default: ProbeGuideConfigVals = ProbeGuideConfigVals(0, 0, 0, 0)
   }
 
   @Lenses
   final case class TargetVals(
-    objectName: String,
-    ra: Double,
-    dec: Double,
-    frame: String,
-    equinox: String,
-    epoch: String,
-    properMotionRA: Double,
-    properMotionDec: Double,
+    objectName:        String,
+    ra:                Double,
+    dec:               Double,
+    frame:             String,
+    equinox:           String,
+    epoch:             String,
+    properMotionRA:    Double,
+    properMotionDec:   Double,
     centralWavelenght: Double,
-    parallax: Double,
-    radialVelocity: Double
+    parallax:          Double,
+    radialVelocity:    Double
   )
 
-  object TargetVals{
+  object TargetVals {
     val default: TargetVals = TargetVals(
       objectName = "",
       ra = 0.0,
@@ -859,7 +914,10 @@ object TestTcsEpics {
     )
   }
 
-  def probeGuideConfigGetters[F[_]: Applicative](st: Ref[F, State], g: Getter[State, ProbeGuideConfigVals]): ProbeGuideConfig[F] =
+  def probeGuideConfigGetters[F[_]: Applicative](
+    st: Ref[F, State],
+    g:  Getter[State, ProbeGuideConfigVals]
+  ): ProbeGuideConfig[F] =
     new ProbeGuideConfig[F] {
       override def nodachopa: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodachopa).get)
       override def nodachopb: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodachopb).get)
@@ -867,70 +925,88 @@ object TestTcsEpics {
       override def nodbchopb: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodbchopb).get)
     }
 
-  def targetGetters[F[_]: Applicative](st: Ref[F, State], g: Getter[State, TargetVals]): Target[F] = new Target[F] {
-    override def objectName: F[String] = st.get.map((g ^|-> TargetVals.objectName).get)
-    override def ra: F[Double] = st.get.map((g ^|-> TargetVals.ra).get)
-    override def dec: F[Double] = st.get.map((g ^|-> TargetVals.dec).get)
-    override def frame: F[String] = st.get.map((g ^|-> TargetVals.frame).get)
-    override def equinox: F[String] = st.get.map((g ^|-> TargetVals.equinox).get)
-    override def epoch: F[String] = st.get.map((g ^|-> TargetVals.epoch).get)
-    override def properMotionRA: F[Double] = st.get.map((g ^|-> TargetVals.properMotionRA).get)
-    override def properMotionDec: F[Double] = st.get.map((g ^|-> TargetVals.properMotionDec).get)
-    override def centralWavelenght: F[Double] = st.get.map((g ^|-> TargetVals.centralWavelenght).get)
-    override def parallax: F[Double] = st.get.map((g ^|-> TargetVals.parallax).get)
-    override def radialVelocity: F[Double] = st.get.map((g ^|-> TargetVals.radialVelocity).get)
-  }
+  def targetGetters[F[_]: Applicative](st: Ref[F, State], g: Getter[State, TargetVals]): Target[F] =
+    new Target[F] {
+      override def objectName: F[String]        = st.get.map((g ^|-> TargetVals.objectName).get)
+      override def ra: F[Double]                = st.get.map((g ^|-> TargetVals.ra).get)
+      override def dec: F[Double]               = st.get.map((g ^|-> TargetVals.dec).get)
+      override def frame: F[String]             = st.get.map((g ^|-> TargetVals.frame).get)
+      override def equinox: F[String]           = st.get.map((g ^|-> TargetVals.equinox).get)
+      override def epoch: F[String]             = st.get.map((g ^|-> TargetVals.epoch).get)
+      override def properMotionRA: F[Double]    = st.get.map((g ^|-> TargetVals.properMotionRA).get)
+      override def properMotionDec: F[Double]   = st.get.map((g ^|-> TargetVals.properMotionDec).get)
+      override def centralWavelenght: F[Double] =
+        st.get.map((g ^|-> TargetVals.centralWavelenght).get)
+      override def parallax: F[Double]          = st.get.map((g ^|-> TargetVals.parallax).get)
+      override def radialVelocity: F[Double]    = st.get.map((g ^|-> TargetVals.radialVelocity).get)
+    }
 
   sealed trait TestTcsEvent extends Product with Serializable
   object TestTcsEvent {
     final case class M1GuideCmd(newState: String) extends TestTcsEvent
     final case class M2GuideCmd(newState: String) extends TestTcsEvent
     final case class M2GuideModeCmd(newComaState: String) extends TestTcsEvent
-    final case class M2GuideConfigCmd(source: String, beam: String, reset: String) extends TestTcsEvent
+    final case class M2GuideConfigCmd(source: String, beam: String, reset: String)
+        extends TestTcsEvent
     final case class MountGuideCmd(source: String, mode: String) extends TestTcsEvent
-    final case class Pwfs1ProbeGuideConfig(nodachopa: String, nodchopb: String, nodbchopa: String, nodbchopb: String)
-      extends TestTcsEvent
-    final case class Pwfs2ProbeGuideConfig(nodachopa: String, nodchopb: String, nodbchopa: String, nodbchopb: String)
-      extends TestTcsEvent
-    final case class OiwfsProbeGuideConfig(nodachopa: String, nodchopb: String, nodbchopa: String, nodbchopb: String)
-      extends TestTcsEvent
+    final case class Pwfs1ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    )                               extends TestTcsEvent
+    final case class Pwfs2ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    )                               extends TestTcsEvent
+    final case class OiwfsProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    )                               extends TestTcsEvent
     final case class OffsetACmd(p: Double, q: Double) extends TestTcsEvent
     final case class Pwfs1ProbeFollowCmd(state: String) extends TestTcsEvent
     final case class Pwfs2ProbeFollowCmd(state: String) extends TestTcsEvent
     final case class OiwfsProbeFollowCmd(state: String) extends TestTcsEvent
-    case object Pwfs1ParkCmd extends TestTcsEvent
-    case object Pwfs2ParkCmd extends TestTcsEvent
-    case object OiwfsParkCmd extends TestTcsEvent
-    case object Pwfs1ObserveCmd extends TestTcsEvent
-    case object Pwfs2ObserveCmd extends TestTcsEvent
-    case object OiwfsObserveCmd extends TestTcsEvent
+    case object Pwfs1ParkCmd        extends TestTcsEvent
+    case object Pwfs2ParkCmd        extends TestTcsEvent
+    case object OiwfsParkCmd        extends TestTcsEvent
+    case object Pwfs1ObserveCmd     extends TestTcsEvent
+    case object Pwfs2ObserveCmd     extends TestTcsEvent
+    case object OiwfsObserveCmd     extends TestTcsEvent
     case object Pwfs1StopObserveCmd extends TestTcsEvent
     case object Pwfs2StopObserveCmd extends TestTcsEvent
     case object OiwfsStopObserveCmd extends TestTcsEvent
 
-    implicit val eqTestTcsEvPent: Eq[TestTcsEvent] = Eq.instance{
-      case (Pwfs1ParkCmd, Pwfs1ParkCmd)               => true
-      case (Pwfs2ParkCmd, Pwfs2ParkCmd)               => true
-      case (OiwfsParkCmd, OiwfsParkCmd)               => true
-      case (Pwfs1ObserveCmd, Pwfs1ObserveCmd)         => true
-      case (Pwfs2ObserveCmd, Pwfs2ObserveCmd)         => true
-      case (OiwfsObserveCmd, OiwfsObserveCmd)         => true
-      case (Pwfs1StopObserveCmd, Pwfs1StopObserveCmd) => true
-      case (Pwfs2StopObserveCmd, Pwfs2StopObserveCmd) => true
-      case (OiwfsStopObserveCmd, OiwfsStopObserveCmd) => true
-      case (M1GuideCmd(a), M1GuideCmd(x))                   => a === x
-      case (M2GuideCmd(a), M2GuideCmd(x))                   => a === x
-      case (M2GuideModeCmd(a), M2GuideModeCmd(x))           => a === x
-      case (Pwfs1ProbeFollowCmd(a), Pwfs1ProbeFollowCmd(x)) => a === x
-      case (Pwfs2ProbeFollowCmd(a), Pwfs2ProbeFollowCmd(x)) => a === x
-      case (OiwfsProbeFollowCmd(a), OiwfsProbeFollowCmd(x)) => a === x
-      case (OffsetACmd(a, b), OffsetACmd(x, y))             => a === x && b === y
-      case (MountGuideCmd(a, b), MountGuideCmd(x, y))       => a === x && b === y
-      case (M2GuideConfigCmd(a, b, c), M2GuideConfigCmd(x, y, z)) => a === x && b === y && c === z
-      case (Pwfs1ProbeGuideConfig(a, b, c, d), Pwfs1ProbeGuideConfig(x, y, z, w)) => a === x && b === y && c === z && d === w
-      case (Pwfs2ProbeGuideConfig(a, b, c, d), Pwfs2ProbeGuideConfig(x, y, z, w)) => a === x && b === y && c === z && d === w
-      case (OiwfsProbeGuideConfig(a, b, c, d), OiwfsProbeGuideConfig(x, y, z, w)) => a === x && b === y && c === z && d === w
-      case _ => false
+    implicit val eqTestTcsEvPent: Eq[TestTcsEvent] = Eq.instance {
+      case (Pwfs1ParkCmd, Pwfs1ParkCmd)                                           => true
+      case (Pwfs2ParkCmd, Pwfs2ParkCmd)                                           => true
+      case (OiwfsParkCmd, OiwfsParkCmd)                                           => true
+      case (Pwfs1ObserveCmd, Pwfs1ObserveCmd)                                     => true
+      case (Pwfs2ObserveCmd, Pwfs2ObserveCmd)                                     => true
+      case (OiwfsObserveCmd, OiwfsObserveCmd)                                     => true
+      case (Pwfs1StopObserveCmd, Pwfs1StopObserveCmd)                             => true
+      case (Pwfs2StopObserveCmd, Pwfs2StopObserveCmd)                             => true
+      case (OiwfsStopObserveCmd, OiwfsStopObserveCmd)                             => true
+      case (M1GuideCmd(a), M1GuideCmd(x))                                         => a === x
+      case (M2GuideCmd(a), M2GuideCmd(x))                                         => a === x
+      case (M2GuideModeCmd(a), M2GuideModeCmd(x))                                 => a === x
+      case (Pwfs1ProbeFollowCmd(a), Pwfs1ProbeFollowCmd(x))                       => a === x
+      case (Pwfs2ProbeFollowCmd(a), Pwfs2ProbeFollowCmd(x))                       => a === x
+      case (OiwfsProbeFollowCmd(a), OiwfsProbeFollowCmd(x))                       => a === x
+      case (OffsetACmd(a, b), OffsetACmd(x, y))                                   => a === x && b === y
+      case (MountGuideCmd(a, b), MountGuideCmd(x, y))                             => a === x && b === y
+      case (M2GuideConfigCmd(a, b, c), M2GuideConfigCmd(x, y, z))                 => a === x && b === y && c === z
+      case (Pwfs1ProbeGuideConfig(a, b, c, d), Pwfs1ProbeGuideConfig(x, y, z, w)) =>
+        a === x && b === y && c === z && d === w
+      case (Pwfs2ProbeGuideConfig(a, b, c, d), Pwfs2ProbeGuideConfig(x, y, z, w)) =>
+        a === x && b === y && c === z && d === w
+      case (OiwfsProbeGuideConfig(a, b, c, d), OiwfsProbeGuideConfig(x, y, z, w)) =>
+        a === x && b === y && c === z && d === w
+      case _                                                                      => false
     }
 
   }
@@ -1056,9 +1132,12 @@ object TestTcsEpics {
     m2GuideModeCmd = TestEpicsCommand1.State[String](false, ""),
     m2GuideConfigCmd = TestEpicsCommand3.State[String, String, String](false, "", "", ""),
     mountGuideCmd = TestEpicsCommand2.State[String, String](false, "", ""),
-    pwfs1ProbeGuideConfigCmd = TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
-    pwfs2ProbeGuideConfigCmd = TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
-    oiwfsProbeGuideConfigCmd = TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
+    pwfs1ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
+    pwfs2ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
+    oiwfsProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
     pwfs1ProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
     pwfs2ProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
     oiwfsProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
@@ -1071,8 +1150,7 @@ object TestTcsEpics {
     oiwfsObserveCmd = TestEpicsCommand1.State[Int](false, -1),
     pwfs1StopObserveCmd = false,
     pwfs2StopObserveCmd = false,
-    oiwfsStopObserveCmd = false,
+    oiwfsStopObserveCmd = false
   )
-
 
 }

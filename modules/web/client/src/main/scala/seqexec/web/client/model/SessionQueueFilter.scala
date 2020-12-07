@@ -14,8 +14,8 @@ import seqexec.web.client.model.lenses.obsClassT
 sealed trait ObsClass extends Product with Serializable
 
 object ObsClass {
-  case object All extends ObsClass
-  case object Daytime extends ObsClass
+  case object All       extends ObsClass
+  case object Daytime   extends ObsClass
   case object Nighttime extends ObsClass
 
   /** @group Typeclass Instances */
@@ -29,8 +29,8 @@ object ObsClass {
 }
 
 /**
-  * Model of a filter for the session queue
-  */
+ * Model of a filter for the session queue
+ */
 @Lenses
 final case class SessionQueueFilter(obsClass: ObsClass) {
   val dayTimeSelected: Boolean = obsClass match {
@@ -52,17 +52,19 @@ final case class SessionQueueFilter(obsClass: ObsClass) {
 
   def filterS(seq: List[SequenceView]): List[SequenceView] =
     obsClass match {
-      case ObsClass.All => seq
-      case ObsClass.Daytime =>
+      case ObsClass.All       => seq
+      case ObsClass.Daytime   =>
         seq.filter(
           obsClassT
             .headOption(_)
-            .map(ObsClass.fromString) === ObsClass.Daytime.some)
+            .map(ObsClass.fromString) === ObsClass.Daytime.some
+        )
       case ObsClass.Nighttime =>
         seq.filter(
           obsClassT
             .headOption(_)
-            .map(ObsClass.fromString) === ObsClass.Nighttime.some)
+            .map(ObsClass.fromString) === ObsClass.Nighttime.some
+        )
     }
 
   def isFilterApplied: Boolean = obsClass =!= ObsClass.All

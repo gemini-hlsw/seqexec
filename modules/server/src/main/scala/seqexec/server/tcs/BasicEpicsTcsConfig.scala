@@ -11,29 +11,29 @@ import squants.Angle
 
 final case class InstrumentPorts(
   flamingos2Port: Int,
-  ghostPort: Int,
-  gmosPort: Int,
-  gnirsPort: Int,
-  gpiPort: Int,
-  gsaoiPort: Int,
-  nifsPort: Int,
-  niriPort: Int
+  ghostPort:      Int,
+  gmosPort:       Int,
+  gnirsPort:      Int,
+  gpiPort:        Int,
+  gsaoiPort:      Int,
+  nifsPort:       Int,
+  niriPort:       Int
 )
 
 @Lenses
 final case class BaseEpicsTcsConfig(
-  iaa: Angle,
-  offset: FocalPlaneOffset,
-  wavelA: Wavelength,
-  pwfs1: GuiderConfig,
-  pwfs2: GuiderConfig,
-  oiwfs: GuiderConfig,
+  iaa:                  Angle,
+  offset:               FocalPlaneOffset,
+  wavelA:               Wavelength,
+  pwfs1:                GuiderConfig,
+  pwfs2:                GuiderConfig,
+  oiwfs:                GuiderConfig,
   telescopeGuideConfig: TelescopeGuideConfig,
-  aoFold: AoFold,
-  useAo: Boolean,
-  scienceFoldPosition: Option[ScienceFold],
-  hrwfsPickupPosition: HrwfsPickupPosition,
-  instPorts: InstrumentPorts
+  aoFold:               AoFold,
+  useAo:                Boolean,
+  scienceFoldPosition:  Option[ScienceFold],
+  hrwfsPickupPosition:  HrwfsPickupPosition,
+  instPorts:            InstrumentPorts
 ) {
   val instrumentOffset: InstrumentOffset = offset.toInstrumentOffset(iaa)
 }

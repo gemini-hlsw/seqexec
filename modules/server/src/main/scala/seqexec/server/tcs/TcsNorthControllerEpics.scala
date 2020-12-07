@@ -15,28 +15,37 @@ import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
 
-final case class TcsNorthControllerEpics[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]) extends TcsNorthController[F] {
+final case class TcsNorthControllerEpics[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F])
+    extends TcsNorthController[F] {
   private val commonController = TcsControllerEpicsCommon(epicsSys)
-  private val aoController = TcsNorthControllerEpicsAo(epicsSys)
+  private val aoController     = TcsNorthControllerEpicsAo(epicsSys)
 
-  override def applyConfig(subsystems: NonEmptySet[Subsystem],
-                           gaos: Option[Altair[F]],
-                           tcs: TcsNorthConfig): F[Unit] = {
+  override def applyConfig(
+    subsystems: NonEmptySet[Subsystem],
+    gaos:       Option[Altair[F]],
+    tcs:        TcsNorthConfig
+  ): F[Unit] =
     tcs match {
       case c: BasicTcsConfig   => commonController.applyBasicConfig(subsystems, c)
-      case d: TcsNorthAoConfig => gaos.map(aoController.applyAoConfig(subsystems, _, d))
-        .getOrElse(SeqexecFailure.Execution("No Altair object defined for Altair step").raiseError[F, Unit])
+      case d: TcsNorthAoConfig =>
+        gaos
+          .map(aoController.applyAoConfig(subsystems, _, d))
+          .getOrElse(
+            SeqexecFailure.Execution("No Altair object defined for Altair step").raiseError[F, Unit]
+          )
     }
-  }
 
   override def notifyObserveStart: F[Unit] = commonController.notifyObserveStart
 
   override def notifyObserveEnd: F[Unit] = commonController.notifyObserveEnd
 
-  override def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsNorthConfig)
-                  (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean)
-  : F[Unit] = tcsConfig match {
-    case c: BasicTcsConfig => commonController.nod(subsystems, offset, guided, c)
-    case _: TcsNorthAoConfig => SeqexecFailure.Execution("N&S not supported when using Altair").raiseError[F, Unit]
-  }
+  override def nod(
+    subsystems: NonEmptySet[Subsystem],
+    tcsConfig:  TcsNorthConfig
+  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
+    tcsConfig match {
+      case c: BasicTcsConfig   => commonController.nod(subsystems, offset, guided, c)
+      case _: TcsNorthAoConfig =>
+        SeqexecFailure.Execution("N&S not supported when using Altair").raiseError[F, Unit]
+    }
 }

@@ -3,7 +3,7 @@
 
 package seqexec.server.gsaoi
 
-import java.lang.{Double => JDouble}
+import java.lang.{ Double => JDouble }
 import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
@@ -36,7 +36,9 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
   private val GsaoiTop = tops.getOrElse("gsaoi", "gsaoi:")
 
   object dcConfigCmd extends EpicsCommandBase[F] {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::dcconfig"))
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gsaoi::dcconfig")
+    )
 
     val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
     def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
@@ -64,8 +66,10 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   }
 
-  object ccConfigCmd extends EpicsCommandBase[F]{
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::config"))
+  object ccConfigCmd extends EpicsCommandBase[F] {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gsaoi::config")
+    )
 
     val filter: Option[CaParameter[String]] = cs.map(_.getString("filter"))
     def setFilter(v: String): F[Unit] = setParameter(filter, v)
@@ -78,41 +82,61 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   }
 
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "gsaoi::observeCmd", s"${GsaoiTop}dc:stateApply",s"${GsaoiTop}dc:observeC",
-    false, s"${GsaoiTop}dc:stop", s"${GsaoiTop}dc:abort", ""))
+  private val observeAS: Option[CaApplySender] = Option(
+    epicsService.createObserveSender("gsaoi::observeCmd",
+                                     s"${GsaoiTop}dc:stateApply",
+                                     s"${GsaoiTop}dc:observeC",
+                                     false,
+                                     s"${GsaoiTop}dc:stop",
+                                     s"${GsaoiTop}dc:abort",
+                                     ""
+    )
+  )
 
-  object stopCmd extends EpicsCommandBase[F]{
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::stop"))
+  object stopCmd extends EpicsCommandBase[F] {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gsaoi::stop")
+    )
   }
 
-  object abortCmd extends EpicsCommandBase[F]{
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::abort"))
+  object abortCmd extends EpicsCommandBase[F] {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gsaoi::abort")
+    )
   }
 
   object observeCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("gsaoi::observe"))
-    override protected val os: Option[CaApplySender] = observeAS
+      epicsService.getCommandSender("gsaoi::observe")
+    )
+    override protected val os: Option[CaApplySender]   = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase[F]{
+  object endObserveCmd extends EpicsCommandBase[F] {
     override val cs: Option[CaCommandSender] = Option(
-      epicsService.getCommandSender("gsaoi::endObserve"))
+      epicsService.getCommandSender("gsaoi::endObserve")
+    )
   }
 
-  val guideApply: CaApplySender = epicsService.createContinuousCommandSender("gsaoi::guideApply",
-    s"${GsaoiTop}dc:stateApply",s"${GsaoiTop}dc:guideC", false, "guide start apply")
-  object guideCmd extends EpicsCommandBase[F]{
+  val guideApply: CaApplySender = epicsService.createContinuousCommandSender(
+    "gsaoi::guideApply",
+    s"${GsaoiTop}dc:stateApply",
+    s"${GsaoiTop}dc:guideC",
+    false,
+    "guide start apply"
+  )
+  object guideCmd extends EpicsCommandBase[F] {
     override val cs: Option[CaCommandSender] =
       Option(epicsService.createCommandSender("gsaoi:guide", guideApply, s"${GsaoiTop}dc:guide"))
   }
 
   val endGuideCmd: EpicsCommand[F] = new EpicsCommandBase[F] {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::endGuide"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gsaoi::endGuide")
+    )
   }
 
   val status: CaStatusAcceptor = epicsService.getStatusAcceptor("gsaoi::status")
@@ -127,9 +151,11 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def utilWheel: F[String] = safeAttributeF(status.getStringAttribute("utilWheel"))
 
-  def dspCodeVersion: F[String] =  safeAttributeF(status.getStringAttribute("DSPTIMBV"))
+  def dspCodeVersion: F[String] = safeAttributeF(status.getStringAttribute("DSPTIMBV"))
 
-  def coldworkSurfaceTemperature: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("CWSTEMP"))
+  def coldworkSurfaceTemperature: F[Double] = safeAttributeSDoubleF(
+    status.getDoubleAttribute("CWSTEMP")
+  )
 
   def bUnits: F[String] = safeAttributeF(status.getStringAttribute("BUNITS"))
 
@@ -143,19 +169,19 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def timingBoardCodeName: F[String] = safeAttributeF(status.getStringAttribute("DSPTIMBN"))
 
-  def readInterval: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("READDLAY"))
+  def readInterval: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("READDLAY"))
 
-  def detectorTemperature: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("DETTEMP"))
+  def detectorTemperature: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("DETTEMP"))
 
   def upperFilterHealth: F[String] = safeAttributeF(status.getStringAttribute("FILT1CAR"))
 
-  def dewarPressure: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("DEWPRES"))
+  def dewarPressure: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("DEWPRES"))
 
-  def obsElapsedTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("ELAPSED"))
+  def obsElapsedTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("ELAPSED"))
 
   def lowerFilterEngPos: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("FILT2POS"))
 
-  def resetDelay: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("RSTDLAY"))
+  def resetDelay: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("RSTDLAY"))
 
   def detectorHousingTemperature: F[Double] =
     safeAttributeSDoubleF(status.getDoubleAttribute("DETHTEMP"))
@@ -174,51 +200,60 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def pciBoardCodeName: F[String] = safeAttributeF(status.getStringAttribute("DSPPCIN"))
 
-  def readTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("READTIME"))
+  def readTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("READTIME"))
 
-  def requestedExposureTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("exposureTime"))
+  def requestedExposureTime: F[Double] = safeAttributeSDoubleF(
+    status.getDoubleAttribute("exposureTime")
+  )
 
   def numberOfResets: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("numberOfResets"))
 
   def readMode: F[String] = safeAttributeF(status.getStringAttribute("readMode"))
 
-  def numberOfFowlerSamples: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("numberOfFowSamples"))
+  def numberOfFowlerSamples: F[Int] = safeAttributeSIntF(
+    status.getIntegerAttribute("numberOfFowSamples")
+  )
 
   def coadds: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("coadds"))
 
-  def exposedTime: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("exposedTime"))
+  def exposedTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("exposedTime"))
 
   def timeMode: F[String] = safeAttributeF(status.getStringAttribute("timeMode"))
 
   def roi: F[String] = safeAttributeF(status.getStringAttribute("roi"))
 
-  def countdown: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("countdown"))
+  def countdown: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("countdown"))
 
-  def coaddsDone: F[Int] =  safeAttributeSIntF(status.getIntegerAttribute("coaddsDone"))
+  def coaddsDone: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("coaddsDone"))
 
-  def mjdobs: F[Double] =  safeAttributeSDoubleF(status.getDoubleAttribute("mjdobs"))
+  def mjdobs: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("mjdobs"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
-    status.addEnum[DhsConnected]("dhsConnected", s"${GsaoiTop}sad:dc:dhsConnO", classOf[DhsConnected])
-  def dhsConnected: F[DhsConnected] = safeAttributeF(dhsConnectedAttr)
+    status
+      .addEnum[DhsConnected]("dhsConnected", s"${GsaoiTop}sad:dc:dhsConnO", classOf[DhsConnected])
+  def dhsConnected: F[DhsConnected]                       = safeAttributeF(dhsConnectedAttr)
 
-  private val observeCAttr: CaAttribute[CarState] = status.addEnum("observeC",
-    s"${GsaoiTop}dc:observeC.VAL", classOf[CarState])
-  def observeState: F[CarState] = safeAttributeF(observeCAttr)
+  private val observeCAttr: CaAttribute[CarState] =
+    status.addEnum("observeC", s"${GsaoiTop}dc:observeC.VAL", classOf[CarState])
+  def observeState: F[CarState]                   = safeAttributeF(observeCAttr)
 
   private val notGuidingAttr = status.getIntegerAttribute("notGuiding")
-  def guiding: F[Boolean] = safeAttributeSIntF(notGuidingAttr).map(_ === 0)
+  def guiding: F[Boolean]    = safeAttributeSIntF(notGuidingAttr).map(_ === 0)
 
-  private val guideStabilizeTime = FiniteDuration(1, SECONDS)
+  private val guideStabilizeTime                                  = FiniteDuration(1, SECONDS)
   private val filteredNotGuidingAttr: CaWindowStabilizer[Integer] =
-    epicsService.timeWindowFilter(notGuidingAttr, java.time.Duration.ofMillis(guideStabilizeTime.toMillis))
+    epicsService.timeWindowFilter(notGuidingAttr,
+                                  java.time.Duration.ofMillis(guideStabilizeTime.toMillis)
+    )
 
-  private val guideTimeout = FiniteDuration(5, SECONDS)
-  def waitForGuideOn: F[Unit] =
-    Async[F].delay(filteredNotGuidingAttr.restart)
+  private val guideTimeout     = FiniteDuration(5, SECONDS)
+  def waitForGuideOn: F[Unit]  =
+    Async[F]
+      .delay(filteredNotGuidingAttr.restart)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 0, guideTimeout, "ODGW guide flag"))
   def waitForGuideOff: F[Unit] =
-    Async[F].delay(filteredNotGuidingAttr.restart)
+    Async[F]
+      .delay(filteredNotGuidingAttr.restart)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 1, guideTimeout, "ODGW guide flag"))
 
   def odgwBaseExpTime: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("baseExpTime"))
@@ -257,17 +292,20 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   def odgw4Y: F[Int] = safeAttributeSIntF(status.getIntegerAttribute("odgw4y"))
 
-  def dcIsPreparing: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notPrepObs")).map(_ === 0)
+  def dcIsPreparing: F[Boolean] =
+    safeAttributeSIntF(status.getIntegerAttribute("notPrepObs")).map(_ === 0)
 
-  def dcIsAcquiring: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notAcqObs")).map(_ === 0)
+  def dcIsAcquiring: F[Boolean] =
+    safeAttributeSIntF(status.getIntegerAttribute("notAcqObs")).map(_ === 0)
 
-  def dcIsReadingOut: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("notReadingOut")).map(_ === 0)
+  def dcIsReadingOut: F[Boolean] =
+    safeAttributeSIntF(status.getIntegerAttribute("notReadingOut")).map(_ === 0)
 
 }
 
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gsaoi.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GsaoiEpics[IO]] =

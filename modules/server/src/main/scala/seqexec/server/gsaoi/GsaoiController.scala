@@ -30,8 +30,7 @@ trait GsaoiController[F[_]] {
 
   def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig)(
-    implicit ev:                 Applicative[F]): F[Time] = {
+  def calcTotalExposureTime(cfg: DCConfig)(implicit ev: Applicative[F]): F[Time] = {
     val readFactor  = 1.2
     val readOutTime = 15
 
@@ -65,21 +64,25 @@ object GsaoiController {
   type OdgwSize     = edu.gemini.spModel.gemini.gsaoi.Gsaoi.OdgwSize
   type UtilityWheel = edu.gemini.spModel.gemini.gsaoi.Gsaoi.UtilityWheel
 
-  final case class DCConfig(readMode:           ReadMode,
-                            roi:                Roi,
-                            coadds:             Coadds,
-                            exposureTime:       ExposureTime,
-                            numberOfFowSamples: NumberOfFowSamples)
+  final case class DCConfig(
+    readMode:           ReadMode,
+    roi:                Roi,
+    coadds:             Coadds,
+    exposureTime:       ExposureTime,
+    numberOfFowSamples: NumberOfFowSamples
+  )
 
   object DCConfig {
     // Universal equals is fine as it is integers and java classes
     implicit val eqDcConig: Eq[DCConfig] = Eq.fromUniversalEquals
   }
 
-  final case class CCConfig(filter:       Filter,
-                            odgwSize:     OdgwSize,
-                            utilityWheel: UtilityWheel,
-                            windowCover:  WindowCover)
+  final case class CCConfig(
+    filter:       Filter,
+    odgwSize:     OdgwSize,
+    utilityWheel: UtilityWheel,
+    windowCover:  WindowCover
+  )
 
   object CCConfig {
     // Universal equals is fine as it is integers and java classes

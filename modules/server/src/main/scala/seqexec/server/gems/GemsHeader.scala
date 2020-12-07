@@ -10,7 +10,14 @@ import io.chrisdavenport.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.{Header, KeywordBag, KeywordsClient, ObsKeywordsReader, buildDouble, buildInt32, buildString, sendKeywords}
+import seqexec.server.keywords.Header
+import seqexec.server.keywords.KeywordBag
+import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.ObsKeywordsReader
+import seqexec.server.keywords.buildDouble
+import seqexec.server.keywords.buildInt32
+import seqexec.server.keywords.buildString
+import seqexec.server.keywords.sendKeywords
 import seqexec.server.tcs.CRFollow
 import seqexec.server.tcs.GemsSource
 import seqexec.server.tcs.TargetKeywordsReader
@@ -18,33 +25,42 @@ import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GemsHeader {
-  def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F],
-                                 gemsReader: GemsKeywordReader[F],
-                                 obsReader: ObsKeywordsReader[F],
-                                 tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F]{
+  def header[F[_]: Sync: Logger](
+    kwClient:   KeywordsClient[F],
+    gemsReader: GemsKeywordReader[F],
+    obsReader:  ObsKeywordsReader[F],
+    tcsReader:  TcsKeywordsReader[F]
+  ): Header[F] = new Header[F] {
 
     // Extra keywords added to GeMS target keywords. They depend on the type of guider
-    private def extraGemsKeywords(baseName: String, g: GemsSource): List[KeywordBag => F[KeywordBag]] = g match {
-      case GemsSource.Odgw1 => List(
-        KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw1X, _)),
-        KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw1Y, _)),
-        KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
-      ).flattenOption
-      case GemsSource.Odgw2 => List(
-        KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw2X, _)),
-        KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw2Y, _)),
-        KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
-      ).flattenOption
-      case GemsSource.Odgw3 => List(
-        KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw3X, _)),
-        KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw3Y, _)),
-        KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
-      ).flattenOption
-      case GemsSource.Odgw4 => List(
-        KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw4X, _)),
-        KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw4Y, _)),
-        KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
-      ).flattenOption
+    private def extraGemsKeywords(
+      baseName: String,
+      g:        GemsSource
+    ): List[KeywordBag => F[KeywordBag]] = g match {
+      case GemsSource.Odgw1 =>
+        List(
+          KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw1X, _)),
+          KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw1Y, _)),
+          KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
+        ).flattenOption
+      case GemsSource.Odgw2 =>
+        List(
+          KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw2X, _)),
+          KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw2Y, _)),
+          KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
+        ).flattenOption
+      case GemsSource.Odgw3 =>
+        List(
+          KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw3X, _)),
+          KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw3Y, _)),
+          KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
+        ).flattenOption
+      case GemsSource.Odgw4 =>
+        List(
+          KeywordName.fromTag(s"${baseName}X").map(buildInt32(gemsReader.odgw4X, _)),
+          KeywordName.fromTag(s"${baseName}Y").map(buildInt32(gemsReader.odgw4Y, _)),
+          KeywordName.fromTag(s"${baseName}SIZ").map(buildInt32(gemsReader.odgwSize, _))
+        ).flattenOption
       case _                => List.empty
     }
 
@@ -57,7 +73,11 @@ object GemsHeader {
       case VirtualGemsTelescope.G4 => "GWFS4"
     }
 
-    private def gemsTargetKeyword(id: ImageFileId, v: VirtualGemsTelescope, gs: GemsSource): F[Unit] =
+    private def gemsTargetKeyword(
+      id: ImageFileId,
+      v:  VirtualGemsTelescope,
+      gs: GemsSource
+    ): F[Unit] =
       guiderKeywords(id, baseName(v), tcsReader.gwfsTarget(v), gs)
 
     def guideWith(gs: GemsSource): F[StandardGuideOptions.Value] = gs match {
@@ -70,10 +90,17 @@ object GemsHeader {
       case GemsSource.Odgw4 => obsReader.odgw4Guide
     }
 
-    def guiderKeywords(id: ImageFileId, baseName: String,target: TargetKeywordsReader[F], gs: GemsSource)
-    : F[Unit] = guideWith(gs).flatMap { g =>
+    def guiderKeywords(
+      id:       ImageFileId,
+      baseName: String,
+      target:   TargetKeywordsReader[F],
+      gs:       GemsSource
+    ): F[Unit] = guideWith(gs)
+      .flatMap { g =>
         val keywords: List[KeywordBag => F[KeywordBag]] = extraGemsKeywords(baseName, gs) ++ List(
-          KeywordName.fromTag(s"${baseName}CFG").map(buildString[F](encodeGemsSource(gs).pure[F], _)),
+          KeywordName
+            .fromTag(s"${baseName}CFG")
+            .map(buildString[F](encodeGemsSource(gs).pure[F], _)),
           KeywordName.fromTag(s"${baseName}OBJ").map(buildString(target.objectName, _)),
           KeywordName.fromTag(s"${baseName}RA").map(buildDouble(target.ra, _)),
           KeywordName.fromTag(s"${baseName}DEC").map(buildDouble(target.dec, _)),
@@ -88,13 +115,19 @@ object GemsHeader {
         ).flattenOption
 
         sendKeywords[F](id, kwClient, keywords).whenA(g.isActive)
-      }.handleError(_ => ())
+      }
+      .handleError(_ => ())
 
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-      tcsReader.gwfsMap.flatMap(_.toList.map{ case (v, gs) => gemsTargetKeyword(id, v, gs) }.sequence).void
+      tcsReader.gwfsMap
+        .flatMap(_.toList.map { case (v, gs) => gemsTargetKeyword(id, v, gs) }.sequence)
+        .void
 
-    def cntKeywords(v: VirtualGemsTelescope, gs: GemsSource, guideOp: StandardGuideOptions.Value)
-    : Option[KeywordBag => F[KeywordBag]] = {
+    def cntKeywords(
+      v:       VirtualGemsTelescope,
+      gs:      GemsSource,
+      guideOp: StandardGuideOptions.Value
+    ): Option[KeywordBag => F[KeywordBag]] = {
 
       val cts = gs match {
         case GemsSource.Cwfs1 => gemsReader.cwfs1Counts
@@ -106,12 +139,17 @@ object GemsHeader {
         case GemsSource.Odgw4 => gemsReader.odgw4Counts
       }
 
-      KeywordName.fromTag(s"${baseName(v)}CTS").map(buildDouble(cts, _)).filter(_ => guideOp.isActive)
+      KeywordName
+        .fromTag(s"${baseName(v)}CTS")
+        .map(buildDouble(cts, _))
+        .filter(_ => guideOp.isActive)
     }
 
     override def sendAfter(id: ImageFileId): F[Unit] = {
       val keywords = List(
-        buildString(tcsReader.crFollow.map(_.map(CRFollow.keywordValue).getOrElse("INDEF")), KeywordName.CRFOLLOW),
+        buildString(tcsReader.crFollow.map(_.map(CRFollow.keywordValue).getOrElse("INDEF")),
+                    KeywordName.CRFOLLOW
+        ),
         buildString(gemsReader.sadc, KeywordName.GEMSSADC),
         buildDouble(gemsReader.dichroic, KeywordName.GEMSDICH),
         buildString(gemsReader.astrometricMode, KeywordName.GEMSASTR),
@@ -136,11 +174,14 @@ object GemsHeader {
       )
 
       sendKeywords[F](id, kwClient, keywords) *>
-        tcsReader.gwfsMap.flatMap{
-          _.toList.map{
-            case (v, gs) => guideWith(gs).map(cntKeywords(v, gs, _))
-          }.sequence
-        }.map(_.flattenOption).flatMap(sendKeywords(id, kwClient, _))
+        tcsReader.gwfsMap
+          .flatMap {
+            _.toList.map { case (v, gs) =>
+              guideWith(gs).map(cntKeywords(v, gs, _))
+            }.sequence
+          }
+          .map(_.flattenOption)
+          .flatMap(sendKeywords(id, kwClient, _))
 
     }
   }

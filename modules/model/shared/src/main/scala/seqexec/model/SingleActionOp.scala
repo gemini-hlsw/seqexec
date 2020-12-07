@@ -16,11 +16,11 @@ sealed trait SingleActionOp extends Product with Serializable {
 
 object SingleActionOp {
   final case class Started(sid: Observation.Id, stepId: StepId, resource: Resource)
-    extends SingleActionOp
+      extends SingleActionOp
   final case class Completed(sid: Observation.Id, stepId: StepId, resource: Resource)
-    extends SingleActionOp
+      extends SingleActionOp
   final case class Error(sid: Observation.Id, stepId: StepId, resource: Resource, msg: String)
-    extends SingleActionOp
+      extends SingleActionOp
 
   implicit val equal: Eq[SingleActionOp] = Eq.instance {
     case (Started(a, c, e), Started(b, d, f))     => a === b && c === d && e === f

@@ -11,7 +11,7 @@ import monocle.macros.Lenses
 import seqexec.model.Observation
 
 @Lenses
-final case class SequenceView (
+final case class SequenceView(
   id:         Observation.Id,
   metadata:   SequenceMetadata,
   status:     SequenceState,

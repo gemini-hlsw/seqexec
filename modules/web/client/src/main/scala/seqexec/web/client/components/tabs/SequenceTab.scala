@@ -11,7 +11,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
-import react.common.{Size => _, _}
+import react.common.{ Size => _, _ }
 import react.semanticui.colors._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon._
@@ -102,33 +102,32 @@ object SequenceTab {
     .builder[Props]
     .initialStateFromProps(props => State(false, props.tab.id, props.tab.loading))
     .render { b =>
-      val status     = b.props.tab.status
-      val sequenceId = b.props.tab.id
-      val instrument = b.props.tab.instrument
-      val running    = b.props.runningInstruments.contains(instrument)
-      val isPreview  = b.props.tab.isPreview
-      val resources = b.props.tab.resourceOperations.filterNot {
-        case (r, s) =>
-          r.isInstrument || s === ResourceRunOperation.ResourceRunIdle
+      val status        = b.props.tab.status
+      val sequenceId    = b.props.tab.id
+      val instrument    = b.props.tab.instrument
+      val running       = b.props.runningInstruments.contains(instrument)
+      val isPreview     = b.props.tab.isPreview
+      val resources     = b.props.tab.resourceOperations.filterNot { case (r, s) =>
+        r.isInstrument || s === ResourceRunOperation.ResourceRunIdle
       }
-      val instName = instrument.show
-      val dispName = if (isPreview) s"Preview: $instName" else instName
-      val isLogged = b.props.loggedIn
+      val instName      = instrument.show
+      val dispName      = if (isPreview) s"Preview: $instName" else instName
+      val isLogged      = b.props.loggedIn
       val nextStepToRun =
         StepIdDisplayed(b.props.tab.nextStepToRun.getOrElse(-1))
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) =>
           s"${sequenceId.format} - ${current + 1}/$total"
-        case _ =>
+        case _                                 =>
           sequenceId.format
       }
 
       val icon: Icon = status match {
         case SequenceState.Running(_, _) =>
           IconCircleNotched.loading()
-        case SequenceState.Completed => IconCheckmark
-        case _                       => IconSelectedRadio
+        case SequenceState.Completed     => IconCheckmark
+        case _                           => IconSelectedRadio
       }
 
       val color = status match {
@@ -148,12 +147,12 @@ object SequenceTab {
         Popup(
           content = s"Load sequence ${sequenceId.format}",
           trigger = Button(
-            size     = Large,
-            compact  = true,
-            icon     = IconUpload,
-            color    = Teal,
+            size = Large,
+            compact = true,
+            icon = IconUpload,
+            color = Teal,
             disabled = b.state.loading || running,
-            loading  = b.state.loading,
+            loading = b.state.loading,
             onClickE = load(b, instrument, sequenceId)
           )
         ).when(isPreview && isLogged)
@@ -167,23 +166,22 @@ object SequenceTab {
       val resourceLabels =
         <.div(
           SeqexecStyles.resourceLabels,
-          resources.map {
-            case (r, s) =>
-              val color = s match {
-                case ResourceRunOperation.ResourceRunIdle         => Blue // Unused
-                case ResourceRunOperation.ResourceRunCompleted(_) => Green
-                case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
-                case ResourceRunOperation.ResourceRunFailed(_)    => Red
-              }
-              s match {
-                case ResourceRunOperation.ResourceRunInFlight(_) =>
-                  Label(color = color, size = Small, clazz = SeqexecStyles.activeResourceLabel)(
-                    r.show
-                  ): VdomNode
-                case ResourceRunOperation.ResourceRunCompleted(_) =>
-                  Label(color = color, size = Small)(r.show): VdomNode
-                case _ => EmptyVdom
-              }
+          resources.map { case (r, s) =>
+            val color = s match {
+              case ResourceRunOperation.ResourceRunIdle         => Blue // Unused
+              case ResourceRunOperation.ResourceRunCompleted(_) => Green
+              case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
+              case ResourceRunOperation.ResourceRunFailed(_)    => Red
+            }
+            s match {
+              case ResourceRunOperation.ResourceRunInFlight(_)  =>
+                Label(color = color, size = Small, clazz = SeqexecStyles.activeResourceLabel)(
+                  r.show
+                ): VdomNode
+              case ResourceRunOperation.ResourceRunCompleted(_) =>
+                Label(color = color, size = Small)(r.show): VdomNode
+              case _                                            => EmptyVdom
+            }
           }.toTagMod
         )
 
@@ -191,7 +189,8 @@ object SequenceTab {
         React.Fragment(
           <.div(SeqexecStyles.instrumentAndResourcesLabel,
                 <.div(SeqexecStyles.tabLabel, dispName),
-                resourceLabels),
+                resourceLabels
+          ),
           Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
         )
 
@@ -227,7 +226,7 @@ object SequenceTab {
         else tabContent
       )
     }
-    .getDerivedStateFromProps{ (props, state) =>
+    .getDerivedStateFromProps { (props, state) =>
       val preview = props.tab.isPreview
       val id      = state.prevTabId
       val newId   = props.tab.id
@@ -236,12 +235,15 @@ object SequenceTab {
       val isLoading  = props.tab.loading
       // Reset the loading state if the id changes
       Function.chain(
-        State.loading.set(false)
-          .some.filter(_ => preview && (id =!= newId || (wasLoading && !isLoading))).toList :::
-        List(
-          State.prevTabId.set(newId),
-          State.prevTabLoading.set(isLoading)
-        )
+        State.loading
+          .set(false)
+          .some
+          .filter(_ => preview && (id =!= newId || (wasLoading && !isLoading)))
+          .toList :::
+          List(
+            State.prevTabId.set(newId),
+            State.prevTabLoading.set(isLoading)
+          )
       )(state)
     }
     .configure(Reusability.shouldComponentUpdate)

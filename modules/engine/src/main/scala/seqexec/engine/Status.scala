@@ -4,8 +4,8 @@
 package seqexec.engine
 
 /**
-  * Flag to indicate whether the global execution is `Running` or `Waiting`.
-  */
+ * Flag to indicate whether the global execution is `Running` or `Waiting`.
+ */
 sealed trait Status
 
 object Status {

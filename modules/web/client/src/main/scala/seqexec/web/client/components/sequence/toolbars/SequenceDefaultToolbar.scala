@@ -14,17 +14,18 @@ import seqexec.model.Observation
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 
-final case class SequenceDefaultToolbar(id: Observation.Id) extends ReactProps[SequenceDefaultToolbar](SequenceDefaultToolbar.component) {
+final case class SequenceDefaultToolbar(id: Observation.Id)
+    extends ReactProps[SequenceDefaultToolbar](SequenceDefaultToolbar.component) {
 
-  val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]] =
+  val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]]   =
     SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
   val controlReader: ReactConnectProxy[Option[SequenceControlFocus]] =
     SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(id))
 }
 
 /**
-  * Toolbar for logged in users
-  */
+ * Toolbar for logged in users
+ */
 object SequenceDefaultToolbar {
 
   type Props = SequenceDefaultToolbar
@@ -35,11 +36,12 @@ object SequenceDefaultToolbar {
     .render_P(p =>
       Grid(
         GridRow(columns = Two, clazz = SeqexecStyles.shorterRow)(
-          GridColumn(floated  = Left,
+          GridColumn(floated = Left,
                      computer = Eight,
-                     tablet   = Eight,
-                     only     = GridOnly.Computer,
-                     clazz    = SeqexecStyles.infoOnControl)(
+                     tablet = Eight,
+                     only = GridOnly.Computer,
+                     clazz = SeqexecStyles.infoOnControl
+          )(
             p.controlReader(_() match {
               case Some(c) => SequenceControl(c)
               case _       => <.div()

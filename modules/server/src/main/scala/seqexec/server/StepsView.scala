@@ -22,14 +22,15 @@ import seqexec.model.enum.Resource
 import seqexec.server.gmos.GmosStepsView
 
 trait StepsView[F[_]] {
+
   /**
    * This method creates a view of the step for the client
    * The Step returned maybe a StandardStep of be specialized e.g. for N&S
    */
   def stepView(
-    stepg: SequenceGen.StepGen[F],
-    step: engine.Step[F],
-    altCfgStatus: List[(Resource, ActionStatus)],
+    stepg:         SequenceGen.StepGen[F],
+    step:          engine.Step[F],
+    altCfgStatus:  List[(Resource, ActionStatus)],
     pendingObsCmd: Option[PendingObserveCmd]
   ): Step
 }
@@ -45,28 +46,31 @@ object StepsView {
 
   def separateActions[F[_]](ls: NonEmptyList[Action[F]]): (List[Action[F]], List[Action[F]]) =
     ls.toList.partition(_.state.runState match {
-        case ActionState.Completed(_) => false
-        case ActionState.Failed(_)    => false
-        case _                        => true
-      }
-    )
+      case ActionState.Completed(_) => false
+      case ActionState.Failed(_)    => false
+      case _                        => true
+    })
 
   def actionsToResources[F[_]](s: NonEmptyList[Action[F]]): (List[Resource], List[Resource]) =
-    separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
+    separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource),
+                             _.map(_.kind).flatMap(kindToResource)
+    )
 
-  private[server] def configStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] = {
+  private[server] def configStatus[F[_]](
+    executions: List[ParallelActions[F]]
+  ): List[(Resource, ActionStatus)] = {
     // Remove undefined actions
-    val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
+    val ex                 = executions.filter(!separateActions(_)._2.exists(_.kind === ActionType.Undefined))
     // Split where at least one is running
     val (current, pending) = splitAfter(ex)(separateActions(_)._1.nonEmpty)
 
     // Calculate the state up to the current
-    val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
-      case (s, e) =>
-        val (a, r) = separateActions(e).bimap(
-            _.flatMap(a => kindToResource(a.kind).tupleRight(ActionStatus.Running)).toMap,
-            _.flatMap(r => kindToResource(r.kind).tupleRight(ActionStatus.Completed)).toMap)
-        s ++ a ++ r
+    val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) { case (s, e) =>
+      val (a, r) = separateActions(e).bimap(
+        _.flatMap(a => kindToResource(a.kind).tupleRight(ActionStatus.Running)).toMap,
+        _.flatMap(r => kindToResource(r.kind).tupleRight(ActionStatus.Completed)).toMap
+      )
+      s ++ a ++ r
     }
 
     // Find out systems in the future
@@ -74,10 +78,13 @@ object StepsView {
     // Calculate status of pending items
     val systemsPending = pending
       .map(actionsToResources)
-      .flatMap { case(a, b) => a.tupleRight(ActionStatus.Pending) ::: b.tupleRight(ActionStatus.Completed) }
-      .filter {
-        case (a, _) => !presentSystems.contains(a)
-      }.distinct
+      .flatMap { case (a, b) =>
+        a.tupleRight(ActionStatus.Pending) ::: b.tupleRight(ActionStatus.Completed)
+      }
+      .filter { case (a, _) =>
+        !presentSystems.contains(a)
+      }
+      .distinct
 
     (configStatus ++ systemsPending).toList.sortBy(_._1)
   }
@@ -85,12 +92,15 @@ object StepsView {
   /**
    * Calculates the config status for pending steps
    */
-  private[server] def pendingConfigStatus[F[_]](executions: List[ParallelActions[F]]): List[(Resource, ActionStatus)] =
+  private[server] def pendingConfigStatus[F[_]](
+    executions: List[ParallelActions[F]]
+  ): List[(Resource, ActionStatus)] =
     executions
       .map(actionsToResources)
       .flatMap { case (a, b) => a ::: b }
       .distinct
-      .tupleRight(ActionStatus.Pending).sortBy(_._1)
+      .tupleRight(ActionStatus.Pending)
+      .sortBy(_._1)
 
   /**
    * Overall pending status for a step
@@ -111,18 +121,18 @@ object StepsView {
       .getOrElse(ActionStatus.Pending)
 
   def fileId[F[_]](executions: List[engine.ParallelActions[F]]): Option[ImageFileId] =
-    observeAction(executions).flatMap(_.state.partials.collectFirst{
-      case FileIdAllocated(fid) => fid
+    observeAction(executions).flatMap(_.state.partials.collectFirst { case FileIdAllocated(fid) =>
+      fid
     })
 
   def defaultStepsView[F[_]]: StepsView[F] = new StepsView[F] {
     def stepView(
-      stepg: SequenceGen.StepGen[F],
-      step: engine.Step[F],
-      altCfgStatus: List[(Resource, ActionStatus)],
+      stepg:         SequenceGen.StepGen[F],
+      step:          engine.Step[F],
+      altCfgStatus:  List[(Resource, ActionStatus)],
       pendingObsCmd: Option[PendingObserveCmd]
     ): Step = {
-      val status = step.status
+      val status       = step.status
       val configStatus =
         if (status.runningOrComplete) {
           stepConfigStatus(step)
@@ -138,9 +148,10 @@ object StepsView {
         skip = step.skipMark.self,
         configStatus = configStatus,
         observeStatus = observeStatus(step.executions),
-        fileId = fileId(step.executions).orElse(stepg.some.collect{
+        fileId = fileId(step.executions).orElse(stepg.some.collect {
           case SequenceGen.CompletedStepGen(_, _, _, fileId) => fileId
-        }.flatten))
+        }.flatten)
+      )
     }
 
   }

@@ -84,8 +84,8 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
   val giapiDBEvents =
     giapiDB.discrete
       .map(_.get(GiapiStatus.GpiAlignAndCalibState.statusItem).flatMap(StatusValue.intValue))
-      .collect {
-        case Some(x) => AlignAndCalibEvent(x)
+      .collect { case Some(x) =>
+        AlignAndCalibEvent(x)
       }
       .map(toFrame)
 
@@ -119,7 +119,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
           }
         }
 
-      case POST -> Root / "seqexec" / "logout"      =>
+      case POST -> Root / "seqexec" / "logout" =>
         // Clean the auth cookie
         val cookie = ResponseCookie(auth.config.cookieName,
                                     "",
@@ -141,13 +141,13 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
           L.warn("warn") *>
           L.error("error")).replicateA(min(1000, max(0, count))) *> Ok("")
 
-      case auth @ POST -> Root / "seqexec" / "site" as user                      =>
+      case auth @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Login start
         L.info(s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}") *>
           Ok(s"$site")
 
-      case ws @ GET -> Root / "seqexec" / "events" as user                       =>
+      case ws @ GET -> Root / "seqexec" / "events" as user =>
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
 

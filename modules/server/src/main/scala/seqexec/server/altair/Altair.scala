@@ -20,8 +20,11 @@ import seqexec.server.tcs.Gaos.ResumeConditionSet
 import squants.Time
 
 trait Altair[F[_]] extends Gaos[F] {
-  def pauseResume(config: AltairConfig, pauseReasons: PauseConditionSet,
-                  resumeReasons: ResumeConditionSet): F[PauseResume[F]]
+  def pauseResume(
+    config:        AltairConfig,
+    pauseReasons:  PauseConditionSet,
+    resumeReasons: ResumeConditionSet
+  ): F[PauseResume[F]]
 
   val resource: Resource
 
@@ -37,11 +40,13 @@ trait Altair[F[_]] extends Gaos[F] {
 
 object Altair {
 
-  private class AltairImpl[F[_]: Sync] (controller: AltairController[F],
-                                        fieldLens: FieldLens
-                                       ) extends Altair[F] {
-    override def pauseResume(config: AltairConfig, pauseReasons: PauseConditionSet,
-                             resumeReasons: ResumeConditionSet): F[PauseResume[F]] =
+  private class AltairImpl[F[_]: Sync](controller: AltairController[F], fieldLens: FieldLens)
+      extends Altair[F] {
+    override def pauseResume(
+      config:        AltairConfig,
+      pauseReasons:  PauseConditionSet,
+      resumeReasons: ResumeConditionSet
+    ): F[PauseResume[F]] =
       controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(config)
 
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
@@ -58,9 +63,8 @@ object Altair {
     }
 
     override def usesOI(guide: AltairConfig): Boolean = guide match {
-      case LgsWithOi |
-           Ngs(true, _) => true
-      case _            => false
+      case LgsWithOi | Ngs(true, _) => true
+      case _                        => false
     }
 
     override def isFollowing: F[Boolean] = controller.isFollowing
@@ -76,11 +80,16 @@ object Altair {
   }
 
   def fromConfig[F[_]: Sync](config: CleanConfig): F[AltairController[F] => Altair[F]] =
-    config.extractAOAs[FieldLens](FIELD_LENSE_PROP).map { fieldLens => (controller: AltairController[F]) =>
-      new AltairImpl[F](controller, fieldLens):Altair[F]
-    }.toF[F]
+    config
+      .extractAOAs[FieldLens](FIELD_LENSE_PROP)
+      .map { fieldLens => (controller: AltairController[F]) =>
+        new AltairImpl[F](controller, fieldLens): Altair[F]
+      }
+      .toF[F]
 
-  def guideStarType[F[_]: ApplicativeError[*[_], Throwable]](config: CleanConfig): F[GuideStarType] =
+  def guideStarType[F[_]: ApplicativeError[*[_], Throwable]](
+    config: CleanConfig
+  ): F[GuideStarType] =
     config.extractAOAs[GuideStarType](GUIDESTAR_TYPE_PROP).toF[F]
 
 }

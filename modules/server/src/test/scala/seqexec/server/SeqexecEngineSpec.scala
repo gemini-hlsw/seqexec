@@ -54,8 +54,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setOperator(q, UserDetails("", ""), operator), 2)
-    } yield inside(sf.flatMap(EngineState.operator.get)) {
-      case Some(op) => op shouldBe operator
+    } yield inside(sf.flatMap(EngineState.operator.get)) { case Some(op) =>
+      op shouldBe operator
     }).unsafeRunSync()
   }
 
@@ -66,8 +66,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) {
-      case Some(op) => op shouldBe iq
+    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) { case Some(op) =>
+      op shouldBe iq
     }).unsafeRunSync()
 
   }
@@ -78,8 +78,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) {
-      case Some(op) => op shouldBe wv
+    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) { case Some(op) =>
+      op shouldBe wv
     }).unsafeRunSync()
   }
 
@@ -89,8 +89,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) {
-      case Some(op) => op shouldBe cc
+    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) { case Some(op) =>
+      op shouldBe cc
     }).unsafeRunSync()
   }
 
@@ -100,8 +100,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) {
-      case Some(op) => op shouldBe sb
+    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) { case Some(op) =>
+      op shouldBe sb
     }).unsafeRunSync()
   }
 
@@ -116,8 +116,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield inside(
       sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)
-    ) {
-      case Some(op) => op shouldBe observer
+    ) { case Some(op) =>
+      op shouldBe observer
     }).unsafeRunSync()
   }
 
@@ -144,8 +144,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
             )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
 
   }
@@ -174,8 +174,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
             )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -286,11 +286,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
               .last
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.toSequence.steps)
-    ) {
-      case Some(steps) =>
-        assertResult(Some(StepState.Skipped))(steps.get(0).map(_.status))
-        assertResult(Some(StepState.Skipped))(steps.get(1).map(_.status))
-        assertResult(Some(StepState.Completed))(steps.get(2).map(_.status))
+    ) { case Some(steps) =>
+      assertResult(Some(StepState.Skipped))(steps.get(0).map(_.status))
+      assertResult(Some(StepState.Skipped))(steps.get(1).map(_.status))
+      assertResult(Some(StepState.Completed))(steps.get(2).map(_.status))
     }).unsafeRunSync()
   }
 
@@ -321,8 +320,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
               .last
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
   }
 
@@ -338,26 +337,25 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       id = seqObsId1,
       title = "",
       instrument = Instrument.GmosS,
-      steps = obsClass.zip(obsType).zipWithIndex.map {
-        case ((obC, obT), i) =>
-          SequenceGen.PendingStepGen(
-            startStepId + i,
-            Monoid.empty[DataId],
-            config = CleanConfig(
-              new DefaultConfig(),
-              Map(
-                (TELESCOPE_KEY / "Base:name", targetName),
-                (OBSERVE_KEY / OBS_CLASS_PROP, obC.headerValue()),
-                (OBSERVE_KEY / OBSERVE_TYPE_PROP, obT)
-              )
-            ),
-            resources = resources,
-            _ => InstrumentSystem.Uncontrollable,
-            generator = SequenceGen.StepActionsGen(
-              configs = resources.map(r => r -> {_:SystemOverrides => pendingAction[IO](r)}).toMap,
-              post = (_, _) => Nil
+      steps = obsClass.zip(obsType).zipWithIndex.map { case ((obC, obT), i) =>
+        SequenceGen.PendingStepGen(
+          startStepId + i,
+          Monoid.empty[DataId],
+          config = CleanConfig(
+            new DefaultConfig(),
+            Map(
+              (TELESCOPE_KEY / "Base:name", targetName),
+              (OBSERVE_KEY / OBS_CLASS_PROP, obC.headerValue()),
+              (OBSERVE_KEY / OBSERVE_TYPE_PROP, obT)
             )
+          ),
+          resources = resources,
+          _ => InstrumentSystem.Uncontrollable,
+          generator = SequenceGen.StepActionsGen(
+            configs = resources.map(r => r -> { _: SystemOverrides => pendingAction[IO](r) }).toMap,
+            post = (_, _) => Nil
           )
+        )
       }
     )
   }
@@ -395,8 +393,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -420,8 +418,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
   }
 
@@ -445,8 +443,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
   }
 
@@ -470,8 +468,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
   }
 
@@ -495,8 +493,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -520,8 +518,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -545,8 +543,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -570,8 +568,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -596,8 +594,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default))
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -622,8 +620,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default))
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isIdle)
+    ) { case Some(status) =>
+      assert(status.isIdle)
     }).unsafeRunSync()
   }
 
@@ -648,8 +646,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Override))
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 
@@ -674,8 +672,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default))
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) {
-      case Some(status) => assert(status.isRunning)
+    ) { case Some(status) =>
+      assert(status.isRunning)
     }).unsafeRunSync()
   }
 }

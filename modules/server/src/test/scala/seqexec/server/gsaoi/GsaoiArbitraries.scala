@@ -18,7 +18,7 @@ trait GsaoiArbitraries {
 
   implicit val windowCoverArb: Arbitrary[WindowCover] =
     Arbitrary(Gen.oneOf(WindowCover.Closed, WindowCover.Opened))
-  implicit val windowCoverCogen: Cogen[WindowCover] =
+  implicit val windowCoverCogen: Cogen[WindowCover]   =
     Cogen[String].contramap(_.productPrefix)
 
   implicit val DCConfigArb: Arbitrary[DCConfig] =
@@ -29,12 +29,12 @@ trait GsaoiArbitraries {
         coadds             <- arbitrary[Int]
         exposureTime       <- arbitrary[ExposureTime]
         numberOfFowSamples <- arbitrary[Int]
-      } yield
-        DCConfig(readMode,
-                 roi,
-                 tag[CoaddsI][Int](coadds),
-                 exposureTime,
-                 tag[NumberOfFowSamplesI][Int](numberOfFowSamples))
+      } yield DCConfig(readMode,
+                       roi,
+                       tag[CoaddsI][Int](coadds),
+                       exposureTime,
+                       tag[NumberOfFowSamplesI][Int](numberOfFowSamples)
+      )
     }
 
   implicit val readModeCogen: Cogen[ReadMode] =
@@ -45,7 +45,8 @@ trait GsaoiArbitraries {
 
   implicit val DCConfigCogen: Cogen[DCConfig] =
     Cogen[(ReadMode, Roi, Int, ExposureTime, Int)].contramap(x =>
-      (x.readMode, x.roi, x.coadds, x.exposureTime, x.numberOfFowSamples))
+      (x.readMode, x.roi, x.coadds, x.exposureTime, x.numberOfFowSamples)
+    )
 
   implicit val CCConfigArb: Arbitrary[CCConfig] =
     Arbitrary {
@@ -68,5 +69,6 @@ trait GsaoiArbitraries {
 
   implicit val CCConfigCogen: Cogen[CCConfig] =
     Cogen[(Filter, OdgwSize, UtilityWheel, WindowCover)].contramap(x =>
-      (x.filter, x.odgwSize, x.utilityWheel, x.windowCover))
+      (x.filter, x.odgwSize, x.utilityWheel, x.windowCover)
+    )
 }

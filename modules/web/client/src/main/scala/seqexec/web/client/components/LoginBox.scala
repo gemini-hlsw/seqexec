@@ -33,8 +33,8 @@ import seqexec.web.client.reusability._
 import seqexec.web.client.services.SeqexecWebClient
 
 /**
-  * UI for the login box
-  */
+ * UI for the login box
+ */
 final case class LoginBox(
   visible: SectionVisibilityState
 ) extends ReactProps[LoginBox](LoginBox.component)
@@ -71,11 +71,11 @@ object LoginBox {
       b.modState(State.username.set(v))
     }
 
-    def loggedInEvent(u: UserDetails): Callback =
+    def loggedInEvent(u:     UserDetails): Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(LoggedIn(u))
-    def updateProgressMsg(m: String): Callback =
+    def updateProgressMsg(m: String): Callback      =
       b.modState(State.progressMsg.set(m.some) >>> State.errorMsg.set(none))
-    def updateErrorMsg(m: String): Callback =
+    def updateErrorMsg(m:    String): Callback      =
       b.modState(State.errorMsg.set(m.some) >>> State.progressMsg.set(none))
     def closeBox: Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
@@ -89,9 +89,8 @@ object LoginBox {
             SeqexecWebClient
               .login(s.username, s.password)
               .map(loggedInEvent)
-              .recover {
-                case _: Exception =>
-                  updateErrorMsg("Login failed, check username/password")
+              .recover { case _: Exception =>
+                updateErrorMsg("Login failed, check username/password")
               }
           )
       }
@@ -103,8 +102,8 @@ object LoginBox {
             s.progressMsg.whenDefined(m =>
               GridColumn(
                 textAlign = Left,
-                floated   = floats.Left,
-                width     = Six
+                floated = floats.Left,
+                width = Six
               )(
                 IconCircleNotched.loading(true),
                 m
@@ -113,9 +112,9 @@ object LoginBox {
             s.errorMsg.whenDefined(m =>
               GridColumn(
                 textAlign = Left,
-                floated   = floats.Left,
-                width     = Six,
-                color     = Red
+                floated = floats.Left,
+                width = Six,
+                color = Red
               )(
                 Icon("attention"),
                 m
@@ -124,8 +123,8 @@ object LoginBox {
             (
               GridColumn(
                 textAlign = Right,
-                floated   = floats.Right,
-                width     = Ten
+                floated = floats.Right,
+                width = Ten
               )(
                 Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
                 Button(^.tpe := "submit")("Login")
@@ -139,14 +138,14 @@ object LoginBox {
       Modal(
         as = As.Form(
           Form(
-            action    = "#",
+            action = "#",
             onSubmitE = attemptLogin
           )(
             ^.id := formId,
             ^.method := "post"
           )
         ),
-        open    = p.visible === SectionOpen,
+        open = p.visible === SectionOpen,
         onClose = closeBox
       )(
         ModalHeader("Login"),

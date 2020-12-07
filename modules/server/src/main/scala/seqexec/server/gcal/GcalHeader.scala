@@ -12,7 +12,10 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 
 object GcalHeader {
-  implicit def header[F[_]: Sync: Logger](kwClient: KeywordsClient[F], gcalReader: GcalKeywordReader[F]): Header[F] =
+  implicit def header[F[_]: Sync: Logger](
+    kwClient:   KeywordsClient[F],
+    gcalReader: GcalKeywordReader[F]
+  ): Header[F] =
     new Header[F] {
       private val gcalKeywords = List(
         buildString(gcalReader.lamp, KeywordName.GCALLAMP),
@@ -21,8 +24,7 @@ object GcalHeader {
         buildString(gcalReader.shutter, KeywordName.GCALSHUT)
       )
 
-      override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): F[Unit] =
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(id, kwClient, gcalKeywords)
 
       override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit

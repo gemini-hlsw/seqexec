@@ -10,14 +10,13 @@ import seqexec.web.client.actions._
 import seqexec.web.client.model.SessionQueueFilter
 
 /**
-  * Handles updates to the session queue filter
-  */
+ * Handles updates to the session queue filter
+ */
 class SessionQueueFilterHandler[M](modelRW: ModelRW[M, SessionQueueFilter])
     extends ActionHandler(modelRW)
     with Handlers[M, SessionQueueFilter] {
 
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateSessionFilter(mod) =>
-      updatedL(mod)
+  override def handle: PartialFunction[Any, ActionResult[M]] = { case UpdateSessionFilter(mod) =>
+    updatedL(mod)
   }
 }

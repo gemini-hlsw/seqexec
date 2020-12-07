@@ -89,13 +89,13 @@ object TcsController {
 
     implicit val specialEq: Eq[Special] = Eq.by(_.s)
 
-    implicit val activeEq: Eq[ActiveNodChopTracking] = Eq.instance{
-      case (Normal, Normal)             => true
-      case (a@Special(_), b@Special(_)) => a === b
-      case _                            => false
+    implicit val activeEq: Eq[ActiveNodChopTracking] = Eq.instance {
+      case (Normal, Normal)                 => true
+      case (a @ Special(_), b @ Special(_)) => a === b
+      case _                                => false
     }
 
-    implicit val eq: Eq[NodChopTrackingConfig] = Eq.instance{
+    implicit val eq: Eq[NodChopTrackingConfig] = Eq.instance {
       case (AllOff, AllOff)                                     => true
       case (a: ActiveNodChopTracking, b: ActiveNodChopTracking) => a === b
       case _                                                    => false
@@ -119,25 +119,26 @@ object TcsController {
 
   /** Data type for probe tracking config. */
   sealed abstract class ProbeTrackingConfig(
-    val follow: FollowOption,
+    val follow:     FollowOption,
     val getNodChop: NodChopTrackingConfig
-  ) {
+  )                          {
     def isActive: Boolean = follow === FollowOn && getNodChop =!= NodChopTrackingConfig.AllOff
   }
   object ProbeTrackingConfig {
     case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
-    case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
-    final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig(FollowOn, ndconfig)
+    case object Off    extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
+    final case class On(ndconfig: ActiveNodChopTracking)
+        extends ProbeTrackingConfig(FollowOn, ndconfig)
     case object Frozen extends ProbeTrackingConfig(FollowOn, NodChopTrackingConfig.AllOff)
 
     implicit val onEq: Eq[On] = Eq.by(_.ndconfig)
 
-    implicit val eq: Eq[ProbeTrackingConfig] = Eq.instance{
-      case (Parked, Parked)   => true
-      case (Off, Off)         => true
-      case (Frozen, Frozen)   => true
-      case (a@On(_), b@On(_)) => a === b
-      case _                  => false
+    implicit val eq: Eq[ProbeTrackingConfig]     = Eq.instance {
+      case (Parked, Parked)       => true
+      case (Off, Off)             => true
+      case (Frozen, Frozen)       => true
+      case (a @ On(_), b @ On(_)) => a === b
+      case _                      => false
     }
     implicit val show: Show[ProbeTrackingConfig] = Show.fromToString
   }
@@ -151,7 +152,7 @@ object TcsController {
 
     implicit val show: Show[HrwfsPickupPosition] = Show.fromToString
 
-    implicit val eq: Eq[HrwfsPickupPosition] = Eq.instance{
+    implicit val eq: Eq[HrwfsPickupPosition] = Eq.instance {
       case (IN, IN)         => true
       case (OUT, OUT)       => true
       case (Parked, Parked) => true
@@ -163,17 +164,17 @@ object TcsController {
 
   sealed trait HrwfsConfig
   object HrwfsConfig {
-    case object Auto                                  extends HrwfsConfig
+    case object Auto extends HrwfsConfig
     final case class Manual(pos: HrwfsPickupPosition) extends HrwfsConfig
 
     implicit val show: Show[HrwfsConfig] = Show.fromToString
 
     implicit val manualEq: Eq[Manual] = Eq.by(_.pos)
 
-    implicit val eq: Eq[HrwfsConfig] = Eq.instance{
-      case (Auto, Auto)               => true
-      case (a@Manual(_), b@Manual(_)) => a === b
-      case _                          => false
+    implicit val eq: Eq[HrwfsConfig] = Eq.instance {
+      case (Auto, Auto)                   => true
+      case (a @ Manual(_), b @ Manual(_)) => a === b
+      case _                              => false
     }
   }
 
@@ -184,7 +185,7 @@ object TcsController {
     case object AO   extends LightSource
     case object GCAL extends LightSource
 
-    implicit val eq: Eq[LightSource] =  Eq.fromUniversalEquals
+    implicit val eq: Eq[LightSource] = Eq.fromUniversalEquals
   }
 
   /* Data type for science fold position. */
@@ -200,32 +201,34 @@ object TcsController {
   trait OffsetX
   trait OffsetY
 
-  final case class FocalPlaneOffset(x: Length@@OffsetX, y: Length@@OffsetY) {
+  final case class FocalPlaneOffset(x: Length @@ OffsetX, y: Length @@ OffsetY) {
     def toInstrumentOffset(iaa: Angle): InstrumentOffset = InstrumentOffset(
-      tag[OffsetP](((x * -1 *iaa.cos) + y * iaa.sin) * FOCAL_PLANE_SCALE),
+      tag[OffsetP](((x * -1 * iaa.cos) + y * iaa.sin) * FOCAL_PLANE_SCALE),
       tag[OffsetQ](((x * -1 * iaa.sin) - y * iaa.cos) * FOCAL_PLANE_SCALE)
     )
   }
   object FocalPlaneOffset {
-    implicit val eq: Eq[FocalPlaneOffset] =  Eq.by(o => (o.x.value, o.y.value))
+    implicit val eq: Eq[FocalPlaneOffset] = Eq.by(o => (o.x.value, o.y.value))
 
-    def fromInstrumentOffset(o: InstrumentOffset, iaa: Angle): FocalPlaneOffset = o.toFocalPlaneOffset(iaa)
+    def fromInstrumentOffset(o: InstrumentOffset, iaa: Angle): FocalPlaneOffset =
+      o.toFocalPlaneOffset(iaa)
   }
 
   trait OffsetP
   trait OffsetQ
 
-  final case class InstrumentOffset(p: Angle@@OffsetP, q: Angle@@OffsetQ) {
+  final case class InstrumentOffset(p: Angle @@ OffsetP, q: Angle @@ OffsetQ) {
     def toFocalPlaneOffset(iaa: Angle): FocalPlaneOffset = FocalPlaneOffset(
       tag[OffsetX](((p * -1 * iaa.cos) - q * iaa.sin) / FOCAL_PLANE_SCALE),
-      tag[OffsetY](( p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
+      tag[OffsetY]((p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
     )
   }
   object InstrumentOffset {
     implicit val EqInstrumentOffset: Eq[InstrumentOffset] =
       Eq.by(o => (o.p.value, o.q.value))
 
-    def fromFocalPlaneOffset(o: FocalPlaneOffset, iaa: Angle): InstrumentOffset = o.toInstrumentOffset(iaa)
+    def fromFocalPlaneOffset(o: FocalPlaneOffset, iaa: Angle): InstrumentOffset =
+      o.toInstrumentOffset(iaa)
   }
 
   @Lenses
@@ -247,7 +250,7 @@ object TcsController {
 
   sealed trait GuiderSensorOption
   case object GuiderSensorOff extends GuiderSensorOption
-  case object GuiderSensorOn extends GuiderSensorOption
+  case object GuiderSensorOn  extends GuiderSensorOption
   object GuiderSensorOption {
     implicit val guideSensorOptionEq: Eq[GuiderSensorOption] = Eq.fromUniversalEquals
   }
@@ -284,41 +287,45 @@ object TcsController {
     // Gemini Adaptive Optics System (GeMS or Altair)
     case object Gaos   extends Subsystem
 
-    val allList: List[Subsystem] = List(PWFS1, PWFS2, OIWFS, AGUnit, Mount, M1, M2, Gaos)
-    implicit val order: Order[Subsystem] = Order.from{ case (a, b) => allList.indexOf(a) - allList.indexOf(b) }
-    val allButGaos: NonEmptySet[Subsystem] = NonEmptySet.of(OIWFS, PWFS1, PWFS2, AGUnit, Mount, M1, M2)
-    val allButGaosNorOi: NonEmptySet[Subsystem] = NonEmptySet.of(PWFS1, PWFS2, AGUnit, Mount, M1, M2)
+    val allList: List[Subsystem]                = List(PWFS1, PWFS2, OIWFS, AGUnit, Mount, M1, M2, Gaos)
+    implicit val order: Order[Subsystem]        = Order.from { case (a, b) =>
+      allList.indexOf(a) - allList.indexOf(b)
+    }
+    val allButGaos: NonEmptySet[Subsystem]      =
+      NonEmptySet.of(OIWFS, PWFS1, PWFS2, AGUnit, Mount, M1, M2)
+    val allButGaosNorOi: NonEmptySet[Subsystem] =
+      NonEmptySet.of(PWFS1, PWFS2, AGUnit, Mount, M1, M2)
 
-    implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
-    implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
+    implicit val show: Show[Subsystem] = Show.show(_.productPrefix)
+    implicit val equal: Eq[Subsystem]  = Eq.fromUniversalEquals
   }
 
   sealed trait GuidersConfig[+C] {
-    val pwfs1: GuiderConfig@@P1Config
-    val pwfs2: GuiderConfig@@P2Config
-    val oiwfs: GuiderConfig@@OIConfig
+    val pwfs1: GuiderConfig @@ P1Config
+    val pwfs2: GuiderConfig @@ P2Config
+    val oiwfs: GuiderConfig @@ OIConfig
   }
 
   @Lenses
   final case class BasicGuidersConfig(
-    pwfs1: GuiderConfig@@P1Config,
-    pwfs2: GuiderConfig@@P2Config,
-    oiwfs: GuiderConfig@@OIConfig
+    pwfs1: GuiderConfig @@ P1Config,
+    pwfs2: GuiderConfig @@ P2Config,
+    oiwfs: GuiderConfig @@ OIConfig
   ) extends GuidersConfig[Nothing]
 
   @Lenses
   final case class AoGuidersConfig[C](
-    pwfs1: GuiderConfig@@P1Config,
+    pwfs1:   GuiderConfig @@ P1Config,
     aoguide: C,
-    oiwfs: GuiderConfig@@OIConfig
+    oiwfs:   GuiderConfig @@ OIConfig
   ) extends GuidersConfig[C] {
-    override val pwfs2: GuiderConfig@@P2Config =
+    override val pwfs2: GuiderConfig @@ P2Config =
       tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
   }
 
   sealed trait TcsConfig[+C, +G] {
-    val gc:  TelescopeGuideConfig
-    val tc:  TelescopeConfig
+    val gc: TelescopeGuideConfig
+    val tc: TelescopeConfig
     val gds: GuidersConfig[C]
     val agc: AGConfig
     val inst: InstrumentGuide
@@ -326,19 +333,19 @@ object TcsController {
 
   @Lenses
   final case class BasicTcsConfig(
-    gc:  TelescopeGuideConfig,
-    tc:  TelescopeConfig,
-    gds: BasicGuidersConfig,
-    agc: AGConfig,
+    gc:   TelescopeGuideConfig,
+    tc:   TelescopeConfig,
+    gds:  BasicGuidersConfig,
+    agc:  AGConfig,
     inst: InstrumentGuide
   ) extends TcsConfig[Nothing, Nothing]
 
   @Lenses
   final case class AoTcsConfig[C, G](
-    gc:  TelescopeGuideConfig,
-    tc:  TelescopeConfig,
-    gds: AoGuidersConfig[C],
-    agc: AGConfig,
+    gc:   TelescopeGuideConfig,
+    tc:   TelescopeConfig,
+    gds:  AoGuidersConfig[C],
+    agc:  AGConfig,
     gaos: G,
     inst: InstrumentGuide
   ) extends TcsConfig[C, G]

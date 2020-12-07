@@ -9,8 +9,8 @@ import org.http4s._
 import org.http4s.dsl.Http4sDsl
 
 /**
-  * Rest Endpoints for SmartGcal
-  */
+ * Rest Endpoints for SmartGcal
+ */
 class SmartGcalRoutes[F[_]: Sync](cal: SmartGcal) extends Http4sDsl[F] {
 
   val publicService: HttpRoutes[F] = HttpRoutes.of {

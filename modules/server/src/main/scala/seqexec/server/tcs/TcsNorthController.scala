@@ -18,22 +18,26 @@ import shapeless.tag.@@
 trait TcsNorthController[F[_]] {
   import TcsNorthController._
 
-  def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem],
-                  gaos: Option[Altair[F]],
-                  tc: TcsNorthConfig): F[Unit]
+  def applyConfig(
+    subsystems: NonEmptySet[TcsController.Subsystem],
+    gaos:       Option[Altair[F]],
+    tc:         TcsNorthConfig
+  ): F[Unit]
 
   def notifyObserveStart: F[Unit]
 
   def notifyObserveEnd: F[Unit]
 
-  def nod(subsystems: NonEmptySet[Subsystem], tcsConfig: TcsNorthConfig)
-         (stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
+  def nod(
+    subsystems: NonEmptySet[Subsystem],
+    tcsConfig:  TcsNorthConfig
+  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
 
 }
 
 object TcsNorthController {
 
-  type TcsNorthConfig = TcsConfig[GuiderConfig@@AoGuide, AltairController.AltairConfig]
-  type TcsNorthAoConfig = AoTcsConfig[GuiderConfig@@AoGuide, AltairController.AltairConfig]
+  type TcsNorthConfig   = TcsConfig[GuiderConfig @@ AoGuide, AltairController.AltairConfig]
+  type TcsNorthAoConfig = AoTcsConfig[GuiderConfig @@ AoGuide, AltairController.AltairConfig]
 
 }

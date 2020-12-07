@@ -3,9 +3,9 @@
 
 package seqexec.server.gpi
 
-import java.lang.{Boolean => JBoolean}
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 import scala.concurrent.duration._
 
@@ -15,7 +15,7 @@ import cats.data.Kleisli
 import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.syntax.all._
-import edu.gemini.spModel.gemini.gpi.Gpi.{ReadoutArea => _, _}
+import edu.gemini.spModel.gemini.gpi.Gpi.{ ReadoutArea => _, _ }
 import edu.gemini.spModel.obsclass.ObsClass
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -83,15 +83,17 @@ final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[
 
   override def notifyObserveStart: F[Unit] = Applicative[F].unit
 
-  override def calcObserveTime(config: CleanConfig): F[Time] = MonadError[F, Throwable].catchNonFatal {
-    val obsTime =
-      for {
-        exp <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
-        coa <- config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
-      } yield
-        (Seconds(exp.toDouble) + perCoaddOverhead) * coa.toDouble + readoutOverhead + writeOverhead
-    obsTime.getOrElse(Milliseconds(100))
-  }
+  override def calcObserveTime(config: CleanConfig): F[Time] =
+    MonadError[F, Throwable].catchNonFatal {
+      val obsTime =
+        for {
+          exp <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+          coa <- config.extractObsAs[JInt](COADDS_PROP).map(_.toInt)
+        } yield (Seconds(
+          exp.toDouble
+        ) + perCoaddOverhead) * coa.toDouble + readoutOverhead + writeOverhead
+      obsTime.getOrElse(Milliseconds(100))
+    }
 
   override def observeProgress(
     total:   Time,
@@ -124,7 +126,8 @@ object Gpi {
       ir          <- config.extractInstAs[ArtificialSource](IR_LASER_LAMP_PROP)
       vis         <- config.extractInstAs[ArtificialSource](VISIBLE_LASER_LAMP_PROP)
       sc          <- config.extractInstAs[ArtificialSource](SUPER_CONTINUUM_LAMP_PROP)
-      attenuation <- config.extractInstAs[JDouble](ARTIFICIAL_SOURCE_ATTENUATION_PROP)
+      attenuation <- config
+                       .extractInstAs[JDouble](ARTIFICIAL_SOURCE_ATTENUATION_PROP)
                        .map(_.toDouble)
     } yield ArtificialSources(ir, vis, sc, attenuation)
 
@@ -136,8 +139,9 @@ object Gpi {
       referenceArm <- config.extractInstAs[Shutter](REFERENCE_ARM_SHUTTER_PROP)
     } yield Shutters(entrance, calEntrance, scienceArm, referenceArm)
 
-  private def gpiMode(config: CleanConfig)
-    : Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
+  private def gpiMode(
+    config: CleanConfig
+  ): Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
     config
       .extractInstAs[ObservingMode](OBSERVING_MODE_PROP)
       .flatMap { mode =>
@@ -154,12 +158,13 @@ object Gpi {
   val AcquisitionKey: String = ObsClass.ACQ.headerValue()
 
   // TODO wrap this on F to keep RT, It involves a large change upstream
-  def isAlignAndCalib(config: CleanConfig): Boolean = {
-    (config.extractInstAs[String](InstConstants.INSTRUMENT_NAME_PROP), config.extractObsAs[String](InstConstants.OBS_CLASS_PROP)).mapN {
+  def isAlignAndCalib(config: CleanConfig): Boolean =
+    (config.extractInstAs[String](InstConstants.INSTRUMENT_NAME_PROP),
+     config.extractObsAs[String](InstConstants.OBS_CLASS_PROP)
+    ).mapN {
       case (Gpi.name, "acq") => true
       case _                 => false
     }.getOrElse(false)
-  }
 
   def gpiReadMode(config: CleanConfig): Either[ExtractFailure, GpiReadMode] =
     // FIXME: This turned out ugly because on the ocs this value is
@@ -167,12 +172,15 @@ object Gpi {
     // The OCS will be updated eventually but in the mean time we have to
     // resort to casting to Object and call toString
     // I beg your forgivness 🙏
-    config.extractInstAs[Any](DETECTOR_SAMPLING_MODE_PROP)
-      .flatMap{s =>
-        GpiReadMode.fromLongName(s.toString)
-        .toRight(
-          ConversionError(OBSERVE_KEY / DETECTOR_SAMPLING_MODE_PROP,
-          "Cannot read gpi Read mode"))}
+    config
+      .extractInstAs[Any](DETECTOR_SAMPLING_MODE_PROP)
+      .flatMap { s =>
+        GpiReadMode
+          .fromLongName(s.toString)
+          .toRight(
+            ConversionError(OBSERVE_KEY / DETECTOR_SAMPLING_MODE_PROP, "Cannot read gpi Read mode")
+          )
+      }
 
   def gpiReadoutArea(config: CleanConfig): Either[ExtractFailure, ReadoutArea] =
     (for {
@@ -180,33 +188,52 @@ object Gpi {
       startY <- config.extractInstAs[JInt](DETECTOR_STARTY_PROP)
       endX   <- config.extractInstAs[JInt](DETECTOR_ENDX_PROP)
       endY   <- config.extractInstAs[JInt](DETECTOR_ENDY_PROP)
-    } yield
-      ReadoutArea.fromValues(startX, startY, endX, endY)
-        .toRight(
-          ConversionError(OBSERVE_KEY / DETECTOR_STARTX_PROP,
-          "Cannot read readout area"))).flatten
+    } yield ReadoutArea
+      .fromValues(startX, startY, endX, endY)
+      .toRight(
+        ConversionError(OBSERVE_KEY / DETECTOR_STARTX_PROP, "Cannot read readout area")
+      )).flatten
 
-  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[GpiConfig] =
-    EitherT(ApplicativeError[F, Throwable].catchNonFatal(
-      (for {
-        adc      <- config.extractInstAs[Adc](ADC_PROP)
-        exp      <- config.extractObsAs[JDouble](EXPOSURE_TIME_PROP)
-                      .map(x => Duration(x, SECONDS))
-        coa      <- config.extractObsAs[JInt](COADDS_PROP)
-                      .map(_.toInt)
-        readMode <- gpiReadMode(config)
-        area     <- gpiReadoutArea(config)
-        obsMode  <- gpiMode(config)
-        pol      <- config.extractInstAs[Disperser](DISPERSER_PROP)
-        polA     <- config.extractInstAs[JDouble](HALF_WAVE_PLATE_ANGLE_VALUE_PROP)
-                      .map(_.toDouble)
-        shutters <- gpiShutters(config)
-        asu      <- gpiASU(config)
-        pc       <- config.extractInstAs[PupilCamera](PUPUL_CAMERA_PROP)
-        ao       <- gpiAoFlags(config)
-      } yield RegularGpiConfig(adc, exp, coa, readMode, area, obsMode, pol, polA, shutters, asu, pc, ao))
-        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-    )).widenRethrowT.widen[GpiConfig]
+  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](
+    config: CleanConfig
+  ): F[GpiConfig] =
+    EitherT(
+      ApplicativeError[F, Throwable].catchNonFatal(
+        (for {
+          adc      <- config.extractInstAs[Adc](ADC_PROP)
+          exp      <- config
+                        .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
+                        .map(x => Duration(x, SECONDS))
+          coa      <- config
+                        .extractObsAs[JInt](COADDS_PROP)
+                        .map(_.toInt)
+          readMode <- gpiReadMode(config)
+          area     <- gpiReadoutArea(config)
+          obsMode  <- gpiMode(config)
+          pol      <- config.extractInstAs[Disperser](DISPERSER_PROP)
+          polA     <- config
+                        .extractInstAs[JDouble](HALF_WAVE_PLATE_ANGLE_VALUE_PROP)
+                        .map(_.toDouble)
+          shutters <- gpiShutters(config)
+          asu      <- gpiASU(config)
+          pc       <- config.extractInstAs[PupilCamera](PUPUL_CAMERA_PROP)
+          ao       <- gpiAoFlags(config)
+        } yield RegularGpiConfig(adc,
+                                 exp,
+                                 coa,
+                                 readMode,
+                                 area,
+                                 obsMode,
+                                 pol,
+                                 polA,
+                                 shutters,
+                                 asu,
+                                 pc,
+                                 ao
+        ))
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      )
+    ).widenRethrowT.widen[GpiConfig]
 
   private def alignAndCalibConfig[F[_]: Applicative]: F[GpiConfig] =
     AlignAndCalibConfig.pure[F].widen[GpiConfig]
@@ -219,7 +246,10 @@ object Gpi {
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.Gpi
 
-    override def calcStepType(config: CleanConfig, isNightSeq: Boolean): Either[SeqexecFailure, StepType] =
+    override def calcStepType(
+      config:     CleanConfig,
+      isNightSeq: Boolean
+    ): Either[SeqexecFailure, StepType] =
       if (Gpi.isAlignAndCalib(config)) {
         StepType.AlignAndCalib.asRight
       } else {

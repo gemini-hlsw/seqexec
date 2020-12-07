@@ -25,7 +25,8 @@ object TcsSettleTimeCalculator {
   def constantSettleTime(cnst: Time): SettleTimeCalculator = (_: Angle) => cnst
 
   // Settle time proportional to displacement
-  def linearSettleTime(scale: SettleTimeScale): SettleTimeCalculator = (displacement: Angle) => scale * displacement
+  def linearSettleTime(scale: SettleTimeScale): SettleTimeCalculator = (displacement: Angle) =>
+    scale * displacement
 
   final case class SettleTimeScale(time: Time, angle: Angle) extends Ratio[Time, Angle] {
     override def base: Time = time
@@ -33,7 +34,7 @@ object TcsSettleTimeCalculator {
     override def counter: Angle = angle
 
     def times(a: Angle): Time = convertToBase(a)
-    def *(a: Angle): Time = times(a)
+    def *(a:     Angle): Time = times(a)
   }
 
   // We are using constant values for now. Values are taken from old Seqexec
@@ -46,28 +47,34 @@ object TcsSettleTimeCalculator {
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
     Instrument.GmosN -> constantSettleTime(500.milliseconds),
     Instrument.GmosS -> constantSettleTime(500.milliseconds),
-    Instrument.F2 -> constantSettleTime(500.milliseconds),
-    Instrument.Nifs -> constantSettleTime(4.seconds),
-    Instrument.Niri -> constantSettleTime(4.seconds),
+    Instrument.F2    -> constantSettleTime(500.milliseconds),
+    Instrument.Nifs  -> constantSettleTime(4.seconds),
+    Instrument.Niri  -> constantSettleTime(4.seconds),
     Instrument.Gnirs -> constantSettleTime(4.seconds)
   )
 
   def calcDisplacement(startOffset: InstrumentOffset, endOffset: InstrumentOffset): Angle =
-    math.sqrt(
-      math.pow((endOffset.p - startOffset.p).toArcseconds, 2.0) +
-        math.pow((endOffset.q - startOffset.q).toArcseconds, 2.0)
-    ).arcseconds
+    math
+      .sqrt(
+        math.pow((endOffset.p - startOffset.p).toArcseconds, 2.0) +
+          math.pow((endOffset.q - startOffset.q).toArcseconds, 2.0)
+      )
+      .arcseconds
 
-  implicit val timeOrder: Order[Time] = Order.fromLessThan{(a: Time, b: Time) => a < b}
+  implicit val timeOrder: Order[Time] = Order.fromLessThan((a: Time, b: Time) => a < b)
 
-  def calc(startOffset: InstrumentOffset,
-           endOffset: InstrumentOffset,
-           subsystems: NonEmptySet[Subsystem],
-           inst: Instrument): Time = {
+  def calc(
+    startOffset: InstrumentOffset,
+    endOffset:   InstrumentOffset,
+    subsystems:  NonEmptySet[Subsystem],
+    inst:        Instrument
+  ): Time = {
     val displacement = calcDisplacement(startOffset, endOffset)
     (subsystems.exists(_ === Subsystem.OIWFS).option(oiwfsSettleTimeCalculators(inst))
-      :: subsystems.toList.map(settleTimeCalculators.get)
-    ).flattenOption.map(_.calc(displacement)).maximumOption.getOrElse(0.seconds)
+      :: subsystems.toList.map(settleTimeCalculators.get)).flattenOption
+      .map(_.calc(displacement))
+      .maximumOption
+      .getOrElse(0.seconds)
   }
 
 }

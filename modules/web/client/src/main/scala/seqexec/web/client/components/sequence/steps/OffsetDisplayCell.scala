@@ -21,8 +21,8 @@ import seqexec.web.client.model.StepItems._
 import seqexec.web.client.reusability._
 
 /**
-  * Component to display the offsets
-  */
+ * Component to display the offsets
+ */
 final case class OffsetsDisplayCell(
   offsetsDisplay: OffsetsDisplay,
   step:           Step
@@ -33,7 +33,7 @@ object OffsetsDisplayCell {
 
   implicit val doubleReuse: Reusability[Double]      = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
-  implicit val propsReuse: Reusability[Props] =
+  implicit val propsReuse: Reusability[Props]        =
     Reusability.by(p => (p.offsetsDisplay, p.step.config))
 
   private val guidingIcon   = IconCrosshairs.copy(color = Green, size = Large)
@@ -163,12 +163,12 @@ object OffsetsDisplayCell {
             guidingIcon.when(guiding),
             noGuidingIcon.unless(guiding),
             p.step match {
-              case s: StandardStep => standardOffsetsRender(s, offsetWidth, axisLabelWidth)
+              case s: StandardStep      => standardOffsetsRender(s, offsetWidth, axisLabelWidth)
               case s: NodAndShuffleStep =>
                 nodAndShuffleOffsetsRender(s, offsetWidth, axisLabelWidth, nsNodLabelWidth)
             }
           )
-        case _ => <.div()
+        case _                                                                           => <.div()
       }
     }
     .configure(Reusability.shouldComponentUpdate)

@@ -12,12 +12,16 @@ import react.common._
 import react.virtualized._
 
 /**
-  * Container for several types of tables
-  */
+ * Container for several types of tables
+ */
 object TableContainer {
 
   // Todo use Reusable[A ~=> B]
-  final case class Props(hasControls: Boolean, table: Size => VdomElement, onResize: Size => Callback)
+  final case class Props(
+    hasControls: Boolean,
+    table:       Size => VdomElement,
+    onResize:    Size => Callback
+  )
 
   implicit val reuse: Reusability[Props] = Reusability.never
 
@@ -29,7 +33,8 @@ object TableContainer {
         SeqexecStyles.tableContainer.when(p.hasControls),
         SeqexecStyles.tableContainerNoControls.unless(p.hasControls),
         AutoSizer(AutoSizer.props(p.table, onResize = p.onResize))
-    ))
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 

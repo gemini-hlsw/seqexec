@@ -12,16 +12,14 @@ import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.Http4sAuthentication
 
 /**
-  * Rest Endpoints to ping the backend and detect when you're logged out
-  */
-class PingRoutes[F[_]: Sync](auth: AuthenticationService[F])
-    extends Http4sDsl[F] {
+ * Rest Endpoints to ping the backend and detect when you're logged out
+ */
+class PingRoutes[F[_]: Sync](auth: AuthenticationService[F]) extends Http4sDsl[F] {
 
-  private val httpAuthentication = new Http4sAuthentication(auth)
+  private val httpAuthentication               = new Http4sAuthentication(auth)
   val pingService: AuthedRoutes[AuthResult, F] =
-    AuthedRoutes.of {
-      case GET -> Root as user =>
-        user.fold(_ => Response[F](Status.Unauthorized).pure[F], _ => Ok(""))
+    AuthedRoutes.of { case GET -> Root as user =>
+      user.fold(_ => Response[F](Status.Unauthorized).pure[F], _ => Ok(""))
     }
 
   def service: HttpRoutes[F] = httpAuthentication.optAuth(pingService)

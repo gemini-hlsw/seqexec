@@ -24,10 +24,9 @@ import seqexec.web.client.services.SeqexecWebClient
 class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[Operator]] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateOperator(name) =>
-      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).as(NoAction))
-      updated(name.some, updateOperatorE)
+  override def handle: PartialFunction[Any, ActionResult[M]] = { case UpdateOperator(name) =>
+    val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).as(NoAction))
+    updated(name.some, updateOperatorE)
   }
 }
 
@@ -38,9 +37,8 @@ class SiteHandler[M](modelRW: ModelRW[M, Option[Site]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[Site]] {
 
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case Initialize(site) =>
-      updated(Some(site))
+  override def handle: PartialFunction[Any, ActionResult[M]] = { case Initialize(site) =>
+    updated(Some(site))
   }
 }
 
@@ -54,7 +52,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog])
     case AppendToLog(s) =>
       updated(value.copy(log = value.log.append(s)))
 
-    case ToggleLogArea  =>
+    case ToggleLogArea =>
       updated(value.copy(display = value.display.toggle))
   }
 }
@@ -65,8 +63,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog])
 class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer])
     extends ActionHandler(modelRW)
     with Handlers[M, Observer] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateDefaultObserver(o) =>
-      updated(o)
+  override def handle: PartialFunction[Any, ActionResult[M]] = { case UpdateDefaultObserver(o) =>
+    updated(o)
   }
 }

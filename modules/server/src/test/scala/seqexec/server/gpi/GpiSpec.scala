@@ -7,8 +7,8 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 
 /**
-  * Tests GPI Config typeclasses
-  */
+ * Tests GPI Config typeclasses
+ */
 final class GpiSpec extends CatsSuite with GpiArbitraries {
   checkAll("Eq[AOFlags]", EqTests[AOFlags].eqv)
   checkAll("Eq[ArtificialSources]", EqTests[ArtificialSources].eqv)

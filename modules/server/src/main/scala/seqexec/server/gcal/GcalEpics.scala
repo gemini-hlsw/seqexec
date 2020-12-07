@@ -19,8 +19,8 @@ import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 
 /**
-  * Created by jluhrs on 3/14/17.
-  */
+ * Created by jluhrs on 3/14/17.
+ */
 class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   val GcalTop: String = tops.getOrElse("gc", "")
@@ -28,21 +28,27 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def post(timeout: FiniteDuration): F[ApplyCommandResult] = lampsCmd.post(timeout)
 
   object shutterCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gcal::shutter")
+    )
 
     private val position = cs.map(_.getString("position"))
     def setPosition(v: String): F[Unit] = setParameter(position, v)
   }
 
   object filterCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::filtSel"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gcal::filtSel")
+    )
 
     private val name = cs.map(_.getString("name"))
     def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
   object diffuserCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::diffuseSel"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gcal::diffuseSel")
+    )
 
     private val name = cs.map(_.getString("name"))
     def setName(v: String): F[Unit] = setParameter(name, v)
@@ -51,7 +57,9 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   private def toLampState(v: BinaryOnOff): String = v.name
 
   object lampsCmd extends EpicsCommandBase {
-    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::lampSel"))
+    override val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("gcal::lampSel")
+    )
 
     private val nameAr = cs.map(_.getString("nameAr"))
     def setArLampName(v: String): F[Unit] = setParameter(nameAr, v)
@@ -92,27 +100,31 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private val state = epicsService.getStatusAcceptor("gcal::status")
 
-  def createLampAttribute(name: String, longName: String): CaAttribute[BinaryOnOff] = state.addEnum[BinaryOnOff](
-    name + "LampState", s"${GcalTop}${name}_LampState", classOf[BinaryOnOff], s"${longName} lamp state"
-  )
+  def createLampAttribute(name: String, longName: String): CaAttribute[BinaryOnOff] =
+    state.addEnum[BinaryOnOff](
+      name + "LampState",
+      s"${GcalTop}${name}_LampState",
+      classOf[BinaryOnOff],
+      s"${longName} lamp state"
+    )
 
   val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
-  def lampAr: F[BinaryOnOff] = safeAttributeF(lampArAttr)
+  def lampAr: F[BinaryOnOff]               = safeAttributeF(lampArAttr)
 
   val lampQHAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH", "Quartz Halogen")
-  def lampQH: F[BinaryOnOff] = safeAttributeF(lampQHAttr)
+  def lampQH: F[BinaryOnOff]               = safeAttributeF(lampQHAttr)
 
   val lampCuArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
-  def lampCuAr: F[BinaryOnOff] = safeAttributeF(lampCuArAttr)
+  def lampCuAr: F[BinaryOnOff]               = safeAttributeF(lampCuArAttr)
 
   val lampXeAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Xe", "Xenon")
-  def lampXe: F[BinaryOnOff] = safeAttributeF(lampXeAttr)
+  def lampXe: F[BinaryOnOff]               = safeAttributeF(lampXeAttr)
 
   val lampThArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("ThAr", "Thorium Argon")
-  def lampThAr: F[BinaryOnOff] = safeAttributeF(lampThArAttr)
+  def lampThAr: F[BinaryOnOff]               = safeAttributeF(lampThArAttr)
 
   val lampIrAttr: CaAttribute[BinaryOnOff] = createLampAttribute("IR", "Infrared")
-  def lampIr: F[BinaryOnOff] = safeAttributeF(lampIrAttr)
+  def lampIr: F[BinaryOnOff]               = safeAttributeF(lampIrAttr)
 
   def shutter: F[String] =
     safeAttributeF(state.getStringAttribute("shutter"))
@@ -126,7 +138,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
 object GcalEpics extends EpicsSystem[GcalEpics[IO]] {
 
-  override val className: String = getClass.getName
+  override val className: String      = getClass.getName
   override val CA_CONFIG_FILE: String = "/Gcal.xml"
 
   override def build[F[_]: Sync](service: CaService, tops: Map[String, String]): F[GcalEpics[IO]] =

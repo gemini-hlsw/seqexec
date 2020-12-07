@@ -4,18 +4,20 @@
 package seqexec.common
 
 import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.{FoldableTests, FunctorTests, TraverseTests}
+import cats.laws.discipline.{ FoldableTests, FunctorTests, TraverseTests }
 import cats.tests.CatsSuite
 import seqexec.common.ArbitrariesCommon.arbFixedLengthBuffer
 import seqexec.common.ArbitrariesCommon.fixedLengthBufferCogen
 
 /**
-  * Tests the Monocle Lenses for Seqexec Events
-  */
+ * Tests the Monocle Lenses for Seqexec Events
+ */
 final class FixedLengthBufferSpec extends CatsSuite {
 
   checkAll("Eq[FixedLengthBuffer]", EqTests[FixedLengthBuffer[Int]].eqv)
   checkAll("Functor[FixedLengthBuffer]", FunctorTests[FixedLengthBuffer].functor[Int, Int, Int])
   checkAll("Foldable[FixedLengthBuffer]", FoldableTests[FixedLengthBuffer].foldable[Int, Int])
-  checkAll("Traversable[FixedLengthBuffer]", TraverseTests[FixedLengthBuffer].traverse[Int, Int, Int, Int, Option, Option])
+  checkAll("Traversable[FixedLengthBuffer]",
+           TraverseTests[FixedLengthBuffer].traverse[Int, Int, Int, Int, Option, Option]
+  )
 }

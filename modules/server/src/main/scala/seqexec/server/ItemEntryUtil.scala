@@ -17,7 +17,7 @@ object ItemEntryUtil {
 
     def width(ks: Array[ItemEntry]): Int = ks match {
       case Array() => 0
-      case _ => ks.maxBy(_.getKey.toString.length).toString.length
+      case _       => ks.maxBy(_.getKey.toString.length).toString.length
     }
 
     def seqValue(o: Object): String = o match {
@@ -28,10 +28,12 @@ object ItemEntryUtil {
     }
 
     val pad = width(ks)
-    (ks.sortWith((u, v) => u.getKey.compareTo(v.getKey) < 0) map { p =>
-      val paddedKey = s"%-${pad}s".format(p.getKey.toString)
-      s"$paddedKey -> ${seqValue(p.getItemValue)}"
-    }).mkString(s"\n", "\n", "")
+    ks.sortWith((u, v) => u.getKey.compareTo(v.getKey) < 0)
+      .map { p =>
+        val paddedKey = s"%-${pad}s".format(p.getKey.toString)
+        s"$paddedKey -> ${seqValue(p.getItemValue)}"
+      }
+      .mkString(s"\n", "\n", "")
   }
 
 }

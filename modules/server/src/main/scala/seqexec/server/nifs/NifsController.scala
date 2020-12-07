@@ -51,12 +51,12 @@ object WindowCover {
 
 object NifsController {
   // DC
-  type Coadds          = Int @@ CoaddsI
-  type Period          = Int @@ PeriodI
-  type ExposureTime    = Time
-  type NumberOfResets  = Int @@ NumberOfResetsI
-  type NumberOfPeriods = Int @@ NumberOfPeriodsI
-  type NumberOfSamples = Int @@ NumberOfSamplesI
+  type Coadds             = Int @@ CoaddsI
+  type Period             = Int @@ PeriodI
+  type ExposureTime       = Time
+  type NumberOfResets     = Int @@ NumberOfResetsI
+  type NumberOfPeriods    = Int @@ NumberOfPeriodsI
+  type NumberOfSamples    = Int @@ NumberOfSamplesI
   // this one is calculated out of the ReadMode
   type NumberOfFowSamples = Int @@ NumberOfFowSamplesI
   type ReadMode           = edu.gemini.spModel.gemini.nifs.NIFSParams.ReadMode
@@ -79,37 +79,40 @@ object NifsController {
     val numberOfSamples: Option[NumberOfSamples]
     val readMode: Either[EngReadMode, ReadMode]
   }
-  final case class ArcFlatDCConfig(coadds:          Coadds,
-                                   period:          Option[Period],
-                                   exposureTime:    ExposureTime,
-                                   numberOfResets:  Option[NumberOfResets],
-                                   numberOfPeriods: Option[NumberOfPeriods],
-                                   numberOfSamples: Option[NumberOfSamples])
-      extends DCConfig {
+  final case class ArcFlatDCConfig(
+    coadds:          Coadds,
+    period:          Option[Period],
+    exposureTime:    ExposureTime,
+    numberOfResets:  Option[NumberOfResets],
+    numberOfPeriods: Option[NumberOfPeriods],
+    numberOfSamples: Option[NumberOfSamples]
+  )                     extends DCConfig                  {
 
     val readMode: Either[EngReadMode, ReadMode] =
       edu.gemini.spModel.gemini.nifs.NIFSParams.ReadMode.BRIGHT_OBJECT_SPEC.asRight
   }
-  final case class StdDCConfig(coadds:          Coadds,
-                               period:          Option[Period],
-                               exposureTime:    ExposureTime,
-                               numberOfResets:  Option[NumberOfResets],
-                               numberOfPeriods: Option[NumberOfPeriods],
-                               numberOfSamples: Option[NumberOfSamples],
-                               readMode:        Either[EngReadMode, ReadMode])
-      extends DCConfig
+  final case class StdDCConfig(
+    coadds:          Coadds,
+    period:          Option[Period],
+    exposureTime:    ExposureTime,
+    numberOfResets:  Option[NumberOfResets],
+    numberOfPeriods: Option[NumberOfPeriods],
+    numberOfSamples: Option[NumberOfSamples],
+    readMode:        Either[EngReadMode, ReadMode]
+  ) extends DCConfig
 
   sealed trait CCConfig extends Product with Serializable
 
   case object DarkCCConfig extends CCConfig
-  final case class StdCCConfig(filter:        Filter,
-                               mask:          Mask,
-                               disperser:     Disperser,
-                               imagingMirror: ImagingMirror,
-                               wavelength:    CentralWavelength,
-                               maskOffset:    MaskOffset,
-                               windowCover:   WindowCover)
-      extends CCConfig
+  final case class StdCCConfig(
+    filter:        Filter,
+    mask:          Mask,
+    disperser:     Disperser,
+    imagingMirror: ImagingMirror,
+    wavelength:    CentralWavelength,
+    maskOffset:    MaskOffset,
+    windowCover:   WindowCover
+  )                        extends CCConfig
 
   final case class NifsConfig(cc: CCConfig, dc: DCConfig)
 

@@ -103,17 +103,17 @@ trait SequenceEventsArbitraries {
       m <- Gen.alphaStr
     } yield ServerLogMessage(l, t, m)
   }
-  implicit val neArb = Arbitrary[NullEvent.type] { NullEvent }
-  implicit val opArb = Arbitrary[OperatorUpdated] {
+  implicit val neArb  = Arbitrary[NullEvent.type](NullEvent)
+  implicit val opArb  = Arbitrary[OperatorUpdated] {
     arbitrary[SequencesQueue[SequenceView]].map(OperatorUpdated.apply)
   }
-  implicit val obArb = Arbitrary[ObserverUpdated] {
+  implicit val obArb  = Arbitrary[ObserverUpdated] {
     arbitrary[SequencesQueue[SequenceView]].map(ObserverUpdated.apply)
   }
-  implicit val cuArb = Arbitrary[ConditionsUpdated] {
+  implicit val cuArb  = Arbitrary[ConditionsUpdated] {
     arbitrary[SequencesQueue[SequenceView]].map(ConditionsUpdated.apply)
   }
-  implicit val qmArb = Arbitrary[QueueManipulationOp] {
+  implicit val qmArb  = Arbitrary[QueueManipulationOp] {
     for {
       q <- arbitrary[QueueId]
       i <- arbitrary[List[Observation.Id]]
@@ -121,16 +121,22 @@ trait SequenceEventsArbitraries {
       c <- arbitrary[ClientId]
       o <- arbitrary[Observation.Id]
       p <- arbitrary[Int]
-      m <- Gen.oneOf(Moved(q, c, o, p), Started(q), Stopped(q), Clear(q), AddedSeqs(q, i), RemovedSeqs(q, i, r))
+      m <- Gen.oneOf(Moved(q, c, o, p),
+                     Started(q),
+                     Stopped(q),
+                     Clear(q),
+                     AddedSeqs(q, i),
+                     RemovedSeqs(q, i, r)
+           )
     } yield m
   }
-  implicit val quArb = Arbitrary[QueueUpdated] {
+  implicit val quArb  = Arbitrary[QueueUpdated] {
     for {
       o <- arbitrary[QueueManipulationOp]
       s <- arbitrary[SequencesQueue[SequenceView]]
     } yield QueueUpdated(o, s)
   }
-  implicit val suArb = Arbitrary[LoadSequenceUpdated] {
+  implicit val suArb  = Arbitrary[LoadSequenceUpdated] {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]

@@ -20,11 +20,12 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.reusability._
 
-final case class ControlMenu(status: ClientStatus) extends ReactProps[ControlMenu](ControlMenu.component)
+final case class ControlMenu(status: ClientStatus)
+    extends ReactProps[ControlMenu](ControlMenu.component)
 
 /**
-  * Menu with options
-  */
+ * Menu with options
+ */
 object ControlMenu {
   implicit val cmReuse: Reusability[ControlMenu] = Reusability.derive
 
@@ -33,7 +34,7 @@ object ControlMenu {
 
   private val openLogin: Callback =
     SeqexecCircuit.dispatchCB(OpenLoginBox)
-  private val logout: Callback =
+  private val logout: Callback    =
     SeqexecCircuit.dispatchCB(Logout)
 
   private def loginButton(enabled: Boolean) =
@@ -79,7 +80,7 @@ object ControlMenu {
                 logoutButton("", status.isConnected)
               )
             )
-          case None =>
+          case None    =>
             MenuItem()(
               soundConnect(x => SoundControl(x())),
               loginButton(status.isConnected)

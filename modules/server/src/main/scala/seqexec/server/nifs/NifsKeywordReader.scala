@@ -9,22 +9,22 @@ import cats.syntax.all._
 import seqexec.server.keywords._
 
 trait NifsKeywordReader[F[_]] {
-  def aperture          : F[String]
-  def biasPwr           : F[Double]
-  def centralWavelength : F[Double]
-  def coadds            : F[Int]
-  def dcName            : F[String]
-  def exposureTime      : F[Double]
-  def exposureMode      : F[String]
-  def filter            : F[String]
-  def grating           : F[String]
-  def imagingMirror     : F[String]
-  def maskOffset        : F[Double]
+  def aperture: F[String]
+  def biasPwr: F[Double]
+  def centralWavelength: F[Double]
+  def coadds: F[Int]
+  def dcName: F[String]
+  def exposureTime: F[Double]
+  def exposureMode: F[String]
+  def filter: F[String]
+  def grating: F[String]
+  def imagingMirror: F[String]
+  def maskOffset: F[Double]
   def numberOfFowSamples: F[Int]
-  def numberOfPeriods   : F[Int]
-  def period            : F[Double]
-  def readTime          : F[Double]
-  def windowCover       : F[String]
+  def numberOfPeriods: F[Int]
+  def period: F[Double]
+  def readTime: F[Double]
+  def windowCover: F[String]
 }
 
 object NifsKeywordReaderDummy {
@@ -102,9 +102,9 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
     override def centralWavelength: F[Double] =
       sys.centralWavelength.safeValOrDefault
 
-    override def coadds: F[Int]          = sys.coadds.safeValOrDefault
+    override def coadds: F[Int] = sys.coadds.safeValOrDefault
 
-    override def dcName: F[String]       = sys.dcName.safeValOrDefault
+    override def dcName: F[String] = sys.dcName.safeValOrDefault
 
     override def exposureTime: F[Double] = sys.exposureTime.safeValOrDefault
 
@@ -122,17 +122,17 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
 
     override def imagingMirror: F[String] = sys.imagingMirror.safeValOrDefault
 
-    override def maskOffset: F[Double]    = sys.maskOffset.safeValOrDefault
+    override def maskOffset: F[Double] = sys.maskOffset.safeValOrDefault
 
     override def numberOfFowSamples: F[Int] =
       sys.numberOfFowSamples.safeValOrDefault
 
     override def numberOfPeriods: F[Int] = sys.numberOfPeriods.safeValOrDefault
 
-    override def period: F[Double]       = sys.period.safeValOrDefault
+    override def period: F[Double] = sys.period.safeValOrDefault
 
-    override def readTime: F[Double]     = sys.readTime.safeValOrDefault
+    override def readTime: F[Double] = sys.readTime.safeValOrDefault
 
-    override def windowCover: F[String]  = sys.windowCover.safeValOrDefault
+    override def windowCover: F[String] = sys.windowCover.safeValOrDefault
   }
 }

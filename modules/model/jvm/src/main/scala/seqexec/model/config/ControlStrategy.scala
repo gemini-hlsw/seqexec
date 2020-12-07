@@ -12,9 +12,9 @@ object ControlStrategy {
   // System will be fully controlled by Seqexec
   case object FullControl extends ControlStrategy
   // Seqexec connects to system, but only to read values
-  case object ReadOnly extends ControlStrategy
+  case object ReadOnly    extends ControlStrategy
   // All system interactions are internally simulated
-  case object Simulated extends ControlStrategy
+  case object Simulated   extends ControlStrategy
 
   def fromString(v: String): Option[ControlStrategy] = v match {
     case "full"      => Some(FullControl)
@@ -27,10 +27,10 @@ object ControlStrategy {
     Enumerated.of(FullControl, ReadOnly, Simulated)
 
   implicit class ControlStrategyOps(v: ControlStrategy) {
-    val connect: Boolean = v =!= ControlStrategy.Simulated
+    val connect: Boolean      = v =!= ControlStrategy.Simulated
     // If connected, then use real values for keywords
     val realKeywords: Boolean = connect
-    val command: Boolean = v === ControlStrategy.FullControl
+    val command: Boolean      = v === ControlStrategy.FullControl
   }
 
 }

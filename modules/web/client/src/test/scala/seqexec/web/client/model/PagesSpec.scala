@@ -9,8 +9,8 @@ import cats.tests.CatsSuite
 import seqexec.web.client.model.Pages._
 
 /**
-  * Tests Client typeclasses
-  */
+ * Tests Client typeclasses
+ */
 final class PagesSpec extends CatsSuite with ArbitrariesWebClient {
 
   checkAll("Eq[SeqexecPages]", EqTests[SeqexecPages].eqv)

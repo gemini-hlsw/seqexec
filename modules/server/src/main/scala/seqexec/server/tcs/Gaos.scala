@@ -43,11 +43,11 @@ object Gaos {
     sealed trait FixedPauseCondition extends PauseCondition
 
     // OI will be turn off
-    case object OiOff extends FixedPauseCondition
+    case object OiOff          extends FixedPauseCondition
     // PI will be turn off
-    case object P1Off extends FixedPauseCondition
+    case object P1Off          extends FixedPauseCondition
     // Unguided step
-    case object GaosGuideOff extends FixedPauseCondition
+    case object GaosGuideOff   extends FixedPauseCondition
     // Instrument config (affects ODGW)
     case object InstConfigMove extends FixedPauseCondition
 
@@ -55,7 +55,7 @@ object Gaos {
 
     implicit val fixedPauseReasonEq: Eq[FixedPauseCondition] = Eq.fromUniversalEquals
 
-    implicit val pauseReasonEq: Eq[PauseCondition] = Eq.instance{
+    implicit val pauseReasonEq: Eq[PauseCondition] = Eq.instance {
       case (a: OffsetMove, b: OffsetMove)                   => a === b
       case (a: FixedPauseCondition, b: FixedPauseCondition) => a === b
       case _                                                => false
@@ -64,7 +64,10 @@ object Gaos {
   }
 
   // Non-repeatable collection of PauseCondition that admits only one OffsetMove
-  final case class PauseConditionSet private (offsetO: Option[OffsetMove], fixed: Set[FixedPauseCondition]){
+  final case class PauseConditionSet private (
+    offsetO: Option[OffsetMove],
+    fixed:   Set[FixedPauseCondition]
+  ) {
 
     def +(v: PauseCondition): PauseConditionSet = v match {
       case a: OffsetMove          => PauseConditionSet(a.some, fixed)
@@ -75,17 +78,18 @@ object Gaos {
 
   }
 
-  object PauseConditionSet{
+  object PauseConditionSet {
 
-    def fromList(ss: List[PauseCondition]): PauseConditionSet = ss.foldLeft(empty){case (xx, e) => xx + e}
+    def fromList(ss: List[PauseCondition]): PauseConditionSet = ss.foldLeft(empty) { case (xx, e) =>
+      xx + e
+    }
 
     val empty: PauseConditionSet = PauseConditionSet(None, Set.empty)
 
-    implicit val pauseConditionSetEq: Eq[PauseConditionSet] = Eq.by{x => (x.offsetO, x.fixed)}
+    implicit val pauseConditionSetEq: Eq[PauseConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
-    implicit val pauseConditionSetShow: Show[PauseConditionSet] = Show.show(
-      x => (x.offsetO.toList ++ x.fixed.toList).mkString
-    )
+    implicit val pauseConditionSetShow: Show[PauseConditionSet] =
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
 
   }
 
@@ -98,11 +102,11 @@ object Gaos {
     sealed trait FixedResumeCondition extends ResumeCondition
 
     // OI will be turn off
-    case object OiOn extends FixedResumeCondition
+    case object OiOn                extends FixedResumeCondition
     // PI will be turn off
-    case object P1On extends FixedResumeCondition
+    case object P1On                extends FixedResumeCondition
     // Guided step
-    case object GaosGuideOn extends FixedResumeCondition
+    case object GaosGuideOn         extends FixedResumeCondition
     // Instrument config (affects ODGW)
     case object InstConfigCompleted extends FixedResumeCondition
 
@@ -124,7 +128,10 @@ object Gaos {
   }
 
   // Non-repeatable collection of ResumeCondition that admits only one OffsetMove
-  final case class ResumeConditionSet private (offsetO: Option[OffsetReached], fixed: Set[FixedResumeCondition]){
+  final case class ResumeConditionSet private (
+    offsetO: Option[OffsetReached],
+    fixed:   Set[FixedResumeCondition]
+  ) {
 
     def +(v: ResumeCondition): ResumeConditionSet = v match {
       case a: OffsetReached        => ResumeConditionSet(a.some, fixed)
@@ -135,22 +142,23 @@ object Gaos {
 
   }
 
-  object ResumeConditionSet{
+  object ResumeConditionSet {
 
-    def fromList(ss: List[ResumeCondition]): ResumeConditionSet = ss.foldLeft(empty){case (xx, e) => xx + e}
+    def fromList(ss: List[ResumeCondition]): ResumeConditionSet = ss.foldLeft(empty) {
+      case (xx, e) => xx + e
+    }
 
     val empty: ResumeConditionSet = ResumeConditionSet(None, Set.empty)
 
-    implicit val resumeConditionSetEq: Eq[ResumeConditionSet] = Eq.by{x => (x.offsetO, x.fixed)}
+    implicit val resumeConditionSetEq: Eq[ResumeConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
-    implicit val resumeConditionSetShow: Show[ResumeConditionSet] = Show.show(
-      x => (x.offsetO.toList ++ x.fixed.toList).mkString
-    )
+    implicit val resumeConditionSetShow: Show[ResumeConditionSet] =
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
 
   }
 
   sealed case class PauseResume[F[_]](
-    pause: Option[F[Unit]], // None means Gaos will not be paused
+    pause:  Option[F[Unit]], // None means Gaos will not be paused
     resume: Option[F[Unit]] // None means Gaos will not be resumed
   )
 
