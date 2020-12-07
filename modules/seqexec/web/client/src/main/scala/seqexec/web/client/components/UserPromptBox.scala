@@ -31,36 +31,50 @@ object UserPromptBox {
 
   def title(n: UserPrompt): String =
     n match {
-      case _: TargetCheckOverride => "Warning!"
+      case ChecksOverride(sid, _, checks) =>
+        if(checks.length > 1)
+          s"Warning! There are problems running sequence ${sid.format}:"
+        else
+          s"Warning! There is a problem running sequence ${sid.format}:"
     }
 
   def okButton(n: UserPrompt): String =
     n match {
-      case _: TargetCheckOverride => "Stop"
+      case _: ChecksOverride => "Stop"
     }
 
   def cancelButton(n: UserPrompt): String =
     n match {
-      case _: TargetCheckOverride => "Continue anyway"
+      case _: ChecksOverride => "Continue anyway"
     }
 
   def okColor(n: UserPrompt): PromptButtonColor =
     n match {
-      case _: TargetCheckOverride => PromptButtonColor.DefaultOk
+      case _: ChecksOverride => PromptButtonColor.DefaultOk
     }
 
   def cancelColor(n: UserPrompt): PromptButtonColor =
     n match {
-      case _: TargetCheckOverride => PromptButtonColor.WarningCancel
+      case _: ChecksOverride => PromptButtonColor.WarningCancel
     }
 
   def question(n: UserPrompt): List[String] =
     n match {
-      case TargetCheckOverride(sid, _, obsTarget, tcsTarget) =>
-        List(s"There is a target mismatch running sequence ${sid.format}:",
-             s"Target in the sequence: ${obsTarget}",
-             s"Target in the TCS: ${tcsTarget}"
-        )
+      case ChecksOverride(_, _, checks) =>
+        checks.toList.flatMap {
+          case TargetCheckOverride(self)  =>
+            List("Targets in sequence and TCS do not match",
+              s"- Target in the sequence: ${self.required}, target in the TCS: ${self.actual}"
+            )
+          case ObsConditionsCheckOverride(cc, iq, sb, wv) =>
+            List("Observing conditions do not match") ++
+            List(
+              cc.map(x => s"- Required Cloud Cover: ${x.required}, Actual: ${x.actual}"),
+              iq.map(x => s"- Required Image Quality: ${x.required}, Actual: ${x.actual}"),
+              sb.map(x => s"- Required Sky Background: ${x.required}, Actual: ${x.actual}"),
+              wv.map(x => s"- Required Water Vapor: ${x.required}, Actual: ${x.actual}")
+            ).collect{ case Some(x) => x }
+      }
     }
 
   type Props = UserPromptBox
