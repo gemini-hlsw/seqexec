@@ -11,8 +11,6 @@ import com.typesafe.sbt.packager.docker._
 
 name := "seqexec"
 
-organization in Global := "edu.gemini.ocs"
-
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 ThisBuild / publishArtifact in (Compile, packageDoc) := false
@@ -55,14 +53,15 @@ inThisBuild(
     version := dateFormatter.format(
       dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate
     ) + dynverGitDescribeOutput.value.mkVersion(versionFmt,
-                                                fallbackVersion(dynverCurrentDate.value))
+                                                fallbackVersion(dynverCurrentDate.value)
+    )
   )
 )
 
 enablePlugins(GitBranchPrompt)
 
 // Custom commands to facilitate web development
-val startSeqexecAllCommands = List(
+val startSeqexecAllCommands   = List(
   "seqexec_web_server/reStart",
   "seqexec_web_client/fastOptJS::startWebpackDevServer",
   "~seqexec_web_client/fastOptJS"
@@ -72,7 +71,7 @@ val restartSeqexecWDSCommands = List(
   "seqexec_web_client/fastOptJS::startWebpackDevServer",
   "~seqexec_web_client/fastOptJS"
 )
-val stopSeqexecAllCommands = List(
+val stopSeqexecAllCommands    = List(
   "seqexec_web_server/reStop",
   "seqexec_web_client/fastOptJS::stopWebpackDevServer"
 )
@@ -86,20 +85,7 @@ resolvers in ThisBuild +=
 
 updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 
-///////////////
-// Root project
-///////////////
-lazy val seqexec = preventPublication(project.in(file(".")))
-  .settings(commonSettings)
-  .aggregate(giapi,
-             web_server_common,
-             web_client_common,
-             seqexec_model.js,
-             seqexec_model.jvm,
-             seqexec_engine,
-             seqexec_server,
-             seqexec_web_server,
-             seqexec_web_client)
+skip in publish := true
 
 //////////////
 // Projects
@@ -120,50 +106,13 @@ lazy val giapi = project
                                 GiapiJmsProvider,
                                 GiapiStatusService,
                                 Giapi,
-                                GiapiCommandsClient) ++ Logging.value ++ Monocle.value,
-    libraryDependencies ++= Seq(GmpStatusGateway % "test",
+                                GiapiCommandsClient
+    ) ++ Logging.value ++ Monocle.value,
+    libraryDependencies ++= Seq(GmpStatusGateway  % "test",
                                 GmpStatusDatabase % "test",
-                                GmpCmdJmsBridge % "test",
-                                NopSlf4j % "test")
-  )
-
-// Common utilities for web server projects
-lazy val web_server_common = project
-  .in(file("modules/shared/web/server/"))
-  .enablePlugins(GitBranchPrompt)
-  .settings(commonSettings: _*)
-  .settings(
-    libraryDependencies ++= CatsEffect.value +: (Http4s ++ MUnit.value ++ Logging.value),
-    testFrameworks += new TestFramework("munit.Framework")
-  )
-
-// Common utilities for web client projects
-lazy val web_client_common = project
-  .in(file("modules/shared/web/client"))
-  .enablePlugins(ScalaJSPlugin)
-  .enablePlugins(GitBranchPrompt)
-  .settings(lucumaScalaJsSettings: _*)
-  .settings(
-    scalacOptions ~= (_.filterNot(
-      Set(
-        // By necessity facades will have unused params
-        "-Wunused:params"
-      )
-    )),
-    // Needed for Monocle macros
-    scalacOptions += "-Ymacro-annotations",
-    testFrameworks += new TestFramework("munit.Framework"),
-    libraryDependencies ++= Seq(
-      Cats.value,
-      Mouse.value,
-      ScalaJSDom.value,
-      ScalaJSReactCommon.value,
-      ScalaJSReactCats.value,
-      ScalaJSReactVirtualized.value,
-      ScalaJSReactSortable.value,
-      ScalaJSReactDraggable.value,
-      TestLibs.value
-    ) ++ MUnit.value ++ ReactScalaJS.value ++ Monocle.value
+                                GmpCmdJmsBridge   % "test",
+                                NopSlf4j          % "test"
+    )
   )
 
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
@@ -179,7 +128,7 @@ lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
 
 // Project for the server side application
 lazy val seqexec_web_server = project
-  .in(file("modules/seqexec/web/server"))
+  .in(file("modules/web/server"))
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
@@ -191,7 +140,8 @@ lazy val seqexec_web_server = project
                                 Http4sPrometheus,
                                 CommonsHttp,
                                 ScalaMock,
-                                Log4CatsNoop.value) ++
+                                Log4CatsNoop.value
+    ) ++
       Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
@@ -204,11 +154,11 @@ lazy val seqexec_web_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_server, web_server_common)
+  .dependsOn(seqexec_server)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
 
 lazy val seqexec_web_client = project
-  .in(file("modules/seqexec/web/client"))
+  .in(file("modules/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(BuildInfoPlugin)
@@ -218,6 +168,13 @@ lazy val seqexec_web_client = project
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
+    scalacOptions ~= (_.filterNot(
+      Set(
+        // By necessity facades will have unused params
+        "-Wunused:params",
+        "-Wunused:explicits"
+      )
+    )),
     // Configurations for webpack
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS := BundlingMode.Application,
@@ -279,6 +236,8 @@ lazy val seqexec_web_client = project
       ScalaJSReactSemanticUI.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
+      ScalaJSReactSortable.value,
+      ScalaJSReactDraggable.value,
       GeminiLocales.value,
       LucumaUI.value,
       PPrint.value,
@@ -291,12 +250,11 @@ lazy val seqexec_web_client = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(web_client_common % "compile->compile;test->test",
-             seqexec_model.js % "compile->compile;test->test")
+  .dependsOn(seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
-lazy val seqexec_server = project
-  .in(file("modules/seqexec/server"))
+lazy val seqexec_server     = project
+  .in(file("modules/server"))
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
@@ -328,17 +286,18 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine % "compile->compile;test->test",
+  .dependsOn(seqexec_engine    % "compile->compile;test->test",
              giapi,
              ocs2_api.jvm,
              seqexec_model.jvm % "compile->compile;test->test",
-             acm % "compile->compile;test->test")
+             acm               % "compile->compile;test->test"
+  )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
 lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
-  .in(file("modules/seqexec/model"))
+  .in(file("modules/model"))
   .enablePlugins(GitBranchPrompt)
   .settings(
     scalacOptions += "-Ymacro-annotations",
@@ -361,7 +320,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   )
 
 lazy val seqexec_engine = project
-  .in(file("modules/seqexec/engine"))
+  .in(file("modules/engine"))
   .enablePlugins(GitBranchPrompt)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
   .settings(commonSettings: _*)
@@ -412,8 +371,8 @@ lazy val acm = project
   )
 
 /**
-  * Common settings for the Seqexec instances
-  */
+ * Common settings for the Seqexec instances
+ */
 lazy val seqexecCommonSettings = Seq(
   // Main class for launching
   mainClass in Compile := Some("seqexec.web.server.http4s.WebServerLauncher"),
@@ -464,8 +423,8 @@ lazy val seqexecCommonSettings = Seq(
 ) ++ commonSettings
 
 /**
-  * Settings for Seqexec in Linux
-  */
+ * Settings for Seqexec in Linux
+ */
 lazy val seqexecLinux = Seq(
   // User/Group for execution
   daemonUser in Linux := "software",
@@ -479,8 +438,8 @@ lazy val seqexecLinux = Seq(
 )
 
 /**
-  * Project for the seqexec server app for development
-  */
+ * Project for the seqexec server app for development
+ */
 lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
   .dependsOn(seqexec_web_server, seqexec_web_client)
   .aggregate(seqexec_web_server, seqexec_web_client)
@@ -497,8 +456,8 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in Universal).value
-      val filtered = universalMappings.filter {
-        case (_, name) => !name.contains("_sjs")
+      val filtered          = universalMappings.filter { case (_, name) =>
+        !name.contains("_sjs")
       }
       filtered
     },
@@ -517,8 +476,8 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
   )
 
 /**
-  * Project for the seqexec test server at GS on Linux 64
-  */
+ * Project for the seqexec test server at GS on Linux 64
+ */
 lazy val app_seqexec_server_gs_test =
   preventPublication(project.in(file("app/seqexec-server-gs-test")))
     .dependsOn(seqexec_web_server, seqexec_web_client)
@@ -537,8 +496,8 @@ lazy val app_seqexec_server_gs_test =
       mappings in Universal := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-        val filtered = universalMappings.filter {
-          case (_, name) => !name.contains("_sjs")
+        val filtered          = universalMappings.filter { case (_, name) =>
+          !name.contains("_sjs")
         }
         filtered
       }
@@ -547,8 +506,8 @@ lazy val app_seqexec_server_gs_test =
     .dependsOn(seqexec_server)
 
 /**
-  * Project for the seqexec test server at GN on Linux 64
-  */
+ * Project for the seqexec test server at GN on Linux 64
+ */
 lazy val app_seqexec_server_gn_test =
   preventPublication(project.in(file("app/seqexec-server-gn-test")))
     .dependsOn(seqexec_web_server, seqexec_web_client)
@@ -566,8 +525,8 @@ lazy val app_seqexec_server_gn_test =
       mappings in Universal := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-        val filtered = universalMappings.filter {
-          case (_, name) => !name.contains("_sjs")
+        val filtered          = universalMappings.filter { case (_, name) =>
+          !name.contains("_sjs")
         }
         filtered
       }
@@ -576,8 +535,8 @@ lazy val app_seqexec_server_gn_test =
     .dependsOn(seqexec_server)
 
 /**
-  * Project for the seqexec server app for production on Linux 64
-  */
+ * Project for the seqexec server app for production on Linux 64
+ */
 lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
   .dependsOn(seqexec_web_server, seqexec_web_client)
   .aggregate(seqexec_web_server, seqexec_web_client)
@@ -594,8 +553,8 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings.filter {
-        case (_, name) => !name.contains("_sjs")
+      val filtered          = universalMappings.filter { case (_, name) =>
+        !name.contains("_sjs")
       }
       filtered
     }
@@ -604,8 +563,8 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
   .dependsOn(seqexec_server)
 
 /**
-  * Project for the GN seqexec server app for production on Linux 64
-  */
+ * Project for the GN seqexec server app for production on Linux 64
+ */
 lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
   .dependsOn(seqexec_web_server, seqexec_web_client)
   .aggregate(seqexec_web_server, seqexec_web_client)
@@ -622,8 +581,8 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
     mappings in Universal := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
-      val filtered = universalMappings.filter {
-        case (_, name) => !name.contains("_sjs")
+      val filtered          = universalMappings.filter { case (_, name) =>
+        !name.contains("_sjs")
       }
       filtered
     }
