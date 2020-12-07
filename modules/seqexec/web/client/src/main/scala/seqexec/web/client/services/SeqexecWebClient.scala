@@ -59,7 +59,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def run(id: Observation.Id, clientId: ClientId, options: RunOptions): Future[Unit] = {
     val param = options match {
       case RunOptions.Normal => ""
-      case RunOptions.TargetCheckOverride => "?overrideTargetCheck=true"
+      case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
     Ajax
       .post(
@@ -407,7 +407,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def runFrom(obsId: Observation.Id, stepId: StepId, clientId: ClientId, options: RunOptions): Future[Unit] = {
     val param = options match {
       case RunOptions.Normal => ""
-      case RunOptions.TargetCheckOverride => "?overrideTargetCheck=true"
+      case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
     Ajax
       .post(

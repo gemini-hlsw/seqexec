@@ -5,12 +5,10 @@ package seqexec.server
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-
 import cats._
-import cats.data.StateT
+import cats.data.{NonEmptyList, StateT}
 import cats.effect.Concurrent
 import cats.effect.ConcurrentEffect
 import cats.effect.Sync
@@ -18,10 +16,13 @@ import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
 import edu.gemini.spModel.obsclass.ObsClass
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.{CLOUD_COVER_PROP, IMAGE_QUALITY_PROP, SKY_BACKGROUND_PROP, WATER_VAPOR_PROP}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
@@ -43,6 +44,7 @@ import seqexec.model.Notification._
 import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.UserDetails
+import seqexec.model.UserPrompt.{Discrepancy, ObsConditionsCheckOverride, SeqCheck, TargetCheckOverride}
 import seqexec.model._
 import seqexec.model.config._
 import seqexec.model.enum._
@@ -196,21 +198,22 @@ object SeqexecEngine {
       )
     }
 
-    private case class TargetMatchResult(startStep: StepId, sequenceTarget: String, tcsTarget: String)
+    // Starting step is either the one given, or the first one not run
+    private def findStartingStep(obs: SequenceData[F], stepId: Option[StepId]): Option[SequenceGen.StepGen[F]] = for {
+      stp    <- stepId.orElse(obs.seq.currentStep.map(_.id))
+      stpGen <- obs.seqGen.steps.dropWhile(_.id =!= stp).find(a => stepRequiresChecks(a.config))
+    } yield stpGen
 
     /**
      * Check if the target on the TCS matches the seqexec target
      * @return an F that returns an optional TargetMatchResult if the targets don't match
      */
-    private def sequenceTcsTargetMatch(obs: SequenceData[F], stp: Option[StepId]): F[Option[TargetMatchResult]] = (
-      for {
-        stepId    <- stp.orElse(obs.seq.currentStep.map(_.id))
-        a         <- obs.seqGen.steps.dropWhile(_.id =!= stepId).find(a => stepRequiresTargetCheck(a.config))
-        seqTarget <- extractTargetName(a.config)
-      } yield systems.tcsKeywordReader.sourceATarget.objectName.map { tcsTarget =>
-        (seqTarget =!= tcsTarget).option(TargetMatchResult(stepId, seqTarget, tcsTarget))
-      }
-    ).getOrElse(none.pure[F])
+    private def sequenceTcsTargetMatch(step: SequenceGen.StepGen[F]): F[Option[TargetCheckOverride]] =
+      extractTargetName(step.config).map { seqTarget =>
+        systems.tcsKeywordReader.sourceATarget.objectName.map { tcsTarget =>
+          (seqTarget =!= tcsTarget).option(TargetCheckOverride(UserPrompt.Discrepancy(seqTarget, tcsTarget)))
+        }
+      }.getOrElse(none.pure[F])
 
     /**
      * Extract the target name from a step configuration. Some processing is necessary to get the same string that
@@ -241,7 +244,7 @@ object SeqexecEngine {
       }
     }
 
-    private def stepRequiresTargetCheck(config: CleanConfig): Boolean = (for {
+    private def stepRequiresChecks(config: CleanConfig): Boolean = (for {
       obsClass <- config.extractObsAs[String](OBS_CLASS_PROP)
       obsType  <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
     } yield (obsClass === ObsClass.SCIENCE.headerValue() ||
@@ -249,6 +252,88 @@ object SeqexecEngine {
       obsClass === ObsClass.PARTNER_CAL.headerValue()
       ) && obsType === SCIENCE_OBSERVE_TYPE
     ).getOrElse(false)
+
+    private def checkCloudCover(actual: CloudCover, requested: SPSiteQuality.CloudCover): Boolean =
+      actual.toInt.getOrElse(100) <= requested.getPercentage
+
+    private def checkImageQuality(actual: ImageQuality, requested: SPSiteQuality.ImageQuality): Boolean =
+      actual.toInt.getOrElse(100) <= requested.getPercentage
+
+    private def checkSkyBackground(actual: SkyBackground, requested: SPSiteQuality.SkyBackground): Boolean =
+      actual.toInt.getOrElse(100) <= requested.getPercentage
+
+    private def checkWaterVapor(actual: WaterVapor, requested: SPSiteQuality.WaterVapor): Boolean =
+      actual.toInt.getOrElse(100) <= requested.getPercentage
+
+    val ObsConditionsProp = "obsConditions"
+
+    private def extractCloudCover(config: CleanConfig): Option[SPSiteQuality.CloudCover] =
+      config.extractAs[String](OCS_KEY / ObsConditionsProp / CLOUD_COVER_PROP).flatMap(_.parseInt).toOption.flatMap{ x =>
+        List(
+          SPSiteQuality.CloudCover.PERCENT_20,
+          SPSiteQuality.CloudCover.PERCENT_50,
+          SPSiteQuality.CloudCover.PERCENT_70,
+          SPSiteQuality.CloudCover.PERCENT_80,
+          SPSiteQuality.CloudCover.PERCENT_90,
+          SPSiteQuality.CloudCover.ANY
+        ).find(_.getPercentage.toInt === x)
+      }
+
+    private def extractImageQuality(config: CleanConfig): Option[SPSiteQuality.ImageQuality] =
+      config.extractAs[String](OCS_KEY / ObsConditionsProp / IMAGE_QUALITY_PROP).flatMap(_.parseInt).toOption.flatMap{ x =>
+        List(
+          SPSiteQuality.ImageQuality.PERCENT_20,
+          SPSiteQuality.ImageQuality.PERCENT_70,
+          SPSiteQuality.ImageQuality.PERCENT_85,
+          SPSiteQuality.ImageQuality.ANY
+        ).find(_.getPercentage.toInt === x)
+      }
+
+    private def extractSkyBackground(config: CleanConfig): Option[SPSiteQuality.SkyBackground] =
+      config.extractAs[String](OCS_KEY / ObsConditionsProp / SKY_BACKGROUND_PROP).flatMap(_.parseInt).toOption.flatMap{ x =>
+        List(
+          SPSiteQuality.SkyBackground.PERCENT_20,
+          SPSiteQuality.SkyBackground.PERCENT_50,
+          SPSiteQuality.SkyBackground.PERCENT_80,
+          SPSiteQuality.SkyBackground.ANY
+        ).find(_.getPercentage.toInt === x)
+      }
+
+    private def extractWaterVapor(config: CleanConfig): Option[SPSiteQuality.WaterVapor] =
+      config.extractAs[String](OCS_KEY / ObsConditionsProp / WATER_VAPOR_PROP).flatMap(_.parseInt).toOption.flatMap{ x =>
+        List(
+          SPSiteQuality.WaterVapor.PERCENT_20,
+          SPSiteQuality.WaterVapor.PERCENT_50,
+          SPSiteQuality.WaterVapor.PERCENT_80,
+          SPSiteQuality.WaterVapor.ANY
+        ).find(_.getPercentage.toInt === x)
+      }
+
+    private def observingConditionsMatch(actualObsConditions: Conditions, step: SequenceGen.StepGen[F])
+    : Option[ObsConditionsCheckOverride] = {
+
+      val reqCC = extractCloudCover(step.config)
+      val reqIQ = extractImageQuality(step.config)
+      val reqSB = extractSkyBackground(step.config)
+      val reqWV = extractWaterVapor(step.config)
+
+      val ccCmp = reqCC.flatMap(x =>
+        (!checkCloudCover(actualObsConditions.cc, x)).option(Discrepancy(actualObsConditions.cc.label, x.displayValue()))
+      )
+      val iqCmp = reqIQ.flatMap(x =>
+        (!checkImageQuality(actualObsConditions.iq, x)).option(Discrepancy(actualObsConditions.iq.label, x.displayValue()))
+      )
+      val sbCmp = reqSB.flatMap(x =>
+        (!checkSkyBackground(actualObsConditions.sb, x)).option(Discrepancy(actualObsConditions.sb.label, x.displayValue()))
+      )
+      val wvCmp = reqWV.flatMap(x =>
+        (!checkWaterVapor(actualObsConditions.wv, x)).option(Discrepancy(actualObsConditions.wv.label, x.displayValue()))
+      )
+
+      (ccCmp.nonEmpty || iqCmp.nonEmpty || sbCmp.nonEmpty || wvCmp.nonEmpty)
+        .option(ObsConditionsCheckOverride(ccCmp, iqCmp, sbCmp, wvCmp))
+
+    }
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s), SeqEvent.NullSeqEvent:SeqEvent)
@@ -279,18 +364,24 @@ object SeqexecEngine {
         _.map{case (sid, stepId) => SequenceStart(sid, stepId)}.getOrElse(NullSeqEvent)
       ))
 
-    private def startCheckResources(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId,
-                                    stepId: Option[StepId], runOverride: RunOverride): HandleType[F, SeqEvent] =
+    private def startChecks(startAction: HandleType[F, Unit], id: Observation.Id, clientId: ClientId,
+                            stepId: Option[StepId], runOverride: RunOverride): HandleType[F, SeqEvent] =
       executeEngine.get.flatMap { st =>
         atSequence(id).getOption(st).map { seq =>
-          executeEngine.liftF(sequenceTcsTargetMatch(seq, stepId)).flatMap { targetCheck =>
-            (checkResources(id)(st), targetCheck, runOverride) match {
+          executeEngine.liftF {
+            findStartingStep(seq, stepId).map(sp => sequenceTcsTargetMatch(sp).map { tchk =>
+              (sp.some,
+                List(tchk, observingConditionsMatch(st.conditions, sp)).collect { case Some(x) => x }.widen[SeqCheck]
+              )
+            }).getOrElse((none[SequenceGen.StepGen[F]], List.empty[SeqCheck]).pure[F])
+          }.flatMap { case (stpg, checks) =>
+            (checkResources(id)(st), stpg, checks, runOverride) match {
               // Resource check fails
-              case (false, _, _) => executeEngine.unit.as[SeqEvent](Busy(id, clientId))
+              case (false, _, _, _) => executeEngine.unit.as[SeqEvent](Busy(id, clientId))
               // Target check fails and no override
-              case (_, Some(TargetMatchResult(stepId, seqTg, tcsTg)), RunOverride.Default) =>
+              case (_, Some(stp), x :: xs, RunOverride.Default) =>
                 executeEngine.unit.as[SeqEvent](RequestConfirmation(
-                  UserPrompt.TargetCheckOverride(id, stepId, seqTg, tcsTg),
+                  UserPrompt.ChecksOverride(id, stp.id, NonEmptyList(x, xs)),
                   clientId
                 ))
               // Allowed to run
@@ -303,14 +394,14 @@ object SeqexecEngine {
     // Stars a sequence from the first non executed step. The method checks for resources conflict.
     override def start(q: EventQueue[F], id: Observation.Id, user: UserDetails, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *> startCheckResources(executeEngine.start(id), id, clientId, none, runOverride)
+        clearObsCmd(id) *> startChecks(executeEngine.start(id), id, clientId, none, runOverride)
       ) )
 
     // Stars a sequence from an arbitrary step. All previous non executed steps are skipped.
     // The method checks for resources conflict.
     override def startFrom(q: EventQueue[F], id: Observation.Id, stp: StepId, clientId: ClientId, runOverride: RunOverride): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](
-        clearObsCmd(id) *> startCheckResources(executeEngine.startFrom(id, stp), id, clientId, stp.some, runOverride)
+        clearObsCmd(id) *> startChecks(executeEngine.startFrom(id, stp), id, clientId, stp.some, runOverride)
       ) )
 
     override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =

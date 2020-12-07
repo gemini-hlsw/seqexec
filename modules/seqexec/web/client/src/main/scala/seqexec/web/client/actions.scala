@@ -28,7 +28,7 @@ object actions {
   sealed trait RunOptions
   object RunOptions {
     case object Normal              extends RunOptions
-    case object TargetCheckOverride extends RunOptions
+    case object ChecksOverride extends RunOptions
   }
 
   // Actions
