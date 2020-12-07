@@ -30,6 +30,7 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
+import lucuma.ui.optics.InputFormat
 
 /**
  * Container for a table with the steps
