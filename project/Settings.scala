@@ -53,7 +53,7 @@ object Settings {
     // test libraries
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
-    val scalaMock                   = "5.0.0"
+    val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.19"
     lazy val munitDisciplineVersion = "1.0.3"
     lazy val munitCatsEffectVersion = "0.3.0"
