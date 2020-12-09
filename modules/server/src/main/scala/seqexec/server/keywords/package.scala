@@ -140,12 +140,11 @@ package keywords {
       extends Keyword[String](name, TypeString, value)
   final case class FloatPrecisionKeyword(name: KeywordName, precision: Int, value: Float)
       extends Keyword[Float](name, TypeFloat, value)   {
-    override val stringValue: String =
-      s"%.${precision}f".formatLocal(new Locale("en", "US"), value.toDouble)
+    override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value.toDouble)
   }
   final case class DoublePrecisionKeyword(name: KeywordName, precision: Int, value: Double)
       extends Keyword[Double](name, TypeDouble, value) {
-    override val stringValue: String = s"%.${precision}f".formatLocal(new Locale("en", "US"), value)
+    override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value)
   }
 
   // At the end, I want to just pass a list of keywords to be sent to the DHS. I cannot do this with Keyword[T],
@@ -340,4 +339,6 @@ package object keywords {
     override def sendAfter(id:     ImageFileId): F[Unit] =
       Applicative[F].unit
   }
+
+  val USLocale: Locale = new Locale("en", "US")
 }
