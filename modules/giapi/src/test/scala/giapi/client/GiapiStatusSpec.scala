@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Timer, Resource }
+import cats.effect.{ ContextShift, IO, Resource, Timer }
 import cats.tests.CatsSuite
 import edu.gemini.aspen.giapi.status.impl.BasicStatus
 import edu.gemini.aspen.giapi.util.jms.JmsKeys
@@ -17,9 +17,11 @@ import edu.gemini.jms.api.DestinationType
 import edu.gemini.jms.api.JmsSimpleMessageSelector
 import scala.concurrent.ExecutionContext
 
-final case class GmpStatus(amq: ActiveMQJmsProvider,
-                     dispatcher: JmsStatusDispatcher,
-                     msgConsumer: BaseMessageConsumer)
+final case class GmpStatus(
+  amq:         ActiveMQJmsProvider,
+  dispatcher:  JmsStatusDispatcher,
+  msgConsumer: BaseMessageConsumer
+)
 
 object GmpStatus {
 
@@ -30,34 +32,33 @@ object GmpStatus {
     s"vm://$name?marshal=false&broker.persistent=false&create=false"
 
   /**
-    * Setup a mini gmp that can store and provide status items
-    */
-  def createGmpStatus(amqUrl: String,
-                intItemName: String,
-                strItemName: String): IO[GmpStatus] = IO.apply {
-    // Local in memory broker
-    val amq = new ActiveMQJmsProvider(amqUrl)
-    amq.startConnection()
+   * Setup a mini gmp that can store and provide status items
+   */
+  def createGmpStatus(amqUrl: String, intItemName: String, strItemName: String): IO[GmpStatus] =
+    IO.apply {
+      // Local in memory broker
+      val amq = new ActiveMQJmsProvider(amqUrl)
+      amq.startConnection()
 
-    // Setup status listeners and db to answer status queries
-    val database   = new StatusDatabase()
-    val dispatcher = new JmsStatusDispatcher("Status Dispatcher")
-    dispatcher.startJms(amq)
-    val msgConsumer = new BaseMessageConsumer(
-      "Status Consumer",
-      new DestinationData(JmsKeys.GW_STATUS_REQUEST_DESTINATION,
-                          DestinationType.TOPIC),
-      new StatusItemRequestListener(database, dispatcher),
-      new JmsSimpleMessageSelector(
-        JmsKeys.GW_STATUS_REQUEST_TYPE_PROPERTY + " = '" + JmsKeys.GW_STATUS_REQUEST_TYPE_ITEM + "'")
-    )
+      // Setup status listeners and db to answer status queries
+      val database    = new StatusDatabase()
+      val dispatcher  = new JmsStatusDispatcher("Status Dispatcher")
+      dispatcher.startJms(amq)
+      val msgConsumer = new BaseMessageConsumer(
+        "Status Consumer",
+        new DestinationData(JmsKeys.GW_STATUS_REQUEST_DESTINATION, DestinationType.TOPIC),
+        new StatusItemRequestListener(database, dispatcher),
+        new JmsSimpleMessageSelector(
+          JmsKeys.GW_STATUS_REQUEST_TYPE_PROPERTY + " = '" + JmsKeys.GW_STATUS_REQUEST_TYPE_ITEM + "'"
+        )
+      )
 
-    msgConsumer.startJms(amq)
-    // Set a status item
-    database.update(new BasicStatus[Int](intItemName, 1))
-    database.update(new BasicStatus[String](strItemName, "one"))
-    GmpStatus(amq, dispatcher, msgConsumer)
-  }
+      msgConsumer.startJms(amq)
+      // Set a status item
+      database.update(new BasicStatus[Int](intItemName, 1))
+      database.update(new BasicStatus[String](strItemName, "one"))
+      GmpStatus(amq, dispatcher, msgConsumer)
+    }
 
   def closeGmpStatus(gmp: GmpStatus): IO[Unit] = IO.apply {
     gmp.dispatcher.stopJms()
@@ -67,8 +68,8 @@ object GmpStatus {
 }
 
 /**
-  * Tests of the giapi api
-  */
+ * Tests of the giapi api
+ */
 final class GiapiStatusSpec extends CatsSuite {
   val intItemName = "item:a"
   val strItemName = "item:b"
@@ -79,44 +80,61 @@ final class GiapiStatusSpec extends CatsSuite {
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
-  def client(amqUrl: String, intItemName: String, strItemName: String): Resource[IO, (GmpStatus, Giapi[IO])] =
+  def client(
+    amqUrl:      String,
+    intItemName: String,
+    strItemName: String
+  ): Resource[IO, (GmpStatus, Giapi[IO])] =
     for {
-      g <- Resource.make(GmpStatus.createGmpStatus(amqUrl, intItemName, strItemName))(GmpStatus.closeGmpStatus)
+      g <- Resource.make(GmpStatus.createGmpStatus(amqUrl, intItemName, strItemName))(
+             GmpStatus.closeGmpStatus
+           )
       c <- Resource.make(Giapi.giapiConnection[IO](amqUrl).connect)(_.close)
     } yield (g, c)
 
   test("Test reading an existing status item") {
-    client(GmpStatus.amqUrl("tests1"), intItemName, strItemName).use { case (_, c) =>
-      c.get[Int](intItemName)
-     }.unsafeRunSync() shouldBe 1
+    client(GmpStatus.amqUrl("tests1"), intItemName, strItemName)
+      .use { case (_, c) =>
+        c.get[Int](intItemName)
+      }
+      .unsafeRunSync() shouldBe 1
   }
 
   test("Test reading an status with string type") {
-    client(GmpStatus.amqUrl("tests2"), intItemName, strItemName).use { case (_, c) =>
-      c.get[String](strItemName)
-    }.attempt.unsafeRunSync() shouldBe Right("one")
+    client(GmpStatus.amqUrl("tests2"), intItemName, strItemName)
+      .use { case (_, c) =>
+        c.get[String](strItemName)
+      }
+      .attempt
+      .unsafeRunSync() shouldBe Right("one")
   }
 
   test("Test reading an unknown status item") {
-    client(GmpStatus.amqUrl("tests3"), intItemName, strItemName).use { case (_, c) =>
-      c.get[Int]("item:u")
-    }.attempt.unsafeRunSync() should matchPattern {
-      case Left(GiapiException(_)) =>
+    client(GmpStatus.amqUrl("tests3"), intItemName, strItemName)
+      .use { case (_, c) =>
+        c.get[Int]("item:u")
+      }
+      .attempt
+      .unsafeRunSync() should matchPattern { case Left(GiapiException(_)) =>
     }
   }
 
   test("Test reading an unknown status item as optional") {
-    client(GmpStatus.amqUrl("tests4"), intItemName, strItemName).use { case (_, c) =>
-      c.getO[Int]("item:u")
-    }.unsafeRunSync() shouldBe None
+    client(GmpStatus.amqUrl("tests4"), intItemName, strItemName)
+      .use { case (_, c) =>
+        c.getO[Int]("item:u")
+      }
+      .unsafeRunSync() shouldBe None
   }
 
   test("Closing connection should terminate") {
     // This should fail but we are mostly concerned with ensuring that it terminates
-    client(GmpStatus.amqUrl("tests5"), intItemName, strItemName).use { case (g, c) =>
-      GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)
-    }.attempt.unsafeRunSync() should matchPattern {
-      case Left(GiapiException(_)) =>
+    client(GmpStatus.amqUrl("tests5"), intItemName, strItemName)
+      .use { case (g, c) =>
+        GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)
+      }
+      .attempt
+      .unsafeRunSync() should matchPattern { case Left(GiapiException(_)) =>
     }
   }
 

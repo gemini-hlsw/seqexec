@@ -3,12 +3,13 @@
 
 package gem.ocs2.pio
 
-import lucuma.core.util.Enumerated
-import lucuma.core.syntax.string._
+import java.time.Duration
+import java.time.Instant
 
 import cats.Functor
 import cats.syntax.all._
-import java.time.{ Duration, Instant }
+import lucuma.core.syntax.string._
+import lucuma.core.util.Enumerated
 
 final case class PioParse[A](run: String => Option[A]) {
   def apply(s: String): Option[A] = run(s)
@@ -25,11 +26,12 @@ object PioParse {
   def enum[A](dictionary: (String, A)*): PioParse[A] =
     PioParse(dictionary.toMap.lift)
 
-  /** Builds a PioParse for an `Enumerated` instance, assuming that the enum
-    * tags will be used as the lookup keys.  In other words, this is an option
-    * for enumerations whose OCS2 export happen to match the new model enum
-    * tags.
-    */
+  /**
+   * Builds a PioParse for an `Enumerated` instance, assuming that the enum
+   * tags will be used as the lookup keys.  In other words, this is an option
+   * for enumerations whose OCS2 export happen to match the new model enum
+   * tags.
+   */
   def enumFromTag[A](as: List[A])(implicit ev: Enumerated[A]): PioParse[A] =
     PioParse(as.map(a => ev.tag(a) -> a).toMap.lift)
 

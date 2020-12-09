@@ -44,15 +44,15 @@ object GiapiStatusDb {
     a:    Any
   ): F[Unit] =
     a match {
-      case a: Int =>
+      case a: Int    =>
         db.update(name, a)
       case a: String =>
         db.update(name, a)
-      case a: Float =>
+      case a: Float  =>
         db.update(name, a)
       case a: Double =>
         db.update(name, a)
-      case _ =>
+      case _         =>
         Applicative[F].unit
     }
 
@@ -116,8 +116,8 @@ object GiapiStatusDb {
       .use(initSG(db, _, items))
 
   /**
-    * Creates a new status db in simulation
-    */
+   * Creates a new status db in simulation
+   */
   def simulatedDb[F[_]: ApplicativeError[?[_], Throwable]]: GiapiStatusDb[F] =
     new GiapiStatusDb[F] {
       def optional(i: String): F[Option[StatusValue]] =
@@ -136,11 +136,11 @@ object GiapiStatusDb {
     }
 
   /**
-    * Creates a new status db that listens for status items as they are produced
-    *
-    * @param url Url of the giapi server
-    * @param items List of items to monitor
-    */
+   * Creates a new status db that listens for status items as they are produced
+   *
+   * @param url Url of the giapi server
+   * @param items List of items to monitor
+   */
   def newStatusDb[F[_]: ConcurrentEffect](
     url:   String,
     items: List[String]
@@ -151,27 +151,28 @@ object GiapiStatusDb {
       db <- GiapiDb.newDb
       _  <- initDb[F](c, db, items) // Get the initial values
       f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
-    } yield
-      new GiapiStatusDb[F] {
-        def optional(i: String): F[Option[StatusValue]] =
-          db.value(i)
+    } yield new GiapiStatusDb[F] {
+      def optional(i: String): F[Option[StatusValue]] =
+        db.value(i)
 
-        def value(i: String): F[StatusValue] =
-          optional(i)
-            .ensure(new GiapiException(s"Giapi channel $i not found"))(
-              _.isDefined
-            )
-            .map { _.orNull } // orNull lets us typecheck but it will never be used due to the `ensure` call above
+      def value(i: String): F[StatusValue] =
+        optional(i)
+          .ensure(new GiapiException(s"Giapi channel $i not found"))(
+            _.isDefined
+          )
+          .map {
+            _.orNull
+          } // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
-        def discrete: Stream[F, Map[String, StatusValue]] =
-          db.discrete
+      def discrete: Stream[F, Map[String, StatusValue]] =
+        db.discrete
 
-        def close: F[Unit] =
-          for {
-            _ <- Sync[F].delay(ss.ss.stopJms()) // Close the listener
-            _ <- Sync[F].delay(c.stopConnection()) // Disconnect from amq
-            _ <- Sync[F].delay(f.cancel) // Stop the fiber
-          } yield ()
-      }
+      def close: F[Unit] =
+        for {
+          _ <- Sync[F].delay(ss.ss.stopJms()) // Close the listener
+          _ <- Sync[F].delay(c.stopConnection()) // Disconnect from amq
+          _ <- Sync[F].delay(f.cancel) // Stop the fiber
+        } yield ()
+    }
 
 }

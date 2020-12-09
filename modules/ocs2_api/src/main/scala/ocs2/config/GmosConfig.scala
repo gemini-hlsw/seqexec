@@ -3,23 +3,26 @@
 
 package ocs2.config
 
-import lucuma.core.enum._
-import io.chrisdavenport.cats.time.instances.all._
-import lucuma.core.math.{ Offset, Wavelength }
-
-import cats.{ Eq, Order }
 import java.time.Duration
+
+import cats.Eq
+import cats.Order
+import io.chrisdavenport.cats.time.instances.all._
+import lucuma.core.enum._
+import lucuma.core.math.Offset
+import lucuma.core.math.Wavelength
 import monocle._
 
 /**
-  * Additional type hierarchy over the low-level GMOS enums.
-  * @group Instrument-Specific Models
-  */
+ * Additional type hierarchy over the low-level GMOS enums.
+ * @group Instrument-Specific Models
+ */
 object GmosConfig {
 
-  /** Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
-    * This class essentially provides a newtype for Int.
-    */
+  /**
+   * Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
+   * This class essentially provides a newtype for Int.
+   */
   sealed abstract case class GmosShuffleOffset(detectorRows: Int) {
 
     // Enforced by fromRowCount constructor
@@ -28,24 +31,27 @@ object GmosConfig {
 
   object GmosShuffleOffset extends GmosShuffleOffsetOptics {
 
-    /** Constructs the shuffle offset with the given number of detector rows,
-      * provided it is a positive number.
-      *
-      * @return `Some(GmosShuffleOffset(rows))` if `rows` is positive,
-      *         `None` otherwise
-      */
+    /**
+     * Constructs the shuffle offset with the given number of detector rows,
+     * provided it is a positive number.
+     *
+     * @return `Some(GmosShuffleOffset(rows))` if `rows` is positive,
+     *         `None` otherwise
+     */
     def fromRowCount(rows:       Int): Option[GmosShuffleOffset] =
       if (rows > 0) Some(new GmosShuffleOffset(rows) {}) else None
 
-    /** Constructs the shuffle offset with the given number of detector rows
-      * provided `rows` is positive, or throws an exception if zero or negative.
-      */
+    /**
+     * Constructs the shuffle offset with the given number of detector rows
+     * provided `rows` is positive, or throws an exception if zero or negative.
+     */
     def unsafeFromRowCount(rows: Int): GmosShuffleOffset         =
       fromRowCount(rows).getOrElse(sys.error(s"Expecting positive detector row count, not $rows"))
 
-    /** Constructs a shuffle offset using the default number of detector rows
-      * associated with the detector.
-      */
+    /**
+     * Constructs a shuffle offset using the default number of detector rows
+     * associated with the detector.
+     */
     def defaultFromDetector(detector: GmosDetector): GmosShuffleOffset =
       fromRowCount(detector.shuffleOffset)
         .getOrElse(sys.error(s"Misconfigured GmosDetector $detector"))
@@ -62,9 +68,10 @@ object GmosConfig {
 
   }
 
-  /** The number of nod-and-shuffle cycles, which must be at least 1. This class
-    * essentially provides a newtype for Int.
-    */
+  /**
+   * The number of nod-and-shuffle cycles, which must be at least 1. This class
+   * essentially provides a newtype for Int.
+   */
   sealed abstract case class GmosShuffleCycles(toInt: Int) {
 
     // Enforced by fromCycleCount constructor
@@ -77,17 +84,19 @@ object GmosConfig {
     val Default: GmosShuffleCycles =
       unsafeFromCycleCount(1)
 
-    /** Constructs the shuffle cycles from a count if `cycles` is positive.
-      *
-      * @return `Some(GmosShuffleCycles(cycles))` if `cycles` is positive,
-      *         `None` otherwise
-      */
+    /**
+     * Constructs the shuffle cycles from a count if `cycles` is positive.
+     *
+     * @return `Some(GmosShuffleCycles(cycles))` if `cycles` is positive,
+     *         `None` otherwise
+     */
     def fromCycleCount(cycles:       Int): Option[GmosShuffleCycles] =
       if (cycles > 0) Some(new GmosShuffleCycles(cycles) {}) else None
 
-    /** Constructs the shuffle cycles with the given `cycles` count provided it
-      * is positive, or else throws an exception if 0 or negative.
-      */
+    /**
+     * Constructs the shuffle cycles with the given `cycles` count provided it
+     * is positive, or else throws an exception if 0 or negative.
+     */
     def unsafeFromCycleCount(cycles: Int): GmosShuffleCycles         =
       fromCycleCount(cycles).getOrElse(sys.error(s"Expecting positive shuffle cycles, not $cycles"))
 
@@ -181,21 +190,24 @@ object GmosConfig {
     def rows: (Int, Int) =
       (yMin.toInt, yMin + yRange)
 
-    /** Returns `true` if the pixels specified by this custom ROI entry overlap
-      * with the pixels specified by `that` entry.
-      */
+    /**
+     * Returns `true` if the pixels specified by this custom ROI entry overlap
+     * with the pixels specified by `that` entry.
+     */
     def overlaps(that: GmosCustomRoiEntry): Boolean =
       columnsOverlap(that) && rowsOverlap(that)
 
-    /** Returns `true` if the columns spanned this custom ROI entry overlap with
-      * the columns spanned by `that` entry.
-      */
+    /**
+     * Returns `true` if the columns spanned this custom ROI entry overlap with
+     * the columns spanned by `that` entry.
+     */
     def columnsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.columns)
 
-    /** Returns `true` if the rows spanned this custom ROI entry overlap with
-      * the rows spanned by `that` entry.
-      */
+    /**
+     * Returns `true` if the rows spanned this custom ROI entry overlap with
+     * the rows spanned by `that` entry.
+     */
     def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.rows)
 
@@ -259,8 +271,9 @@ object GmosConfig {
 
   }
 
-  /** Shared static configuration for both GMOS-N and GMOS-S.
-    */
+  /**
+   * Shared static configuration for both GMOS-N and GMOS-S.
+   */
   final case class GmosCommonStaticConfig(
     detector:      GmosDetector,
     mosPreImaging: MosPreImaging,
@@ -307,8 +320,9 @@ object GmosConfig {
 
   }
 
-  /** Parameters that determine GMOS CCD readout.
-    */
+  /**
+   * Parameters that determine GMOS CCD readout.
+   */
   final case class GmosCcdReadout(
     xBinning:    GmosXBinning,
     yBinning:    GmosYBinning,
@@ -357,8 +371,9 @@ object GmosConfig {
 
   }
 
-  /** Shared dynamic configuration for both GMOS-N and GMOS-S.
-    */
+  /**
+   * Shared dynamic configuration for both GMOS-N and GMOS-S.
+   */
   final case class GmosCommonDynamicConfig(
     ccdReadout:   GmosCcdReadout,
     dtaxOffset:   GmosDtax,
@@ -401,10 +416,11 @@ object GmosConfig {
 
   }
 
-  /** Custom mask definition, which is available as an alternative to using a
-    * builtin FPU.  Either both these parameters are set or neither are set in a
-    * GMOS observation
-    */
+  /**
+   * Custom mask definition, which is available as an alternative to using a
+   * builtin FPU.  Either both these parameters are set or neither are set in a
+   * GMOS observation
+   */
   final case class GmosCustomMask(
     maskDefinitionFilename: String,
     slitWidth:              GmosCustomSlitWidth
@@ -431,13 +447,14 @@ object GmosConfig {
 
   }
 
-  /** GMOS grating configuration, parameterized on the disperser type.  These
-    * are grouped because they only apply when using a grating.  That is, all
-    * are defined or none or defined in the dynamic config.
-    *
-    * @tparam D disperser type, expected to be `GmosNorthDisperser` or
-    *           `GmosSouthDisperser`
-    */
+  /**
+   * GMOS grating configuration, parameterized on the disperser type.  These
+   * are grouped because they only apply when using a grating.  That is, all
+   * are defined or none or defined in the dynamic config.
+   *
+   * @tparam D disperser type, expected to be `GmosNorthDisperser` or
+   *           `GmosSouthDisperser`
+   */
   final case class GmosGrating[D](
     disperser:  D,
     order:      GmosDisperserOrder,

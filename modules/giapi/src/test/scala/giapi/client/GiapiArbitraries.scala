@@ -13,18 +13,18 @@ trait GiapiArbitraries {
   implicit val configurationArb = Arbitrary {
     for {
       m <- arbitrary[Map[String, String]]
-    } yield
-      m.map {
-          case (k, v) => Configuration.single(k, v)
-        }
-        .toList
-        .combineAll
+    } yield m
+      .map { case (k, v) =>
+        Configuration.single(k, v)
+      }
+      .toList
+      .combineAll
   }
 
   implicit val configurationCogen: Cogen[Configuration] =
     Cogen[Map[String, String]].contramap {
-      _.config.map {
-        case (c, v) => (c.getName, v)
+      _.config.map { case (c, v) =>
+        (c.getName, v)
       }
     }
 }

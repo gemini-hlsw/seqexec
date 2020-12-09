@@ -3,7 +3,8 @@
 
 package ocs2
 
-import cats.{ Order, Show }
+import cats.Order
+import cats.Show
 import cats.instances.short._
 import lucuma.core.optics.syntax.prism._
 import monocle.Prism
@@ -26,9 +27,9 @@ object CoAdds {
     Order.by(_.toShort)
 
   /**
-    * Prism from Short into CoAdds and back.
-    * @group Optics
-    */
+   * Prism from Short into CoAdds and back.
+   * @group Optics
+   */
   def fromShort: Prism[Short, CoAdds] =
     Prism((n: Short) => Some(n).filter(_ > 0).map(new CoAdds(_) {}))(_.toShort)
 

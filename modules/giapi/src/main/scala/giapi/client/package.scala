@@ -29,8 +29,8 @@ import shapeless.Typeable._
 package object client {
 
   /**
-    * Allowed types according to GIAPI
-    */
+   * Allowed types according to GIAPI
+   */
   implicit val strItemGetter: ItemGetter[String] = new ItemGetter[String] {}
 
   implicit val doubleItemGetter: ItemGetter[Double] = new ItemGetter[Double] {}
@@ -47,13 +47,13 @@ package client {
   final case class GiapiException(str: String) extends RuntimeException(str)
 
   /**
-    * Typeclass to present as evidence when calling `Giapi.get`
-    */
+   * Typeclass to present as evidence when calling `Giapi.get`
+   */
   sealed abstract class ItemGetter[A: shapeless.Typeable] {
 
     /**
-      * Attempt to convert any value to A as sent by StatusHandler
-      */
+     * Attempt to convert any value to A as sent by StatusHandler
+     */
     def value(p: Any): Option[A] = shapeless.Typeable[A].cast(p)
   }
 
@@ -64,60 +64,59 @@ package client {
   }
 
   /**
-    * Represents a connection to a GIAPi based instrument
-    *
-    * @tparam F Effect type
-    */
+   * Represents a connection to a GIAPi based instrument
+   *
+   * @tparam F Effect type
+   */
   trait GiapiConnection[F[_]] {
     def connect: F[Giapi[F]]
   }
 
   /**
-    * Algebra to interact with a GIAPI instrument
-    *
-    * @tparam F Effect Type
-    */
-  trait Giapi[F[_]] {
+   * Algebra to interact with a GIAPI instrument
+   *
+   * @tparam F Effect Type
+   */
+  trait Giapi[F[_]]           {
 
     /**
-      * Returns a value for the status item. If not found or there is an error, an exception could be thrown
-      */
+     * Returns a value for the status item. If not found or there is an error, an exception could be thrown
+     */
     def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
-      * Attempts to read a value. If not found an empty F is returned
-      */
+     * Attempts to read a value. If not found an empty F is returned
+     */
     def getO[A: ItemGetter](statusItem: String): F[Option[A]]
 
     /**
-      * Executes a command as defined on GIAPI
-      * Note that commands can end in ERROR or COMPLETED
-      * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
-      * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
-      * wait for ERROR/COMPLETED and do async calls above this level
-      *
-      * This decision may be review in the future
-      */
+     * Executes a command as defined on GIAPI
+     * Note that commands can end in ERROR or COMPLETED
+     * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
+     * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
+     * wait for ERROR/COMPLETED and do async calls above this level
+     *
+     * This decision may be review in the future
+     */
     def command(command: Command, timeout: FiniteDuration): F[CommandResult]
 
     /**
-      * Returns a stream of values for the status item.
-      */
+     * Returns a stream of values for the status item.
+     */
     def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]]
 
     /**
-      * Close the connection
-      */
+     * Close the connection
+     */
     private[giapi] def close: F[Unit]
   }
 
   /**
-    * Interpreters
-    */
+   * Interpreters
+   */
   object Giapi {
 
-    final case class StatusStreamer(aggregate: StatusHandlerAggregate,
-                                    ss:        StatusService)
+    final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
 
     def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] =
       Sync[F].delay {
@@ -126,7 +125,9 @@ package client {
         sg
       }
 
-    private def commandSenderClient[F[_]: Applicative](c: ActiveMQJmsProvider): F[CommandSenderClient] =
+    private def commandSenderClient[F[_]: Applicative](
+      c: ActiveMQJmsProvider
+    ): F[CommandSenderClient] =
       Applicative[F].pure {
         new CommandSenderClient(c)
       }
@@ -177,28 +178,29 @@ package client {
       }
 
     /**
-      * Interpreter on F
-      *
-      * @param url Url to connect to
-      * @tparam F Effect type
-      */
+     * Interpreter on F
+     *
+     * @param url Url to connect to
+     * @tparam F Effect type
+     */
     def giapiConnection[F[_]: Timer: ConcurrentEffect](
       url: String
     ): GiapiConnection[F] =
       new GiapiConnection[F] {
-        private def giapi(c:  ActiveMQJmsProvider,
-                          sg: StatusGetter,
-                          cc: CommandSenderClient,
-                          ss: StatusStreamer) =
+        private def giapi(
+          c:  ActiveMQJmsProvider,
+          sg: StatusGetter,
+          cc: CommandSenderClient,
+          ss: StatusStreamer
+        ) =
           new Giapi[F] {
-            private val commandsAckTimeout                  = 2000.milliseconds
+            private val commandsAckTimeout = 2000.milliseconds
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
                 case Some(a) => a.pure[F]
-                case None =>
-                  Sync[F].raiseError(
-                    new GiapiException(s"Status item $statusItem not found"))
+                case None    =>
+                  Sync[F].raiseError(new GiapiException(s"Status item $statusItem not found"))
               }
 
             def getO[A: ItemGetter](statusItem: String): F[Option[A]] =
@@ -209,7 +211,7 @@ package client {
 
             override def command(command: Command, timeOut: FiniteDuration): F[CommandResult] = {
               val error = CommandResultException.timedOut(timeOut)
-              val e = ApplicativeError[F, Throwable].raiseError[CommandResult](error)
+              val e     = ApplicativeError[F, Throwable].raiseError[CommandResult](error)
               commands.sendCommand(cc, command, commandsAckTimeout).timeoutTo(timeOut, e)
             }
 
@@ -241,33 +243,41 @@ package client {
       }
 
     /**
-      * Interpreter on Id
-      */
+     * Interpreter on Id
+     */
     def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
-        override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
-        override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
-        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] = sys.error(s"Cannot read $statusItem")
-        override def command(command: Command, timeout: FiniteDuration): Id[CommandResult] = CommandResult(Response.COMPLETED)
+        override def get[A: ItemGetter](statusItem:    String): Id[A]         =
+          sys.error(s"Cannot read $statusItem")
+        override def getO[A: ItemGetter](statusItem:   String): Id[Option[A]] = None
+        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] =
+          sys.error(s"Cannot read $statusItem")
+        override def command(command:                  Command, timeout: FiniteDuration): Id[CommandResult] =
+          CommandResult(Response.COMPLETED)
         override def close: Id[Unit] = ()
       }
     }
 
     /**
-      * Simulator interpreter on IO, Reading items will fail and all commands will succeed
-      */
-    def simulatedGiapiConnection[F[_]](implicit T: Timer[F], F: ApplicativeError[F, Throwable]): GiapiConnection[F] = new GiapiConnection[F] {
+     * Simulator interpreter on IO, Reading items will fail and all commands will succeed
+     */
+    def simulatedGiapiConnection[F[_]](implicit
+      T: Timer[F],
+      F: ApplicativeError[F, Throwable]
+    ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {
-        override def get[A: ItemGetter](statusItem: String): F[A] = F.raiseError(new RuntimeException(s"Cannot read $statusItem"))
-        override def getO[A: ItemGetter](statusItem: String): F[Option[A]] = F.pure(None)
-        override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] = F.pure(Stream.empty.covary[F])
-        override def command(command: Command, timeout: FiniteDuration): F[CommandResult] =
+        override def get[A: ItemGetter](statusItem:    String): F[A]         =
+          F.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def getO[A: ItemGetter](statusItem:   String): F[Option[A]] = F.pure(None)
+        override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =
+          F.pure(Stream.empty.covary[F])
+        override def command(command:                  Command, timeout: FiniteDuration): F[CommandResult] =
           if (command.sequenceCommand === SequenceCommand.OBSERVE) {
             T.sleep(timeout) *>
-            F.pure(CommandResult(Response.COMPLETED))
+              F.pure(CommandResult(Response.COMPLETED))
           } else {
             T.sleep(5.seconds) *>
-            F.pure(CommandResult(Response.COMPLETED))
+              F.pure(CommandResult(Response.COMPLETED))
           }
         override def close: F[Unit] = F.unit
       })
