@@ -24,13 +24,6 @@ jobs:
         uses: olafurpg/setup-scala@v10
         with:
           java-version: 1.8
-      - name: base
-        run: |
-          echo ${{ github.event.pull_request.base.sha }}
-          echo ${{ github.event.base_ref }}
-          echo ${{ github.base_ref }}
-          git rev-parse HEAD
-          git rev-parse HEAD^1
       - name: Export assets to packtracker
         if: github.event_name == 'pull_request'
         run: |

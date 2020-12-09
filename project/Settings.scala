@@ -59,7 +59,7 @@ object Settings {
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
-    val semanticUI = "2.3.1"
+    val fomanticUI = "2.8.7"
     val ocsVersion = "2020101.1.1"
 
     val apacheXMLRPC        = "3.1.3"
