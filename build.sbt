@@ -200,7 +200,7 @@ lazy val seqexec_web_client = project
     useYarn := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "semantic-ui-less" -> LibraryVersions.semanticUI,
+      "fomantic-ui-less" -> LibraryVersions.fomanticUI,
       "prop-types"       -> "15.7.2",
       "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
     ),
@@ -215,8 +215,8 @@ lazy val seqexec_web_client = project
       "file-loader"                   -> "6.0.0",
       "css-loader"                    -> "3.5.3",
       "style-loader"                  -> "1.2.1",
-      "less"                          -> "2.7.2",
-      "less-loader"                   -> "4.1.0",
+      "less"                          -> "3.9.0",
+      "less-loader"                   -> "7.0.1",
       "webpack-merge"                 -> "4.2.2",
       "mini-css-extract-plugin"       -> "0.8.0",
       "webpack-dev-server-status-bar" -> "1.1.0",

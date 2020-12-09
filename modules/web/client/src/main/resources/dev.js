@@ -1,4 +1,4 @@
-import "./theme/semantic.less";
+import "resources/theme/semantic.less";
 import "./less/style.less";
 import "./less/semantic-ui-alerts.less";
 
