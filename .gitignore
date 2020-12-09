@@ -13,8 +13,6 @@
 yarn.lock
 .tags*
 .java-version
-package.json
-package-lock.json
 calibrations/
 .metals/
 .bloop/
