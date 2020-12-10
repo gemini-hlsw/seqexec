@@ -1,13 +1,17 @@
-import "resources/theme/semantic.less";
-import "./less/style.less";
-import "./less/semantic-ui-alerts.less";
+import { SeqexecApp }  from  "@sjs/main.js";
+// import "/semantic.less";
+// import "./less/style.less";
+// import "./less/semantic-ui-alerts.less";
+import '/public/semantic.css';
+import '/public/style.css';
 
-var App = require("sjs/seqexec_web_client-fastopt.js");
-
-if (module.hot) {
-  module.hot.dispose(() => {
-    App.SeqexecApp.stop();
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    SeqexecApp.stop();
   });
-  module.hot.accept();
-  App.SeqexecApp.start();
+  import.meta.hot.accept(({module}) => {
+    console.log("CH")
+    console.log(module)
+  });
+  SeqexecApp.start();
 }

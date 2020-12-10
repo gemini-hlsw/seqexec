@@ -57,7 +57,7 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
  * Seqexec WebApp entry point
  * Exposed to the js world
  */
-@JSExportTopLevel("SeqexecApp")
+@JSExportTopLevel("SeqexecApp", moduleID = "main")
 object SeqexecApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val launcher = new SeqexecLauncher[IO]

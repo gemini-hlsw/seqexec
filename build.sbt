@@ -7,7 +7,7 @@ import sbt.Keys._
 import NativePackagerHelper._
 import sbtcrossproject.crossProject
 import sbtcrossproject.CrossType
-import com.typesafe.sbt.packager.docker._
+import org.scalajs.linker.interface.ModuleSplitStyle
 
 name := "seqexec"
 
@@ -160,7 +160,7 @@ lazy val seqexec_web_server = project
 lazy val seqexec_web_client = project
   .in(file("modules/web/client"))
   .enablePlugins(ScalaJSPlugin)
-  .enablePlugins(ScalaJSBundlerPlugin)
+  // .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
@@ -175,6 +175,8 @@ lazy val seqexec_web_client = project
         "-Wunused:explicits"
       )
     )),
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
+    scalaJSLinkerConfig ~= (_.withModuleSplitStyle(ModuleSplitStyle.SmallestModules)),
     // Configurations for webpack
     webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS := BundlingMode.Application,
@@ -199,34 +201,34 @@ lazy val seqexec_web_client = project
     // Use yarn as it is faster than npm
     useYarn := true,
     // JS dependencies via npm
-    npmDependencies in Compile ++= Seq(
-      "fomantic-ui-less" -> LibraryVersions.fomanticUI,
-      "prop-types"       -> "15.7.2",
-      "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
-    ),
+    // npmDependencies in Compile ++= Seq(
+    //   "fomantic-ui-less" -> LibraryVersions.fomanticUI,
+    //   "prop-types"       -> "15.7.2",
+    //   "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
+    // ),
     Compile / fastOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     // NPM libs for development, mostly to let webpack do its magic
-    npmDevDependencies in Compile ++= Seq(
-      "postcss"                       -> "8.1.1",
-      "postcss-loader"                -> "4.0.3",
-      "autoprefixer"                  -> "10.0.1",
-      "url-loader"                    -> "4.1.0",
-      "file-loader"                   -> "6.0.0",
-      "css-loader"                    -> "3.5.3",
-      "style-loader"                  -> "1.2.1",
-      "less"                          -> "3.9.0",
-      "less-loader"                   -> "7.0.1",
-      "webpack-merge"                 -> "4.2.2",
-      "mini-css-extract-plugin"       -> "0.8.0",
-      "webpack-dev-server-status-bar" -> "1.1.0",
-      "cssnano"                       -> "4.1.10",
-      "terser-webpack-plugin"         -> "3.0.6",
-      "html-webpack-plugin"           -> "4.3.0",
-      "css-minimizer-webpack-plugin"  -> "1.1.5",
-      "favicons-webpack-plugin"       -> "4.2.0",
-      "@packtracker/webpack-plugin"   -> "2.3.0"
-    ),
+    // npmDevDependencies in Compile ++= Seq(
+    //   "postcss"                       -> "8.1.1",
+    //   "postcss-loader"                -> "4.0.3",
+    //   "autoprefixer"                  -> "10.0.1",
+    //   "url-loader"                    -> "4.1.0",
+    //   "file-loader"                   -> "6.0.0",
+    //   "css-loader"                    -> "3.5.3",
+    //   "style-loader"                  -> "1.2.1",
+    //   "less"                          -> "3.9.0",
+    //   "less-loader"                   -> "7.0.1",
+    //   "webpack-merge"                 -> "4.2.2",
+    //   "mini-css-extract-plugin"       -> "0.8.0",
+    //   "webpack-dev-server-status-bar" -> "1.1.0",
+    //   "cssnano"                       -> "4.1.10",
+    //   "terser-webpack-plugin"         -> "3.0.6",
+    //   "html-webpack-plugin"           -> "4.3.0",
+    //   "css-minimizer-webpack-plugin"  -> "1.1.5",
+    //   "favicons-webpack-plugin"       -> "4.2.0",
+    //   "@packtracker/webpack-plugin"   -> "2.3.0"
+    // ),
     libraryDependencies ++= Seq(
       Cats.value,
       Mouse.value,
@@ -379,8 +381,8 @@ lazy val seqexecCommonSettings = Seq(
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
   // Depend on webpack and add the assets created by webpack
-  mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
-    .map(f => f.data -> f.data.getName()),
+  // mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
+  //   .map(f => f.data -> f.data.getName()),
   // Name of the launch script
   executableScriptName := "seqexec-server",
   // No javadocs
