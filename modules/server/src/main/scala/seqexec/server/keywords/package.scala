@@ -10,7 +10,10 @@ import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 
+import java.util.Locale
+
 package keywords {
+
   sealed trait KeywordsBundler[F[_]] {
     def bundleKeywords(ks: List[KeywordBag => F[KeywordBag]]): F[KeywordBag]
   }
@@ -118,7 +121,9 @@ package keywords {
   case object TypeString  extends KeywordType
 
   // The developer uses these classes to define all the typed keywords
-  sealed class Keyword[T] protected (val n: KeywordName, val t: KeywordType, val v: T)
+  sealed class Keyword[T] protected (val n: KeywordName, val t: KeywordType, val v: T) {
+    val stringValue: String = s"$v"
+  }
   final case class Int8Keyword(name: KeywordName, value: Byte)
       extends Keyword[Byte](name, TypeInt8, value)
   final case class Int16Keyword(name: KeywordName, value: Short)
@@ -133,6 +138,14 @@ package keywords {
       extends Keyword[Boolean](name, TypeBoolean, value)
   final case class StringKeyword(name: KeywordName, value: String)
       extends Keyword[String](name, TypeString, value)
+  final case class FloatPrecisionKeyword(name: KeywordName, precision: Int, value: Float)
+      extends Keyword[Float](name, TypeFloat, value)   {
+    override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value.toDouble)
+  }
+  final case class DoublePrecisionKeyword(name: KeywordName, precision: Int, value: Double)
+      extends Keyword[Double](name, TypeDouble, value) {
+    override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value)
+  }
 
   // At the end, I want to just pass a list of keywords to be sent to the DHS. I cannot do this with Keyword[T],
   // because I cannot mix different types in a List. But at the end I only care about the value as a String, so I
@@ -239,7 +252,7 @@ package object keywords {
   def listDefault[F[_]: Applicative, A]: F[List[A]] = List.empty[A].pure[F]
 
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
-    InternalKeyword(k.n, k.t, s"${k.v}")
+    InternalKeyword(k.n, k.t, k.stringValue)
 
   implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A]) {
     def orDefault: A = a.getOrElse(d.default)
@@ -289,6 +302,12 @@ package object keywords {
     get:  F[Double],
     name: KeywordName
   ): KeywordBag => F[KeywordBag] = buildKeyword(get, name, DoubleKeyword)
+  def buildDoublePrecision[F[_]: MonadError[*[_], Throwable]](
+    get:       F[Double],
+    precision: Int,
+    name:      KeywordName
+  ): KeywordBag => F[KeywordBag] = k =>
+    get.safeValOrDefault.map(x => k.add(DoublePrecisionKeyword(name, precision, x)))
   def buildBoolean[F[_]: MonadError[*[_], Throwable]](
     get:  F[Boolean],
     name: KeywordName,
@@ -320,4 +339,6 @@ package object keywords {
     override def sendAfter(id:     ImageFileId): F[Unit] =
       Applicative[F].unit
   }
+
+  val USLocale: Locale = new Locale("en", "US")
 }

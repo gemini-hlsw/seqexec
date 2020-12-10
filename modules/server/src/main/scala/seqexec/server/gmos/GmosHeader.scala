@@ -117,7 +117,7 @@ object GmosHeader {
             buildDouble(gmosReader.gratingWavelength, KeywordName.GRWLEN),
             buildDouble(gmosReader.gratingAdjustedWavelength, KeywordName.CENTWAVE),
             buildInt32(gmosReader.gratingOrder, KeywordName.GRORDER),
-            buildDouble(gmosReader.gratingTilt, KeywordName.GRTILT),
+            buildDoublePrecision(gmosReader.gratingTilt, 4, KeywordName.GRTILT),
             buildDouble(gmosReader.gratingStep, KeywordName.GRSTEP),
             buildDouble(gmosReader.dtaX, KeywordName.DTAX),
             buildDouble(gmosReader.dtaY, KeywordName.DTAY),
