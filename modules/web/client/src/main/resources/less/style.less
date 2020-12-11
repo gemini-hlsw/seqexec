@@ -64,7 +64,7 @@ body {
 .ui.darkolive.label {
   background-color: #5d642d !important;
   border-color: #5d642d !important;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
 }
 
 @keyframes border-dance {
@@ -180,12 +180,13 @@ body {
 }
 
 .SeqexecStyles-emptyInstrumentTabLogHidden {
-  height: ~"calc(100vh - 25.2em)";
+  height: ~"calc(100vh - 24.2em)";
 }
 
 .SeqexecStyles-tabSegment {
   min-height: 20.4em;
   padding: 0.4em !important;
+  margin-bottom: 0 !important;
 }
 
 .SeqexecStyles-tabSegmentLogHidden {
@@ -205,7 +206,7 @@ body {
 }
 
 .SeqexecStyles-tabSegmentLogHiddenUnauth {
-  height: ~"calc(100vh - 30.1em)";
+  height: ~"calc(100vh - 29.1em)";
 }
 
 .SeqexecStyles-tabSegmentLogShownUnauth {
@@ -452,7 +453,8 @@ body {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: @table_detail_row_top_padding @table_detail_row_right_padding @table_detail_row_bottom_padding @table_row_left_padding;
+  padding: @table_detail_row_top_padding @table_detail_row_right_padding
+    @table_detail_row_bottom_padding @table_row_left_padding;
   z-index: 100;
   position: relative;
 }
@@ -1320,6 +1322,10 @@ p.SeqexecStyles-confirmLine {
   font-weight: bold;
 }
 
+.SeqexecStyles-loginError {
+  padding: 1em;
+}
+
 @media only screen and (max-width: 767px) {
   .SeqexecStyles-notInMobile {
     display: none !important;
@@ -1400,4 +1406,3 @@ p.SeqexecStyles-confirmLine {
     height: ~"calc(100vh - 35.9em)";
   }
 }
-

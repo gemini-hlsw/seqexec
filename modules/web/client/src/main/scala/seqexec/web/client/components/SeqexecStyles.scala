@@ -19,6 +19,9 @@ object SeqexecStyles {
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
 
+  val LoginError: Css =
+    Css("SeqexecStyles-loginError")
+
   val ConfirmLine: Css =
     Css("SeqexecStyles-confirmLine")
 

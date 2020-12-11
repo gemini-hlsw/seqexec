@@ -112,7 +112,9 @@ object SequenceTabContent {
         ).combineAll
 
       TabPane(active = p.content.isActive,
-              as = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
+              as = As.Segment(
+                Segment(compact = true, attached = SegmentAttached.Attached, secondary = true)
+              ),
               clazz = tabClazz
       )(
         dataTab := instrument.show,

@@ -113,18 +113,19 @@ object LoginBox {
               GridColumn(
                 textAlign = Left,
                 floated = floats.Left,
-                width = Six,
-                color = Red
+                width = Ten,
+                color = Red,
+                stretched = true,
+                clazz = SeqexecStyles.LoginError
               )(
-                Icon("attention"),
-                m
+                <.div(Icon("attention"), m)
               )
             ),
             (
               GridColumn(
                 textAlign = Right,
                 floated = floats.Right,
-                width = Ten
+                width = Six
               )(
                 Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
                 Button(^.tpe := "submit")("Login")
