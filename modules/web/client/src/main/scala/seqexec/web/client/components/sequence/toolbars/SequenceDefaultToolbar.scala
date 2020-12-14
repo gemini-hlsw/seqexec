@@ -7,9 +7,6 @@ import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.semanticui.collections.grid._
-import react.semanticui.floats._
-import react.semanticui.widths._
 import seqexec.model.Observation
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
@@ -34,25 +31,19 @@ object SequenceDefaultToolbar {
     .builder[Props]("SequenceDefaultToolbar")
     .stateless
     .render_P(p =>
-      Grid(
-        GridRow(columns = Two, clazz = SeqexecStyles.shorterRow)(
-          GridColumn(floated = Left,
-                     computer = Eight,
-                     tablet = Eight,
-                     only = GridOnly.Computer,
-                     clazz = SeqexecStyles.infoOnControl
-          )(
-            p.controlReader(_() match {
-              case Some(c) => SequenceControl(c)
-              case _       => <.div()
-            })
-          ),
-          GridColumn(floated = Right, clazz = SeqexecStyles.infoOnControl)(
-            p.observerReader(_() match {
-              case Some(p) => SequenceInfo(p)
-              case _       => <.div()
-            })
-          )
+      <.div(
+        SeqexecStyles.SequencesControl,
+        <.div(SeqexecStyles.SequenceControlButtons)(
+          p.controlReader(_() match {
+            case Some(c) => SequenceControl(c)
+            case _       => <.div()
+          })
+        ),
+        <.div(SeqexecStyles.SequenceInfo)(
+          p.observerReader(_() match {
+            case Some(p) => SequenceInfo(p)
+            case _       => <.div()
+          })
         )
       )
     )

@@ -19,7 +19,6 @@ import seqexec.web.client.actions.RequestRun
 import seqexec.web.client.actions.RequestSync
 import seqexec.web.client.actions.RunOptions
 import seqexec.web.client.circuit._
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.CancelPauseOperation
 import seqexec.web.client.model.PauseOperation
@@ -137,7 +136,6 @@ object SequenceControl {
         val nextStepToRun                                  = nextStep.foldMap(_ + 1)
 
         <.div(
-          SeqexecStyles.controlButtons,
           List(
             // Sync button
             syncButton(id, p.canSync)

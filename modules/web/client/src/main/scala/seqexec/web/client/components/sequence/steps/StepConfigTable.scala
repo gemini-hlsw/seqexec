@@ -188,18 +188,14 @@ object StepConfigTable {
     .initialStateFromProps(_.startState)
     .render(b =>
       TableContainer(
-        TableContainer.Props(
-          true,
-          size =>
-            if (size.width.toInt > 0) {
-              Table(settingsTableProps(b, size),
-                    b.state.columnBuilder(size, colBuilder(b, size)): _*
-              )
-            } else {
-              <.div()
-            },
-          onResize = _ => Callback.empty
-        )
+        true,
+        size =>
+          if (size.width.toInt > 0) {
+            Table(settingsTableProps(b, size), b.state.columnBuilder(size, colBuilder(b, size)): _*)
+          } else {
+            <.div()
+          },
+        onResize = _ => Callback.empty
       )
     )
     .configure(Reusability.shouldComponentUpdate)
