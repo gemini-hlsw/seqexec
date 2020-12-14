@@ -19,6 +19,24 @@ object SeqexecStyles {
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
 
+  val TabControls: Css =
+    Css("SeqexecStyles-tabControls")
+
+  val TabTable: Css =
+    Css("SeqexecStyles-tabTable")
+
+  val ConfigTableControls: Css =
+    Css("SeqexecStyles-configTableControls")
+
+  val SequencesControl: Css =
+    Css("SeqexecStyles-sequencesControl")
+
+  val MainUI: Css =
+    Css("SeqexecStyles-mainUI")
+
+  val Footer: Css =
+    Css("SeqexecStyles-footer")
+
   val LoginError: Css =
     Css("SeqexecStyles-loginError")
 
@@ -83,6 +101,8 @@ object SeqexecStyles {
 
   val fieldsNoBottom: Css = Css("SeqexecStyles-fieldsNoBottom")
 
+  val SequenceInfo: Css = Css("SeqexecStyles-sequenceInfo")
+
   val headerSideBarStyle: Css =
     Css("SeqexecStyles-headerSidebarStyle")
 
@@ -97,32 +117,7 @@ object SeqexecStyles {
 
   val tabSegment: Css = Css("SeqexecStyles-tabSegment")
 
-  val tabSegmentLogHidden: Css =
-    Css("SeqexecStyles-tabSegmentLogHidden")
-
-  val tabSegmentLogShown: Css =
-    Css("SeqexecStyles-tabSegmentLogShown")
-
-  val tabSegmentUnauth: Css =
-    Css("SeqexecStyles-tabSegmentUnauth")
-
-  val tabSegmentLogHiddenUnauth: Css =
-    Css("SeqexecStyles-tabSegmentLogHiddenUnauth")
-
-  val tabSegmentLogShownUnauth: Css =
-    Css("SeqexecStyles-tabSegmentLogShownUnauth")
-
-  val tableContainerNoControls: Css =
-    Css("SeqexecStyles-tableContainerNoControls")
-
-  val tableContainer: Css =
-    Css("SeqexecStyles-tableContainer")
-
-  val controlButtons: Css = Css("SeqexecStyles-controlButtons")
-
-  val infoOnControl: Css = Css("SeqexecStyles-infoOnControl")
-
-  val sequencesArea: Css = Css("SeqexecStyles-sequencesArea")
+  val SequenceControlButtons: Css = Css("SeqexecStyles-sequenceControlButtons")
 
   // Sometimes we need to manually add css
   val item: Css = Css("item")
@@ -149,7 +144,11 @@ object SeqexecStyles {
 
   val logTableRow: Css = Css("SeqexecStyles-logTableRow")
 
+  val logTable: Css = Css("SeqexecStyles-logTable")
+
   val selectorFields: Css = Css("SeqexecStyles-selectorFields")
+
+  val logLevelBox: Css = Css("SeqexecStyles-logLevelBox")
 
   val queueTextColumn: Css =
     Css("SeqexecStyles-queueTextColumn")
