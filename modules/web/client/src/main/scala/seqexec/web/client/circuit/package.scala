@@ -201,11 +201,17 @@ package circuit {
   }
 
   @Lenses
-  final case class SequenceControlFocus(canOperate: Boolean, control: ControlModel)
+  final case class SequenceControlFocus(
+    instrument: Instrument,
+    obsId:      Observation.Id,
+    overrides:  SystemOverrides,
+    canOperate: Boolean,
+    control:    ControlModel
+  )
 
   object SequenceControlFocus {
     implicit val eq: Eq[SequenceControlFocus] =
-      Eq.by(x => (x.canOperate, x.control))
+      Eq.by(x => (x.instrument, x.obsId, x.overrides, x.canOperate, x.control))
 
     def seqControlG(
       id: Observation.Id
@@ -214,7 +220,12 @@ package circuit {
         SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
-          SequenceControlFocus(status, ControlModel.controlModelG.get(tab)).some
+          SequenceControlFocus(tab.instrument,
+                               tab.obsId,
+                               tab.sequence.overrides,
+                               status,
+                               ControlModel.controlModelG.get(tab)
+          ).some
         case _                                        => none
       }
     }

@@ -19,6 +19,9 @@ object SeqexecStyles {
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
 
+  val SubsystemsForm: Css =
+    Css("SeqexecStyles-subsystemsForm")
+
   val TabControls: Css =
     Css("SeqexecStyles-tabControls")
 
@@ -116,6 +119,8 @@ object SeqexecStyles {
     Css("SeqexecStyles-emptyInstrumentTabLogHidden")
 
   val tabSegment: Css = Css("SeqexecStyles-tabSegment")
+
+  val SequenceControlForm: Css = Css("SeqexecStyles-sequenceControlForm")
 
   val SequenceControlButtons: Css = Css("SeqexecStyles-sequenceControlButtons")
 

@@ -15,6 +15,7 @@ final case class SequenceView(
   id:         Observation.Id,
   metadata:   SequenceMetadata,
   status:     SequenceState,
+  overrides:  SystemOverrides,
   steps:      List[Step],
   willStopIn: Option[Int]
 ) {

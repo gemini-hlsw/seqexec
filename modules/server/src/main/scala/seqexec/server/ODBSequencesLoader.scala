@@ -16,6 +16,7 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.engine.Event
 import seqexec.engine.Sequence
 import seqexec.model.Observation
+import seqexec.model.SystemOverrides
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent._
 import seqexec.server.SeqexecFailure.SeqexecException

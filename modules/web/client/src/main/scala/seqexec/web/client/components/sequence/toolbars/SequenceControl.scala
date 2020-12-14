@@ -5,13 +5,17 @@ package seqexec.web.client.components.sequence.toolbars
 
 import cats.syntax.all._
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
+import monocle.macros.Lenses
 import mouse.all._
 import react.common._
+import react.semanticui.collections.form.FormCheckbox
 import react.semanticui.colors._
+import react.semanticui.elements.button.Button
 import seqexec.model.Observation
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
@@ -19,6 +23,7 @@ import seqexec.web.client.actions.RequestRun
 import seqexec.web.client.actions.RequestSync
 import seqexec.web.client.actions.RunOptions
 import seqexec.web.client.circuit._
+import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.CancelPauseOperation
 import seqexec.web.client.model.PauseOperation
@@ -26,6 +31,11 @@ import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.controlButton
+import react.semanticui.modules.popup.Popup
+import seqexec.web.client.services.SeqexecWebClient
+import japgolly.scalajs.react.AsyncCallback
+import scala.concurrent.ExecutionContext.Implicits.global
+import seqexec.model.SystemOverrides
 
 final case class SequenceControl(p: SequenceControlFocus)
     extends ReactProps[SequenceControl](SequenceControl.component) {
@@ -64,6 +74,10 @@ final case class SequenceControl(p: SequenceControlFocus)
 object SequenceControl {
   type Props = SequenceControl
 
+  @Lenses
+  final case class State(subsystems: Boolean)
+
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestRun(s: Observation.Id): Callback =
@@ -126,16 +140,48 @@ object SequenceControl {
       text = "Pause"
     )
 
+  private def subsystemsButton($ : RenderScope[Props, State, Unit], overrides: SystemOverrides) =
+    <.div(
+      SeqexecStyles.SubsystemsForm,
+      Popup(
+        content = "Enable/Disable subsystems",
+        trigger = Button(icon = true,
+                         active = $.state.subsystems,
+                         toggle = true,
+                         onClick = $.modStateL(State.subsystems)(x => !x)
+        )(IconTools)
+      ),
+      FormCheckbox(
+        label = "TCS",
+        checked = overrides.isTcsEnabled,
+        onClick = AsyncCallback
+          .fromFuture(SeqexecWebClient.toggleTCS($.props.p.obsId, !overrides.isTcsEnabled))
+          .toCallback
+      )
+        .when($.state.subsystems),
+      FormCheckbox(
+        label = "GCAL",
+        onClick =
+          AsyncCallback.fromFuture(SeqexecWebClient.toggleTCS($.props.p.obsId, false)).toCallback
+      ).when($.state.subsystems),
+      FormCheckbox(label = $.props.p.instrument.show,
+                   onClick = AsyncCallback
+                     .fromFuture(SeqexecWebClient.toggleTCS($.props.p.obsId, false))
+                     .toCallback
+      ).when($.state.subsystems)
+    )
+
   private def component =
     ScalaComponent
       .builder[Props]("SequenceControl")
-      .stateless
-      .render_P { p =>
-        val SequenceControlFocus(_, control)               = p.p
-        val ControlModel(id, partial, nextStep, status, _) = control
-        val nextStepToRun                                  = nextStep.foldMap(_ + 1)
+      .initialState(State(false))
+      .renderP { ($, p) =>
+        val SequenceControlFocus(_, _, overrides, _, control) = p.p
+        val ControlModel(id, partial, nextStep, status, _)    = control
+        val nextStepToRun                                     = nextStep.foldMap(_ + 1)
 
         <.div(
+          SeqexecStyles.SequenceControlForm,
           List(
             // Sync button
             syncButton(id, p.canSync)
@@ -149,11 +195,10 @@ object SequenceControl {
             // Pause button
             pauseButton(id, p.canPause)
               .when(status.isRunning && !status.userStopRequested)
-          ).toTagMod
+          ).toTagMod,
+          subsystemsButton($, overrides).when(status.isIdle || status.isError)
         )
       }
       .build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] =
-    component(p)
 }

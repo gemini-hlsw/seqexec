@@ -86,7 +86,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     sequences: SequencesQueue[SequenceView]
   ): SequencesQueue[SequenceView] =
     sequences.copy(sessionQueue = sequences.sessionQueue.filter {
-      case SequenceView(_, metadata, _, _, _) =>
+      case SequenceView(_, metadata, _, _, _, _) =>
         value.site
           .exists(_.instruments.toList.contains(metadata.instrument))
     })
@@ -241,6 +241,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
+      println(s)
       val sequences            = filterSequences(s.view)
       val resourceRunRequested =
         SequencesQueue

@@ -75,7 +75,8 @@ trait ModelBooPicklers extends BooPicklerSyntax {
   implicit val instrumentPickler   = enumeratedPickler[Instrument]
   implicit val resourcePickler     = enumeratedPickler[Resource]
 
-  implicit val operatorPickler = generatePickler[Operator]
+  implicit val operatorPickler  = generatePickler[Operator]
+  implicit val overridesPickler = generatePickler[SystemOverrides]
 
   implicit val systemNamePickler = enumeratedPickler[SystemName]
 
@@ -298,6 +299,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
   implicit val acProgressPickler                  = generatePickler[AlignAndCalibEvent]
   implicit val singleActionEventPickler           = generatePickler[SingleActionEvent]
   implicit val nullEventPickler                   = generatePickler[NullEvent.type]
+  implicit val overridesUpdatedPickler            = generatePickler[OverridesUpdated]
 
   // Composite pickler for the seqexec event hierarchy
   implicit val eventsPickler = compositePickler[SeqexecEvent]
@@ -333,6 +335,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
     .addConcreteType[ObservationProgressEvent]
     .addConcreteType[SingleActionEvent]
     .addConcreteType[AlignAndCalibEvent]
+    .addConcreteType[OverridesUpdated]
     .addConcreteType[NullEvent.type]
 
   implicit val userLoginPickler = generatePickler[UserLoginRequest]

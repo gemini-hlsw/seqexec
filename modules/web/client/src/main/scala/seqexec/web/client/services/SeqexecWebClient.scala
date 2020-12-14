@@ -46,6 +46,13 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
+  def toggleTCS(id: Observation.Id, enabled: Boolean): Future[Unit] =
+    Ajax
+      .post(
+        url = s"$baseUrl/commands/${encodeURI(id.format)}/tcsEnabled/$enabled"
+      )
+      .void
+
   def sync(id: Observation.Id): Future[Unit] =
     Ajax
       .post(

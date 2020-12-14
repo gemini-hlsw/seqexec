@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.data.NonEmptySet
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.`enum`.NodAndShuffleStage
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 

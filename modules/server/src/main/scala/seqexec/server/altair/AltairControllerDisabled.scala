@@ -6,7 +6,7 @@ package seqexec.server.altair
 import cats.Applicative
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 import seqexec.server.altair.AltairController.FieldLens
 import seqexec.server.tcs.Gaos
 import seqexec.server.tcs.Gaos.PauseResume

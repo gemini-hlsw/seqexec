@@ -1533,7 +1533,7 @@ object SeqexecEngine {
       case NullSeqEvent                       => Stream.empty
       case SetOperator(_, _)                  => Stream.emit(OperatorUpdated(svs))
       case SetObserver(_, _, _)               => Stream.emit(ObserverUpdated(svs))
-      case SetTcsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
+      case SetTcsEnabled(_, _, _)             => Stream.emit(OverridesUpdated(svs))
       case SetGcalEnabled(_, _, _)            => Stream.empty //TODO: Put proper SeqexecModelUpdate
       case SetInstrumentEnabled(_, _, _)      => Stream.empty //TODO: Put proper SeqexecModelUpdate
       case SetDhsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
@@ -1622,6 +1622,7 @@ object SeqexecEngine {
     SequenceView(seq.id,
                  SequenceMetadata(instrument, obsSeq.observer, obsSeq.seqGen.title),
                  st.status,
+                 obsSeq.overrides,
                  engineSteps(seq),
                  None
     )

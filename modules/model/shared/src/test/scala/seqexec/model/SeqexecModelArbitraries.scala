@@ -90,14 +90,24 @@ trait SeqexecModelArbitraries {
     } yield s
   }
 
+  implicit val sysOverArb = Arbitrary[SystemOverrides] {
+    for {
+      tcs  <- arbitrary[Boolean]
+      inst <- arbitrary[Boolean]
+      gcal <- arbitrary[Boolean]
+      dhs  <- arbitrary[Boolean]
+    } yield SystemOverrides(tcs, inst, gcal, dhs)
+  }
+
   implicit val svArb  = Arbitrary[SequenceView] {
     for {
       id <- arbitrary[Observation.Id]
       m  <- arbitrary[SequenceMetadata]
       s  <- arbitrary[SequenceState]
+      o  <- arbitrary[SystemOverrides]
       t  <- arbitrary[List[Step]]
       i  <- arbitrary[Option[Int]]
-    } yield SequenceView(id, m, s, t, i)
+    } yield SequenceView(id, m, s, o, t, i)
   }
   implicit val sqvArb = sequencesQueueArb[SequenceView]
 
@@ -119,10 +129,15 @@ trait SeqexecModelArbitraries {
   implicit val smCogen: Cogen[SequenceMetadata] =
     Cogen[(Instrument, Option[Observer], String)].contramap(s => (s.instrument, s.observer, s.name))
 
-  implicit val svCogen: Cogen[SequenceView] =
-    Cogen[(Observation.Id, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s =>
-      (s.id, s.metadata, s.status, s.steps, s.willStopIn)
+  implicit val sysOverCogen: Cogen[SystemOverrides] =
+    Cogen[(Boolean, Boolean, Boolean, Boolean)].contramap(x =>
+      (x.isTcsEnabled, x.isInstrumentEnabled, x.isGcalEnabled, x.isDhsEnabled)
     )
+
+  implicit val svCogen: Cogen[SequenceView] =
+    Cogen[
+      (Observation.Id, SequenceMetadata, SequenceState, SystemOverrides, List[Step], Option[Int])
+    ].contramap(s => (s.id, s.metadata, s.status, s.overrides, s.steps, s.willStopIn))
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
     Cogen[(Conditions, Option[Operator], List[A])].contramap(s =>
