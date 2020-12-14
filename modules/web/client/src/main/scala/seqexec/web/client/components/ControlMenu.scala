@@ -92,6 +92,7 @@ object ControlMenu {
             )
           case None    =>
             MenuItem()(
+              helpButton,
               soundConnect(x => SoundControl(x())),
               loginButton(status.isConnected)
             )
