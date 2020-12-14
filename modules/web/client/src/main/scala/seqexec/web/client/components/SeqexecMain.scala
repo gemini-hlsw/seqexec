@@ -91,7 +91,7 @@ object SeqexecMain {
           <.div(SeqexecStyles.logArea)(
             logConnect(l => LogArea(p.site, l()))
           ),
-            Footer(p.ctl, p.site)
+          Footer(p.ctl, p.site)
         ),
         lbConnect(p => LoginBox(p())),
         userNotificationConnect(p => UserNotificationBox(p())),

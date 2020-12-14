@@ -28,9 +28,7 @@ object TableContainer {
   private val component = ScalaComponent
     .builder[Props]("TableContainer")
     .stateless
-    .render_P(p =>
-      AutoSizer(AutoSizer.props(p.table, onResize = p.onResize))
-    )
+    .render_P(p => AutoSizer(AutoSizer.props(p.table, onResize = p.onResize)))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
