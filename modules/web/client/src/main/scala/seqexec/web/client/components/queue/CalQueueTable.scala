@@ -47,10 +47,106 @@ import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.reusability._
 import web.client.table._
 
+// ScalaJS defined trait
+trait CalQueueRow extends js.Object {
+  var obsId: Observation.Id
+  var instrument: Instrument
+  var status: SequenceState
+}
+
+object CalQueueRow {
+
+  def apply(obsId: Observation.Id, instrument: Instrument, status: SequenceState): CalQueueRow = {
+    val p = (new js.Object).asInstanceOf[CalQueueRow]
+    p.obsId = obsId
+    p.instrument = instrument
+    p.status = status
+    p
+  }
+
+  def unapply(l: CalQueueRow): Option[(Observation.Id, Instrument, SequenceState)] =
+    Some((l.obsId, l.instrument, l.status))
+
+  def Empty: CalQueueRow =
+    apply(Observation.Id.unsafeFromString("Default-1"), Instrument.F2, SequenceState.Idle)
+}
+
+final case class CalQueueTable(queueId: QueueId, data: CalQueueFocus)
+    extends ReactProps[CalQueueTable](CalQueueTable.component) {
+  val rowCount: Int = data.seqs.size
+
+  val canOperate: Boolean = data.status.canOperate
+
+  def moveSeq[T: Eq](list: List[T], i: Int, value: T): List[T] = {
+    val (front, back) = list.splitAt(i)
+    front.filterNot(_ === value) ++ List(value) ++ back.filterNot(_ === value)
+  }
+
+  def rowGetter(s: CalQueueTable.State)(i: Int): CalQueueRow = {
+    val moved = s.moved
+      .flatMap(c => data.seqs.lift(c._2.oldIndex).map(o => moveSeq(data.seqs, c._2.newIndex, o)))
+      .getOrElse(data.seqs)
+    moved
+      .lift(i)
+      .map(s => CalQueueRow(s.id, s.i, s.status))
+      .getOrElse(CalQueueRow.Empty)
+  }
+
+  def seqState(id: Observation.Id): Option[QueueSeqOperations] =
+    CalQueueFocus.seqQueueOpsT(id).headOption(data)
+
+  val clearOp: Boolean = data.lastOp match {
+    case Some(QueueManipulationOp.Clear(_)) => true
+    case _                                  => false
+  }
+
+  /**
+   * Rows added on the last operation
+   */
+  val addedRows: List[Observation.Id] = data.lastOp match {
+    case Some(QueueManipulationOp.AddedSeqs(_, x)) => x
+    case _                                         => Nil
+  }
+
+  /**
+   * Rows deleted on the last operation
+   */
+  val removedRows: List[Int] = data.lastOp match {
+    case Some(QueueManipulationOp.RemovedSeqs(_, _, i)) => i
+    case _                                              => Nil
+  }
+
+  /**
+   * Rows deleted on the last operation
+   */
+  val movedRows: List[Observation.Id] = data.lastOp match {
+    case Some(QueueManipulationOp.Moved(_, _, o, _)) => List(o)
+    case _                                           => Nil
+  }
+
+  val afterDeletedRows: List[Int] =
+    data.seqs.zipWithIndex
+      .find { case (_, i) =>
+        removedRows.contains(i)
+      }
+      .map(i => (i._2 to rowCount).toList)
+      .orEmpty
+
+  val upLifted: List[Int] =
+    data.seqs.zipWithIndex
+      .find { case (s, _) =>
+        seqState(s.id).exists(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+      }
+      .map(i => ((i._2 + 1) to rowCount).toList)
+      .orEmpty
+}
+
 /**
  * Calibration queue table
  */
 object CalQueueTable {
+  type Props = CalQueueTable
+
   sealed trait TableColumn     extends Product with Serializable
   case object RemoveSeqColumn  extends TableColumn
   case object StateSeqColumn   extends TableColumn
@@ -106,75 +202,6 @@ object CalQueueTable {
   val ro: NonEmptyList[ColumnMeta[TableColumn]] =
     NonEmptyList.of(StateSeqMeta, ObsIdColumnMeta, InstrumentColumnMeta)
 
-  final case class Props(queueId: QueueId, data: CalQueueFocus) {
-    val rowCount: Int = data.seqs.size
-
-    val canOperate: Boolean = data.status.canOperate
-
-    def moveSeq[T: Eq](list: List[T], i: Int, value: T): List[T] = {
-      val (front, back) = list.splitAt(i)
-      front.filterNot(_ === value) ++ List(value) ++ back.filterNot(_ === value)
-    }
-
-    def rowGetter(s: State)(i: Int): CalQueueRow = {
-      val moved = s.moved
-        .flatMap(c => data.seqs.lift(c._2.oldIndex).map(o => moveSeq(data.seqs, c._2.newIndex, o)))
-        .getOrElse(data.seqs)
-      moved
-        .lift(i)
-        .map(s => CalQueueRow(s.id, s.i, s.status))
-        .getOrElse(CalQueueRow.Empty)
-    }
-
-    def seqState(id: Observation.Id): Option[QueueSeqOperations] =
-      CalQueueFocus.seqQueueOpsT(id).headOption(data)
-
-    val clearOp: Boolean = data.lastOp match {
-      case Some(QueueManipulationOp.Clear(_)) => true
-      case _                                  => false
-    }
-
-    /**
-     * Rows added on the last operation
-     */
-    val addedRows: List[Observation.Id] = data.lastOp match {
-      case Some(QueueManipulationOp.AddedSeqs(_, x)) => x
-      case _                                         => Nil
-    }
-
-    /**
-     * Rows deleted on the last operation
-     */
-    val removedRows: List[Int] = data.lastOp match {
-      case Some(QueueManipulationOp.RemovedSeqs(_, _, i)) => i
-      case _                                              => Nil
-    }
-
-    /**
-     * Rows deleted on the last operation
-     */
-    val movedRows: List[Observation.Id] = data.lastOp match {
-      case Some(QueueManipulationOp.Moved(_, _, o, _)) => List(o)
-      case _                                           => Nil
-    }
-
-    val afterDeletedRows: List[Int] =
-      data.seqs.zipWithIndex
-        .find { case (_, i) =>
-          removedRows.contains(i)
-        }
-        .map(i => (i._2 to rowCount).toList)
-        .orEmpty
-
-    val upLifted: List[Int] =
-      data.seqs.zipWithIndex
-        .find { case (s, _) =>
-          seqState(s.id).exists(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
-        }
-        .map(i => ((i._2 + 1) to rowCount).toList)
-        .orEmpty
-  }
-
   @Lenses
   final case class State(
     tableState:        TableState[TableColumn],
@@ -205,30 +232,6 @@ object CalQueueTable {
     Reusability.derive[IndexChange]
   implicit val stateReuse: Reusability[State]    =
     Reusability.by(x => (x.tableState, x.moved))
-
-  // ScalaJS defined trait
-  trait CalQueueRow extends js.Object {
-    var obsId: Observation.Id
-    var instrument: Instrument
-    var status: SequenceState
-  }
-
-  object CalQueueRow {
-
-    def apply(obsId: Observation.Id, instrument: Instrument, status: SequenceState): CalQueueRow = {
-      val p = (new js.Object).asInstanceOf[CalQueueRow]
-      p.obsId = obsId
-      p.instrument = instrument
-      p.status = status
-      p
-    }
-
-    def unapply(l: CalQueueRow): Option[(Observation.Id, Instrument, SequenceState)] =
-      Some((l.obsId, l.instrument, l.status))
-
-    def Empty: CalQueueRow =
-      apply(Observation.Id.unsafeFromString("Default-1"), Instrument.F2, SequenceState.Idle)
-  }
 
   val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
@@ -426,30 +429,29 @@ object CalQueueTable {
 
     def render(p: Props, s: State): VdomElement =
       TableContainer(
-        TableContainer.Props(
-          p.canOperate,
-          size =>
-            if (size.width.toInt > 0) {
-              val sortableList =
-                SortableContainer.wrapC(Table.component,
-                                        s.tableState
-                                          .columnBuilder(size, colBuilder(p, s, size))
-                                          .map(_.vdomElement)
-                )
-
-              // If distance is 0 we can miss some events
-              val cp = SortableContainer.Props(
-                onSortEnd = requestMove,
-                shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
-                helperClass = (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
-                distance = 3
+        p.canOperate,
+        size =>
+          if (size.width.toInt > 0) {
+            println(size.height)
+            val sortableList =
+              SortableContainer.wrapC(Table.component,
+                                      s.tableState
+                                        .columnBuilder(size, colBuilder(p, s, size))
+                                        .map(_.vdomElement)
               )
-              sortableList(cp)(table(p, s)(size))
-            } else {
-              <.div()
-            },
-          onResize = _ => Callback.empty
-        )
+
+            // If distance is 0 we can miss some events
+            val cp = SortableContainer.Props(
+              onSortEnd = requestMove,
+              shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
+              helperClass = (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
+              distance = 3
+            )
+            sortableList(cp)(table(p, s)(size))
+          } else {
+            <.div()
+          },
+        onResize = _ => Callback.empty
       )
   }
 
