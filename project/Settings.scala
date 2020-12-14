@@ -74,7 +74,7 @@ object Settings {
     val gmpStatusGateway    = "0.3.3"
     val gmpStatusDatabase   = "0.3.3"
     val gmpCmdClientBridge  = "0.6.3"
-    val guava               = "25.1-jre"
+    val guava               = "30.1-jre"
     val prometheusClient    = "0.9.0"
     val geminiLocales       = "0.5.0"
     val pprint              = "0.6.0"
