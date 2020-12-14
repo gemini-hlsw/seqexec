@@ -113,4 +113,5 @@ final class BoopicklingSpec extends munit.DisciplineSuite with ModelBooPicklers 
   checkAll("Pickler[M1GuideConfig]", PicklerTests[M1GuideConfig].pickler)
   checkAll("Pickler[M2GuideConfig]", PicklerTests[M2GuideConfig].pickler)
   checkAll("Pickler[TelescopeGuideConfig]", PicklerTests[TelescopeGuideConfig].pickler)
+  checkAll("Pickler[SystemOverrides]", PicklerTests[SystemOverrides].pickler)
 }

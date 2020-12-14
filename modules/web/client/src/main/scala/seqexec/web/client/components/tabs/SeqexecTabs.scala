@@ -30,13 +30,13 @@ object SeqexecTabs {
   private val tabConnect                      = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
 
   val component = ScalaComponent
-    .builder[Props]("InstrumentsMenu")
+    .builder[Props]
     .stateless
     .render_P(p =>
       tabConnect { x =>
         val tabsL                = x().tabs.toList
         val runningInstruments   = tabsL.collect {
-          case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
+          case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _, _, _)) =>
             i
         }
         val tabs: List[VdomNode] =
@@ -48,7 +48,13 @@ object SeqexecTabs {
             }
             .map {
               case Right(t) =>
-                SequenceTab(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)
+                SequenceTab(p.router,
+                            t,
+                            x().canOperate,
+                            x().defaultObserver,
+                            t.systemOverrides,
+                            runningInstruments
+                )
               case Left(t)  =>
                 CalibrationQueueTab(p.router, t)
             }

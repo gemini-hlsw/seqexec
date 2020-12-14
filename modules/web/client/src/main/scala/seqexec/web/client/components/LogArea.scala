@@ -30,6 +30,7 @@ import react.clipboard._
 import react.common._
 import react.common.implicits._
 import react.semanticui.collections.form.Form
+import react.semanticui.collections.form.FormCheckbox
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.segment.Segment
@@ -47,7 +48,6 @@ import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.reusability._
 import web.client.table._
-import react.semanticui.collections.form.FormCheckbox
 
 /**
  * Area to display a sequence's log

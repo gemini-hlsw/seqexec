@@ -22,7 +22,9 @@ import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
+import seqexec.model.SystemOverrides
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -39,6 +41,7 @@ final case class SequenceTab(
   tab:                AvailableTab,
   loggedIn:           Boolean,
   defaultObserver:    Observer,
+  systemOverrides:    SystemOverrides,
   runningInstruments: List[Instrument]
 ) extends ReactProps[SequenceTab](SequenceTab.component)
 
@@ -163,17 +166,34 @@ object SequenceTab {
           Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
         )
 
+      val disabledSubsystems =
+        <.div(
+          SeqexecStyles.resourceLabels,
+          List(
+            ("TCS", b.props.systemOverrides.isTcsEnabled),
+            ("GCAL", b.props.systemOverrides.isGcalEnabled),
+            ("DHS", b.props.systemOverrides.isDhsEnabled),
+            ("INST", b.props.systemOverrides.isInstrumentEnabled)
+          ).map { case (l, b) => <.div(SeqexecStyles.DisabledSubsystem, l).unless(b) }.toTagMod
+        )
+
       val resourceLabels =
         <.div(
           SeqexecStyles.resourceLabels,
           resources.map { case (r, s) =>
+            val show  = r match {
+              case Resource.TCS  => b.props.systemOverrides.isTcsEnabled
+              case Resource.Gcal => b.props.systemOverrides.isGcalEnabled
+              case _: Instrument => b.props.systemOverrides.isInstrumentEnabled
+              case _             => true
+            }
             val color = s match {
               case ResourceRunOperation.ResourceRunIdle         => Blue // Unused
               case ResourceRunOperation.ResourceRunCompleted(_) => Green
               case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
               case ResourceRunOperation.ResourceRunFailed(_)    => Red
             }
-            s match {
+            (s match {
               case ResourceRunOperation.ResourceRunInFlight(_)  =>
                 Label(color = color, size = Small, clazz = SeqexecStyles.activeResourceLabel)(
                   r.show
@@ -181,7 +201,7 @@ object SequenceTab {
               case ResourceRunOperation.ResourceRunCompleted(_) =>
                 Label(color = color, size = Small)(r.show): VdomNode
               case _                                            => EmptyVdom
-            }
+            }).when(show)
           }.toTagMod
         )
 
@@ -189,6 +209,7 @@ object SequenceTab {
         React.Fragment(
           <.div(SeqexecStyles.instrumentAndResourcesLabel,
                 <.div(SeqexecStyles.tabLabel, dispName),
+                disabledSubsystems,
                 resourceLabels
           ),
           Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)

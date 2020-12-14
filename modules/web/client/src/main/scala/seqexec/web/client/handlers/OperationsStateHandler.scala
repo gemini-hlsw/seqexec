@@ -98,6 +98,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       )
   }
 
+  def handleOverrideControls: PartialFunction[Any, ActionResult[M]] = {
+    case FlipSubystemsControls(id, s) =>
+      updatedL(SequencesOnDisplay.changeOverrideControls(id, s))
+  }
+
   def handleRequestResourceRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestResourceRun(id, s, r) =>
       updatedL(
@@ -257,11 +262,13 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation,
-         handleOperationResult,
-         handleOperationFailed,
-         handleSelectedStep,
-         handleOperationComplete,
-         handleRequestResourceRun
+    List(
+      handleRequestOperation,
+      handleOperationResult,
+      handleOperationFailed,
+      handleSelectedStep,
+      handleOperationComplete,
+      handleRequestResourceRun,
+      handleOverrideControls
     ).combineAll
 }

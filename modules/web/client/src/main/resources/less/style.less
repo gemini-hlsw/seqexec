@@ -76,6 +76,31 @@ body {
       right top 20px;
   }
 }
+.SeqexecStyles-disabledSubsystems {
+  color: @white;
+  background-color: darken(darkgray, 30%);
+  padding: 0.5em 0.8em;
+  line-height: 1;
+  font-size: 0.78571429rem;
+  position: relative;
+  vertical-align: baseline;
+  margin: 0 0.14285714em;
+  padding: 0.5833em 0.833em;
+  text-transform: none;
+  font-weight: bold;
+  border: 0 solid transparent;
+  border-radius: 0.28571429rem;
+  transition: background 0.1s ease;
+  background-image: repeating-linear-gradient(
+    163deg,
+    transparent 0%,
+    transparent 48%,
+    darken(white, 20%) 50%,
+    darken(white, 20%) 58%,
+    transparent 60%,
+    transparent 100%
+  );
+}
 
 .SeqexecStyles-activeGuide {
   background-color: @greenHeaderColor !important;
@@ -202,6 +227,9 @@ body {
   flex-shrink: 1;
 }
 
+.SeqexecStyles-sequenceControlForm {
+  display: flex;
+}
 .SeqexecStyles-sequencesControl {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
@@ -1323,6 +1351,14 @@ p.SeqexecStyles-confirmLine {
   padding: 1em;
 }
 
+.SeqexecStyles-subsystemsForm {
+  display: flex;
+  align-items: center;
+}
+
+.SeqexecStyles-subsystemsForm .field .ui.checkbox {
+  margin-right: 1em;
+}
 @media only screen and (min-width: 767px) {
   .SeqexecStyles-queueAreaRow {
     flex-direction: row;

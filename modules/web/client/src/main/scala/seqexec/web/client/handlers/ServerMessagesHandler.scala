@@ -86,7 +86,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     sequences: SequencesQueue[SequenceView]
   ): SequencesQueue[SequenceView] =
     sequences.copy(sessionQueue = sequences.sessionQueue.filter {
-      case SequenceView(_, metadata, _, _, _) =>
+      case SequenceView(_, metadata, _, _, _, _) =>
         value.site
           .exists(_.instruments.toList.contains(metadata.instrument))
     })

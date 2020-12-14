@@ -50,6 +50,7 @@ package object reusability {
     Reusability.caseClassExcept("config")
   implicit val nsSubexposureReuse: Reusability[NSSubexposure]                       =
     Reusability.derive[NSSubexposure]
+  implicit val overridesReuse: Reusability[SystemOverrides]                         = Reusability.byEq
   implicit val nsRunningStateReuse: Reusability[NSRunningState]                     =
     Reusability.derive[NSRunningState]
   implicit val nsStatus: Reusability[NodAndShuffleStatus]                           =

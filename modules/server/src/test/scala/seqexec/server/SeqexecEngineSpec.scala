@@ -36,6 +36,7 @@ import seqexec.model.{
 }
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
+import seqexec.model.SystemOverrides
 import monocle.Monocle._
 import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.model.dhs.DataId

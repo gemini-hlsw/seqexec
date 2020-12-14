@@ -26,6 +26,7 @@ import seqexec.engine.Result.PartialVal
 import seqexec.model.{ ActionType, ClientId }
 import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.model.dhs._
+import seqexec.model.SystemOverrides
 import seqexec.model.config._
 import seqexec.server.altair.{ AltairControllerSim, AltairKeywordReaderDummy }
 import seqexec.server.flamingos2.Flamingos2ControllerSim

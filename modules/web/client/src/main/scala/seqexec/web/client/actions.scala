@@ -19,6 +19,7 @@ import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.UserPromptResult
 import web.client.table._
@@ -155,6 +156,8 @@ object actions {
   final case class ConnectionError(s: String) extends Action
   final case class ServerMessage(e: SeqexecEvent) extends Action
 
+  final case class FlipSubystemsControls(id: Observation.Id, state: SectionVisibilityState)
+      extends Action
   final case class FlipSkipStep(id: Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
 

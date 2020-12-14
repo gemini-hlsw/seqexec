@@ -199,6 +199,13 @@ object events {
       Eq.by(_.view)
   }
 
+  final case class OverridesUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+  object OverridesUpdated {
+    implicit lazy val equal: Eq[OverridesUpdated] =
+      Eq.by(_.view)
+  }
+
   final case class ConditionsUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
   object ConditionsUpdated {
