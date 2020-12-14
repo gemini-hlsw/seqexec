@@ -11,17 +11,17 @@ import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.virtualized._
 
+final case class TableContainer(
+  hasControls: Boolean,
+  table:       Size => VdomElement,
+  onResize:    Size => Callback
+) extends ReactProps[TableContainer](TableContainer.component)
+
 /**
  * Container for several types of tables
  */
 object TableContainer {
-
-  // Todo use Reusable[A ~=> B]
-  final case class Props(
-    hasControls: Boolean,
-    table:       Size => VdomElement,
-    onResize:    Size => Callback
-  )
+  type Props = TableContainer
 
   implicit val reuse: Reusability[Props] = Reusability.never
 
@@ -29,11 +29,7 @@ object TableContainer {
     .builder[Props]("TableContainer")
     .stateless
     .render_P(p =>
-      <.div(
-        SeqexecStyles.tableContainer.when(p.hasControls),
-        SeqexecStyles.tableContainerNoControls.unless(p.hasControls),
-        AutoSizer(AutoSizer.props(p.table, onResize = p.onResize))
-      )
+      AutoSizer(AutoSizer.props(p.table, onResize = p.onResize))
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

@@ -1030,27 +1030,25 @@ object StepsTable extends Columns {
   // Wire it up from VDOM
   def render($ : Scope): VdomElement =
     TableContainer(
-      TableContainer.Props(
-        $.props.hasControls,
-        size => {
-          val areaSize = Size(size.height, size.width.toInt - $.state.scrollBarWidth)
-          val ts       =
-            $.state.tableState
-              .columnBuilder(areaSize, colBuilder($, areaSize), $.props.columnWidths)
-              .map(_.vdomElement)
+      $.props.hasControls,
+      size => {
+        val areaSize = Size(size.height, size.width.toInt - $.state.scrollBarWidth)
+        val ts       =
+          $.state.tableState
+            .columnBuilder(areaSize, colBuilder($, areaSize), $.props.columnWidths)
+            .map(_.vdomElement)
 
-          if (size.width.toInt > 0)
-            ref
-              .component(stepsTableProps($)(size))(ts: _*)
-              .vdomElement
-          else
-            <.div()
-        },
-        onResize = s =>
-          $.modStateL(State.tableState)(
-            _.recalculateWidths(s, $.props.visibleColumns, $.props.columnWidths)
-          )
-      )
+        if (size.width.toInt > 0)
+          ref
+            .component(stepsTableProps($)(size))(ts: _*)
+            .vdomElement
+        else
+          <.div()
+      },
+      onResize = s =>
+        $.modStateL(State.tableState)(
+          _.recalculateWidths(s, $.props.visibleColumns, $.props.columnWidths)
+        )
     )
 
   def initialState(p: Props): State =

@@ -7,7 +7,6 @@ import cats.syntax.all._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.semanticui.collections.form._
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
 import react.semanticui.sizes._
@@ -32,24 +31,15 @@ object SequenceInfo {
       .stateless
       .render_P { p =>
         val SequenceInfoFocus(isLogged, obsName, status, tName) = p.p
-        val unknownTargetName: TagMod                           =
-          Label(basic = true)(UnknownTargetName)
-        val targetName                                          = tName
+        val targetName: String                                  = tName
           .filter(_.nonEmpty)
-          .fold(unknownTargetName)(t => Label(basic = true)(t))
-        Form(
-          FormGroup(
-            SeqexecStyles.fieldsNoBottom,
-            FormField(
-              Label(color = Green, size = Medium)(IconCheckmark, "Sequence Complete")
-            ).when(status === SequenceState.Completed),
-            FormField(
-              Label(basic = true)(obsName)
-            ).when(isLogged),
-            FormField(
-              targetName
-            ).when(isLogged)
-          )
+          .getOrElse(UnknownTargetName)
+        <.div(
+          SeqexecStyles.SequenceInfo,
+          Label(color = Green, size = Medium)(IconCheckmark, "Sequence Complete")
+            .when(status === SequenceState.Completed),
+          Label(obsName).when(isLogged),
+          Label(targetName).when(isLogged)
         )
       }
       .build

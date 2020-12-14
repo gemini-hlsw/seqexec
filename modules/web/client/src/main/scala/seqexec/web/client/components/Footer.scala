@@ -56,7 +56,7 @@ object Footer {
     .stateless
     .render_P(p =>
       Menu(
-        clazz = Css("footer"),
+        clazz = SeqexecStyles.Footer,
         inverted = true
       )(
         MenuItem(

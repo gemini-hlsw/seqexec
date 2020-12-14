@@ -13,10 +13,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import lucuma.core.enum.Site
 import react.common._
 import react.common.implicits._
-import react.semanticui.collections.grid._
 import react.semanticui.elements.divider.Divider
 import react.semanticui.toasts._
-import react.semanticui.widths._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.tabs.TabsArea
 import seqexec.web.client.model.Pages._
@@ -32,7 +30,7 @@ object AppTitle {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val component = ScalaComponent
-    .builder[Props]("SeqexecTitle")
+    .builder[Props]
     .stateless
     .render_P(p =>
       Divider(as = "h4",
@@ -63,14 +61,15 @@ object SeqexecMain {
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
   private val lbConnect               = SeqexecCircuit.connect(_.uiModel.loginBox)
-  private val logConnect              = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val userNotificationConnect = SeqexecCircuit.connect(_.uiModel.notification)
   private val userPromptConnect       = SeqexecCircuit.connect(_.uiModel.userPrompt)
-  private val headerSideBarConnect    = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
-  private val wsConnect               = SeqexecCircuit.connect(_.ws)
+
+  private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
+  private val logConnect           = SeqexecCircuit.connect(_.uiModel.globalLog)
+  private val wsConnect            = SeqexecCircuit.connect(_.ws)
 
   private val component = ScalaComponent
-    .builder[Props]("SeqexecUI")
+    .builder[Props]
     .stateless
     .render_P(p =>
       React.Fragment(
@@ -78,32 +77,25 @@ object SeqexecMain {
                                animation = SemanticAnimation.FadeUp,
                                clazz = SeqexecStyles.Toast
         ),
-        Grid(padded = GridPadded.Horizontally)(
-          GridRow(clazz = SeqexecStyles.shorterRow),
+        <.div(SeqexecStyles.MainUI)(
           wsConnect(ws => AppTitle(p.site, ws())),
-          GridRow(clazz = SeqexecStyles.shorterRow |+| SeqexecStyles.queueAreaRow)(
-            GridColumn(mobile = Sixteen,
-                       tablet = Ten,
-                       computer = Ten,
-                       clazz = SeqexecStyles.queueArea
-            )(
+          <.div(SeqexecStyles.queueAreaRow)(
+            <.div(SeqexecStyles.queueArea)(
               SessionQueueTableSection(p.ctl)
             ),
-            GridColumn(tablet = Six, computer = Six, clazz = SeqexecStyles.headerSideBarArea)(
+            <.div(SeqexecStyles.headerSideBarArea)(
               headerSideBarConnect(x => HeadersSideBar(x()))
             )
           ),
-          GridRow(clazz = SeqexecStyles.shorterRow)(
-            TabsArea(p.ctl, p.site)
-          ),
-          GridRow(clazz = SeqexecStyles.logArea)(
+          TabsArea(p.ctl, p.site),
+          <.div(SeqexecStyles.logArea)(
             logConnect(l => LogArea(p.site, l()))
-          )
+          ),
+            Footer(p.ctl, p.site)
         ),
         lbConnect(p => LoginBox(p())),
         userNotificationConnect(p => UserNotificationBox(p())),
-        userPromptConnect(p => UserPromptBox(p())),
-        Footer(p.ctl, p.site)
+        userPromptConnect(p => UserPromptBox(p()))
       )
     )
     .configure(Reusability.shouldComponentUpdate)

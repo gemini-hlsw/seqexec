@@ -12,15 +12,11 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import mouse.boolean._
 import react.common._
-import react.semanticui.collections.grid._
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.button.ButtonGroup
 import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.label.Label
-import react.semanticui.floats._
 import react.semanticui.sizes._
-import react.semanticui.verticalalignment.Bottom
-import react.semanticui.widths._
 import seqexec.model.Observation
 import seqexec.model.RunningStep
 import seqexec.model.enum.Instrument
@@ -68,45 +64,42 @@ object StepConfigToolbar {
         SequenceConfigPage(p.instrument, p.id, p.step)
       }
 
-      Grid(
-        GridRow(columns = Three, clazz = SeqexecStyles.shorterRow)(
-          GridColumn(floated = Left, width = Two, clazz = SeqexecStyles.shorterFields)(
-            // Back to sequence button
-            p.router.link(sequencePage)(
-              Button(icon = true,
-                     labelPosition = LabelPosition.Left,
-                     onClick = p.router.setUrlAndDispatchCB(sequencePage)
-              )(IconChevronLeft, "Back")
-            )
-          ),
-          GridColumn(floated = Left, width = Six, verticalAlign = Bottom, only = GridOnly.Computer)(
-            p.sequenceConnect(_() match {
-              case Some(p) => SequenceInfo(p)
-              case _       => React.Fragment()
-            })
-          ),
-          GridColumn(floated = Right, width = Eight, clazz = SeqexecStyles.shorterFields)(
-            ButtonGroup(clazz = Css("right floated"))(
-              // Previous step button
-              (p.step > 0).option(
-                p.router.link(prevStepPage)(
-                  Button(icon = true,
-                         labelPosition = LabelPosition.Left,
-                         onClick = p.router.setUrlAndDispatchCB(prevStepPage)
-                  )(IconChevronLeft, "Prev")
-                )
-              ),
-              Label(size = Large, clazz = SeqexecStyles.labelAsButton)(
-                RunningStep.fromInt(p.step, p.total).getOrElse(RunningStep.Zero).show
-              ),
-              // Next step button
-              (p.step < p.total - 1).option(
-                p.router.link(nextStepPage)(
-                  Button(icon = true,
-                         labelPosition = LabelPosition.Right,
-                         onClick = p.router.setUrlAndDispatchCB(nextStepPage)
-                  )(IconChevronRight, "Next")
-                )
+      <.div(
+        SeqexecStyles.ConfigTableControls,
+        <.div(SeqexecStyles.SequenceControlButtons)(
+          // Back to sequence button
+          p.router.link(sequencePage)(
+            Button(icon = true,
+                   labelPosition = LabelPosition.Left,
+                   onClick = p.router.setUrlAndDispatchCB(sequencePage)
+            )(IconChevronLeft, "Back")
+          )
+        ),
+        p.sequenceConnect(_() match {
+          case Some(p) => SequenceInfo(p)
+          case _       => React.Fragment()
+        }),
+        <.div(SeqexecStyles.SequenceInfo)(
+          ButtonGroup(clazz = Css("right floated"))(
+            // Previous step button
+            (p.step > 0).option(
+              p.router.link(prevStepPage)(
+                Button(icon = true,
+                       labelPosition = LabelPosition.Left,
+                       onClick = p.router.setUrlAndDispatchCB(prevStepPage)
+                )(IconChevronLeft, "Prev")
+              )
+            ),
+            Label(size = Large, clazz = SeqexecStyles.labelAsButton)(
+              RunningStep.fromInt(p.step, p.total).getOrElse(RunningStep.Zero).show
+            ),
+            // Next step button
+            (p.step < p.total - 1).option(
+              p.router.link(nextStepPage)(
+                Button(icon = true,
+                       labelPosition = LabelPosition.Right,
+                       onClick = p.router.setUrlAndDispatchCB(nextStepPage)
+                )(IconChevronRight, "Next")
               )
             )
           )
