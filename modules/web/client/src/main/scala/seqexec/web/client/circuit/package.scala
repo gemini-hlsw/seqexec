@@ -204,7 +204,7 @@ package circuit {
   final case class SequenceControlFocus(
     instrument:             Instrument,
     obsId:                  Observation.Id,
-    overrides:              SystemOverrides,
+    systemOverrides:        SystemOverrides,
     overrideSubsysControls: SectionVisibilityState,
     canOperate:             Boolean,
     control:                ControlModel
@@ -213,7 +213,13 @@ package circuit {
   object SequenceControlFocus {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x =>
-        (x.instrument, x.obsId, x.overrides, x.overrideSubsysControls, x.canOperate, x.control)
+        (x.instrument,
+         x.obsId,
+         x.systemOverrides,
+         x.overrideSubsysControls,
+         x.canOperate,
+         x.control
+        )
       )
 
     def seqControlG(
@@ -225,7 +231,7 @@ package circuit {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           SequenceControlFocus(tab.instrument,
                                tab.obsId,
-                               tab.sequence.overrides,
+                               tab.sequence.systemOverrides,
                                tab.subsystemControlVisible,
                                status,
                                ControlModel.controlModelG.get(tab)

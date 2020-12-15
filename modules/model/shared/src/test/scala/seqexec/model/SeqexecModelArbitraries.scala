@@ -137,7 +137,7 @@ trait SeqexecModelArbitraries {
   implicit val svCogen: Cogen[SequenceView] =
     Cogen[
       (Observation.Id, SequenceMetadata, SequenceState, SystemOverrides, List[Step], Option[Int])
-    ].contramap(s => (s.id, s.metadata, s.status, s.overrides, s.steps, s.willStopIn))
+    ].contramap(s => (s.id, s.metadata, s.status, s.systemOverrides, s.steps, s.willStopIn))
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
     Cogen[(Conditions, Option[Operator], List[A])].contramap(s =>

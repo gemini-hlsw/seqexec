@@ -111,16 +111,15 @@ body {
   text-align: center;
 }
 
-.SeqexecStyles-instrumentAndResourcesLabel {
-  display: flex;
-  margin-bottom: -6px;
-}
-
 .SeqexecStyles-resourceLabels {
   display: flex;
-  position: relative;
-  bottom: 8px;
 }
+.SeqexecStyles-tabTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .SeqexecStyles-filterActiveButton {
   background-color: @positiveColor !important;
@@ -135,23 +134,28 @@ body {
 .SeqexecStyles-tabLabel {
   width: 100%;
   text-align: center;
-  pointer-events: none;
+  margin: 0.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SeqexecStyles-previewTabLabel {
+  justify-content: space-between;
+}
+
+.SeqexecStyles-loadButton {
+  align-self: flex-end;
+}
+
+.SeqexecStyles-loadedTab {
+  flex-direction: column;
 }
 
 .SeqexecStyles-dropOnTab {
   background-color: darken(@secondaryBackground, 10%) !important;
 }
 
-.SeqexecStyles-previewTabLabel {
-  width: 100%;
-  text-align: center;
-  display: flex;
-}
-
-.SeqexecStyles-previewTabId {
-  align-self: flex-start;
-  margin-right: 1em;
-}
 
 .SeqexecStyles-previewTabLoadButton {
   align-self: flex-end;
@@ -161,6 +165,11 @@ body {
 .SeqexecStyles-resourcesTabLabels {
   align-self: flex-end;
   margin-left: auto;
+}
+
+.ui.tabular.menu .item.SeqexecStyles-tab {
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .SeqexecStyles-tab {
@@ -323,6 +332,13 @@ body {
   margin-top: 0;
 }
 
+.ui.label.SeqexecStyles-labelPointer {
+  margin-top: .2em;
+}
+
+.SeqexecStyles-resourcesLabels {
+  display: flex;
+}
 .SeqexecStyles-labelPointer {
   cursor: pointer;
 }

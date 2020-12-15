@@ -151,6 +151,7 @@ object SequenceTab {
           content = s"Load sequence ${sequenceId.format}",
           trigger = Button(
             size = Large,
+            clazz = SeqexecStyles.LoadButton,
             compact = true,
             icon = IconUpload,
             color = Teal,
@@ -160,21 +161,19 @@ object SequenceTab {
           )
         ).when(isPreview && isLogged)
 
-      val instrumentWithId =
-        React.Fragment(
-          <.div(SeqexecStyles.activeInstrumentLabel, dispName),
-          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
-        )
-
       val disabledSubsystems =
         <.div(
-          SeqexecStyles.resourceLabels,
+          SeqexecStyles.ResourceLabels,
           List(
             ("TCS", b.props.systemOverrides.isTcsEnabled),
             ("GCAL", b.props.systemOverrides.isGcalEnabled),
             ("DHS", b.props.systemOverrides.isDhsEnabled),
             ("INST", b.props.systemOverrides.isInstrumentEnabled)
-          ).map { case (l, b) => <.div(SeqexecStyles.DisabledSubsystem, l).unless(b) }.toTagMod
+          ).map { case (l, b) =>
+            println(l)
+            println(b)
+            <.div(SeqexecStyles.DisabledSubsystem, l).unless(b)
+          }.toTagMod
         )
 
       val resourceLabels =
@@ -205,47 +204,22 @@ object SequenceTab {
           }.toTagMod
         )
 
-      val instrumentAndResources =
-        React.Fragment(
-          <.div(SeqexecStyles.instrumentAndResourcesLabel,
-                <.div(SeqexecStyles.tabLabel, dispName),
-                disabledSubsystems,
-                resourceLabels
-          ),
-          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
-        )
-
-      val tabContent: VdomNode =
-        if (resources.isEmpty) {
-          <.div(
-            SeqexecStyles.tabLabel,
-            instrumentWithId
-          )
-        } else {
-          <.div(
-            SeqexecStyles.tabLabel,
-            instrumentAndResources
-          )
-        }
-
-      val previewTabContent: VdomNode =
+      val tab =
         <.div(
-          SeqexecStyles.previewTabLabel.when(isLogged),
-          SeqexecStyles.tabLabel.unless(isLogged),
+          SeqexecStyles.TabLabel,
+          SeqexecStyles.PreviewTab.when(isLogged),
+          SeqexecStyles.LoadedTab.when(!isPreview),
           <.div(
-            SeqexecStyles.previewTabId,
-            instrumentWithId
+            SeqexecStyles.TabTitleRow,
+            dispName,
+            disabledSubsystems.when(!isPreview),
+            resourceLabels.when(!isPreview)
           ),
-          <.div(
-            SeqexecStyles.previewTabLoadButton,
-            loadButton
-          )
+          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle).when(!isPreview),
+          loadButton.when(isPreview)
         )
 
-      linkTo(b.props, linkPage)(
-        if (isPreview) previewTabContent
-        else tabContent
-      )
+      linkTo(b.props, linkPage)(tab)
     }
     .getDerivedStateFromProps { (props, state) =>
       val preview = props.tab.isPreview

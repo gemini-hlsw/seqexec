@@ -145,7 +145,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
                             stepConfig,
                             selectedStep,
                             tabOperations,
-                            x.overrides,
+                            x.systemOverrides,
                             overrideControls
       ).some
     }

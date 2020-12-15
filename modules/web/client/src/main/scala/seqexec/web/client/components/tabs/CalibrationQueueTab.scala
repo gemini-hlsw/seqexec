@@ -121,7 +121,8 @@ object CalibrationQueueTab {
 
       val tabContent: VdomNode =
         <.div(
-          SeqexecStyles.tabLabel,
+          SeqexecStyles.TabLabel,
+          SeqexecStyles.LoadedTab,
           <.div(SeqexecStyles.activeInstrumentLabel, "Daytime Queue"),
           Label(color = color, clazz = SeqexecStyles.labelPointer)(
             icon,
