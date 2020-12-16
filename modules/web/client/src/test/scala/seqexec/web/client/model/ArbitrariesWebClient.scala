@@ -92,21 +92,41 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Either[SequenceView, SequenceView]]
         to  <- arbitrary[TabOperations]
+        so  <- arbitrary[SystemOverrides]
         se  <- arbitrary[Option[StepId]]
+        ov  <- arbitrary[SectionVisibilityState]
       } yield InstrumentSequenceTab(i,
                                     sv.bimap(tag[InstrumentSequenceTab.CompletedSV][SequenceView],
                                              tag[InstrumentSequenceTab.LoadedSV][SequenceView]
                                     ),
                                     idx,
                                     se,
-                                    to
+                                    to,
+                                    so,
+                                    ov
       )
     }
 
   implicit val istCogen: Cogen[InstrumentSequenceTab] =
-    Cogen[(Instrument, SequenceView, Option[StepId], Option[StepId], TabOperations)].contramap {
-      x =>
-        (x.inst, x.sequence, x.stepConfig, x.selectedStep, x.tabOperations)
+    Cogen[
+      (
+        Instrument,
+        SequenceView,
+        Option[StepId],
+        Option[StepId],
+        TabOperations,
+        SystemOverrides,
+        SectionVisibilityState
+      )
+    ].contramap { x =>
+      (x.inst,
+       x.sequence,
+       x.stepConfig,
+       x.selectedStep,
+       x.tabOperations,
+       x.systemOverrides,
+       x.subsysControls
+      )
     }
 
   implicit val arbPreviewSequenceTab: Arbitrary[PreviewSequenceTab] =
@@ -341,7 +361,9 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         a <- arbitrary[TabSelected]
         l <- arbitrary[Boolean]
         o <- arbitrary[SortedMap[Resource, ResourceRunOperation]]
-      } yield AvailableTab(d, s, i, r, n, p, a, l, o)
+        u <- arbitrary[SystemOverrides]
+        m <- arbitrary[SectionVisibilityState]
+      } yield AvailableTab(d, s, i, r, n, p, a, l, u, m, o)
     }
 
   implicit val availableTabCogen: Cogen[AvailableTab] =
@@ -353,11 +375,22 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         Option[Int],
         Option[RunningStep],
         Boolean,
-        TabSelected
+        TabSelected,
+        SystemOverrides,
+        SectionVisibilityState
       )
     ]
       .contramap(x =>
-        (x.id, x.status, x.instrument, x.nextStepToRun, x.runningStep, x.isPreview, x.active)
+        (x.id,
+         x.status,
+         x.instrument,
+         x.nextStepToRun,
+         x.runningStep,
+         x.isPreview,
+         x.active,
+         x.systemOverrides,
+         x.overrideControls
+        )
       )
 
   implicit val arbSeqexecTabActive: Arbitrary[SeqexecTabActive] =

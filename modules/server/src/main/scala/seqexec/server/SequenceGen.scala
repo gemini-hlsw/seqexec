@@ -13,6 +13,7 @@ import seqexec.engine.ExecutionIndex
 import seqexec.engine.ParallelActions
 import seqexec.engine.{ Step => EngineStep }
 import seqexec.model.Observation
+import seqexec.model.SystemOverrides
 import seqexec.model.StepId
 import seqexec.model.dhs.DataId
 import seqexec.model.dhs.ImageFileId

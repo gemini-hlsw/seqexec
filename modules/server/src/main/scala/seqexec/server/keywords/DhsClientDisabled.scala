@@ -11,7 +11,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.dhs.toImageFileId
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 
 class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
 

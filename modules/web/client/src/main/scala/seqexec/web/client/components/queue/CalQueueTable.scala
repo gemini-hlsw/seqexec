@@ -432,7 +432,6 @@ object CalQueueTable {
         p.canOperate,
         size =>
           if (size.width.toInt > 0) {
-            println(size.height)
             val sortableList =
               SortableContainer.wrapC(Table.component,
                                       s.tableState

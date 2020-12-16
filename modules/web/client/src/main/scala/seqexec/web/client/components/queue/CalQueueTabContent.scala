@@ -4,8 +4,8 @@
 package seqexec.web.client.components.queue
 
 import cats.syntax.all._
-import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.React
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -19,10 +19,10 @@ import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
+import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.dataTab
-import seqexec.web.client.model.SectionVisibilityState
 
 final case class CalQueueTabContent(
   canOperate:   Boolean,

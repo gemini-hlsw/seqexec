@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import diode.react.ReactConnectProxy
+import japgolly.scalajs.react.React
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
@@ -28,7 +29,7 @@ object SequenceDefaultToolbar {
   type Props = SequenceDefaultToolbar
 
   private val component = ScalaComponent
-    .builder[Props]("SequenceDefaultToolbar")
+    .builder[Props]
     .stateless
     .render_P(p =>
       <.div(
@@ -36,13 +37,13 @@ object SequenceDefaultToolbar {
         <.div(SeqexecStyles.SequenceControlButtons)(
           p.controlReader(_() match {
             case Some(c) => SequenceControl(c)
-            case _       => <.div()
+            case _       => React.Fragment()
           })
         ),
         <.div(SeqexecStyles.SequenceInfo)(
           p.observerReader(_() match {
             case Some(p) => SequenceInfo(p)
-            case _       => <.div()
+            case _       => React.Fragment()
           })
         )
       )

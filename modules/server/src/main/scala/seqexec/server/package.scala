@@ -235,4 +235,7 @@ package object server {
   type HandleType[F[_], A]  = Handle[F, EngineState[F], EventType[F], A]
   type ExecEngineType[F[_]] = Engine[F, EngineState[F], SeqEvent]
 
+  def overrideLogMessage[F[_]: Logger](systemName: String, op: String): F[Unit] =
+    Logger[F].info(s"System $systemName overridden. Operation $op skipped.")
+
 }

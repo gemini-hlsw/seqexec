@@ -19,6 +19,12 @@ object SeqexecStyles {
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
 
+  val DisabledSubsystem: Css =
+    Css("SeqexecStyles-disabledSubsystems")
+
+  val SubsystemsForm: Css =
+    Css("SeqexecStyles-subsystemsForm")
+
   val TabControls: Css =
     Css("SeqexecStyles-tabControls")
 
@@ -64,6 +70,9 @@ object SeqexecStyles {
   val activeGuide: Css =
     Css("SeqexecStyles-activeGuide")
 
+  val LoadButton: Css =
+    Css("SeqexecStyles-loadButton")
+
   val activeInstrumentLabel: Css =
     Css("SeqexecStyles-activeInstrumentLabel")
 
@@ -73,17 +82,21 @@ object SeqexecStyles {
   val resourceLabels: Css =
     Css("SeqexecStyles-resourceLabels")
 
-  val instrumentAndResourcesLabel: Css =
-    Css("SeqexecStyles-instrumentAndResourcesLabel")
-
   val tab: Css = Css("SeqexecStyles-tab")
 
-  val tabLabel: Css = Css("SeqexecStyles-tabLabel")
+  val TabLabel: Css = Css("SeqexecStyles-tabLabel")
 
-  val previewTabLabel: Css =
+  val PreviewTab: Css =
     Css("SeqexecStyles-previewTabLabel")
 
-  val previewTabId: Css = Css("SeqexecStyles-previewTabId")
+  val LoadedTab: Css =
+    Css("SeqexecStyles-loadedTab")
+
+  val TabTitleRow: Css =
+    Css("SeqexecStyles-tabTitleRow")
+
+  val ResourceLabels: Css =
+    Css("SeqexecStyles-resourceLabels")
 
   val previewTabLoadButton: Css =
     Css("SeqexecStyles-previewTabLoadButton")
@@ -116,6 +129,8 @@ object SeqexecStyles {
     Css("SeqexecStyles-emptyInstrumentTabLogHidden")
 
   val tabSegment: Css = Css("SeqexecStyles-tabSegment")
+
+  val SequenceControlForm: Css = Css("SeqexecStyles-sequenceControlForm")
 
   val SequenceControlButtons: Css = Css("SeqexecStyles-sequenceControlButtons")
 
