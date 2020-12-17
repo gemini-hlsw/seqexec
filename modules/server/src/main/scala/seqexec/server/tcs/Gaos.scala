@@ -74,6 +74,11 @@ object Gaos {
       case b: FixedPauseCondition => PauseConditionSet(offsetO, fixed + b)
     }
 
+    def -(v: PauseCondition): PauseConditionSet = v match {
+      case _: OffsetMove          => PauseConditionSet(none, fixed)
+      case b: FixedPauseCondition => PauseConditionSet(offsetO, fixed - b)
+    }
+
     def contains(v: FixedPauseCondition): Boolean = fixed.contains(v)
 
   }

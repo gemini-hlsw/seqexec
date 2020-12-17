@@ -10,6 +10,7 @@ import fs2.Stream
 import fs2.concurrent.SignallingRef
 import io.circe.Decoder
 import io.circe.DecodingFailure
+import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.model.M1GuideConfig
 import seqexec.model.M1GuideConfig._
@@ -37,9 +38,11 @@ import seqexec.server.gems.GemsController.Odgw4Usage
 import seqexec.server.gems.GemsController.P1Usage
 import squants.space.Millimeters
 
+@Lenses
 final case class GuideConfig(
-  tcsGuide:  TelescopeGuideConfig,
-  gaosGuide: Option[Either[AltairConfig, GemsConfig]]
+  tcsGuide:      TelescopeGuideConfig,
+  gaosGuide:     Option[Either[AltairConfig, GemsConfig]],
+  gemsSkyPaused: Boolean
 )
 
 sealed trait GuideConfigDb[F[_]] {
@@ -47,13 +50,15 @@ sealed trait GuideConfigDb[F[_]] {
 
   def set(v: GuideConfig): F[Unit]
 
+  def update(f: GuideConfig => GuideConfig): F[Unit]
+
   def discrete: Stream[F, GuideConfig]
 }
 
 object GuideConfigDb {
 
-  val defaultGuideConfig =
-    GuideConfig(TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff), None)
+  val defaultGuideConfig: GuideConfig =
+    GuideConfig(TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff), None, false)
 
   def newDb[F[_]: Concurrent]: F[GuideConfigDb[F]] =
     SignallingRef[F, GuideConfig](defaultGuideConfig).map { ref =>
@@ -61,6 +66,8 @@ object GuideConfigDb {
         override def value: F[GuideConfig] = ref.get
 
         override def set(v: GuideConfig): F[Unit] = ref.set(v)
+
+        override def update(f: GuideConfig => GuideConfig): F[Unit] = ref.update(f)
 
         override def discrete: Stream[F, GuideConfig] = ref.discrete
       }
@@ -71,6 +78,8 @@ object GuideConfigDb {
       override def value: F[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[F]
 
       override def set(v: GuideConfig): F[Unit] = Applicative[F].unit
+
+      override def update(f: GuideConfig => GuideConfig): F[Unit] = Applicative[F].unit
 
       override def discrete: Stream[F, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
     }
@@ -106,7 +115,6 @@ object GuideConfigDb {
     }
   }
 
-  // TODO Implement GeMS decoder
   implicit val gemsDecoder: Decoder[GemsConfig] = Decoder.instance[GemsConfig] { c =>
     c.downField("aoOn").as[Boolean].flatMap { x =>
       if (x)
@@ -186,6 +194,6 @@ object GuideConfigDb {
     )(TelescopeGuideConfig(_, _, _))(mountGuideDecoder, m1GuideDecoder, m2GuideDecoder)
 
   implicit val guideConfigDecoder: Decoder[GuideConfig] =
-    Decoder.forProduct2("tcsGuide", "gaosGuide")(GuideConfig)
+    Decoder.forProduct2("tcsGuide", "gaosGuide")(GuideConfig(_, _, false))
 
 }

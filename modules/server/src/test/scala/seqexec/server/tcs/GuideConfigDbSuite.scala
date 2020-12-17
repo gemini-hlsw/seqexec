@@ -49,7 +49,8 @@ final class GuideConfigDbSuite extends munit.FunSuite {
       M1GuideConfig.M1GuideOn(M1Source.PWFS1),
       M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
     ),
-    None
+    None,
+    gemsSkyPaused = false
   )
 
   val rawJson2: String          = """
@@ -87,7 +88,8 @@ final class GuideConfigDbSuite extends munit.FunSuite {
       M1GuideConfig.M1GuideOn(M1Source.PWFS1),
       M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.PWFS1))
     ),
-    Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0)))))
+    Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0))))),
+    gemsSkyPaused = false
   )
 
   val rawJson3: String          = """
@@ -138,7 +140,8 @@ final class GuideConfigDbSuite extends munit.FunSuite {
           OIUsage.DontUse
         )
       )
-    )
+    ),
+    gemsSkyPaused = false
   )
 
   test("GuideConfigDb provide decoders") {
