@@ -199,22 +199,22 @@ object TcsSouthControllerEpicsAo {
         .flatMap(setCwfs1Guide(_, subsystems, current.cwfs1.tracking, demand.cwfs1.tracking)),
       current.mapping
         .get(Cwfs2)
-        .flatMap(setCwfs1Guide(_, subsystems, current.cwfs2.tracking, demand.cwfs2.tracking)),
+        .flatMap(setCwfs2Guide(_, subsystems, current.cwfs2.tracking, demand.cwfs2.tracking)),
       current.mapping
         .get(Cwfs3)
-        .flatMap(setCwfs1Guide(_, subsystems, current.cwfs3.tracking, demand.cwfs3.tracking)),
+        .flatMap(setCwfs3Guide(_, subsystems, current.cwfs3.tracking, demand.cwfs3.tracking)),
       current.mapping
         .get(Odgw1)
         .flatMap(setOdgw1Probe(_)(subsystems, current.odgw1.tracking, demand.odgw1.tracking)),
       current.mapping
         .get(Odgw2)
-        .flatMap(setOdgw1Probe(_)(subsystems, current.odgw2.tracking, demand.odgw2.tracking)),
+        .flatMap(setOdgw2Probe(_)(subsystems, current.odgw2.tracking, demand.odgw2.tracking)),
       current.mapping
         .get(Odgw3)
-        .flatMap(setOdgw1Probe(_)(subsystems, current.odgw3.tracking, demand.odgw3.tracking)),
+        .flatMap(setOdgw3Probe(_)(subsystems, current.odgw3.tracking, demand.odgw3.tracking)),
       current.mapping
         .get(Odgw4)
-        .flatMap(setOdgw1Probe(_)(subsystems, current.odgw4.tracking, demand.odgw4.tracking))
+        .flatMap(setOdgw4Probe(_)(subsystems, current.odgw4.tracking, demand.odgw4.tracking))
     ).flattenOption
 
     // It will be a GeMS guided step only if all GeMS sources used in the base configuration are active
@@ -316,7 +316,7 @@ object TcsSouthControllerEpicsAo {
         List(
           isStartingUnguidedStep(current, baseAoConfig, demand).option(PauseCondition.GaosGuideOff),
           demand.tc.offsetA.flatMap(o =>
-            (!isStartingUnguidedStep(current, baseAoConfig, demand) && mustPauseAoWhileOffseting(
+            (isAoGuidedStep(baseAoConfig, demand) && mustPauseAoWhileOffseting(
               current,
               demand
             ))
@@ -328,20 +328,15 @@ object TcsSouthControllerEpicsAo {
     def calcAoResumeConditions(
       current:      EpicsTcsAoConfig,
       baseAoConfig: GemsConfig,
-      demand:       TcsSouthAoConfig
+      demand:       TcsSouthAoConfig,
+      pauseReasons: PauseConditionSet
     ): ResumeConditionSet =
       ResumeConditionSet.fromList(
         List(
           isComingBackFromUnguidedStep(current, baseAoConfig, demand).option(
             ResumeCondition.GaosGuideOn
           ),
-          demand.tc.offsetA.flatMap(o =>
-            (!isComingBackFromUnguidedStep(current,
-                                           baseAoConfig,
-                                           demand
-            ) && mustPauseAoWhileOffseting(current, demand))
-              .option(ResumeCondition.OffsetReached(o.toFocalPlaneOffset(current.base.iaa)))
-          )
+          pauseReasons.offsetO.map(o => ResumeCondition.OffsetReached(o.newOffset))
         ).flattenOption
       )
 
@@ -350,11 +345,13 @@ object TcsSouthControllerEpicsAo {
       current:      EpicsTcsAoConfig,
       baseAoConfig: GemsConfig,
       demand:       TcsSouthAoConfig
-    ): F[Gaos.PauseResume[F]] =
+    ): F[Gaos.PauseResume[F]] = {
+      val pauseReasons = calcAoPauseConditions(current, baseAoConfig, demand)
       gaos.pauseResume(
-        calcAoPauseConditions(current, baseAoConfig, demand),
-        calcAoResumeConditions(current, baseAoConfig, demand)
+        pauseReasons,
+        calcAoResumeConditions(current, baseAoConfig, demand, pauseReasons)
       )
+    }
 
     def calcGuideOff(
       current:     EpicsTcsAoConfig,

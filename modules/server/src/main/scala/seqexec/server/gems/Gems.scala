@@ -27,12 +27,14 @@ import seqexec.server.gems.GemsController.Odgw2Usage
 import seqexec.server.gems.GemsController.Odgw3Usage
 import seqexec.server.gems.GemsController.Odgw4Usage
 import seqexec.server.gems.GemsController.P1Usage
-import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.PauseConditionSet
-import seqexec.server.tcs.Gaos.PauseResume
-import seqexec.server.tcs.Gaos.ResumeConditionSet
-import seqexec.server.tcs.GuideConfigDb
-import seqexec.server.tcs.Tcs
+import seqexec.server.tcs.{ Gaos, GuideConfig, GuideConfigDb, Tcs }
+import seqexec.server.tcs.Gaos.{
+  PauseCondition,
+  PauseConditionSet,
+  PauseResume,
+  ResumeCondition,
+  ResumeConditionSet
+}
 import squants.Time
 
 trait Gems[F[_]] extends Gaos[F] {
@@ -66,17 +68,59 @@ object Gems {
       pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet
     ): F[PauseResume[F]] =
-      guideConfigDb.value.map(_.gaosGuide).flatMap {
-        case Some(Right(gemsCfg)) =>
-          controller.pauseResume(pauseReasons, resumeReasons)(combine(gemsCfg, cfg))
-        case _                    =>
-          SeqexecFailure
-            .Execution("Attempting to run GeMS sequence before GeMS has being configured.")
-            .raiseError[F, PauseResume[F]]
+      guideConfigDb.value.flatMap { g =>
+        g.gaosGuide match {
+          case Some(Right(gemsCfg)) =>
+            val filteredPauseReasons  = filterPauseReasons(pauseReasons, g.gemsSkyPaused)
+            val filteredResumeReasons = filterResumeReasons(
+              resumeReasons,
+              g.gemsSkyPaused || filteredPauseReasons.contains(PauseCondition.GaosGuideOff)
+            )
+            controller
+              .pauseResume(filteredPauseReasons, filteredResumeReasons)(combine(gemsCfg, cfg))
+              .map(x =>
+                PauseResume(
+                  x.pause.map(
+                    _.flatMap(_ =>
+                      guideConfigDb
+                        .update(GuideConfig.gemsSkyPaused.set(true))
+                        .whenA(filteredPauseReasons.contains(PauseCondition.GaosGuideOff))
+                    )
+                  ),
+                  x.resume.map(
+                    _.flatMap(_ =>
+                      guideConfigDb
+                        .update(GuideConfig.gemsSkyPaused.set(false))
+                        .whenA(filteredResumeReasons.contains(ResumeCondition.GaosGuideOn))
+                    )
+                  )
+                )
+              )
+          case _                    =>
+            SeqexecFailure
+              .Execution("Attempting to run GeMS sequence before GeMS has being configured.")
+              .raiseError[F, PauseResume[F]]
+        }
       }
 
     override val stateGetter: GemsWfsState[F] = controller.stateGetter
   }
+
+  // Ignore GaosGuideOff if it was already sent in a previous step
+  // TODO: do the same for Filter pause condition (for GSAOI calibrations)
+  private def filterPauseReasons(
+    pauseReasons: PauseConditionSet,
+    isSkyPaused:  Boolean
+  ): PauseConditionSet =
+    if (isSkyPaused) pauseReasons.copy(fixed = pauseReasons.fixed - PauseCondition.GaosGuideOff)
+    else pauseReasons
+
+  private def filterResumeReasons(
+    resumeReasons: ResumeConditionSet,
+    isSkyPaused:   Boolean
+  ): ResumeConditionSet =
+    if (!isSkyPaused) resumeReasons.copy(fixed = resumeReasons.fixed - ResumeCondition.GaosGuideOn)
+    else resumeReasons
 
   // `combine` calculates the final configuration between the configuration coming from the step and the configuration
   // set by the operator.
