@@ -648,9 +648,9 @@ object TcsControllerEpicsCommon {
       for {
         s0 <- tcsConfigRetriever.retrieveBaseConfiguration
         _  <- SeqexecFailure
-                .Execution("Found useAo set for non AO step.")
+                .Execution("Found useAo set for non AO step using PWFS2.")
                 .raiseError[F, Unit]
-                .whenA(s0.useAo)
+                .whenA(s0.useAo && subsystems.contains(Subsystem.PWFS2) && tcs.gds.pwfs2.isActive)
         s1 <- guideOff(subsystems, s0, tcs)
         s2 <- sysConfig(s1)
         _  <- guideOn(subsystems, s2, tcs)
