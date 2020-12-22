@@ -23,10 +23,10 @@ object Settings {
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "2.3.0"
-    val catsVersion         = "2.3.0"
+    val catsEffectVersion   = "2.3.1"
+    val catsVersion         = "2.3.1"
     val mouseVersion        = "0.26.2"
-    val fs2Version          = "2.4.6"
+    val fs2Version          = "2.5.0"
     val shapelessVersion    = "2.3.3"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
@@ -55,7 +55,7 @@ object Settings {
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.20"
-    lazy val munitDisciplineVersion = "1.0.3"
+    lazy val munitDisciplineVersion = "1.0.4"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
