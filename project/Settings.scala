@@ -32,7 +32,7 @@ object Settings {
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.14"
+    val http4sVersion  = "0.21.15"
     val squants        = "1.7.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
@@ -76,12 +76,12 @@ object Settings {
     val gmpCmdClientBridge  = "0.6.3"
     val guava               = "30.1-jre"
     val prometheusClient    = "0.9.0"
-    val geminiLocales       = "0.5.0"
+    val geminiLocales       = "0.5.1"
     val pprint              = "0.6.0"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.4"
+    val lucumaCore = "0.7.5"
     val lucumaUI   = "0.11.2"
   }
 
