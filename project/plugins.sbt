@@ -3,9 +3,9 @@ resolvers  ++= Seq(
   Resolver.bintrayIvyRepo("rtimush", "sbt-plugin-snapshots")
 )
 
-addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.3")
+addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.4")
 
-addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.3.1")
+addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.4.0")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 

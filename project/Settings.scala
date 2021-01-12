@@ -76,13 +76,13 @@ object Settings {
     val gmpCmdClientBridge  = "0.6.3"
     val guava               = "30.1-jre"
     val prometheusClient    = "0.9.0"
-    val geminiLocales       = "0.5.0"
+    val geminiLocales       = "0.5.1"
     val pprint              = "0.6.0"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.4"
-    val lucumaUI   = "0.11.3"
+    val lucumaCore = "0.7.5"
+    val lucumaUI   = "0.11.2"
   }
 
   /**
