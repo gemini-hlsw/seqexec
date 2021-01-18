@@ -664,10 +664,12 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
         advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Override))
-    } yield inside(
-      sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) { case Some(status) =>
-      assert(status.isRunning)
+    } yield inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption)) {
+      case Some(s) =>
+        assert(s.status.isRunning)
+        inside(s.currentStep) { case Some(t) =>
+          assert(t.id === 2)
+        }
     }).unsafeRunSync()
   }
 
