@@ -12,7 +12,6 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import lucuma.core.syntax.string._
-import monocle.Prism
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import squants.space._
@@ -29,16 +28,6 @@ object CRFollow {
     case On  => "yes"
     case Off => "no"
   }
-
-  def fromInt: Prism[Int, CRFollow] =
-    Prism[Int, CRFollow] {
-      case 0 => Off.some
-      case 1 => On.some
-      case _ => none
-    } {
-      case Off => 0
-      case On  => 1
-    }
 
 }
 
@@ -537,8 +526,12 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def f2InstPort: F[Int] = sys.f2Port.safeValOrDefault
 
     override def crFollow: F[Option[CRFollow]] =
-      sys.crFollow
-        .map(CRFollow.fromInt.getOption)
+      sys.crTrackingFrame
+        .map(TrackingFrame.fromString)
+        .map {
+          case TrackingFrame.AzimuthElevation => CRFollow.Off.some
+          case _                              => CRFollow.On.some
+        }
         .handleError(_ => none)
 
     private def pOffsetOption: F[Option[Angle]] = (
