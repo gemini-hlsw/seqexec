@@ -169,8 +169,6 @@ object Step {
 
     def wasSkipped: Boolean = s.status.wasSkipped
 
-    def canRunFrom: Boolean = s.status.canRunFrom
-
     def canConfigure: Boolean = s.status.canConfigure
 
     def isMultiLevel: Boolean =
