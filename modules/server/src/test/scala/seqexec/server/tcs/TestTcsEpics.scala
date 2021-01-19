@@ -466,6 +466,8 @@ class TestTcsEpics[F[_]: Sync](
 
   override def crFollow: F[Int] = state.get.map(_.crFollow)
 
+  override def crTrackingFrame: F[String] = state.get.map(_.crTrackingFrame)
+
   override def sourceATarget: Target[F] = targetGetters(state, State.sourceATarget.asGetter)
 
   override val pwfs1Target: Target[F] = targetGetters(state, State.pwfs1Target.asGetter)
@@ -800,6 +802,7 @@ object TestTcsEpics {
     airmassEnd:               Double,
     carouselMode:             String,
     crFollow:                 Int,
+    crTrackingFrame:          String,
     sourceATarget:            TargetVals,
     pwfs1Target:              TargetVals,
     pwfs2Target:              TargetVals,
@@ -1079,6 +1082,7 @@ object TestTcsEpics {
     airmassEnd = 0.0,
     carouselMode = "",
     crFollow = 0,
+    crTrackingFrame = "",
     sourceATarget = TargetVals.default,
     pwfs1Target = TargetVals.default,
     pwfs2Target = TargetVals.default,
