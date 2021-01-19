@@ -268,8 +268,14 @@ object SeqexecEngine {
       stepId: Option[StepId]
     ): Option[SequenceGen.StepGen[F]] = for {
       stp    <- stepId.orElse(obs.seq.currentStep.map(_.id))
-      stpGen <- obs.seqGen.steps.dropWhile(_.id =!= stp).find(a => stepRequiresChecks(a.config))
+      stpGen <- obs.seqGen.steps.find(_.id === stp)
     } yield stpGen
+
+    private def findFirstCheckRequiredStep(
+      obs:    SequenceData[F],
+      stepId: StepId
+    ): Option[SequenceGen.StepGen[F]] =
+      obs.seqGen.steps.dropWhile(_.id =!= stepId).find(a => stepRequiresChecks(a.config))
 
     /**
      * Check if the target on the TCS matches the seqexec target
@@ -497,14 +503,16 @@ object SeqexecEngine {
             executeEngine
               .liftF {
                 findStartingStep(seq, stepId)
-                  .map(sp =>
-                    sequenceTcsTargetMatch(sp).map { tchk =>
-                      (sp.some,
-                       List(tchk, observingConditionsMatch(st.conditions, sp))
-                         .collect { case Some(x) => x }
-                         .widen[SeqCheck]
-                      )
-                    }
+                  .flatMap(ststp =>
+                    findFirstCheckRequiredStep(seq, ststp.id).map(sp =>
+                      sequenceTcsTargetMatch(sp).map { tchk =>
+                        (ststp.some,
+                         List(tchk, observingConditionsMatch(st.conditions, sp))
+                           .collect { case Some(x) => x }
+                           .widen[SeqCheck]
+                        )
+                      }
+                    )
                   )
                   .getOrElse((none[SequenceGen.StepGen[F]], List.empty[SeqCheck]).pure[F])
               }
