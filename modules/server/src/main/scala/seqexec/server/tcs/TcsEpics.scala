@@ -263,6 +263,8 @@ trait TcsEpics[F[_]] {
 
   def crFollow: F[Int]
 
+  def crTrackingFrame: F[String]
+
   def sourceATarget: Target[F]
 
   val pwfs1Target: Target[F]
@@ -1007,6 +1009,10 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override def carouselMode: F[String] = safeAttributeF(tcsState.getStringAttribute("cguidmod"))
 
   override def crFollow: F[Int] = safeAttributeSIntF(tcsState.getIntegerAttribute("crfollow"))
+
+  override def crTrackingFrame: F[String] = safeAttributeF(
+    tcsState.getStringAttribute("rotTrackFrame")
+  )
 
   override def sourceATarget: Target[F] = new Target[F] {
     override def epoch: F[String] = safeAttributeF(tcsState.getStringAttribute("sourceAEpoch"))

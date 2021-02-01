@@ -10,10 +10,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import lucuma.core.enum.Site
 import react.common._
-import react.semanticui.collections.grid.GridColumn
-import react.semanticui.widths._
 import seqexec.web.client.circuit._
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.queue.CalQueueTabContent
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.reusability._
@@ -34,18 +31,16 @@ object TabsArea {
     .builder[Props]("TabsArea")
     .stateless
     .render_P(p =>
-      GridColumn(width = Sixteen, clazz = SeqexecStyles.sequencesArea)(
+      React.Fragment(
         SeqexecTabs(p.router),
         tabsConnect(x =>
           React
             .Fragment(
-              x().toList.collect {
-                case t: SequenceTabContentFocus =>
-                  SequenceTabContent(p.router, t): VdomNode
-                case t                          =>
-                  CalQueueTabContent(
-                    CalQueueTabContent.Props(t.canOperate, t.active, t.logDisplayed)
-                  ): VdomNode
+              x().toList.collect[VdomNode] {
+                case t: SequenceTabContentFocus if t.isActive =>
+                  SequenceTabContent(p.router, t)
+                case t if t.isActive                          =>
+                  CalQueueTabContent(t.canOperate, t.active, t.logDisplayed)
               }: _*
             )
         )

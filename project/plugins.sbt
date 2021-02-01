@@ -3,9 +3,9 @@ resolvers  ++= Seq(
   Resolver.bintrayIvyRepo("rtimush", "sbt-plugin-snapshots")
 )
 
-addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.3")
+addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.4")
 
-addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.3.1")
+addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.4.0")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 
@@ -16,7 +16,7 @@ addSbtPlugin("io.spray"           % "sbt-revolver"             % "0.9.1")
 addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"            % "0.10.0")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.7.6")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.8.0")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")

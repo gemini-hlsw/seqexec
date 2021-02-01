@@ -22,7 +22,9 @@ import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
+import seqexec.model.SystemOverrides
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -39,6 +41,7 @@ final case class SequenceTab(
   tab:                AvailableTab,
   loggedIn:           Boolean,
   defaultObserver:    Observer,
+  systemOverrides:    SystemOverrides,
   runningInstruments: List[Instrument]
 ) extends ReactProps[SequenceTab](SequenceTab.component)
 
@@ -148,6 +151,7 @@ object SequenceTab {
           content = s"Load sequence ${sequenceId.format}",
           trigger = Button(
             size = Large,
+            clazz = SeqexecStyles.LoadButton,
             compact = true,
             icon = IconUpload,
             color = Teal,
@@ -157,23 +161,38 @@ object SequenceTab {
           )
         ).when(isPreview && isLogged)
 
-      val instrumentWithId =
-        React.Fragment(
-          <.div(SeqexecStyles.activeInstrumentLabel, dispName),
-          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
+      val disabledSubsystems =
+        <.div(
+          SeqexecStyles.ResourceLabels,
+          List(
+            ("TCS", b.props.systemOverrides.isTcsEnabled),
+            ("GCAL", b.props.systemOverrides.isGcalEnabled),
+            ("DHS", b.props.systemOverrides.isDhsEnabled),
+            ("INST", b.props.systemOverrides.isInstrumentEnabled)
+          ).map { case (l, b) =>
+            println(l)
+            println(b)
+            <.div(SeqexecStyles.DisabledSubsystem, l).unless(b)
+          }.toTagMod
         )
 
       val resourceLabels =
         <.div(
           SeqexecStyles.resourceLabels,
           resources.map { case (r, s) =>
+            val show  = r match {
+              case Resource.TCS  => b.props.systemOverrides.isTcsEnabled
+              case Resource.Gcal => b.props.systemOverrides.isGcalEnabled
+              case _: Instrument => b.props.systemOverrides.isInstrumentEnabled
+              case _             => true
+            }
             val color = s match {
               case ResourceRunOperation.ResourceRunIdle         => Blue // Unused
               case ResourceRunOperation.ResourceRunCompleted(_) => Green
               case ResourceRunOperation.ResourceRunInFlight(_)  => Yellow
               case ResourceRunOperation.ResourceRunFailed(_)    => Red
             }
-            s match {
+            (s match {
               case ResourceRunOperation.ResourceRunInFlight(_)  =>
                 Label(color = color, size = Small, clazz = SeqexecStyles.activeResourceLabel)(
                   r.show
@@ -181,50 +200,26 @@ object SequenceTab {
               case ResourceRunOperation.ResourceRunCompleted(_) =>
                 Label(color = color, size = Small)(r.show): VdomNode
               case _                                            => EmptyVdom
-            }
+            }).when(show)
           }.toTagMod
         )
 
-      val instrumentAndResources =
-        React.Fragment(
-          <.div(SeqexecStyles.instrumentAndResourcesLabel,
-                <.div(SeqexecStyles.tabLabel, dispName),
-                resourceLabels
-          ),
-          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle)
-        )
-
-      val tabContent: VdomNode =
-        if (resources.isEmpty) {
-          <.div(
-            SeqexecStyles.tabLabel,
-            instrumentWithId
-          )
-        } else {
-          <.div(
-            SeqexecStyles.tabLabel,
-            instrumentAndResources
-          )
-        }
-
-      val previewTabContent: VdomNode =
+      val tab =
         <.div(
-          SeqexecStyles.previewTabLabel.when(isLogged),
-          SeqexecStyles.tabLabel.unless(isLogged),
+          SeqexecStyles.TabLabel,
+          SeqexecStyles.PreviewTab.when(isLogged),
+          SeqexecStyles.LoadedTab.when(!isPreview),
           <.div(
-            SeqexecStyles.previewTabId,
-            instrumentWithId
+            SeqexecStyles.TabTitleRow,
+            dispName,
+            disabledSubsystems.when(!isPreview),
+            resourceLabels.when(!isPreview)
           ),
-          <.div(
-            SeqexecStyles.previewTabLoadButton,
-            loadButton
-          )
+          Label(color = color, clazz = SeqexecStyles.labelPointer)(icon, tabTitle).when(!isPreview),
+          loadButton.when(isPreview)
         )
 
-      linkTo(b.props, linkPage)(
-        if (isPreview) previewTabContent
-        else tabContent
-      )
+      linkTo(b.props, linkPage)(tab)
     }
     .getDerivedStateFromProps { (props, state) =>
       val preview = props.tab.isPreview

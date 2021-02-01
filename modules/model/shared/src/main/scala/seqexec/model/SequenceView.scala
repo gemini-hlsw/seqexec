@@ -12,11 +12,12 @@ import seqexec.model.Observation
 
 @Lenses
 final case class SequenceView(
-  id:         Observation.Id,
-  metadata:   SequenceMetadata,
-  status:     SequenceState,
-  steps:      List[Step],
-  willStopIn: Option[Int]
+  id:              Observation.Id,
+  metadata:        SequenceMetadata,
+  status:          SequenceState,
+  systemOverrides: SystemOverrides,
+  steps:           List[Step],
+  willStopIn:      Option[Int]
 ) {
 
   def progress: Option[RunningStep] =

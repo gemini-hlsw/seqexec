@@ -10,7 +10,6 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.common.implicits._
 import react.semanticui.As
 import react.semanticui.elements.segment.Segment
 import react.semanticui.elements.segment.SegmentAttached
@@ -22,8 +21,6 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.SectionVisibilityState.SectionClosed
-import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui._
 
@@ -65,10 +62,7 @@ object SequenceTabContent {
     p.content.tableType match {
       case StepsTableTypeSelection.StepsTableSelected =>
         p.stepsConnect { x =>
-          <.div(
-            ^.height := "100%",
-            StepsTable(p.router, p.content.canOperate, x())
-          )
+          StepsTable(p.router, p.content.canOperate, x())
         }
 
       case StepsTableTypeSelection.StepConfigTableSelected(i) =>
@@ -90,37 +84,20 @@ object SequenceTabContent {
     }
 
   protected val component = ScalaComponent
-    .builder[Props]("SequenceTabContent")
+    .builder[Props]
     .stateless
     .render_P { p =>
-      val canOperate   = p.content.canOperate
-      val instrument   = p.content.instrument
-      val logDisplayed = p.content.logDisplayed
-
-      val tabClazz =
-        List(
-          SeqexecStyles.tabSegment.when_(canOperate),
-          SeqexecStyles.tabSegmentLogShown
-            .when_(canOperate && logDisplayed === SectionOpen),
-          SeqexecStyles.tabSegmentLogHidden
-            .when_(canOperate && logDisplayed === SectionClosed),
-          SeqexecStyles.tabSegmentUnauth.when_(!canOperate),
-          SeqexecStyles.tabSegmentLogShownUnauth
-            .when_(!canOperate && logDisplayed === SectionOpen),
-          SeqexecStyles.tabSegmentLogHiddenUnauth
-            .when_(!canOperate && logDisplayed === SectionClosed)
-        ).combineAll
-
-      TabPane(active = p.content.isActive,
-              as = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
-              clazz = tabClazz
+      val instrument = p.content.instrument
+      TabPane(
+        active = p.content.isActive,
+        as = As.Segment(
+          Segment(compact = true, attached = SegmentAttached.Attached, secondary = true)
+        ),
+        clazz = SeqexecStyles.tabSegment
       )(
         dataTab := instrument.show,
-        <.div(
-          ^.height := "100%",
-          toolbar(p),
-          stepsTable(p)
-        ).when(p.content.isActive)
+        <.div(SeqexecStyles.TabControls, toolbar(p).when(p.content.canOperate)),
+        <.div(SeqexecStyles.TabTable, stepsTable(p).when(p.content.isActive))
       )
     }
     .configure(Reusability.shouldComponentUpdate)

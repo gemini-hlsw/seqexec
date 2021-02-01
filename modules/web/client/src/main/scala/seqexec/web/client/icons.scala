@@ -40,5 +40,8 @@ object icons {
   val IconStopCircle: Icon        = Icon("stop circle")
   val IconSettings: Icon          = Icon("settings")
   val IconBrowser: Icon           = Icon("browser")
+  val IconSignOut: Icon           = Icon("sign out")
+  val IconHelp: Icon              = Icon("help")
+  val IconTools: Icon             = Icon("sliders horizontal")
 
 }

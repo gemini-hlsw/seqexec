@@ -19,6 +19,33 @@ object SeqexecStyles {
   val TableRightPadding: Int        = 13
   val DefaultScrollBarWidth: Double = 15.0
 
+  val DisabledSubsystem: Css =
+    Css("SeqexecStyles-disabledSubsystems")
+
+  val SubsystemsForm: Css =
+    Css("SeqexecStyles-subsystemsForm")
+
+  val TabControls: Css =
+    Css("SeqexecStyles-tabControls")
+
+  val TabTable: Css =
+    Css("SeqexecStyles-tabTable")
+
+  val ConfigTableControls: Css =
+    Css("SeqexecStyles-configTableControls")
+
+  val SequencesControl: Css =
+    Css("SeqexecStyles-sequencesControl")
+
+  val MainUI: Css =
+    Css("SeqexecStyles-mainUI")
+
+  val Footer: Css =
+    Css("SeqexecStyles-footer")
+
+  val LoginError: Css =
+    Css("SeqexecStyles-loginError")
+
   val ConfirmLine: Css =
     Css("SeqexecStyles-confirmLine")
 
@@ -43,6 +70,9 @@ object SeqexecStyles {
   val activeGuide: Css =
     Css("SeqexecStyles-activeGuide")
 
+  val LoadButton: Css =
+    Css("SeqexecStyles-loadButton")
+
   val activeInstrumentLabel: Css =
     Css("SeqexecStyles-activeInstrumentLabel")
 
@@ -52,17 +82,21 @@ object SeqexecStyles {
   val resourceLabels: Css =
     Css("SeqexecStyles-resourceLabels")
 
-  val instrumentAndResourcesLabel: Css =
-    Css("SeqexecStyles-instrumentAndResourcesLabel")
-
   val tab: Css = Css("SeqexecStyles-tab")
 
-  val tabLabel: Css = Css("SeqexecStyles-tabLabel")
+  val TabLabel: Css = Css("SeqexecStyles-tabLabel")
 
-  val previewTabLabel: Css =
+  val PreviewTab: Css =
     Css("SeqexecStyles-previewTabLabel")
 
-  val previewTabId: Css = Css("SeqexecStyles-previewTabId")
+  val LoadedTab: Css =
+    Css("SeqexecStyles-loadedTab")
+
+  val TabTitleRow: Css =
+    Css("SeqexecStyles-tabTitleRow")
+
+  val ResourceLabels: Css =
+    Css("SeqexecStyles-resourceLabels")
 
   val previewTabLoadButton: Css =
     Css("SeqexecStyles-previewTabLoadButton")
@@ -80,6 +114,8 @@ object SeqexecStyles {
 
   val fieldsNoBottom: Css = Css("SeqexecStyles-fieldsNoBottom")
 
+  val SequenceInfo: Css = Css("SeqexecStyles-sequenceInfo")
+
   val headerSideBarStyle: Css =
     Css("SeqexecStyles-headerSidebarStyle")
 
@@ -94,32 +130,9 @@ object SeqexecStyles {
 
   val tabSegment: Css = Css("SeqexecStyles-tabSegment")
 
-  val tabSegmentLogHidden: Css =
-    Css("SeqexecStyles-tabSegmentLogHidden")
+  val SequenceControlForm: Css = Css("SeqexecStyles-sequenceControlForm")
 
-  val tabSegmentLogShown: Css =
-    Css("SeqexecStyles-tabSegmentLogShown")
-
-  val tabSegmentUnauth: Css =
-    Css("SeqexecStyles-tabSegmentUnauth")
-
-  val tabSegmentLogHiddenUnauth: Css =
-    Css("SeqexecStyles-tabSegmentLogHiddenUnauth")
-
-  val tabSegmentLogShownUnauth: Css =
-    Css("SeqexecStyles-tabSegmentLogShownUnauth")
-
-  val tableContainerNoControls: Css =
-    Css("SeqexecStyles-tableContainerNoControls")
-
-  val tableContainer: Css =
-    Css("SeqexecStyles-tableContainer")
-
-  val controlButtons: Css = Css("SeqexecStyles-controlButtons")
-
-  val infoOnControl: Css = Css("SeqexecStyles-infoOnControl")
-
-  val sequencesArea: Css = Css("SeqexecStyles-sequencesArea")
+  val SequenceControlButtons: Css = Css("SeqexecStyles-sequenceControlButtons")
 
   // Sometimes we need to manually add css
   val item: Css = Css("item")
@@ -146,7 +159,11 @@ object SeqexecStyles {
 
   val logTableRow: Css = Css("SeqexecStyles-logTableRow")
 
+  val logTable: Css = Css("SeqexecStyles-logTable")
+
   val selectorFields: Css = Css("SeqexecStyles-selectorFields")
+
+  val logLevelBox: Css = Css("SeqexecStyles-logLevelBox")
 
   val queueTextColumn: Css =
     Css("SeqexecStyles-queueTextColumn")

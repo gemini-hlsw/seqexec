@@ -11,7 +11,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.server.InstrumentSystem
 import seqexec.server.Progress
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import squants.Time
 

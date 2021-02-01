@@ -20,6 +20,7 @@ import seqexec.model.RunningStep
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.StepId
+import seqexec.model.SystemOverrides
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag.@@
@@ -33,6 +34,8 @@ final case class AvailableTab(
   isPreview:          Boolean,
   active:             TabSelected,
   loading:            Boolean,
+  systemOverrides:    SystemOverrides,
+  overrideControls:   SectionVisibilityState,
   resourceOperations: SortedMap[Resource, ResourceRunOperation]
 )
 
@@ -47,6 +50,8 @@ object AvailableTab {
        x.isPreview,
        x.active,
        x.loading,
+       x.overrideControls,
+       x.systemOverrides,
        x.resourceOperations
       )
     )
@@ -122,6 +127,13 @@ object CalibrationQueueTab {
 
 sealed trait SequenceTab extends SeqexecTab {
   val tabOperations: TabOperations
+
+  def subsystemControlVisible: SectionVisibilityState =
+    this match {
+      case i: InstrumentSequenceTab => i.subsysControls
+      case _: PreviewSequenceTab    => SectionVisibilityState.SectionClosed
+    }
+
   def instrument: Instrument =
     this match {
       case i: InstrumentSequenceTab => i.inst
@@ -153,6 +165,8 @@ sealed trait SequenceTab extends SeqexecTab {
     this match {
       case InstrumentSequenceTab(_,
                                  Left(_: InstrumentSequenceTab.CompletedSequenceView),
+                                 _,
+                                 _,
                                  _,
                                  _,
                                  _
@@ -220,14 +234,16 @@ object SequenceTab {
 
 @Lenses
 final case class InstrumentSequenceTab(
-  inst:          Instrument,
-  curSequence:   Either[
+  inst:            Instrument,
+  curSequence:     Either[
     InstrumentSequenceTab.CompletedSequenceView,
     InstrumentSequenceTab.LoadedSequenceView
   ],
-  stepConfig:    Option[StepId],
-  selected:      Option[StepId],
-  tabOperations: TabOperations
+  stepConfig:      Option[StepId],
+  selected:        Option[StepId],
+  tabOperations:   TabOperations,
+  systemOverrides: SystemOverrides,
+  subsysControls:  SectionVisibilityState
 ) extends SequenceTab {
   val seq: SequenceView = curSequence match {
     case Right(x) => x
@@ -247,7 +263,16 @@ object InstrumentSequenceTab {
   private implicit val completedEq: Eq[CompletedSequenceView] = Eq.by(identity)
 
   implicit val eq: Eq[InstrumentSequenceTab] =
-    Eq.by(x => (x.instrument, x.sequence, x.stepConfig, x.selected, x.tabOperations))
+    Eq.by(x =>
+      (x.instrument,
+       x.sequence,
+       x.stepConfig,
+       x.selected,
+       x.tabOperations,
+       x.systemOverrides,
+       x.subsysControls
+      )
+    )
 
   implicit val completedSequence: Optional[InstrumentSequenceTab, CompletedSequenceView] =
     InstrumentSequenceTab.curSequence ^<-? stdLeft

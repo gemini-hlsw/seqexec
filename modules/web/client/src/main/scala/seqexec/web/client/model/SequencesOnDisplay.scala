@@ -21,6 +21,7 @@ import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.StepId
+import seqexec.model.SystemOverrides
 import seqexec.model.enum._
 import seqexec.web.client.circuit.DayCalObserverFocus
 import seqexec.web.client.circuit.SequenceObserverFocus
@@ -58,7 +59,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
    * List of loaded sequence ids
    */
   def loadedIds: List[Observation.Id] =
-    tabs.toNel.collect { case InstrumentSequenceTab(_, Right(curr), _, _, _) =>
+    tabs.toNel.collect { case InstrumentSequenceTab(_, Right(curr), _, _, _, _, _) =>
       curr.id
     }
 
@@ -125,23 +126,27 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     // Build the new tabs
     val currentInsTabs = SequencesOnDisplay.instrumentTabs.getAll(this)
     val instTabs       = loaded.collect { case Some(x) =>
-      val tab           = currentInsTabs
+      val tab              = currentInsTabs
         .find(_.obsId === x.id)
       // FIXME
       // val curTableState = tab
       //   .map(_.tableState)
       //   .getOrElse(StepsTable.State.InitialTableState)
-      val left          = tag[InstrumentSequenceTab.CompletedSV][SequenceView](x)
-      val right         = tag[InstrumentSequenceTab.LoadedSV][SequenceView](x)
-      val seq           = tab.filter(_.isComplete).as(left).toLeft(right)
-      val stepConfig    = tab.flatMap(_.stepConfig)
-      val selectedStep  = tab.flatMap(_.selectedStep)
-      val tabOperations = tab.map(_.tabOperations).getOrElse(TabOperations.Default)
+      val left             = tag[InstrumentSequenceTab.CompletedSV][SequenceView](x)
+      val right            = tag[InstrumentSequenceTab.LoadedSV][SequenceView](x)
+      val seq              = tab.filter(_.isComplete).as(left).toLeft(right)
+      val stepConfig       = tab.flatMap(_.stepConfig)
+      val selectedStep     = tab.flatMap(_.selectedStep)
+      val tabOperations    = tab.map(_.tabOperations).getOrElse(TabOperations.Default)
+      val overrideControls =
+        tab.map(_.subsysControls).getOrElse(SectionVisibilityState.SectionClosed)
       InstrumentSequenceTab(x.metadata.instrument,
                             seq,
                             stepConfig,
                             selectedStep,
-                            tabOperations
+                            tabOperations,
+                            x.systemOverrides,
+                            overrideControls
       ).some
     }
 
@@ -193,7 +198,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         .map(_.modify(SeqexecTab.previewTab.modify(update)))
       q
     } else if (isLoaded) {
-      tabs.findFocusP { case InstrumentSequenceTab(_, Right(curr), _, _, _) =>
+      tabs.findFocusP { case InstrumentSequenceTab(_, Right(curr), _, _, _, _, _) =>
         obsId === curr.id
       }
     } else {
@@ -272,11 +277,11 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   // Is the id focused?
   def idDisplayed(id: Observation.Id): Boolean =
     tabs.withFocus.exists {
-      case (InstrumentSequenceTab(_, Right(curr), _, _, _), true) =>
+      case (InstrumentSequenceTab(_, Right(curr), _, _, _, _, _), true) =>
         curr.id === id
-      case (PreviewSequenceTab(curr, _, _, _), true)              =>
+      case (PreviewSequenceTab(curr, _, _, _), true)                    =>
         curr.id === id
-      case _                                                      =>
+      case _                                                            =>
         false
     }
 
@@ -299,6 +304,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
           i.isPreview,
           TabSelected.fromBoolean(a),
           i.loading,
+          i.systemOverrides,
+          i.subsysControls,
           i.tabOperations.resourceRunRequested
         ).asRight
       case (i: PreviewSequenceTab, a)    =>
@@ -311,6 +318,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
           i.isPreview,
           TabSelected.fromBoolean(a),
           i.loading,
+          SystemOverrides.AllEnabled,
+          SectionVisibilityState.SectionClosed,
           SortedMap.empty
         ).asRight
       case (i: CalibrationQueueTab, a)   =>
@@ -326,7 +335,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def selectedObserver: Option[Either[DayCalObserverFocus, SequenceObserverFocus]] =
     SequencesOnDisplay.focusSequence
       .getOption(this)
-      .collect { case InstrumentSequenceTab(_, Right(s), _, _, _) =>
+      .collect { case InstrumentSequenceTab(_, Right(s), _, _, _, _, _) =>
         SequenceObserverFocus(s.metadata.instrument,
                               s.id,
                               s.allStepsDone,
@@ -347,8 +356,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     // This is a bit tricky. When we load we need to remove existing completed sequences
     // As this is a client side only state it won't be cleaned automatically
     val cleaned = copy(tabs = Zipper.fromNel(NonEmptyList.fromListUnsafe(tabs.toList.filter {
-      case InstrumentSequenceTab(inst, Left(_), _, _, _) => inst =!= i
-      case _                                             => true
+      case InstrumentSequenceTab(inst, Left(_), _, _, _, _, _) => inst =!= i
+      case _                                                   => true
     })))
 
     SequencesOnDisplay.loadingL(obsId).set(false)(cleaned)
@@ -411,8 +420,8 @@ object SequencesOnDisplay {
 
   private def instrumentSequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
     tab match {
-      case InstrumentSequenceTab(_, Right(curr), _, _, _) => curr.id === id
-      case _                                              => false
+      case InstrumentSequenceTab(_, Right(curr), _, _, _, _, _) => curr.id === id
+      case _                                                    => false
     }
 
   private def sequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
@@ -528,6 +537,13 @@ object SequencesOnDisplay {
           SeqexecTabActive(i, selected)
       }.headOption
     }
+
+  def changeOverrideControls(
+    id:    Observation.Id,
+    state: SectionVisibilityState
+  ): SequencesOnDisplay => SequencesOnDisplay =
+    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.subsysControls)
+      .set(state)
 
   def markOperations(
     id:      Observation.Id,

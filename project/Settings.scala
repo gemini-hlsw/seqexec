@@ -14,36 +14,36 @@ object Settings {
     val scalajsReact            = "1.7.7"
     val booPickle               = "1.3.3"
     val diode                   = "1.1.14"
-    val javaTimeJS              = "2.0.0"
-    val scalaJSReactCommon      = "0.11.2"
-    val scalaJSSemanticUI       = "0.10.1"
-    val scalaJSReactVirtualized = "0.11.2"
-    val scalaJSReactClipboard   = "1.4.2"
-    val scalaJSReactDraggable   = "0.11.2"
+    val javaTimeJS              = "2.1.0"
+    val scalaJSReactCommon      = "0.11.3"
+    val scalaJSSemanticUI       = "0.10.5"
+    val scalaJSReactVirtualized = "0.11.3"
+    val scalaJSReactClipboard   = "1.4.3"
+    val scalaJSReactDraggable   = "0.11.3"
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "2.3.0"
-    val catsVersion         = "2.3.0"
+    val catsEffectVersion   = "2.3.1"
+    val catsVersion         = "2.3.1"
     val mouseVersion        = "0.26.2"
-    val fs2Version          = "2.4.6"
+    val fs2Version          = "2.5.0"
     val shapelessVersion    = "2.3.3"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.13"
+    val http4sVersion  = "0.21.16"
     val squants        = "1.7.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "4.3.0"
+    val jwt            = "5.0.0"
     val slf4j          = "1.7.30"
     val log4s          = "1.9.0"
     val log4cats       = "1.1.1"
-    val log4catsLevel  = "0.1.1"
+    val log4catsLevel  = "0.1.2"
     val logback        = "1.2.3"
-    val janino         = "3.1.2"
-    val logstash       = "6.5"
+    val janino         = "3.1.3"
+    val logstash       = "6.6"
     val pureConfig     = "0.14.0"
     val monocleVersion = "2.1.0"
     val circeVersion   = "0.13.0"
@@ -54,12 +54,12 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
-    lazy val munitVersion           = "0.7.19"
-    lazy val munitDisciplineVersion = "1.0.3"
+    lazy val munitVersion           = "0.7.21"
+    lazy val munitDisciplineVersion = "1.0.5"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
-    val semanticUI = "2.3.1"
+    val fomanticUI = "2.8.7"
     val ocsVersion = "2020101.1.1"
 
     val apacheXMLRPC        = "3.1.3"
@@ -74,15 +74,15 @@ object Settings {
     val gmpStatusGateway    = "0.3.3"
     val gmpStatusDatabase   = "0.3.3"
     val gmpCmdClientBridge  = "0.6.3"
-    val guava               = "25.0-jre"
-    val prometheusClient    = "0.9.0"
-    val geminiLocales       = "0.5.0"
-    val pprint              = "0.6.0"
-    val jaxb                = "2.3.3"
+    val guava               = "30.1-jre"
+    val prometheusClient    = "0.10.0"
+    val geminiLocales       = "0.5.1"
+    val pprint              = "0.6.1"
+    val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.2"
-    val lucumaUI   = "0.7.2"
+    val lucumaCore = "0.7.5"
+    val lucumaUI   = "0.11.3"
   }
 
   /**
@@ -91,7 +91,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.0" % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.1" % "test"
     )
     val MUnit          = Def.setting(
       Seq(

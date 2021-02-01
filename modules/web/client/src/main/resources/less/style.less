@@ -1,6 +1,6 @@
-@import "~semantic-ui-less/themes/default/globals/site.variables";
-@import "~semantic-ui-less/themes/default/collections/table.variables";
-@import "~semantic-ui-less/themes/default/elements/segment.variables";
+@import "~fomantic-ui-less/themes/default/globals/site.variables";
+@import "~fomantic-ui-less/themes/default/collections/table.variables";
+@import "~fomantic-ui-less/themes/default/elements/segment.variables";
 
 @background_color_5: #f5f5f5;
 @background_color_6: #f9fafb;
@@ -64,7 +64,7 @@ body {
 .ui.darkolive.label {
   background-color: #5d642d !important;
   border-color: #5d642d !important;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
 }
 
 @keyframes border-dance {
@@ -76,6 +76,31 @@ body {
       right top 20px;
   }
 }
+.SeqexecStyles-disabledSubsystems {
+  color: @white;
+  background-color: darken(darkgray, 30%);
+  padding: 0.5em 0.8em;
+  line-height: 1;
+  font-size: 0.78571429rem;
+  position: relative;
+  vertical-align: baseline;
+  margin: 0 0.14285714em;
+  padding: 0.5833em 0.833em;
+  text-transform: none;
+  font-weight: bold;
+  border: 0 solid transparent;
+  border-radius: 0.28571429rem;
+  transition: background 0.1s ease;
+  background-image: repeating-linear-gradient(
+    163deg,
+    transparent 0%,
+    transparent 48%,
+    darken(white, 20%) 50%,
+    darken(white, 20%) 58%,
+    transparent 60%,
+    transparent 100%
+  );
+}
 
 .SeqexecStyles-activeGuide {
   background-color: @greenHeaderColor !important;
@@ -86,16 +111,15 @@ body {
   text-align: center;
 }
 
-.SeqexecStyles-instrumentAndResourcesLabel {
-  display: flex;
-  margin-bottom: -6px;
-}
-
 .SeqexecStyles-resourceLabels {
   display: flex;
-  position: relative;
-  bottom: 8px;
 }
+.SeqexecStyles-tabTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .SeqexecStyles-filterActiveButton {
   background-color: @positiveColor !important;
@@ -110,23 +134,28 @@ body {
 .SeqexecStyles-tabLabel {
   width: 100%;
   text-align: center;
-  pointer-events: none;
+  margin: 0.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SeqexecStyles-previewTabLabel {
+  justify-content: space-between;
+}
+
+.SeqexecStyles-loadButton {
+  align-self: flex-end;
+}
+
+.SeqexecStyles-loadedTab {
+  flex-direction: column;
 }
 
 .SeqexecStyles-dropOnTab {
   background-color: darken(@secondaryBackground, 10%) !important;
 }
 
-.SeqexecStyles-previewTabLabel {
-  width: 100%;
-  text-align: center;
-  display: flex;
-}
-
-.SeqexecStyles-previewTabId {
-  align-self: flex-start;
-  margin-right: 1em;
-}
 
 .SeqexecStyles-previewTabLoadButton {
   align-self: flex-end;
@@ -136,6 +165,11 @@ body {
 .SeqexecStyles-resourcesTabLabels {
   align-self: flex-end;
   margin-left: auto;
+}
+
+.ui.tabular.menu .item.SeqexecStyles-tab {
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .SeqexecStyles-tab {
@@ -163,6 +197,10 @@ body {
   margin-bottom: 0 !important;
 }
 
+.SeqexecStyles-sequenceInfo {
+  background-color: none;
+  align-self: center;
+}
 .SeqexecStyles-headerSidebarStyle {
   border-width: 1px;
   border-style: solid;
@@ -171,73 +209,46 @@ body {
   .widerColumn;
 }
 
-.SeqexecStyles-emptyInstrumentTab {
-  min-height: 20.4em;
-}
-
-.SeqexecStyles-emptyInstrumentTabLogShown {
-  height: ~"calc(100vh - 39.9em)";
-}
-
-.SeqexecStyles-emptyInstrumentTabLogHidden {
-  height: ~"calc(100vh - 25.2em)";
+.ui.segment.SeqexecStyles-tabSegment {
+  padding: 0.4em;
+  margin-bottom: 0;
+  border-bottom: unset;
+  display: flex;
+  flex-direction: column;
 }
 
 .SeqexecStyles-tabSegment {
-  min-height: 20.4em;
-  padding: 0.4em !important;
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
-.SeqexecStyles-tabSegmentLogHidden {
-  height: ~"calc(100vh - 30.1em)";
+.SeqexecStyles-configTableControls {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  display: flex;
+  justify-content: space-between;
+}
+.SeqexecStyles-tabControls {
 }
 
-.SeqexecStyles-tabSegmentLogShown {
-  height: ~"calc(100vh - 44.8em)";
+.SeqexecStyles-tabTable {
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
-.SeqexecStyles-tabSegmentUnauth {
-  min-height: 18.4em;
-  padding-right: 0.4em !important;
-  padding-left: 0.4em !important;
-  padding-top: 0.4em !important;
-  padding-bottom: 0.4em !important;
+.SeqexecStyles-sequenceControlForm {
+  display: flex;
+}
+.SeqexecStyles-sequencesControl {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  display: flex;
+  justify-content: space-between;
 }
 
-.SeqexecStyles-tabSegmentLogHiddenUnauth {
-  height: ~"calc(100vh - 30.1em)";
-}
-
-.SeqexecStyles-tabSegmentLogShownUnauth {
-  height: ~"calc(100vh - 44.8em)";
-}
-
-.SeqexecStyles-tableContainer {
-  height: ~"calc(100% - 2.8em)";
-  margin-top: 1em;
-}
-
-.SeqexecStyles-tableContainerNoControls {
-  height: ~"calc(100% - 0.1em)";
-}
-
-.SeqexecStyles-sequencesArea {
-  .widerColumn;
-}
-
-.SeqexecStyles-controlButtons {
-  padding-bottom: 0.3em;
-}
-
-.SeqexecStyles-infoOnControl {
-  margin-top: 0.2em !important;
-}
-
-.SeqexecStyles-sequencesArea
-  > div
-  > .tabular.menu
-  > .SeqexecStyles-inactiveTabContent:last-child {
-  border-right: @border !important;
+.SeqexecStyles-sequencesTable {
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
 .SeqexecStyles-errorText {
@@ -256,16 +267,19 @@ body {
   .widerColumn;
 }
 
-.SeqexecStyles-logSecondarySegment {
-  .normalizedSegment;
-  padding-left: 0.4em !important;
-  padding-right: 0.4em !important;
+.ui.segment.SeqexecStyles-logSecondarySegment {
+  padding-left: 0.4em;
+  padding-right: 0.4em;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .SeqexecStyles-logControlRow {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
-  padding: 0em !important;
+  padding: 0em;
+  display: flex;
+  justify-content: space-between;
 }
 
 .SeqexecStyles-logTableRow {
@@ -275,10 +289,18 @@ body {
   padding-top: 0em !important;
 }
 
+.ui.form .SeqexecStyles-selectorFields {
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+
 .SeqexecStyles-selectorFields {
-  float: right;
-  margin-bottom: 0px !important;
-  margin-top: 5px !important;
+  display: flex;
+}
+
+.ui.form .field.SeqexecStyles-logLevelBox {
+  margin-bottom: 0px;
+  margin-right: 1em;
 }
 
 .queueText() {
@@ -310,6 +332,13 @@ body {
   margin-top: 0;
 }
 
+.ui.label.SeqexecStyles-labelPointer {
+  margin-top: .2em;
+}
+
+.SeqexecStyles-resourcesLabels {
+  display: flex;
+}
 .SeqexecStyles-labelPointer {
   cursor: pointer;
 }
@@ -318,8 +347,9 @@ body {
   margin-bottom: -1em !important;
 }
 
-.SeqexecStyles-titleRow {
-  margin-bottom: 0em !important;
+.ui.header.SeqexecStyles-titleRow {
+  padding-top: 0.2em;
+  margin-bottom: 0.2em;
   &:after {
     top: 0px !important;
   }
@@ -397,20 +427,23 @@ body {
 }
 
 .SeqexecStyles-queueAreaRow {
-  .appSegment;
+  display: flex;
+  flex-direction: column;
 }
 
 .SeqexecStyles-queueArea {
-  .widerColumn;
+  width: 100%;
+  .mobileSegment;
 }
 
 .SeqexecStyles-headerSidebarArea {
-  .widerColumn;
+  width: 100%;
+  display: none;
+  padding-left: 0.5rem !important;
 }
 
 .SeqexecStyles-logArea {
-  margin-bottom: 3em;
-  .appSegment;
+  // .appSegment;
 }
 
 .SeqexecStyles-lowerRow {
@@ -452,7 +485,8 @@ body {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: @table_detail_row_top_padding @table_detail_row_right_padding @table_detail_row_bottom_padding @table_row_left_padding;
+  padding: @table_detail_row_top_padding @table_detail_row_right_padding
+    @table_detail_row_bottom_padding @table_row_left_padding;
   z-index: 100;
   position: relative;
 }
@@ -736,7 +770,6 @@ body {
 }
 
 .stepWithBreakpoint(@line_color) {
-  // background-color: @background;
   background-image: linear-gradient(to right, @line_color 0px, @line_color);
   font-size: smaller !important;
   text-overflow: ellipsis;
@@ -1072,7 +1105,7 @@ body {
 
 // Get the same background color as a button
 .SeqexecStyles-labelAsButton {
-  @import "~semantic-ui-less/themes/default/elements/button.variables";
+  @import "~fomantic-ui-less/themes/default/elements/button.variables";
   background: @background !important;
   padding-top: @verticalPadding !important;
   padding-bottom: @verticalPadding !important;
@@ -1111,16 +1144,6 @@ body {
   padding-top: 0.5em !important;
   padding-bottom: 0.5em !important;
 }
-.ui.footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 46px;
-  margin-bottom: 0;
-  margin-top: 0;
-  background-color: @background_color_5;
-  border-radius: unset;
-}
 .SeqexecStyles-stepsTable {
   background-image: linear-gradient(
       to bottom,
@@ -1135,6 +1158,7 @@ body {
   background-clip: content-box padding-box !important;
 }
 .SeqexecStyles-logTable {
+  margin-bottom: 0.2em;
   font-size: 1em;
 }
 .ReactVirtualized__Table__headerRow {
@@ -1320,6 +1344,49 @@ p.SeqexecStyles-confirmLine {
   font-weight: bold;
 }
 
+.SeqexecStyles-mainUI {
+  height: 100vh;
+  width: 100vw;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ui.menu.SeqexecStyles-footer {
+  margin-bottom: 0;
+  border-radius: unset;
+  margin-top: auto;
+  height: 46px;
+  width: 100%;
+  max-width: 100%;
+  min-height: 46px;
+}
+
+.SeqexecStyles-loginError {
+  padding: 1em;
+}
+
+.SeqexecStyles-subsystemsForm {
+  display: flex;
+  align-items: center;
+}
+
+.SeqexecStyles-subsystemsForm .field .ui.checkbox {
+  margin-right: 1em;
+}
+@media only screen and (min-width: 767px) {
+  .SeqexecStyles-queueAreaRow {
+    flex-direction: row;
+  }
+  .SeqexecStyles-queueArea {
+    width: 50%;
+  }
+  .SeqexecStyles-headerSidebarArea {
+    width: 50%;
+    display: block;
+  }
+}
 @media only screen and (max-width: 767px) {
   .SeqexecStyles-notInMobile {
     display: none !important;
@@ -1336,13 +1403,10 @@ p.SeqexecStyles-confirmLine {
   }
   .SeqexecStyles-tabSegment {
     .mobileSegment;
-    min-height: 32.3em;
-  }
-  .SeqexecStyles-sequencesArea {
-    .mobileSegment;
   }
   .SeqexecStyles-queueArea {
-    .mobileSegment;
+  }
+  .SeqexecStyles-headerSidebarArea {
   }
   .SeqexecStyles-logSegment {
     .mobileSegment;
@@ -1362,42 +1426,12 @@ p.SeqexecStyles-confirmLine {
   .SeqexecStyles-logArea {
     padding: 0em !important;
   }
-
-  .SeqexecStyles-tabSegmentLogHidden {
-    height: ~"calc(100vh - 21.1em)";
-  }
-
-  .SeqexecStyles-tabSegmentLogShown {
-    height: ~"calc(100vh - 35.8em)";
-  }
   .SeqexecStyles-emptyInstrumentTab {
     min-height: 25.4em;
-  }
-
-  .SeqexecStyles-emptyInstrumentTabLogShown {
-    height: ~"calc(100vh - 30.9em)";
-  }
-
-  .SeqexecStyles-emptyInstrumentTabLogHidden {
-    height: ~"calc(100vh - 16.1em)";
   }
   .SeqexecStyles-stepsListPaneUnauth {
     height: ~"calc(100% - 0em)";
     margin-top: 0.1em !important;
     margin-bottom: 0.1em !important;
   }
-  .SeqexecStyles-tabSegmentUnauth {
-    padding-right: 0.1em !important;
-    padding-left: 0.1em !important;
-    padding-top: 0.1em !important;
-    padding-bottom: 0.1em !important;
-  }
-  .SeqexecStyles-tabSegmentLogHiddenUnauth {
-    height: ~"calc(100vh - 21.1em)";
-  }
-
-  .SeqexecStyles-tabSegmentLogShownUnauth {
-    height: ~"calc(100vh - 35.9em)";
-  }
 }
-

@@ -6,7 +6,12 @@ package seqexec.web.client.model
 import lucuma.core.util.Enumerated
 
 // UI model
-sealed trait SectionVisibilityState extends Product with Serializable
+sealed trait SectionVisibilityState extends Product with Serializable {
+  def flip: SectionVisibilityState = this match {
+    case SectionVisibilityState.SectionOpen   => SectionVisibilityState.SectionClosed
+    case SectionVisibilityState.SectionClosed => SectionVisibilityState.SectionOpen
+  }
+}
 
 object SectionVisibilityState {
   case object SectionOpen   extends SectionVisibilityState

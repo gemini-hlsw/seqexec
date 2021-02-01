@@ -4,12 +4,12 @@
 package seqexec.web.client.components.queue
 
 import cats.syntax.all._
+import japgolly.scalajs.react.React
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
-import react.common.implicits._
 import react.semanticui.As
 import react.semanticui.collections.message.Message
 import react.semanticui.elements.segment.Segment
@@ -20,29 +20,29 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.SectionVisibilityState
-import seqexec.web.client.model.SectionVisibilityState.SectionClosed
-import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.dataTab
+
+final case class CalQueueTabContent(
+  canOperate:   Boolean,
+  active:       TabSelected,
+  logDisplayed: SectionVisibilityState
+) extends ReactProps[CalQueueTabContent](CalQueueTabContent.component) {
+  protected[queue] val dayCalConnectOps =
+    SeqexecCircuit.connect(SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
+  protected[queue] val dayCalConnect    =
+    SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
+
+  val isActive: Boolean =
+    active === TabSelected.Selected
+}
 
 /**
  * Content of the queue tab
  */
 object CalQueueTabContent {
-  final case class Props(
-    canOperate:   Boolean,
-    active:       TabSelected,
-    logDisplayed: SectionVisibilityState
-  ) {
-    protected[queue] val dayCalConnectOps =
-      SeqexecCircuit.connect(SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
-    protected[queue] val dayCalConnect    =
-      SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
-
-    val isActive: Boolean =
-      active === TabSelected.Selected
-  }
+  type Props = CalQueueTabContent
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -59,35 +59,27 @@ object CalQueueTabContent {
     .builder[Props]("CalQueueTabContent")
     .stateless
     .render_P { p =>
-      val tabClazz =
-        List(
-          SeqexecStyles.tabSegment,
-          SeqexecStyles.tabSegmentLogShown
-            .when_(p.logDisplayed === SectionOpen),
-          SeqexecStyles.tabSegmentLogHidden
-            .when_(p.logDisplayed === SectionClosed)
-        ).combineAll
-
       TabPane(active = p.isActive,
               as = As.Segment(Segment(attached = SegmentAttached.Attached, secondary = true)),
-              clazz = tabClazz
+              clazz = SeqexecStyles.tabSegment
       )(
         dataTab := "daycal",
-        <.div(
-          ^.height := "100%",
-          p.dayCalConnectOps(_() match {
-            case Some(x) => CalQueueToolbar(CalibrationQueueId, x)
-            case _       => <.div()
-          }).when(p.canOperate),
-          p.dayCalConnect(_() match {
-            case Some(x) =>
-              <.div(
-                ^.height := "100%",
-                CalQueueTable(CalQueueTable.Props(CalibrationQueueId, x))
-              )
-            case _       => defaultContent
-          })
-        ).when(p.isActive)
+        React
+          .Fragment(
+            <.div(SeqexecStyles.TabControls,
+                  p.dayCalConnectOps(_() match {
+                    case Some(x) => CalQueueToolbar(CalibrationQueueId, x)
+                    case _       => <.div()
+                  }).when(p.canOperate)
+            ),
+            <.div(SeqexecStyles.TabTable,
+                  p.dayCalConnect(_() match {
+                    case Some(x) =>
+                      CalQueueTable(CalibrationQueueId, x)
+                    case _       => defaultContent
+                  }).when(p.isActive)
+            )
+          )
       )
     }
     .configure(Reusability.shouldComponentUpdate)

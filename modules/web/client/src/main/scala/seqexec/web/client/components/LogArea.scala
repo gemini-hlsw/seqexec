@@ -30,18 +30,13 @@ import react.clipboard._
 import react.common._
 import react.common.implicits._
 import react.semanticui.collections.form.Form
-import react.semanticui.collections.form.FormField
-import react.semanticui.collections.form.FormGroup
-import react.semanticui.collections.grid.Grid
-import react.semanticui.collections.grid.GridColumn
-import react.semanticui.collections.grid.GridRow
+import react.semanticui.collections.form.FormCheckbox
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.button.LabelPosition
 import react.semanticui.elements.segment.Segment
 import react.semanticui.modules.checkbox.Checkbox
 import react.semanticui.sizes._
 import react.semanticui.textalignment._
-import react.semanticui.widths._
 import react.virtualized._
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.enum.ServerLogLevel
@@ -59,7 +54,7 @@ import web.client.table._
  */
 object CopyLogToClipboard {
   private val component = ScalaComponent
-    .builder[String]("CopyLogToClipboard")
+    .builder[String]
     .stateless
     .render_P { p =>
       CopyToClipboard(p)(
@@ -336,7 +331,7 @@ object LogArea {
     s => b.setStateL(State.levelLens(l))(s.some)
 
   private val component = ScalaComponent
-    .builder[Props]("LogArea")
+    .builder[Props]
     .initialState(State.Default)
     .render { b =>
       val p          = b.props
@@ -347,40 +342,32 @@ object LogArea {
         else IconDoubleUp
       val toggleText =
         (p.log.display === SectionOpen).fold("Hide Log", "Show Log")
-      GridColumn(width = Sixteen, clazz = SeqexecStyles.logSegment)(
-        Segment(secondary = true, clazz = SeqexecStyles.logSecondarySegment)(
-          Grid(
-            GridRow(clazz = SeqexecStyles.logControlRow)(
-              GridColumn(width = Six)(
-                Button(icon = true,
-                       labelPosition = LabelPosition.Left,
-                       compact = true,
-                       size = Small,
-                       onClick = SeqexecCircuit.dispatchCB(ToggleLogArea)
-                )(toggleIcon, toggleText)
-              ),
-              GridColumn(width = Ten)(
-                Form(
-                  FormGroup(clazz = SeqexecStyles.selectorFields)(
-                    s.selectedLevels.toTagMod { case (l, s) =>
-                      FormField(inline = true)(
-                        Checkbox(
-                          label = l.show,
-                          checked = s,
-                          onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
-                            (onLevelChange(b, l)(p.checked.getOrElse(false)))
-                        )
-                      )
-                    }
-                  )
+      Segment(secondary = true, clazz = SeqexecStyles.logSecondarySegment)(
+        <.div(SeqexecStyles.logControlRow)(
+          Button(icon = true,
+                 labelPosition = LabelPosition.Left,
+                 compact = true,
+                 size = Small,
+                 onClick = SeqexecCircuit.dispatchCB(ToggleLogArea)
+          )(toggleIcon, toggleText),
+          Form(
+            <.div(SeqexecStyles.selectorFields)(
+              s.selectedLevels.toTagMod { case (l, s) =>
+                FormCheckbox(
+                  label = l.show,
+                  inline = true,
+                  clazz = SeqexecStyles.logLevelBox,
+                  checked = s,
+                  onChangeE = (_: ReactMouseEvent, p: Checkbox.CheckboxProps) =>
+                    (onLevelChange(b, l)(p.checked.getOrElse(false)))
                 )
-              ).when(p.log.display === SectionOpen)
-            ),
-            GridRow(clazz = SeqexecStyles.logTableRow)(
-              AutoSizer(AutoSizer.props(table(b), disableHeight = true, onResize = onResize(b)))
-            ).when(p.log.display === SectionOpen)
-          )
-        )
+              }
+            )
+          ).when(p.log.display === SectionOpen)
+        ),
+        <.div(SeqexecStyles.logSecondarySegment |+| SeqexecStyles.logTable)(
+          AutoSizer(AutoSizer.props(table(b), disableHeight = true, onResize = onResize(b)))
+        ).when(p.log.display === SectionOpen)
       )
     }
     .configure(Reusability.shouldComponentUpdate)

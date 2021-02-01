@@ -7,6 +7,7 @@ import monocle.macros.Lenses
 import seqexec.engine.Sequence
 import seqexec.model.NodAndShuffleStep.PendingObserveCmd
 import seqexec.model.Observer
+import seqexec.model.SystemOverrides
 
 @Lenses
 final case class SequenceData[F[_]](

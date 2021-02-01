@@ -10,7 +10,7 @@ import io.chrisdavenport.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.server.Progress
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 import squants.Time
 
 class NifsControllerDisabled[F[_]: Logger: Applicative] extends NifsController[F] {

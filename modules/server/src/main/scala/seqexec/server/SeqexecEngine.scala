@@ -268,8 +268,14 @@ object SeqexecEngine {
       stepId: Option[StepId]
     ): Option[SequenceGen.StepGen[F]] = for {
       stp    <- stepId.orElse(obs.seq.currentStep.map(_.id))
-      stpGen <- obs.seqGen.steps.dropWhile(_.id =!= stp).find(a => stepRequiresChecks(a.config))
+      stpGen <- obs.seqGen.steps.find(_.id === stp)
     } yield stpGen
+
+    private def findFirstCheckRequiredStep(
+      obs:    SequenceData[F],
+      stepId: StepId
+    ): Option[SequenceGen.StepGen[F]] =
+      obs.seqGen.steps.dropWhile(_.id =!= stepId).find(a => stepRequiresChecks(a.config))
 
     /**
      * Check if the target on the TCS matches the seqexec target
@@ -497,14 +503,16 @@ object SeqexecEngine {
             executeEngine
               .liftF {
                 findStartingStep(seq, stepId)
-                  .map(sp =>
-                    sequenceTcsTargetMatch(sp).map { tchk =>
-                      (sp.some,
-                       List(tchk, observingConditionsMatch(st.conditions, sp))
-                         .collect { case Some(x) => x }
-                         .widen[SeqCheck]
-                      )
-                    }
+                  .flatMap(ststp =>
+                    findFirstCheckRequiredStep(seq, ststp.id).map(sp =>
+                      sequenceTcsTargetMatch(sp).map { tchk =>
+                        (ststp.some,
+                         List(tchk, observingConditionsMatch(st.conditions, sp))
+                           .collect { case Some(x) => x }
+                           .widen[SeqCheck]
+                        )
+                      }
+                    )
                   )
                   .getOrElse((none[SequenceGen.StepGen[F]], List.empty[SeqCheck]).pure[F])
               }
@@ -1533,10 +1541,10 @@ object SeqexecEngine {
       case NullSeqEvent                       => Stream.empty
       case SetOperator(_, _)                  => Stream.emit(OperatorUpdated(svs))
       case SetObserver(_, _, _)               => Stream.emit(ObserverUpdated(svs))
-      case SetTcsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
-      case SetGcalEnabled(_, _, _)            => Stream.empty //TODO: Put proper SeqexecModelUpdate
-      case SetInstrumentEnabled(_, _, _)      => Stream.empty //TODO: Put proper SeqexecModelUpdate
-      case SetDhsEnabled(_, _, _)             => Stream.empty //TODO: Put proper SeqexecModelUpdate
+      case SetTcsEnabled(_, _, _)             => Stream.emit(OverridesUpdated(svs))
+      case SetGcalEnabled(_, _, _)            => Stream.emit(OverridesUpdated(svs))
+      case SetInstrumentEnabled(_, _, _)      => Stream.emit(OverridesUpdated(svs))
+      case SetDhsEnabled(_, _, _)             => Stream.emit(OverridesUpdated(svs))
       case AddLoadedSequence(i, s, _, c)      => Stream.emit(LoadSequenceUpdated(i, s, svs, c))
       case ClearLoadedSequences(_)            => Stream.emit(ClearLoadedSequencesUpdated(svs))
       case SetConditions(_, _)                => Stream.emit(ConditionsUpdated(svs))
@@ -1622,6 +1630,7 @@ object SeqexecEngine {
     SequenceView(seq.id,
                  SequenceMetadata(instrument, obsSeq.observer, obsSeq.seqGen.title),
                  st.status,
+                 obsSeq.overrides,
                  engineSteps(seq),
                  None
     )

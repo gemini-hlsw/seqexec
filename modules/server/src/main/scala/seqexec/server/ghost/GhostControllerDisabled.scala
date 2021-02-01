@@ -8,7 +8,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SystemOverrides.overrideLogMessage
+import seqexec.server.overrideLogMessage
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
 import squants.time.Time
