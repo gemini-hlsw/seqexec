@@ -429,7 +429,9 @@ object GmosControllerEpics extends GmosEncoders {
           ),
           setGainSetting(state, config.r.ampReadMode, config.r.ampGain),
           applyParam(state.ampCount, encode(config.r.ampCount), DC.setAmpCount),
-          applyParam(state.roiNumUsed, roiNumUsed(config.roi), DC.setRoiNumUsed),
+          // TODO revert this change when FR-41232 is resolved
+          //applyParam(state.roiNumUsed, roiNumUsed(config.roi), DC.setRoiNumUsed),
+          DC.setRoiNumUsed(roiNumUsed(config.roi)).some,
           applyParam(state.ccdXBinning, encode(config.bi.x), DC.setCcdXBinning),
           applyParam(state.ccdYBinning, encode(config.bi.y), DC.setCcdYBinning)
         ).flattenOption ++
