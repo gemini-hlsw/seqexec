@@ -6,9 +6,7 @@ package seqexec.server.altair
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats._
 import cats.effect.Async
 import cats.effect.Sync
@@ -17,6 +15,7 @@ import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
+import io.chrisdavenport.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.server.SeqexecFailure
@@ -48,7 +47,7 @@ object AltairControllerEpics {
   def apply[F[_]: Async](
     epicsAltair: => AltairEpics[F],
     epicsTcs:    => TcsEpics[F]
-  ): AltairController[F] = new AltairController[F] {
+  )(implicit L:  Logger[F]): AltairController[F] = new AltairController[F] {
 
     private def inRangeLinear[T <: Ordered[T]](vMin: T, vMax: T)(v: T): Boolean =
       v > vMin && v < vMax
@@ -129,8 +128,11 @@ object AltairControllerEpics {
         newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).map(prepareMatrix)
       ).collect { case Some(x) => x }
 
-      val pause   = (actions.sequence *> epicsTcs.targetFilter.post(DefaultTimeout).void)
-        .whenA(actions.nonEmpty)
+      val pause   = (
+        L.debug("Pausing Altair guiding") *>
+          actions.sequence *> epicsTcs.targetFilter.post(DefaultTimeout) *>
+          L.debug("Altair guiding paused")
+      ).whenA(actions.nonEmpty)
 
       needsToStop.option((newCfg, pause))
     }
@@ -157,12 +159,15 @@ object AltairControllerEpics {
       val guideOk  = reasons.contains(ResumeCondition.GaosGuideOn)
 
       (newPosOk && guideOk).option(
-        (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout) *>
+        (L.debug("Resume Altair guiding") *>
+          epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout) *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
-          epicsAltair.waitAoSettled(AoSettledTimeout)).whenA(!currCfg.aoLoop)
+          L.debug("Altair guiding resumed") *>
+          epicsAltair.waitAoSettled(AoSettledTimeout) *>
+          L.debug("Altair guiding settled")).whenA(!currCfg.aoLoop)
       )
     }
 
@@ -187,27 +192,35 @@ object AltairControllerEpics {
     private val StrapGateTimeout = FiniteDuration(5, SECONDS)
 
     private def startStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
-      epicsAltair.strapGateControl.setGate(1) *>
+      L.debug("Starting STRAP gate in Altair") *>
+        epicsAltair.strapGateControl.setGate(1) *>
         epicsAltair.strapGateControl.post(DefaultTimeout) *>
-        epicsAltair.waitForStrapGate(100, StrapGateTimeout)
+        epicsAltair.waitForStrapGate(100, StrapGateTimeout) *>
+        L.debug("STRAP gate started")
     ).unlessA(currCfg.strapGate =!= 0)
 
     private def stopStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
-      epicsAltair.strapGateControl.setGate(0) *>
-        epicsAltair.strapGateControl.post(DefaultTimeout).void
+      L.debug("Stopping STRAP gate in Altair") *>
+        epicsAltair.strapGateControl.setGate(0) *>
+        epicsAltair.strapGateControl.post(DefaultTimeout) *>
+        L.debug("STRAP gate stopped")
     ).whenA(currCfg.strapGate =!= 0)
 
     private val StrapLoopSettleTimeout = FiniteDuration(10, SECONDS)
 
     private def startStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
-      epicsAltair.strapControl.setActive(1) *>
+      L.debug("Starting STRAP loop in Altair") *>
+        epicsAltair.strapControl.setActive(1) *>
         epicsAltair.strapControl.post(DefaultTimeout) *>
-        epicsAltair.waitForStrapLoop(v = true, StrapLoopSettleTimeout)
+        epicsAltair.waitForStrapLoop(v = true, StrapLoopSettleTimeout) *>
+        L.debug("STRAP loop started")
     ).unlessA(currCfg.strapLoop)
 
     private def stopStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
-      epicsAltair.strapControl.setActive(0) *>
-        epicsAltair.strapControl.post(DefaultTimeout).void
+      L.debug("Stopping STRAP loop in Altair") *>
+        epicsAltair.strapControl.setActive(0) *>
+        epicsAltair.strapControl.post(DefaultTimeout) *>
+        L.debug("STRAP loop stopped")
     ).whenA(currCfg.strapLoop)
 
     implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
@@ -280,17 +293,23 @@ object AltairControllerEpics {
     )(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet): PauseResume[F] = {
       val pause: Option[F[Unit]]  =
         (pauseReasons.contains(PauseCondition.GaosGuideOff) && currCfg.aoLoop).option {
-          epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+          L.debug("Pausing Altair guiding") *>
+            epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
             epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed) *>
-            epicsTcs.targetFilter.post(DefaultTimeout).void
+            epicsTcs.targetFilter.post(DefaultTimeout) *>
+            L.debug("Altair guiding paused")
+
         }
       val resume: Option[F[Unit]] = (resumeReasons.contains(ResumeCondition.GaosGuideOn) &&
         (pauseReasons.contains(PauseCondition.GaosGuideOff) || !currCfg.aoLoop)).option {
-        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        L.debug("Resuming Altair guiding") *>
+          epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
-          epicsAltair.waitAoSettled(AoSettledTimeout)
+          L.debug("Altair guiding resumed") *>
+          epicsAltair.waitAoSettled(AoSettledTimeout) *>
+          L.debug("Altair guiding settled")
       }
 
       PauseResume(
@@ -300,8 +319,12 @@ object AltairControllerEpics {
     }
 
     private def turnOff(c: EpicsAltairConfig): PauseResume[F] = PauseResume(
-      (epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-        epicsTcs.targetFilter.post(DefaultTimeout)).whenA(c.aoLoop).some,
+      (
+        L.debug("Turning Altair guiding off") *>
+          epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+          epicsTcs.targetFilter.post(DefaultTimeout) *>
+          L.debug("Altair guiding turned off")
+      ).whenA(c.aoLoop).some,
       None
     )
 

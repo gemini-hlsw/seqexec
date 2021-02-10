@@ -155,6 +155,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- L.debug("Send endObserve to Flamingos2")
       _ <- sys.endObserveCmd.mark
       _ <- sys.endObserveCmd.post(DefaultTimeout)
+      _ <- L.debug("endObserve sent to Flamingos2")
     } yield ()
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] = {

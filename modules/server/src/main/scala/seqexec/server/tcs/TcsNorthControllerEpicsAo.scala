@@ -167,9 +167,9 @@ object TcsNorthControllerEpicsAo {
 
         if (params.nonEmpty)
           for {
+            _ <- L.debug("Start TCS configuration")
             s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
-            _ <- L.debug("TCS configuration command post")
             _ <- if (mountMoves)
                    epicsSys.waitInPosition(Duration.ofMillis(stabilizationTime.toMillis),
                                            tcsTimeout
@@ -181,6 +181,7 @@ object TcsNorthControllerEpicsAo {
                  )
                    epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
                  else Applicative[F].unit
+            _ <- L.debug("Completed TCS configuration")
           } yield s
         else
           L.debug("Skipping TCS configuration") *> current.pure[F]
@@ -330,9 +331,10 @@ object TcsNorthControllerEpicsAo {
 
       if (params.nonEmpty)
         for {
+          _ <- L.debug("Turning guide off")
           s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
           _ <- epicsSys.post(TcsControllerEpicsCommon.DefaultTimeout)
-          _ <- L.debug("Turning guide off")
+          _ <- L.debug("Guide turned off")
         } yield s
       else
         L.debug("Skipping guide off") *> current.pure[F]
@@ -353,9 +355,10 @@ object TcsNorthControllerEpicsAo {
 
       if (params.nonEmpty)
         for {
+          _ <- L.debug("Turning guide on")
           s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
           _ <- epicsSys.post(TcsControllerEpicsCommon.DefaultTimeout)
-          _ <- L.debug("Turning guide on")
+          _ <- L.debug("Guide turned on")
         } yield s
       else
         L.debug("Skipping guide on") *> current.pure[F]

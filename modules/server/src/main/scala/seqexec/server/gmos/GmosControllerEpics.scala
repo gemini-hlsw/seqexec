@@ -511,7 +511,8 @@ object GmosControllerEpics extends GmosEncoders {
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to Gmos") *>
           sys.endObserveCmd.mark *>
-          sys.endObserveCmd.post(DefaultTimeout).void
+          sys.endObserveCmd.post(DefaultTimeout) *>
+          L.debug("endObserve sent to Gmos")
 
       override def pauseObserve: F[Unit] = protectedObserveCommand("Pause", sys.pauseCmd)
 

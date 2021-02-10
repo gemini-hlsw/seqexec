@@ -139,7 +139,8 @@ object GcalControllerEpics {
     ).flattenOption
 
     (for {
-      _ <- L.debug("Send configuration to GCAL")
+      _ <- L.info("Start GCAL configuration")
+      _ <- L.debug(s"GCAL configuration: ${demand.show}")
       _ <- params.sequence
       r <- epics.post(SetupTimeout)
       _ <- L.debug("Completed GCAL configuration")

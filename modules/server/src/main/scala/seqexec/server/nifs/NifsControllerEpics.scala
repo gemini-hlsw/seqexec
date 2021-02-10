@@ -366,17 +366,20 @@ object NifsControllerEpics extends NifsEncoders {
     override def endObserve: F[Unit] =
       L.debug("Send endObserve to NIFS") *>
         epicsSys.endObserveCmd.mark *>
-        epicsSys.endObserveCmd.post(DefaultTimeout).void
+        epicsSys.endObserveCmd.post(DefaultTimeout) *>
+        L.debug("endObserve sent to NIFS")
 
     override def stopObserve: F[Unit] =
       L.debug("Stop NIFS exposure") *>
         epicsSys.stopCmd.mark *>
-        epicsSys.stopCmd.post(DefaultTimeout).void
+        epicsSys.stopCmd.post(DefaultTimeout) *>
+        L.debug("Stop observe command sent to NIFS")
 
     override def abortObserve: F[Unit] =
       L.debug("Abort NIFS exposure") *>
         epicsSys.abortCmd.mark *>
-        epicsSys.abortCmd.post(DefaultTimeout).void
+        epicsSys.abortCmd.post(DefaultTimeout) *>
+        L.debug("Abort observe command sent to NIFS")
 
     override def observeProgress(total: Time): fs2.Stream[F, Progress] =
       ProgressUtil.obsCountdownWithObsStage[F](

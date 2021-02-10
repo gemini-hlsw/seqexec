@@ -72,7 +72,8 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](
       L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
         epicsSys.LoopControl.setCommand(PauseCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.post(CmdTimeout).void
+        epicsSys.LoopControl.post(CmdTimeout) *>
+        L.debug("Pause command sent to GeMS")
     }
 
   }
@@ -90,7 +91,8 @@ class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](
         epicsSys.LoopControl.setCommand(ResumeCmd) *>
         epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
         epicsSys.LoopControl.post(CmdTimeout) *>
-        epicsSys.waitForStableLoops(LoopStabilizationTimeout)
+        epicsSys.waitForStableLoops(LoopStabilizationTimeout) *>
+        L.debug("Resume command sent to GeMS")
     }
   }
 

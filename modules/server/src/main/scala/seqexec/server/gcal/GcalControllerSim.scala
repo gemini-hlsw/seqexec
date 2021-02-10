@@ -3,12 +3,14 @@
 
 package seqexec.server.gcal
 
+import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import seqexec.server.gcal.GcalController.GcalConfig
+import seqexec.server.gcal.GcalController.gcalConfigShow
 
 object GcalControllerSim {
   def apply[F[_]: Logger]: GcalController[F] = new GcalController[F] {
     override def applyConfig(config: GcalConfig): F[Unit] =
-      Logger[F].debug("Simulating GCAL configuration")
+      Logger[F].debug(s"Simulating GCAL configuration: ${config.show}")
   }
 }

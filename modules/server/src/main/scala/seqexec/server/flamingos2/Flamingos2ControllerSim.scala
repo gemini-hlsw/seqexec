@@ -55,14 +55,15 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: L
     sim.observe(fileId, expTime)
 
   override def applyConfig(config: Flamingos2Config): F[Unit] =
-    L.info(s"Applying Flamingos-2 configuration $config") *>
-      counter.modify(x => (x + 1, x + 1)) >>= { c =>
-      {
-        counter.set(0) *>
-          L.error(s"Error applying Flamingos-2 configuration") *>
-          MonadError[F, Throwable].raiseError(Execution("simulated error"))
-      }.whenA(c === failAt)
-    }
+    L.info(s"Simulate applying Flamingos-2 configuration $config") *>
+      (counter.modify(x => (x + 1, x + 1)) >>= { c =>
+        {
+          counter.set(0) *>
+            L.error(s"Error applying Flamingos-2 configuration") *>
+            MonadError[F, Throwable].raiseError(Execution("simulated error"))
+        }.whenA(c === failAt)
+      }) <*
+      L.info("Completed simulating Flamingos-2 configuration apply")
 
   override def endObserve: F[Unit] = sim.endObserve
 

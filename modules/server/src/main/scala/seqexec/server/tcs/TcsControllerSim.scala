@@ -18,7 +18,8 @@ class TcsControllerSim[F[_]: Applicative: Logger] {
     def configSubsystem(subsystem: Subsystem): F[Unit] =
       info(s"Applying ${subsystem.show} configuration.")
 
-    subsystems.toList.traverse_(configSubsystem)
+    info("Simulate TCS configuration") *>
+      subsystems.toList.traverse_(configSubsystem)
   }
 
   def notifyObserveStart: F[Unit] = info("Simulate TCS observe")

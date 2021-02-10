@@ -14,7 +14,6 @@ import cats.syntax.all._
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
-import io.chrisdavenport.log4cats.Logger
 import seqexec.model.enum.Resource
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
@@ -28,11 +27,8 @@ import seqexec.server.gcal.GcalController._
 /**
  * Created by jluhrs on 3/21/17.
  */
-final case class Gcal[F[_]: Logger] private (controller: GcalController[F], cfg: GcalConfig)(
-  implicit val F:                                        Sync[F]
-) extends System[F] {
-
-  private val Log: Logger[F] = Logger[F]
+final case class Gcal[F[_]: Sync] private (controller: GcalController[F], cfg: GcalConfig)
+    extends System[F] {
 
   override val resource: Resource = Resource.Gcal
 
@@ -40,12 +36,7 @@ final case class Gcal[F[_]: Logger] private (controller: GcalController[F], cfg:
    * Called to configure a system, returns a F[ConfigResult]
    */
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    for {
-      _   <- Log.info("Start GCAL configuration")
-      _   <- Log.debug(s"GCAL configuration: ${cfg.show}")
-      ret <- controller.applyConfig(cfg).map(const(ConfigResult(this)))
-      _   <- Log.info("Completed GCAL configuration")
-    } yield ret
+    controller.applyConfig(cfg).map(const(ConfigResult(this)))
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
@@ -59,7 +50,7 @@ object Gcal {
 
   implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
 
-  def fromConfig[F[_]: Sync: Logger](
+  def fromConfig[F[_]: Sync](
     isCP:   Boolean,
     config: CleanConfig
   ): F[GcalController[F] => Gcal[F]] = {
@@ -108,6 +99,6 @@ object Gcal {
 
   // GCAL that always turn off its lamps except for the IR lamp. Used to assure GCAL light does not interfere in a non
   // calibration step
-  def defaultGcal[F[_]: Sync: Logger](controller: GcalController[F]): Gcal[F] =
+  def defaultGcal[F[_]: Sync](controller: GcalController[F]): Gcal[F] =
     new Gcal[F](controller, GcalConfig.GcalOffIgnoringIr)
 }

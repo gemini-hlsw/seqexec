@@ -424,9 +424,10 @@ object TcsControllerEpicsCommon {
 
       if (params.nonEmpty)
         for {
+          _ <- L.debug("Turning guide off")
           s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
           _ <- epicsSys.post(DefaultTimeout)
-          _ <- L.debug("Turning guide off")
+          _ <- L.debug("Guide turned off")
         } yield s
       else
         L.debug("Skipping guide off") *> current.pure[F]
@@ -600,9 +601,10 @@ object TcsControllerEpicsCommon {
 
       if (params.nonEmpty)
         for {
+          _ <- L.debug("Turning guide on")
           s <- params.foldLeft(Sync[F].delay(current)) { case (c, p) => c.flatMap(p) }
           _ <- epicsSys.post(DefaultTimeout)
-          _ <- L.debug("Turning guide on")
+          _ <- L.debug("Guide turned on")
         } yield s
       else
         L.debug("Skipping guide on") *> Sync[F].delay(current)
@@ -659,12 +661,14 @@ object TcsControllerEpicsCommon {
     override def notifyObserveStart: F[Unit]             =
       L.debug("Send observe to TCS") *>
         epicsSys.observe.mark *>
-        epicsSys.post(DefaultTimeout).void
+        epicsSys.post(DefaultTimeout) *>
+        L.debug("Observe command sent to TCS")
 
     override def notifyObserveEnd: F[Unit] =
       L.debug("Send endObserve to TCS") *>
         epicsSys.endObserve.mark *>
-        epicsSys.post(DefaultTimeout).void
+        epicsSys.post(DefaultTimeout) *>
+        L.debug("endObserve command sent to TCS")
 
     // To nod the telescope is just like applying a TCS configuration, but always with an offset
     override def nod(
