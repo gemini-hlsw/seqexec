@@ -19,9 +19,10 @@ import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil._
 
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
+  val sysName: String   = "Altair"
   val AltairTop: String = tops.getOrElse("ao", "ao:")
 
-  object strapGateControl extends EpicsCommandBase {
+  object strapGateControl extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       service.createTaskControlSender("aoStrap", s"${AltairTop}wfcs:strapGtCtl", "ALTAIR STRAP")
     )
@@ -31,7 +32,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     def setGate(v: Int): F[Unit] = setParameter(gate, Integer.valueOf(v))
   }
 
-  object strapControl extends EpicsCommandBase {
+  object strapControl extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       service.createTaskControlSender("strapCorrCtl",
                                       s"${AltairTop}wfcs:strapCorrCtl",
@@ -46,7 +47,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
-  object sfoControl extends EpicsCommandBase {
+  object sfoControl extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
 
@@ -60,7 +61,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     def setActive(v: LgsSfoControl): F[Unit] = setParameter(active, v)
   }
 
-  object btoLoopControl extends EpicsCommandBase {
+  object btoLoopControl extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 

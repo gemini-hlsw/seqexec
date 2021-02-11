@@ -11,11 +11,9 @@ import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import java.util.{ Timer => JTimer }
-
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.math.abs
-
 import cats._
 import cats.data.Nested
 import cats.effect.Async
@@ -38,23 +36,27 @@ trait EpicsCommand[F[_]] {
   def mark: F[Unit]
 }
 
-abstract class EpicsCommandBase[F[_]: Async] extends EpicsCommand[F] {
+abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsCommand[F] {
   protected val cs: Option[CaCommandSender]
 
+  import EpicsUtil.AddSystemNameToCmdErrorOp
+
   override def post(timeout: FiniteDuration): F[ApplyCommandResult] = setTimeout(timeout) *>
-    Async[F].async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
-      cs.map { ccs =>
-        ccs.postCallback {
-          new CaCommandListener {
-            override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
-            override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
-            override def onFailure(cause: Exception): Unit = f(cause.asLeft)
+    Async[F]
+      .async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
+        cs.map { ccs =>
+          ccs.postCallback {
+            new CaCommandListener {
+              override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
+              override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
+              override def onFailure(cause: Exception): Unit = f(cause.asLeft)
+            }
           }
-        }
-      // It should call f on all execution paths, thanks @tpolecat
-      }.void
-        .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
-    }
+        // It should call f on all execution paths, thanks @tpolecat
+        }.void
+          .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+      }
+      .addSystemNameToCmdError(sysName)
 
   override def mark: F[Unit] = Sync[F].delay {
     cs.map(_.mark())
@@ -128,33 +130,42 @@ object EpicsCommandBase {
 
 }
 
-trait ObserveCommand {
+trait ObserveCommand[F[_]] {
+  def post(timeout: FiniteDuration): F[ObserveCommandResult]
+  def mark: F[Unit]
+}
+
+abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveCommand[F] {
   protected val cs: Option[CaCommandSender]
   protected val os: Option[CaApplySender]
 
-  def post[F[_]: Async](timeout: FiniteDuration): F[ObserveCommandResult] = setTimeout(timeout) *>
-    Async[F].async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
-      os.map { oos =>
-        oos.postCallback {
-          new CaCommandListener {
-            override def onSuccess(): Unit = f(ObserveCommandResult.Success.asRight)
-            override def onPause(): Unit   = f(ObserveCommandResult.Paused.asRight)
-            override def onFailure(cause: Exception): Unit = cause match {
-              case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
-              case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
-              case _                   => f(cause.asLeft)
+  import EpicsUtil.AddSystemNameToCmdErrorOp
+
+  override def post(timeout: FiniteDuration): F[ObserveCommandResult] = setTimeout(timeout) *>
+    Async[F]
+      .async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
+        os.map { oos =>
+          oos.postCallback {
+            new CaCommandListener {
+              override def onSuccess(): Unit = f(ObserveCommandResult.Success.asRight)
+              override def onPause(): Unit   = f(ObserveCommandResult.Paused.asRight)
+              override def onFailure(cause: Exception): Unit = cause match {
+                case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
+                case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
+                case _                   => f(cause.asLeft)
+              }
             }
           }
-        }
-      }.void
-        .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
-    }
+        }.void
+          .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+      }
+      .addSystemNameToCmdError(sysName)
 
-  def mark[F[_]: Sync]: F[Unit] = Sync[F].delay {
+  override def mark: F[Unit] = Sync[F].delay {
     cs.map(_.mark())
   }.void
 
-  protected def setTimeout[F[_]: Sync](t: FiniteDuration): F[Unit] =
+  protected def setTimeout(t: FiniteDuration): F[Unit] =
     Sync[F].delay {
       os.map(_.setTimeout(t.length, t.unit))
     }.void
@@ -426,6 +437,12 @@ object EpicsUtil {
     val pattern = "_G[0-9]{4}$"
 
     s.replaceAll(pattern, "")
+  }
+
+  implicit class AddSystemNameToCmdErrorOp[F[_]: MonadError[*[_], Throwable], A](f: F[A]) {
+    def addSystemNameToCmdError(sysName: String): F[A] = f.adaptError { case e: CaCommandError =>
+      new CaCommandError(s"Error from ${sysName}: ${e.getMessage}")
+    }
   }
 
 }

@@ -5,9 +5,7 @@ package seqexec.server.gsaoi
 
 import java.lang.{ Double => JDouble }
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -21,21 +19,18 @@ import edu.gemini.epics.acm.CaStatusAcceptor
 import edu.gemini.epics.acm.CaWindowStabilizer
 import edu.gemini.epics.acm.CarState
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
-import seqexec.server.EpicsCommand
-import seqexec.server.EpicsCommandBase
+import seqexec.server.{ EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil, ObserveCommandBase }
 import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.EpicsSystem
-import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
-import seqexec.server.ObserveCommand
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   private val GsaoiTop = tops.getOrElse("gsaoi", "gsaoi:")
+  val sysName: String  = "GSAOI"
 
-  object dcConfigCmd extends EpicsCommandBase[F] {
+  object dcConfigCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::dcconfig")
     )
@@ -66,7 +61,7 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   }
 
-  object ccConfigCmd extends EpicsCommandBase[F] {
+  object ccConfigCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::config")
     )
@@ -93,19 +88,19 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
   )
 
-  object stopCmd extends EpicsCommandBase[F] {
+  object stopCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::stop")
     )
   }
 
-  object abortCmd extends EpicsCommandBase[F] {
+  object abortCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::abort")
     )
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::observe")
     )
@@ -115,7 +110,7 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase[F] {
+  object endObserveCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::endObserve")
     )
@@ -128,12 +123,12 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     false,
     "guide start apply"
   )
-  object guideCmd extends EpicsCommandBase[F] {
+  object guideCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] =
       Option(epicsService.createCommandSender("gsaoi:guide", guideApply, s"${GsaoiTop}dc:guide"))
   }
 
-  val endGuideCmd: EpicsCommand[F] = new EpicsCommandBase[F] {
+  val endGuideCmd: EpicsCommand[F] = new EpicsCommandBase[F]("GSAOI") {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gsaoi::endGuide")
     )

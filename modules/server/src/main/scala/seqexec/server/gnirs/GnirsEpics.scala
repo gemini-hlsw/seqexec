@@ -4,26 +4,23 @@
 package seqexec.server.gnirs
 
 import java.lang.{ Double => JDouble }
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{ DetectorState => JDetectorState }
-import seqexec.server.EpicsCommandBase
+import seqexec.server.{ EpicsCommandBase, EpicsSystem, ObserveCommandBase }
 import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
-import seqexec.server.ObserveCommand
 
 class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
-
+  val sysName: String  = "GNIRS"
   val GnirsTop: String = tops.getOrElse("nirs", "nirs:")
 
-  object configCCCmd extends EpicsCommandBase {
+  object configCCCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nirs::config")
     )
@@ -77,7 +74,7 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   }
 
-  object configDCCmd extends EpicsCommandBase {
+  object configDCCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nirs::dcconfig")
     )
@@ -102,7 +99,7 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
 
   }
 
-  object endObserveCmd extends EpicsCommandBase {
+  object endObserveCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nirs::endObserve")
     )
@@ -121,11 +118,11 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
   )
 
-  object stopCmd extends EpicsCommandBase {
+  object stopCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
-  object stopAndWaitCmd extends ObserveCommand {
+  object stopAndWaitCmd extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = stopCS
     override protected val os: Option[CaApplySender]   = observeAS
   }
@@ -134,16 +131,16 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     epicsService.getCommandSender("nirs::abort")
   )
 
-  object abortCmd extends EpicsCommandBase {
+  object abortCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
-  object abortAndWait extends ObserveCommand {
+  object abortAndWait extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = abortCS
     override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nirs::observe")
     )
