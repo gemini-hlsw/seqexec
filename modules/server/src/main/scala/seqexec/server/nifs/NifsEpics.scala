@@ -4,7 +4,6 @@
 package seqexec.server.nifs
 
 import java.lang.{ Double => JDouble }
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -13,18 +12,17 @@ import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
-import seqexec.server.EpicsCommandBase
+import seqexec.server.{ EpicsCommandBase, EpicsSystem, ObserveCommandBase }
 import seqexec.server.EpicsCommandBase.setParameter
-import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
-import seqexec.server.ObserveCommand
 
 class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
-  val NifsTop = tops.getOrElse("nifs", "nifs:")
+  val sysName: String = "NIFS"
+  val NifsTop         = tops.getOrElse("nifs", "nifs:")
 
-  object ccConfigCmd extends EpicsCommandBase[F] {
+  object ccConfigCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::config"))
 
@@ -52,7 +50,7 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   }
 
-  object dcConfigCmd extends EpicsCommandBase[F] {
+  object dcConfigCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
@@ -105,11 +103,11 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     )
   )
 
-  object stopCmd extends EpicsCommandBase[F] {
+  object stopCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
-  object stopAndWaitCmd extends ObserveCommand {
+  object stopAndWaitCmd extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = stopCS
     override protected val os: Option[CaApplySender]   = observeAS
   }
@@ -118,16 +116,16 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     epicsService.getCommandSender("nifs::abort")
   )
 
-  object abortCmd extends EpicsCommandBase[F] {
+  object abortCmd extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
-  object abortAndWait extends ObserveCommand {
+  object abortAndWait extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = abortCS
     override protected val os: Option[CaApplySender]   = observeAS
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::observe")
     )
@@ -137,7 +135,7 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase[F] {
+  object endObserveCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::endObserve")
     )

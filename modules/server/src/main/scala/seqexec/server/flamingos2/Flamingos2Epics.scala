@@ -17,12 +17,12 @@ import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil._
 
 final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
-
+  val sysName       = "FLAMINGOS-2"
   val F2Top: String = tops.getOrElse("f2", "f2:")
 
   def post(timeout: FiniteDuration): F[ApplyCommandResult] = configCmd.post(timeout)
 
-  object dcConfigCmd extends EpicsCommandBase {
+  object dcConfigCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::dcconfig")
     )
@@ -42,19 +42,19 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 
   }
 
-  object abortCmd extends EpicsCommandBase {
+  object abortCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::abort")
     )
   }
 
-  object stopCmd extends EpicsCommandBase {
+  object stopCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::stop")
     )
   }
 
-  object observeCmd extends EpicsCommandBase {
+  object observeCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::observe")
     )
@@ -63,13 +63,13 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandBase {
+  object endObserveCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::endObserve")
     )
   }
 
-  object configCmd extends EpicsCommandBase {
+  object configCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("flamingos2::config")
     )

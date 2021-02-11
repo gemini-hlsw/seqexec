@@ -22,12 +22,12 @@ import seqexec.server.EpicsUtil.safeAttributeF
  * Created by jluhrs on 3/14/17.
  */
 class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
-
+  val sysName: String = "GCAL"
   val GcalTop: String = tops.getOrElse("gc", "")
 
   def post(timeout: FiniteDuration): F[ApplyCommandResult] = lampsCmd.post(timeout)
 
-  object shutterCmd extends EpicsCommandBase {
+  object shutterCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gcal::shutter")
     )
@@ -36,7 +36,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setPosition(v: String): F[Unit] = setParameter(position, v)
   }
 
-  object filterCmd extends EpicsCommandBase {
+  object filterCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gcal::filtSel")
     )
@@ -45,7 +45,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
-  object diffuserCmd extends EpicsCommandBase {
+  object diffuserCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gcal::diffuseSel")
     )
@@ -56,7 +56,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   private def toLampState(v: BinaryOnOff): String = v.name
 
-  object lampsCmd extends EpicsCommandBase {
+  object lampsCmd extends EpicsCommandBase[F](sysName) {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gcal::lampSel")
     )

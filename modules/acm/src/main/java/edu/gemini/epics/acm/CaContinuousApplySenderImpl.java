@@ -221,7 +221,7 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
                         failCommandWithCarError(cm);
                         return IdleState;
                     } else if (carVal.isBusy()) {
-                        succedCommand(cm);
+                        succeedCommand(cm);
                         return IdleState;
                     }
                 }
@@ -307,7 +307,7 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
                     return IdleState;
                 }
                 if (carState.isBusy()) {
-                    succedCommand(cm);
+                    succeedCommand(cm);
                     return IdleState;
                 }
             }
@@ -370,7 +370,7 @@ public class CaContinuousApplySenderImpl<C extends Enum<C> & CarStateGeneric> im
         this.timeoutUnit = timeUnit;
     }
 
-    private void succedCommand(final CaCommandMonitorImpl cm) {
+    private void succeedCommand(final CaCommandMonitorImpl cm) {
         executor.execute(cm::completeSuccess);
     }
 

@@ -26,11 +26,12 @@ import seqexec.server.EpicsUtil.safeAttributeSListSFloatF
 import seqexec.server.EpicsUtil.safeAttributeSListSIntF
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
+  val sysName: String = "GeMS"
 
   private val MystTop = tops.getOrElse("myst", "myst:")
   private val RtcTop  = tops.getOrElse("rtc", "rtc:")
 
-  object LoopControl extends EpicsCommandBase {
+  object LoopControl extends EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("gems::seqLoopCtrl")
     )
