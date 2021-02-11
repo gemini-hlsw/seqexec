@@ -318,7 +318,8 @@ object NiriControllerEpics extends NiriEncoders {
               epicsSys.configDCCmd.post(DefaultTimeout).void
 
         L.debug("Starting NIRI configuration") *>
-          warnOnDHSNotConected *>
+          L.debug(s"NIRI configuration: ${config.show}")
+        warnOnDHSNotConected *>
           warnOnArrayNotActive *>
           cfgActions *>
           L.debug("Completed NIRI configuration")
@@ -339,12 +340,14 @@ object NiriControllerEpics extends NiriEncoders {
       override def stopObserve: F[Unit] =
         L.debug("Stop NIRI exposure") *>
           epicsSys.stopCmd.mark *>
-          epicsSys.stopCmd.post(DefaultTimeout).void
+          epicsSys.stopCmd.post(DefaultTimeout) *>
+          L.debug("Stop observe command sent to NIRI")
 
       override def abortObserve: F[Unit] =
         L.debug("Abort NIRI exposure") *>
           epicsSys.abortCmd.mark *>
-          epicsSys.abortCmd.post(DefaultTimeout).void
+          epicsSys.abortCmd.post(DefaultTimeout) *>
+          L.debug("Abort observe command sent to NIRI")
 
       override def observeProgress(total: Time): fs2.Stream[F, Progress] =
         ProgressUtil.obsCountdownWithObsStage[F](

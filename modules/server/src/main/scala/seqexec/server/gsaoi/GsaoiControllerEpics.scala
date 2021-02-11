@@ -188,12 +188,14 @@ object GsaoiControllerEpics {
       override def stopObserve: F[Unit] =
         L.debug("Stop GSAOI exposure") *>
           epicsSys.stopCmd.mark *>
-          epicsSys.stopCmd.post(DefaultTimeout).void
+          epicsSys.stopCmd.post(DefaultTimeout) *>
+          L.debug("Stop observe command sent to GSAOI")
 
       override def abortObserve: F[Unit] =
         L.debug("Abort GSAOI exposure") *>
           epicsSys.abortCmd.mark *>
-          epicsSys.abortCmd.post(DefaultTimeout).void
+          epicsSys.abortCmd.post(DefaultTimeout) *>
+          L.debug("Abort observe command sent to GSAOI")
 
       override def observeProgress(total: Time): fs2.Stream[F, Progress] = {
         val rem = for {

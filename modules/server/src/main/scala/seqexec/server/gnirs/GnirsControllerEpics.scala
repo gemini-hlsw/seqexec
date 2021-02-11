@@ -330,6 +330,7 @@ object GnirsControllerEpics extends GnirsEncoders {
 
       override def applyConfig(config: GnirsConfig): F[Unit] =
         L.debug("Starting GNIRS configuration") *>
+          L.debug(s"GNIRS configuration: ${config.show}") *>
           warnOnDhs *>
           warnOnArray *>
           setDCParams(config.dc) *>
@@ -343,22 +344,25 @@ object GnirsControllerEpics extends GnirsEncoders {
           epicsSys.observeCmd.setLabel(fileId) *>
           epicsSys.observeCmd
             .post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
-            .flatTap(_ => L.debug("Completed GNITS observe"))
+            .flatTap(_ => L.debug("Completed GNIRS observe"))
 
       override def endObserve: F[Unit] =
         L.debug("Send endObserve to GNIRS") *>
           epicsSys.endObserveCmd.mark *>
-          epicsSys.endObserveCmd.post(DefaultTimeout).void
+          epicsSys.endObserveCmd.post(DefaultTimeout) *>
+          L.debug("endObserve sent to GNIRS")
 
       override def stopObserve: F[Unit] =
         L.debug("Stop GNIRS exposure") *>
           epicsSys.stopCmd.mark *>
-          epicsSys.stopCmd.post(DefaultTimeout).void
+          epicsSys.stopCmd.post(DefaultTimeout) *>
+          L.debug("GNIRS stop observe command sent")
 
       override def abortObserve: F[Unit] =
         L.debug("Abort GNIRS exposure") *>
           epicsSys.abortCmd.mark *>
-          epicsSys.abortCmd.post(DefaultTimeout).void
+          epicsSys.abortCmd.post(DefaultTimeout) *>
+          L.debug("GNIRS abort observe command sent")
 
       override def observeProgress(total: Time): Stream[F, Progress] =
         ProgressUtil.obsCountdownWithObsStage[F](
