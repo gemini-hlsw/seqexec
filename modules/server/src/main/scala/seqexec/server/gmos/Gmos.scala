@@ -377,11 +377,7 @@ object Gmos {
       gainSetting  <- config.extractInstAs[String](AMP_GAIN_SETTING_PROP).flatMap(toGain)
       xBinning     <- config.extractInstAs[Binning](CCD_X_BIN_PROP)
       yBinning     <- config.extractInstAs[Binning](CCD_Y_BIN_PROP)
-      builtInROI   <- config.extractInstAs[BuiltinROI](BUILTIN_ROI_PROP)
-      customROI     = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
-      roi          <- RegionsOfInterest
-                        .fromOCS(builtInROI, customROI)
-                        .leftMap(e => ContentError(SeqexecFailure.explain(e)))
+      roi          <- extractROIs(config)
     } yield DCConfig(exposureTime,
                      shutterState,
                      CCDReadout(ampReadMode, gainChoice, ampCount, gainSetting),
@@ -391,6 +387,14 @@ object Gmos {
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def nsCmdRef[F[_]: Sync]: F[Ref[F, Option[NSObserveCommand]]] = Ref.of(none)
+
+  def extractROIs(config: CleanConfig): Either[ExtractFailure, RegionsOfInterest] = for {
+    builtInROI <- config.extractInstAs[BuiltinROI](BUILTIN_ROI_PROP)
+    customROI   = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
+    roi        <- RegionsOfInterest
+                    .fromOCS(builtInROI, customROI)
+                    .leftMap(e => ContentError(SeqexecFailure.explain(e)))
+  } yield roi
 
   def calcStepType(
     instrument: Instrument,
