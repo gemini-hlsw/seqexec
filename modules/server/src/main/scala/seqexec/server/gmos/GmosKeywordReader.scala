@@ -74,6 +74,9 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config
   def isNS: F[Boolean] =
     config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError[F]
 
+  def numberOfROI: F[Int] =
+    Gmos.extractROIs(config).map(_.rois.map(_.length).getOrElse(1)).explainExtractError
+
 }
 
 object GmosObsKeywordsReader {
@@ -126,7 +129,7 @@ trait GmosKeywordReader[F[_]] {
   def adcWavelength1: F[Double]
   def adcWavelength2: F[Double]
   def detNRoi: F[Int]
-  def roiValues: F[List[(Int, RoiValues)]]
+  def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]]
   def aExpCount: F[Int]
   def bExpCount: F[Int]
   def isADCInUse: F[Boolean]
@@ -172,10 +175,12 @@ object GmosKeywordReaderDummy {
     override def adcWavelength1: F[Double]            = doubleDefault[F]
     override def adcWavelength2: F[Double]            = doubleDefault[F]
     override def detNRoi: F[Int]                      = intDefault[F]
-    override def roiValues: F[List[(Int, RoiValues)]] = listDefault[F, (Int, RoiValues)]
-    override def aExpCount: F[Int]                    = intDefault[F]
-    override def bExpCount: F[Int]                    = intDefault[F]
-    override def isADCInUse: F[Boolean]               = boolDefault[F]
+    override def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]] = seqNRois
+      .map(n => intDefault[F].map(x => (1 to n).toList.map(i => i -> RoiValues(x, x, x, x))))
+      .getOrElse(listDefault[F, (Int, RoiValues)])
+    override def aExpCount: F[Int] = intDefault[F]
+    override def bExpCount: F[Int]      = intDefault[F]
+    override def isADCInUse: F[Boolean] = boolDefault[F]
   }
 }
 
@@ -237,8 +242,8 @@ object GmosKeywordReaderEpics {
         }
       }
 
-    override def roiValues: F[List[(Int, RoiValues)]] =
-      (sys.roiNumUsed, sys.rois)
+    override def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]] =
+      (seqNRois.map(_.pure[F]).getOrElse(sys.roiNumUsed), sys.rois)
         .mapN(readRois)
         .flatten
         .handleError(_ => List.empty[(Int, RoiValues)])
