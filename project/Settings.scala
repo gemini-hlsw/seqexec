@@ -91,7 +91,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.1" % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.2" % "test"
     )
     val MUnit          = Def.setting(
       Seq(
