@@ -4,7 +4,6 @@
 package seqexec.model.boopickle
 
 import lucuma.core.util.arb.ArbEnumerated._
-import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
 import seqexec.model._
 import seqexec.model.events._
@@ -22,7 +21,7 @@ import seqexec.model.arb._
 /**
  * Tests Serialization/Deserialization using BooPickle
  */
-final class BoopicklingSpec extends munit.DisciplineSuite with ModelBooPicklers {
+final class BoopicklingSuite extends munit.DisciplineSuite with ModelBooPicklers {
   import ArbProgramId._
   import ArbObservationId._
 

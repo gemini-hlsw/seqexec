@@ -141,7 +141,6 @@ object WebServerLauncher extends IOApp with LogInitialization {
             BlazeServerBuilder[F](global)
               .bindHttp(conf.webServer.port, conf.webServer.host)
               .withWebSockets(true)
-              .withNio2(true)
               .withHttpApp((prRouter <+> all).orNotFound)
           ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
         })
@@ -191,7 +190,6 @@ object WebServerLauncher extends IOApp with LogInitialization {
     BlazeServerBuilder[F](global)
       .bindHttp(conf.insecurePort, conf.host)
       .withHttpApp(router.orNotFound)
-      .withNio2(true)
       .resource
   }
 

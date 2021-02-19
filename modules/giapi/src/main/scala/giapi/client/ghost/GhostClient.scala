@@ -18,7 +18,7 @@ object GhostClient {
   private final class GhostClientImpl[F[_]](override val giapi: Giapi[F]) extends GhostClient[F]
 
   // Used for simulations
-  def simulatedGhostClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]
+  def simulatedGhostClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
     : Resource[F, GhostClient[F]] =
     Resource.liftF(
       Giapi.simulatedGiapiConnection[F].connect.map(new GhostClientImpl(_))

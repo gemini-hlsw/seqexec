@@ -22,7 +22,7 @@ import seqexec.server.SeqEvent._
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.UnrecognizedInstrument
 
-final class ODBSequencesLoader[F[_]: ApplicativeError[?[_], Throwable]: Logger](
+final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]: Logger](
   odbProxy:            OdbProxy[F],
   translator:          SeqTranslate[F]
 )(implicit execEngine: ExecEngineType[F]) {
@@ -116,7 +116,7 @@ object ODBSequencesLoader {
     d:         HeaderExtraData
   ): Sequence[F] = Sequence(id, toStepList(seq, overrides, d))
 
-  private[server] def loadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
+  private[server] def loadSequenceEndo[F[_]: MonadError[*[_], Throwable]: Logger](
     seqId:      Observation.Id,
     seqg:       SequenceGen[F],
     execEngine: ExecEngineType[F]
@@ -141,7 +141,7 @@ object ODBSequencesLoader {
           ))
         )(st)
 
-  private[server] def reloadSequenceEndo[F[_]: MonadError[?[_], Throwable]: Logger](
+  private[server] def reloadSequenceEndo[F[_]: MonadError[*[_], Throwable]: Logger](
     seqId:      Observation.Id,
     seqg:       SequenceGen[F],
     execEngine: ExecEngineType[F]

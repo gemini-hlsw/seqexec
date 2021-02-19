@@ -22,7 +22,7 @@ import seqexec.server.tcs.Gaos.PauseResume
 import seqexec.server.tcs.Gaos.ResumeCondition
 import seqexec.server.tcs.Gaos.ResumeConditionSet
 
-class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](
+class GemsControllerEpics[F[_]: Async: ApplicativeError[*[_], Throwable]](
   epicsSys:    GemsEpics[F],
   gsaoiGuider: GsaoiGuider[F]
 )(implicit L:  Logger[F])

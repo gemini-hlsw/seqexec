@@ -149,7 +149,7 @@ object GpiClient {
   }
 
   // Used for simulations
-  def simulatedGpiClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]
+  def simulatedGpiClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
     : Resource[F, GpiClient[F]] =
     Resource.liftF(
       Giapi

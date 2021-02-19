@@ -64,7 +64,7 @@ sealed trait TcsConfigRetriever[F[_]] {
 }
 
 object TcsConfigRetriever {
-  private class TcsConfigRetrieverImpl[F[_]: MonadError[?[_], Throwable]](epicsSys: TcsEpics[F])
+  private class TcsConfigRetrieverImpl[F[_]: MonadError[*[_], Throwable]](epicsSys: TcsEpics[F])
       extends TcsConfigRetriever[F]
       with TcsConfigDecoders
       with ScienceFoldPositionCodex {
@@ -357,6 +357,6 @@ object TcsConfigRetriever {
 
   }
 
-  def apply[F[_]: MonadError[?[_], Throwable]](epicsSys: TcsEpics[F]): TcsConfigRetriever[F] =
+  def apply[F[_]: MonadError[*[_], Throwable]](epicsSys: TcsEpics[F]): TcsConfigRetriever[F] =
     new TcsConfigRetrieverImpl(epicsSys)
 }
