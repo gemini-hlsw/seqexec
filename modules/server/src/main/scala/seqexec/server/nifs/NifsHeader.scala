@@ -14,7 +14,7 @@ import seqexec.server.tcs.TcsKeywordsReader
 
 object NifsHeader {
 
-  def header[F[_]: MonadError[?[_], Throwable]: Logger](
+  def header[F[_]: MonadError[*[_], Throwable]: Logger](
     kwClient:          KeywordsClient[F],
     instReader:        NifsKeywordReader[F],
     tcsKeywordsReader: TcsKeywordsReader[F]

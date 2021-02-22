@@ -51,7 +51,7 @@ object ConfigUtilOps {
   implicit class EitherExtractFailureOps[A] private[server] (r: Either[ExtractFailure, A]) {
     def adaptExtractFailure: Either[SeqexecFailure, A] = r.leftMap(explainExtractError)
 
-    def toF[F[_]: ApplicativeError[?[_], Throwable]]: F[A] =
+    def toF[F[_]: ApplicativeError[*[_], Throwable]]: F[A] =
       r.fold(explainExtractError(_).raiseError[F, A], _.pure[F])
   }
 

@@ -74,7 +74,7 @@ object InstrumentControllerSim {
     stopObserveDelay:   FiniteDuration,
     configurationDelay: FiniteDuration,
     obsStateRef:        Ref[F, ObserveState]
-  )(implicit val F:     MonadError[?[_], Throwable][F], L: Logger[F], T: Timer[F])
+  )(implicit val F:     MonadError[*[_], Throwable][F], L: Logger[F], T: Timer[F])
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
 

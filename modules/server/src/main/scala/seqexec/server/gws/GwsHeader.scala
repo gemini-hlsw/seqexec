@@ -13,7 +13,7 @@ import seqexec.server.EpicsHealth
 import seqexec.server.keywords._
 
 object GwsHeader {
-  def header[F[_]: MonadError[?[_], Throwable]: Logger](
+  def header[F[_]: MonadError[*[_], Throwable]: Logger](
     kwClient:  KeywordsClient[F],
     gwsReader: GwsKeywordReader[F]
   ): Header[F] = new Header[F] {

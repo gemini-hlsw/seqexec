@@ -65,7 +65,7 @@ object InstrumentActions {
       )
     )
 
-  def launchObserve[F[_]: MonadError[?[_], Throwable]: Logger](
+  def launchObserve[F[_]: MonadError[*[_], Throwable]: Logger](
     env:       ObserveEnvironment[F],
     doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] =

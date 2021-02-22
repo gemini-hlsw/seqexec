@@ -44,7 +44,7 @@ object Flamingos2ControllerSim {
 /**
  * This controller will run correctly but fail at step `failAt`
  */
-final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: Logger] private (
+final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: Logger] private (
   failAt:  Int,
   sim:     InstrumentControllerSim[F],
   counter: Ref[F, Int]

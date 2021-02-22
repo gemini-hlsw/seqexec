@@ -32,7 +32,7 @@ object Settings {
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.16"
+    val http4sVersion  = "0.21.19"
     val squants        = "1.7.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
@@ -55,7 +55,7 @@ object Settings {
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.22"
-    lazy val munitDisciplineVersion = "1.0.5"
+    lazy val munitDisciplineVersion = "1.0.6"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
@@ -81,8 +81,8 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.6"
-    val lucumaUI   = "0.11.3"
+    val lucumaCore = "0.7.7"
+    val lucumaUI   = "0.11.4"
   }
 
   /**
@@ -91,7 +91,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.1" % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.2" % "test"
     )
     val MUnit          = Def.setting(
       Seq(
@@ -281,7 +281,7 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val kpVersion        = "0.11.1"
+    val kpVersion        = "0.11.3"
     val betterMonadicFor = "0.3.1"
   }
 

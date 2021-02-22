@@ -118,7 +118,7 @@ object GiapiStatusDb {
   /**
    * Creates a new status db in simulation
    */
-  def simulatedDb[F[_]: ApplicativeError[?[_], Throwable]]: GiapiStatusDb[F] =
+  def simulatedDb[F[_]: ApplicativeError[*[_], Throwable]]: GiapiStatusDb[F] =
     new GiapiStatusDb[F] {
       def optional(i: String): F[Option[StatusValue]] =
         none.pure[F]

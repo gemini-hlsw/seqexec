@@ -25,13 +25,13 @@ final case class Handle[F[_], D, V, A](run: StateT[F, D, (A, Option[Stream[F, V]
 object Handle {
   def fromStream[F[_]: Monad, D, V](p: Stream[F, V]): Handle[F, D, V, Unit] =
     Handle[F, D, V, Unit](
-      Applicative[StateT[F, D, ?]].pure[(Unit, Option[Stream[F, V]])](((), Some(p)))
+      Applicative[StateT[F, D, *]].pure[(Unit, Option[Stream[F, V]])](((), Some(p)))
     )
 
   def liftF[F[_]: Monad, D, V, A](f: F[A]): Handle[F, D, V, A] = StateT.liftF[F, D, A](f).toHandle
 
-  implicit def handlePMonad[F[_]: Monad, D, V]: Monad[Handle[F, D, V, ?]] =
-    new Monad[Handle[F, D, V, ?]] {
+  implicit def handlePMonad[F[_]: Monad, D, V]: Monad[Handle[F, D, V, *]] =
+    new Monad[Handle[F, D, V, *]] {
       private def concatOpP(
         op1: Option[Stream[F, V]],
         op2: Option[Stream[F, V]]
@@ -43,7 +43,7 @@ object Handle {
       }
 
       override def pure[A](a: A): Handle[F, D, V, A] = Handle(
-        Applicative[StateT[F, D, ?]].pure((a, None))
+        Applicative[StateT[F, D, *]].pure((a, None))
       )
 
       override def flatMap[A, B](
@@ -105,7 +105,7 @@ object Handle {
   }
 
   def unit[F[_]: Monad, D, V]: Handle[F, D, V, Unit] =
-    Applicative[Handle[F, D, V, ?]].unit
+    Applicative[Handle[F, D, V, *]].unit
 
   def get[F[_]: Applicative, D, V]: Handle[F, D, V, D] =
     StateT.get[F, D].toHandle

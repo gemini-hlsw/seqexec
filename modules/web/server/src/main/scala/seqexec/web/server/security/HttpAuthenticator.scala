@@ -38,7 +38,7 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
   val authUser: Kleisli[F, Request[F], AuthResult] =
     Kleisli(request => Sync[F].delay(authRequest(request)))
 
-  val optAuthUser: Kleisli[OptionT[F, ?], Request[F], AuthResult] =
+  val optAuthUser: Kleisli[OptionT[F, *], Request[F], AuthResult] =
     Kleisli(request => OptionT.liftF(Sync[F].delay(authRequest(request))))
 
   val optAuth: AuthMiddleware[F, AuthResult] = AuthMiddleware(optAuthUser)
@@ -56,7 +56,7 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
 object TokenRefresher {
   private def replaceCookie[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F])(
     result:                                       AuthResult
-  ): Kleisli[OptionT[F, ?], Request[F], Response[F]] = Kleisli { request =>
+  ): Kleisli[OptionT[F, *], Request[F], Response[F]] = Kleisli { request =>
     result.fold(_ => service(request),
                 u =>
                   OptionT.liftF(auth.loginCookie(u)) >>= { c =>
