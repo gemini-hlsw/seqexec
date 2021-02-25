@@ -57,6 +57,7 @@ class ConfigurationLoaderSpec extends CatsSuite {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:",
     Some("127.0.0.1"),
+    0,
     5.seconds,
     10.seconds
   )
@@ -150,6 +151,7 @@ seqexec-engine {
     odbQueuePollingInterval = 3 seconds
     tops = "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:"
     epicsCaAddrList = 127.0.0.1
+    readRetries = 0
     ioTimeout = 5 seconds
     dhsTimeout = 10 seconds
     gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"

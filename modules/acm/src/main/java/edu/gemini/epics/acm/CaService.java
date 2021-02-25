@@ -56,19 +56,20 @@ public final class CaService {
     private final Map<String, TaskControlWithResource> taskControlSenders;
     private final ScheduledExecutorService executorService;
     static private String addrList = "";
+    static private Integer readRetries = 0;
     static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
     static private final Lock instanceLock = new ReentrantLock();
     static private final int THREAD_COUNT = 8;
 
-    private CaService(String addrList, Duration timeout) {
+    private CaService(String addrList, Duration timeout, Integer readRetries) {
         statusAcceptors = new HashMap<>();
         applySenders = new HashMap<>();
         observeSenders = new HashMap<>();
         continuousCmdSenders = new HashMap<>();
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
-        epicsService = new EpicsService(addrList, (double) timeout.getSeconds());
+        epicsService = new EpicsService(addrList, (double) timeout.getSeconds(), readRetries);
         executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG, this.getClass().getName());
 
         epicsService.startService();
@@ -76,7 +77,7 @@ public final class CaService {
 
     private CaService() {
 
-        this(System.getenv(EPICS_CA_ADDR_LIST).replaceAll("\\\\ ", " "), Duration.ofSeconds(1));
+        this(System.getenv(EPICS_CA_ADDR_LIST).replaceAll("\\\\ ", " "), Duration.ofSeconds(1), 0);
 
     }
 
@@ -89,6 +90,13 @@ public final class CaService {
     public static void setAddressList(String addrList) {
         CaService.addrList = addrList;
     }
+
+    /**
+     * Sets the number of retries for channel reads
+     *
+     * @param retries Number of read retries
+     */
+    public static void setReadRetries(Integer retries) { CaService.readRetries = retries; }
 
     /**
      * Sets the timeout to wait for EPICS IO requests.
@@ -113,7 +121,7 @@ public final class CaService {
                 if (addrList == null) {
                     theInstance = new CaService();
                 } else {
-                    theInstance = new CaService(addrList, ioTimeout);
+                    theInstance = new CaService(addrList, ioTimeout, readRetries);
                 }
             }
             instanceLock.unlock();

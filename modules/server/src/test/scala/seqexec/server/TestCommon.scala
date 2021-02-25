@@ -93,6 +93,7 @@ object TestCommon {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     "",
     Some("127.0.0.1"),
+    0,
     3.seconds,
     10.seconds
   )
