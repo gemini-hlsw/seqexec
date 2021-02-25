@@ -26,8 +26,10 @@ object CaServiceInit {
           case _       => F.raiseError[Unit](new RuntimeException("Cannot initialize EPICS subsystem"))
         }
       } *>
-      F.delay(CaService.setReadRetries(conf.readRetries)) *>
-      F.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis))) *>
+      F.delay {
+        CaService.setReadRetries(conf.readRetries)
+        CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis))
+      } *>
       F.delay(CaService.getInstance())
         .ensure(new Exception("Unable to start EPICS service."))(c => Option(c).isDefined)
   }
