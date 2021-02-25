@@ -705,7 +705,7 @@ object SeqexecEngine {
         )
 
     override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit] =
-      logDebugEvent(q, "SeqexecEngine: Setting image quality") *>
+      logDebugEvent(q, s"SeqexecEngine: Setting image quality to $iq") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
             ((EngineState.conditions[F] ^|-> Conditions.iq).set(iq) >>> refreshSequences)
@@ -715,7 +715,7 @@ object SeqexecEngine {
         )
 
     override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit] =
-      logDebugEvent(q, "SeqexecEngine: Setting water vapor") *>
+      logDebugEvent(q, s"SeqexecEngine: Setting water vapor to $wv") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
             ((EngineState.conditions[F] ^|-> Conditions.wv).set(wv) >>> refreshSequences)
@@ -725,7 +725,7 @@ object SeqexecEngine {
         )
 
     override def setSkyBackground(q: EventQueue[F], sb: SkyBackground, user: UserDetails): F[Unit] =
-      logDebugEvent(q, "SeqexecEngine: Setting sky background") *>
+      logDebugEvent(q, s"SeqexecEngine: Setting sky background to $sb") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
             ((EngineState.conditions[F] ^|-> Conditions.sb).set(sb) >>> refreshSequences)
@@ -735,7 +735,7 @@ object SeqexecEngine {
         )
 
     override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit] =
-      logDebugEvent(q, "SeqexecEngine: Setting cloud cover") *>
+      logDebugEvent(q, s"SeqexecEngine: Setting cloud cover to $cc") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
             ((EngineState.conditions[F] ^|-> Conditions.cc).set(cc) >>> refreshSequences)
