@@ -12,7 +12,7 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.FPU_PROP_NAME
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.LightSinkName
 import seqexec.model.enum.Instrument
 import seqexec.server.CleanConfig

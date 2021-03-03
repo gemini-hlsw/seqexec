@@ -11,7 +11,7 @@ import cats.effect.Async
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.Lens
 import monocle.macros.Lenses
 import mouse.boolean._

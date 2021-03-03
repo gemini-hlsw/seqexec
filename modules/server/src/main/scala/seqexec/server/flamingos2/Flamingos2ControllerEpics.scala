@@ -17,7 +17,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadoutMode
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.WindowCover
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult

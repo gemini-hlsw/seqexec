@@ -12,7 +12,7 @@ import giapi.client.GiapiConfig
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.syntax.giapiconfig._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.math.Coordinates
 import lucuma.core.util.Enumerated
 import seqexec.server.AbstractGiapiInstrumentController

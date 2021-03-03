@@ -12,7 +12,7 @@ import cats.syntax.all._
 import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.engine.Event
 import seqexec.engine.Sequence
 import seqexec.model.Observation

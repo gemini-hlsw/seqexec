@@ -10,8 +10,8 @@ import cats.data.NonEmptyList
 import fs2.Stream
 import seqexec.model.Observation
 import lucuma.core.enum.Site
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.noop.NoOpLogger
 
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{ Action, Result, Sequence }

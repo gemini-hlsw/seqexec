@@ -8,7 +8,7 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._
 import seqexec.engine.Event._

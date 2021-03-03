@@ -10,7 +10,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.Site
 import mouse.boolean._
 import org.http4s.client.Client
