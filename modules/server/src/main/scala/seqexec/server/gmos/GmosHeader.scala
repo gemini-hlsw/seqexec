@@ -53,16 +53,14 @@ object GmosHeader {
         )
 
       private def roiKeywords: F[List[KeywordBag => F[KeywordBag]]] =
-        gmosObsReader.numberOfROI.attempt.flatMap { roiCnt =>
-          gmosReader.roiValues(roiCnt.toOption).map {
-            _.flatMap { case (i, rv) =>
-              List(
-                KeywordName.fromTag(s"DETRO${i}X").map(buildInt32(rv.xStart.pure[F], _)),
-                KeywordName.fromTag(s"DETRO${i}XS").map(buildInt32(rv.xSize.pure[F], _)),
-                KeywordName.fromTag(s"DETRO${i}Y").map(buildInt32(rv.yStart.pure[F], _)),
-                KeywordName.fromTag(s"DETRO${i}YS").map(buildInt32(rv.ySize.pure[F], _))
-              ).flattenOption
-            }
+        gmosReader.roiValues(none).map {
+          _.flatMap { case (i, rv) =>
+            List(
+              KeywordName.fromTag(s"DETRO${i}X").map(buildInt32(rv.xStart.pure[F], _)),
+              KeywordName.fromTag(s"DETRO${i}XS").map(buildInt32(rv.xSize.pure[F], _)),
+              KeywordName.fromTag(s"DETRO${i}Y").map(buildInt32(rv.yStart.pure[F], _)),
+              KeywordName.fromTag(s"DETRO${i}YS").map(buildInt32(rv.ySize.pure[F], _))
+            ).flattenOption
           }
         }
 
@@ -141,7 +139,7 @@ object GmosHeader {
                         KeywordName.EXPOSURE
             ),
             buildInt32(gmosReader.adcUsed, KeywordName.ADCUSED),
-            buildInt32(gmosObsReader.numberOfROI, KeywordName.DETNROI)
+            buildInt32(gmosReader.detNRoi, KeywordName.DETNROI)
           ) ::: adcKeywords ::: roiKeywords ::: nsKeywords
         )
 
