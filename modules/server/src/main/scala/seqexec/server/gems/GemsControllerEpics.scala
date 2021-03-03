@@ -10,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 import cats.ApplicativeError
 import cats.effect.Async
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.server.gems.Gems._

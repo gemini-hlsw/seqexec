@@ -7,7 +7,7 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.jawn.decode

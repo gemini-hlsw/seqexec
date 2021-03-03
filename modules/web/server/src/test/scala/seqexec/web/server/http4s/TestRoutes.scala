@@ -12,7 +12,7 @@ import fs2.concurrent.Queue
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import lucuma.core.enum.Site
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import org.http4s._
 import org.http4s.Uri.uri
 import seqexec.server._

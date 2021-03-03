@@ -18,7 +18,7 @@ import fs2.Stream
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.GiapiStatus
 import lucuma.core.enum.Site
 import org.http4s._

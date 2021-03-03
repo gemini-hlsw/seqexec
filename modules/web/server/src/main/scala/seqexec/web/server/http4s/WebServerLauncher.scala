@@ -23,8 +23,8 @@ import fs2.Stream
 import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import io.prometheus.client.CollectorRegistry
 import org.asynchttpclient.AsyncHttpClientConfig
 import org.asynchttpclient.DefaultAsyncHttpClientConfig

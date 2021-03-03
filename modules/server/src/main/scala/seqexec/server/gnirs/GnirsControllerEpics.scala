@@ -18,7 +18,7 @@ import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult

@@ -5,7 +5,7 @@ package seqexec.web.server.http4s
 
 import cats.effect.Sync
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import org.http4s.EntityDecoder
 import org.http4s.HttpRoutes
 import org.http4s.circe.jsonOf

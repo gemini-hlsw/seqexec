@@ -4,7 +4,7 @@
 package seqexec.server.gcal
 
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.gcal.GcalController.GcalConfig
 import seqexec.server.gcal.GcalController.gcalConfigShow
 

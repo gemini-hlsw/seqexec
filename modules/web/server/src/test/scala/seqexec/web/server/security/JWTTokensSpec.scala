@@ -6,7 +6,7 @@ package seqexec.web.server.security
 import cats.effect.IO
 import cats.effect.Timer
 import cats.tests.CatsSuite
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import seqexec.model.config._
 import seqexec.model.UserDetails
 import scala.concurrent.duration._

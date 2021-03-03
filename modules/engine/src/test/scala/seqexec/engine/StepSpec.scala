@@ -11,8 +11,8 @@ import cats.tests.CatsSuite
 import fs2.concurrent.Queue
 import fs2.Stream
 import seqexec.model.Observation
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import java.util.UUID
 import org.scalatest.Inside._
 import seqexec.engine.TestUtil.TestState

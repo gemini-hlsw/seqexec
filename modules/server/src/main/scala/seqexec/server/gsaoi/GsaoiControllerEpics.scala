@@ -17,7 +17,7 @@ import edu.gemini.spModel.gemini.gsaoi.Gsaoi.Filter
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi.ReadMode
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi.Roi
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi.UtilityWheel
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId

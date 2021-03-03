@@ -8,7 +8,7 @@ import cats.effect.Clock
 import cats.effect.ContextShift
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import scala.concurrent.duration._
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs._

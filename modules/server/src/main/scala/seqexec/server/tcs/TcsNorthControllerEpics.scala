@@ -7,7 +7,7 @@ import cats.data._
 import cats.effect.Async
 import cats.effect.Timer
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.Altair

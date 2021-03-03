@@ -16,7 +16,7 @@ import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.all._
 import seqexec.model.GmosParameters._
 import seqexec.model.NSSubexposure
