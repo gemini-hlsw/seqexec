@@ -39,7 +39,7 @@ object Settings {
     val jwt            = "5.0.0"
     val slf4j          = "1.7.30"
     val log4s          = "1.9.0"
-    val log4cats       = "1.1.1"
+    val log4cats       = "1.2.0"
     val log4catsLevel  = "0.1.2"
     val logback        = "1.2.3"
     val janino         = "3.1.3"
@@ -123,9 +123,9 @@ object Settings {
     val CatsTime         = Def.setting(
       "io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
     )
-    val Log4Cats         = Def.setting("io.chrisdavenport" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
+    val Log4Cats         = Def.setting("org.typelevel" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Log4CatsNoop     =
-      Def.setting("io.chrisdavenport" %%% "log4cats-noop" % LibraryVersions.log4cats % "test")
+      Def.setting("org.typelevel" %%% "log4cats-noop" % LibraryVersions.log4cats % "test")
     val Logback          = Seq(
       "ch.qos.logback"       % "logback-core"             % LibraryVersions.logback,
       "ch.qos.logback"       % "logback-classic"          % LibraryVersions.logback,
@@ -135,8 +135,8 @@ object Settings {
     val Log4s            = Def.setting("org.log4s" %%% "log4s" % LibraryVersions.log4s)
     val Log4CatsLogLevel = Def.setting(
       Seq(
-        "io.chrisdavenport" %%% "log4cats-core"     % LibraryVersions.log4cats,
-        "com.rpiaggio"      %%% "log4cats-loglevel" % LibraryVersions.log4catsLevel
+        "org.typelevel" %%% "log4cats-core"     % LibraryVersions.log4cats,
+        "com.rpiaggio"  %%% "log4cats-loglevel" % LibraryVersions.log4catsLevel
       )
     )
     val PrometheusClient =

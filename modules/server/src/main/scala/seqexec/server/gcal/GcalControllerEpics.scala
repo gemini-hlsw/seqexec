@@ -13,7 +13,7 @@ import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Filter
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.EpicsCodex._
 import seqexec.server.EpicsUtil.applyParam
 import seqexec.server.gcal.GcalController.Diffuser

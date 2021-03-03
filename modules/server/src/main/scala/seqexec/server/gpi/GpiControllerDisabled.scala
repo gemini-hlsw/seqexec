@@ -6,7 +6,7 @@ package seqexec.server.gpi
 import cats.Applicative
 import cats.implicits._
 import giapi.client.GiapiStatusDb
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.overrideLogMessage

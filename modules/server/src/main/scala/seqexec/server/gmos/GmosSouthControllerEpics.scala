@@ -13,7 +13,7 @@ import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ DisperserSouth => Disperse
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ FPUnitSouth => FPU }
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ FilterSouth => Filter }
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{ StageModeSouth => StageMode }
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.Beam
 import seqexec.server.gmos.GmosController.SouthTypes

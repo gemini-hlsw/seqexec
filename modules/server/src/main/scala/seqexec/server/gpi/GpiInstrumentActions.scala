@@ -7,7 +7,7 @@ import cats.effect.Concurrent
 import cats.effect.Timer
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.engine.ParallelActions
 import seqexec.engine.Result
 import seqexec.server.InstrumentActions

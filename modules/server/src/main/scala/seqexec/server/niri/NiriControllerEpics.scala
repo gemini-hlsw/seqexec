@@ -23,7 +23,7 @@ import edu.gemini.spModel.gemini.niri.Niri.Camera
 import edu.gemini.spModel.gemini.niri.Niri.Disperser
 import edu.gemini.spModel.gemini.niri.Niri.Filter
 import edu.gemini.spModel.gemini.niri.Niri.Mask
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult

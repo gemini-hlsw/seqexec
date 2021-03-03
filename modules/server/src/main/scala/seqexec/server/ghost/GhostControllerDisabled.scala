@@ -5,7 +5,7 @@ package seqexec.server.ghost
 
 import cats.Applicative
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.overrideLogMessage

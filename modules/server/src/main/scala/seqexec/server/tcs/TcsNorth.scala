@@ -10,7 +10,7 @@ import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.enum.M1Source

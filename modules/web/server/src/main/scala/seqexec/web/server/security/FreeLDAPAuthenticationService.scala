@@ -8,7 +8,7 @@ import cats.effect._
 import cats.free.Free
 import cats.syntax.all._
 import com.unboundid.ldap.sdk._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
 

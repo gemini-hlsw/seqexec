@@ -5,7 +5,7 @@ package seqexec.server.gmos
 
 import cats.effect.Sync
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId

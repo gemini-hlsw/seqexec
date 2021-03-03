@@ -32,7 +32,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.Site
 import monocle.Monocle.index
 import monocle.Optional

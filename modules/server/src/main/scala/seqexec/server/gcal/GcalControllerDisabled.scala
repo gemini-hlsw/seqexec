@@ -3,7 +3,7 @@
 
 package seqexec.server.gcal
 
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.overrideLogMessage
 
 class GcalControllerDisabled[F[_]: Logger] extends GcalController[F] {

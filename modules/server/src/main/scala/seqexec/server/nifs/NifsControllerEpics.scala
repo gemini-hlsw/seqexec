@@ -22,7 +22,7 @@ import edu.gemini.spModel.gemini.nifs.NIFSParams.{ EngReadMode => LegacyEngReadM
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId

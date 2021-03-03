@@ -6,7 +6,7 @@ package seqexec.server.gems
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
