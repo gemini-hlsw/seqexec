@@ -22,7 +22,7 @@ import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.enum.ApplyCommandResult

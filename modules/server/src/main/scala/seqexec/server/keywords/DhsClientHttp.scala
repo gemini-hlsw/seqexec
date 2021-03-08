@@ -15,7 +15,7 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder

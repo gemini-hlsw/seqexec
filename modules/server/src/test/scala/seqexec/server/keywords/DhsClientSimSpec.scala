@@ -5,7 +5,7 @@ package seqexec.server.keywords
 
 import cats.effect.IO
 import lucuma.core.enum.KeywordName
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import java.time.LocalDate
 import seqexec.server.keywords.DhsClient.Permanent
 

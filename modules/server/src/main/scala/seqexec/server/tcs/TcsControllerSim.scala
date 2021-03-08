@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.Applicative
 import cats.data.NonEmptySet
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.tcs.TcsController._
 

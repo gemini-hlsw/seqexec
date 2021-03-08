@@ -23,8 +23,8 @@ import fs2.Stream
 import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import io.prometheus.client.CollectorRegistry
 import org.asynchttpclient.AsyncHttpClientConfig
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
@@ -141,7 +141,6 @@ object WebServerLauncher extends IOApp with LogInitialization {
             BlazeServerBuilder[F](global)
               .bindHttp(conf.webServer.port, conf.webServer.host)
               .withWebSockets(true)
-              .withNio2(true)
               .withHttpApp((prRouter <+> all).orNotFound)
           ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
         })
@@ -191,7 +190,6 @@ object WebServerLauncher extends IOApp with LogInitialization {
     BlazeServerBuilder[F](global)
       .bindHttp(conf.insecurePort, conf.host)
       .withHttpApp(router.orNotFound)
-      .withNio2(true)
       .resource
   }
 

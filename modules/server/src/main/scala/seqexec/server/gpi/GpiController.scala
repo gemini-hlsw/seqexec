@@ -23,7 +23,7 @@ import giapi.client.GiapiStatusDb
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.GiapiStatusApply._
 import lucuma.core.enum.GpiReadMode
 import mouse.boolean._

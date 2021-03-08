@@ -5,7 +5,7 @@ package seqexec.server.nifs
 
 import cats.MonadError
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
@@ -14,7 +14,7 @@ import seqexec.server.tcs.TcsKeywordsReader
 
 object NifsHeader {
 
-  def header[F[_]: MonadError[?[_], Throwable]: Logger](
+  def header[F[_]: MonadError[*[_], Throwable]: Logger](
     kwClient:          KeywordsClient[F],
     instReader:        NifsKeywordReader[F],
     tcsKeywordsReader: TcsKeywordsReader[F]

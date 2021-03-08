@@ -9,7 +9,7 @@ import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some

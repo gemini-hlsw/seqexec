@@ -27,6 +27,7 @@ trait GhostSettings
  * @param ghostGDS URL for GHOST's GDS
  * @param tops Used to select the top component for epics subsystems
  * @param epicsCaAddrList List of IPs for the epics subsystem
+ * @param readRetries Number of retries when reading a channel
  * @param ioTimeout Timeout to listen for EPICS events
  * @param dhsTimeout Timeout for DHS operations
  */
@@ -44,6 +45,7 @@ final case class SeqexecEngineConfiguration(
   ghostGDS:                Uri @@ GhostSettings,
   tops:                    String,
   epicsCaAddrList:         Option[String],
+  readRetries:             Int,
   ioTimeout:               FiniteDuration,
   dhsTimeout:              FiniteDuration
 )
@@ -66,6 +68,7 @@ object SeqexecEngineConfiguration {
        x.ghostGDS,
        x.tops,
        x.epicsCaAddrList,
+       x.readRetries,
        x.ioTimeout,
        x.dhsTimeout
       )

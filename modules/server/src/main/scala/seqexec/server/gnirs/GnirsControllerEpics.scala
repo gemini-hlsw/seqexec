@@ -18,7 +18,7 @@ import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -378,6 +378,6 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
 
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  private val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(240, SECONDS)
 }

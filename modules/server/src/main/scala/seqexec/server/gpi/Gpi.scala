@@ -20,7 +20,7 @@ import edu.gemini.spModel.obsclass.ObsClass
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.GpiReadMode
 import lucuma.core.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
@@ -194,7 +194,7 @@ object Gpi {
         ConversionError(OBSERVE_KEY / DETECTOR_STARTX_PROP, "Cannot read readout area")
       )).flatten
 
-  private def regularSequenceConfig[F[_]: MonadError[?[_], Throwable]](
+  private def regularSequenceConfig[F[_]: MonadError[*[_], Throwable]](
     config: CleanConfig
   ): F[GpiConfig] =
     EitherT(
@@ -238,7 +238,7 @@ object Gpi {
   private def alignAndCalibConfig[F[_]: Applicative]: F[GpiConfig] =
     AlignAndCalibConfig.pure[F].widen[GpiConfig]
 
-  def fromSequenceConfig[F[_]: MonadError[?[_], Throwable]](config: CleanConfig): F[GpiConfig] =
+  def fromSequenceConfig[F[_]: MonadError[*[_], Throwable]](config: CleanConfig): F[GpiConfig] =
     ApplicativeError[F, Throwable]
       .catchNonFatal(isAlignAndCalib(config))
       .ifM(alignAndCalibConfig[F], regularSequenceConfig[F](config))

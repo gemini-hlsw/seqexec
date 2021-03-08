@@ -8,8 +8,8 @@ import cats.effect.{ ContextShift, IO, Timer }
 import cats.syntax.all._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
-import io.chrisdavenport.log4cats.noop.NoOpLogger
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.Logger
 import java.util.UUID
 
 import edu.gemini.spModel.core.Peer
@@ -93,6 +93,7 @@ object TestCommon {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     "",
     Some("127.0.0.1"),
+    0,
     3.seconds,
     10.seconds
   )

@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import cats.effect.Concurrent
 import cats.effect.Timer
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.engine.Action
 import seqexec.engine.Action.ActionState
 import seqexec.engine.ParallelActions
@@ -65,7 +65,7 @@ object InstrumentActions {
       )
     )
 
-  def launchObserve[F[_]: MonadError[?[_], Throwable]: Logger](
+  def launchObserve[F[_]: MonadError[*[_], Throwable]: Logger](
     env:       ObserveEnvironment[F],
     doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] =

@@ -184,9 +184,9 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
   val sfoStatus: CaStatusAcceptor = service.getStatusAcceptor("sfostate")
 
-  def lgsfcnts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("lgsfcnts"))
+  def lgsfcnts: F[Double] = safeAttributeSDoubleF(sfoStatus.getDoubleAttribute("lgsfcnts"))
 
-  def lgsfexp: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("lgsfexp"))
+  def lgsfexp: F[Double] = safeAttributeSDoubleF(sfoStatus.getDoubleAttribute("lgsfexp"))
 
 }
 

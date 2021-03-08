@@ -140,10 +140,16 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gmos::dcconfig")
     )
 
+    object roiCAD extends EpicsCommandBase[F](sysName) {
+      override protected val cs: Option[CaCommandSender] =
+        Option(epicsService.getApplySender("gmos::dcapply"))
+          .flatMap(x => Option(epicsService.createCommandSender("roiCmd", x, s"${GmosTop}dc:roi")))
+    }
+
     private val roiNumUsed: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("roiNumUsed", s"${GmosTop}dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): F[Unit] =
-      setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
+      setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble)) *> roiCAD.mark
 
     val rois: Map[Int, RoiParameters[F]]                  =
       (1 to 5).iterator.map(i => i -> RoiParameters[F](cs, i)).toMap
@@ -172,12 +178,12 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     private val ccdXBinning: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("ccdXBinning", s"${GmosTop}dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): F[Unit] =
-      setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
+      setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble)) *> roiCAD.mark
 
     private val ccdYBinning: Option[CaParameter[JDouble]] =
       cs.map(_.addDouble("ccdYBinning", s"${GmosTop}dc:roiYBin", "CCD Y Binning Value", false))
     def setCcdYBinning(v: Int): F[Unit] =
-      setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble))
+      setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble)) *> roiCAD.mark
 
     private val nsPairs: Option[CaParameter[Integer]] =
       cs.map(_.getInteger("nsPairs"))

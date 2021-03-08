@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 
 import cats.effect.Sync
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.dhs.toImageFileId
 import seqexec.server.overrideLogMessage

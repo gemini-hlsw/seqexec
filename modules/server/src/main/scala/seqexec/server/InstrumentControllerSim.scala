@@ -12,7 +12,7 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
@@ -74,7 +74,7 @@ object InstrumentControllerSim {
     stopObserveDelay:   FiniteDuration,
     configurationDelay: FiniteDuration,
     obsStateRef:        Ref[F, ObserveState]
-  )(implicit val F:     MonadError[?[_], Throwable][F], L: Logger[F], T: Timer[F])
+  )(implicit val F:     MonadError[*[_], Throwable][F], L: Logger[F], T: Timer[F])
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
 

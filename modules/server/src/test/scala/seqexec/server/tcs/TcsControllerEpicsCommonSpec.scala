@@ -9,8 +9,8 @@ import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import edu.gemini.spModel.core.Wavelength
 import lucuma.core.enum.LightSinkName.Gmos
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.noop.NoOpLogger
 import org.scalatest.PrivateMethodTester
 import org.scalatest.matchers.should.Matchers._
 import seqexec.model.{ M1GuideConfig, M2GuideConfig, TelescopeGuideConfig }

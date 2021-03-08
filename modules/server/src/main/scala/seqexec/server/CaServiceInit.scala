@@ -6,7 +6,7 @@ package seqexec.server
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm.CaService
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.config.SeqexecEngineConfiguration
 
 object CaServiceInit {
@@ -26,7 +26,10 @@ object CaServiceInit {
           case _       => F.raiseError[Unit](new RuntimeException("Cannot initialize EPICS subsystem"))
         }
       } *>
-      F.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis))) *>
+      F.delay {
+        CaService.setReadRetries(conf.readRetries)
+        CaService.setIOTimeout(java.time.Duration.ofMillis(conf.ioTimeout.toMillis))
+      } *>
       F.delay(CaService.getInstance())
         .ensure(new Exception("Unable to start EPICS service."))(c => Option(c).isDefined)
   }

@@ -7,7 +7,7 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.jawn.decode
@@ -94,7 +94,7 @@ object AuthenticationService {
 
   // Allows calling authenticate on a list of authenticator, stopping at the first
   // that succeeds
-  implicit class ComposedAuth[F[_]: MonadError[?[_], Throwable]](val s: AuthenticationServices[F]) {
+  implicit class ComposedAuth[F[_]: MonadError[*[_], Throwable]](val s: AuthenticationServices[F]) {
 
     def authenticateUser(username: String, password: String): F[AuthResult] = {
       def go(l: List[AuthService[F]]): F[AuthResult] = l match {

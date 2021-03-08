@@ -13,7 +13,7 @@ import giapi.client.GiapiClient
 import giapi.client.commands.CommandResult
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.SeqexecFailure.SeqexecException

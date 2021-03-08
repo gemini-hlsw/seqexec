@@ -10,7 +10,7 @@ import scala.concurrent.duration.FiniteDuration
 import cats.ApplicativeError
 import cats.effect.Async
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.server.gems.Gems._
@@ -22,7 +22,7 @@ import seqexec.server.tcs.Gaos.PauseResume
 import seqexec.server.tcs.Gaos.ResumeCondition
 import seqexec.server.tcs.Gaos.ResumeConditionSet
 
-class GemsControllerEpics[F[_]: Async: ApplicativeError[?[_], Throwable]](
+class GemsControllerEpics[F[_]: Async: ApplicativeError[*[_], Throwable]](
   epicsSys:    GemsEpics[F],
   gsaoiGuider: GsaoiGuider[F]
 )(implicit L:  Logger[F])

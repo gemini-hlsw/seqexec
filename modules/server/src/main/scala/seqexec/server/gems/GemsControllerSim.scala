@@ -5,7 +5,7 @@ package seqexec.server.gems
 
 import cats.Applicative
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.gems.Gems.Cwfs1DetectorState
 import seqexec.server.gems.Gems.Cwfs2DetectorState
 import seqexec.server.gems.Gems.Cwfs3DetectorState

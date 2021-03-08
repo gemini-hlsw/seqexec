@@ -9,7 +9,7 @@ import cats.effect.Timer
 import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentControllerSim
@@ -44,7 +44,7 @@ object Flamingos2ControllerSim {
 /**
  * This controller will run correctly but fail at step `failAt`
  */
-final case class Flamingos2ControllerSimBad[F[_]: MonadError[?[_], Throwable]: Logger] private (
+final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: Logger] private (
   failAt:  Int,
   sim:     InstrumentControllerSim[F],
   counter: Ref[F, Int]

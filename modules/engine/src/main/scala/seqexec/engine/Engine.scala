@@ -8,7 +8,7 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._
 import seqexec.engine.Event._
@@ -23,7 +23,7 @@ import seqexec.model.Observation
 import seqexec.model.SequenceState
 import seqexec.model.StepId
 
-class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.State[F, S]) {
+class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.State[F, S]) {
   val L: Logger[F] = Logger[F]
 
   type EventType     = Event[F, S, U]
@@ -234,7 +234,7 @@ class Engine[F[_]: MonadError[?[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     )
 
   private def getState(f: S => Option[Stream[F, EventType]]): HandleType[Unit] =
-    get.flatMap(s => Handle[F, S, EventType, Unit](f(s).pure[StateT[F, S, ?]].map(((), _))))
+    get.flatMap(s => Handle[F, S, EventType, Unit](f(s).pure[StateT[F, S, *]].map(((), _))))
 
   private def actionStop(
     id: Observation.Id,

@@ -27,7 +27,7 @@ import seqexec.server.keywords._
 
 final case class RoiValues(xStart: Int, xSize: Int, yStart: Int, ySize: Int)
 
-final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config: CleanConfig) {
+final case class GmosObsKeywordsReader[F[_]: MonadError[*[_], Throwable]](config: CleanConfig) {
   import GmosObsKeywordsReader._
 
   private implicit val BooleanDefaultValue: DefaultHeaderValue[Boolean] =
@@ -82,7 +82,7 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[?[_], Throwable]](config
 object GmosObsKeywordsReader {
 
   private implicit class ExplainExtractError[A](v: Either[ExtractFailure, A]) {
-    def explainExtractError[F[_]: MonadError[?[_], Throwable]]: F[A] =
+    def explainExtractError[F[_]: MonadError[*[_], Throwable]]: F[A] =
       EitherT(v.pure[F])
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
         .widenRethrowT[Throwable]
