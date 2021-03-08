@@ -107,7 +107,7 @@ trait Flamingos2Encoders {
 
 object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
-  val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
