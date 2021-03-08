@@ -270,7 +270,7 @@ object NiriControllerEpics extends NiriEncoders {
         epicsSys.minIntegration.map { t =>
           val MinIntTime    = t.seconds
           val CoaddOverhead = 2.5
-          val TotalOverhead = 30.seconds
+          val TotalOverhead = 120.seconds
 
           FiniteDuration(
             ((cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead).toMillis,

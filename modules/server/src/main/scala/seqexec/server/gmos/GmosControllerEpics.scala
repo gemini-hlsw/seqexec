@@ -628,7 +628,7 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
   val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  val ReadoutTimeout: FiniteDuration = FiniteDuration(90, SECONDS)
+  val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   val ConfigTimeout: FiniteDuration  = FiniteDuration(600, SECONDS)
 
 }

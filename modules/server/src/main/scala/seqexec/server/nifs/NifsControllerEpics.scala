@@ -391,7 +391,7 @@ object NifsControllerEpics extends NifsEncoders {
       )
 
     def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
-      val SafetyPadding = 30.seconds
+      val SafetyPadding = 120.seconds
 
       FiniteDuration((calcTotalExposureTime(cfg) + SafetyPadding).toMillis, MILLISECONDS)
     }

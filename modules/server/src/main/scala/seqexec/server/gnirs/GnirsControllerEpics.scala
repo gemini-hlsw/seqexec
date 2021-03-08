@@ -378,6 +378,6 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
 
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  private val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(240, SECONDS)
 }
