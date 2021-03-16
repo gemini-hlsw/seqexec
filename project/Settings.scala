@@ -69,7 +69,7 @@ object Settings {
     val giapi               = "1.1.5"
     val giapiJmsUtil        = "0.5.5"
     val giapiJmsProvider    = "1.6.5"
-    val giapiCommandsClient = "0.2.5"
+    val giapiCommandsClient = "0.2.7"
     val giapiStatusService  = "0.6.5"
     val gmpStatusGateway    = "0.3.5"
     val gmpStatusDatabase   = "0.3.5"
