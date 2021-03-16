@@ -64,7 +64,7 @@ object Settings {
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.1"
-    val epicsService        = "1.0.5"
+    val epicsService        = "1.0.7"
     val gmpCommandRecords   = "0.7.5"
     val giapi               = "1.1.5"
     val giapiJmsUtil        = "0.5.5"
