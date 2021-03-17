@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsReader;
+import edu.gemini.epics.QueuedEventDispatcherSelector;
 import edu.gemini.epics.impl.EpicsReaderImpl;
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.impl.EpicsWriterImpl;
@@ -70,6 +71,7 @@ public final class CaService {
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
         epicsService = new EpicsService(addrList, (double) timeout.getSeconds(), readRetries);
+        epicsService.setEventDispatcherSelector(new QueuedEventDispatcherSelector());
         executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG, this.getClass().getName());
 
         epicsService.startService();
