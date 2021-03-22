@@ -5,7 +5,6 @@ package seqexec.server.gnirs
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
@@ -14,7 +13,22 @@ import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{
+  AcquisitionMirror,
+  Camera,
+  CrossDispersed,
+  Disperser,
+  Filter,
+  Focus,
+  FocusSuggestion,
+  HartmannMask,
+  PixelScale,
+  SlitWidth,
+  Wavelength,
+  WellDepth,
+  WollastonPrism,
+  Decker => OcsDecker
+}
 import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
@@ -28,11 +42,7 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gnirs.GnirsController.CCConfig
-import seqexec.server.gnirs.GnirsController.DCConfig
-import seqexec.server.gnirs.GnirsController.Filter1
-import seqexec.server.gnirs.GnirsController.Other
-import seqexec.server.gnirs.GnirsController.ReadMode
+import seqexec.server.gnirs.GnirsController.{ CCConfig, DCConfig, Decker, Filter1, Other, ReadMode }
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -174,20 +184,23 @@ object Gnirs {
     woll:   WollastonPrism,
     xdisp:  CrossDispersed
   ): Either[ExtractFailure, GnirsController.Decker] =
-    config.extractInstAs[Decker](DECKER_PROP).orElse {
+    config.extractInstAs[OcsDecker](DECKER_PROP).map(Decker.SeqDecker(_)).orElse {
       for {
         pixScale <- config.extractInstAs[PixelScale](PIXEL_SCALE_PROP)
       } yield xdisp match {
-        case CrossDispersed.LXD => Decker.LONG_CAM_X_DISP
-        case CrossDispersed.SXD => Decker.SHORT_CAM_X_DISP
+        case CrossDispersed.LXD => Decker.SeqDecker(OcsDecker.LONG_CAM_X_DISP)
+        case CrossDispersed.SXD => Decker.SeqDecker(OcsDecker.SHORT_CAM_X_DISP)
         case _                  =>
-          if (woll === WollastonPrism.YES) Decker.WOLLASTON
+          if (woll === WollastonPrism.YES) Decker.SeqDecker(OcsDecker.WOLLASTON)
           else
             pixScale match {
-              case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
+              case PixelScale.PS_005 => Decker.SeqDecker(OcsDecker.LONG_CAM_LONG_SLIT)
               case PixelScale.PS_015 =>
-                if (slit === SlitWidth.IFU) Decker.IFU
-                else Decker.SHORT_CAM_LONG_SLIT
+                slit match {
+                  case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
+                  case SlitWidth.HR_IFU                 => Decker.HR_IFU
+                  case _                                => Decker.SeqDecker(OcsDecker.SHORT_CAM_LONG_SLIT)
+                }
             }
       }
     }
@@ -198,7 +211,7 @@ object Gnirs {
     slit:     SlitWidth,
     decker:   Decker
   ): Either[ConfigUtilOps.ExtractFailure, GnirsController.Filter1] =
-    if (slit === SlitWidth.PUPIL_VIEWER || decker === Decker.PUPIL_VIEWER)
+    if (slit === SlitWidth.PUPIL_VIEWER || decker.isPupilViewer)
       GnirsController.Filter1.PupilViewer.asRight
     else {
       val f = filter
