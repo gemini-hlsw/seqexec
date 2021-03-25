@@ -24,8 +24,6 @@ resolvers in ThisBuild += "Gemini Repository".at(
 // Add e.g. a `jres.sbt` file with your particular configuration
 ocsJreDir in ThisBuild := Path.userHome / ".jres8_ocs3"
 
-parallelExecution in (ThisBuild, Test) := false
-
 cancelable in Global := true
 
 // Should make CI builds more robust

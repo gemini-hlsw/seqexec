@@ -23,7 +23,7 @@ object Settings {
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "2.3.3"
+    val catsEffectVersion   = "2.4.0"
     val catsVersion         = "2.4.2"
     val mouseVersion        = "1.0.0"
     val fs2Version          = "2.5.3"
@@ -39,7 +39,7 @@ object Settings {
     val jwt            = "5.0.0"
     val slf4j          = "1.7.30"
     val log4s          = "1.9.0"
-    val log4cats       = "1.2.0"
+    val log4cats       = "1.2.1"
     val log4catsLevel  = "0.2.0"
     val logback        = "1.2.3"
     val janino         = "3.1.3"

@@ -20,7 +20,7 @@ object GhostClient {
   // Used for simulations
   def simulatedGhostClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
     : Resource[F, GhostClient[F]] =
-    Resource.liftF(
+    Resource.eval(
       Giapi.simulatedGiapiConnection[F].connect.map(new GhostClientImpl(_))
     )
 

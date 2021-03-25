@@ -1,8 +1,3 @@
-resolvers  ++= Seq(
-  "Flyway" at "https://davidmweber.github.io/flyway-sbt.repo",
-  Resolver.bintrayIvyRepo("rtimush", "sbt-plugin-snapshots")
-)
-
 addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.6")
 
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.5.0")
