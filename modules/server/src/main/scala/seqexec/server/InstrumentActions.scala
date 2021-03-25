@@ -3,7 +3,6 @@
 
 package seqexec.server
 
-import cats.MonadError
 import cats.data.NonEmptyList
 import cats.effect.Concurrent
 import cats.effect.Timer
@@ -65,7 +64,7 @@ object InstrumentActions {
       )
     )
 
-  def launchObserve[F[_]: MonadError[*[_], Throwable]: Logger](
+  def launchObserve[F[_]](
     env:       ObserveEnvironment[F],
     doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] =

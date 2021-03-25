@@ -112,7 +112,7 @@ object Flamingos2Header {
   }
 
   object InstKeywordReaderEpics {
-    def apply[F[_]: Sync](sys: Flamingos2Epics[F]): InstKeywordsReader[F] =
+    def apply[F[_]](sys: Flamingos2Epics[F]): InstKeywordsReader[F] =
       new InstKeywordsReader[F] {
         override def getHealth: F[String] = sys.health
 

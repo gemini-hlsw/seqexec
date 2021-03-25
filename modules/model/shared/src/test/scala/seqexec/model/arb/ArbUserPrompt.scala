@@ -3,7 +3,6 @@
 
 package seqexec.model.arb
 
-import cats.Eq
 import cats.data.NonEmptyList
 import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.{ Observation, StepId, UserPrompt }
@@ -20,7 +19,7 @@ import seqexec.model.UserPrompt.{
 trait ArbUserPrompt {
   import ArbObservationId._
 
-  implicit def discrepancyArb[A: Arbitrary: Eq]: Arbitrary[Discrepancy[A]] =
+  implicit def discrepancyArb[A: Arbitrary]: Arbitrary[Discrepancy[A]] =
     Arbitrary[Discrepancy[A]] {
       for {
         actual   <- arbitrary[A]
@@ -28,7 +27,7 @@ trait ArbUserPrompt {
       } yield Discrepancy[A](actual, required)
     }
 
-  implicit def discrepancyCogen[A: Cogen: Eq]: Cogen[Discrepancy[A]] =
+  implicit def discrepancyCogen[A: Cogen]: Cogen[Discrepancy[A]] =
     Cogen[(A, A)].contramap(x => (x.actual, x.required))
 
   implicit val targetCheckOverrideArb = Arbitrary[TargetCheckOverride] {

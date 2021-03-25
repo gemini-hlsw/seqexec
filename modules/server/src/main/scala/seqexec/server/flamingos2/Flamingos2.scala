@@ -197,7 +197,7 @@ object Flamingos2 {
       s <- config.extractInstAs[Decker](DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig[F[_]: Sync](
+  def fromSequenceConfig[F[_]](
     config: CleanConfig
   ): Either[SeqexecFailure, Flamingos2Config] = for {
     p <- ccConfigFromSequenceConfig(config)

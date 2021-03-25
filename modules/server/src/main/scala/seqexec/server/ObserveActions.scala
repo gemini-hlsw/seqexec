@@ -109,7 +109,7 @@ trait ObserveActions {
    * Preamble for observations. It tells the odb, the subsystems
    * send the start headers and finally sends an observe
    */
-  def observePreamble[F[_]: Concurrent: Timer: Logger](
+  def observePreamble[F[_]: Concurrent: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): F[ObserveCommandResult] =
@@ -132,7 +132,7 @@ trait ObserveActions {
    * It tells the odb and each subsystem and also sends the end
    * observation keywords
    */
-  def okTail[F[_]: Concurrent: Timer](
+  def okTail[F[_]: Concurrent](
     fileId:  ImageFileId,
     stopped: Boolean,
     env:     ObserveEnvironment[F]

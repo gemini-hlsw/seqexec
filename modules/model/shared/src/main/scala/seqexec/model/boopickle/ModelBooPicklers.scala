@@ -57,16 +57,16 @@ trait ModelBooPicklers extends BooPicklerSyntax {
   def sourceIndex[A: Enumerated]: Map[Int, A] =
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
-  def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](
+  def valuesMapPickler[A: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
-  ): Pickler[A]                                        =
+  ): Pickler[A]                                    =
     transformPickler((t: B) =>
       valuesMap
         .get(t)
         .getOrElse(throw new RuntimeException(s"Failed to decode value"))
     )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
 
-  def enumeratedPickler[A: Eq: Enumerated]: Pickler[A] =
+  def enumeratedPickler[A: Enumerated]: Pickler[A] =
     valuesMapPickler[A, Int](sourceIndex[A])
 
   implicit val timeProgressPickler =

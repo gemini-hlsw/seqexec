@@ -76,7 +76,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Configures the Authentication service */
-  def authService[F[_]: Sync: Timer: Logger](
+  def authService[F[_]: Sync: Logger](
     mode: Mode,
     conf: AuthenticationConfig
   ): F[AuthenticationService[F]] =

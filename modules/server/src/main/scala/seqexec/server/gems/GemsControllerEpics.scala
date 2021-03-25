@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit.SECONDS
 
 import scala.concurrent.duration.FiniteDuration
 
-import cats.ApplicativeError
 import cats.effect.Async
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
@@ -22,7 +21,7 @@ import seqexec.server.tcs.Gaos.PauseResume
 import seqexec.server.tcs.Gaos.ResumeCondition
 import seqexec.server.tcs.Gaos.ResumeConditionSet
 
-class GemsControllerEpics[F[_]: Async: ApplicativeError[*[_], Throwable]](
+class GemsControllerEpics[F[_]: Async](
   epicsSys:    GemsEpics[F],
   gsaoiGuider: GsaoiGuider[F]
 )(implicit L:  Logger[F])

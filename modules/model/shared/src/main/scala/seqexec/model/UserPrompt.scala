@@ -30,7 +30,7 @@ object UserPrompt {
     }
   }
 
-  final case class Discrepancy[A: Eq](actual: A, required: A)
+  final case class Discrepancy[A](actual: A, required: A)
 
   object Discrepancy {
     implicit def eq[A: Eq]: Eq[Discrepancy[A]] = Eq.by(x => (x.actual, x.required))

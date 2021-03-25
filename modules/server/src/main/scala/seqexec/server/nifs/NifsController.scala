@@ -3,7 +3,6 @@
 
 package seqexec.server.nifs
 
-import cats.Applicative
 import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
@@ -118,7 +117,7 @@ object NifsController {
 
   implicit val cfgShow: Show[NifsConfig] = Show.fromToString
 
-  def calcTotalExposureTime[F[_]: Applicative](cfg: DCConfig): Time = {
+  def calcTotalExposureTime[F[_]](cfg: DCConfig): Time = {
     val readOutTime = cfg.readMode match {
       case Right(LegacyReadMode.BRIGHT_OBJECT_SPEC) => 11.4
       case Right(LegacyReadMode.MEDIUM_OBJECT_SPEC) => 27.4

@@ -40,7 +40,7 @@ final case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName:
   def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
-final case class AuthenticationService[F[_]: Timer: Sync: Logger](
+final case class AuthenticationService[F[_]: Sync: Logger](
   mode:   Mode,
   config: AuthenticationConfig
 ) extends AuthService[F] {

@@ -3,7 +3,6 @@
 
 package seqexec.server.tcs
 
-import cats.MonadError
 import cats.data.NonEmptySet
 import cats.effect.Sync
 import cats.syntax.all._
@@ -33,7 +32,7 @@ import shapeless.tag.@@
 import squants.Angle
 import squants.space.Arcseconds
 
-class TcsNorth[F[_]: Sync: MonadError[*[_], Throwable]: Logger] private (
+class TcsNorth[F[_]: Sync: Logger] private (
   tcsController: TcsNorthController[F],
   subsystems:    NonEmptySet[Subsystem],
   gaos:          Option[Altair[F]],

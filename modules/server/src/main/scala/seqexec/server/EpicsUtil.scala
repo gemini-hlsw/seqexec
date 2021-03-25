@@ -365,7 +365,7 @@ object EpicsUtil {
    * @param d Value to be set
    * @param set Action to set the parameter
    */
-  def applyParamT[F[_]: Functor](
+  def applyParamT[F[_]](
     relTolerance: Double
   )(c:            Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
     if (areValuesDifferentEnough(relTolerance, c, d)) {
