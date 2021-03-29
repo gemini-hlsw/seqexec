@@ -55,7 +55,7 @@ object Settings {
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.22"
-    lazy val munitDisciplineVersion = "1.0.6"
+    lazy val munitDisciplineVersion = "1.0.7"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
