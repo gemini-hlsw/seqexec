@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -76,7 +76,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Configures the Authentication service */
-  def authService[F[_]: Sync: Timer: Logger](
+  def authService[F[_]: Sync: Logger](
     mode: Mode,
     conf: AuthenticationConfig
   ): F[AuthenticationService[F]] =
