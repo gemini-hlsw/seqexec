@@ -104,7 +104,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
         c <- Resource.make(Sync[F].delay(failoverServerSet.getConnection))(c =>
                Sync[F].delay(c.close())
              )
-        x <- Resource.liftF(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
+        x <- Resource.eval(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
       } yield x
 
     rsrc.use {
