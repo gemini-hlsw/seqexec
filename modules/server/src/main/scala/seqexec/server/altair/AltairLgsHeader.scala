@@ -26,7 +26,7 @@ object AltairLgsHeader {
           List(
             buildDouble(altairReader.lgdfocus, KeywordName.LGDFOCUS),
             buildDouble(altairReader.lgttcnts, KeywordName.LGTTCNTS),
-            buildInt32(altairReader.lgttexp, KeywordName.LGTTEXP),
+            buildDouble(altairReader.lgttexp, KeywordName.LGTTEXP),
             buildDouble(altairReader.lgsfcnts, KeywordName.LGSFCNTS),
             buildDouble(altairReader.lgsfexp, KeywordName.LGSFEXP),
             buildDouble(altairReader.fsmtip, KeywordName.FSMTIP),
