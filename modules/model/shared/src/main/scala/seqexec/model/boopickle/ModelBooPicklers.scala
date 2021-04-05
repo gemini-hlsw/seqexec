@@ -145,6 +145,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
           .getOrElse(
             throw new RuntimeException("Failed to decode ns subexposure")
           )
+      case _                                  => throw new RuntimeException("Failed to decode ns subexposure")
     }((ns: NSSubexposure) => (ns.totalCycles, ns.cycle, ns.stageIndex))
   implicit val nsRunningStatePickler                           = generatePickler[NSRunningState]
   implicit val nsStatusPickler                                 = generatePickler[NodAndShuffleStatus]

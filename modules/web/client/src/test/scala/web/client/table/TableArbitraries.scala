@@ -10,6 +10,7 @@ import japgolly.scalajs.react.raw.JsNumber
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 import react.common.syntax._
+import scala.annotation.nowarn
 
 trait TableArbitraries {
   implicit val arbUserModified: Arbitrary[UserModified] = Arbitrary {
@@ -60,6 +61,7 @@ trait TableArbitraries {
     )
   }
 
+  @nowarn
   implicit val jsNumberCogen: Cogen[JsNumber] =
     Cogen[Double].contramap { x =>
       (x: Any) match {

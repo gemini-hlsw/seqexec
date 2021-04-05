@@ -1,4 +1,4 @@
-addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.6")
+addSbtPlugin("edu.gemini"         % "sbt-lucuma"               % "0.3.7")
 
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "1.5.1")
 

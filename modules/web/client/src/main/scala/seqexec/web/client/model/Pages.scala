@@ -14,6 +14,7 @@ import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit.SeqexecCircuit
+import scala.annotation.nowarn
 
 // Pages
 object Pages {
@@ -66,6 +67,7 @@ object Pages {
   }
 
   // Pages forms a prism with Page
+  @nowarn
   val PageActionP: Prism[Action, SeqexecPages] = Prism[Action, SeqexecPages] {
     case SelectRoot                         => Root.some
     case RequestSoundEcho                   => SoundTest.some

@@ -773,7 +773,7 @@ object SeqexecEngine {
         .handleErrorWith {
           case e: SeqFailure =>
             Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-          case e: Exception  =>
+          case e             =>
             Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }
