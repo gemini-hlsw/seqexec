@@ -39,7 +39,7 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
               case _: NSPartial => true
               case _            => false
             }
-          nsPartials.headOption.map { case NSPartial(act, sub) =>
+          nsPartials.headOption.collect { case NSPartial(act, sub) =>
             NSRunningState(act, sub)
           }
         }
