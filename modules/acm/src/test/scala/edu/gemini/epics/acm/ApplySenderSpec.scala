@@ -4,15 +4,15 @@
 package edu.gemini.epics.acm
 
 import edu.gemini.epics.api.ChannelListener
-import edu.gemini.epics.{EpicsReader, EpicsWriter}
+import edu.gemini.epics.{ EpicsReader, EpicsWriter }
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalamock.scalatest.MockFactory
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ ScheduledExecutorService, ScheduledThreadPoolExecutor, TimeUnit }
 import java.util.concurrent.atomic.AtomicInteger
-import java.lang.{Integer => JInteger}
-import java.lang.{Short => JShort}
-import java.time.{Duration, Instant}
+import java.lang.{ Integer => JInteger }
+import java.lang.{ Short => JShort }
+import java.time.{ Duration, Instant }
 
 final class ApplySenderSpec extends AnyFunSuite {
   import ApplySenderSpec._
@@ -25,7 +25,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
 
     assert(!apply.isActive)
 
@@ -60,7 +70,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     apply.onCarClidChange(100, Instant.ofEpochMilli(210))
     assert(!l.isDone)
     // The timestamp used verifies that the window is applied correctly.
-    apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(20).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2)))
+    apply.onCarValChange(
+      CarState.IDLE,
+      Instant.ofEpochMilli(20).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2))
+    )
 
     l.waitDone(1, TimeUnit.SECONDS)
     assert(l.isDone)
@@ -75,7 +88,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
 
     assert(!apply.isActive)
 
@@ -113,7 +136,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
 
     assert(!apply.isActive)
 
@@ -148,7 +181,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     apply.onCarClidChange(100, Instant.ofEpochMilli(210))
     assert(!l.isDone)
     // The timestamp used verifies that the window is applied correctly.
-    apply.onCarValChange(CarState.ERROR, Instant.ofEpochMilli(20).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2)))
+    apply.onCarValChange(
+      CarState.ERROR,
+      Instant.ofEpochMilli(20).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2))
+    )
 
     l.waitInactive(1, TimeUnit.SECONDS)
 
@@ -162,8 +198,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC",
-      "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
 
     assert(!apply.isActive)
 
@@ -195,7 +240,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     assert(!l.isDone)
     apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(40))
     assert(!l.isDone)
-    apply.onCarClidChange(100, Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow.dividedBy(2)))
+    apply.onCarClidChange(
+      100,
+      Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow.dividedBy(2))
+    )
 
     l.waitDone(2, TimeUnit.SECONDS)
     assert(l.isDone)
@@ -204,14 +252,23 @@ final class ApplySenderSpec extends AnyFunSuite {
     assert(observePauseCount.get == 0)
     assert(observeSuccessCount.get == 1)
 
-
   }
 
   test("Successful abnormal command sequence 2") {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
 
     assert(!apply.isActive)
 
@@ -243,7 +300,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     assert(!l.isDone)
     apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(60))
     assert(!l.isDone)
-    apply.onApplyValChange(100, Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow.dividedBy(2)))
+    apply.onApplyValChange(
+      100,
+      Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow.dividedBy(2))
+    )
 
     l.waitDone(2, TimeUnit.SECONDS)
     assert(l.isDone)
@@ -258,8 +318,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC",
-      "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
     apply.setTimeout(applyTimeout.toMillis, TimeUnit.MILLISECONDS)
 
     assert(!apply.isActive)
@@ -292,7 +361,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     assert(!l.isDone)
     apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(40))
     assert(!l.isDone)
-    apply.onCarClidChange(100, Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2)))
+    apply.onCarClidChange(
+      100,
+      Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2))
+    )
 
     l.waitInactive(applyTimeout.getSeconds * 2, TimeUnit.SECONDS)
 
@@ -306,7 +378,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
     apply.setTimeout(applyTimeout.toMillis, TimeUnit.MILLISECONDS)
 
     assert(!apply.isActive)
@@ -340,7 +422,10 @@ final class ApplySenderSpec extends AnyFunSuite {
     apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(60))
     assert(!l.isDone)
     // change in apply.VAL arrives too late...
-    apply.onApplyValChange(100, Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2)))
+    apply.onApplyValChange(
+      100,
+      Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow.multipliedBy(2))
+    )
 
     l.waitInactive(applyTimeout.getSeconds * 2, TimeUnit.SECONDS)
 
@@ -353,7 +438,17 @@ final class ApplySenderSpec extends AnyFunSuite {
 
     val (reader, writer) = ApplyMock.genericApplyMock("dummy:apply", "dummy:applyC")
 
-    val apply: CaApplySenderImpl[CarState] = new CaApplySenderImpl[CarState]("apply", "dummy:apply", "dummy:applyC", "dummy apply", classOf[CarState], reader, writer, executor, TimestampProvider.Default)
+    val apply: CaApplySenderImpl[CarState] =
+      new CaApplySenderImpl[CarState]("apply",
+                                      "dummy:apply",
+                                      "dummy:applyC",
+                                      "dummy apply",
+                                      classOf[CarState],
+                                      reader,
+                                      writer,
+                                      executor,
+                                      TimestampProvider.Default
+      )
     apply.setTimeout(applyTimeout.toMillis, TimeUnit.MILLISECONDS)
 
     assert(!apply.isActive)
@@ -385,13 +480,21 @@ final class ApplySenderSpec extends AnyFunSuite {
     assert(!l.isDone)
     apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(30))
     assert(!l.isDone)
-    apply.onApplyValChange(100, Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow))
+    apply.onApplyValChange(100,
+                           Instant.ofEpochMilli(40).plus(CaApplySenderImpl.CompletionEventWindow)
+    )
     assert(!l.isDone)
-    apply.onCarClidChange(100, Instant.ofEpochMilli(50).plus(CaApplySenderImpl.CompletionEventWindow))
+    apply.onCarClidChange(100,
+                          Instant.ofEpochMilli(50).plus(CaApplySenderImpl.CompletionEventWindow)
+    )
     assert(!l.isDone)
-    apply.onCarValChange(CarState.BUSY, Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow))
+    apply.onCarValChange(CarState.BUSY,
+                         Instant.ofEpochMilli(60).plus(CaApplySenderImpl.CompletionEventWindow)
+    )
     assert(!l.isDone)
-    apply.onCarValChange(CarState.IDLE, Instant.ofEpochMilli(70).plus(CaApplySenderImpl.CompletionEventWindow))
+    apply.onCarValChange(CarState.IDLE,
+                         Instant.ofEpochMilli(70).plus(CaApplySenderImpl.CompletionEventWindow)
+    )
 
     l.waitDone(applyTimeout.getSeconds * 2, TimeUnit.SECONDS)
     assert(l.isDone)
