@@ -303,6 +303,10 @@ object AltairControllerEpics {
       val resume: Option[F[Unit]] = (resumeReasons.contains(ResumeCondition.GaosGuideOn) &&
         (pauseReasons.contains(PauseCondition.GaosGuideOff) || !currCfg.aoLoop)).option {
         L.debug("Resuming Altair guiding") *>
+          epicsAltair.btoLoopControl.setActive("ON") *>
+          epicsAltair.btoLoopControl.post(DefaultTimeout) *>
+          epicsTcs.aoFlatten.mark *>
+          epicsTcs.aoFlatten.post(DefaultTimeout) *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
