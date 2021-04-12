@@ -50,17 +50,19 @@ object HeadersSideBar {
   implicit val eqHeadersSideBar: Eq[HeadersSideBar]    = Eq.by(_.model)
   implicit val propsReuse: Reusability[HeadersSideBar] = Reusability.byEq
 
+  private def conditionIntToString(v: Int): String = if (v === 100) "Any" else v.toString
+
   implicit val showSkyBackground: Display[SkyBackground] =
-    Display.by(_.toInt.map(_.toString).getOrElse("Unknown"), _.label)
+    Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
   implicit val displayWaterVapor: Display[WaterVapor] =
-    Display.by(_.toInt.map(_.toString).getOrElse("Unknown"), _.label)
+    Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
   implicit val showCloudCover: Display[CloudCover] =
-    Display.by(_.toInt.map(_.toString).getOrElse("Unknown"), _.label)
+    Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
   implicit val showImageQuality: Display[ImageQuality] =
-    Display.by(_.toInt.map(_.toString).getOrElse("Unknown"), _.label)
+    Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
   @Lenses
   final case class State(
