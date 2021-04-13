@@ -85,8 +85,8 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       ),
       baseURI / id / "keywords"
     )
-    val cl  = if (finalFlag) base else clientWithRetry
-    cl.expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
+    clientWithRetry
+      .expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
       .flatMap(EitherT.fromEither(_))
