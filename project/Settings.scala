@@ -78,7 +78,7 @@ object Settings {
     val prometheusClient    = "0.10.0"
     val geminiLocales       = "0.6.0"
     val pprint              = "0.6.4"
-    val jaxb                = "2.3.1"
+    val jaxb                = "2.3.4"
 
     // Gemini Libraries
     val lucumaCore = "0.7.10"
