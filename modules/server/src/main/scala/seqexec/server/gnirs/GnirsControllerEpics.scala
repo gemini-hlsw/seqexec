@@ -79,9 +79,9 @@ trait GnirsEncoders {
 
   implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {
     case Filter1.Open        => "Open"
-    case Filter1.J_MK        => "J_MK"
-    case Filter1.K_MK        => "K_MK"
-    case Filter1.Y_MK        => "Y_MK"
+    case Filter1.J_MK        => "J-MK"
+    case Filter1.K_MK        => "K-MK"
+    case Filter1.Y_MK        => "Y-MK"
     case Filter1.ND100X      => "ND100X"
     case Filter1.PupilViewer => "PupilViewer"
     case Filter1.RightMask   => "RightMask"
