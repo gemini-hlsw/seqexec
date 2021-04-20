@@ -98,7 +98,7 @@ package object commands {
     command:        Command,
     timeout:        Duration
   ): F[CommandResult] =
-    Async[F].async { cb =>
+    Async[F].async_ { cb =>
       val hr = commandsClient.sendCommand(
         command.toGiapi,
         (hr: HandlerResponse, _: GiapiCommand) => {
