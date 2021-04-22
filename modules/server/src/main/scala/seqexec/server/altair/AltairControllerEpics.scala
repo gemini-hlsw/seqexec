@@ -18,6 +18,7 @@ import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
@@ -151,6 +152,9 @@ object AltairControllerEpics {
     private val AoSettledTimeout  = FiniteDuration(30, SECONDS)
     private val MatrixPrepTimeout = FiniteDuration(10, SECONDS)
 
+    private def dmFlattenAction: F[ApplyCommandResult] =
+      epicsTcs.aoFlatten.mark *> epicsTcs.aoFlatten.post(DefaultTimeout)
+
     private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
       reasons:                              ResumeConditionSet
     ): Option[F[Unit]] = {
@@ -161,8 +165,8 @@ object AltairControllerEpics {
       (newPosOk && guideOk).option(
         (L.debug("Resume Altair guiding") *>
           epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout) *>
+          dmFlattenAction *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
           L.debug("Altair guiding resumed") *>
@@ -305,10 +309,8 @@ object AltairControllerEpics {
         L.debug("Resuming Altair guiding") *>
           epicsAltair.btoLoopControl.setActive("ON") *>
           epicsAltair.btoLoopControl.post(DefaultTimeout) *>
-          epicsTcs.aoFlatten.mark *>
-          epicsTcs.aoFlatten.post(DefaultTimeout) *>
+          dmFlattenAction *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
           L.debug("Altair guiding resumed") *>
