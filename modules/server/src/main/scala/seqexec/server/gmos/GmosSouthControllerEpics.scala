@@ -91,6 +91,12 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Filter.z_G0328_CaT_G0333       => ("CaT_G0333", "z_G0328")
     case Filter.RG780_G0334             => ("open1-6", "RG780_G0334")
     case Filter.Lya395_G0342            => ("open1-6", "Lya395_G0342")
+    case Filter.F396N_G0352             => ("F396N_G0352", "open2-8")
+    case Filter.JWL34_G0350             => ("JWL34_G0350", "open2-8")
+    case Filter.JWL38_G0351             => ("JWL38_G0351", "open2-8")
+    case Filter.JWL43_G0353             => ("JWL43_G0353", "open2-8")
+    case Filter.STRB_G0355              => ("Strb_G0355", "open2-8")
+    case Filter.STRY_G0354              => ("Stry_G0354", "open2-8")
     case Filter.NONE                    => ("open1-6", "open2-8")
   }
 
