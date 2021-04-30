@@ -13,8 +13,8 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Decker => OcsDecker }
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 import fs2.Stream
@@ -67,14 +67,16 @@ trait GnirsEncoders {
   }
 
   implicit val deckerEncoder: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
-    case Decker.ACQUISITION         => "Acq"
-    case Decker.PUPIL_VIEWER        => "PV"
-    case Decker.SHORT_CAM_LONG_SLIT => "SCLong"
-    case Decker.SHORT_CAM_X_DISP    => "SCXD"
-    case Decker.LONG_CAM_LONG_SLIT  => "LCLong"
-    case Decker.LONG_CAM_X_DISP     => "LCXD"
-    case Decker.IFU                 => "IFU1"
-    case Decker.WOLLASTON           => "Woll"
+    case Decker.SeqDecker(OcsDecker.ACQUISITION)         => "Acq"
+    case Decker.SeqDecker(OcsDecker.PUPIL_VIEWER)        => "PV"
+    case Decker.SeqDecker(OcsDecker.SHORT_CAM_LONG_SLIT) => "SCLong"
+    case Decker.SeqDecker(OcsDecker.SHORT_CAM_X_DISP)    => "SCXD"
+    case Decker.SeqDecker(OcsDecker.LONG_CAM_LONG_SLIT)  => "LCLong"
+    case Decker.SeqDecker(OcsDecker.LONG_CAM_X_DISP)     => "LCXD"
+    case Decker.SeqDecker(OcsDecker.IFU)                 => "IFU1"
+    case Decker.SeqDecker(OcsDecker.WOLLASTON)           => "Woll"
+    case Decker.LR_IFU                                   => "IFU1"
+    case Decker.HR_IFU                                   => "IFU2"
   }
 
   implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {

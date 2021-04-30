@@ -8,6 +8,7 @@ import cats.Eq
 import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Decker => OcsDecker }
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.Progress
@@ -56,13 +57,31 @@ object GnirsController {
 
   type Coadds = Int
 
-  type Decker = edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
-
   type Disperser = edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
 
   type ExposureTime = Time
 
   type Wavelength = Length
+
+  sealed trait Decker {
+    val isPupilViewer: Boolean = false
+  }
+  object Decker       {
+
+    final case class SeqDecker(v: OcsDecker) extends Decker {
+      override val isPupilViewer: Boolean = v === OcsDecker.PUPIL_VIEWER
+    }
+    case object LR_IFU extends Decker
+    case object HR_IFU extends Decker
+
+    implicit val OcsDeckerEq: Eq[OcsDecker] = Eq.fromUniversalEquals
+    implicit val DeckerEq: Eq[Decker]       = Eq.instance {
+      case (SeqDecker(a), SeqDecker(b)) => a === b
+      case (LR_IFU, LR_IFU)             => true
+      case (HR_IFU, HR_IFU)             => true
+      case _                            => false
+    }
+  }
 
   sealed trait Filter1
   object Filter1 {
