@@ -25,6 +25,7 @@ import giapi.client.commands.Command
 import giapi.client.commands.CommandResultException
 import giapi.client.commands._
 import shapeless.Typeable._
+import cats.effect.Temporal
 
 package object client {
 
@@ -183,7 +184,7 @@ package client {
      * @param url Url to connect to
      * @tparam F Effect type
      */
-    def giapiConnection[F[_]: Timer: ConcurrentEffect](
+    def giapiConnection[F[_]: Temporal: ConcurrentEffect](
       url: String
     ): GiapiConnection[F] =
       new GiapiConnection[F] {
@@ -262,7 +263,7 @@ package client {
      * Simulator interpreter on IO, Reading items will fail and all commands will succeed
      */
     def simulatedGiapiConnection[F[_]](implicit
-      T: Timer[F],
+      T: Temporal[F],
       F: ApplicativeError[F, Throwable]
     ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {

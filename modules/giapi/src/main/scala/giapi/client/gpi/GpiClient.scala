@@ -8,7 +8,6 @@ import scala.concurrent.duration._
 import cats.ApplicativeError
 import cats.effect.ConcurrentEffect
 import cats.effect.Resource
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.Activity
 import edu.gemini.aspen.giapi.commands.SequenceCommand
@@ -20,6 +19,7 @@ import giapi.client.commands.Command
 import giapi.client.commands.CommandResult
 import giapi.client.commands.Configuration
 import mouse.boolean._
+import cats.effect.Temporal
 
 sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 
@@ -149,7 +149,7 @@ object GpiClient {
   }
 
   // Used for simulations
-  def simulatedGpiClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
+  def simulatedGpiClient[F[_]: Temporal: ApplicativeError[*[_], Throwable]]
     : Resource[F, GpiClient[F]] =
     Resource.eval(
       Giapi
@@ -158,7 +158,7 @@ object GpiClient {
         .map(new GpiClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
-  def gpiClient[F[_]: Timer: ConcurrentEffect](
+  def gpiClient[F[_]: Temporal: ConcurrentEffect](
     url:               String,
     statusesToMonitor: List[String]
   ): Resource[F, GpiClient[F]] = {
