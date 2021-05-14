@@ -23,8 +23,8 @@ object Settings {
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "3.1.1"
-    val catsVersion         = "2.6.0"
+    val catsEffectVersion   = "2.5.1"
+    val catsVersion         = "2.6.1"
     val mouseVersion        = "1.0.2"
     val fs2Version          = "2.5.5"
     val shapelessVersion    = "2.3.6"
@@ -42,7 +42,7 @@ object Settings {
     val log4cats       = "1.3.0"
     val log4catsLevel  = "0.2.0"
     val logback        = "1.2.3"
-    val janino         = "3.1.3"
+    val janino         = "3.1.4"
     val logstash       = "6.6"
     val pureConfig     = "0.14.1"
     val monocleVersion = "2.1.0"
@@ -55,7 +55,7 @@ object Settings {
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.26"
-    lazy val munitDisciplineVersion = "1.0.8"
+    lazy val munitDisciplineVersion = "1.0.9"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
