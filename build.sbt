@@ -274,6 +274,7 @@ lazy val seqexec_server = project
         SpModelCore,
         POT,
         OpenCSV,
+        Http4sXml,
         Http4sBoopickle,
         PrometheusClient,
         Log4Cats.value,
