@@ -25,8 +25,8 @@ object Settings {
     // Scala libraries
     val catsEffectVersion   = "2.5.1"
     val catsVersion         = "2.6.1"
-    val mouseVersion        = "1.0.2"
-    val fs2Version          = "3.0.4"
+    val mouseVersion        = "1.0.3"
+    val fs2Version          = "2.5.6"
     val shapelessVersion    = "2.3.7"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
@@ -46,7 +46,7 @@ object Settings {
     val logstash       = "6.6"
     val pureConfig     = "0.14.1"
     val monocleVersion = "2.1.0"
-    val circeVersion   = "0.13.0"
+    val circeVersion   = "0.14.1"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
 
@@ -81,7 +81,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.8.0"
+    val lucumaCore = "0.8.1"
     val lucumaUI   = "0.12.2"
   }
 
@@ -91,7 +91,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.4" % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.5" % "test"
     )
     val MUnit          = Def.setting(
       Seq(
