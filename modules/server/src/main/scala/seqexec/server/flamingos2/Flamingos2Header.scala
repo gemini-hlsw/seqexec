@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
@@ -112,7 +112,7 @@ object Flamingos2Header {
   }
 
   object InstKeywordReaderEpics {
-    def apply[F[_]: Sync](sys: Flamingos2Epics[F]): InstKeywordsReader[F] =
+    def apply[F[_]](sys: Flamingos2Epics[F]): InstKeywordsReader[F] =
       new InstKeywordsReader[F] {
         override def getHealth: F[String] = sys.health
 

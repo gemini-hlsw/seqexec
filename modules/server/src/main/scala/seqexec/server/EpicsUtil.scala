@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -365,7 +365,7 @@ object EpicsUtil {
    * @param d Value to be set
    * @param set Action to set the parameter
    */
-  def applyParamT[F[_]: Functor](
+  def applyParamT[F[_]](
     relTolerance: Double
   )(c:            Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
     if (areValuesDifferentEnough(relTolerance, c, d)) {

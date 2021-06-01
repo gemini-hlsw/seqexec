@@ -1,9 +1,8 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
-import cats.MonadError
 import cats.data.NonEmptyList
 import cats.effect.Concurrent
 import cats.effect.Timer
@@ -65,7 +64,7 @@ object InstrumentActions {
       )
     )
 
-  def launchObserve[F[_]: MonadError[*[_], Throwable]: Logger](
+  def launchObserve[F[_]](
     env:       ObserveEnvironment[F],
     doObserve: (ImageFileId, ObserveEnvironment[F]) => Stream[F, Result[F]]
   ): Stream[F, Result[F]] =

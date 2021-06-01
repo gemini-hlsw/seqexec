@@ -9,20 +9,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Scala
-        uses: olafurpg/setup-scala@v10
+        uses: olafurpg/setup-scala@v11
         with:
           java-version: adopt@1.11
       - name: Cache Coursier
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v2.1.6
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
       - name: Cache SBT
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v2.1.6
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
       - name: Check format
-        run: csbt headerCheck test:headerCheck scalafmtCheckAll
+        run: sbt headerCheck test:headerCheck scalafmtCheckAll
       - name: Run tests
         run: sbt +compile seqexec_modelJVM/test seqexec_modelJS/test seqexec_engine/test seqexec_server/test seqexec_web_server/test seqexec_web_client/test

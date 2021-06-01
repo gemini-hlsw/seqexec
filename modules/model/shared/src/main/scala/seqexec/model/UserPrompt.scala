@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -30,7 +30,7 @@ object UserPrompt {
     }
   }
 
-  final case class Discrepancy[A: Eq](actual: A, required: A)
+  final case class Discrepancy[A](actual: A, required: A)
 
   object Discrepancy {
     implicit def eq[A: Eq]: Eq[Discrepancy[A]] = Eq.by(x => (x.actual, x.required))

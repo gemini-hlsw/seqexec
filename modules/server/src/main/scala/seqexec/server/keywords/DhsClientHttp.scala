@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -85,8 +85,8 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       ),
       baseURI / id / "keywords"
     )
-    val cl  = if (finalFlag) base else clientWithRetry
-    cl.expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
+    clientWithRetry
+      .expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
       .flatMap(EitherT.fromEither(_))

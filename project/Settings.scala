@@ -14,7 +14,7 @@ object Settings {
     val scalajsReact            = "1.7.7"
     val booPickle               = "1.3.3"
     val diode                   = "1.1.14"
-    val javaTimeJS              = "2.2.0"
+    val javaTimeJS              = "2.3.0"
     val scalaJSReactCommon      = "0.11.3"
     val scalaJSSemanticUI       = "0.10.6"
     val scalaJSReactVirtualized = "0.11.3"
@@ -23,30 +23,30 @@ object Settings {
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "2.3.3"
-    val catsVersion         = "2.4.2"
-    val mouseVersion        = "1.0.0"
-    val fs2Version          = "2.5.2"
-    val shapelessVersion    = "2.3.3"
+    val catsEffectVersion   = "2.5.1"
+    val catsVersion         = "2.6.1"
+    val mouseVersion        = "1.0.3"
+    val fs2Version          = "2.5.6"
+    val shapelessVersion    = "2.3.7"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.20"
-    val squants        = "1.7.0"
+    val http4sVersion  = "0.21.24"
+    val squants        = "1.8.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "5.0.0"
     val slf4j          = "1.7.30"
-    val log4s          = "1.9.0"
-    val log4cats       = "1.2.0"
+    val log4s          = "1.10.0"
+    val log4cats       = "1.3.1"
     val log4catsLevel  = "0.2.0"
     val logback        = "1.2.3"
-    val janino         = "3.1.3"
+    val janino         = "3.1.4"
     val logstash       = "6.6"
     val pureConfig     = "0.14.1"
     val monocleVersion = "2.1.0"
-    val circeVersion   = "0.13.0"
+    val circeVersion   = "0.14.1"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
 
@@ -54,13 +54,13 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
-    lazy val munitVersion           = "0.7.22"
-    lazy val munitDisciplineVersion = "1.0.6"
+    lazy val munitVersion           = "0.7.26"
+    lazy val munitDisciplineVersion = "1.0.9"
     lazy val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
-    val ocsVersion = "2020101.1.1"
+    val ocsVersion = "2021101.2.2"
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.1"
@@ -74,15 +74,15 @@ object Settings {
     val gmpStatusGateway    = "0.3.7"
     val gmpStatusDatabase   = "0.3.7"
     val gmpCmdClientBridge  = "0.6.7"
-    val guava               = "30.1.1-jre"
-    val prometheusClient    = "0.10.0"
-    val geminiLocales       = "0.5.1"
-    val pprint              = "0.6.2"
+    val guava               = "30.1-jre"
+    val prometheusClient    = "0.11.0"
+    val geminiLocales       = "0.6.0"
+    val pprint              = "0.6.6"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.7.9"
-    val lucumaUI   = "0.11.5"
+    val lucumaCore = "0.8.1"
+    val lucumaUI   = "0.12.2"
   }
 
   /**
@@ -91,7 +91,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs       = Def.setting(
-      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.2" % "test"
+      "org.typelevel" %%% "cats-testkit-scalatest" % "2.1.5" % "test"
     )
     val MUnit          = Def.setting(
       Seq(

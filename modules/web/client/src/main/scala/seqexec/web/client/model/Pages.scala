@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -14,6 +14,7 @@ import seqexec.model.StepId
 import seqexec.model.enum._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit.SeqexecCircuit
+import scala.annotation.nowarn
 
 // Pages
 object Pages {
@@ -66,6 +67,7 @@ object Pages {
   }
 
   // Pages forms a prism with Page
+  @nowarn
   val PageActionP: Prism[Action, SeqexecPages] = Prism[Action, SeqexecPages] {
     case SelectRoot                         => Root.some
     case RequestSoundEcho                   => SoundTest.some

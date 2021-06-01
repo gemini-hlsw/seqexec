@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model.boopickle
@@ -57,16 +57,16 @@ trait ModelBooPicklers extends BooPicklerSyntax {
   def sourceIndex[A: Enumerated]: Map[Int, A] =
     Enumerated[A].all.zipWithIndex.map(_.swap).toMap
 
-  def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](
+  def valuesMapPickler[A: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
-  ): Pickler[A]                                        =
+  ): Pickler[A]                                    =
     transformPickler((t: B) =>
       valuesMap
         .get(t)
         .getOrElse(throw new RuntimeException(s"Failed to decode value"))
     )(t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
 
-  def enumeratedPickler[A: Eq: Enumerated]: Pickler[A] =
+  def enumeratedPickler[A: Enumerated]: Pickler[A] =
     valuesMapPickler[A, Int](sourceIndex[A])
 
   implicit val timeProgressPickler =
@@ -145,6 +145,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
           .getOrElse(
             throw new RuntimeException("Failed to decode ns subexposure")
           )
+      case _                                  => throw new RuntimeException("Failed to decode ns subexposure")
     }((ns: NSSubexposure) => (ns.totalCycles, ns.cycle, ns.stageIndex))
   implicit val nsRunningStatePickler                           = generatePickler[NSRunningState]
   implicit val nsStatusPickler                                 = generatePickler[NodAndShuffleStatus]

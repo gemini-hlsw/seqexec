@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -104,7 +104,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
         c <- Resource.make(Sync[F].delay(failoverServerSet.getConnection))(c =>
                Sync[F].delay(c.close())
              )
-        x <- Resource.liftF(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
+        x <- Resource.eval(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
       } yield x
 
     rsrc.use {
