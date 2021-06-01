@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up Scala
-        uses: olafurpg/setup-scala@v10
+        uses: olafurpg/setup-scala@v11
         with:
           java-version: 1.8
       - name: Export assets to packtracker
