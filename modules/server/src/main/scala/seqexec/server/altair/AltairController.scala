@@ -3,7 +3,7 @@
 
 package seqexec.server.altair
 
-import cats.Eq
+import cats.{ Eq, Show }
 import cats.syntax.all._
 import seqexec.server.tcs.Gaos.PauseConditionSet
 import seqexec.server.tcs.Gaos.PauseResume
@@ -50,5 +50,7 @@ object AltairController {
     case (LgsWithP1, LgsWithP1) => true
     case _                      => false
   }
+
+  implicit val showAltairConfig: Show[AltairConfig] = Show.fromToString[AltairConfig]
 
 }

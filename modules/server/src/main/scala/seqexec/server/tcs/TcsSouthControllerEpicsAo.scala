@@ -46,6 +46,8 @@ import seqexec.server.tcs.TcsSouthController.GemsGuiders
 import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
 import squants.time.TimeConversions._
 
+import TcsSouthController._
+
 /**
  * Controller of Gemini's South AO system over epics
  */
@@ -517,6 +519,8 @@ object TcsSouthControllerEpicsAo {
         if (params.nonEmpty)
           for {
             _ <- L.debug("Start TCS configuration")
+            _ <- L.debug(s"TCS configuration: ${tcs.show}")
+            _ <- L.debug(s"for subsystems $subsystems")
             s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
             _ <- if (mountMoves)

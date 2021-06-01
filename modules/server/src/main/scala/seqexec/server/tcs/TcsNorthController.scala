@@ -3,16 +3,21 @@
 
 package seqexec.server.tcs
 
+import cats.Show
 import cats.data.NonEmptySet
+import cats.implicits._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController
-import seqexec.server.tcs.TcsController.AoGuide
-import seqexec.server.tcs.TcsController.AoTcsConfig
-import seqexec.server.tcs.TcsController.GuiderConfig
-import seqexec.server.tcs.TcsController.InstrumentOffset
-import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsController.TcsConfig
+import seqexec.server.tcs.TcsController.{
+  AoGuide,
+  AoTcsConfig,
+  BasicTcsConfig,
+  GuiderConfig,
+  InstrumentOffset,
+  Subsystem,
+  TcsConfig
+}
 import shapeless.tag.@@
 
 trait TcsNorthController[F[_]] {
@@ -39,5 +44,13 @@ object TcsNorthController {
 
   type TcsNorthConfig   = TcsConfig[GuiderConfig @@ AoGuide, AltairController.AltairConfig]
   type TcsNorthAoConfig = AoTcsConfig[GuiderConfig @@ AoGuide, AltairController.AltairConfig]
+
+  implicit val aoGuideShow: Show[GuiderConfig @@ AoGuide] =
+    Show.show(_.asInstanceOf[GuiderConfig].show)
+
+  implicit val tcsNorthConfigShow: Show[TcsNorthConfig] = Show.show {
+    case x: BasicTcsConfig   => x.show
+    case x: TcsNorthAoConfig => x.show
+  }
 
 }

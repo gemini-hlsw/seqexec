@@ -628,6 +628,8 @@ object TcsControllerEpicsCommon {
         if (params.nonEmpty)
           for {
             _ <- L.debug("Start TCS configuration")
+            _ <- L.debug(s"TCS configuration: ${tcs.show}")
+            _ <- L.debug(s"for subsystems $subsystems")
             s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(ConfigTimeout)
             _ <- if (mountMoves)
