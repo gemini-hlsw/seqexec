@@ -70,26 +70,9 @@ case class TcsSouth[F[_]: Sync: Logger] private (
 
   override val resource: Resource = Resource.TCS
 
-  //TODO Implement GeMS case
-  // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsSouthConfig, subsystem: Subsystem): String =
-    (subsystem match {
-      case Subsystem.M1     => pprint.apply(tcs.gc.m1Guide)
-      case Subsystem.M2     => pprint.apply(tcs.gc.m2Guide)
-      case Subsystem.OIWFS  => pprint.apply(tcs.gds.oiwfs)
-      case Subsystem.PWFS1  => pprint.apply(tcs.gds.pwfs1)
-      case Subsystem.PWFS2  => pprint.apply(tcs.gds.pwfs2)
-      case Subsystem.Mount  => pprint.apply(tcs.tc)
-      case Subsystem.AGUnit => pprint.apply(List(tcs.agc.sfPos, tcs.agc.hrwfs))
-      case Subsystem.Gaos   => pprint.apply("")
-    }).plainText
-
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap { cfg =>
-      subsystems.traverse_(s =>
-        Log.debug(s"Applying TCS/$s configuration/config: ${subsystemConfig(cfg, s)}")
-      ) *>
-        tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
+      tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
   override def notifyObserveStart: F[Unit] = tcsController.notifyObserveStart

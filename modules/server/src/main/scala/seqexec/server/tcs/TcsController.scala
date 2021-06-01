@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats._
 import cats.data.NonEmptySet
 import cats.data.OneAnd
-import cats.syntax.all._
+import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
 import lucuma.core.enum._
 import monocle.macros.Lenses
@@ -27,9 +27,12 @@ object TcsController {
 
   /** Enumerated type for beams A, B, and C. */
   sealed trait Beam extends Product with Serializable
+
   object Beam {
     case object A extends Beam
+
     case object B extends Beam
+
     case object C extends Beam
 
     implicit val equal: Eq[Beam] = Eq.fromUniversalEquals
@@ -40,15 +43,18 @@ object TcsController {
    * (M2 orientation)
    */
   final case class NodChop(nod: Beam, chop: Beam)
+
   object NodChop {
     implicit def EqNodChop: Eq[NodChop] = Eq.by(x => (x.nod, x.chop))
   }
 
   /** Enumerated type for nod/chop tracking. */
   sealed trait NodChopTrackingOption
+
   object NodChopTrackingOption {
 
-    case object NodChopTrackingOn  extends NodChopTrackingOption
+    case object NodChopTrackingOn extends NodChopTrackingOption
+
     case object NodChopTrackingOff extends NodChopTrackingOption
 
     def fromBoolean(on: Boolean): NodChopTrackingOption =
@@ -57,6 +63,7 @@ object TcsController {
     implicit val eq: Eq[NodChopTrackingOption] = Eq.fromUniversalEquals
 
   }
+
   import NodChopTrackingOption._ // needed below
 
   // TCS can be configured to update a guide probe position only for certain nod-chop positions.
@@ -110,25 +117,33 @@ object TcsController {
 
   /** Enumerated type for follow on/off. */
   sealed trait FollowOption
+
   object FollowOption {
     case object FollowOff extends FollowOption
-    case object FollowOn  extends FollowOption
+
+    case object FollowOn extends FollowOption
+
     implicit val followEq: Eq[FollowOption] = Eq.fromUniversalEquals[FollowOption]
   }
+
   import FollowOption._
 
   /** Data type for probe tracking config. */
   sealed abstract class ProbeTrackingConfig(
     val follow:     FollowOption,
     val getNodChop: NodChopTrackingConfig
-  )                          {
+  ) {
     def isActive: Boolean = follow === FollowOn && getNodChop =!= NodChopTrackingConfig.AllOff
   }
+
   object ProbeTrackingConfig {
     case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
-    case object Off    extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
+
+    case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
+
     final case class On(ndconfig: ActiveNodChopTracking)
         extends ProbeTrackingConfig(FollowOn, ndconfig)
+
     case object Frozen extends ProbeTrackingConfig(FollowOn, NodChopTrackingConfig.AllOff)
 
     implicit val onEq: Eq[On] = Eq.by(_.ndconfig)
@@ -145,9 +160,12 @@ object TcsController {
 
   /** Enumerated type for HRWFS pickup position. */
   sealed trait HrwfsPickupPosition
+
   object HrwfsPickupPosition {
-    case object IN     extends HrwfsPickupPosition
-    case object OUT    extends HrwfsPickupPosition
+    case object IN extends HrwfsPickupPosition
+
+    case object OUT extends HrwfsPickupPosition
+
     case object Parked extends HrwfsPickupPosition
 
     implicit val show: Show[HrwfsPickupPosition] = Show.fromToString
@@ -163,8 +181,10 @@ object TcsController {
   }
 
   sealed trait HrwfsConfig
+
   object HrwfsConfig {
     case object Auto extends HrwfsConfig
+
     final case class Manual(pos: HrwfsPickupPosition) extends HrwfsConfig
 
     implicit val show: Show[HrwfsConfig] = Show.fromToString
@@ -180,9 +200,12 @@ object TcsController {
 
   /** Enumerated type for light source. */
   sealed trait LightSource
+
   object LightSource {
-    case object Sky  extends LightSource
-    case object AO   extends LightSource
+    case object Sky extends LightSource
+
+    case object AO extends LightSource
+
     case object GCAL extends LightSource
 
     implicit val eq: Eq[LightSource] = Eq.fromUniversalEquals
@@ -190,6 +213,7 @@ object TcsController {
 
   /* Data type for science fold position. */
   final case class LightPath(source: LightSource, sink: LightSinkName)
+
   object LightPath {
 
     implicit val show: Show[LightPath] = Show.fromToString
@@ -199,6 +223,7 @@ object TcsController {
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
   trait OffsetX
+
   trait OffsetY
 
   final case class FocalPlaneOffset(x: Length @@ OffsetX, y: Length @@ OffsetY) {
@@ -207,6 +232,7 @@ object TcsController {
       tag[OffsetQ](((x * -1 * iaa.sin) - y * iaa.cos) * FOCAL_PLANE_SCALE)
     )
   }
+
   object FocalPlaneOffset {
     implicit val eq: Eq[FocalPlaneOffset] = Eq.by(o => (o.x.value, o.y.value))
 
@@ -215,6 +241,7 @@ object TcsController {
   }
 
   trait OffsetP
+
   trait OffsetQ
 
   final case class InstrumentOffset(p: Angle @@ OffsetP, q: Angle @@ OffsetQ) {
@@ -223,6 +250,7 @@ object TcsController {
       tag[OffsetY]((p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
     )
   }
+
   object InstrumentOffset {
     implicit val EqInstrumentOffset: Eq[InstrumentOffset] =
       Eq.by(o => (o.p.value, o.q.value))
@@ -244,13 +272,19 @@ object TcsController {
   }
 
   trait P1Config
+
   trait P2Config
+
   trait OIConfig
+
   trait AoGuide
 
   sealed trait GuiderSensorOption
+
   case object GuiderSensorOff extends GuiderSensorOption
-  case object GuiderSensorOn  extends GuiderSensorOption
+
+  case object GuiderSensorOn extends GuiderSensorOption
+
   object GuiderSensorOption {
     implicit val guideSensorOptionEq: Eq[GuiderSensorOption] = Eq.fromUniversalEquals
   }
@@ -268,24 +302,36 @@ object TcsController {
 
   final case class AGConfig(sfPos: LightPath, hrwfs: Option[HrwfsConfig])
 
+  object AGConfig {
+    implicit val show: Show[AGConfig] = Show.show(x => s"(${x.sfPos.show}, ${x.hrwfs.show})")
+  }
+
   sealed trait Subsystem extends Product with Serializable
+
   object Subsystem {
     // Instrument internal WFS
-    case object OIWFS  extends Subsystem
+    case object OIWFS extends Subsystem
+
     // Peripheral WFS 1
-    case object PWFS1  extends Subsystem
+    case object PWFS1 extends Subsystem
+
     // Peripheral WFS 2
-    case object PWFS2  extends Subsystem
+    case object PWFS2 extends Subsystem
+
     // Internal AG mechanisms (science fold, AC arm)
     case object AGUnit extends Subsystem
+
     // Mount and cass-rotator
-    case object Mount  extends Subsystem
+    case object Mount extends Subsystem
+
     // Primary mirror
-    case object M1     extends Subsystem
+    case object M1 extends Subsystem
+
     // Secondary mirror
-    case object M2     extends Subsystem
+    case object M2 extends Subsystem
+
     // Gemini Adaptive Optics System (GeMS or Altair)
-    case object Gaos   extends Subsystem
+    case object Gaos extends Subsystem
 
     val allList: List[Subsystem]                = List(PWFS1, PWFS2, OIWFS, AGUnit, Mount, M1, M2, Gaos)
     implicit val order: Order[Subsystem]        = Order.from { case (a, b) =>
@@ -323,6 +369,26 @@ object TcsController {
       tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
   }
 
+  object GuidersConfig {
+    implicit val pwfs1Show: Show[GuiderConfig @@ P1Config] = Show.show {
+      _.asInstanceOf[GuiderConfig].show
+    }
+    implicit val pwfs2Show: Show[GuiderConfig @@ P2Config] = Show.show {
+      _.asInstanceOf[GuiderConfig].show
+    }
+    implicit val oiwfsShow: Show[GuiderConfig @@ OIConfig] = Show.show {
+      _.asInstanceOf[GuiderConfig].show
+    }
+
+    implicit val basicGuidersConfigShow: Show[BasicGuidersConfig] = Show.show { x =>
+      s"(pwfs1 = ${x.pwfs1.show}, pwfs2 = ${x.pwfs2.show}, oiwfs = ${x.oiwfs.show})"
+    }
+
+    implicit def aoGuidersConfigShow[C: Show]: Show[AoGuidersConfig[C]] = Show.show { x =>
+      s"(pwfs1 = ${x.pwfs1.show}, aoguide = ${x.aoguide.show}, oiwfs = ${x.oiwfs.show})"
+    }
+  }
+
   sealed trait TcsConfig[+C, +G] {
     val gc: TelescopeGuideConfig
     val tc: TelescopeConfig
@@ -350,4 +416,15 @@ object TcsController {
     inst: InstrumentGuide
   ) extends TcsConfig[C, G]
 
+  object TcsConfig {
+
+    implicit val basicTcsConfigShow: Show[BasicTcsConfig] = Show.show { x =>
+      s"(guideConfig = ${x.gc.show}, telConfig = ${x.tc.show}, guidersConfig = ${x.gds.show}, A&G = ${x.agc.show})"
+    }
+
+    implicit def aoTcsConfigShow[C: Show, G: Show]: Show[AoTcsConfig[C, G]] = Show.show { x =>
+      s"(guideConfig = ${x.gc.show}, telConfig = ${x.tc.show}, guidersConfig = ${x.gds.show}, A&G = ${x.agc.show}, gaos = ${x.gaos.show})"
+    }
+
+  }
 }

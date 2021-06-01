@@ -5,22 +5,27 @@ package seqexec.server.tcs
 
 import cats.Applicative
 import cats.data.NonEmptySet
+import cats.implicits._
 import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.Altair
 import seqexec.server.tcs.TcsController.InstrumentOffset
 import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
+import seqexec.server.tcs.TcsNorthController.{ TcsNorthConfig, tcsNorthConfigShow }
 
 class TcsNorthControllerSim[F[_]: Applicative: Logger] private extends TcsNorthController[F] {
   val sim = new TcsControllerSim[F]
+  val L   = Logger[F]
 
   override def applyConfig(
     subsystems: NonEmptySet[Subsystem],
     gaos:       Option[Altair[F]],
     tc:         TcsNorthConfig
   ): F[Unit] =
-    sim.applyConfig(subsystems)
+    L.debug("Start TCS configuration") *>
+      L.debug(s"TCS configuration: ${tc.show}") *>
+      sim.applyConfig(subsystems) *>
+      L.debug("Completed TCS configuration")
 
   override def notifyObserveStart: F[Unit] = sim.notifyObserveStart
 

@@ -145,7 +145,7 @@ object GcalController {
       s"shutter = ${config.shutter}",
       s"filter = ${config.filterO}",
       s"diffuser = ${config.diffuserO}"
-    ).mkString
+    ).mkString(", ")
   )
 
 }

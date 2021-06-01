@@ -94,7 +94,7 @@ object Gaos {
     implicit val pauseConditionSetEq: Eq[PauseConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
     implicit val pauseConditionSetShow: Show[PauseConditionSet] =
-      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString("(", ", ", ")"))
 
   }
 
@@ -158,7 +158,7 @@ object Gaos {
     implicit val resumeConditionSetEq: Eq[ResumeConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
     implicit val resumeConditionSetShow: Show[ResumeConditionSet] =
-      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString("(", ", ", ")"))
 
   }
 

@@ -3,7 +3,7 @@
 
 package seqexec.model
 
-import cats.Eq
+import cats.{ Eq, Show }
 import monocle.macros.Lenses
 import seqexec.model.enum.MountGuideOption
 
@@ -18,4 +18,6 @@ final case class TelescopeGuideConfig(
 object TelescopeGuideConfig {
   implicit val eq: Eq[TelescopeGuideConfig] =
     Eq.by(x => (x.mountGuide, x.m1Guide, x.m2Guide))
+
+  implicit val show: Show[TelescopeGuideConfig] = Show.fromToString[TelescopeGuideConfig]
 }

@@ -3,24 +3,18 @@
 
 package seqexec.server.tcs
 
-import cats.Applicative
 import cats.data.NonEmptySet
-import cats.syntax.all._
+import cats.implicits._
 import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.tcs.TcsController._
 
-class TcsControllerSim[F[_]: Applicative: Logger] {
+class TcsControllerSim[F[_]: Logger] {
 
   def info(msg: String): F[Unit] = Logger[F].info(msg)
 
-  def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] = {
-    def configSubsystem(subsystem: Subsystem): F[Unit] =
-      info(s"Applying ${subsystem.show} configuration.")
-
-    info("Simulate TCS configuration") *>
-      subsystems.toList.traverse_(configSubsystem)
-  }
+  def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] =
+    info(s"Simulate TCS configuration for ${subsystems.toList.mkString("(", ", ", ")")}")
 
   def notifyObserveStart: F[Unit] = info("Simulate TCS observe")
 
