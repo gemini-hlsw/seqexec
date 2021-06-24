@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -7,7 +7,7 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.jawn.decode
@@ -40,7 +40,7 @@ final case class JwtUserClaim(exp: Int, iat: Int, username: String, displayName:
   def toUserDetails: UserDetails = UserDetails(username, displayName)
 }
 
-final case class AuthenticationService[F[_]: Timer: Sync: Logger](
+final case class AuthenticationService[F[_]: Sync: Logger](
   mode:   Mode,
   config: AuthenticationConfig
 ) extends AuthService[F] {

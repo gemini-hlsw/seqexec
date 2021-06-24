@@ -1,10 +1,11 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
 
-import cats.Eq
-import cats.syntax.all._
+import cats.{ Eq, Show }
+import cats.implicits._
+import mouse.boolean._
 import seqexec.server.gems.Gems.GemsWfsState
 import seqexec.server.tcs.Gaos.PauseConditionSet
 import seqexec.server.tcs.Gaos.PauseResume
@@ -53,6 +54,21 @@ object GemsController {
     val isOdgw4Used: Boolean
     val isP1Used: Boolean
     val isOIUsed: Boolean
+  }
+
+  object GemsConfig {
+    implicit val show: Show[GemsConfig] = Show.show { x =>
+      List(
+        x.isCwfs1Used.option("CWFS1"),
+        x.isCwfs2Used.option("CWFS2"),
+        x.isCwfs3Used.option("CWFS3"),
+        x.isOdgw1Used.option("ODGW1"),
+        x.isOdgw2Used.option("ODGW2"),
+        x.isOdgw3Used.option("ODGW3"),
+        x.isOdgw4Used.option("ODGW4")
+      ).collect { case Some(x) => x }
+        .mkString("(", ", ", ")")
+    }
   }
 
   case object GemsOff extends GemsConfig {

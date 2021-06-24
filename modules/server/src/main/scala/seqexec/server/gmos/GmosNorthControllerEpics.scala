@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -13,7 +13,7 @@ import edu.gemini.spModel.gemini.gmos.GmosNorthType.{ DisperserNorth => Disperse
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{ FPUnitNorth => FPU }
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{ FilterNorth => Filter }
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{ StageModeNorth => StageMode }
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.EpicsCodex
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.Beam

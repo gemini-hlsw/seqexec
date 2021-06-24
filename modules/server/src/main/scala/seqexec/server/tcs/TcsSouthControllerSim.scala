@@ -1,26 +1,31 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
 import cats.Applicative
 import cats.data.NonEmptySet
-import io.chrisdavenport.log4cats.Logger
+import cats.implicits._
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.InstrumentOffset
 import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
+import seqexec.server.tcs.TcsSouthController.{ TcsSouthConfig, tcsSouthConfigShow }
 
 class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthController[F] {
   val sim = new TcsControllerSim[F]
+  val L   = Logger[F]
 
   override def applyConfig(
     subsystems: NonEmptySet[TcsController.Subsystem],
     gaos:       Option[Gems[F]],
     tc:         TcsSouthConfig
   ): F[Unit] =
-    sim.applyConfig(subsystems)
+    L.debug("Start TCS configuration") *>
+      L.debug(s"TCS configuration: ${tc.show}") *>
+      sim.applyConfig(subsystems) *>
+      L.debug("Completed TCS configuration")
 
   override def notifyObserveStart: F[Unit] = sim.notifyObserveStart
 

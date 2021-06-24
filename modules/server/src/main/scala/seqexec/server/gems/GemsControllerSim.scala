@@ -1,11 +1,11 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
 
 import cats.Applicative
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.gems.Gems.Cwfs1DetectorState
 import seqexec.server.gems.Gems.Cwfs2DetectorState
 import seqexec.server.gems.Gems.Cwfs3DetectorState

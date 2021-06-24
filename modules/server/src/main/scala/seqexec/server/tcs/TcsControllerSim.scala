@@ -1,26 +1,20 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import cats.Applicative
 import cats.data.NonEmptySet
-import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import cats.implicits._
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.tcs.TcsController._
 
-class TcsControllerSim[F[_]: Applicative: Logger] {
+class TcsControllerSim[F[_]: Logger] {
 
   def info(msg: String): F[Unit] = Logger[F].info(msg)
 
-  def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] = {
-    def configSubsystem(subsystem: Subsystem): F[Unit] =
-      info(s"Applying ${subsystem.show} configuration.")
-
-    info("Simulate TCS configuration") *>
-      subsystems.toList.traverse_(configSubsystem)
-  }
+  def applyConfig(subsystems: NonEmptySet[Subsystem]): F[Unit] =
+    info(s"Simulate TCS configuration for ${subsystems.toList.mkString("(", ", ", ")")}")
 
   def notifyObserveStart: F[Unit] = info("Simulate TCS observe")
 

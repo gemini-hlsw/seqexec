@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -15,7 +15,7 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.LightSinkName
 import monocle.Lens
 import mouse.boolean._
@@ -628,6 +628,8 @@ object TcsControllerEpicsCommon {
         if (params.nonEmpty)
           for {
             _ <- L.debug("Start TCS configuration")
+            _ <- L.debug(s"TCS configuration: ${tcs.show}")
+            _ <- L.debug(s"for subsystems $subsystems")
             s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(ConfigTimeout)
             _ <- if (mountMoves)

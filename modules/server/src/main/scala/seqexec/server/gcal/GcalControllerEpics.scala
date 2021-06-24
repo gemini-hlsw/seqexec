@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gcal
@@ -13,7 +13,7 @@ import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Diffuser
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Filter
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.server.EpicsCodex._
 import seqexec.server.EpicsUtil.applyParam
 import seqexec.server.gcal.GcalController.Diffuser

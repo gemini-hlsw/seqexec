@@ -1,18 +1,15 @@
 /*
- * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
 package edu.gemini.epics.acm;
 
 import edu.gemini.epics.EpicsReader;
-import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.ReadWriteClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
-import edu.gemini.epics.impl.EpicsReaderImpl;
-import edu.gemini.epics.impl.EpicsWriterImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 import org.slf4j.Logger;

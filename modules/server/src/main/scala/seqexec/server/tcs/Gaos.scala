@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -94,7 +94,7 @@ object Gaos {
     implicit val pauseConditionSetEq: Eq[PauseConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
     implicit val pauseConditionSetShow: Show[PauseConditionSet] =
-      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString("(", ", ", ")"))
 
   }
 
@@ -158,7 +158,7 @@ object Gaos {
     implicit val resumeConditionSetEq: Eq[ResumeConditionSet] = Eq.by(x => (x.offsetO, x.fixed))
 
     implicit val resumeConditionSetShow: Show[ResumeConditionSet] =
-      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString)
+      Show.show(x => (x.offsetO.toList ++ x.fixed.toList).mkString("(", ", ", ")"))
 
   }
 

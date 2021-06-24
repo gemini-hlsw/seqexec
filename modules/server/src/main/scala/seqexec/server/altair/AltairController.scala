@@ -1,9 +1,9 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
 
-import cats.Eq
+import cats.{ Eq, Show }
 import cats.syntax.all._
 import seqexec.server.tcs.Gaos.PauseConditionSet
 import seqexec.server.tcs.Gaos.PauseResume
@@ -50,5 +50,7 @@ object AltairController {
     case (LgsWithP1, LgsWithP1) => true
     case _                      => false
   }
+
+  implicit val showAltairConfig: Show[AltairConfig] = Show.fromToString[AltairConfig]
 
 }

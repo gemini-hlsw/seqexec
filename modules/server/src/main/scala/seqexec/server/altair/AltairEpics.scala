@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -184,9 +184,9 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
   val sfoStatus: CaStatusAcceptor = service.getStatusAcceptor("sfostate")
 
-  def lgsfcnts: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("lgsfcnts"))
+  def lgsfcnts: F[Double] = safeAttributeSDoubleF(sfoStatus.getDoubleAttribute("lgsfcnts"))
 
-  def lgsfexp: F[Double] = safeAttributeSDoubleF(status.getDoubleAttribute("lgsfexp"))
+  def lgsfexp: F[Double] = safeAttributeSDoubleF(sfoStatus.getDoubleAttribute("lgsfexp"))
 
 }
 

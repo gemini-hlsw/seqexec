@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -11,7 +11,7 @@ import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.enum.M1Source
@@ -70,26 +70,9 @@ case class TcsSouth[F[_]: Sync: Logger] private (
 
   override val resource: Resource = Resource.TCS
 
-  //TODO Implement GeMS case
-  // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsSouthConfig, subsystem: Subsystem): String =
-    (subsystem match {
-      case Subsystem.M1     => pprint.apply(tcs.gc.m1Guide)
-      case Subsystem.M2     => pprint.apply(tcs.gc.m2Guide)
-      case Subsystem.OIWFS  => pprint.apply(tcs.gds.oiwfs)
-      case Subsystem.PWFS1  => pprint.apply(tcs.gds.pwfs1)
-      case Subsystem.PWFS2  => pprint.apply(tcs.gds.pwfs2)
-      case Subsystem.Mount  => pprint.apply(tcs.tc)
-      case Subsystem.AGUnit => pprint.apply(List(tcs.agc.sfPos, tcs.agc.hrwfs))
-      case Subsystem.Gaos   => pprint.apply("")
-    }).plainText
-
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     buildTcsConfig.flatMap { cfg =>
-      subsystems.traverse_(s =>
-        Log.debug(s"Applying TCS/$s configuration/config: ${subsystemConfig(cfg, s)}")
-      ) *>
-        tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
+      tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
   override def notifyObserveStart: F[Unit] = tcsController.notifyObserveStart

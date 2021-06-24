@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -10,7 +10,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.Site
 import mouse.boolean._
 import org.http4s.client.Client
@@ -339,19 +339,19 @@ object Systems {
     ): Resource[IO, Systems[IO]] =
       for {
         odbProxy                                   <- Resource.pure[IO, OdbProxy[IO]](odbProxy[IO])
-        dhsClient                                  <- Resource.liftF(dhs[IO](httpClient))
-        gcdb                                       <- Resource.liftF(GuideConfigDb.newDb[IO])
-        (gcalCtr, gcalKR)                          <- Resource.liftF(gcal)
-        (tcsGN, tcsGS, tcsKR, altairCtr, altairKR) <- Resource.liftF(tcsObjects(gcdb, site))
-        (gemsCtr, gemsKR, gsaoiCtr, gsaoiKR)       <- Resource.liftF(gemsObjects)
-        (gnirsCtr, gnirsKR)                        <- Resource.liftF(gnirs)
-        f2Controller                               <- Resource.liftF(flamingos2)
-        (niriCtr, niriKR)                          <- Resource.liftF(niri)
-        (nifsCtr, nifsKR)                          <- Resource.liftF(nifs)
-        (gmosSouthCtr, gmosNorthCtr, gmosKR)       <- Resource.liftF(gmosObjects(site))
+        dhsClient                                  <- Resource.eval(dhs[IO](httpClient))
+        gcdb                                       <- Resource.eval(GuideConfigDb.newDb[IO])
+        (gcalCtr, gcalKR)                          <- Resource.eval(gcal)
+        (tcsGN, tcsGS, tcsKR, altairCtr, altairKR) <- Resource.eval(tcsObjects(gcdb, site))
+        (gemsCtr, gemsKR, gsaoiCtr, gsaoiKR)       <- Resource.eval(gemsObjects)
+        (gnirsCtr, gnirsKR)                        <- Resource.eval(gnirs)
+        f2Controller                               <- Resource.eval(flamingos2)
+        (niriCtr, niriKR)                          <- Resource.eval(niri)
+        (nifsCtr, nifsKR)                          <- Resource.eval(nifs)
+        (gmosSouthCtr, gmosNorthCtr, gmosKR)       <- Resource.eval(gmosObjects(site))
         gpiController                              <- gpi[IO](httpClient)
         ghostController                            <- ghost[IO](httpClient)
-        gwsKR                                      <- Resource.liftF(gws)
+        gwsKR                                      <- Resource.eval(gws)
       } yield Systems[IO](
         odbProxy,
         dhsClient,

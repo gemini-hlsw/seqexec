@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -15,9 +15,10 @@ import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
@@ -151,6 +152,9 @@ object AltairControllerEpics {
     private val AoSettledTimeout  = FiniteDuration(30, SECONDS)
     private val MatrixPrepTimeout = FiniteDuration(10, SECONDS)
 
+    private def dmFlattenAction: F[ApplyCommandResult] =
+      epicsTcs.aoFlatten.mark *> epicsTcs.aoFlatten.post(DefaultTimeout)
+
     private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
       reasons:                              ResumeConditionSet
     ): Option[F[Unit]] = {
@@ -161,8 +165,8 @@ object AltairControllerEpics {
       (newPosOk && guideOk).option(
         (L.debug("Resume Altair guiding") *>
           epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout) *>
+          dmFlattenAction *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
           L.debug("Altair guiding resumed") *>
@@ -303,8 +307,10 @@ object AltairControllerEpics {
       val resume: Option[F[Unit]] = (resumeReasons.contains(ResumeCondition.GaosGuideOn) &&
         (pauseReasons.contains(PauseCondition.GaosGuideOff) || !currCfg.aoLoop)).option {
         L.debug("Resuming Altair guiding") *>
+          epicsAltair.btoLoopControl.setActive("ON") *>
+          epicsAltair.btoLoopControl.post(DefaultTimeout) *>
+          dmFlattenAction *>
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
           epicsTcs.targetFilter.post(DefaultTimeout) *>
           L.debug("Altair guiding resumed") *>

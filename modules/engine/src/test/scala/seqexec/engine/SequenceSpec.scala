@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -8,8 +8,8 @@ import cats.data.NonEmptyList
 import fs2.Stream
 import seqexec.model.Observation
 import java.util.UUID
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
 import org.scalatest.Inside.inside
 import org.scalatest.matchers.should.Matchers._
 import seqexec.model.{ ActionType, ClientId, SequenceState, UserDetails }

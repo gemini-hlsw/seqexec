@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -22,7 +22,7 @@ import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.enum.ApplyCommandResult
@@ -365,7 +365,7 @@ object EpicsUtil {
    * @param d Value to be set
    * @param set Action to set the parameter
    */
-  def applyParamT[F[_]: Functor](
+  def applyParamT[F[_]](
     relTolerance: Double
   )(c:            Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
     if (areValuesDifferentEnough(relTolerance, c, d)) {

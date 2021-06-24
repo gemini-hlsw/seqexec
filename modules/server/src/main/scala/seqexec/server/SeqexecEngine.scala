@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -32,7 +32,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.Site
 import monocle.Monocle.index
 import monocle.Optional
@@ -773,7 +773,7 @@ object SeqexecEngine {
         .handleErrorWith {
           case e: SeqFailure =>
             Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-          case e: Exception  =>
+          case e             =>
             Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }

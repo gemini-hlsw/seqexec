@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -39,7 +39,7 @@ final class GmosStepsView[F[_]] extends StepsView[F] {
               case _: NSPartial => true
               case _            => false
             }
-          nsPartials.headOption.map { case NSPartial(act, sub) =>
+          nsPartials.headOption.collect { case NSPartial(act, sub) =>
             NSRunningState(act, sub)
           }
         }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
@@ -19,7 +19,7 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.LightSinkName
 import lucuma.core.syntax.string._
 import seqexec.model.dhs.ImageFileId
@@ -28,11 +28,7 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gnirs.GnirsController.CCConfig
-import seqexec.server.gnirs.GnirsController.DCConfig
-import seqexec.server.gnirs.GnirsController.Filter1
-import seqexec.server.gnirs.GnirsController.Other
-import seqexec.server.gnirs.GnirsController.ReadMode
+import seqexec.server.gnirs.GnirsController.{ CCConfig, DCConfig, Filter1, Other, ReadMode }
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
@@ -186,8 +182,11 @@ object Gnirs {
             pixScale match {
               case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
               case PixelScale.PS_015 =>
-                if (slit === SlitWidth.IFU) Decker.IFU
-                else Decker.SHORT_CAM_LONG_SLIT
+                slit match {
+                  case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
+                  case SlitWidth.HR_IFU                 => Decker.HR_IFU
+                  case _                                => Decker.SHORT_CAM_LONG_SLIT
+                }
             }
       }
     }

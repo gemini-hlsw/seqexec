@@ -1,11 +1,15 @@
 /*
- * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
 package edu.gemini.epics.acm;
 
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +21,7 @@ import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
+
 
 /**
  * Monitors the execution of a command in an EPICS system using the Gemini EPICS records.
@@ -37,6 +42,13 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
 
     private final Boolean trace = Boolean.getBoolean("epics.apply.trace");
 
+    /*
+     * Changes to apply.VAL, applyC.VAL and applyC.CLID can arrive in disorder. To fix that solution, a BUSY-IDLE
+     * will be accepted even if it arrives before the applyC.VAL and/or applyC.CLID change, as long the delay is less
+     * than `CompletionEventWindow`
+     */
+    static Duration CompletionEventWindow = Duration.ofMillis(50);
+
     private long timeout;
     private TimeUnit timeoutUnit;
     private final ScheduledExecutorService executor;
@@ -44,23 +56,24 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
     private final ChannelListener<Integer> valListener;
     private final ChannelListener<Integer> carClidListener;
     private final ChannelListener<C> carValListener;
+    private final TimestampProvider timestampProvider;
     private State currentState;
     private static final State IdleState = new State() {
         @Override
         public String signature() { return "IdleState"; }
 
         @Override
-        public State onApplyValChange(Integer val) {
+        public State onApplyValChange(Integer val, Instant timestamp) {
             return this;
         }
 
         @Override
-        public State onCarValChange(CarStateGeneric carState) {
+        public State onCarValChange(CarStateGeneric carState, Instant timestamp) {
             return this;
         }
 
         @Override
-        public State onCarClidChange(Integer val) {
+        public State onCarClidChange(Integer val, Instant timestamp) {
             return this;
         }
 
@@ -70,47 +83,42 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         }
     };
 
+    private static final DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+            .withZone(ZoneId.systemDefault());
+
     public CaApplySenderImpl(
-        final String name,
-        final String applyRecord,
-        final String carRecord,
-        final String description,
-        final Class<C> carClass,
-        final EpicsReader epicsReader,
-        final EpicsWriter epicsWriter,
-        final ScheduledExecutorService executor
-    ) throws CAException {
+            final String name,
+            final String applyRecord,
+            final String carRecord,
+            final String description,
+            final Class<C> carClass,
+            final EpicsReader epicsReader,
+            final EpicsWriter epicsWriter,
+            final ScheduledExecutorService executor,
+            TimestampProvider timestampProvider) throws CAException {
         super();
         this.name = name;
         this.description = description;
+        this.timestampProvider = timestampProvider;
         this.currentState = IdleState;
         this.executor = executor;
 
         apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
-        apply.registerValListener(valListener = new ChannelListener<Integer>() {
-            @Override
-            public void valueChanged(String arg0, List<Integer> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaApplySenderImpl.this.onApplyValChange(newVals.get(0));
-                }
+        apply.registerValListener(valListener = (arg0, newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaApplySenderImpl.this.onApplyValChange(newVals.get(0));
             }
         });
 
         car = new CaCarRecord<C>(carRecord, carClass, epicsReader);
-        car.registerClidListener(carClidListener = new ChannelListener<Integer>() {
-            @Override
-            public void valueChanged(String arg0, List<Integer> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaApplySenderImpl.this.onCarClidChange(newVals.get(0));
-                }
+        car.registerClidListener(carClidListener = (arg0, newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaApplySenderImpl.this.onCarClidChange(newVals.get(0));
             }
         });
-        car.registerValListener(carValListener = new ChannelListener<C>() {
-            @Override
-            public void valueChanged(String arg0, List<C> newVals) {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaApplySenderImpl.this.onCarValChange(newVals.get(0));
-                }
+        car.registerValListener(carValListener = (arg0, newVals) -> {
+            if (newVals != null && !newVals.isEmpty()) {
+                CaApplySenderImpl.this.onCarValChange(newVals.get(0));
             }
         });
 
@@ -163,8 +171,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
             failCommand(cm, new CaCommandInProgress());
         } else {
             try {
-                CarStateGeneric carVal = car.getValValue();
-                currentState = new WaitPreset(cm, carVal);
+                currentState = new BusyState(cm);
 
                 apply.setDir(CadDirective.START);
                 if (timeout > 0) {
@@ -196,51 +203,138 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
     private interface State {
         String signature();
 
-        State onApplyValChange(Integer val);
+        State onApplyValChange(Integer val, Instant timestamp);
 
-        State onCarValChange(CarStateGeneric carState);
+        State onCarValChange(CarStateGeneric carState, Instant timestamp);
 
-        State onCarClidChange(Integer val);
+        State onCarClidChange(Integer val, Instant timestamp);
 
         State onTimeout();
     }
 
-    private final class WaitPreset implements State {
-        final CaCommandMonitorImpl cm;
-        final CarStateGeneric carVal;
-        final Integer carClid;
+    /*
+     * CommandState keeps track of the CAR output changes.
+     */
+    private interface CommandState {
+        CommandState onCarValChange(CarStateGeneric carState, Instant timestamp);
 
-        WaitPreset(final CaCommandMonitorImpl cm, final CarStateGeneric carVal) {
-            this.cm = cm;
-            this.carVal = carVal;
-            this.carClid = null;
+        boolean checkCompletion(Instant eventTimestamp, int clid, int carClid, CaCommandMonitorImpl cm);
+
+        String signature();
+    }
+
+    private final CommandState commandIdle = new CommandState() {
+        @Override
+        public CommandState onCarValChange(CarStateGeneric carState, Instant timestamp) {
+            if(carState.isBusy()) return commandBusy;
+            else if(carState.isIdle()) return this;
+            else return new CommandEnded(timestamp, carState);
         }
 
-        private WaitPreset(final CaCommandMonitorImpl cm, final CarStateGeneric carVal, final Integer carClid) {
-            this.cm = cm;
+        @Override
+        public boolean checkCompletion(Instant eventTimestamp, int clid, int carClid, CaCommandMonitorImpl cm) {
+            return false;
+        }
+
+        @Override
+        public String signature() {
+            return "CommandIdle";
+        }
+    };
+
+    private final CommandState commandBusy = new CommandState() {
+        @Override
+        public CommandState onCarValChange(CarStateGeneric carState, Instant timestamp) {
+            if(carState.isBusy()) return this;
+            else return new CommandEnded(timestamp, carState);
+        }
+
+        @Override
+        public boolean checkCompletion(Instant eventTimestamp, int clid, int carClid, CaCommandMonitorImpl cm) {
+            return false;
+        }
+
+        @Override
+        public String signature() {
+            return "CommandBusy";
+        }
+    };
+
+    private final class CommandEnded implements CommandState {
+        private final Instant timestamp;
+        private final CarStateGeneric carVal;
+
+        CommandEnded(final Instant timestamp, final CarStateGeneric carVal) {
+            this.timestamp = timestamp;
             this.carVal = carVal;
+        }
+
+        @Override
+        public CommandState onCarValChange(CarStateGeneric carState, Instant timestamp) {
+            if(carState.isBusy()) return commandBusy;
+            else if(!carVal.isIdle() && carState.isIdle()) return commandIdle;
+            else return new CommandEnded(timestamp, carVal);
+        }
+
+        @Override
+        public boolean checkCompletion(Instant eventTimestamp, int clid, int carClid, CaCommandMonitorImpl cm) {
+            if(carClid >= clid && timestamp.plus(CompletionEventWindow).isAfter(eventTimestamp)) {
+                if (carVal.isPaused()) pauseCommand(cm);
+                else if (carVal.isError()) failCommandWithCarError(cm);
+                else succeedCommand(cm); //The only remaining possibility is IDLE, because it is not possible to reach this state on BUSY.
+
+                return true;
+            } else
+                return false;
+        }
+
+        @Override
+        public String signature() {
+            return "CommandEnded(carVal = " + carVal + ", timestamp = " + timestampFormatter.format(timestamp) + ")";
+        }
+    }
+
+    /*
+     * BusyState keeps track of the clid given by the apply record, the clid in the CAR, and the sequence of changes in
+     * the CAR output, and checks if the command is completed after every change.
+     */
+    private final class BusyState implements State {
+        final CaCommandMonitorImpl cm;
+        final CommandState commandState;
+        final Optional<Integer> clid;
+        final Optional<Integer> carClid;
+
+        BusyState(final CaCommandMonitorImpl cm) {
+            this.cm = cm;
+            this.commandState = commandIdle;
+            this.clid = Optional.empty();
+            this.carClid = Optional.empty();
+        }
+
+        BusyState(final CaCommandMonitorImpl cm,
+                  final CommandState commandState,
+                  final Optional<Integer> clid,
+                  final Optional<Integer> carClid) {
+            this.cm = cm;
+            this.commandState = commandState;
+            this.clid = clid;
             this.carClid = carClid;
         }
 
         @Override
         public String signature() {
-            return "WaitPreset(carState = " + carVal + ", carClid = " + carClid + ")";
+            return "BusyState(commandState = " + commandState.signature() + ", clid = " + clid + ", carClid = " + carClid + ")";
         }
 
         @Override
-        public State onApplyValChange(final Integer val) {
-            if (val > 0) {
-                // This would be weird, it means the CAR signaled a final state for the command before the Apply record
-                // gave a command id.
-                if (carVal != null && carClid != null && carClid >= val) {
-                    if (carVal.isError()) {
-                        failCommandWithCarError(cm);
-                        return IdleState;
-                    } else if (carVal.isBusy()) {
-                        return new WaitCompletion(cm, val);
-                    }
+        public State onApplyValChange(Integer val, Instant timestamp) {
+            if(val > 0) {
+                if(clid.isPresent()) return this;
+                else {
+                    boolean ended = carClid.map(y -> commandState.checkCompletion(timestamp, val, y, cm)).orElse(false);
+                    if (ended) return IdleState;
+                    else return new BusyState(cm, commandState, Optional.of(val), carClid);
                 }
-                return new WaitStart(cm, val, carVal, carClid);
             } else {
                 failCommandWithApplyError(cm);
                 return IdleState;
@@ -248,13 +342,18 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         }
 
         @Override
-        public State onCarValChange(final CarStateGeneric val) {
-            return new WaitPreset(cm, val, carClid);
+        public State onCarValChange(CarStateGeneric carState, Instant timestamp) {
+            CommandState newCmdState = commandState.onCarValChange(carState, timestamp);
+            boolean ended = clid.flatMap( x -> carClid.map(y -> newCmdState.checkCompletion(timestamp, x, y, cm))).orElse(false);
+            if(ended) return IdleState;
+            else return new BusyState(cm, newCmdState, clid, carClid);
         }
 
         @Override
-        public State onCarClidChange(final Integer val) {
-            return new WaitPreset(cm, carVal, val);
+        public State onCarClidChange(Integer val, Instant timestamp) {
+            boolean ended = clid.map(x -> commandState.checkCompletion(timestamp, x, val, cm)).orElse(false);
+            if (ended) return IdleState;
+            else return new BusyState(cm, commandState, clid, Optional.of(val));
         }
 
         @Override
@@ -264,171 +363,52 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         }
     }
 
-    private final class WaitStart implements State {
-        final CaCommandMonitorImpl cm;
-        final int clid;
-        final Integer carClid;
-        final CarStateGeneric carState;
-
-        WaitStart(
-            final CaCommandMonitorImpl cm,
-            final int clid,
-            final CarStateGeneric carState,
-            final Integer carClid) {
-            this.cm = cm;
-            this.clid = clid;
-            this.carState = carState;
-            this.carClid = carClid;
-        }
-
-        @Override
-        public String signature() {
-            return "WaitStart(clid = " + clid + ", carState = " + carState + ", carClid = " + carClid + ")";
-        }
-
-        @Override
-        public State onApplyValChange(final Integer val) {
-            if (val >= clid) {
-                return this;
-            } else {
-                failCommand(cm, new CaCommandPostError(
-                        "Another command was triggered in apply record "
-                                + apply.getEpicsName()));
-                return IdleState;
-            }
-        }
-
-        @Override
-        public State onCarValChange(final CarStateGeneric val) {
-            return checkOutConditions(val, carClid);
-        }
-
-        @Override
-        public State onCarClidChange(final Integer val) {
-            return checkOutConditions(carState, val);
-        }
-
-        @Override
-        public State onTimeout() {
-            failCommand(cm, new TimeoutException());
-            return IdleState;
-        }
-
-        private State checkOutConditions(final CarStateGeneric carState,
-                final Integer carClid) {
-            if (carState != null && carClid != null && carClid >= clid) {
-                if (carState.isError()) {
-                    failCommandWithCarError(cm);
-                    return IdleState;
-                }
-                if (carState.isBusy()) {
-                    return new WaitCompletion(cm, clid);
-                }
-            }
-            return new WaitStart(cm, clid, carState, carClid);
-        }
-
-    }
-
-    private final class WaitCompletion implements State {
-        final CaCommandMonitorImpl cm;
-        final int clid;
-
-        WaitCompletion(final CaCommandMonitorImpl cm, final int clid) {
-            this.cm = cm;
-            this.clid = clid;
-        }
-
-        @Override
-        public String signature() {
-            return "WaitCompletion(clid = " + clid + ")";
-        }
-
-        @Override
-        public State onApplyValChange(final Integer val) {
-            if (val >= clid) {
-                return this;
-            } else {
-                failCommand(cm, new CaCommandPostError(
-                        "Another command was triggered in apply record "
-                                + apply.getEpicsName()));
-                return IdleState;
-            }
-        }
-
-        @Override
-        public State onCarValChange(final CarStateGeneric val) {
-            if(val.isIdle()) {
-                succedCommand(cm);
-                return IdleState;
-            }
-            else if(val.isError()){
-                failCommandWithCarError(cm);
-                return IdleState;
-            }
-            else if(val.isPaused()) {
-                pauseCommand(cm);
-                return IdleState;
-            }
-            else {
-                return this;
-            }
-        }
-
-        @Override
-        public State onCarClidChange(final Integer val) {
-            if (val >= clid) {
-                return this;
-            } else {
-                failCommand(cm, new CaCommandPostError(
-                        "Another command was triggered in apply record "
-                                + apply.getEpicsName()));
-                return IdleState;
-            }
-        }
-
-        @Override
-        public State onTimeout() {
-            failCommand(cm, new TimeoutException());
-            return IdleState;
-        }
-
-    }
-
-    private synchronized void onApplyValChange(final Integer val) {
+    protected synchronized void onApplyValChange(final Integer val, Instant timestamp) {
         if (val != null) {
             State oldState = currentState;
-            currentState = currentState.onApplyValChange(val);
+            currentState = currentState.onApplyValChange(val, timestamp);
             if (currentState.equals(IdleState) && timeoutFuture != null) {
                 timeoutFuture.cancel(true);
                 timeoutFuture = null;
             }
-            if(trace) LOG.debug("onApplyValChange(" + val + "): " + oldState.signature() + " -> " + currentState.signature());
+            if(trace) LOG.debug("onApplyValChange(" + val + ", " + timestampFormatter.format(timestamp) + "): " + oldState.signature() + " -> " + currentState.signature());
+        }
+    }
+
+    private synchronized void onApplyValChange(final Integer val) {
+        onApplyValChange(val, timestampProvider.now());
+    }
+
+    protected synchronized void onCarClidChange(final Integer val, Instant timestamp) {
+        if (val != null) {
+            State oldState = currentState;
+            currentState = currentState.onCarClidChange(val, timestamp);
+            if (currentState.equals(IdleState) && timeoutFuture != null) {
+                timeoutFuture.cancel(true);
+                timeoutFuture = null;
+            }
+            if(trace) LOG.debug("onCarClidChange(" + val + ", " + timestampFormatter.format(timestamp) + "): " + oldState.signature() + " -> " + currentState.signature());
         }
     }
 
     private synchronized void onCarClidChange(final Integer val) {
-        if (val != null) {
+        onCarClidChange(val, timestampProvider.now());
+    }
+
+    protected synchronized void onCarValChange(final C carState, Instant timestamp) {
+        if (carState != null) {
             State oldState = currentState;
-            currentState = currentState.onCarClidChange(val);
+            currentState = currentState.onCarValChange(carState, timestamp);
             if (currentState.equals(IdleState) && timeoutFuture != null) {
                 timeoutFuture.cancel(true);
                 timeoutFuture = null;
             }
-            if(trace) LOG.debug("onCarClidChange(" + val + "): " + oldState.signature() + " -> " + currentState.signature());
+            if(trace) LOG.debug("onCarValChange(" + carState + ", " + timestampFormatter.format(timestamp) + "): " + oldState.signature() + " -> " + currentState.signature());
         }
     }
 
     private synchronized void onCarValChange(final C carState) {
-        if (carState != null) {
-            State oldState = currentState;
-            currentState = currentState.onCarValChange(carState);
-            if (currentState.equals(IdleState) && timeoutFuture != null) {
-                timeoutFuture.cancel(true);
-                timeoutFuture = null;
-            }
-            if(trace) LOG.debug("onCarValChange(" + carState + "): " + oldState.signature() + " -> " + currentState.signature());
-        }
+        onCarValChange(carState, timestampProvider.now());
     }
 
     private synchronized void onTimeout() {
@@ -449,7 +429,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         this.timeoutUnit = timeUnit;
     }
 
-    private void succedCommand(final CaCommandMonitorImpl cm) {
+    private void succeedCommand(final CaCommandMonitorImpl cm) {
         executor.execute(cm::completeSuccess);
     }
 

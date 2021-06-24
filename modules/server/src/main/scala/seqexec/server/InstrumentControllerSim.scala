@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -12,7 +12,7 @@ import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.dhs.ImageFileId

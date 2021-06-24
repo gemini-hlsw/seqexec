@@ -1,24 +1,19 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Camera, Decker, Disperser, ReadMode }
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -75,13 +70,15 @@ trait GnirsEncoders {
     case Decker.LONG_CAM_X_DISP     => "LCXD"
     case Decker.IFU                 => "IFU1"
     case Decker.WOLLASTON           => "Woll"
+    case Decker.LR_IFU              => "IFU1"
+    case Decker.HR_IFU              => "IFU2"
   }
 
   implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {
     case Filter1.Open        => "Open"
-    case Filter1.J_MK        => "J_MK"
-    case Filter1.K_MK        => "K_MK"
-    case Filter1.Y_MK        => "Y_MK"
+    case Filter1.J_MK        => "J-MK"
+    case Filter1.K_MK        => "K-MK"
+    case Filter1.Y_MK        => "Y-MK"
     case Filter1.ND100X      => "ND100X"
     case Filter1.PupilViewer => "PupilViewer"
     case Filter1.RightMask   => "RightMask"
@@ -378,6 +375,6 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
 
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  private val ReadoutTimeout: FiniteDuration = FiniteDuration(30, SECONDS)
+  private val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(240, SECONDS)
 }

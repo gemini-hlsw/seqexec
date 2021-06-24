@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -9,7 +9,7 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import seqexec.engine._
 import seqexec.model.Observation
 import seqexec.model.dhs._
@@ -109,7 +109,7 @@ trait ObserveActions {
    * Preamble for observations. It tells the odb, the subsystems
    * send the start headers and finally sends an observe
    */
-  def observePreamble[F[_]: Concurrent: Timer: Logger](
+  def observePreamble[F[_]: Concurrent: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): F[ObserveCommandResult] =
@@ -132,7 +132,7 @@ trait ObserveActions {
    * It tells the odb and each subsystem and also sends the end
    * observation keywords
    */
-  def okTail[F[_]: Concurrent: Timer](
+  def okTail[F[_]: Concurrent](
     fileId:  ImageFileId,
     stopped: Boolean,
     env:     ObserveEnvironment[F]

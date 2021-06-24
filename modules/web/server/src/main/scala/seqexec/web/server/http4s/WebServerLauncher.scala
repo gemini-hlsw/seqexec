@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -23,8 +23,8 @@ import fs2.Stream
 import fs2.concurrent.InspectableQueue
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import io.prometheus.client.CollectorRegistry
 import org.asynchttpclient.AsyncHttpClientConfig
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
@@ -76,7 +76,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Configures the Authentication service */
-  def authService[F[_]: Sync: Timer: Logger](
+  def authService[F[_]: Sync: Logger](
     mode: Mode,
     conf: AuthenticationConfig
   ): F[AuthenticationService[F]] =
@@ -136,7 +136,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     def build(all: F[HttpRoutes[F]]): Resource[F, Server[F]] =
       Resource
-        .liftF(all.flatMap { all =>
+        .eval(all.flatMap { all =>
           val builder =
             BlazeServerBuilder[F](global)
               .bindHttp(conf.webServer.port, conf.webServer.host)
@@ -259,10 +259,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
       collector:  CollectorRegistry
     ): Resource[IO, SeqexecEngine[IO]] =
       for {
-        met  <- Resource.liftF(SeqexecMetrics.build[IO](conf.site, collector))
-        caS  <- Resource.liftF(CaServiceInit.caInit[IO](conf.seqexecEngine))
+        met  <- Resource.eval(SeqexecMetrics.build[IO](conf.site, collector))
+        caS  <- Resource.eval(CaServiceInit.caInit[IO](conf.seqexecEngine))
         sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine, caS)
-        seqE <- Resource.liftF(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
+        seqE <- Resource.eval(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
       } yield seqE
 
     def webServerIO(
@@ -275,8 +275,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
       b:    Blocker
     ): Resource[IO, Unit] =
       for {
-        as <- Resource.liftF(authService[IO](conf.mode, conf.authentication))
-        ca <- Resource.liftF(SmartGcalInitializer.init[IO](conf.smartGcal))
+        as <- Resource.eval(authService[IO](conf.mode, conf.authentication))
+        ca <- Resource.eval(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
         _  <- webServer[IO](conf, ca, as, in, out, en, cr, cs, b)
       } yield ()
@@ -287,38 +287,38 @@ object WebServerLauncher extends IOApp with LogInitialization {
     val seqexec: Resource[IO, ExitCode] =
       for {
         b      <- Blocker[IO]
-        _      <- Resource.liftF(configLog[IO]) // Initialize log before the engine is setup
-        conf   <- Resource.liftF(config[IO].flatMap(loadConfiguration[IO](_, b)))
-        _      <- Resource.liftF(printBanner(conf))
+        _      <- Resource.eval(configLog[IO]) // Initialize log before the engine is setup
+        conf   <- Resource.eval(config[IO].flatMap(loadConfiguration[IO](_, b)))
+        _      <- Resource.eval(printBanner(conf))
         cli    <- AsyncHttpClient.resource[IO](clientConfig(conf.seqexecEngine.dhsTimeout))
-        inq    <- Resource.liftF(InspectableQueue.bounded[IO, executeEngine.EventType](10))
-        out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
-        _      <- Resource.liftF(logToClients(out))
-        cr     <- Resource.liftF(IO(new CollectorRegistry))
-        cs     <- Resource.liftF(
+        inq    <- Resource.eval(InspectableQueue.bounded[IO, executeEngine.EventType](10))
+        out    <- Resource.eval(Topic[IO, SeqexecEvent](NullEvent))
+        _      <- Resource.eval(logToClients(out))
+        cr     <- Resource.eval(IO(new CollectorRegistry))
+        cs     <- Resource.eval(
                     Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_))
                   )
-        _      <- Resource.liftF(publishStats(cs).compile.drain.start)
+        _      <- Resource.eval(publishStats(cs).compile.drain.start)
         engine <- engineIO(conf, cli, cr)
         _      <- webServerIO(conf, inq, out, engine, cr, cs, b)
-        _      <- Resource.liftF(
+        _      <- Resource.eval(
                     inq.size
                       .evalMap(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1))
                       .compile
                       .drain
                       .start
                   )
-        _      <- Resource.liftF(
+        _      <- Resource.eval(
                     out.subscribers
                       .evalMap(l => Logger[IO].debug(s"Subscribers amount: $l").whenA(l > 1))
                       .compile
                       .drain
                       .start
                   )
-        f      <- Resource.liftF(
+        f      <- Resource.eval(
                     engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start
                   )
-        _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
+        _      <- Resource.eval(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
     seqexec.use(_ => IO.never)

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -45,9 +45,9 @@ object TcsSettleTimeCalculator {
   )
 
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
-    Instrument.GmosN -> constantSettleTime(500.milliseconds),
-    Instrument.GmosS -> constantSettleTime(500.milliseconds),
-    Instrument.F2    -> constantSettleTime(500.milliseconds),
+    Instrument.GmosN -> constantSettleTime(1.seconds),
+    Instrument.GmosS -> constantSettleTime(1.seconds),
+    Instrument.F2    -> constantSettleTime(1.seconds),
     Instrument.Nifs  -> constantSettleTime(4.seconds),
     Instrument.Niri  -> constantSettleTime(4.seconds),
     Instrument.Gnirs -> constantSettleTime(4.seconds)

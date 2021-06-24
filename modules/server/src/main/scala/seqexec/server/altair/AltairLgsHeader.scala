@@ -1,11 +1,11 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
 
 import cats.Applicative
 import cats.effect.Sync
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.enum.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
@@ -26,7 +26,7 @@ object AltairLgsHeader {
           List(
             buildDouble(altairReader.lgdfocus, KeywordName.LGDFOCUS),
             buildDouble(altairReader.lgttcnts, KeywordName.LGTTCNTS),
-            buildInt32(altairReader.lgttexp, KeywordName.LGTTEXP),
+            buildDouble(altairReader.lgttexp, KeywordName.LGTTEXP),
             buildDouble(altairReader.lgsfcnts, KeywordName.LGSFCNTS),
             buildDouble(altairReader.lgsfexp, KeywordName.LGSFEXP),
             buildDouble(altairReader.fsmtip, KeywordName.FSMTIP),

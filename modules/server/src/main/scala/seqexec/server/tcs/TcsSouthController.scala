@@ -1,17 +1,22 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
+import cats.Show
 import cats.data.NonEmptySet
+import cats.implicits._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.TcsController.AoTcsConfig
-import seqexec.server.tcs.TcsController.GuiderConfig
-import seqexec.server.tcs.TcsController.InstrumentOffset
-import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsController.TcsConfig
+import seqexec.server.tcs.TcsController.{
+  AoTcsConfig,
+  BasicTcsConfig,
+  GuiderConfig,
+  InstrumentOffset,
+  Subsystem,
+  TcsConfig
+}
 import shapeless.tag.@@
 
 trait TcsSouthController[F[_]] {
@@ -56,5 +61,14 @@ object TcsSouthController {
 
   type TcsSouthConfig   = TcsConfig[GemsGuiders, GemsConfig]
   type TcsSouthAoConfig = AoTcsConfig[GemsGuiders, GemsConfig]
+
+  implicit val aoGuideShow: Show[GemsGuiders] = Show.show { x =>
+    s"(cwfs1 = ${(x.cwfs1: GuiderConfig).show}, cwfs2 = ${(x.cwfs2: GuiderConfig).show}, cwfs3 = ${(x.cwfs3: GuiderConfig).show}, odgw1 = ${(x.odgw1: GuiderConfig).show}, odgw2 = ${(x.odgw2: GuiderConfig).show}, odgw3 = ${(x.odgw3: GuiderConfig).show}, odgw4 = ${(x.odgw4: GuiderConfig).show})"
+  }
+
+  implicit val tcsSouthConfigShow: Show[TcsSouthConfig] = Show.show {
+    case x: BasicTcsConfig   => x.show
+    case x: TcsSouthAoConfig => x.show
+  }
 
 }

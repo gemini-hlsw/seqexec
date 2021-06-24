@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.nifs
@@ -22,7 +22,7 @@ import edu.gemini.spModel.gemini.nifs.NIFSParams.{ EngReadMode => LegacyEngReadM
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.boolean._
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
@@ -391,7 +391,7 @@ object NifsControllerEpics extends NifsEncoders {
       )
 
     def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
-      val SafetyPadding = 30.seconds
+      val SafetyPadding = 120.seconds
 
       FiniteDuration((calcTotalExposureTime(cfg) + SafetyPadding).toMillis, MILLISECONDS)
     }

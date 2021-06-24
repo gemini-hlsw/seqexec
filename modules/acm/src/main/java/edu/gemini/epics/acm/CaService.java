@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+ * Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 
 import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.EpicsReader;
+import edu.gemini.epics.QueuedEventDispatcherSelector;
 import edu.gemini.epics.impl.EpicsReaderImpl;
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.impl.EpicsWriterImpl;
@@ -70,6 +71,7 @@ public final class CaService {
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
         epicsService = new EpicsService(addrList, (double) timeout.getSeconds(), readRetries);
+        epicsService.setEventDispatcherSelector(new QueuedEventDispatcherSelector());
         executorService = SafeExecutor.safeExecutor(THREAD_COUNT, LOG, this.getClass().getName());
 
         epicsService.startService();
@@ -213,11 +215,11 @@ public final class CaService {
             EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarStateGEM5.class, epicsReader, epicsWriter, executorService);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter, executorService, TimestampProvider.Default);
             }
             else {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarState.class, epicsReader, epicsWriter, executorService);
+                        description, CarState.class, epicsReader, epicsWriter, executorService, TimestampProvider.Default);
             }
             applySenders.put(name, b);
             return b;

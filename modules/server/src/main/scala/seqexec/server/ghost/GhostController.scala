@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -12,7 +12,7 @@ import giapi.client.GiapiConfig
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.syntax.giapiconfig._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import lucuma.core.math.Coordinates
 import lucuma.core.util.Enumerated
 import seqexec.server.AbstractGiapiInstrumentController

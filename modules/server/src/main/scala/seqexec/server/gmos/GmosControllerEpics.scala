@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -16,7 +16,7 @@ import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import fs2.Stream
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import mouse.all._
 import seqexec.model.GmosParameters._
 import seqexec.model.NSSubexposure
@@ -628,7 +628,7 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
   val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  val ReadoutTimeout: FiniteDuration = FiniteDuration(90, SECONDS)
+  val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
   val ConfigTimeout: FiniteDuration  = FiniteDuration(600, SECONDS)
 
 }

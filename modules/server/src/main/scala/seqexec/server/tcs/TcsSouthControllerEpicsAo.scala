@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -11,7 +11,7 @@ import cats.effect.Async
 import cats.effect.Sync
 import cats.effect.Timer
 import cats.syntax.all._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import monocle.Lens
 import monocle.macros.Lenses
 import mouse.boolean._
@@ -45,6 +45,8 @@ import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import seqexec.server.tcs.TcsSouthController.GemsGuiders
 import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
 import squants.time.TimeConversions._
+
+import TcsSouthController._
 
 /**
  * Controller of Gemini's South AO system over epics
@@ -517,6 +519,8 @@ object TcsSouthControllerEpicsAo {
         if (params.nonEmpty)
           for {
             _ <- L.debug("Start TCS configuration")
+            _ <- L.debug(s"TCS configuration: ${tcs.show}")
+            _ <- L.debug(s"for subsystems $subsystems")
             s <- params.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p) }
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
             _ <- if (mountMoves)

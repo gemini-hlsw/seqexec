@@ -1,11 +1,11 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import cats.effect.IO
 import lucuma.core.enum.KeywordName
-import io.chrisdavenport.log4cats.noop.NoOpLogger
+import org.typelevel.log4cats.noop.NoOpLogger
 import java.time.LocalDate
 import seqexec.server.keywords.DhsClient.Permanent
 

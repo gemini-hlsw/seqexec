@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -26,7 +26,7 @@ trait AltairKeywordReader[F[_]] {
   // LGS
   def lgdfocus: F[Double]
   def lgttcnts: F[Double]
-  def lgttexp: F[Int]
+  def lgttexp: F[Double]
   def lgsfcnts: F[Double]
   def lgsfexp: F[Double]
   def fsmtip: F[Double]
@@ -55,7 +55,7 @@ object AltairKeywordReaderDummy {
     override def aobs: F[String]     = strDefault[F]
     override def lgdfocus: F[Double] = doubleDefault[F]
     override def lgttcnts: F[Double] = doubleDefault[F]
-    override def lgttexp: F[Int]     = intDefault[F]
+    override def lgttexp: F[Double]  = doubleDefault[F]
     override def lgsfcnts: F[Double] = doubleDefault[F]
     override def lgsfexp: F[Double]  = doubleDefault[F]
     override def fsmtip: F[Double]   = doubleDefault[F]
@@ -108,7 +108,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         apd3 <- sys.apd3
         apd4 <- sys.apd4
       } yield (apd1 + apd2 + apd3 + apd4).toDouble).safeValOrDefault
-    override def lgttexp: F[Int]     = sys.lgttexp.safeValOrDefault
+    override def lgttexp: F[Double]  = sys.lgttexp.map(_.toDouble).safeValOrDefault
     override def lgsfcnts: F[Double] = sys.lgsfcnts.safeValOrDefault
     override def lgsfexp: F[Double]  = sys.lgsfexp.safeValOrDefault
     override def fsmtip: F[Double]   = sys.fsmtip.safeValOrDefault

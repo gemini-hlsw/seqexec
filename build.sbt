@@ -13,20 +13,18 @@ name := "seqexec"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / publishArtifact in (Compile, packageDoc) := false
+ThisBuild / Compile / packageDoc / publishArtifact := false
 
 // Gemini repository
-resolvers in ThisBuild += "Gemini Repository".at(
+ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
-ocsJreDir in ThisBuild := Path.userHome / ".jres8_ocs3"
+ThisBuild / ocsJreDir := Path.userHome / ".jres8_ocs3"
 
-parallelExecution in (ThisBuild, Test) := false
-
-cancelable in Global := true
+Global / cancelable := true
 
 // Should make CI builds more robust
 concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
@@ -80,12 +78,12 @@ addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 
-resolvers in ThisBuild +=
+ThisBuild / resolvers +=
   Resolver.sonatypeRepo("snapshots")
 
-updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
+ThisBuild / updateOptions := updateOptions.value.withLatestSnapshots(false)
 
-skip in publish := true
+publish / skip := true
 
 //////////////
 // Projects
@@ -144,8 +142,8 @@ lazy val seqexec_web_server = project
     ) ++
       Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
-    javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
-    mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher")
+    reStart / javaOptions += s"-javaagent:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
+    reStart / mainClass := Some("seqexec.web.server.http4s.WebServerLauncher")
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -176,30 +174,30 @@ lazy val seqexec_web_client = project
       )
     )),
     // Configurations for webpack
-    webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
-    webpackBundlingMode in fullOptJS := BundlingMode.Application,
+    fastOptJS / webpackBundlingMode := BundlingMode.LibraryOnly(),
+    fullOptJS / webpackBundlingMode := BundlingMode.Application,
     webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort := 9090,
-    version in webpack := "4.44.1",
-    version in startWebpackDevServer := "3.11.0",
+    webpack / version := "4.44.1",
+    startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    webpackConfigFile in fullOptJS := Some(
+    fullOptJS / webpackConfigFile := Some(
       baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"
     ),
-    webpackConfigFile in fastOptJS := Some(
+    fastOptJS / webpackConfigFile := Some(
       baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"
     ),
-    webpackConfigFile in Test := Some(
+    Test / webpackConfigFile := Some(
       baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"
     ),
     webpackEmitSourceMaps := false,
-    parallelExecution in Test := false,
-    version in installJsdom := "16.4.0",
-    requireJsDomEnv in Test := true,
+    Test / parallelExecution := false,
+    installJsdom / version := "16.4.0",
+    Test / requireJsDomEnv := true,
     // Use yarn as it is faster than npm
     useYarn := true,
     // JS dependencies via npm
-    npmDependencies in Compile ++= Seq(
+    Compile / npmDependencies ++= Seq(
       "fomantic-ui-less" -> LibraryVersions.fomanticUI,
       "prop-types"       -> "15.7.2",
       "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
@@ -207,7 +205,7 @@ lazy val seqexec_web_client = project
     Compile / fastOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     // NPM libs for development, mostly to let webpack do its magic
-    npmDevDependencies in Compile ++= Seq(
+    Compile / npmDevDependencies ++= Seq(
       "postcss"                       -> "8.1.1",
       "postcss-loader"                -> "4.0.3",
       "autoprefixer"                  -> "10.0.1",
@@ -347,13 +345,13 @@ lazy val acm = project
       ScalaMock,
       JUnitInterface
     ) ++ Logback ++ JAXB,
-    libraryDependencies in Test ++= Logback,
-    testOptions in Test := Seq(),
-    sourceGenerators in Compile += Def.task {
+    Test / libraryDependencies ++= Logback,
+    Test / testOptions := Seq(),
+    Compile / sourceGenerators += Def.task {
       import scala.sys.process._
       val pkg = "edu.gemini.epics.acm.generated"
       val log = state.value.log
-      val gen = (sourceManaged in Compile).value
+      val gen = (Compile / sourceManaged).value
       val out = pkg.split("\\.").foldLeft(gen)(_ / _)
       val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
       val cmd = List("xjc", "-d", gen.getAbsolutePath, "-p", pkg, xsd.getAbsolutePath)
@@ -375,11 +373,11 @@ lazy val acm = project
  */
 lazy val seqexecCommonSettings = Seq(
   // Main class for launching
-  mainClass in Compile := Some("seqexec.web.server.http4s.WebServerLauncher"),
+  Compile / mainClass := Some("seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
-  parallelExecution in Universal := false,
+  Universal / parallelExecution := false,
   // Depend on webpack and add the assets created by webpack
-  mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
+  Compile / packageBin / mappings ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
     .map(f => f.data -> f.data.getName()),
   // Name of the launch script
   executableScriptName := "seqexec-server",
@@ -392,12 +390,12 @@ lazy val seqexecCommonSettings = Seq(
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
-  mappings in Universal += {
+  Universal / mappings += {
     val f = (resourceDirectory in (seqexec_web_server, Compile)).value / "logback.xml"
     f -> ("conf/" + f.getName)
   },
   // Launch options
-  javaOptions in Universal ++= Seq(
+  Universal / javaOptions ++= Seq(
     // -J params will be added as jvm parameters
     "-J-Xmx1024m",
     "-J-Xms256m",
@@ -427,13 +425,13 @@ lazy val seqexecCommonSettings = Seq(
  */
 lazy val seqexecLinux = Seq(
   // User/Group for execution
-  daemonUser in Linux := "software",
-  daemonGroup in Linux := "software",
-  maintainer in Universal := "Software Group <software@gemini.edu>",
+  Linux / daemonUser := "software",
+  Linux / daemonGroup := "software",
+  Universal / maintainer := "Software Group <software@gemini.edu>",
   // This lets us build RPMs from snapshot versions
-  name in Linux := "Seqexec Server",
-  version in Linux := {
-    (version in ThisBuild).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
+  Linux / name := "Seqexec Server",
+  Linux / version := {
+    (ThisBuild / version ).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
   }
 )
 
@@ -449,28 +447,28 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
   .settings(
     description := "Seqexec server for local testing",
     // Put the jar files in the lib dir
-    mappings in Universal += {
-      val jar = (packageBin in Compile).value
+    Universal / mappings += {
+      val jar = (Compile / packageBin).value
       jar -> ("lib/" + jar.getName)
     },
-    mappings in Universal := {
+    Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (mappings in Universal).value
+      val universalMappings = (Universal / mappings).value
       val filtered          = universalMappings.filter { case (_, name) =>
         !name.contains("_sjs")
       }
       filtered
     },
-    mappings in Universal += {
-      val f = (resourceDirectory in Compile).value / "update_smartgcal"
+    Universal / mappings += {
+      val f = (Compile / resourceDirectory).value / "update_smartgcal"
       f -> ("bin/" + f.getName)
     },
-    mappings in Universal += {
-      val f = (resourceDirectory in Compile).value / "seqexec-server.env"
+    Universal / mappings += {
+      val f = (Compile / resourceDirectory).value / "seqexec-server.env"
       f -> ("systemd/" + f.getName)
     },
-    mappings in Universal += {
-      val f = (resourceDirectory in Compile).value / "seqexec-server.service"
+    Universal / mappings += {
+      val f = (Compile / resourceDirectory).value / "seqexec-server.service"
       f -> ("systemd/" + f.getName)
     }
   )
@@ -493,7 +491,7 @@ lazy val app_seqexec_server_gs_test =
       description := "Seqexec GS test deployment",
       applicationConfName := "seqexec",
       applicationConfSite := DeploymentSite.GS,
-      mappings in Universal := {
+      Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
         val filtered          = universalMappings.filter { case (_, name) =>
@@ -522,7 +520,7 @@ lazy val app_seqexec_server_gn_test =
       description := "Seqexec GN test deployment",
       applicationConfName := "seqexec",
       applicationConfSite := DeploymentSite.GN,
-      mappings in Universal := {
+      Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
         val filtered          = universalMappings.filter { case (_, name) =>
@@ -550,7 +548,7 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
     description := "Seqexec Gemini South server production",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GS,
-    mappings in Universal := {
+    Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
       val filtered          = universalMappings.filter { case (_, name) =>
@@ -578,7 +576,7 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
     description := "Seqexec Gemini North server production",
     applicationConfName := "seqexec",
     applicationConfSite := DeploymentSite.GN,
-    mappings in Universal := {
+    Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
       val filtered          = universalMappings.filter { case (_, name) =>
