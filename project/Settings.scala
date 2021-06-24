@@ -81,7 +81,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.8.1"
+    val lucumaCore = "0.9.1"
     val lucumaUI   = "0.12.2"
   }
 
@@ -281,7 +281,7 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val kpVersion        = "0.11.3"
+    val kpVersion        = "0.13.0"
     val betterMonadicFor = "0.3.1"
   }
 
