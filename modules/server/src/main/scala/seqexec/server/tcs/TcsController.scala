@@ -231,6 +231,11 @@ object TcsController {
       tag[OffsetP](((x * -1 * iaa.cos) + y * iaa.sin) * FOCAL_PLANE_SCALE),
       tag[OffsetQ](((x * -1 * iaa.sin) - y * iaa.cos) * FOCAL_PLANE_SCALE)
     )
+
+    def ~=(other: FocalPlaneOffset): Boolean =
+      math.pow((x - other.x).toMillimeters, 2) + math.pow((y - other.y).toMillimeters,
+                                                          2
+      ) <= FocalPlaneOffset.ToleranceSquared
   }
 
   object FocalPlaneOffset {
@@ -238,6 +243,8 @@ object TcsController {
 
     def fromInstrumentOffset(o: InstrumentOffset, iaa: Angle): FocalPlaneOffset =
       o.toFocalPlaneOffset(iaa)
+
+    val ToleranceSquared: Double = 1e12
   }
 
   trait OffsetP
@@ -249,6 +256,7 @@ object TcsController {
       tag[OffsetX](((p * -1 * iaa.cos) - q * iaa.sin) / FOCAL_PLANE_SCALE),
       tag[OffsetY]((p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
     )
+
   }
 
   object InstrumentOffset {
