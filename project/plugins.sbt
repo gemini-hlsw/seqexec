@@ -27,6 +27,6 @@ addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.20.0")
 addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.2")
 addSbtPlugin("com.timushev.sbt"   % "sbt-updates"              % "0.5.3")
 
-addSbtPlugin("org.scalameta"      % "sbt-scalafmt"             % "2.4.2")
+addSbtPlugin("org.scalameta"      % "sbt-scalafmt"             % "2.4.3")
 
 onLoad in Global := { s => "dependencyUpdates" :: s }
