@@ -42,6 +42,7 @@ class TestTcsEpics[F[_]: Sync](
       mountGuideCmd,
       offsetACmd,
       offsetBCmd,
+      wavelSourceA,
       pwfs1Park,
       pwfs1ProbeFollowCmd,
       pwfs1ProbeGuideCmd,
@@ -156,9 +157,17 @@ class TestTcsEpics[F[_]: Sync](
     override def setY(v: Double): F[Unit] = Applicative[F].unit
   }
 
-  override val wavelSourceA: TargetWavelengthCmd[F] = new DummyCmd[F] with TargetWavelengthCmd[F] {
-    override def setWavel(v: Double): F[Unit] = Applicative[F].unit
-  }
+  override val wavelSourceA: TargetWavelengthCmd[F] =
+    new TestEpicsCommand1[F, State, TestTcsEvent, Double](State.wavelSourceACmd, state, out)
+      with TargetWavelengthCmd[F] {
+      override def setWavel(v: Double): F[Unit] = setParameter1(v)
+
+      override protected def event(st: State): TestTcsEvent =
+        TestTcsEvent.WavelSourceACmd(st.wavelSourceACmd.param1)
+
+      override protected def cmd(st: State): State =
+        st.copy(sourceAWavelength = st.wavelSourceACmd.param1)
+    }
 
   override val wavelSourceB: TargetWavelengthCmd[F] = new DummyCmd[F] with TargetWavelengthCmd[F] {
     override def setWavel(v: Double): F[Unit] = Applicative[F].unit
@@ -863,6 +872,7 @@ object TestTcsEpics {
     pwfs2ProbeFollowCmd:      TestEpicsCommand1.State[String],
     oiwfsProbeFollowCmd:      TestEpicsCommand1.State[String],
     offsetACmd:               TestEpicsCommand2.State[Double, Double],
+    wavelSourceACmd:          TestEpicsCommand1.State[Double],
     pwfs1ParkCmd:             TestEpicsCommand0.State,
     pwfs2ParkCmd:             TestEpicsCommand0.State,
     oiwfsParkCmd:             TestEpicsCommand0.State,
@@ -971,6 +981,7 @@ object TestTcsEpics {
       nodbchopb: String
     )                               extends TestTcsEvent
     final case class OffsetACmd(p: Double, q: Double) extends TestTcsEvent
+    final case class WavelSourceACmd(w: Double) extends TestTcsEvent
     final case class Pwfs1ProbeFollowCmd(state: String) extends TestTcsEvent
     final case class Pwfs2ProbeFollowCmd(state: String) extends TestTcsEvent
     final case class OiwfsProbeFollowCmd(state: String) extends TestTcsEvent
@@ -1146,6 +1157,7 @@ object TestTcsEpics {
     pwfs2ProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
     oiwfsProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
     offsetACmd = TestEpicsCommand2.State[Double, Double](false, 0.0, 0.0),
+    wavelSourceACmd = TestEpicsCommand1.State[Double](false, 0.0),
     pwfs1ParkCmd = false,
     pwfs2ParkCmd = false,
     oiwfsParkCmd = false,
