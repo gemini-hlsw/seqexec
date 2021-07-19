@@ -28,6 +28,8 @@ import seqexec.server.EpicsCodex.encode
 import seqexec.server.EpicsCommand
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsController._
+import squants.Length
+import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 /**
@@ -251,14 +253,14 @@ object TcsControllerEpicsCommon {
       .map(_.withDebug(s"$name($current =!= $demand"))
 
   def applyParam[F[_]: Applicative, T, C](
-    used:    Boolean,
-    current: T,
-    demand:  T,
-    act:     T => F[Unit],
-    lens:    Lens[C, T],
-    comp:    (T, T) => Boolean
-  )(name:    String): Option[WithDebug[C => F[C]]] =
-    (used && comp(current, demand))
+    used:     Boolean,
+    current:  T,
+    demand:   T,
+    act:      T => F[Unit],
+    lens:     Lens[C, T],
+    equalish: (T, T) => Boolean
+  )(name:     String): Option[WithDebug[C => F[C]]] =
+    (used && !equalish(current, demand))
       .option((c: C) => act(demand) *> lens.set(demand)(c).pure[F])
       .map(_.withDebug(s"$name($current =!= $demand"))
 
@@ -625,7 +627,7 @@ object TcsControllerEpicsCommon {
           o.toFocalPlaneOffset((l ^|-> BaseEpicsTcsConfig.iaa).get(current)),
           setTelescopeOffset,
           l ^|-> BaseEpicsTcsConfig.offset,
-          (u: FocalPlaneOffset, v: FocalPlaneOffset) => u ~= v
+          offsetNear
         )("Offset")
       ),
       tc.wavelA.flatMap(
@@ -633,7 +635,8 @@ object TcsControllerEpicsCommon {
                    (l ^|-> BaseEpicsTcsConfig.wavelA).get(current),
                    _,
                    setWavelength,
-                   l ^|-> BaseEpicsTcsConfig.wavelA
+                   l ^|-> BaseEpicsTcsConfig.wavelA,
+                   wavelengthNear
         )("Wavelenght")
       )
     ).flattenOption
@@ -788,5 +791,18 @@ object TcsControllerEpicsCommon {
 
   val DefaultTimeout: FiniteDuration = FiniteDuration(10, SECONDS)
   val ConfigTimeout: FiniteDuration  = FiniteDuration(60, SECONDS)
+
+  val OffsetTolerance: Length = 1e-6.millimeters
+
+  def offsetNear(offset: FocalPlaneOffset, other: FocalPlaneOffset): Boolean =
+    math.pow((offset.x - other.x).toMillimeters, 2) + math.pow((offset.y - other.y).toMillimeters,
+                                                               2
+    ) <= math.pow(OffsetTolerance.toMillimeters, 2)
+
+  // Wavelength status gives value as Angstroms, with no decimals
+  val WavelengthTolerance: Length = 0.5.angstroms
+
+  def wavelengthNear(wavel: Wavelength, other: Wavelength): Boolean =
+    math.abs(wavel.length.toAngstroms - other.length.toAngstroms) <= WavelengthTolerance.toAngstroms
 
 }
