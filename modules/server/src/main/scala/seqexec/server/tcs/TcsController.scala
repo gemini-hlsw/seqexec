@@ -231,6 +231,7 @@ object TcsController {
       tag[OffsetP](((x * -1 * iaa.cos) + y * iaa.sin) * FOCAL_PLANE_SCALE),
       tag[OffsetQ](((x * -1 * iaa.sin) - y * iaa.cos) * FOCAL_PLANE_SCALE)
     )
+
   }
 
   object FocalPlaneOffset {
@@ -238,6 +239,7 @@ object TcsController {
 
     def fromInstrumentOffset(o: InstrumentOffset, iaa: Angle): FocalPlaneOffset =
       o.toFocalPlaneOffset(iaa)
+
   }
 
   trait OffsetP
@@ -249,6 +251,7 @@ object TcsController {
       tag[OffsetX](((p * -1 * iaa.cos) - q * iaa.sin) / FOCAL_PLANE_SCALE),
       tag[OffsetY]((p * iaa.sin - q * iaa.cos) / FOCAL_PLANE_SCALE)
     )
+
   }
 
   object InstrumentOffset {

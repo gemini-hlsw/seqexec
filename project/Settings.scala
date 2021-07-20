@@ -25,7 +25,7 @@ object Settings {
     // Scala libraries
     val catsEffectVersion   = "2.5.1"
     val catsVersion         = "2.6.1"
-    val mouseVersion        = "1.0.3"
+    val mouseVersion        = "1.0.4"
     val fs2Version          = "2.5.6"
     val shapelessVersion    = "2.3.7"
     val scalaParsersVersion = "1.1.2"
@@ -36,8 +36,8 @@ object Settings {
     val squants        = "1.8.0"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "6.0.0"
-    val slf4j          = "1.7.31"
+    val jwt            = "5.0.0"
+    val slf4j          = "1.7.32"
     val log4s          = "1.10.0"
     val log4cats       = "1.3.1"
     val log4catsLevel  = "0.2.0"
@@ -54,7 +54,7 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
-    lazy val munitVersion           = "0.7.26"
+    lazy val munitVersion           = "0.7.27"
     lazy val munitDisciplineVersion = "1.0.9"
     lazy val munitCatsEffectVersion = "0.3.0"
 
@@ -81,7 +81,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore = "0.8.1"
+    val lucumaCore = "0.10.1"
     val lucumaUI   = "0.12.2"
   }
 
@@ -281,7 +281,7 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val kpVersion        = "0.11.3"
+    val kpVersion        = "0.13.0"
     val betterMonadicFor = "0.3.1"
   }
 

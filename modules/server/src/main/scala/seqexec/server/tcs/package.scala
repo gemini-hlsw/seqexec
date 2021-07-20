@@ -49,14 +49,18 @@ package tcs {
 
   }
 
+  sealed case class WithDebug[A](self: A, debug: String) {
+    def mapDebug(f: String => String): WithDebug[A] = this.copy(debug = f(debug))
+  }
+
 }
 
 package object tcs {
   val BottomPort: Int  = 1
   val InvalidPort: Int = 0
 
-  val tcsTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  val agTimeout: FiniteDuration  = FiniteDuration(60, SECONDS)
+  val tcsTimeout: FiniteDuration = FiniteDuration(90, SECONDS)
+  val agTimeout: FiniteDuration  = FiniteDuration(90, SECONDS)
 
   val NonStopExposures = -1
 
@@ -76,5 +80,9 @@ package object tcs {
     Eq[Int].contramap(_.ordinal())
 
   def tagIso[B, T]: Iso[B @@ T, B] = Iso.apply[B @@ T, B](x => x)(tag[T](_))
+
+  implicit class WithDebugOps[A](v: A) {
+    def withDebug(msg: String): WithDebug[A] = WithDebug(v, msg)
+  }
 
 }

@@ -42,6 +42,7 @@ import seqexec.server.tcs.TcsController.{
 import shapeless.tag
 import squants.space.{ Arcseconds, Length, Microns, Millimeters }
 import org.scalatest.flatspec.AnyFlatSpec
+import seqexec.server.keywords.USLocale
 import seqexec.server.tcs.TestTcsEpics.{ ProbeGuideConfigVals, TestTcsEvent }
 import squants.space.AngleConversions._
 import squants.space.LengthConversions._
@@ -806,6 +807,161 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       TestTcsEvent.OiwfsProbeFollowCmd("On"),
       TestTcsEvent.OiwfsProbeGuideConfig("On", "Off", "Off", "On")
     ) ++ guideOnEvents).map(result should contain(_))
+
+  }
+
+  // This function simulates the loss of precision in the EPICS record
+  def epicsTransform(prec: Int)(v: Double): Double =
+    s"%.${prec}f".formatLocal(USLocale, v).toDouble
+
+  it should "apply an offset if it is not at the right position" in {
+
+    val offsetDemand  = InstrumentOffset(tag[OffsetP](10.arcseconds), tag[OffsetQ](-5.arcseconds))
+    val offsetCurrent =
+      InstrumentOffset(tag[OffsetP](10.00001.arcseconds), tag[OffsetQ](-5.arcseconds))
+    val iaa           = 33.degrees
+    val wavelength    = Wavelength(440.nanometers)
+    val recordPrec    = 14
+
+    val dumbEpics = buildTcsController[IO](
+      TestTcsEpics.defaultState.copy(
+        xoffsetPoA1 = tag[OffsetX](
+          epicsTransform(recordPrec)(offsetCurrent.toFocalPlaneOffset(iaa).x.toMillimeters)
+        ),
+        yoffsetPoA1 = tag[OffsetX](
+          epicsTransform(recordPrec)(offsetCurrent.toFocalPlaneOffset(iaa).y.toMillimeters)
+        ),
+        instrAA = epicsTransform(recordPrec)(iaa.toDegrees),
+        sourceAWavelength = epicsTransform(recordPrec)(wavelength.length.toAngstroms)
+      )
+    )
+
+    val config = baseConfig.copy(
+      tc = TelescopeConfig(offsetDemand.some, wavelength.some)
+    )
+
+    val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
+      d <- dumbEpics
+      c  = TcsControllerEpicsCommon(d)
+      _ <- c.applyBasicConfig(TcsController.Subsystem.allButGaos, config)
+      r <- d.outputF
+    } yield r
+
+    val result = genOut.unsafeRunSync()
+
+    assert(
+      result.exists {
+        case TestTcsEvent.OffsetACmd(_, _) => true
+        case _                             => false
+      }
+    )
+
+  }
+
+  it should "not reapply an offset if it is already at the right position" in {
+
+    val offset     = InstrumentOffset(tag[OffsetP](10.arcseconds), tag[OffsetQ](-5.arcseconds))
+    val iaa        = 33.degrees
+    val wavelength = Wavelength(440.nanometers)
+    val recordPrec = 14
+
+    val dumbEpics = buildTcsController[IO](
+      TestTcsEpics.defaultState.copy(
+        xoffsetPoA1 =
+          tag[OffsetX](epicsTransform(recordPrec)(offset.toFocalPlaneOffset(iaa).x.toMillimeters)),
+        yoffsetPoA1 =
+          tag[OffsetX](epicsTransform(recordPrec)(offset.toFocalPlaneOffset(iaa).y.toMillimeters)),
+        instrAA = epicsTransform(recordPrec)(iaa.toDegrees),
+        sourceAWavelength = epicsTransform(recordPrec)(wavelength.length.toAngstroms)
+      )
+    )
+
+    val config = baseConfig.copy(
+      tc = TelescopeConfig(offset.some, wavelength.some)
+    )
+
+    val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
+      d <- dumbEpics
+      c  = TcsControllerEpicsCommon(d)
+      _ <- c.applyBasicConfig(TcsController.Subsystem.allButGaos, config)
+      r <- d.outputF
+    } yield r
+
+    val result = genOut.unsafeRunSync()
+
+    assert(
+      !result.exists {
+        case TestTcsEvent.OffsetACmd(_, _) => true
+        case _                             => false
+      }
+    )
+
+  }
+
+  it should "apply the target wavelength if it changes" in {
+
+    val wavelengthDemand  = Wavelength((2000.0 / 7.0).nanometers)
+    val wavelengthCurrent = Wavelength((2000.0 / 7.0).nanometers + 1.angstroms)
+    val recordPrec        = 0
+
+    val dumbEpics = buildTcsController[IO](
+      TestTcsEpics.defaultState.copy(
+        sourceAWavelength = epicsTransform(recordPrec)(wavelengthCurrent.length.toAngstroms)
+      )
+    )
+
+    val config = baseConfig.copy(
+      tc = TelescopeConfig(None, wavelengthDemand.some)
+    )
+
+    val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
+      d <- dumbEpics
+      c  = TcsControllerEpicsCommon(d)
+      _ <- c.applyBasicConfig(TcsController.Subsystem.allButGaos, config)
+      r <- d.outputF
+    } yield r
+
+    val result = genOut.unsafeRunSync()
+
+    assert(
+      result.exists {
+        case TestTcsEvent.WavelSourceACmd(_) => true
+        case _                               => false
+      }
+    )
+
+  }
+
+  it should "not reapply the target wavelength if it is already at the right value" in {
+
+    val wavelength = Wavelength((2000.0 / 7.0).nanometers)
+    val recordPrec = 0
+
+    val dumbEpics = buildTcsController[IO](
+      TestTcsEpics.defaultState.copy(
+        sourceAWavelength = epicsTransform(recordPrec)(wavelength.length.toAngstroms)
+      )
+    )
+
+    val config = baseConfig.copy(
+      tc = TelescopeConfig(None, wavelength.some)
+    )
+
+    val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
+      d <- dumbEpics
+      c  = TcsControllerEpicsCommon(d)
+      _ <- c.applyBasicConfig(TcsController.Subsystem.allButGaos, config)
+      r <- d.outputF
+    } yield r
+
+    val result = genOut.unsafeRunSync()
+
+    assert(
+      !result.exists {
+        case TestTcsEvent.WavelSourceACmd(_) => true
+        case _                               => false
+      }
+    )
 
   }
 
