@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Resource, Timer }
+import cats.effect.{ IO, Resource }
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
@@ -21,6 +21,7 @@ import edu.gemini.aspen.giapi.commands.CommandSender
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import org.scalatest.EitherValues
+import cats.effect.Temporal
 
 final case class GmpCommands(amq: ActiveMQJmsProvider, cmc: CommandMessagesConsumer)
 
@@ -80,7 +81,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   def client(amqUrl: String, handleCommands: Boolean): Resource[IO, Giapi[IO]] =
