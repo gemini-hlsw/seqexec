@@ -11,6 +11,7 @@ import org.scalacheck.Gen
 import shapeless.tag
 import shapeless.tag.@@
 import squants.Angle
+import squants.space.AngleConversions._
 import squants.space.Degrees
 
 trait TcsArbitraries {
@@ -28,16 +29,20 @@ trait TcsArbitraries {
   implicit val tcsNodChopCogen: Cogen[TcsController.NodChop]   =
     Cogen[(TcsController.Beam, TcsController.Beam)].contramap(x => (x.nod, x.chop))
 
-  private val angleMMGen                                             = Gen.posNum[Double].map(Degrees(_))
+  private def rangedAngleGen(minVal: Angle, maxVal: Angle) =
+    Gen.choose(minVal.toDegrees, maxVal.toDegrees).map(Degrees(_))
+
+  private val offsetLimit: Angle = 120.arcseconds
+
   implicit val offsetPArb: Arbitrary[Angle @@ TcsController.OffsetP] = Arbitrary(
-    angleMMGen.map(tag[TcsController.OffsetP].apply)
+    rangedAngleGen(-offsetLimit, offsetLimit).map(tag[TcsController.OffsetP].apply)
   )
   implicit val offsetPCogen: Cogen[Angle @@ TcsController.OffsetP]   =
     Cogen[Double].contramap(_.value)
-  implicit val offsetYArb: Arbitrary[Angle @@ TcsController.OffsetQ] = Arbitrary(
-    angleMMGen.map(tag[TcsController.OffsetQ].apply)
+  implicit val offsetQArb: Arbitrary[Angle @@ TcsController.OffsetQ] = Arbitrary(
+    rangedAngleGen(-offsetLimit, offsetLimit).map(tag[TcsController.OffsetQ].apply)
   )
-  implicit val offsetYCogen: Cogen[Angle @@ TcsController.OffsetQ]   =
+  implicit val offsetQCogen: Cogen[Angle @@ TcsController.OffsetQ]   =
     Cogen[Double].contramap(_.value)
   implicit val fpoArb: Arbitrary[TcsController.InstrumentOffset]     = Arbitrary {
     for {
@@ -49,6 +54,9 @@ trait TcsArbitraries {
     Cogen[(Angle @@ TcsController.OffsetP, Angle @@ TcsController.OffsetQ)].contramap(x =>
       (x.p, x.q)
     )
+
+  implicit val iaaArb: Arbitrary[Angle] = Arbitrary(rangedAngleGen(-90.degrees, 270.degrees))
+  implicit val iaaCogen: Cogen[Angle]   = Cogen[Double].contramap(_.toDegrees)
 
   implicit val crFollowArb: Arbitrary[CRFollow] = Arbitrary {
     Gen.oneOf(CRFollow.On, CRFollow.Off)
