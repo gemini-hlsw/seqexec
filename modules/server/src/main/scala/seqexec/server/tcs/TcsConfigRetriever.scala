@@ -231,10 +231,10 @@ object TcsConfigRetriever {
       getCwfs(epicsSys.cwfs1Follow)
 
     private val getCwfs2: (VirtualGemsTelescope, F[Cwfs2DetectorState]) => F[GuiderConfig] =
-      getCwfs(epicsSys.cwfs1Follow)
+      getCwfs(epicsSys.cwfs2Follow)
 
     private val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
-      getCwfs(epicsSys.cwfs1Follow)
+      getCwfs(epicsSys.cwfs3Follow)
 
     private def getOdgw[T: DetectorStateOps: Eq](
       getParked: F[Boolean],
