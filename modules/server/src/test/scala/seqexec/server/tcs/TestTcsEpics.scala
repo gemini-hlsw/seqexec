@@ -380,6 +380,8 @@ class TestTcsEpics[F[_]: Sync](
 
   override def p2Parked: F[Boolean] = state.get.map(_.p2Parked)
 
+  override def oiName: F[String] = state.get.map(_.oiName)
+
   override def oiParked: F[Boolean] = state.get.map(_.oiParked)
 
   override def pwfs1On: F[BinaryYesNo] = state.get.map(_.pwfs1On)
@@ -770,6 +772,7 @@ object TestTcsEpics {
     p1Parked:                 Boolean,
     p2Parked:                 Boolean,
     oiParked:                 Boolean,
+    oiName:                   String,
     pwfs1On:                  BinaryYesNo,
     pwfs2On:                  BinaryYesNo,
     oiwfsOn:                  BinaryYesNo,
@@ -1052,6 +1055,7 @@ object TestTcsEpics {
     p1Parked = true,
     p2Parked = true,
     oiParked = true,
+    oiName = "None",
     pwfs1On = BinaryYesNo.No,
     pwfs2On = BinaryYesNo.No,
     oiwfsOn = BinaryYesNo.No,
@@ -1142,28 +1146,28 @@ object TestTcsEpics {
     g2GuideConfig = ProbeGuideConfigVals.default,
     g3GuideConfig = ProbeGuideConfigVals.default,
     g4GuideConfig = ProbeGuideConfigVals.default,
-    m1GuideCmd = TestEpicsCommand1.State[String](false, ""),
-    m2GuideCmd = TestEpicsCommand1.State[String](false, ""),
-    m2GuideModeCmd = TestEpicsCommand1.State[String](false, ""),
-    m2GuideConfigCmd = TestEpicsCommand3.State[String, String, String](false, "", "", ""),
-    mountGuideCmd = TestEpicsCommand2.State[String, String](false, "", ""),
+    m1GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    m2GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    m2GuideModeCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    m2GuideConfigCmd = TestEpicsCommand3.State[String, String, String](mark = false, "", "", ""),
+    mountGuideCmd = TestEpicsCommand2.State[String, String](mark = false, "", ""),
     pwfs1ProbeGuideConfigCmd =
-      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
     pwfs2ProbeGuideConfigCmd =
-      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
     oiwfsProbeGuideConfigCmd =
-      TestEpicsCommand4.State[String, String, String, String](false, "", "", "", ""),
-    pwfs1ProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
-    pwfs2ProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
-    oiwfsProbeFollowCmd = TestEpicsCommand1.State[String](false, ""),
-    offsetACmd = TestEpicsCommand2.State[Double, Double](false, 0.0, 0.0),
-    wavelSourceACmd = TestEpicsCommand1.State[Double](false, 0.0),
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
+    pwfs1ProbeFollowCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    pwfs2ProbeFollowCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    oiwfsProbeFollowCmd = TestEpicsCommand1.State[String](mark = false, ""),
+    offsetACmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0),
+    wavelSourceACmd = TestEpicsCommand1.State[Double](mark = false, 0.0),
     pwfs1ParkCmd = false,
     pwfs2ParkCmd = false,
     oiwfsParkCmd = false,
-    pwfs1ObserveCmd = TestEpicsCommand1.State[Int](false, -1),
-    pwfs2ObserveCmd = TestEpicsCommand1.State[Int](false, -1),
-    oiwfsObserveCmd = TestEpicsCommand1.State[Int](false, -1),
+    pwfs1ObserveCmd = TestEpicsCommand1.State[Int](mark = false, -1),
+    pwfs2ObserveCmd = TestEpicsCommand1.State[Int](mark = false, -1),
+    oiwfsObserveCmd = TestEpicsCommand1.State[Int](mark = false, -1),
     pwfs1StopObserveCmd = false,
     pwfs2StopObserveCmd = false,
     oiwfsStopObserveCmd = false

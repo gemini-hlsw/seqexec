@@ -327,19 +327,20 @@ object TcsConfigRetriever {
 
     override def retrieveBaseConfiguration: F[BaseEpicsTcsConfig] =
       for {
-        iaa   <- getIAA
-        offX  <- getOffsetX
-        offY  <- getOffsetY
-        wl    <- getWavelength
-        p1    <- getPwfs1
-        p2    <- getPwfs2
-        oi    <- getOiwfs
-        tgc   <- getGuideConfig
-        aof   <- getAoFold
-        useAo <- getUseAo
-        sf    <- getScienceFoldPosition
-        hr    <- getHrwfsPickupPosition
-        ports <- getInstrumentPorts
+        iaa    <- getIAA
+        offX   <- getOffsetX
+        offY   <- getOffsetY
+        wl     <- getWavelength
+        p1     <- getPwfs1
+        p2     <- getPwfs2
+        oi     <- getOiwfs
+        oiName <- epicsSys.oiName
+        tgc    <- getGuideConfig
+        aof    <- getAoFold
+        useAo  <- getUseAo
+        sf     <- getScienceFoldPosition
+        hr     <- getHrwfsPickupPosition
+        ports  <- getInstrumentPorts
       } yield BaseEpicsTcsConfig(
         iaa,
         FocalPlaneOffset(tag[OffsetX](offX), tag[OffsetY](offY)),
@@ -347,6 +348,7 @@ object TcsConfigRetriever {
         p1,
         p2,
         oi,
+        oiName,
         tgc,
         aof,
         useAo,

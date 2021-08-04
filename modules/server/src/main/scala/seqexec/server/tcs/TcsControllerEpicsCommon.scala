@@ -20,6 +20,7 @@ import mouse.boolean._
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
+import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.M1Source
 import seqexec.model.enum.MountGuideOption
@@ -109,7 +110,9 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
   def setOiwfsProbe[C](l: Lens[C, BaseEpicsTcsConfig])(
     a:                    NonEmptySet[Subsystem],
     b:                    ProbeTrackingConfig,
-    c:                    ProbeTrackingConfig
+    c:                    ProbeTrackingConfig,
+    oiName:               String,
+    inst:                 Instrument
   ): Option[WithDebug[C => F[C]]]
 
   def setNodChopProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd[F])(
@@ -585,11 +588,16 @@ object TcsControllerEpicsCommon {
     override def setOiwfsProbe[C](l: Lens[C, BaseEpicsTcsConfig])(
       a:                             NonEmptySet[Subsystem],
       b:                             ProbeTrackingConfig,
-      c:                             ProbeTrackingConfig
-    ): Option[WithDebug[C => F[C]]] =
-      setGuideProbe(oiwfsGuiderControl,
-                    (l ^|-> BaseEpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set
-      )(a, b, c).map(_.mapDebug(d => s"OIWFS: $d"))
+      c:                             ProbeTrackingConfig,
+      oiName:                        String,
+      inst:                          Instrument
+    ): Option[WithDebug[C => F[C]]] = oiSelectionName(inst).flatMap { x =>
+      if (x === oiName)
+        setGuideProbe(oiwfsGuiderControl,
+                      (l ^|-> BaseEpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set
+        )(a, b, c).map(_.mapDebug(d => s"OIWFS: $d"))
+      else none
+    }
 
     // Same offset is applied to all the beams
     override def setTelescopeOffset(c: FocalPlaneOffset): F[Unit] =
@@ -648,7 +656,12 @@ object TcsControllerEpicsCommon {
     ): List[WithDebug[BaseEpicsTcsConfig => F[BaseEpicsTcsConfig]]] = List(
       setPwfs1Probe(Lens.id)(subsystems, current.pwfs1.tracking, tcs.gds.pwfs1.tracking),
       setPwfs2Probe(Lens.id)(subsystems, current.pwfs2.tracking, tcs.gds.pwfs2.tracking),
-      setOiwfsProbe(Lens.id)(subsystems, current.oiwfs.tracking, tcs.gds.oiwfs.tracking),
+      setOiwfsProbe(Lens.id)(subsystems,
+                             current.oiwfs.tracking,
+                             tcs.gds.oiwfs.tracking,
+                             current.oiName,
+                             tcs.inst.instrument
+      ),
       setPwfs1(Lens.id)(subsystems, current.pwfs1.detector, tcs.gds.pwfs1.detector),
       setPwfs2(Lens.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
       setOiwfs(Lens.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
@@ -804,5 +817,14 @@ object TcsControllerEpicsCommon {
 
   def wavelengthNear(wavel: Wavelength, other: Wavelength): Boolean =
     math.abs(wavel.length.toAngstroms - other.length.toAngstroms) <= WavelengthTolerance.toAngstroms
+
+  def oiSelectionName(i: Instrument): Option[String] = i match {
+    case Instrument.F2                                        => "F2".some
+    case Instrument.GmosS | Instrument.GmosN                  => "GMOS".some
+    case Instrument.Gnirs                                     => "GNIRS".some
+    case Instrument.Niri                                      => "NIRI".some
+    case Instrument.Nifs                                      => "NIFS".some
+    case Instrument.Ghost | Instrument.Gpi | Instrument.Gsaoi => none
+  }
 
 }

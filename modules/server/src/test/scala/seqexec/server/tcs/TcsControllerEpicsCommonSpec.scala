@@ -63,6 +63,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
+    "None",
     TelescopeGuideConfig(MountGuideOption.MountGuideOff,
                          M1GuideConfig.M1GuideOff,
                          M2GuideConfig.M2GuideOff
@@ -669,6 +670,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     oiwfsOn = BinaryYesNo.Yes,
     sfName = "gmos3",
     oiwfsProbeGuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
+    oiName = "GMOS",
     gmosPort = 3,
     comaCorrect = "On"
   )
@@ -775,6 +777,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
         m1GuideSource = "OIWFS",
         m2oiGuide = "ON",
         oiParked = false,
+        oiName = "GMOS",
         sfName = "gmos3",
         gmosPort = 3
       )

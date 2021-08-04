@@ -145,7 +145,9 @@ object TcsNorthControllerEpicsAo {
           setAltairProbe(subsystems, current.aowfs, tcs.gds.aoguide.tracking),
           commonController.setOiwfsProbe(EpicsTcsAoConfig.base)(subsystems,
                                                                 current.base.oiwfs.tracking,
-                                                                tcs.gds.oiwfs.tracking
+                                                                tcs.gds.oiwfs.tracking,
+                                                                current.base.oiName,
+                                                                tcs.inst.instrument
           ),
           commonController.setScienceFold(EpicsTcsAoConfig.base)(subsystems,
                                                                  current,

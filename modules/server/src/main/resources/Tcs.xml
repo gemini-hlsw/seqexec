@@ -1204,6 +1204,12 @@
             <type>DOUBLE</type>
             <description>Guide star Y</description>
         </attribute>
+        <attribute name="oiName">
+            <channel>oi:name</channel>
+            <type>STRING</type>
+            <description>selected OI</description>
+            <top>ag</top>
+        </attribute>
         <attribute name="oiParked">
             <channel>oi:probeParked</channel>
             <type>INTEGER</type>
