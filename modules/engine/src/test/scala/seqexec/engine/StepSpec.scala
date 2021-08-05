@@ -3,9 +3,7 @@
 
 package seqexec.engine
 
-import cats.effect.{ ContextShift, IO }
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
+import cats.effect.IO
 import cats.data.NonEmptyList
 import cats.tests.CatsSuite
 import fs2.concurrent.Queue
@@ -25,13 +23,14 @@ import seqexec.model.{ ActionType, UserDetails }
 import scala.Function.const
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import cats.effect.{ Ref, Temporal }
 
 class StepSpec extends CatsSuite {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+  implicit val ioTimer: Temporal[IO] = IO.timer(ExecutionContext.global)
 
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
