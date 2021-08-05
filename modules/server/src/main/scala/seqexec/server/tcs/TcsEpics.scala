@@ -166,6 +166,8 @@ trait TcsEpics[F[_]] {
 
   def p2Parked: F[Boolean]
 
+  def oiName: F[String]
+
   def oiParked: F[Boolean]
 
   def pwfs1On: F[BinaryYesNo]
@@ -840,6 +842,8 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def p2Parked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("p2Parked"))
     .map(_ =!= 0)
+
+  override def oiName: F[String] = safeAttributeF(tcsState.getStringAttribute("oiName"))
 
   override def oiParked: F[Boolean] = safeAttributeSIntF(tcsState.getIntegerAttribute("oiParked"))
     .map(_ =!= 0)

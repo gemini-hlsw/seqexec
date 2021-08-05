@@ -28,6 +28,7 @@ final case class BaseEpicsTcsConfig(
   pwfs1:                GuiderConfig,
   pwfs2:                GuiderConfig,
   oiwfs:                GuiderConfig,
+  oiName:               String,
   telescopeGuideConfig: TelescopeGuideConfig,
   aoFold:               AoFold,
   useAo:                Boolean,

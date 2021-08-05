@@ -34,12 +34,13 @@ class TcsNorthControllerEpicsAoSpec extends AnyFlatSpec with PrivateMethodTester
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
       GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
+      "None",
       TelescopeGuideConfig(MountGuideOption.MountGuideOff,
                            M1GuideConfig.M1GuideOff,
                            M2GuideConfig.M2GuideOff
       ),
       AoFold.Out,
-      false,
+      useAo = false,
       None,
       HrwfsPickupPosition.OUT,
       InstrumentPorts(
