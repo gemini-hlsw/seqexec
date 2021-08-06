@@ -3,7 +3,6 @@
 
 package seqexec.engine
 
-import cats.effect.concurrent.Semaphore
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import cats.effect._
@@ -24,6 +23,7 @@ import seqexec.engine.TestUtil.TestState
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
+import cats.effect.std.Semaphore
 
 class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
