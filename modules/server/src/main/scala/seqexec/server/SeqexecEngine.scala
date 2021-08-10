@@ -288,7 +288,7 @@ object SeqexecEngine {
         .map { seqTarget =>
           systems.tcsKeywordReader.sourceATarget.objectName.map { tcsTarget =>
             (seqTarget =!= tcsTarget).option(
-              TargetCheckOverride(UserPrompt.Discrepancy(seqTarget, tcsTarget))
+              TargetCheckOverride(UserPrompt.Discrepancy(tcsTarget, seqTarget))
             )
           }
         }
@@ -300,17 +300,6 @@ object SeqexecEngine {
      */
     private def extractTargetName(config: CleanConfig): Option[String] = {
       val BasePositionKey    = "Base:name"
-      val SolarSystemObjects = Map(
-        ("199", "Mercury"),
-        ("299", "Venus"),
-        ("301", "Moon"),
-        ("499", "Mars"),
-        ("599", "Jupiter"),
-        ("699", "Saturn"),
-        ("799", "Uranus"),
-        ("899", "Neptune"),
-        ("999", "Pluto")
-      )
       val baseName           = config.extractTelescopeAs[String](BasePositionKey).toOption
       val EphemerisExtension = ".eph"
 
@@ -318,7 +307,7 @@ object SeqexecEngine {
         if (x.endsWith(EphemerisExtension)) {
           x.dropRight(EphemerisExtension.length)
         } else {
-          SolarSystemObjects.getOrElse(x, x)
+          x
         }
       }
     }
