@@ -505,31 +505,6 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     }).unsafeRunSync()
   }
 
-  it should "pass the target check for solar objects" in {
-    val systems = systemsWithTargetName("Jupiter")
-
-    val seq = testTargetSequence("599", 1, List(ObsClass.SCIENCE), List(SCIENCE_OBSERVE_TYPE))
-
-    val s0 = ODBSequencesLoader
-      .loadSequenceEndo[IO](seqObsId1, seq, executeEngine)
-      .apply(EngineState.default[IO])
-
-    (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
-      q             <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf            <- advanceOne(
-                         q,
-                         s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
-                       )
-    } yield inside(
-      sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
-    ) { case Some(status) =>
-      assert(status.isRunning)
-    }).unsafeRunSync()
-  }
-
   it should "start sequence that fails target check if forced" in {
     val systems = systemsWithTargetName("other")
 
