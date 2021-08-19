@@ -5,26 +5,28 @@ package seqexec.server.altair
 
 import cats.ApplicativeError
 import cats.effect.Sync
-import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
+import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.Resource
 import seqexec.server.CleanConfig
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.PauseConditionSet
-import seqexec.server.tcs.Gaos.PauseResume
-import seqexec.server.tcs.Gaos.ResumeConditionSet
+import seqexec.server.tcs.Gaos.{ PauseConditionSet, ResumeConditionSet }
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 
 trait Altair[F[_]] extends Gaos[F] {
+
   def pauseResume(
     config:        AltairConfig,
+    currOffset:    FocalPlaneOffset,
+    instrument:    Instrument,
     pauseReasons:  PauseConditionSet,
     resumeReasons: ResumeConditionSet
-  ): F[PauseResume[F]]
+  ): F[AltairPauseResume[F]]
 
   val resource: Resource
 
@@ -34,20 +36,22 @@ trait Altair[F[_]] extends Gaos[F] {
 
   def isFollowing: F[Boolean]
 
+  // Are we using a NGS, either for NGS mode or LGS + NGS ?
   def hasTarget(guide: AltairConfig): Boolean
 
 }
 
 object Altair {
 
-  private class AltairImpl[F[_]: Sync](controller: AltairController[F], fieldLens: FieldLens)
-      extends Altair[F] {
+  private class AltairImpl[F[_]: Sync](controller: AltairController[F]) extends Altair[F] {
     override def pauseResume(
       config:        AltairConfig,
+      currOffset:    FocalPlaneOffset,
+      instrument:    Instrument,
       pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet
-    ): F[PauseResume[F]] =
-      controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(config)
+    ): F[AltairPauseResume[F]] =
+      controller.pauseResume(pauseReasons, resumeReasons, currOffset, instrument)(config)
 
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
       config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
@@ -79,13 +83,7 @@ object Altair {
 
   }
 
-  def fromConfig[F[_]: Sync](config: CleanConfig): F[AltairController[F] => Altair[F]] =
-    config
-      .extractAOAs[FieldLens](FIELD_LENSE_PROP)
-      .map { fieldLens => (controller: AltairController[F]) =>
-        new AltairImpl[F](controller, fieldLens): Altair[F]
-      }
-      .toF[F]
+  def apply[F[_]: Sync](controller: AltairController[F]): Altair[F] = new AltairImpl[F](controller)
 
   def guideStarType[F[_]: ApplicativeError[*[_], Throwable]](
     config: CleanConfig
