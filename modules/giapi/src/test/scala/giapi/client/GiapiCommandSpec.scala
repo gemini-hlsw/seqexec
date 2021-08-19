@@ -10,9 +10,9 @@ import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import edu.gemini.aspen.giapi.commands.{
   Activity,
   Command => JCommand,
-  SequenceCommand,
   CompletionListener,
-  HandlerResponse
+  HandlerResponse,
+  SequenceCommand
 }
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesBridgeImpl

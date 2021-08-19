@@ -148,9 +148,9 @@ object NiriControllerEpics extends NiriEncoders {
     new NiriController[F] {
 
       /**
-       * The instrument has three filter wheels with a status channel for each one. But it does not have
-       * a status channel for the virtual filter, so I have to calculate it. The assumption is that only
-       * one wheel can be in a not open position at a given time.
+       * The instrument has three filter wheels with a status channel for each one. But it does not
+       * have a status channel for the virtual filter, so I have to calculate it. The assumption is
+       * that only one wheel can be in a not open position at a given time.
        */
       private def currentFilter: F[Option[String]] = {
         val filter1 = epicsSys.filter1

@@ -1,27 +1,30 @@
 import com.typesafe.sbt.packager.MappingsHelper._
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 import sbt.Keys._
-import sbt.{Project, Resolver, _}
+import sbt.{ Project, Resolver, _ }
 
 /**
-  * Define tasks and settings used by application definitions
-  */
+ * Define tasks and settings used by application definitions
+ */
 object AppsCommon {
-  lazy val ocsJreDir = settingKey[File]("Directory where distribution JREs are stored.")
-  lazy val applicationConfName = settingKey[String]("Name of the application to lookup the configuration")
-  lazy val applicationConfSite = settingKey[DeploymentSite]("Name of the site for the application configuration")
-  lazy val downloadConfiguration = taskKey[Seq[File]]("Download a configuration file for an application")
+  lazy val ocsJreDir             = settingKey[File]("Directory where distribution JREs are stored.")
+  lazy val applicationConfName   =
+    settingKey[String]("Name of the application to lookup the configuration")
+  lazy val applicationConfSite   =
+    settingKey[DeploymentSite]("Name of the site for the application configuration")
+  lazy val downloadConfiguration =
+    taskKey[Seq[File]]("Download a configuration file for an application")
 
   sealed trait LogType
   object LogType {
     case object ConsoleAndFiles extends LogType
-    case object Files extends LogType
+    case object Files           extends LogType
   }
 
   sealed trait DeploymentTarget {
     def subdir: String
   }
-  object DeploymentTarget {
+  object DeploymentTarget       {
     case object Linux64 extends DeploymentTarget {
       override def subdir: String = "linux"
     }
@@ -30,7 +33,7 @@ object AppsCommon {
   sealed trait DeploymentSite {
     def site: String
   }
-  object DeploymentSite {
+  object DeploymentSite       {
     case object GS extends DeploymentSite {
       override def site: String = "gs"
     }
@@ -40,8 +43,8 @@ object AppsCommon {
   }
 
   /**
-    * Mappings common to applications, including configuration and logging conf
-    */
+   * Mappings common to applications, including configuration and logging conf
+   */
   lazy val deployedAppMappings = Seq(
     // Don't include the configuration on the jar. Instead we copy it to the conf dir
     mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
@@ -50,14 +53,15 @@ object AppsCommon {
     mappings in Universal in packageZipTarball += {
       val f = (resourceDirectory in Compile).value / "app.conf"
       f -> ("conf/" + f.getName)
-    })
+    }
+  )
 
   private def embeddedJreSettings(target: DeploymentTarget) = Seq(
     // Put the jre in the tarball
     mappings in Universal ++= {
-      val jresDir = (ocsJreDir in ThisBuild).value
+      val jresDir    = (ocsJreDir in ThisBuild).value
       // Map the location of jre files
-      val jreLink = "JRE64_1.8"
+      val jreLink    = "JRE64_1.8"
       val linux64Jre = jresDir.toPath.resolve(target.subdir).resolve(jreLink)
       directory(linux64Jre.toFile).map { j =>
         j._1 -> j._2.replace(jreLink, "jre")
@@ -73,13 +77,14 @@ object AppsCommon {
   lazy val embeddedJreSettingsLinux64 = embeddedJreSettings(DeploymentTarget.Linux64)
 
   /**
-    * Settings for meta projects to make them non-publishable
-    */
+   * Settings for meta projects to make them non-publishable
+   */
   def preventPublication(p: Project) =
     p.settings(
-      publish := {},
-      publishLocal := {},
-      publishArtifact := false,
-      publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
-      packagedArtifacts := Map.empty)
+      publish           := {},
+      publishLocal      := {},
+      publishArtifact   := false,
+      publishTo         := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
+      packagedArtifacts := Map.empty
+    )
 }

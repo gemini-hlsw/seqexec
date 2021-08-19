@@ -28,11 +28,11 @@ object ConfigUtilOps {
 
   /**
    * ExtractFailures are failures that occur when information cannot be extracted correctly.
-   * 1. KeyNotFound should be used when an expected key is absent.
-   * 2. ConversionError occurs when the given item was found in the step configuration, but cannot
-   *   be read as the requested type.
-   * 3. ContentError occurs when there is a logical error in the contents of a step configuration.
-   *   A typical example would be when the value of one item implies the presence of another, which is missing.
+   *   1. KeyNotFound should be used when an expected key is absent. 2. ConversionError occurs when
+   *      the given item was found in the step configuration, but cannot be read as the requested
+   *      type. 3. ContentError occurs when there is a logical error in the contents of a step
+   *      configuration. A typical example would be when the value of one item implies the presence
+   *      of another, which is missing.
    */
   sealed trait ExtractFailure
   final case class KeyNotFound(key: ItemKey) extends ExtractFailure

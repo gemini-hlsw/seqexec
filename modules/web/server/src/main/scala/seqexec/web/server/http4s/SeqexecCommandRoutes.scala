@@ -109,19 +109,19 @@ class SeqexecCommandRoutes[F[_]: Sync](
 
     case POST -> Root / ObsIdVar(obsId) / "tcsEnabled" / BooleanVar(tcsEnabled) as user =>
       se.setTcsEnabled(inputQueue, obsId, user, tcsEnabled) *>
-        Ok(s"Set TCS enable flag to '${tcsEnabled}' for sequence ${obsId.format}")
+        Ok(s"Set TCS enable flag to '$tcsEnabled' for sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "gcalEnabled" / BooleanVar(gcalEnabled) as user =>
       se.setGcalEnabled(inputQueue, obsId, user, gcalEnabled) *>
-        Ok(s"Set GCAL enable flag to '${gcalEnabled}' for sequence ${obsId.format}")
+        Ok(s"Set GCAL enable flag to '$gcalEnabled' for sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "instEnabled" / BooleanVar(instEnabled) as user =>
       se.setInstrumentEnabled(inputQueue, obsId, user, instEnabled) *>
-        Ok(s"Set instrument enable flag to '${instEnabled}' for sequence ${obsId.format}")
+        Ok(s"Set instrument enable flag to '$instEnabled' for sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "dhsEnabled" / BooleanVar(dhsEnabled) as user =>
       se.setDhsEnabled(inputQueue, obsId, user, dhsEnabled) *>
-        Ok(s"Set DHS enable flag to '${dhsEnabled}' for sequence ${obsId.format}")
+        Ok(s"Set DHS enable flag to '$dhsEnabled' for sequence ${obsId.format}")
 
     case req @ POST -> Root / "iq" as user =>
       req.req.decode[ImageQuality](iq =>

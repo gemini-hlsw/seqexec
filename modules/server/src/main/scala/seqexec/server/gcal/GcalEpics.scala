@@ -103,9 +103,9 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def createLampAttribute(name: String, longName: String): CaAttribute[BinaryOnOff] =
     state.addEnum[BinaryOnOff](
       name + "LampState",
-      s"${GcalTop}${name}_LampState",
+      s"$GcalTop${name}_LampState",
       classOf[BinaryOnOff],
-      s"${longName} lamp state"
+      s"$longName lamp state"
     )
 
   val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")

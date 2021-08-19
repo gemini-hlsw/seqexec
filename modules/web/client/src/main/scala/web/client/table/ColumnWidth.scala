@@ -19,7 +19,7 @@ sealed abstract class VariableColumnWidth(val percentage: Double, val minWidth: 
   assert(percentage > 0 && percentage <= 1)
   assert(minWidth >= 0)
   override def toString: String =
-    s"Variable(${percentage}%, ${minWidth}px)"
+    s"Variable($percentage%, ${minWidth}px)"
 }
 
 object ColumnWidth {

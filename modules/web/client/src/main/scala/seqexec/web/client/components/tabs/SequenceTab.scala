@@ -85,9 +85,9 @@ object SequenceTab {
     val hasError   = p.tab.status.isError
 
     <.a(
-      ^.href := p.router.urlFor(page).value,
+      ^.href  := p.router.urlFor(page).value,
       ^.onClick ==> showSequence(p, page),
-      ^.cls := "item",
+      ^.cls   := "item",
       ^.classSet(
         "active" -> (active === TabSelected.Selected)
       ),

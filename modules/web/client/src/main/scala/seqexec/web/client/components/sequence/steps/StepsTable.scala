@@ -485,7 +485,7 @@ object StepsTable extends Columns {
     prevSequenceState:        Option[SequenceState],
     prevRunning:              Option[RunningStep],
     prevResourceRunRequested: SortedMap[Resource, ResourceRunOperation],
-    recomputeFrom:            Option[Int], // Min row to recompute heights from
+    recomputeFrom:            Option[Int],              // Min row to recompute heights from
     runNewStep:               Option[(StepId, Boolean)] // (New running step, scroll to it?)
   ) {
 
@@ -540,7 +540,7 @@ object StepsTable extends Columns {
 
   def stepControlRenderer(
     f:                       StepsTableFocus,
-    $                       : Scope,
+    $                      : Scope,
     rowBreakpointHoverOnCB:  Int => Callback,
     rowBreakpointHoverOffCB: Int => Callback,
     recomputeHeightsCB:      Int => Callback
@@ -571,7 +571,7 @@ object StepsTable extends Columns {
       SettingsCell(p.router, f.instrument, f.id, row.step.id, p.isPreview)
 
   def stepProgressRenderer(
-    f: StepsTableFocus,
+    f:  StepsTableFocus,
     $ : Scope
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
@@ -738,7 +738,7 @@ object StepsTable extends Columns {
 
   private def columnCellRenderer(
     $ : Scope,
-    c: TableColumn
+    c:  TableColumn
   ): CellRenderer[js.Object, js.Object, StepRow] = {
     val optR = c match {
       case ControlColumn       =>
@@ -771,7 +771,7 @@ object StepsTable extends Columns {
 
   // Columns for the table
   private def colBuilder(
-    $    : Scope,
+    $   : Scope,
     size: Size
   ): ColumnRenderArgs[TableColumn] => Table.ColumnArg =
     tb => {
@@ -875,7 +875,7 @@ object StepsTable extends Columns {
       disableHeader = false,
       noRowsRenderer = () =>
         <.div(
-          ^.cls := "ui center aligned segment noRows",
+          ^.cls    := "ui center aligned segment noRows",
           ^.height := size.height.toInt.px,
           "No Steps"
         ),
@@ -933,17 +933,17 @@ object StepsTable extends Columns {
       _:                Option[OnRowClick],
       _:                Option[OnRowClick],
       style:            Style
-    ) => {
+    ) =>
       p.rowGetter(index) match {
         case StepRow(s) if p.showRowDetails(s, selected) && index === s.id =>
           <.div(
-            ^.key := key,
+            ^.key   := key,
             ^.style := Style.toJsObject(style),
             SeqexecStyles.expandedRunningRow,
             SeqexecStyles.stepRow,
             <.div(
-              ^.cls := className,
-              ^.key := s"$key-top",
+              ^.cls    := className,
+              ^.key    := s"$key-top",
               SeqexecStyles.expandedTopRow,
               ^.height := SeqexecStyles.runningRowHeight.px,
               ^.onMouseDown ==> allowedClick(p, index, onRowClick),
@@ -961,7 +961,7 @@ object StepsTable extends Columns {
 
               rowComponents.zipWithIndex.toTagMod { case (rowComponent, rowIdx) =>
                 <.div(
-                  ^.key := s"$key-subRow-$rowIdx",
+                  ^.key    := s"$key-subRow-$rowIdx",
                   SeqexecStyles.expandedBottomRow,
                   SeqexecStyles.tableDetailRow,
                   SeqexecStyles.tableDetailRowWithGutter
@@ -977,16 +977,15 @@ object StepsTable extends Columns {
           )
         case _                                                             =>
           <.div(
-            ^.cls := className,
-            ^.key := key,
-            ^.role := "row",
+            ^.cls   := className,
+            ^.key   := key,
+            ^.role  := "row",
             ^.style := Style.toJsObject(style),
             ^.onMouseDown ==> allowedClick(p, index, onRowClick),
             ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
             columns.toTagMod
           )
       }
-    }
 
   // Create a ref
   private val ref = Ref.toJsComponent(Table.component)

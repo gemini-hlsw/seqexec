@@ -18,11 +18,9 @@ import org.scalatest.funsuite.AnyFunSuite
 /**
  * Tests of the observe state machine
  *
- * We want to verify that the Apply state and Observe state FSM properly do
- * state transitions as the EPICS channels change.
- * To speed up the process the CAJContext is mocked as we don't really
- * care about the state of the channels. Instead we want to only observe
- * the state transitions
+ * We want to verify that the Apply state and Observe state FSM properly do state transitions as the
+ * EPICS channels change. To speed up the process the CAJContext is mocked as we don't really care
+ * about the state of the channels. Instead we want to only observe the state transitions
  */
 final class ObserveStateSpec
     extends AnyFunSuite
@@ -1149,15 +1147,15 @@ trait GenericInstMocks extends ChannelsFactory {
     val epicsReader = mock[EpicsReader]
     val epicsWriter = mock[EpicsWriter]
 
-    (epicsWriter.getEnumChannel[CadDirective] _).expects(s"${apply}.DIR", *).returns(dirChannel)
-    (epicsReader.getIntegerChannel _).expects(s"${apply}.VAL").returns(intChannelS)
-    (epicsReader.getStringChannel _).expects(s"${apply}.MESS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects(s"${applyCar}.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel[CarState] _).expects(s"${applyCar}.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects(s"${applyCar}.OMSS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects(s"${observeCar}.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel[CarState] _).expects(s"${observeCar}.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects(s"${observeCar}.OMSS").returns(strChannel)
+    (epicsWriter.getEnumChannel[CadDirective] _).expects(s"$apply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects(s"$apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects(s"$apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects(s"$applyCar.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel[CarState] _).expects(s"$applyCar.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects(s"$applyCar.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects(s"$observeCar.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects(s"$observeCar.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects(s"$observeCar.OMSS").returns(strChannel)
     (epicsReader, epicsWriter)
   }
 }

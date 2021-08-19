@@ -397,7 +397,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
 }
 
 /**
- * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
+ * Contains the sequences displayed on the instrument tabs. Note that they are references to
+ * sequences on the Queue
  */
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview

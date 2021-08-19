@@ -376,7 +376,7 @@ object SessionQueueTable extends Columns {
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
     <.a(
-      ^.href := p.ctl.urlFor(page).value,
+      ^.href      := p.ctl.urlFor(page).value,
       ^.onClick ==> { _.preventDefaultCB },
       ^.draggable := false,
       mod.toTagMod
@@ -392,9 +392,8 @@ object SessionQueueTable extends Columns {
   private def linkedTextRenderer(p: Props)(
     f:                              SessionQueueRow => String
   ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
-    (_, _, _, row: SessionQueueRow, _) => {
+    (_, _, _, row: SessionQueueRow, _) =>
       linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, <.p(SeqexecStyles.queueText, f(row)))
-    }
 
   private def statusIconRenderer(
     b: Backend
@@ -653,7 +652,7 @@ object SessionQueueTable extends Columns {
           disableHeader = false,
           noRowsRenderer = () =>
             <.div(
-              ^.cls := "ui center aligned segment noRows",
+              ^.cls    := "ui center aligned segment noRows",
               SeqexecStyles.noRowsSegment,
               ^.height := 180.px,
               "Session queue empty"
@@ -698,19 +697,18 @@ object SessionQueueTable extends Columns {
       _:                Option[OnRowClick],
       _:                Option[OnRowClick],
       style:            Style
-    ) => {
+    ) =>
       <.div(
-        ^.cls := className,
+        ^.cls       := className,
         ^.draggable := b.props.canOperate,
-        ^.key := key,
-        ^.role := "row",
+        ^.key       := key,
+        ^.role      := "row",
         ^.onDragStart ==> dragStart(b, rowData.obsId),
-        ^.style := style.toJsObject,
+        ^.style     := style.toJsObject,
         ^.onClick -->? onRowClick.map(h => h(index)),
         ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
         columns.toTagMod
       ): VdomElement
-    }
 
   private def initialState(p: Props): State =
     (

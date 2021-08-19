@@ -14,22 +14,38 @@ trait GhostSettings
 
 /**
  * Configuration of the Seqexec Engine
- * @param odb Location of the odb server
- * @param dhsServer Location of the dhs server proxy
- * @param systemControl Control of the subsystems
- * @param odbNotifications Indicates if we notify the odb of sequence events
- * @param instForceError Used for testing to simulate errors
- * @param failAt At what step to fail if we simulate errors
- * @param odbQueuePollingInterval frequency to check the odb queue
- * @param gpiUrl URL for the GPI GMP
- * @param gpiGDS URL for GPI's GDS
- * @param ghostUrl URL for GHOST GMP
- * @param ghostGDS URL for GHOST's GDS
- * @param tops Used to select the top component for epics subsystems
- * @param epicsCaAddrList List of IPs for the epics subsystem
- * @param readRetries Number of retries when reading a channel
- * @param ioTimeout Timeout to listen for EPICS events
- * @param dhsTimeout Timeout for DHS operations
+ * @param odb
+ *   Location of the odb server
+ * @param dhsServer
+ *   Location of the dhs server proxy
+ * @param systemControl
+ *   Control of the subsystems
+ * @param odbNotifications
+ *   Indicates if we notify the odb of sequence events
+ * @param instForceError
+ *   Used for testing to simulate errors
+ * @param failAt
+ *   At what step to fail if we simulate errors
+ * @param odbQueuePollingInterval
+ *   frequency to check the odb queue
+ * @param gpiUrl
+ *   URL for the GPI GMP
+ * @param gpiGDS
+ *   URL for GPI's GDS
+ * @param ghostUrl
+ *   URL for GHOST GMP
+ * @param ghostGDS
+ *   URL for GHOST's GDS
+ * @param tops
+ *   Used to select the top component for epics subsystems
+ * @param epicsCaAddrList
+ *   List of IPs for the epics subsystem
+ * @param readRetries
+ *   Number of retries when reading a channel
+ * @param ioTimeout
+ *   Timeout to listen for EPICS events
+ * @param dhsTimeout
+ *   Timeout for DHS operations
  */
 final case class SeqexecEngineConfiguration(
   odb:                     Uri,

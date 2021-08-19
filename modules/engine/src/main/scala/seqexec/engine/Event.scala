@@ -98,7 +98,7 @@ object Event {
     r:      Result.Partial[R]
   ): Event[F, Nothing, Nothing] =
     EventSystem[F](PartialResult(id, stepId, i, r))
-  def paused[F[_]](id:            Observation.Id, i: Int, c: Result.Paused[F]): Event[F, Nothing, Nothing] =
+  def paused[F[_]](id:            Observation.Id, i:        Int, c: Result.Paused[F]): Event[F, Nothing, Nothing] =
     EventSystem[F](Paused[F](id, i, c))
   def breakpointReached[F[_]](id: Observation.Id): Event[F, Nothing, Nothing] =
     EventSystem[F](BreakpointReached(id))

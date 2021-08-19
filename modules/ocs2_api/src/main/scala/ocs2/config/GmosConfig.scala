@@ -15,13 +15,14 @@ import monocle._
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
- * @group Instrument-Specific Models
+ * @group Instrument-Specific
+ * Models
  */
 object GmosConfig {
 
   /**
-   * Nod-and-shuffle offset in detector rows, which must be positive, non-zero.
-   * This class essentially provides a newtype for Int.
+   * Nod-and-shuffle offset in detector rows, which must be positive, non-zero. This class
+   * essentially provides a newtype for Int.
    */
   sealed abstract case class GmosShuffleOffset(detectorRows: Int) {
 
@@ -32,25 +33,25 @@ object GmosConfig {
   object GmosShuffleOffset extends GmosShuffleOffsetOptics {
 
     /**
-     * Constructs the shuffle offset with the given number of detector rows,
-     * provided it is a positive number.
+     * Constructs the shuffle offset with the given number of detector rows, provided it is a
+     * positive number.
      *
-     * @return `Some(GmosShuffleOffset(rows))` if `rows` is positive,
-     *         `None` otherwise
+     * @return
+     *   `Some(GmosShuffleOffset(rows))` if `rows` is positive, `None` otherwise
      */
     def fromRowCount(rows:       Int): Option[GmosShuffleOffset] =
       if (rows > 0) Some(new GmosShuffleOffset(rows) {}) else None
 
     /**
-     * Constructs the shuffle offset with the given number of detector rows
-     * provided `rows` is positive, or throws an exception if zero or negative.
+     * Constructs the shuffle offset with the given number of detector rows provided `rows` is
+     * positive, or throws an exception if zero or negative.
      */
     def unsafeFromRowCount(rows: Int): GmosShuffleOffset         =
       fromRowCount(rows).getOrElse(sys.error(s"Expecting positive detector row count, not $rows"))
 
     /**
-     * Constructs a shuffle offset using the default number of detector rows
-     * associated with the detector.
+     * Constructs a shuffle offset using the default number of detector rows associated with the
+     * detector.
      */
     def defaultFromDetector(detector: GmosDetector): GmosShuffleOffset =
       fromRowCount(detector.shuffleOffset)
@@ -69,8 +70,8 @@ object GmosConfig {
   }
 
   /**
-   * The number of nod-and-shuffle cycles, which must be at least 1. This class
-   * essentially provides a newtype for Int.
+   * The number of nod-and-shuffle cycles, which must be at least 1. This class essentially provides
+   * a newtype for Int.
    */
   sealed abstract case class GmosShuffleCycles(toInt: Int) {
 
@@ -87,15 +88,15 @@ object GmosConfig {
     /**
      * Constructs the shuffle cycles from a count if `cycles` is positive.
      *
-     * @return `Some(GmosShuffleCycles(cycles))` if `cycles` is positive,
-     *         `None` otherwise
+     * @return
+     *   `Some(GmosShuffleCycles(cycles))` if `cycles` is positive, `None` otherwise
      */
     def fromCycleCount(cycles:       Int): Option[GmosShuffleCycles] =
       if (cycles > 0) Some(new GmosShuffleCycles(cycles) {}) else None
 
     /**
-     * Constructs the shuffle cycles with the given `cycles` count provided it
-     * is positive, or else throws an exception if 0 or negative.
+     * Constructs the shuffle cycles with the given `cycles` count provided it is positive, or else
+     * throws an exception if 0 or negative.
      */
     def unsafeFromCycleCount(cycles: Int): GmosShuffleCycles         =
       fromCycleCount(cycles).getOrElse(sys.error(s"Expecting positive shuffle cycles, not $cycles"))
@@ -191,22 +192,22 @@ object GmosConfig {
       (yMin.toInt, yMin + yRange)
 
     /**
-     * Returns `true` if the pixels specified by this custom ROI entry overlap
-     * with the pixels specified by `that` entry.
+     * Returns `true` if the pixels specified by this custom ROI entry overlap with the pixels
+     * specified by `that` entry.
      */
     def overlaps(that: GmosCustomRoiEntry): Boolean =
       columnsOverlap(that) && rowsOverlap(that)
 
     /**
-     * Returns `true` if the columns spanned this custom ROI entry overlap with
-     * the columns spanned by `that` entry.
+     * Returns `true` if the columns spanned this custom ROI entry overlap with the columns spanned
+     * by `that` entry.
      */
     def columnsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.columns)
 
     /**
-     * Returns `true` if the rows spanned this custom ROI entry overlap with
-     * the rows spanned by `that` entry.
+     * Returns `true` if the rows spanned this custom ROI entry overlap with the rows spanned by
+     * `that` entry.
      */
     def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.rows)
@@ -417,9 +418,8 @@ object GmosConfig {
   }
 
   /**
-   * Custom mask definition, which is available as an alternative to using a
-   * builtin FPU.  Either both these parameters are set or neither are set in a
-   * GMOS observation
+   * Custom mask definition, which is available as an alternative to using a builtin FPU. Either
+   * both these parameters are set or neither are set in a GMOS observation
    */
   final case class GmosCustomMask(
     maskDefinitionFilename: String,
@@ -448,12 +448,12 @@ object GmosConfig {
   }
 
   /**
-   * GMOS grating configuration, parameterized on the disperser type.  These
-   * are grouped because they only apply when using a grating.  That is, all
-   * are defined or none or defined in the dynamic config.
+   * GMOS grating configuration, parameterized on the disperser type. These are grouped because they
+   * only apply when using a grating. That is, all are defined or none or defined in the dynamic
+   * config.
    *
-   * @tparam D disperser type, expected to be `GmosNorthDisperser` or
-   *           `GmosSouthDisperser`
+   * @tparam D
+   *   disperser type, expected to be `GmosNorthDisperser` or `GmosSouthDisperser`
    */
   final case class GmosGrating[D](
     disperser:  D,

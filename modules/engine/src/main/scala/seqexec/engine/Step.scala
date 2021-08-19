@@ -91,11 +91,11 @@ object Step {
   ) { self =>
 
     /**
-     * Adds the `Current` `Execution` to the list of completed `Execution`s and
-     * makes the next pending `Execution` the `Current` one.
+     * Adds the `Current` `Execution` to the list of completed `Execution`s and makes the next
+     * pending `Execution` the `Current` one.
      *
-     * If there are still `Action`s that have not finished in `Current` or if
-     * there are no more pending `Execution`s it returns `None`.
+     * If there are still `Action`s that have not finished in `Current` or if there are no more
+     * pending `Execution`s it returns `None`.
      */
     val next: Option[Zipper[F]] =
       pending match {
@@ -110,8 +110,8 @@ object Step {
       self.copy(pending = rolledback._2, focus = rolledback._1, done = Nil)
 
     /**
-     * Obtain the resulting `Step` only if all `Execution`s have been completed.
-     * This is a special way of *unzipping* a `Zipper`.
+     * Obtain the resulting `Step` only if all `Execution`s have been completed. This is a special
+     * way of *unzipping* a `Zipper`.
      */
     val uncurrentify: Option[Step[F]] =
       if (pending.isEmpty)
@@ -119,8 +119,8 @@ object Step {
       else None
 
     /**
-     * Unzip a `Zipper`. This creates a single `Step` with either completed
-     * `Exection`s or pending `Execution`s.
+     * Unzip a `Zipper`. This creates a single `Step` with either completed `Exection`s or pending
+     * `Execution`s.
      */
     val toStep: Step[F] =
       Step(
@@ -159,8 +159,8 @@ object Step {
     }
 
     /**
-     * Make a `Zipper` from a `Step` only if all the `Execution`s in the `Step` are
-     * pending. This is a special way of *zipping* a `Step`.
+     * Make a `Zipper` from a `Step` only if all the `Execution`s in the `Step` are pending. This is
+     * a special way of *zipping* a `Step`.
      */
     def currentify[F[_]](step: Step[F]): Option[Zipper[F]] =
       calcRolledback(step.executions).map { case (x, exes) =>

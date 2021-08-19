@@ -20,9 +20,8 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 
 /**
- * This handler is called only once. It will be triggered when the first message
- * with the full model arrives.
- * Then we sync to the first running sequence or to the route we are currently on
+ * This handler is called only once. It will be triggered when the first message with the full model
+ * arrives. Then we sync to the first running sequence or to the route we are currently on
  */
 class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
     extends ActionHandler(modelRW)

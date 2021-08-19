@@ -20,11 +20,10 @@ import seqexec.model.enum.DailyProgramType
 import seqexec.model.parser.ProgramIdParsers
 
 /**
- * A science program id, which has three constructors:
- * for standard programs
- * for standard daily engineering and calibration programs
- * and for all others.
- * @group Program Model
+ * A science program id, which has three constructors: for standard programs for standard daily
+ * engineering and calibration programs and for all others.
+ * @group Program
+ * Model
  */
 sealed trait ProgramId extends Product with Serializable {
 
@@ -135,9 +134,9 @@ object ProgramId {
   }
 
   /**
-   * Parser for a non-standard program id of the general form `site-semester-type-tail` where
-   * any subset of the structured portion is permitted as long as it appears in the proper order.
-   * This is the catch-all type for otherwise unparseable ids, so it is guaranteed that the string
+   * Parser for a non-standard program id of the general form `site-semester-type-tail` where any
+   * subset of the structured portion is permitted as long as it appears in the proper order. This
+   * is the catch-all type for otherwise unparseable ids, so it is guaranteed that the string
    * representation of a `Nonstandard` via `.format` is *not* parseable in to a standard science or
    * daily program id. This data type has no public constructor and no `.copy` method, as these
    * could violate the above invariant. The only way to get an instance is via `.fromString`.
@@ -153,8 +152,8 @@ object ProgramId {
 
     /**
      * Format the components of a `Nonstandard`, which may result in a string that *cannot* be
-     * re-parsed into a Nonstandard program id because it instead parses into a more structured
-     * type (i.e., Daily or Science). Nonstandard is the fallback.
+     * re-parsed into a Nonstandard program id because it instead parses into a more structured type
+     * (i.e., Daily or Science). Nonstandard is the fallback.
      */
     def format(
       siteOption:        Option[Site],
@@ -183,8 +182,8 @@ object ProgramId {
   }
 
   /**
-   * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then
-   * by the defined orderings for individual cases when constructors match.
+   * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then by
+   * the defined orderings for individual cases when constructors match.
    */
   implicit val ProgramIdOrder: Order[ProgramId] =
     Order.from {
@@ -196,7 +195,8 @@ object ProgramId {
 
   /**
    * `Ordering` instance for Scala standard library.
-   * @see ProgramIdOrder
+   * @see
+   *   ProgramIdOrder
    */
   implicit val ProgramIdOrdering: scala.math.Ordering[ProgramId] =
     ProgramIdOrder.toOrdering

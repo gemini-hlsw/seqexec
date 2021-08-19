@@ -462,7 +462,7 @@ class SeqexecCommandRoutesSpec
       assert(s === Some(Status.Ok))
       assert(
         b.unsafeRunSync() === Some(
-          s"Set observer name to '${obs}' for sequence ${obsId.format}"
+          s"Set observer name to '$obs' for sequence ${obsId.format}"
         )
       )
     }

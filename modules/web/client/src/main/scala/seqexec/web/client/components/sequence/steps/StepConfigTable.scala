@@ -166,7 +166,7 @@ object StepConfigTable {
       disableHeader = false,
       noRowsRenderer = () =>
         <.div(
-          ^.cls := "ui center aligned segment noRows",
+          ^.cls    := "ui center aligned segment noRows",
           ^.height := size.height.toInt.px,
           "No configuration for step"
         ),

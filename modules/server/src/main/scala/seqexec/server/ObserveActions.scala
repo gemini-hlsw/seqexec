@@ -93,8 +93,8 @@ trait ObserveActions {
     env.otherSys.traverse_(_.notifyObserveStart)
 
   /**
-   * Tell each subsystem that an observe will end
-   * Unlike observe start we also tell the instrumetn about it
+   * Tell each subsystem that an observe will end Unlike observe start we also tell the instrumetn
+   * about it
    */
   def notifyObserveEnd[F[_]: Applicative](env: ObserveEnvironment[F]): F[Unit] =
     (env.inst +: env.otherSys).traverse_(_.notifyObserveEnd)
@@ -106,8 +106,8 @@ trait ObserveActions {
     env.inst.keywordsClient.closeImage(id)
 
   /**
-   * Preamble for observations. It tells the odb, the subsystems
-   * send the start headers and finally sends an observe
+   * Preamble for observations. It tells the odb, the subsystems send the start headers and finally
+   * sends an observe
    */
   def observePreamble[F[_]: Concurrent: Logger](
     fileId: ImageFileId,
@@ -128,9 +128,8 @@ trait ObserveActions {
     } yield r
 
   /**
-   * End of an observation for a typical instrument
-   * It tells the odb and each subsystem and also sends the end
-   * observation keywords
+   * End of an observation for a typical instrument It tells the odb and each subsystem and also
+   * sends the end observation keywords
    */
   def okTail[F[_]: Concurrent](
     fileId:  ImageFileId,

@@ -54,8 +54,7 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
 }
 
 /**
- * Seqexec WebApp entry point
- * Exposed to the js world
+ * Seqexec WebApp entry point Exposed to the js world
  */
 @JSExportTopLevel("SeqexecApp")
 object SeqexecApp extends IOApp {

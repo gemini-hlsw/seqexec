@@ -11,8 +11,8 @@ import mouse.boolean._
 import seqexec.engine.Action.ActionState
 
 /**
- * This structure holds the current `Execution` under execution. It carries
- * information about which `Action`s have been completed.
+ * This structure holds the current `Execution` under execution. It carries information about which
+ * `Action`s have been completed.
  */
 final case class Execution[F[_]](execution: List[Action[F]]) {
 
@@ -60,8 +60,7 @@ object Execution {
   def empty[F[_]]: Execution[F] = Execution[F](Nil)
 
   /**
-   * Make an `Execution` `Current` only if all the `Action`s in the execution
-   * are pending.
+   * Make an `Execution` `Current` only if all the `Action`s in the execution are pending.
    */
   def currentify[F[_]](as: ParallelActions[F]): Option[Execution[F]] =
     as.forall(_.state.runState.isIdle).option(Execution(as.toList))

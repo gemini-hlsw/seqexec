@@ -15,8 +15,8 @@ import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
 
 /**
- * Custom appender that can take log events from logback and send them
- * to clients via the common pipe/WebSockets
+ * Custom appender that can take log events from logback and send them to clients via the common
+ * pipe/WebSockets
  *
  * This is out of the scala/http4s loop
  */

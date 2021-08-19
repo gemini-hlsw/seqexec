@@ -16,8 +16,8 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 trait AppBaseDir {
 
   /**
-   * Calculates the base dir of the application based on the location of "this" class jar file
-   * It will throw an exception if unable to find the base dir
+   * Calculates the base dir of the application based on the location of "this" class jar file It
+   * will throw an exception if unable to find the base dir
    */
   def baseDir[F[_]: Sync]: F[Path] = Sync[F].delay {
     val clazz    = this.getClass

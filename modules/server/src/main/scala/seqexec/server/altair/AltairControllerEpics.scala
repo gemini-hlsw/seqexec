@@ -282,7 +282,7 @@ object AltairControllerEpics {
         .filter(_ => strap || sfo)
         .map(_.bimap(ttgsOffEndo, ttgsOff(currCfg) *> _))
 
-    private def resumeLgsMode(strap: Boolean, sfo:                         Boolean, starPos: (Length, Length))(
+    private def resumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length))(
       currCfg:                       EpicsAltairConfig
     )(reasons:                       ResumeConditionSet): Option[F[Unit]] =
       resumeNgsOrLgsMode(starPos, currCfg)(reasons)
@@ -290,7 +290,8 @@ object AltairControllerEpics {
         .map(_ *> ttgsOn(strap, sfo, currCfg))
 
     /**
-     * Modes LgsWithP1 and LgsWithOi don't use an Altair target. The only action required is to start or stop corrections
+     * Modes LgsWithP1 and LgsWithOi don't use an Altair target. The only action required is to
+     * start or stop corrections
      */
     private def pauseResumeLgsWithXX(
       currCfg:      EpicsAltairConfig

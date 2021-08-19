@@ -149,8 +149,8 @@ lazy val seqexec_web_server = project
     buildInfoUsePackageAsPath := true,
     buildInfoKeys ++= Seq[BuildInfoKey](name, version, buildInfoBuildNumber),
     buildInfoOptions += BuildInfoOption.BuildTime,
-    buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "seqexec.web.server"
+    buildInfoObject           := "OcsBuildInfo",
+    buildInfoPackage          := "seqexec.web.server"
   )
   .dependsOn(seqexec_server)
   .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
@@ -176,26 +176,26 @@ lazy val seqexec_web_client = project
     // Configurations for webpack
     fastOptJS / webpackBundlingMode := BundlingMode.LibraryOnly(),
     fullOptJS / webpackBundlingMode := BundlingMode.Application,
-    webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
-    webpackDevServerPort := 9090,
-    webpack / version := "4.44.1",
+    webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackDevServerPort            := 9090,
+    webpack / version               := "4.44.1",
     startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    fullOptJS / webpackConfigFile := Some(
+    fullOptJS / webpackConfigFile   := Some(
       baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"
     ),
-    fastOptJS / webpackConfigFile := Some(
+    fastOptJS / webpackConfigFile   := Some(
       baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"
     ),
-    Test / webpackConfigFile := Some(
+    Test / webpackConfigFile        := Some(
       baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"
     ),
-    webpackEmitSourceMaps := false,
-    Test / parallelExecution := false,
-    installJsdom / version := "16.4.0",
-    Test / requireJsDomEnv := true,
+    webpackEmitSourceMaps           := false,
+    Test / parallelExecution        := false,
+    installJsdom / version          := "16.4.0",
+    Test / requireJsDomEnv          := true,
     // Use yarn as it is faster than npm
-    useYarn := true,
+    useYarn                         := true,
     // JS dependencies via npm
     Compile / npmDependencies ++= Seq(
       "fomantic-ui-less" -> LibraryVersions.fomanticUI,
@@ -245,8 +245,8 @@ lazy val seqexec_web_client = project
   .settings(
     buildInfoUsePackageAsPath := true,
     buildInfoKeys ++= Seq[BuildInfoKey](name, version),
-    buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "seqexec.web.client"
+    buildInfoObject           := "OcsBuildInfo",
+    buildInfoPackage          := "seqexec.web.client"
   )
   .dependsOn(seqexec_model.js % "compile->compile;test->test")
 
@@ -281,8 +281,8 @@ lazy val seqexec_server     = project
   .settings(
     buildInfoUsePackageAsPath := true,
     buildInfoKeys ++= Seq[BuildInfoKey](name, version),
-    buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "seqexec.server"
+    buildInfoObject           := "OcsBuildInfo",
+    buildInfoPackage          := "seqexec.server"
   )
   .dependsOn(seqexec_engine    % "compile->compile;test->test",
              giapi,
@@ -373,20 +373,20 @@ lazy val acm = project
  */
 lazy val seqexecCommonSettings = Seq(
   // Main class for launching
-  Compile / mainClass := Some("seqexec.web.server.http4s.WebServerLauncher"),
+  Compile / mainClass               := Some("seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
-  Universal / parallelExecution := false,
+  Universal / parallelExecution     := false,
   // Depend on webpack and add the assets created by webpack
   Compile / packageBin / mappings ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
     .map(f => f.data -> f.data.getName()),
   // Name of the launch script
-  executableScriptName := "seqexec-server",
+  executableScriptName              := "seqexec-server",
   // No javadocs
   mappings in (Compile, packageDoc) := Seq(),
   // Don't create launchers for Windows
-  makeBatScripts := Seq.empty,
+  makeBatScripts                    := Seq.empty,
   // Specify a different name for the config file
-  bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
+  bashScriptConfigLocation          := Some("${app_home}/../conf/launcher.args"),
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
@@ -425,13 +425,13 @@ lazy val seqexecCommonSettings = Seq(
  */
 lazy val seqexecLinux = Seq(
   // User/Group for execution
-  Linux / daemonUser := "software",
-  Linux / daemonGroup := "software",
+  Linux / daemonUser     := "software",
+  Linux / daemonGroup    := "software",
   Universal / maintainer := "Software Group <software@gemini.edu>",
   // This lets us build RPMs from snapshot versions
-  Linux / name := "Seqexec Server",
-  Linux / version := {
-    (ThisBuild / version ).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
+  Linux / name           := "Seqexec Server",
+  Linux / version        := {
+    (ThisBuild / version).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
   }
 )
 
@@ -445,7 +445,7 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
   .settings(
-    description := "Seqexec server for local testing",
+    description          := "Seqexec server for local testing",
     // Put the jar files in the lib dir
     Universal / mappings += {
       val jar = (Compile / packageBin).value
@@ -488,9 +488,9 @@ lazy val app_seqexec_server_gs_test =
     .settings(seqexecLinux: _*)
     .settings(deployedAppMappings: _*)
     .settings(
-      description := "Seqexec GS test deployment",
-      applicationConfName := "seqexec",
-      applicationConfSite := DeploymentSite.GS,
+      description          := "Seqexec GS test deployment",
+      applicationConfName  := "seqexec",
+      applicationConfSite  := DeploymentSite.GS,
       Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
@@ -517,9 +517,9 @@ lazy val app_seqexec_server_gn_test =
     .settings(seqexecLinux: _*)
     .settings(deployedAppMappings: _*)
     .settings(
-      description := "Seqexec GN test deployment",
-      applicationConfName := "seqexec",
-      applicationConfSite := DeploymentSite.GN,
+      description          := "Seqexec GN test deployment",
+      applicationConfName  := "seqexec",
+      applicationConfSite  := DeploymentSite.GN,
       Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
         val universalMappings = (mappings in (app_seqexec_server, Universal)).value
@@ -545,9 +545,9 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
   .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
-    description := "Seqexec Gemini South server production",
-    applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GS,
+    description          := "Seqexec Gemini South server production",
+    applicationConfName  := "seqexec",
+    applicationConfSite  := DeploymentSite.GS,
     Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value
@@ -573,9 +573,9 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
   .settings(seqexecLinux: _*)
   .settings(deployedAppMappings: _*)
   .settings(
-    description := "Seqexec Gemini North server production",
-    applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GN,
+    description          := "Seqexec Gemini North server production",
+    applicationConfName  := "seqexec",
+    applicationConfSite  := DeploymentSite.GN,
     Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (mappings in (app_seqexec_server, Universal)).value

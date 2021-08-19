@@ -222,7 +222,8 @@ package keywords {
       }
 
     /**
-     * @typeclass Functor
+     * @typeclass
+     *   Functor
      */
     implicit val dhvFunctor: Functor[DefaultHeaderValue] =
       new Functor[DefaultHeaderValue] {
