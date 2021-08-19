@@ -11,7 +11,7 @@ import seqexec.model.enum.Instrument
 
 final case class SeqexecMetrics private (
   site:           Site,
-  private val qs: Gauge, // Amount of items on the list of queues
+  private val qs: Gauge,  // Amount of items on the list of queues
   private val ss: Counter // Sequences started
 )
 

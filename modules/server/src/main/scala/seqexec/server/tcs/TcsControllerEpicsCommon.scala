@@ -34,8 +34,8 @@ import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 /**
- * Base implementation of an Epics TcsController
- * Type parameter BaseEpicsTcsConfig is the class used to hold the current configuration
+ * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
+ * to hold the current configuration
  */
 sealed trait TcsControllerEpicsCommon[F[_]] {
 
@@ -435,8 +435,9 @@ object TcsControllerEpicsCommon {
     }
 
     /**
-     * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current position is Parked and
-     * requested position is OUT (or the other way around), then it is not necessary to move the HR pickup mirror.
+     * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current
+     * position is Parked and requested position is OUT (or the other way around), then it is not
+     * necessary to move the HR pickup mirror.
      */
     override def setHrPickup[C](l: Lens[C, BaseEpicsTcsConfig])(
       subsystems:                  NonEmptySet[Subsystem],

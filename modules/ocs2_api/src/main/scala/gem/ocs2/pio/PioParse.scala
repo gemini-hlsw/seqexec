@@ -27,10 +27,9 @@ object PioParse {
     PioParse(dictionary.toMap.lift)
 
   /**
-   * Builds a PioParse for an `Enumerated` instance, assuming that the enum
-   * tags will be used as the lookup keys.  In other words, this is an option
-   * for enumerations whose OCS2 export happen to match the new model enum
-   * tags.
+   * Builds a PioParse for an `Enumerated` instance, assuming that the enum tags will be used as the
+   * lookup keys. In other words, this is an option for enumerations whose OCS2 export happen to
+   * match the new model enum tags.
    */
   def enumFromTag[A](as: List[A])(implicit ev: Enumerated[A]): PioParse[A] =
     PioParse(as.map(a => ev.tag(a) -> a).toMap.lift)

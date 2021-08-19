@@ -19,8 +19,7 @@ object events {
   }
 
   /**
-   * Events implementing ForClient will be delivered only to the given
-   * clientId
+   * Events implementing ForClient will be delivered only to the given clientId
    */
   sealed trait ForClient extends SeqexecEvent {
     def clientId: ClientId

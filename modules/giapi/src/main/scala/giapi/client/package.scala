@@ -66,7 +66,8 @@ package client {
   /**
    * Represents a connection to a GIAPi based instrument
    *
-   * @tparam F Effect type
+   * @tparam F
+   *   Effect type
    */
   trait GiapiConnection[F[_]] {
     def connect: F[Giapi[F]]
@@ -75,12 +76,14 @@ package client {
   /**
    * Algebra to interact with a GIAPI instrument
    *
-   * @tparam F Effect Type
+   * @tparam F
+   *   Effect Type
    */
   trait Giapi[F[_]]           {
 
     /**
-     * Returns a value for the status item. If not found or there is an error, an exception could be thrown
+     * Returns a value for the status item. If not found or there is an error, an exception could be
+     * thrown
      */
     def get[A: ItemGetter](statusItem: String): F[A]
 
@@ -90,11 +93,10 @@ package client {
     def getO[A: ItemGetter](statusItem: String): F[Option[A]]
 
     /**
-     * Executes a command as defined on GIAPI
-     * Note that commands can end in ERROR or COMPLETED
-     * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
-     * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
-     * wait for ERROR/COMPLETED and do async calls above this level
+     * Executes a command as defined on GIAPI Note that commands can end in ERROR or COMPLETED Giapi
+     * has an extra case where we have a command ACCEPTED and it will complete in the future That
+     * makes handling easier with callbacks on Java land but on IO-land it makes more sense to wait
+     * for ERROR/COMPLETED and do async calls above this level
      *
      * This decision may be review in the future
      */
@@ -180,8 +182,10 @@ package client {
     /**
      * Interpreter on F
      *
-     * @param url Url to connect to
-     * @tparam F Effect type
+     * @param url
+     *   Url to connect to
+     * @tparam F
+     *   Effect type
      */
     def giapiConnection[F[_]: Timer: ConcurrentEffect](
       url: String
@@ -247,7 +251,7 @@ package client {
      */
     def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
-        override def get[A: ItemGetter](statusItem:    String): Id[A]         =
+        override def get[A: ItemGetter](statusItem:    String): Id[A] =
           sys.error(s"Cannot read $statusItem")
         override def getO[A: ItemGetter](statusItem:   String): Id[Option[A]] = None
         override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] =
@@ -266,7 +270,7 @@ package client {
       F: ApplicativeError[F, Throwable]
     ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {
-        override def get[A: ItemGetter](statusItem:    String): F[A]         =
+        override def get[A: ItemGetter](statusItem:    String): F[A] =
           F.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem:   String): F[Option[A]] = F.pure(None)
         override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =

@@ -21,8 +21,8 @@ import squants.space.Degrees
 import squants.thermal.Celsius
 
 /**
- * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather Server.
- * It has all the objects used to read TCS status values and execute TCS commands.
+ * GwsEpics wraps the non-functional parts of the EPICS ACM library to interact with the Weather
+ * Server. It has all the objects used to read TCS status values and execute TCS commands.
  */
 final class GwsEpics[F[_]: Sync] private (epicsService: CaService) {
   private val state = epicsService.getStatusAcceptor("gws::state")

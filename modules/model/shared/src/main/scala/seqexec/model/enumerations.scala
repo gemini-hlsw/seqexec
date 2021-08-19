@@ -4,9 +4,8 @@
 package seqexec.model
 
 /**
- * Unfortunatly we'll have to store this here too to avoid exposing
- * spModel to the client
- * Should be gone when we integrate into gem
+ * Unfortunatly we'll have to store this here too to avoid exposing spModel to the client Should be
+ * gone when we integrate into gem
  */
 object enumerations {
   object filter {

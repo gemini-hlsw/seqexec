@@ -77,9 +77,9 @@ object CalibrationQueueTab {
     val active = p.tab.active
 
     <.a(
-      ^.href := p.router.urlFor(page).value,
+      ^.href  := p.router.urlFor(page).value,
       ^.onClick ==> showCalibrationQueue(p, page),
-      ^.cls := "item",
+      ^.cls   := "item",
       ^.classSet(
         "active" -> (active === TabSelected.Selected)
       ),

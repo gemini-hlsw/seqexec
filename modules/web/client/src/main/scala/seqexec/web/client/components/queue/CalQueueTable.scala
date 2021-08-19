@@ -234,14 +234,12 @@ object CalQueueTable {
     Reusability.by(x => (x.tableState, x.moved))
 
   val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
-    (_, _, _, r: CalQueueRow, _) => {
+    (_, _, _, r: CalQueueRow, _) =>
       <.p(SeqexecStyles.queueText |+| SeqexecStyles.noselect, r.obsId.format)
-    }
 
   val instrumentRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
-    (_, _, _, r: CalQueueRow, _) => {
+    (_, _, _, r: CalQueueRow, _) =>
       <.p(SeqexecStyles.queueText |+| SeqexecStyles.noselect, r.instrument.show)
-    }
 
   private def removeSeq(qid: QueueId, sid: Observation.Id): Callback =
     SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(qid, sid))
@@ -384,7 +382,7 @@ object CalQueueTable {
         disableHeader = false,
         noRowsRenderer = () =>
           <.div(
-            ^.cls := "ui center aligned segment noRows",
+            ^.cls    := "ui center aligned segment noRows",
             SeqexecStyles.noRowsSegment,
             ^.height := size.height.toInt.px,
             "Cal queue empty"

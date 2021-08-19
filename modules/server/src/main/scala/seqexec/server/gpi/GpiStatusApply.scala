@@ -46,10 +46,8 @@ object GpiStatusApply extends GpiLookupTables {
     foldConfigM(allGpiApply, db, config)
 
   /**
-   * ObsMode needs a special treatment. It is a meta model thus it sets
-   * the filter, fpm, apodizer and lyot
-   * We need to check that each subsystem matches or we will
-   * falsely not set the obs mode
+   * ObsMode needs a special treatment. It is a meta model thus it sets the filter, fpm, apodizer
+   * and lyot We need to check that each subsystem matches or we will falsely not set the obs mode
    */
   def overrideObsMode[F[_]: Monad](
     db:        GiapiStatusDb[F],

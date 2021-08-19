@@ -11,14 +11,11 @@ import cats.syntax.all._
 import fs2.Stream
 
 /**
- * Type constructor where all Seqexec side effect are managed.
- * Handle is a State machine inside a F, which can produce Streams as output. It is combined with the
- * input stream to run seqexec engine.
+ * Type constructor where all Seqexec side effect are managed. Handle is a State machine inside a F,
+ * which can produce Streams as output. It is combined with the input stream to run seqexec engine.
  *
- * Its type parameters are:
- * A: Type of the output (usually Unit)
- * V: Type of the events
- * D: Type of the state machine state.
+ * Its type parameters are: A: Type of the output (usually Unit) V: Type of the events D: Type of
+ * the state machine state.
  */
 final case class Handle[F[_], D, V, A](run: StateT[F, D, (A, Option[Stream[F, V]])])
 

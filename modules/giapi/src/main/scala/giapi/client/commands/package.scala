@@ -87,11 +87,16 @@ package object commands {
 
   /**
    * Send a command over giapi
-   * @param commandsClient Client interface to send the command to the client and await the response
-   * @param command The actual command sent
-   * @param timeout Timeout to await a response, often 2 seconds
-   * @tparam F Effect type
-   * @return the result of the operation
+   * @param commandsClient
+   *   Client interface to send the command to the client and await the response
+   * @param command
+   *   The actual command sent
+   * @param timeout
+   *   Timeout to await a response, often 2 seconds
+   * @tparam F
+   *   Effect type
+   * @return
+   *   the result of the operation
    */
   def sendCommand[F[_]: Async](
     commandsClient: CommandSenderClient,

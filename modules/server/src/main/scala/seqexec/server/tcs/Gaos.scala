@@ -164,7 +164,7 @@ object Gaos {
 
   sealed case class PauseResume[F[_]](
     pause:  Option[F[Unit]], // None means Gaos will not be paused
-    resume: Option[F[Unit]] // None means Gaos will not be resumed
+    resume: Option[F[Unit]]  // None means Gaos will not be resumed
   )
 
 }

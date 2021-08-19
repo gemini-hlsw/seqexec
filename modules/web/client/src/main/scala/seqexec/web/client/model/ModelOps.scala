@@ -74,13 +74,13 @@ object ModelOps {
       s.steps match {
         case x if x.forall(s => s.status === StepState.Pending && !s.skip) =>
           Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.isFinished)                                   => None // All steps have been executed
-        case x if x.exists(_.hasError)                                     =>
+        case x if x.forall(_.isFinished)                                  => None // All steps have been executed
+        case x if x.exists(_.hasError)                                    =>
           Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =!= -1)
-        case x if x.exists(s => s.status === StepState.Paused && !s.skip)  =>
+        case x if x.exists(s => s.status === StepState.Paused && !s.skip) =>
           Option(x.indexWhere((s: Step) => s.status === StepState.Paused))
             .filter(_ =!= -1)
-        case x                                                             =>
+        case x                                                            =>
           Option(x.indexWhere((s: Step) => !s.isFinished && !s.skip))
             .filter(_ =!= -1)
       }

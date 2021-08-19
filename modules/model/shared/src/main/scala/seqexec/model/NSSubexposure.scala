@@ -11,9 +11,9 @@ import seqexec.model.enum.NodAndShuffleStage._
 import shapeless.tag
 
 final case class NSSubexposure private (
-  totalCycles: NsCycles, // Total amount of cycles for a N&S step
-  cycle:       NsCycles, // Cycle for this sub exposure
-  stageIndex:  Int, // Nod or stage index (between 0 and 3)
+  totalCycles: NsCycles,          // Total amount of cycles for a N&S step
+  cycle:       NsCycles,          // Cycle for this sub exposure
+  stageIndex:  Int,               // Nod or stage index (between 0 and 3)
   stage:       NodAndShuffleStage // Subexposure stage
 ) {
   val firstSubexposure: Boolean = (cycle: Int) === 0 && stageIndex === 0

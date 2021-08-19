@@ -55,9 +55,8 @@ trait SequenceConfiguration {
       .getOrElse(StepState.Failed("Logical error reading step status"))
 
   /**
-   * Attempts to extract the Wavelength from the sequence.
-   * The value is not always present thus we can get a None
-   * Also errors reading the value are possible thus we produce an Either
+   * Attempts to extract the Wavelength from the sequence. The value is not always present thus we
+   * can get a None Also errors reading the value are possible thus we produce an Either
    */
   def extractWavelength(config: CleanConfig): Either[SeqexecFailure, Option[Wavelength]] =
     if (!config.containsKey(OBSERVING_WAVELENGTH_KEY))

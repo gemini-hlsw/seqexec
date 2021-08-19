@@ -9,7 +9,8 @@ import monocle.Lens
 import seqexec.model.UserDetails
 
 /**
- * Utility class to let components more easily switch parts of the UI depending on the user and connection state
+ * Utility class to let components more easily switch parts of the UI depending on the user and
+ * connection state
  */
 final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
   def isLogged: Boolean    = u.isDefined

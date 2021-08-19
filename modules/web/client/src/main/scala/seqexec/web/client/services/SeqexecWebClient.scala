@@ -61,7 +61,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def toggle(id: Observation.Id, enabled: Boolean, section: String): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(id.format)}/${section}/$enabled"
+        url = s"$baseUrl/commands/${encodeURI(id.format)}/$section/$enabled"
       )
       .void
 

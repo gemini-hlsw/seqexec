@@ -50,8 +50,8 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
 }
 
 /**
- * Middleware used to keep the session alive as long as authenticated request are comming
- * It has some cost as it needs to decode/encode the cookie with JWT
+ * Middleware used to keep the session alive as long as authenticated request are comming It has
+ * some cost as it needs to decode/encode the cookie with JWT
  */
 object TokenRefresher {
   private def replaceCookie[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F])(

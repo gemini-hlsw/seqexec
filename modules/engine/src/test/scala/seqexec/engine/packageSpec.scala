@@ -559,9 +559,8 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
       .unsafeRunSync()
 
     /**
-     * First state update must have the action started.
-     * Second state update must have the action finished.
-     * The value in `dummy` must change. That is prove that the `Action` run.
+     * First state update must have the action started. Second state update must have the action
+     * finished. The value in `dummy` must change. That is prove that the `Action` run.
      */
     inside(sfs) { case a :: b :: _ =>
       assert(TestState.sequenceStateIndex(seqId).getOption(a).exists(_.getSingleState(c).started))

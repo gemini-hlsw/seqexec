@@ -50,9 +50,9 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     }
 
   /**
-   * startFrom starts a sequence from an arbitrary step. It does it by marking all previous steps to be skipped and then
-   * modifying the state sequence as if it was run.
-   * If the requested step is already run or marked to be skipped, the sequence will start from the next runnable step
+   * startFrom starts a sequence from an arbitrary step. It does it by marking all previous steps to
+   * be skipped and then modifying the state sequence as if it was run. If the requested step is
+   * already run or marked to be skipped, the sequence will start from the next runnable step
    */
   def startFrom(id: Observation.Id, step: StepId): HandleType[Unit] =
     getS(id).flatMap {
@@ -133,16 +133,18 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
 
   /**
    * Refresh the steps executions of an existing sequence. Does not add nor remove steps.
-   * @param id sequence identifier
-   * @param steps List of new steps definitions
+   * @param id
+   *   sequence identifier
+   * @param steps
+   *   List of new steps definitions
    * @return
    */
   def update(id: Observation.Id, steps: List[Step[F]]): Endo[S] =
     stateL.sequenceStateIndex(id).modify(_.update(steps.map(_.executions)))
 
   /**
-   * Adds the current `Execution` to the completed `Queue`, makes the next
-   * pending `Execution` the current one, and initiates the actual execution.
+   * Adds the current `Execution` to the completed `Queue`, makes the next pending `Execution` the
+   * current one, and initiates the actual execution.
    *
    * If there are no more pending `Execution`s, it emits the `Finished` event.
    */
@@ -179,8 +181,8 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     )
 
   /**
-   * Executes all actions in the `Current` `Execution` in parallel. When all are done it emits the `Executed` event.
-   * It also updates the `State` as needed.
+   * Executes all actions in the `Current` `Execution` in parallel. When all are done it emits the
+   * `Executed` event. It also updates the `State` as needed.
    */
   // Send the expected event when the `Action` is executed
   // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
@@ -248,8 +250,8 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     }.getOrElse(unit))
 
   /**
-   * Given the index of the completed `Action` in the current `Execution`, it
-   * marks the `Action` as completed and returns the new updated `State`.
+   * Given the index of the completed `Action` in the current `Execution`, it marks the `Action` as
+   * completed and returns the new updated `State`.
    *
    * When the index doesn't exist it does nothing.
    */
@@ -306,9 +308,8 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     }.getOrElse(unit))
 
   /**
-   * For now it only changes the `Status` to `Paused` and returns the new
-   * `State`. In the future this function should handle the failed
-   * action.
+   * For now it only changes the `Status` to `Paused` and returns the new `State`. In the future
+   * this function should handle the failed action.
    */
   private def fail(id: Observation.Id)(i: Int, e: Result.Error): HandleType[Unit] =
     modifyS(id)(_.mark(i)(e)) *>

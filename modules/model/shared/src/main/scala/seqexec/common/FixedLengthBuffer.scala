@@ -60,8 +60,8 @@ object FixedLengthBuffer {
     Eq.by(x => (x.maxLength, x.toChain))
 
   /**
-   * @typeclass Traverse
-   * Based on traverse implementation for List
+   * @typeclass
+   *   Traverse Based on traverse implementation for List
    */
   implicit val instance: Traverse[FixedLengthBuffer] = new Traverse[FixedLengthBuffer] {
     override def traverse[G[_], A, B](fa: FixedLengthBuffer[A])(f: A => G[B])(implicit
@@ -88,8 +88,7 @@ object FixedLengthBuffer {
 }
 
 /**
- * Immutable Fixed Length Buffer. It will accumulate items in order
- * and discard old ones when full
+ * Immutable Fixed Length Buffer. It will accumulate items in order and discard old ones when full
  */
 sealed trait FixedLengthBuffer[A] {
 

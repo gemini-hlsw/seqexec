@@ -21,7 +21,7 @@ class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
     _    <- overrideLogMessage("DHS", "setKeywords")
     date <- Sync[F].delay(LocalDate.now)
     time <- Sync[F].delay(System.currentTimeMillis % 1000)
-  } yield toImageFileId(f"S${date.format(format)}S${time}%04d")
+  } yield toImageFileId(f"S${date.format(format)}S$time%04d")
 
   override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit] =
     overrideLogMessage("DHS", "setKeywords")

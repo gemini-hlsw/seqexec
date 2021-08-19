@@ -143,7 +143,7 @@ class GmosInstrumentActions[
           .flatMap(observeTail(fileId, env, nsCfg))
 
       // We reach here only if the result was Paused and no command made it stop/pause/abort
-      case _                                                     => Result.Partial(NSContinue).pure[F].widen[Result[F]]
+      case _ => Result.Partial(NSContinue).pure[F].widen[Result[F]]
 
     }
 

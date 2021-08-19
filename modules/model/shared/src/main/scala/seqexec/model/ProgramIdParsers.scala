@@ -38,9 +38,9 @@ trait ProgramIdParsers {
     (site <~ hyphen, dailyProgramType, yyyymmdd).mapN(Daily.apply).named("daily")
 
   /**
-   * Parser for the components of a nonstandard program id (which has no public constructor).
-   * This parser is greedy and will read as much structured information as possible rather than
-   * leaving it in the tail.
+   * Parser for the components of a nonstandard program id (which has no public constructor). This
+   * parser is greedy and will read as much structured information as possible rather than leaving
+   * it in the tail.
    */
   def nonstandard: Parser[(Option[Site], Option[Semester], Option[ProgramType], String)] =
     (opt(site <~ hyphen), opt(semester <~ hyphen), opt(programType <~ hyphen), nonWhitespace).tupled

@@ -279,8 +279,8 @@ object EpicsUtil {
     Sync[F].delay(Option(get.value))
 
   /**
-   * Tries to read a value of type A from a channel
-   *  Null results are raised as error and other errors are captured
+   * Tries to read a value of type A from a channel Null results are raised as error and other
+   * errors are captured
    */
   def safeAttributeWrapF[F[_]: Sync, A >: Null](channel: String, get: => A): F[A] =
     Sync[F]
@@ -340,30 +340,39 @@ object EpicsUtil {
 
   /**
    * Decides to set a param comparing the current value and the value to be set
-   * @param c Current value on the system
-   * @param d Value to be set
-   * @param f Action to set the parameter
+   * @param c
+   *   Current value on the system
+   * @param d
+   *   Value to be set
+   * @param f
+   *   Action to set the parameter
    */
   def applyParam[F[_], A: Eq](c: A, d: A, f: A => F[Unit]): Option[F[Unit]] =
     if (c =!= d) f(d).some else none
 
   /**
-   * Test if we should set a value d given that the current value c and
-   * a given tolerance
-   * @param t Max relative tolerance allowed between the current and destination value
-   * @param c Current value on the system
-   * @param d Value to be set
+   * Test if we should set a value d given that the current value c and a given tolerance
+   * @param t
+   *   Max relative tolerance allowed between the current and destination value
+   * @param c
+   *   Current value on the system
+   * @param d
+   *   Value to be set
    */
   private def areValuesDifferentEnough(t: Double, c: Double, d: Double): Boolean =
     !(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d) / d) > t)
 
   /**
-   * Decides to set a param comparing the current value and the value to be set with
-   * a given tolerance
-   * @param relTolerance Max relative tolerance allowed between the current and destination value
-   * @param c Current value on the system
-   * @param d Value to be set
-   * @param set Action to set the parameter
+   * Decides to set a param comparing the current value and the value to be set with a given
+   * tolerance
+   * @param relTolerance
+   *   Max relative tolerance allowed between the current and destination value
+   * @param c
+   *   Current value on the system
+   * @param d
+   *   Value to be set
+   * @param set
+   *   Action to set the parameter
    */
   def applyParamT[F[_]](
     relTolerance: Double
@@ -441,7 +450,7 @@ object EpicsUtil {
 
   implicit class AddSystemNameToCmdErrorOp[F[_]: MonadError[*[_], Throwable], A](f: F[A]) {
     def addSystemNameToCmdError(sysName: String): F[A] = f.adaptError { case e: CaCommandError =>
-      new CaCommandError(s"Error from ${sysName}: ${e.getMessage}")
+      new CaCommandError(s"Error from $sysName: ${e.getMessage}")
     }
   }
 

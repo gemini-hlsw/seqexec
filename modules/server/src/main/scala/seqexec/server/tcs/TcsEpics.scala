@@ -30,8 +30,8 @@ import squants.Angle
 import squants.space.Degrees
 
 /**
- * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
- * to read TCS status values and execute TCS commands.
+ * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all
+ * the objects used to read TCS status values and execute TCS commands.
  *
  * Created by jluhrs on 10/1/15.
  */

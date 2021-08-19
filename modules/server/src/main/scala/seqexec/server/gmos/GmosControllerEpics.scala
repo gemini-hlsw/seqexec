@@ -335,7 +335,7 @@ object GmosControllerEpics extends GmosEncoders {
 
           //TODO Improve data model to remove this case. It is here because search includes types of
           // both sites.
-          case _                                 => List.empty
+          case _ => List.empty
         }
 
         //If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways

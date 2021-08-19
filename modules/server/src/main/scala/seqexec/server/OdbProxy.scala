@@ -46,7 +46,7 @@ object OdbProxy {
         }).widenRethrowT
 
       def queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences
-      def datasetStart(obsId:    Observation.Id, dataId: DataId, fileId:      ImageFileId): F[Boolean] =
+      def datasetStart(obsId:    Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
         cmds.datasetStart(obsId, dataId, fileId)
       def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
         cmds.datasetComplete(obsId, dataId, fileId)

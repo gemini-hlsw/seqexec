@@ -9,9 +9,12 @@ import cats.Eq
 
 /**
  * Configuration for the TLS server
- * @param keyStore Location where to find the keystore
- * @param keyStorePwd Password for the keystore
- * @param certPwd Password for the certificate used for TLS
+ * @param keyStore
+ *   Location where to find the keystore
+ * @param keyStorePwd
+ *   Password for the keystore
+ * @param certPwd
+ *   Password for the certificate used for TLS
  */
 final case class TLSConfig(keyStore: Path, keyStorePwd: String, certPwd: String)
 
@@ -23,11 +26,16 @@ object TLSConfig {
 
 /**
  * Configuration for the web server side of the seqexec
- * @param host Host name to listen, typicall 0.0.0.0
- * @param port Port to listen for web requestes
- * @param insecurePort Port where we setup a redirect server to send to https
- * @param externalBaseUrl Redirects need an external facing name
- * @param tls Configuration of TLS, optional
+ * @param host
+ *   Host name to listen, typicall 0.0.0.0
+ * @param port
+ *   Port to listen for web requestes
+ * @param insecurePort
+ *   Port where we setup a redirect server to send to https
+ * @param externalBaseUrl
+ *   Redirects need an external facing name
+ * @param tls
+ *   Configuration of TLS, optional
  */
 final case class WebServerConfiguration(
   host:            String,

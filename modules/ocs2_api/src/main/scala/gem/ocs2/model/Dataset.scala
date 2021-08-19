@@ -14,7 +14,8 @@ import seqexec.model.Observation
 
 /**
  * A labeled, timestamped data file.
- * @group Sequence Model
+ * @group Sequence
+ * Model
  */
 final case class Dataset(
   label:     Dataset.Label,
@@ -26,7 +27,8 @@ object Dataset {
 
   /**
    * Datasets are labeled by observation and index.
-   * @group Data Types
+   * @group Data
+   * Types
    */
   final case class Label(observationId: Observation.Id, index: Int) {
     override def toString =
@@ -37,7 +39,8 @@ object Dataset {
 
     /**
      * Labels are ordered by observation and index.
-     * @group Typeclass Instances
+     * @group Typeclass
+     * Instances
      */
     implicit val LabelOrder: Order[Label] =
       Order.by(a => (a.observationId, a.index))
@@ -68,9 +71,10 @@ object Dataset {
   }
 
   /**
-   * Datasets are ordered by their labels, which are normally unique. For completeness they are further
-   * ordered by timestamp and filename.
-   * @group Typeclass Instances
+   * Datasets are ordered by their labels, which are normally unique. For completeness they are
+   * further ordered by timestamp and filename.
+   * @group Typeclass
+   * Instances
    */
   implicit val DatasetOrder: Order[Dataset] =
     Order.by(a => (a.label, a.timestamp, a.filename))

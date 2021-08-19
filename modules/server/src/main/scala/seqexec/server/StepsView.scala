@@ -24,8 +24,8 @@ import seqexec.server.gmos.GmosStepsView
 trait StepsView[F[_]] {
 
   /**
-   * This method creates a view of the step for the client
-   * The Step returned maybe a StandardStep of be specialized e.g. for N&S
+   * This method creates a view of the step for the client The Step returned maybe a StandardStep of
+   * be specialized e.g. for N&S
    */
   def stepView(
     stepg:         SequenceGen.StepGen[F],
