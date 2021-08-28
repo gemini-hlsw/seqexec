@@ -10,6 +10,7 @@ import cats.effect._
 import cats.syntax.all._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
+import cats.effect.Temporal
 
 /** Client for GHOST */
 sealed trait GhostClient[F[_]] extends GiapiClient[F]
@@ -18,13 +19,13 @@ object GhostClient {
   private final class GhostClientImpl[F[_]](override val giapi: Giapi[F]) extends GhostClient[F]
 
   // Used for simulations
-  def simulatedGhostClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
+  def simulatedGhostClient[F[_]: Temporal: ApplicativeError[*[_], Throwable]]
     : Resource[F, GhostClient[F]] =
     Resource.eval(
       Giapi.simulatedGiapiConnection[F].connect.map(new GhostClientImpl(_))
     )
 
-  def ghostClient[F[_]: Timer: ConcurrentEffect](
+  def ghostClient[F[_]: Temporal: ConcurrentEffect](
     url: String
   ): Resource[F, GhostClient[F]] = {
     val ghostStatus: Resource[F, Giapi[F]] =
