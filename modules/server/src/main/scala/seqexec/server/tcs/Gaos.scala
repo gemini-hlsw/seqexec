@@ -143,6 +143,11 @@ object Gaos {
       case b: FixedResumeCondition => ResumeConditionSet(offsetO, fixed + b)
     }
 
+    def -(v: ResumeCondition): ResumeConditionSet = v match {
+      case _: OffsetReached        => ResumeConditionSet(none, fixed)
+      case b: FixedResumeCondition => ResumeConditionSet(offsetO, fixed - b)
+    }
+
     def contains(v: FixedResumeCondition): Boolean = fixed.contains(v)
 
   }

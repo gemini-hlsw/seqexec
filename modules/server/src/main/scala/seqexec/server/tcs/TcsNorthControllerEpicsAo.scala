@@ -92,25 +92,26 @@ object TcsNorthControllerEpicsAo {
       tcs:        TcsNorthAoConfig
     ): F[Unit] = {
       def configParams(
-        current: EpicsTcsAoConfig
+        current: EpicsTcsAoConfig,
+        demand:  TcsNorthAoConfig
       ): List[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
         List(
           commonController.setPwfs1Probe(EpicsTcsAoConfig.base)(subsystems,
                                                                 current.base.pwfs1.tracking,
-                                                                tcs.gds.pwfs1.tracking
+                                                                demand.gds.pwfs1.tracking
           ),
-          setAltairProbe(subsystems, current.aowfs, tcs.gds.aoguide.tracking),
+          setAltairProbe(subsystems, current.aowfs, demand.gds.aoguide.tracking),
           commonController.setOiwfsProbe(EpicsTcsAoConfig.base)(subsystems,
                                                                 current.base.oiwfs.tracking,
-                                                                tcs.gds.oiwfs.tracking,
+                                                                demand.gds.oiwfs.tracking,
                                                                 current.base.oiName,
-                                                                tcs.inst.instrument
+                                                                demand.inst.instrument
           ),
           commonController.setScienceFold(EpicsTcsAoConfig.base)(subsystems,
                                                                  current,
-                                                                 tcs.agc.sfPos
+                                                                 demand.agc.sfPos
           ),
-          commonController.setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, tcs.agc)
+          commonController.setHrPickup(EpicsTcsAoConfig.base)(subsystems, current, demand.agc)
         ).flattenOption
 
       def executeTargetFilterConf(filterEnabled: Boolean): F[Unit] =
@@ -123,17 +124,18 @@ object TcsNorthControllerEpicsAo {
 
       def sysConfig(
         current:      EpicsTcsAoConfig,
+        demand:       TcsNorthAoConfig,
         filterTarget: Boolean,
         aoConfigO:    Option[F[Unit]]
       ): F[EpicsTcsAoConfig] = {
         val mountConfigParams   =
-          commonController.configMountPos(subsystems, current, tcs.tc, EpicsTcsAoConfig.base)
-        val paramList           = configParams(current) ++ mountConfigParams
+          commonController.configMountPos(subsystems, current, demand.tc, EpicsTcsAoConfig.base)
+        val paramList           = configParams(current, demand) ++ mountConfigParams
         val mountMoves: Boolean = mountConfigParams.nonEmpty
-        val stabilizationTime   = tcs.tc.offsetA
+        val stabilizationTime   = demand.tc.offsetA
           .map(
             TcsSettleTimeCalculator
-              .calc(current.base.instrumentOffset, _, subsystems, tcs.inst.instrument)
+              .calc(current.base.instrumentOffset, _, subsystems, demand.inst.instrument)
           )
           .getOrElse(0.seconds)
 
@@ -142,10 +144,10 @@ object TcsNorthControllerEpicsAo {
           val debug  = paramList.map(_.debug).mkString(", ")
           for {
             _ <- L.debug("Start TCS configuration")
-            _ <- L.debug(s"TCS configuration: ${tcs.show}")
+            _ <- L.debug(s"TCS configuration: ${demand.show}")
             _ <- L.debug(s"for subsystems $subsystems")
             _ <- L.debug(s"TCS set because $debug").whenA(trace)
-            _ <- executeTargetFilterConf(true).whenA(filterTarget && tcs.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(true).whenA(filterTarget && demand.tc.offsetA.isDefined)
             _ <- aoConfigO.getOrElse(Applicative[F].unit)
             s <- params
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
@@ -160,25 +162,46 @@ object TcsNorthControllerEpicsAo {
                  )
                    epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
                  else Applicative[F].unit
-            _ <- executeTargetFilterConf(false).whenA(filterTarget && tcs.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(false).whenA(filterTarget && demand.tc.offsetA.isDefined)
             _ <- L.debug("Completed TCS configuration")
           } yield s
         } else
           L.debug("Skipping TCS configuration") *> current.pure[F]
       }
 
+      // A lot of decisions are taken inside the Altair object, but their effects are applied here. They are
+      // communicated through the output of pauseResumeGaos
+      // The outputs are:
+      // - Actions to pause Altair guiding
+      // - If TCS can continue guiding M1 and M2 between the pause and resume
+      // - If it needs to apply a target filter
+      // - If it needs to force freezing AO probe
+      // - If there is a Altair configuration action to run as part of the TCS configuration (i.e. control matrix
+      // calculation)
+      // - Actions to resume Altair guiding
+      // - If TCS can continue guiding M1 and M2 after the resume
       for {
-        s0 <- tcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
-        _  <- SeqexecFailure
-                .Execution("Found useAo not set for AO step.")
-                .raiseError[F, Unit]
-                .whenA(!s0.base.useAo)
-        pr <- pauseResumeGaos(gaos, s0, tcs)
-        _  <- pr.pause.getOrElse(Applicative[F].unit)
-        s1 <- guideOff(subsystems, s0, tcs, pr.guideWhilePaused)
-        s2 <- sysConfig(s1, pr.filterTarget, pr.config)
-        _  <- guideOn(subsystems, s2, tcs, pr.restoreOnResume)
-        _  <- pr.resume.getOrElse(Applicative[F].unit) //resume Gaos
+        s0            <- tcsConfigRetriever.retrieveConfigurationNorth(gaos.isFollowing)
+        _             <- SeqexecFailure
+                           .Execution("Found useAo not set for AO step.")
+                           .raiseError[F, Unit]
+                           .whenA(!s0.base.useAo)
+        pr            <- pauseResumeGaos(gaos, s0, tcs)
+        adjustedDemand =
+          (AoTcsConfig.gds ^|-> AoGuidersConfig
+            .aoguide[GuiderConfig @@ AoGuide] ^<-> tagIso ^|-> GuiderConfig.tracking).modify(t =>
+            (pr.forceFreeze && t.isActive).fold(ProbeTrackingConfig.Off, t)
+          )(tcs)
+        _             <- pr.pause.getOrElse(Applicative[F].unit)
+        s1            <- guideOff(subsystems, s0, adjustedDemand, pr.guideWhilePaused)
+        s2            <- sysConfig(
+                           s1,
+                           adjustedDemand,
+                           pr.filterTarget,
+                           pr.config
+                         )
+        _             <- guideOn(subsystems, s2, adjustedDemand, pr.restoreOnResume)
+        _             <- pr.resume.getOrElse(Applicative[F].unit) //resume Gaos
       } yield ()
     }
 

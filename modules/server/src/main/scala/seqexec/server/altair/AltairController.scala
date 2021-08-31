@@ -61,7 +61,8 @@ object AltairController {
     filterTarget:     Boolean,
     resume:           Option[F[Unit]],
     restoreOnResume:  GuideCapabilities,
-    config:           Option[F[Unit]]
+    config:           Option[F[Unit]],
+    forceFreeze:      Boolean
   )
 
 }

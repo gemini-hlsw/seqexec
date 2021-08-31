@@ -28,7 +28,8 @@ object AltairControllerSim {
         filterTarget = false,
         L.info(s"Simulate restoring Altair configuration $cfg because of $resumeReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
-        none
+        none,
+        forceFreeze = true
       ).pure[F]
 
     override def observe(expTime: Time)(cfg: AltairController.AltairConfig): F[Unit] =
