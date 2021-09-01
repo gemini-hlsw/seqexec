@@ -3,9 +3,6 @@
 
 package seqexec.server.gsaoi
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
@@ -30,7 +27,6 @@ trait GsaoiKeywordReader[F[_]] {
   def detectorTemperature: F[Double]
   def detectorHousingTemperature: F[Double]
   def dewarPressure: F[Double]
-  def dateObs: F[String]
   def mjdobs: F[Double]
   def readMode: F[String]
   def expositionMode: F[String]
@@ -67,7 +63,6 @@ object GsaoiKeywordReaderDummy {
       override def detectorTemperature: F[Double]        = doubleDefault[F]
       override def detectorHousingTemperature: F[Double] = doubleDefault[F]
       override def dewarPressure: F[Double]              = doubleDefault[F]
-      override def dateObs: F[String]                    = strDefault[F]
       override def mjdobs: F[Double]                     = doubleDefault[F]
       override def readMode: F[String]                   = strDefault[F]
       override def expositionMode: F[String]             = strDefault[F]
@@ -159,8 +154,6 @@ object GsaoiKeywordReaderEpics extends GsaoiLUT {
         sys.detectorHousingTemperature.safeValOrDefault
       override def dewarPressure: F[Double]              =
         sys.dewarPressure.map(p => Math.rint(p * 100.0) / 100.0).safeValOrDefault
-      override def dateObs: F[String]                    =
-        F.delay(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE))
       override def mjdobs: F[Double]                     = sys.mjdobs.safeValOrDefault
       override def readMode: F[String]                   = sys.readMode.safeValOrDefault
       override def expositionMode: F[String]             = sys.expositionMode.safeValOrDefault
