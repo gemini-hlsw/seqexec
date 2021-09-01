@@ -3,9 +3,6 @@
 
 package seqexec.server.flamingos2
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 import cats.Applicative
 import cats.data.EitherT
 import cats.effect.Sync
@@ -42,9 +39,7 @@ object Flamingos2Header {
                          KeywordName.PREIMAGE,
                          DefaultHeaderValue.FalseDefaultValue
             ),
-            buildString(Sync[F].delay(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)),
-                        KeywordName.DATE_OBS
-            ),
+            buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS),
             buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
             buildString(f2ObsReader.readMode, KeywordName.READMODE),
             buildInt32(f2ObsReader.nReads, KeywordName.NREADS)
