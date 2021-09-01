@@ -24,7 +24,7 @@ trait ArbM2GuideConfig {
 
   implicit val m2GuideOnCogen: Cogen[M2GuideConfig.M2GuideOn] =
     Cogen[(ComaOption, List[TipTiltSource])].contramap(x =>
-      (x.coma, x.source.toList.sortBy(x => s"$x"))
+      (x.coma, x.sources.toList.sortBy(x => s"$x"))
     )
 
   implicit val arbM2GuideConfig: Arbitrary[M2GuideConfig] =

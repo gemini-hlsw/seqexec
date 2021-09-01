@@ -8,11 +8,17 @@ import cats.syntax.all._
 import seqexec.model.enum.M1Source
 
 /** Data type for M1 guide config. */
-sealed trait M1GuideConfig extends Product with Serializable
+sealed trait M1GuideConfig extends Product with Serializable {
+  def uses(s: M1Source): Boolean
+}
 
 object M1GuideConfig {
-  case object M1GuideOff extends M1GuideConfig
-  final case class M1GuideOn(source: M1Source) extends M1GuideConfig
+  case object M1GuideOff extends M1GuideConfig {
+    override def uses(s: M1Source): Boolean = false
+  }
+  final case class M1GuideOn(source: M1Source) extends M1GuideConfig {
+    override def uses(s: M1Source): Boolean = source === s
+  }
 
   object M1GuideOn {
     implicit val showM1GuideOn: Show[M1GuideOn] = Show.fromToString

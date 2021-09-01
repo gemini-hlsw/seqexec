@@ -6,21 +6,29 @@ package seqexec.server.altair
 import cats.Applicative
 import cats.implicits._
 import org.typelevel.log4cats.Logger
+import seqexec.model.`enum`.Instrument
 import seqexec.server.overrideLogMessage
-import seqexec.server.altair.AltairController.FieldLens
+import seqexec.server.altair.AltairController.AltairPauseResume
 import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.GuideCapabilities
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 
 class AltairControllerDisabled[F[_]: Logger: Applicative] extends AltairController[F] {
   override def pauseResume(
     pauseReasons:  Gaos.PauseConditionSet,
     resumeReasons: Gaos.ResumeConditionSet,
-    fieldLens:     FieldLens
-  )(cfg:           AltairController.AltairConfig): F[Gaos.PauseResume[F]] =
-    PauseResume(
+    currentOffset: FocalPlaneOffset,
+    instrument:    Instrument
+  )(cfg:           AltairController.AltairConfig): F[AltairPauseResume[F]] =
+    AltairPauseResume(
       overrideLogMessage("Altair", "pause AO loops").some,
-      overrideLogMessage("Altair", "resume AO loops").some
+      GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
+      filterTarget = false,
+      overrideLogMessage("Altair", "resume AO loops").some,
+      GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
+      none,
+      forceFreeze = true
     ).pure[F]
 
   override def observe(expTime: Time)(cfg: AltairController.AltairConfig): F[Unit] =
@@ -30,4 +38,5 @@ class AltairControllerDisabled[F[_]: Logger: Applicative] extends AltairControll
     overrideLogMessage("Altair", "endObserve")
 
   override def isFollowing: F[Boolean] = false.pure[F]
+
 }

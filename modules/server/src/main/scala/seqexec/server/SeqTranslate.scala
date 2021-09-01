@@ -506,22 +506,18 @@ object SeqTranslate {
             }.pure[F]
 
           case Site.GN =>
-            if (useGaos)
-              Altair
-                .fromConfig(config)
-                .map(a =>
-                  (ov: SystemOverrides) =>
-                    TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
-                                           subs,
-                                           a(overriddenSystems.altair(ov)).some,
-                                           inst,
-                                           systemss.guideDb
-                    )(
-                      config,
-                      LightPath(lsource, inst.sfName(config)),
-                      w
-                    ): System[F]
-                )
+            if (useGaos) { (ov: SystemOverrides) =>
+              TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
+                                     subs,
+                                     Altair(overriddenSystems.altair(ov)).some,
+                                     inst,
+                                     systemss.guideDb
+              )(
+                config,
+                LightPath(lsource, inst.sfName(config)),
+                w
+              ): System[F]
+            }.pure[F]
             else { (ov: SystemOverrides) =>
               TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
                                      subs,

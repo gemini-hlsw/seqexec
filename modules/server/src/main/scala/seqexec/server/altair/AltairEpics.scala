@@ -142,7 +142,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def controlMatrixCalc: F[CarStateGEM5] = safeAttributeF(controlMatrixCalcAttr)
 
   def waitMatrixCalc(v: CarStateGEM5, timeout: FiniteDuration): F[Unit] =
-    EpicsUtil.waitForValueF(controlMatrixCalcAttr, v, timeout, "Atair control matrix calculation")
+    EpicsUtil.waitForValueF(controlMatrixCalcAttr, v, timeout, "Altair control matrix calculation")
 
   def lgsP1: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("lgsp1On"))
     .map(_ =!= 0)
