@@ -146,7 +146,9 @@ object AltairControllerEpics {
       epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *> epicsTcs.aoCorrect.post(DefaultTimeout)
 
     private val setCorrectionsOn: F[ApplyCommandResult] =
-      epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *> epicsTcs.aoCorrect.post(DefaultTimeout)
+      epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        epicsTcs.aoCorrect.setGains(1) *>
+        epicsTcs.aoCorrect.post(DefaultTimeout)
 
     private def pauseResumeNgsMode(
       startPos:     (Length, Length),
