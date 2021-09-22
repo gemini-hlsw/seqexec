@@ -25,7 +25,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentGuide
 import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
-import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.gems.GemsController.{ GemsConfig, GemsOff }
 import seqexec.server.tcs.TcsController.AGConfig
 import seqexec.server.tcs.TcsController.AoGuidersConfig
 import seqexec.server.tcs.TcsController.AoTcsConfig
@@ -130,9 +130,27 @@ case class TcsSouth[F[_]: Sync: Logger] private (
       config.instrument
     ): TcsSouthConfig).pure[F]
 
+  private def anyGeMSGuiderActive(gc: TcsSouth.TcsSeqConfig[F]): Boolean =
+    gc.guideWithCWFS1.exists(_.isActive) ||
+      gc.guideWithCWFS2.exists(_.isActive) ||
+      gc.guideWithCWFS3.exists(_.isActive) ||
+      gc.guideWithODGW1.exists(_.isActive) ||
+      gc.guideWithODGW2.exists(_.isActive) ||
+      gc.guideWithODGW3.exists(_.isActive) ||
+      gc.guideWithODGW4.exists(_.isActive)
+
   private def buildTcsAoConfig(gc: GuideConfig): F[TcsSouthConfig] =
     gc.gaosGuide
       .flatMap(_.toOption)
+      .fold {
+        // Only raise an error if there is no GeMS config coming from TCS and step has a GeMS guider active.
+        if (anyGeMSGuiderActive(config))
+          SeqexecFailure
+            .Execution("Attempting to run GeMS sequence before GeMS was configured.")
+            .raiseError[F, GemsConfig]
+        else
+          GemsOff.pure[F].widen[GemsConfig]
+      }(_.pure[F])
       .map { aog =>
         AoTcsConfig[GemsGuiders, GemsConfig](
           gc.tcsGuide,
@@ -193,12 +211,6 @@ case class TcsSouth[F[_]: Sync: Logger] private (
           config.instrument
         ): TcsSouthConfig
       }
-      .map(_.pure[F])
-      .getOrElse(
-        SeqexecFailure
-          .Execution("Attempting to run GeMS sequence before GeMS was configured.")
-          .raiseError[F, TcsSouthConfig]
-      )
 
   def buildTcsConfig: F[TcsSouthConfig] =
     guideDb.value.flatMap { c =>
