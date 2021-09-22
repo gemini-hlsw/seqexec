@@ -32,7 +32,7 @@ object Settings {
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.26"
+    val http4sVersion  = "0.21.29"
     val squants        = "1.8.2"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
