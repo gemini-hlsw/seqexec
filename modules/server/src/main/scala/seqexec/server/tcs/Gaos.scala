@@ -38,20 +38,20 @@ object Gaos {
 
   object PauseCondition {
     // Telescope offset will be changed
-    final case class OffsetMove(newOffset: FocalPlaneOffset) extends PauseCondition
+    final case class OffsetMove(from: FocalPlaneOffset, to: FocalPlaneOffset) extends PauseCondition
 
     sealed trait FixedPauseCondition extends PauseCondition
 
-    // OI will be turn off
+    // OI will be turned off
     case object OiOff          extends FixedPauseCondition
-    // PI will be turn off
+    // PI will be turned off
     case object P1Off          extends FixedPauseCondition
-    // Unguided step
+    // GAOS NGS will be turned off
     case object GaosGuideOff   extends FixedPauseCondition
     // Instrument config (affects ODGW)
     case object InstConfigMove extends FixedPauseCondition
 
-    implicit val offsetMoveEq: Eq[OffsetMove] = Eq.by(_.newOffset)
+    implicit val offsetMoveEq: Eq[OffsetMove] = Eq.by(_.to)
 
     implicit val fixedPauseReasonEq: Eq[FixedPauseCondition] = Eq.fromUniversalEquals
 
@@ -143,6 +143,11 @@ object Gaos {
       case b: FixedResumeCondition => ResumeConditionSet(offsetO, fixed + b)
     }
 
+    def -(v: ResumeCondition): ResumeConditionSet = v match {
+      case _: OffsetReached        => ResumeConditionSet(none, fixed)
+      case b: FixedResumeCondition => ResumeConditionSet(offsetO, fixed - b)
+    }
+
     def contains(v: FixedResumeCondition): Boolean = fixed.contains(v)
 
   }
@@ -162,9 +167,12 @@ object Gaos {
 
   }
 
+  // Describes which loops can stay closed
+  sealed case class GuideCapabilities(canGuideM2: Boolean, canGuideM1: Boolean)
+
   sealed case class PauseResume[F[_]](
-    pause:  Option[F[Unit]], // None means Gaos will not be paused
-    resume: Option[F[Unit]]  // None means Gaos will not be resumed
+    pause:  Option[F[Unit]],
+    resume: Option[F[Unit]]
   )
 
 }

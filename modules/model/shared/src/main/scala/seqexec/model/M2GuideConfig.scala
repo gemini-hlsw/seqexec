@@ -9,14 +9,20 @@ import seqexec.model.enum.ComaOption
 import seqexec.model.enum.TipTiltSource
 
 /** Data type for M2 guide config. */
-sealed trait M2GuideConfig extends Product with Serializable
+sealed trait M2GuideConfig extends Product with Serializable {
+  def uses(s: TipTiltSource): Boolean
+}
 
 object M2GuideConfig {
-  case object M2GuideOff extends M2GuideConfig
-  final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig
+  case object M2GuideOff extends M2GuideConfig {
+    override def uses(s: TipTiltSource): Boolean = false
+  }
+  final case class M2GuideOn(coma: ComaOption, sources: Set[TipTiltSource]) extends M2GuideConfig {
+    override def uses(s: TipTiltSource): Boolean = sources.contains(s)
+  }
 
   object M2GuideOn {
-    implicit val eq: Eq[M2GuideOn] = Eq.by(x => (x.coma, x.source))
+    implicit val eq: Eq[M2GuideOn] = Eq.by(x => (x.coma, x.sources))
   }
 
   implicit val show: Show[M2GuideConfig] = Show.fromToString

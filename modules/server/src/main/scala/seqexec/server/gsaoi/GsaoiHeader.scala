@@ -40,7 +40,7 @@ object GsaoiHeader extends GsaoiLUT {
           buildDouble(instReader.detectorTemperature, KeywordName.DETTEMP),
           buildDouble(instReader.detectorHousingTemperature, KeywordName.DETHTEMP),
           buildDouble(instReader.dewarPressure, KeywordName.DEWPRES),
-          buildString(instReader.dateObs, KeywordName.DATE_OBS),
+          buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS),
           buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
           buildDouble(instReader.mjdobs, KeywordName.GSAOI_MJD_OBS),
           buildString(instReader.readMode, KeywordName.SAMPMODE),

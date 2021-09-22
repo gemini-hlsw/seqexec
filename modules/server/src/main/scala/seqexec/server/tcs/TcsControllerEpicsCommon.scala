@@ -30,6 +30,7 @@ import seqexec.server.EpicsCommand
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsController._
 import squants.Length
+import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
@@ -143,10 +144,7 @@ object TcsControllerEpicsCommon {
     current: BaseEpicsTcsConfig,
     demand:  BasicTcsConfig
   ): Boolean = {
-    val distanceSquared = demand.tc.offsetA
-      .map(_.toFocalPlaneOffset(current.iaa))
-      .map(o => (o.x - current.offset.x, o.y - current.offset.y))
-      .map(d => d._1 * d._1 + d._2 * d._2)
+    val distanceSquared = calcMoveDistanceSquared(current, demand.tc)
 
     val thresholds = List(
       (Tcs.calcGuiderInUse(demand.gc,
@@ -471,7 +469,7 @@ object TcsControllerEpicsCommon {
 
       if (paramList.nonEmpty) {
         val params = paramList.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p.self) }
-        val debug  = paramList.map(_.debug).reduce((m, n) => m + ", " + n)
+        val debug  = paramList.map(_.debug).mkString(", ")
         for {
           _ <- L.debug("Turning guide off")
           _ <- L.debug(s"guideOff set because $debug").whenA(trace)
@@ -684,7 +682,7 @@ object TcsControllerEpicsCommon {
 
       if (paramList.nonEmpty) {
         val params = paramList.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p.self) }
-        val debug  = paramList.map(_.debug).reduce((m, n) => m + ", " + n)
+        val debug  = paramList.map(_.debug).mkString(", ")
         for {
           _ <- L.debug("Turning guide on")
           _ <- L.debug(s"guideOn set because $debug").whenA(trace)
@@ -713,7 +711,7 @@ object TcsControllerEpicsCommon {
 
         if (paramList.nonEmpty) {
           val params = paramList.foldLeft(current.pure[F]) { case (c, p) => c.flatMap(p.self) }
-          val debug  = paramList.map(_.debug).reduce((m, n) => m + ", " + n)
+          val debug  = paramList.map(_.debug).mkString(", ")
 
           for {
             _ <- L.debug("Start TCS configuration")
@@ -827,5 +825,11 @@ object TcsControllerEpicsCommon {
     case Instrument.Nifs                                      => "NIFS".some
     case Instrument.Ghost | Instrument.Gpi | Instrument.Gsaoi => none
   }
+
+  def calcMoveDistanceSquared(current: BaseEpicsTcsConfig, demand: TelescopeConfig): Option[Area] =
+    demand.offsetA
+      .map(_.toFocalPlaneOffset(current.iaa))
+      .map(o => (o.x - current.offset.x, o.y - current.offset.y))
+      .map(d => d._1 * d._1 + d._2 * d._2)
 
 }

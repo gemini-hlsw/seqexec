@@ -23,7 +23,7 @@ object Settings {
     val scalaJSReactSortable    = "0.4.2"
 
     // Scala libraries
-    val catsEffectVersion   = "2.5.3"
+    val catsEffectVersion   = "2.5.4"
     val catsVersion         = "2.6.1"
     val mouseVersion        = "1.0.4"
     val fs2Version          = "2.5.9"
@@ -32,8 +32,8 @@ object Settings {
     val scalaXmlVerson      = "1.2.0"
     val catsTime            = "0.3.4"
 
-    val http4sVersion  = "0.21.26"
-    val squants        = "1.8.3"
+    val http4sVersion  = "0.21.29"
+    val squants        = "1.8.2"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "5.0.0"
@@ -54,7 +54,7 @@ object Settings {
     val xmlUnit                     = "1.6"
     val jUnitInterface              = "0.11"
     val scalaMock                   = "5.1.0"
-    lazy val munitVersion           = "0.7.28"
+    lazy val munitVersion           = "0.7.29"
     lazy val munitDisciplineVersion = "1.0.9"
     lazy val munitCatsEffectVersion = "0.3.0"
 
@@ -75,7 +75,7 @@ object Settings {
     val gmpStatusDatabase   = "0.3.7"
     val gmpCmdClientBridge  = "0.6.7"
     val guava               = "30.1.1-jre"
-    val prometheusClient    = "0.11.0"
+    val prometheusClient    = "0.12.0"
     val geminiLocales       = "0.6.0"
     val pprint              = "0.6.6"
     val jaxb                = "2.3.1"
