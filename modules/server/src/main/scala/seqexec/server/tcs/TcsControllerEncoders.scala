@@ -18,7 +18,7 @@ trait TcsControllerEncoders {
       case MountGuideOption.MountGuideOff => "off"
     }
 
-  implicit val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String] =
+  implicit val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String]       =
     EncodeEpicsValue {
       case M1GuideConfig.M1GuideOn(_) => "on"
       case M1GuideConfig.M1GuideOff   => "off"
@@ -36,19 +36,19 @@ trait TcsControllerEncoders {
       case _                                             => "off"
     }
 
-  val encodeM2GuideReset: EncodeEpicsValue[M2GuideConfig, String] =
+  val encodeM2GuideReset: EncodeEpicsValue[M2GuideConfig, String]                       =
     EncodeEpicsValue {
       case M2GuideConfig.M2GuideOn(_, _) => "off"
       case M2GuideConfig.M2GuideOff      => "on"
     }
 
-  implicit val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
+  implicit val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String]     =
     EncodeEpicsValue {
       case NodChopTrackingOption.NodChopTrackingOn  => "On"
       case NodChopTrackingOption.NodChopTrackingOff => "Off"
     }
 
-  implicit val encodeFollowOption: EncodeEpicsValue[FollowOption, String] =
+  implicit val encodeFollowOption: EncodeEpicsValue[FollowOption, String]               =
     EncodeEpicsValue {
       case FollowOption.FollowOn  => "On"
       case FollowOption.FollowOff => "Off"

@@ -53,12 +53,12 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def astrometryReady: F[Boolean] = safeAttributeF(mystStatus.getStringAttribute("astromState"))
     .map(_ === ReadyState.Ready.toString)
 
-  private val flexLoopAttr      = mystStatus.addEnum("flexLoop",
+  private val flexLoopAttr        = mystStatus.addEnum("flexLoop",
                                                 s"${MystTop}flexLoopStatus.VAL",
                                                 classOf[LoopState],
                                                 "Flexure loop status"
   )
-  def flexureLoop: F[LoopState] = safeAttributeF(flexLoopAttr)
+  def flexureLoop: F[LoopState]   = safeAttributeF(flexLoopAttr)
 
   private val focusLoopAttr   = mystStatus.addEnum("focLoop",
                                                  s"${MystTop}focLoopStatus.VAL",
@@ -146,12 +146,12 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def waitForStableLoops(timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(scienceStateAttr, ReadyState.Ready, timeout, "GeMS science ready flag")
 
-  private val ttLoopAttr   = mystStatus.addEnum("ttLoop",
+  private val ttLoopAttr                                   = mystStatus.addEnum("ttLoop",
                                               s"${MystTop}ttLoopStatus.VAL",
                                               classOf[LoopState],
                                               "TT loop status"
   )
-  def ttLoop: F[LoopState] = safeAttributeF(ttLoopAttr)
+  def ttLoop: F[LoopState]                                 = safeAttributeF(ttLoopAttr)
 
   val rtcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::rtcsad")
 

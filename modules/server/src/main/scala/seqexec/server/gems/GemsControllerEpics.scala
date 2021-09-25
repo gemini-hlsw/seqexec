@@ -41,7 +41,7 @@ class GemsControllerEpics[F[_]: Async](
   }
 
   import GsaoiGuider.OdgwId._
-  override val stateGetter: GemsWfsState[F] = GemsWfsState(
+  override val stateGetter: GemsWfsState[F]                              = GemsWfsState(
     epicsSys.apd1Active.map(DetectorStateOps.fromBoolean[Cwfs1DetectorState]),
     epicsSys.apd2Active.map(DetectorStateOps.fromBoolean[Cwfs2DetectorState]),
     epicsSys.apd3Active.map(DetectorStateOps.fromBoolean[Cwfs3DetectorState]),

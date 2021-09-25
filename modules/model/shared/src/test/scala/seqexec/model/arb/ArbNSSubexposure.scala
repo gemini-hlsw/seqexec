@@ -14,7 +14,7 @@ import seqexec.model.GmosParameters._
 import shapeless.tag
 
 trait ArbNSSubexposure {
-  implicit val nsSubexposureArb = Arbitrary[NSSubexposure] {
+  implicit val nsSubexposureArb                         = Arbitrary[NSSubexposure] {
     for {
       t <- Gen.posNum[Int].map(tag[NsCyclesI][Int])
       c <- Gen.choose(0, t).map(tag[NsCyclesI][Int])

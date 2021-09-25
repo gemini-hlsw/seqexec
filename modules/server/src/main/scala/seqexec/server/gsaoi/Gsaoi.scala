@@ -72,12 +72,12 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
         .flatMap(x => controller.observe(fileId, x))
     }
 
-  override def calcObserveTime(config: CleanConfig): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time]                           =
     readDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(Sync[F].delay(60.seconds))
 
-  override def keywordsClient: KeywordsClient[F] = this
+  override def keywordsClient: KeywordsClient[F]                                       = this
 
   override def observeProgress(
     total:   Time,
@@ -99,9 +99,9 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                        = Sync[F].unit
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                                    =
     controller.endObserve
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
@@ -135,7 +135,7 @@ object Gsaoi {
       .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
       .map(_.toDouble.seconds)
 
-  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds] =
+  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds]  =
     config
       .extractInstAs[JInt](COADDS_PROP)
       .map(_.toInt)

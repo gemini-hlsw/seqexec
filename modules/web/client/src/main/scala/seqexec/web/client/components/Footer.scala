@@ -41,7 +41,7 @@ object Footer {
     e.preventDefaultCB *>
       p.router.dispatchAndSetUrlCB(SelectCalibrationQueue)
 
-  val onVersionCopy = (_: String, _: Boolean) =>
+  val onVersionCopy     = (_: String, _: Boolean) =>
     toastCB(
       ToastOptions(title = "Copied...",
                    icon = Icon("clipboard"),

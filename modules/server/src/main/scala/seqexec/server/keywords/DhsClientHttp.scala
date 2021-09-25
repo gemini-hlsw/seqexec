@@ -42,7 +42,7 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
     with Http4sClientDsl[F] {
   import DhsClientHttp._
 
-  private val clientWithRetry = {
+  private val clientWithRetry                                  = {
     val max             = 4
     var attemptsCounter = 1
     val policy          = RetryPolicy[F] { attempts: Int =>
@@ -102,7 +102,7 @@ object DhsClientHttp {
   object DhsError            extends ErrorType("DHS_ERROR")
   object InternalServerError extends ErrorType("INTERNAL_SERVER_ERROR")
 
-  implicit def errorTypeDecode: Decoder[ErrorType] = Decoder.instance[ErrorType](c =>
+  implicit def errorTypeDecode: Decoder[ErrorType]                       = Decoder.instance[ErrorType](c =>
     c
       .as[String]
       .map {
@@ -113,7 +113,7 @@ object DhsClientHttp {
       }
   )
 
-  implicit def errorDecode: Decoder[Error] = Decoder.instance[Error](c =>
+  implicit def errorDecode: Decoder[Error]                               = Decoder.instance[Error](c =>
     for {
       t   <- c.downField("type").as[ErrorType]
       msg <- c.downField("message").as[String]
@@ -136,7 +136,7 @@ object DhsClientHttp {
       }
     }
 
-  implicit def unitDecode: Decoder[Either[SeqexecFailure, Unit]] =
+  implicit def unitDecode: Decoder[Either[SeqexecFailure, Unit]]         =
     Decoder.instance[Either[SeqexecFailure, Unit]] { c =>
       val r = c.downField("response")
       val s = r.downField("status").as[String]
@@ -160,7 +160,7 @@ object DhsClientHttp {
       )
     )
 
-  implicit def keywordEncode: Encoder[InternalKeyword] =
+  implicit def keywordEncode: Encoder[InternalKeyword]                   =
     Encoder.instance[InternalKeyword](k =>
       Json.obj(
         "name"  := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name),
@@ -185,7 +185,7 @@ private class DhsClientSim[F[_]: FlatMap: Logger](date: LocalDate, counter: Ref[
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  override def createImage(p: ImageParameters): F[ImageFileId] =
+  override def createImage(p: ImageParameters): F[ImageFileId]                                 =
     counter.modify(x => (x + 1, x + 1)).map { c =>
       toImageFileId(f"S${date.format(format)}S$c%04d")
     }

@@ -10,7 +10,7 @@ import org.scalacheck.Cogen
 import org.scalacheck.Arbitrary._
 
 trait GiapiArbitraries {
-  implicit val configurationArb = Arbitrary {
+  implicit val configurationArb                         = Arbitrary {
     for {
       m <- arbitrary[Map[String, String]]
     } yield m

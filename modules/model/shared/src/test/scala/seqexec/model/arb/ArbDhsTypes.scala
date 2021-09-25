@@ -15,16 +15,16 @@ trait ArbDhsTypes {
       Gen.alphaNumStr.map(toImageFileId)
     }
 
-  implicit val imageFileIdCogen: Cogen[ImageFileId] =
+  implicit val imageFileIdCogen: Cogen[ImageFileId]   =
     Cogen[String]
       .contramap(identity)
 
-  implicit val arbDataId: Arbitrary[DataId] =
+  implicit val arbDataId: Arbitrary[DataId]           =
     Arbitrary {
       Gen.alphaNumStr.map(toDataId)
     }
 
-  implicit val dataIdCogen: Cogen[DataId] =
+  implicit val dataIdCogen: Cogen[DataId]             =
     Cogen[String]
       .contramap(identity)
 }

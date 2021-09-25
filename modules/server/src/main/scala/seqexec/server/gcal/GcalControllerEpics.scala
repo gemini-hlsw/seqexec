@@ -25,19 +25,19 @@ object GcalControllerEpics {
   // Default value from Tcl Seqexec
   private val SetupTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
-  implicit private val encodeLampState: EncodeEpicsValue[LampState, BinaryOnOff] =
+  implicit private val encodeLampState: EncodeEpicsValue[LampState, BinaryOnOff]         =
     EncodeEpicsValue {
       case LampState.Off => BinaryOnOff.OFF
       case LampState.On  => BinaryOnOff.ON
       case _             => sys.error("Cannot happen")
     }
 
-  implicit private val encodeShutter: EncodeEpicsValue[Shutter, String] = EncodeEpicsValue {
+  implicit private val encodeShutter: EncodeEpicsValue[Shutter, String]                  = EncodeEpicsValue {
     case Shutter.OPEN   => "OPEN"
     case Shutter.CLOSED => "CLOSE"
   }
 
-  implicit private val encodeFilter: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
+  implicit private val encodeFilter: EncodeEpicsValue[Filter, String]                    = EncodeEpicsValue {
     case Filter.NONE  => "CLEAR"
     case Filter.GMOS  => "GMOS"
     case Filter.HROS  => "HROS"
@@ -50,12 +50,12 @@ object GcalControllerEpics {
     case _            => "CLEAR"
   }
 
-  implicit private val encodeDiffuser: EncodeEpicsValue[Diffuser, String] = EncodeEpicsValue {
+  implicit private val encodeDiffuser: EncodeEpicsValue[Diffuser, String]                = EncodeEpicsValue {
     case Diffuser.IR      => "IR"
     case Diffuser.VISIBLE => "VISIBLE"
   }
 
-  private def setArLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+  private def setArLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit]   =
     sys.lampsCmd.setArLampName("Ar") *>
       sys.lampsCmd.setArLampOn(v)
 
@@ -67,15 +67,15 @@ object GcalControllerEpics {
     sys.lampsCmd.setThArLampName("ThAr") *>
       sys.lampsCmd.setThArLampOn(v)
 
-  private def setQHLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+  private def setQHLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit]   =
     sys.lampsCmd.setQHLampName("QH") *>
       sys.lampsCmd.setQHLampOn(v)
 
-  private def setXeLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+  private def setXeLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit]   =
     sys.lampsCmd.setXeLampName("Xe") *>
       sys.lampsCmd.setXeLampOn(v)
 
-  private def setIrLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+  private def setIrLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit]   =
     sys.lampsCmd.setIRLampName("IR") *>
       sys.lampsCmd.setIRLampOn(v)
 

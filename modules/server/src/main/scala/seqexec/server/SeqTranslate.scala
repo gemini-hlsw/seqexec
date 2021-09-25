@@ -452,10 +452,10 @@ object SeqTranslate {
 
     import TcsController.Subsystem._
 
-    private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem] =
+    private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem]    =
       NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
-    private def tryWavelength(inst: Instrument, config: CleanConfig): F[Option[Wavelength]] =
+    private def tryWavelength(inst: Instrument, config: CleanConfig): F[Option[Wavelength]]       =
       extractWavelength(config) match {
         case Left(x)  =>
           Logger[F]
@@ -542,7 +542,7 @@ object SeqTranslate {
       def adaptGcal(b: GcalController[F] => Gcal[F])(ov: SystemOverrides): Gcal[F] = b(
         overriddenSystems.gcal(ov)
       )
-      def defaultGcal: SystemOverrides => Gcal[F] = adaptGcal(Gcal.defaultGcal)
+      def defaultGcal: SystemOverrides => Gcal[F]                                  = adaptGcal(Gcal.defaultGcal)
 
       stepType match {
         case StepType.CelestialObject(inst) =>
@@ -573,7 +573,7 @@ object SeqTranslate {
             )
           }
 
-        case StepType.FlatOrArc(inst)   =>
+        case StepType.FlatOrArc(inst) =>
           for {
             tcs  <- getTcs(flatOrArcTcsSubsystems(inst),
                            useGaos = false,
@@ -595,7 +595,7 @@ object SeqTranslate {
             gcal <- Gcal.fromConfig(site == Site.GS, config)
           } yield Map(Resource.TCS -> tcs, Resource.Gcal -> adaptGcal(gcal) _)
 
-        case StepType.DarkOrBias(_)     => Map.empty[Resource, SystemOverrides => System[F]].pure[F]
+        case StepType.DarkOrBias(_) => Map.empty[Resource, SystemOverrides => System[F]].pure[F]
 
         case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) =>
           Map[Resource, SystemOverrides => System[F]](
@@ -681,13 +681,13 @@ object SeqTranslate {
         tcsSubsystems
       )
 
-    private def gwsHeaders(kwClient: KeywordsClient[F]): Header[F] =
+    private def gwsHeaders(kwClient: KeywordsClient[F]): Header[F]                                =
       GwsHeader.header(kwClient, systemss.gwsKeywordReader)
 
-    private def gcalHeader(kwClient: KeywordsClient[F]): Header[F] =
+    private def gcalHeader(kwClient: KeywordsClient[F]): Header[F]                                =
       GcalHeader.header(kwClient, systemss.gcalKeywordReader)
 
-    private def altairHeader(kwClient: KeywordsClient[F]): Header[F] =
+    private def altairHeader(kwClient: KeywordsClient[F]): Header[F]                              =
       AltairHeader.header[F](
         kwClient,
         systemss.altairKeywordReader,

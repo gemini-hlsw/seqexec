@@ -17,13 +17,13 @@ import squants.Time
 
 class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes](name: String)
     extends GmosController[F, T] {
-  override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit] =
+  override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit]           =
     overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     overrideLogMessage(name, s"observe $fileId").as(ObserveCommandResult.Success)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                                  = overrideLogMessage(name, "endObserve")
 
   override def stopObserve: F[Unit] = overrideLogMessage(name, "stopObserve")
 
@@ -34,10 +34,10 @@ class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes]
   override def resumePaused(expTime: Time): F[ObserveCommandResult] =
     overrideLogMessage(name, "resumePaused").as(ObserveCommandResult.Success)
 
-  override def stopPaused: F[ObserveCommandResult] =
+  override def stopPaused: F[ObserveCommandResult]                  =
     overrideLogMessage(name, "stopPaused").as(ObserveCommandResult.Stopped)
 
-  override def abortPaused: F[ObserveCommandResult] =
+  override def abortPaused: F[ObserveCommandResult]                 =
     overrideLogMessage(name, "abortPaused").as(ObserveCommandResult.Aborted)
 
   override def observeProgress(
@@ -45,5 +45,5 @@ class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes]
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] = Stream.empty
 
-  override def nsCount: F[Int] = 0.pure[F]
+  override def nsCount: F[Int]                                      = 0.pure[F]
 }

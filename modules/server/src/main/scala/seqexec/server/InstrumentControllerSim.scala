@@ -78,7 +78,7 @@ object InstrumentControllerSim {
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
 
-    def log(msg: => String): F[Unit] =
+    def log(msg: => String): F[Unit]          =
       L.info(msg)
 
     private def tupledUpdate[A, B](f: A => B) = (x: A) => (f(x), f(x))

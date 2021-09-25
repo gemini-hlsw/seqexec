@@ -25,7 +25,7 @@ trait ArbTelescopeGuideConfig {
       } yield TelescopeGuideConfig(mo, m1, m2)
     }
 
-  implicit val telescopeConfigCogen: Cogen[TelescopeGuideConfig] =
+  implicit val telescopeConfigCogen: Cogen[TelescopeGuideConfig]    =
     Cogen[(MountGuideOption, M1GuideConfig, M2GuideConfig)]
       .contramap(x => (x.mountGuide, x.m1Guide, x.m2Guide))
 }

@@ -97,16 +97,16 @@ object GemsKeywordReaderEpics {
     gsaoiEpics: => GsaoiEpics[F]
   ): GemsKeywordReader[F] = new GemsKeywordReader[F] {
 
-    override def sadc: F[String] =
+    override def sadc: F[String]                 =
       epics.scienceAdcLoopActive.map(if (_) "ON" else "OFF").safeValOrDefault
 
-    override def dichroic: F[Double] = epics.beamSplitterState.map {
+    override def dichroic: F[Double]             = epics.beamSplitterState.map {
       case "1" => 0.85
       case "2" => 1.0
       case _   => DoubleDefault
     }.safeValOrDefault
 
-    override def astrometricMode: F[String] = epics.astroMode.map {
+    override def astrometricMode: F[String]      = epics.astroMode.map {
       case "None"    => "off"
       case "Regular" => "regular"
       case "Good"    => "good"
@@ -114,13 +114,13 @@ object GemsKeywordReaderEpics {
       case a         => a
     }.safeValOrDefault
 
-    override def nadc: F[String] =
+    override def nadc: F[String]                 =
       epics.ngsAdcLoopActive.map(if (_) "ON" else "OFF").safeValOrDefault
 
     private def lgswfsFlux(idx: Long): F[Double] =
       epics.lgsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
 
-    override def lgswfs1Counts: F[Double] = lgswfsFlux(1)
+    override def lgswfs1Counts: F[Double]        = lgswfsFlux(1)
 
     override def lgswfs2Counts: F[Double] = lgswfsFlux(2)
 
@@ -147,7 +147,7 @@ object GemsKeywordReaderEpics {
       .map(_.map(_.toDouble))
       .safeValOrDefault
 
-    override def cnSquare1: F[Double] = cnSum(List(16))
+    override def cnSquare1: F[Double]              = cnSum(List(16))
 
     override def cnSquare2: F[Double] = cnSum(List(17, 18))
 
@@ -188,7 +188,7 @@ object GemsKeywordReaderEpics {
     private def cwfsFlux(idx: Long): F[Double] =
       epics.ngsFlux.map(_.get(idx).map(_.toDouble)).safeValOrDefault
 
-    override def cwfs1Counts: F[Double] = cwfsFlux(1)
+    override def cwfs1Counts: F[Double]        = cwfsFlux(1)
 
     override def cwfs2Counts: F[Double] = cwfsFlux(2)
 

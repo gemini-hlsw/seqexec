@@ -97,7 +97,7 @@ object Handle {
       )
   }
 
-  implicit class StateToHandle[F[_]: Functor, D, V, A](self: StateT[F, D, A]) {
+  implicit class StateToHandle[F[_]: Functor, D, V, A](self: StateT[F, D, A])     {
     def toHandle: Handle[F, D, V, A] = Handle(self.map((_, None)))
   }
 

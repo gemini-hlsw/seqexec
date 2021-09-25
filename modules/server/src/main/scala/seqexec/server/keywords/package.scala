@@ -63,7 +63,7 @@ package keywords {
   object GdsInstrument {
     def bundleKeywords[F[_]: Monad](
       ks: List[KeywordBag => F[KeywordBag]]
-    ): F[KeywordBag]                        =
+    ): F[KeywordBag] =
       ks.foldLeft(Applicative[F].pure(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
 
     def kb[F[_]: Monad]: KeywordsBundler[F] = new KeywordsBundler[F] {
@@ -112,7 +112,7 @@ package keywords {
     }
   }
 
-  case object TypeInt8    extends KeywordType
+  case object TypeInt8 extends KeywordType
   case object TypeInt16   extends KeywordType
   case object TypeInt32   extends KeywordType
   case object TypeFloat   extends KeywordType
@@ -139,11 +139,11 @@ package keywords {
   final case class StringKeyword(name: KeywordName, value: String)
       extends Keyword[String](name, TypeString, value)
   final case class FloatPrecisionKeyword(name: KeywordName, precision: Int, value: Float)
-      extends Keyword[Float](name, TypeFloat, value)   {
+      extends Keyword[Float](name, TypeFloat, value)                                   {
     override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value.toDouble)
   }
   final case class DoublePrecisionKeyword(name: KeywordName, precision: Int, value: Double)
-      extends Keyword[Double](name, TypeDouble, value) {
+      extends Keyword[Double](name, TypeDouble, value)                                 {
     override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value)
   }
 
@@ -158,7 +158,7 @@ package keywords {
     value:       String
   )
 
-  object InternalKeyword {
+  object InternalKeyword                                       {
     implicit val eq: Eq[InternalKeyword] =
       Eq.by(x => (x.name, x.keywordType, x.value))
   }
@@ -177,7 +177,7 @@ package keywords {
 
     implicit val eq: Eq[KeywordBag]         = Eq.by(_.keywords)
     implicit val monoid: Monoid[KeywordBag] = new Monoid[KeywordBag] {
-      override def empty: KeywordBag = KeywordBag.empty
+      override def empty: KeywordBag                     = KeywordBag.empty
       override def combine(a: KeywordBag, b: KeywordBag) =
         KeywordBag(a.keywords |+| b.keywords)
     }
@@ -196,7 +196,7 @@ package keywords {
     @inline
     def apply[A](implicit instance: DefaultHeaderValue[A]): DefaultHeaderValue[A] = instance
 
-    implicit val IntDefaultValue: DefaultHeaderValue[Int] =
+    implicit val IntDefaultValue: DefaultHeaderValue[Int]       =
       new DefaultHeaderValue[Int] {
         val default: Int = IntDefault
       }
@@ -206,7 +206,7 @@ package keywords {
         val default: Double = DoubleDefault
       }
 
-    implicit val StrDefaultValue: DefaultHeaderValue[String] =
+    implicit val StrDefaultValue: DefaultHeaderValue[String]    =
       new DefaultHeaderValue[String] {
         val default: String = StrDefault
       }
@@ -255,7 +255,7 @@ package object keywords {
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, k.stringValue)
 
-  implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A]) {
+  implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A])         {
     def orDefault: A = a.getOrElse(d.default)
   }
 
@@ -318,7 +318,7 @@ package object keywords {
     buildKeyword(get, name, BooleanKeyword)
   }
   def buildString[F[_]: MonadError[*[_], Throwable]](
-    get: F[String],
+    get:  F[String],
     name: KeywordName
   ): KeywordBag => F[KeywordBag] = buildKeyword(get, name, StringKeyword)
 
@@ -337,7 +337,7 @@ package object keywords {
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       Applicative[F].unit
-    override def sendAfter(id:     ImageFileId): F[Unit] =
+    override def sendAfter(id: ImageFileId): F[Unit]                         =
       Applicative[F].unit
   }
 

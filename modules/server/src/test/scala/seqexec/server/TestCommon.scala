@@ -57,10 +57,10 @@ object TestCommon {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Timer[IO]               =
     IO.timer(ExecutionContext.global)
 
-  implicit val logger: Logger[IO] = NoOpLogger.impl[IO]
+  implicit val logger: Logger[IO]               = NoOpLogger.impl[IO]
 
   val defaultSettings: SeqexecEngineConfiguration = SeqexecEngineConfiguration(
     odb = uri("localhost"),
@@ -114,7 +114,7 @@ object TestCommon {
         pendingAction(resource)
       )
 
-  private val fileId = toImageFileId("fileId")
+  private val fileId                                         = toImageFileId("fileId")
 
   def observing[F[_]: Applicative]: Action[F] =
     Action
@@ -170,9 +170,9 @@ object TestCommon {
       .get(oid)
       .exists(_.seq.status.isCompleted)
 
-  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
+  private val sm                                                       = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
 
-  private val gpiSim: IO[GpiController[IO]] = GpiClient
+  private val gpiSim: IO[GpiController[IO]]     = GpiClient
     .simulatedGpiClient[IO]
     .use(x =>
       IO(

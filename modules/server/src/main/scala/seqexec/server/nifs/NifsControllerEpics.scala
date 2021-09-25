@@ -52,7 +52,7 @@ object NifsLookupTables {
 }
 
 trait NifsEncoders {
-  implicit val filterEncoder: EncodeEpicsValue[LegacyFilter, String] =
+  implicit val filterEncoder: EncodeEpicsValue[LegacyFilter, String]       =
     EncodeEpicsValue {
       case LegacyFilter.SAME_AS_DISPERSER => "" // Unused
       case LegacyFilter.ZJ_FILTER         => "ZJ"
@@ -62,13 +62,13 @@ trait NifsEncoders {
       case LegacyFilter.BLOCKED           => "Blocked"
     }
 
-  implicit val windowCoverEncoder: EncodeEpicsValue[WindowCover, String] =
+  implicit val windowCoverEncoder: EncodeEpicsValue[WindowCover, String]   =
     EncodeEpicsValue {
       case WindowCover.Opened => "Opened"
       case WindowCover.Closed => "Closed"
     }
 
-  implicit val maskEncoder: EncodeEpicsValue[LegacyMask, String] =
+  implicit val maskEncoder: EncodeEpicsValue[LegacyMask, String]           =
     EncodeEpicsValue {
       case LegacyMask.CLEAR         => "3.0_Mask"
       case LegacyMask.PINHOLE       => "0.1_Hole"
@@ -123,10 +123,10 @@ object NifsControllerEpics extends NifsEncoders {
 
     private val unit = Applicative[F].unit
 
-    private def setCoadds(n: Coadds): F[Unit] =
+    private def setCoadds(n: Coadds): F[Unit]                           =
       epicsSys.dcConfigCmd.setCoadds(n)
 
-    private def setNumberOfResets(r: Option[NumberOfResets]): F[Unit] =
+    private def setNumberOfResets(r: Option[NumberOfResets]): F[Unit]   =
       r.map(epicsSys.dcConfigCmd.setnumberOfResets).getOrElse(unit)
 
     private def setNumberOfPeriods(r: Option[NumberOfPeriods]): F[Unit] =
@@ -157,19 +157,19 @@ object NifsControllerEpics extends NifsEncoders {
         _ <- v.map(epicsSys.dcConfigCmd.setFowlerSamples).getOrElse(unit)
       } yield ()
 
-    private def setPeriod(period: Option[Period]): F[Unit] =
+    private def setPeriod(period: Option[Period]): F[Unit]              =
       (for {
         p <- OptionT(period.pure[F])
         _ <- OptionT.liftF(epicsSys.dcConfigCmd.setPeriod(p.toDouble))
         _ <- OptionT.liftF(epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ExposureTime))
       } yield ()).value.void
 
-    private def setExposureTime(expTime: ExposureTime): F[Unit] =
+    private def setExposureTime(expTime: ExposureTime): F[Unit]         =
       epicsSys.dcConfigCmd.setExposureTime(expTime.toSeconds) *>
         epicsSys.dcConfigCmd.setPeriod(1) *>
         epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ReadPeriod)
 
-    private def configDC(cfg: DCConfig): F[Unit] =
+    private def configDC(cfg: DCConfig): F[Unit]                        =
       setReadMode(cfg.readMode) *>
         setNumberOfSamples(cfg.numberOfSamples, numberOfFowSamples(cfg.readMode)) *>
         setPeriod(cfg.period) *>
@@ -179,7 +179,7 @@ object NifsControllerEpics extends NifsEncoders {
         setNumberOfPeriods(cfg.numberOfPeriods) *>
         epicsSys.dcConfigCmd.post(ConfigTimeout).void
 
-    private def setFilter(cfg: CCConfig): F[Option[F[Unit]]] = {
+    private def setFilter(cfg: CCConfig): F[Option[F[Unit]]]            = {
       val actualFilter: F[LegacyFilter] = cfg match {
         case DarkCCConfig     =>
           LegacyFilter.BLOCKED.pure[F]
@@ -210,7 +210,7 @@ object NifsControllerEpics extends NifsEncoders {
       }
     }
 
-    private def setImagingMirror(cfg: CCConfig): F[Option[F[Unit]]] =
+    private def setImagingMirror(cfg: CCConfig): F[Option[F[Unit]]]     =
       cfg match {
         case DarkCCConfig     => none.pure[F]
         case cfg: StdCCConfig =>
@@ -218,7 +218,7 @@ object NifsControllerEpics extends NifsEncoders {
           smartSetParamF(im, epicsSys.imagingMirror, epicsSys.ccConfigCmd.setImagingMirror(im))
       }
 
-    private def setWindowCover(cfg: CCConfig): F[Option[F[Unit]]] = {
+    private def setWindowCover(cfg: CCConfig): F[Option[F[Unit]]]       = {
       val wcPosition = cfg match {
         case DarkCCConfig     =>
           WindowCover.Closed
@@ -229,7 +229,7 @@ object NifsControllerEpics extends NifsEncoders {
       smartSetParamF(wc, epicsSys.windowCover, epicsSys.ccConfigCmd.setWindowCover(wc))
     }
 
-    private def setDisperser(cfg: CCConfig): F[Option[F[Unit]]] =
+    private def setDisperser(cfg: CCConfig): F[Option[F[Unit]]]         =
       cfg match {
         case DarkCCConfig     => none.pure[F]
         case cfg: StdCCConfig =>
@@ -261,10 +261,10 @@ object NifsControllerEpics extends NifsEncoders {
             }
       }
 
-    private def setMask(cfg: CCConfig): F[Option[F[Unit]]] = {
+    private def setMask(cfg: CCConfig): F[Option[F[Unit]]]              = {
       def setMaskEpics(lm: LegacyMask): F[Option[F[Unit]]] = {
-        val mask      = encode(lm)
-        val setMaskIO = epicsSys.ccConfigCmd.setMask(mask)
+        val mask                                              = encode(lm)
+        val setMaskIO                                         = epicsSys.ccConfigCmd.setMask(mask)
         // Here we can assume that we are actually in the right position but have been offset if:
         // * The current position is INVALID
         // * The last selected position (which was validated) is the same as where we are demanded to go
@@ -306,7 +306,7 @@ object NifsControllerEpics extends NifsEncoders {
           }
       }
 
-    private def setMaskOffset(cfg: CCConfig): F[Option[F[Unit]]] =
+    private def setMaskOffset(cfg: CCConfig): F[Option[F[Unit]]]        =
       cfg match {
         case DarkCCConfig     => none.pure[F]
         case cfg: StdCCConfig =>
@@ -318,7 +318,7 @@ object NifsControllerEpics extends NifsEncoders {
           }
       }
 
-    private val postCcConfig = epicsSys.ccConfigCmd.post(ConfigTimeout)
+    private val postCcConfig                                            = epicsSys.ccConfigCmd.post(ConfigTimeout)
 
     private def firstCCPass(cfg: CCConfig): F[Unit] =
       executeIfNeeded(List(setFilter(cfg),
@@ -338,19 +338,19 @@ object NifsControllerEpics extends NifsEncoders {
     private val CentralWavelengthTolerance = 0.002
     private val MaskOffsetTolerance        = 0.002
 
-    private def secondCCPass(cfg: CCConfig): F[Unit] =
+    private def secondCCPass(cfg: CCConfig): F[Unit]                                  =
       executeIfNeeded(List(setCentralWavelength(cfg), setMaskOffset(cfg)), postCcConfig)
 
-    private def configCC(cfg: CCConfig): F[Unit] =
+    private def configCC(cfg: CCConfig): F[Unit]                                      =
       firstCCPass(cfg) *>
         secondCCPass(cfg)
 
-    override def applyConfig(config: NifsController.NifsConfig): F[Unit] =
+    override def applyConfig(config: NifsController.NifsConfig): F[Unit]              =
       L.debug("Start NIFS configuration") *>
         configCC(config.cc) *> configDC(config.dc) *>
         L.debug("Completed NIFS configuration")
 
-    private val checkDhs =
+    private val checkDhs                                                              =
       failUnlessM(epicsSys.dhsConnected.map(_ === DhsConnected.Yes),
                   SeqexecFailure.Execution("NIFS is not connected to DHS")
       )
@@ -363,25 +363,25 @@ object NifsControllerEpics extends NifsEncoders {
           L.debug("Completed NIFS observe")
         }
 
-    override def endObserve: F[Unit] =
+    override def endObserve: F[Unit]                                                  =
       L.debug("Send endObserve to NIFS") *>
         epicsSys.endObserveCmd.mark *>
         epicsSys.endObserveCmd.post(DefaultTimeout) *>
         L.debug("endObserve sent to NIFS")
 
-    override def stopObserve: F[Unit] =
+    override def stopObserve: F[Unit]                                                 =
       L.debug("Stop NIFS exposure") *>
         epicsSys.stopCmd.mark *>
         epicsSys.stopCmd.post(DefaultTimeout) *>
         L.debug("Stop observe command sent to NIFS")
 
-    override def abortObserve: F[Unit] =
+    override def abortObserve: F[Unit]                                                =
       L.debug("Abort NIFS exposure") *>
         epicsSys.abortCmd.mark *>
         epicsSys.abortCmd.post(DefaultTimeout) *>
         L.debug("Abort observe command sent to NIFS")
 
-    override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+    override def observeProgress(total: Time): fs2.Stream[F, Progress]                =
       ProgressUtil.obsCountdownWithObsStage[F](
         total,
         0.seconds,
@@ -390,7 +390,7 @@ object NifsControllerEpics extends NifsEncoders {
         )
       )
 
-    def calcObserveTimeout(cfg: DCConfig): FiniteDuration = {
+    def calcObserveTimeout(cfg: DCConfig): FiniteDuration   = {
       val SafetyPadding = 120.seconds
 
       FiniteDuration((calcTotalExposureTime(cfg) + SafetyPadding).toMillis, MILLISECONDS)

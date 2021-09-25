@@ -25,28 +25,28 @@ package gmos {
     def unapply(s: NSPartial): Option[(NSAction, NSSubexposure)] =
       Some((s.ongoingAction, s.sub))
 
-    case class NSStart(sub: NSSubexposure) extends NSPartial {
+    case class NSStart(sub: NSSubexposure)            extends NSPartial {
       override val ongoingAction = NSAction.Start
     }
-    case class NSTCSNodStart(sub: NSSubexposure) extends NSPartial {
+    case class NSTCSNodStart(sub: NSSubexposure)      extends NSPartial {
       override val ongoingAction = NSAction.NodStart
     }
-    case class NSTCSNodComplete(sub: NSSubexposure) extends NSPartial {
+    case class NSTCSNodComplete(sub: NSSubexposure)   extends NSPartial {
       override val ongoingAction = NSAction.NodComplete
     }
     case class NSSubexposureStart(sub: NSSubexposure) extends NSPartial {
       override val ongoingAction = NSAction.StageObserveStart
     }
-    case class NSSubexposureEnd(sub: NSSubexposure) extends NSPartial {
+    case class NSSubexposureEnd(sub: NSSubexposure)   extends NSPartial {
       override val ongoingAction = NSAction.StageObserveComplete
     }
-    case class NSComplete(sub: NSSubexposure) extends NSPartial {
+    case class NSComplete(sub: NSSubexposure)         extends NSPartial {
       override val ongoingAction = NSAction.Done
     }
 
-    case object NSContinue  extends InternalPartialVal
-    case object NSSubPaused extends InternalPartialVal
-    case object NSFinalObs  extends InternalPartialVal
+    case object NSContinue                            extends InternalPartialVal
+    case object NSSubPaused                           extends InternalPartialVal
+    case object NSFinalObs                            extends InternalPartialVal
 
   }
 

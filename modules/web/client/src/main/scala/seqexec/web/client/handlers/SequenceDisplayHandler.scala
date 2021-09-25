@@ -44,7 +44,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
       updatedL(SequencesFocus.sod.modify(_.updateCalTabObserver(o)))
   }
 
-  private def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
+  private def handleShowHideStep: PartialFunction[Any, ActionResult[M]]   = {
     case ShowPreviewStepConfig(i, id, step) =>
       val seq = SequencesQueue
         .queueItemG[SequenceView](_.id === id)
@@ -62,7 +62,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   }
 
-  private def handleClean: PartialFunction[Any, ActionResult[M]] = { case CleanSequences =>
+  private def handleClean: PartialFunction[Any, ActionResult[M]]      = { case CleanSequences =>
     noChange
   }
 
@@ -71,7 +71,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
       updatedL(SequencesFocus.sod.modify(_.loadingFailed(id)))
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] =
+  override def handle: PartialFunction[Any, ActionResult[M]]          =
     List(handleSelectSequenceDisplay,
          handleShowHideStep,
          handleLoadFailed,

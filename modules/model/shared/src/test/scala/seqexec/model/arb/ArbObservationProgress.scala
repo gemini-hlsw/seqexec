@@ -18,7 +18,7 @@ import squants.time._
 trait ArbObservationProgress {
   import ArbObservationId._
 
-  implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
+  implicit val arbObservationProgress: Arbitrary[ObservationProgress]     =
     Arbitrary {
       for {
         o <- arbitrary[Observation.Id]
@@ -29,7 +29,7 @@ trait ArbObservationProgress {
       } yield ObservationProgress(o, s, t, r, v)
     }
 
-  implicit val observationInProgressCogen: Cogen[ObservationProgress] =
+  implicit val observationInProgressCogen: Cogen[ObservationProgress]     =
     Cogen[(Observation.Id, StepId, Time, Time, ObserveStage)]
       .contramap(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage))
 
@@ -49,7 +49,7 @@ trait ArbObservationProgress {
     Cogen[(Observation.Id, StepId, Time, Time, ObserveStage, NSSubexposure)]
       .contramap(x => (x.obsId, x.stepId, x.total, x.remaining, x.stage, x.sub))
 
-  implicit val arbProgress: Arbitrary[Progress] =
+  implicit val arbProgress: Arbitrary[Progress]                           =
     Arbitrary {
       for {
         o <- arbitrary[ObservationProgress]
@@ -58,7 +58,7 @@ trait ArbObservationProgress {
       } yield p
     }
 
-  implicit val progressCogen: Cogen[Progress] =
+  implicit val progressCogen: Cogen[Progress]                             =
     Cogen[Either[ObservationProgress, NSObservationProgress]]
       .contramap {
         case x: ObservationProgress   => Left(x)

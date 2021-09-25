@@ -24,7 +24,7 @@ object NiriControllerSim {
         override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
           calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))
 
-        override def applyConfig(config: NiriConfig): F[Unit] = sim.applyConfig(config)
+        override def applyConfig(config: NiriConfig): F[Unit]                             = sim.applyConfig(config)
 
         override def stopObserve: F[Unit] = sim.stopObserve
 
@@ -35,7 +35,7 @@ object NiriControllerSim {
         override def observeProgress(total: Time): fs2.Stream[F, Progress] =
           sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-        override def calcTotalExposureTime(cfg: DCConfig): F[Time] = {
+        override def calcTotalExposureTime(cfg: DCConfig): F[Time]         = {
           val MinIntTime = 0.5.seconds
 
           (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble

@@ -14,10 +14,10 @@ final case class Operator(value: String)
 
 object Operator {
 
-  val Zero: Operator =
+  val Zero: Operator                 =
     Operator("")
 
-  implicit val equal: Eq[Operator] =
+  implicit val equal: Eq[Operator]   =
     Eq.fromUniversalEquals
 
   implicit val shows: Show[Operator] =

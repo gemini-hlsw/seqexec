@@ -94,7 +94,7 @@ class ObservationsProgressStateHandler[M](modelRW: ModelRW[M, AllObservationsPro
     upd.getOrElse(noChange)
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
+  override def handle: PartialFunction[Any, ActionResult[M]]                         = {
     case ServerMessage(ObservationProgressEvent(e)) =>
       updatedL(
         AllObservationsProgressState

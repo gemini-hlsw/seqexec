@@ -42,7 +42,7 @@ import squants.Time
 import squants.time.TimeConversions._
 
 trait GmosEncoders {
-  implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
+  implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String]   = EncodeEpicsValue {
     case AmpReadMode.SLOW => "SLOW"
     case AmpReadMode.FAST => "FAST"
   }
@@ -53,26 +53,26 @@ trait GmosEncoders {
     case _                         => ""
   }
 
-  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, String] = EncodeEpicsValue {
+  implicit val ampCountEncoder: EncodeEpicsValue[AmpCount, String]         = EncodeEpicsValue {
     // gmosAmpCount.lut
     case AmpCount.THREE  => ""
     case AmpCount.SIX    => "BEST"
     case AmpCount.TWELVE => "ALL"
   }
 
-  implicit val binningEncoder: EncodeEpicsValue[Binning, Int] = EncodeEpicsValue(b => b.getValue)
+  implicit val binningEncoder: EncodeEpicsValue[Binning, Int]              = EncodeEpicsValue(b => b.getValue)
 
-  implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String] = EncodeEpicsValue(
+  implicit val disperserOrderEncoder: EncodeEpicsValue[DisperserOrder, String]      = EncodeEpicsValue(
     _.sequenceValue
   )
 
-  implicit val disperserOrderEncoderInt: EncodeEpicsValue[DisperserOrder, Int] = EncodeEpicsValue {
+  implicit val disperserOrderEncoderInt: EncodeEpicsValue[DisperserOrder, Int]      = EncodeEpicsValue {
     case Order.ZERO => 0
     case Order.ONE  => 1
     case Order.TWO  => 2
   }
 
-  implicit val nsStateEncoder: EncodeEpicsValue[NodAndShuffleState, String] = EncodeEpicsValue {
+  implicit val nsStateEncoder: EncodeEpicsValue[NodAndShuffleState, String]         = EncodeEpicsValue {
     case NodAndShuffleState.Classic    => "CLASSIC"
     case NodAndShuffleState.NodShuffle => "NOD_SHUFFLE"
   }
@@ -84,14 +84,14 @@ trait GmosEncoders {
       case _             => none
     }
 
-  implicit val exposureTimeEncoder: EncodeEpicsValue[ExposureTime, Int] = EncodeEpicsValue(
+  implicit val exposureTimeEncoder: EncodeEpicsValue[ExposureTime, Int]             = EncodeEpicsValue(
     _.toSeconds.toInt
   )
 
-  implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double]         =
+  implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double]             =
     EncodeEpicsValue((l: Length) => l.toNanometers)
 
-  implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int] =
+  implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int]     =
     EncodeEpicsValue {
       case ElectronicOffset.On  => 1
       case ElectronicOffset.Off => 0
@@ -176,18 +176,18 @@ object GmosControllerEpics extends GmosEncoders {
       private val DC = sys.configDCCmd
 
       // Read the current state of the
-      private def retrieveState: F[GmosEpicsState] =
+      private def retrieveState: F[GmosEpicsState]                                        =
         for {
           dc <- retrieveDCState
           cc <- retrieveCCState
           ns <- retrieveNSState
         } yield GmosEpicsState(dc, cc, ns)
 
-      private def retrieveNSState: F[GmosNSEpicsState] =
+      private def retrieveNSState: F[GmosNSEpicsState]                                    =
         (sys.nsPairs.map(tag[NsPairsI][Int]), sys.nsRows.map(tag[NsRowsI][Int]), sys.nsState)
           .mapN(GmosNSEpicsState.apply)
 
-      private def retrieveDCState: F[GmosDCEpicsState] =
+      private def retrieveDCState: F[GmosDCEpicsState]                                    =
         for {
           shutterState <- sys.shutterState
           exposureTime <- sys.exposureTime
@@ -207,7 +207,7 @@ object GmosControllerEpics extends GmosEncoders {
                                  ccdYBinning
         )
 
-      private def retrieveCCState: F[GmosCCEpicsState] =
+      private def retrieveCCState: F[GmosCCEpicsState]                                    =
         for {
           filter1                 <- sys.filter1
           filter2                 <- sys.filter2
@@ -238,7 +238,7 @@ object GmosControllerEpics extends GmosEncoders {
           useElectronicOffsetting
         )
 
-      private def setShutterState(s: GmosDCEpicsState, dc: DCConfig): Option[F[Unit]] = dc.s match {
+      private def setShutterState(s: GmosDCEpicsState, dc: DCConfig): Option[F[Unit]]     = dc.s match {
         case ShutterState.UnsetShutter => none
         case sh                        =>
           val encodedVal = encode(sh)
@@ -254,10 +254,10 @@ object GmosControllerEpics extends GmosEncoders {
         applyParam(state.gainSetting, encodedVal, DC.setGainSetting)
       }
 
-      private def roiNumUsed(s: RegionsOfInterest): Int =
+      private def roiNumUsed(s: RegionsOfInterest): Int                                   =
         s.rois.map(_.length).getOrElse(1)
 
-      private def setROI(binning: CCDBinning, s: RegionsOfInterest): List[F[Unit]] =
+      private def setROI(binning: CCDBinning, s: RegionsOfInterest): List[F[Unit]]        =
         s.rois match {
           case Left(b)     => roiParameters(binning, 1, Encoders[T].builtInROI.encode(b)).toList
           case Right(rois) =>
@@ -301,7 +301,7 @@ object GmosControllerEpics extends GmosEncoders {
                    (_: Int) => CC.setDisperserOrder(disperserOrderEncoder.encode(o))
         )
 
-      def setWavelength(state: GmosCCEpicsState, w: Length): Option[F[Unit]] =
+      def setWavelength(state: GmosCCEpicsState, w: Length): Option[F[Unit]]             =
         applyParam(state.disperserWavel, encode(w), CC.setDisperserLambda)
 
       def setDisperserParams(
@@ -389,7 +389,7 @@ object GmosControllerEpics extends GmosEncoders {
         applyParam(state.stageMode, stage, CC.setStageMode)
       }
 
-      private def setDtaXOffset(state: GmosCCEpicsState, v: DTAX): Option[F[Unit]] = {
+      private def setDtaXOffset(state: GmosCCEpicsState, v: DTAX): Option[F[Unit]]       = {
         val PixelsToMicrons = 15.0
         val Tolerance       = 0.001
 
@@ -412,12 +412,12 @@ object GmosControllerEpics extends GmosEncoders {
                    (e: Int) => CC.setElectronicOffsetting(e)
         )
 
-      private def warnOnDHSNotConected: F[Unit] =
+      private def warnOnDHSNotConected: F[Unit]                                          =
         sys.dhsConnected
           .map(_.trim === DhsConnected)
           .ifM(Applicative[F].unit, L.warn("GMOS is not connected to the DHS"))
 
-      private def dcParams(state: GmosDCEpicsState, config: DCConfig): List[F[Unit]] =
+      private def dcParams(state: GmosDCEpicsState, config: DCConfig): List[F[Unit]]     =
         List(
           applyParam(
             state.exposureTime,
@@ -441,7 +441,7 @@ object GmosControllerEpics extends GmosEncoders {
           // TODO these are not smart about setting them only if needed
           setROI(config.bi, config.roi)
 
-      private def nsParams(state: GmosNSEpicsState, config: NSConfig): List[F[Unit]] =
+      private def nsParams(state: GmosNSEpicsState, config: NSConfig): List[F[Unit]]     =
         List(
           applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x)),
           applyParam(state.nsRows, config.nsRows, (x: Int) => DC.setNsRows(x)),
@@ -463,7 +463,7 @@ object GmosControllerEpics extends GmosEncoders {
               )
           ).flattenOption
 
-      override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit] =
+      override def applyConfig(config: GmosController.GmosConfig[T]): F[Unit]                  =
         retrieveState.flatMap { state =>
           val params = dcParams(state.dc, config.dc) ++
             ccParams(state.cc, config.cc) ++
@@ -477,12 +477,12 @@ object GmosControllerEpics extends GmosEncoders {
             L.debug("Completed Gmos configuration")
         }
 
-      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
+      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]        =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
           sys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
 
-      private def failOnDHSNotConected: F[Unit] =
+      private def failOnDHSNotConected: F[Unit]                                                =
         sys.dhsConnected
           .map(_.trim === DhsConnected)
           .ifM(Applicative[F].unit,
@@ -490,7 +490,7 @@ object GmosControllerEpics extends GmosEncoders {
                  .raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS"))
           )
 
-      private def protectedObserveCommand(name: String, cmd: EpicsCommandBase[F]): F[Unit] = {
+      private def protectedObserveCommand(name: String, cmd: EpicsCommandBase[F]): F[Unit]     = {
         val safetyCutoffAsDouble: Double = SafetyCutoff.toSeconds.toDouble
 
         (sys.dcIsAcquiring, sys.countdown).mapN { case (isAcq, timeLeft) =>
@@ -507,11 +507,11 @@ object GmosControllerEpics extends GmosEncoders {
         }.flatten
       }
 
-      override def stopObserve: F[Unit] = protectedObserveCommand("Stop", sys.stopCmd)
+      override def stopObserve: F[Unit]                                                        = protectedObserveCommand("Stop", sys.stopCmd)
 
       override def abortObserve: F[Unit] = protectedObserveCommand("Abort", sys.abortCmd)
 
-      override def endObserve: F[Unit] =
+      override def endObserve: F[Unit]   =
         L.debug("Send endObserve to Gmos") *>
           sys.endObserveCmd.mark *>
           sys.endObserveCmd.post(DefaultTimeout) *>
@@ -526,14 +526,14 @@ object GmosControllerEpics extends GmosEncoders {
         _   <- L.debug("Completed Gmos observation")
       } yield ret
 
-      override def stopPaused: F[ObserveCommandResult] = for {
+      override def stopPaused: F[ObserveCommandResult]                  = for {
         _   <- L.debug("Stop Gmos paused observation")
         _   <- sys.stopAndWaitCmd.mark
         ret <- sys.stopAndWaitCmd.post(DefaultTimeout)
         _   <- L.debug("Completed stopping Gmos observation")
       } yield if (ret === ObserveCommandResult.Success) ObserveCommandResult.Stopped else ret
 
-      override def abortPaused: F[ObserveCommandResult] = for {
+      override def abortPaused: F[ObserveCommandResult]                 = for {
         _   <- L.debug("Abort Gmos paused observation")
         _   <- sys.abortAndWait.mark
         ret <- sys.abortAndWait.post(DefaultTimeout)
@@ -551,7 +551,7 @@ object GmosControllerEpics extends GmosEncoders {
         }
 
       // Different progress results for classic and NS
-      def gmosProgress: (Time, RemainingTime, ObserveStage) => F[Progress] =
+      def gmosProgress: (Time, RemainingTime, ObserveStage) => F[Progress]                 =
         (time, remaining, stage) =>
           sys.nsState.flatMap {
             case "CLASSIC" => EpicsUtil.defaultProgress[F](time, remaining, stage)
@@ -568,7 +568,7 @@ object GmosControllerEpics extends GmosEncoders {
           gmosProgress
         )
 
-      override def nsCount: F[Int] = for {
+      override def nsCount: F[Int]                                                         = for {
         a <- sys.aExpCount
         b <- sys.bExpCount
       } yield a + b
@@ -582,7 +582,7 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
   sealed abstract case class XSize(value: Int)
-  object XSize {
+  object XSize  {
     def fromInt(v: Int): Option[XSize] = (v > 0).option(new XSize(v) {})
   }
 
@@ -592,7 +592,7 @@ object GmosControllerEpics extends GmosEncoders {
   }
 
   sealed abstract case class YSize(value: Int)
-  object YSize {
+  object YSize  {
     def fromInt(v: Int): Option[YSize] = (v > 0).option(new YSize(v) {})
   }
 
@@ -607,7 +607,7 @@ object GmosControllerEpics extends GmosEncoders {
         .mapN(new ROIValues(_, _, _, _) {})
 
     // Built from OCS ROI values
-    def fromOCS(roi:    ROI): Option[ROIValues] =
+    def fromOCS(roi: ROI): Option[ROIValues] =
       (XStart.fromInt(roi.getXStart),
        XSize.fromInt(roi.getXSize),
        YStart.fromInt(roi.getYStart),

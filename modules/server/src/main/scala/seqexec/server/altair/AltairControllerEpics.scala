@@ -51,7 +51,7 @@ object AltairControllerEpics {
     epicsTcs:    => TcsEpics[F]
   )(implicit L:  Logger[F]): AltairController[F] = new AltairController[F] {
 
-    private def inRangeLinear[T <: Ordered[T]](vMin: T, vMax: T)(v: T): Boolean =
+    private def inRangeLinear[T <: Ordered[T]](vMin: T, vMax: T)(v: T): Boolean                    =
       v > vMin && v < vMax
 
     private def newPosition(starPos: (Length, Length))(offset: FocalPlaneOffset): (Length, Length) =
@@ -61,7 +61,7 @@ object AltairControllerEpics {
     val CorrectionsOff: String = "OFF"
 
     // The OT checks this, why do it again in Seqexec?
-    private def newPosInRange(newPos: (Length, Length)): Boolean = {
+    private def newPosInRange(newPos: (Length, Length)): Boolean                                = {
       val minX = Millimeters(-37.2)
       val maxX = Millimeters(37.2)
       val minY = Millimeters(-37.2)
@@ -90,7 +90,7 @@ object AltairControllerEpics {
       newPos:  (Length, Length)
     ): Boolean = validControlMatrix(currCfg.preparedMatrixCoords)(newPos)
 
-    private def prepareMatrix(newPos: (Length, Length)): F[Unit] =
+    private def prepareMatrix(newPos: (Length, Length)): F[Unit]                                =
       epicsTcs.aoPrepareControlMatrix.setX(newPos._1.toMillimeters) *>
         epicsTcs.aoPrepareControlMatrix.setY(newPos._2.toMillimeters)
 
@@ -142,10 +142,10 @@ object AltairControllerEpics {
 
     }
 
-    private val setCorrectionsOff: F[ApplyCommandResult] =
+    private val setCorrectionsOff: F[ApplyCommandResult]                                        =
       epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *> epicsTcs.aoCorrect.post(DefaultTimeout)
 
-    private val setCorrectionsOn: F[ApplyCommandResult] =
+    private val setCorrectionsOn: F[ApplyCommandResult]                                         =
       epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
         epicsTcs.aoCorrect.setGains(1) *>
         epicsTcs.aoCorrect.post(DefaultTimeout)
@@ -185,14 +185,14 @@ object AltairControllerEpics {
       )
     }
 
-    private val AoSettledTimeout  = FiniteDuration(30, SECONDS)
-    private val MatrixPrepTimeout = FiniteDuration(10, SECONDS)
+    private val AoSettledTimeout                                                                = FiniteDuration(30, SECONDS)
+    private val MatrixPrepTimeout                                                               = FiniteDuration(10, SECONDS)
 
     private val dmFlattenAction: F[ApplyCommandResult] =
       epicsTcs.aoFlatten.mark *> epicsTcs.aoFlatten.post(DefaultTimeout)
 
     // Let's keep this check until we are sure the coordinates for the control matrix are properly estimated
-    private val checkControlMatrix: F[Unit] = {
+    private val checkControlMatrix: F[Unit]                                                   = {
       val tolerance = Millimeters(1e-3)
 
       for {
@@ -248,7 +248,7 @@ object AltairControllerEpics {
           ()
         )
 
-    private def startStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
+    private def startStrapGate(currCfg: EpicsAltairConfig): F[Unit]                           = (
       L.debug("Starting STRAP gate in Altair") *>
         epicsAltair.strapGateControl.setGate(1) *>
         epicsAltair.strapGateControl.post(DefaultTimeout) *>
@@ -256,14 +256,14 @@ object AltairControllerEpics {
         L.debug("STRAP gate started")
     ).unlessA(currCfg.strapGate =!= 0)
 
-    private def stopStrapGate(currCfg: EpicsAltairConfig): F[Unit] = (
+    private def stopStrapGate(currCfg: EpicsAltairConfig): F[Unit]                            = (
       L.debug("Stopping STRAP gate in Altair") *>
         epicsAltair.strapGateControl.setGate(0) *>
         epicsAltair.strapGateControl.post(DefaultTimeout) *>
         L.debug("STRAP gate stopped")
     ).whenA(currCfg.strapGate =!= 0)
 
-    private val StrapLoopSettleTimeout = FiniteDuration(10, SECONDS)
+    private val StrapLoopSettleTimeout                                                        = FiniteDuration(10, SECONDS)
 
     private def startStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
       L.debug("Starting STRAP loop in Altair") *>
@@ -273,21 +273,21 @@ object AltairControllerEpics {
         L.debug("STRAP loop started")
     ).unlessA(currCfg.strapLoop)
 
-    private def stopStrapLoop(currCfg: EpicsAltairConfig): F[Unit] = (
+    private def stopStrapLoop(currCfg: EpicsAltairConfig): F[Unit]  = (
       L.debug("Stopping STRAP loop in Altair") *>
         epicsAltair.strapControl.setActive(0) *>
         epicsAltair.strapControl.post(DefaultTimeout) *>
         L.debug("STRAP loop stopped")
     ).whenA(currCfg.strapLoop)
 
-    implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
+    implicit val sfoControlEq: Eq[LgsSfoControl]                    = Eq.by(_.ordinal)
 
-    private def startSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
+    private def startSfoLoop(currCfg: EpicsAltairConfig): F[Unit]                         =
       epicsAltair.sfoControl
         .setActive(LgsSfoControl.Enable)
         .unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
-    private def pauseSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
+    private def pauseSfoLoop(currCfg: EpicsAltairConfig): F[Unit]                         =
       epicsAltair.sfoControl
         .setActive(LgsSfoControl.Pause)
         .whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
@@ -299,13 +299,13 @@ object AltairControllerEpics {
         (startStrapGate(currCfg) *> startStrapLoop(currCfg)).whenA(strap) *>
         startSfoLoop(currCfg).whenA(sfo)
 
-    private val ttgsOffEndo: Endo[EpicsAltairConfig] = EpicsAltairConfig.strapGate.set(0) >>>
+    private val ttgsOffEndo: Endo[EpicsAltairConfig]                                      = EpicsAltairConfig.strapGate.set(0) >>>
       EpicsAltairConfig.strapLoop.set(false) >>>
       EpicsAltairConfig.sfoLoop.modify { v =>
         (v === LgsSfoControl.Disable).fold(LgsSfoControl.Disable, LgsSfoControl.Pause)
       }
 
-    private def ttgsOff(currCfg: EpicsAltairConfig): F[Unit] =
+    private def ttgsOff(currCfg: EpicsAltairConfig): F[Unit]                              =
       stopStrapGate(currCfg) *>
         stopStrapLoop(currCfg) *>
         pauseSfoLoop(currCfg)
@@ -395,7 +395,7 @@ object AltairControllerEpics {
         L.debug(s"Skipped resuming Altair LGS(strap = $strap, sfo = $sfo) guiding")
     }
 
-    private def turnOff(currentCfg: EpicsAltairConfig): AltairPauseResume[F] = {
+    private def turnOff(currentCfg: EpicsAltairConfig): AltairPauseResume[F]              = {
       val pauseAction =
         if (currentCfg.aoLoop)
           L.debug("Turning Altair guiding off") *>
@@ -466,7 +466,7 @@ object AltairControllerEpics {
         }
       }
 
-    override def observe(expTime: Time)(cfg: AltairConfig): F[Unit] = Sync[F]
+    override def observe(expTime: Time)(cfg: AltairConfig): F[Unit]                       = Sync[F]
       .delay(LocalDate.now)
       .flatMap(date =>
         (epicsTcs.aoStatistics.setTriggerTimeInterval(0.0) *>
@@ -477,7 +477,7 @@ object AltairControllerEpics {
           )).whenA(expTime > 5.seconds && cfg =!= AltairOff)
       )
 
-    override def endObserve(cfg: AltairConfig): F[Unit] = Applicative[F].unit
+    override def endObserve(cfg: AltairConfig): F[Unit]                                   = Applicative[F].unit
 
     def retrieveConfig: F[EpicsAltairConfig] = for {
       cmtxx <- epicsAltair.matrixStartX.map(Millimeters(_))

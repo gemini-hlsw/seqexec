@@ -55,13 +55,13 @@ object HeadersSideBar {
   implicit val showSkyBackground: Display[SkyBackground] =
     Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
-  implicit val displayWaterVapor: Display[WaterVapor] =
+  implicit val displayWaterVapor: Display[WaterVapor]    =
     Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
-  implicit val showCloudCover: Display[CloudCover] =
+  implicit val showCloudCover: Display[CloudCover]       =
     Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
-  implicit val showImageQuality: Display[ImageQuality] =
+  implicit val showImageQuality: Display[ImageQuality]   =
     Display.by(_.toInt.map(conditionIntToString).getOrElse("Unknown"), _.label)
 
   @Lenses
@@ -76,7 +76,7 @@ object HeadersSideBar {
     def apply(operator: Option[Operator], observer: Option[Observer]): State =
       State(operator, observer, operator, observer)
 
-    implicit val stateEquals: Eq[State] = Eq.fromUniversalEquals
+    implicit val stateEquals: Eq[State]                                      = Eq.fromUniversalEquals
 
     implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.operator, s.observer))
   }

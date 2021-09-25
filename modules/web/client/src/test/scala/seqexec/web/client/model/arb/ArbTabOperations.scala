@@ -24,7 +24,7 @@ trait ArbTabOperations {
       } yield s
     }
 
-  implicit val rroCogen: Cogen[ResourceRunOperation] =
+  implicit val rroCogen: Cogen[ResourceRunOperation]                    =
     Cogen[Option[Either[Int, Either[Int, Int]]]].contramap {
       case ResourceRunOperation.ResourceRunIdle         => None
       case ResourceRunOperation.ResourceRunInFlight(i)  => Some(Left(i))
@@ -32,7 +32,7 @@ trait ArbTabOperations {
       case ResourceRunOperation.ResourceRunFailed(i)    => Some(Right(Left(i)))
     }
 
-  implicit val arbTabOperations: Arbitrary[TabOperations] = {
+  implicit val arbTabOperations: Arbitrary[TabOperations]               = {
     implicit val ordering: Ordering[Resource] =
       Order[Resource].toOrdering
 
@@ -51,7 +51,7 @@ trait ArbTabOperations {
     }
   }
 
-  implicit val toCogen: Cogen[TabOperations] =
+  implicit val toCogen: Cogen[TabOperations]                            =
     Cogen[
       (
         RunOperation,

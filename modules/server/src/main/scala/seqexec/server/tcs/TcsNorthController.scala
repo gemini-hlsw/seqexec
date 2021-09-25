@@ -48,7 +48,7 @@ object TcsNorthController {
   implicit val aoGuideShow: Show[GuiderConfig @@ AoGuide] =
     Show.show(_.asInstanceOf[GuiderConfig].show)
 
-  implicit val tcsNorthConfigShow: Show[TcsNorthConfig] = Show.show {
+  implicit val tcsNorthConfigShow: Show[TcsNorthConfig]   = Show.show {
     case x: BasicTcsConfig   => x.show
     case x: TcsNorthAoConfig => x.show
   }

@@ -38,7 +38,7 @@ trait ConfigArbitraries {
       } yield new ItemEntry(key, value)
     }
 
-  implicit val arbConfig: Arbitrary[Config] =
+  implicit val arbConfig: Arbitrary[Config]       =
     Arbitrary {
       for {
         items <- arbitrary[Array[ItemEntry]]

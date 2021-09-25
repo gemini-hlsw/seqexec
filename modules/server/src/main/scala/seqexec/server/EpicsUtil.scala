@@ -47,8 +47,8 @@ abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsComma
         cs.map { ccs =>
           ccs.postCallback {
             new CaCommandListener {
-              override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
-              override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
+              override def onSuccess(): Unit                 = f(ApplyCommandResult.Completed.asRight)
+              override def onPause(): Unit                   = f(ApplyCommandResult.Paused.asRight)
               override def onFailure(cause: Exception): Unit = f(cause.asLeft)
             }
           }
@@ -58,11 +58,11 @@ abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsComma
       }
       .addSystemNameToCmdError(sysName)
 
-  override def mark: F[Unit] = Sync[F].delay {
+  override def mark: F[Unit]                                        = Sync[F].delay {
     cs.map(_.mark())
   }.void
 
-  protected def setTimeout(t: FiniteDuration): F[Unit] =
+  protected def setTimeout(t: FiniteDuration): F[Unit]              =
     Sync[F].delay {
       cs.map(_.getApplySender).map(_.setTimeout(t.length, t.unit))
     }.void
@@ -147,8 +147,8 @@ abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveC
         os.map { oos =>
           oos.postCallback {
             new CaCommandListener {
-              override def onSuccess(): Unit = f(ObserveCommandResult.Success.asRight)
-              override def onPause(): Unit   = f(ObserveCommandResult.Paused.asRight)
+              override def onSuccess(): Unit                 = f(ObserveCommandResult.Success.asRight)
+              override def onPause(): Unit                   = f(ObserveCommandResult.Paused.asRight)
               override def onFailure(cause: Exception): Unit = cause match {
                 case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
                 case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
@@ -161,11 +161,11 @@ abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveC
       }
       .addSystemNameToCmdError(sysName)
 
-  override def mark: F[Unit] = Sync[F].delay {
+  override def mark: F[Unit]                                          = Sync[F].delay {
     cs.map(_.mark())
   }.void
 
-  protected def setTimeout(t: FiniteDuration): F[Unit] =
+  protected def setTimeout(t: FiniteDuration): F[Unit]                =
     Sync[F].delay {
       os.map(_.setTimeout(t.length, t.unit))
     }.void
@@ -178,7 +178,7 @@ object EpicsCodex {
   }
 
   object EncodeEpicsValue {
-    def apply[A, T](f:  A => T): EncodeEpicsValue[A, T]                        = (a: A) => f(a)
+    def apply[A, T](f: A => T): EncodeEpicsValue[A, T]                         = (a: A) => f(a)
     def applyO[A, T](f: PartialFunction[A, T]): EncodeEpicsValue[A, Option[T]] = (a: A) => f.lift(a)
   }
 
@@ -232,7 +232,7 @@ object EpicsUtil {
         // guarantees that only one of them will complete the IO.
         val timer          = new JTimer
         val statusListener = new CaAttributeListener[T] {
-          override def onValueChange(newVals: util.List[T]): Unit =
+          override def onValueChange(newVals: util.List[T]): Unit   =
             if (
               !newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1
             ) {

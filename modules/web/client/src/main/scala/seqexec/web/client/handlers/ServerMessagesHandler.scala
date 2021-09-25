@@ -44,27 +44,27 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     with Handlers[M, WebSocketsFocus] {
 
   // Global references to audio files
-  private val SequencePausedAudio = Audio.selectPlayable(
+  private val SequencePausedAudio     = Audio.selectPlayable(
     new Audio(SequencePausedResourceMP3.resource),
     new Audio(SequencePausedResourceWebM.resource)
   )
 
-  private val ExposurePausedAudio = Audio.selectPlayable(
+  private val ExposurePausedAudio     = Audio.selectPlayable(
     new Audio(ExposurePausedResourceMP3.resource),
     new Audio(ExposurePausedResourceWebM.resource)
   )
 
-  private val SequenceErrorAudio = Audio.selectPlayable(
+  private val SequenceErrorAudio      = Audio.selectPlayable(
     new Audio(SequenceErrorResourceMP3.resource),
     new Audio(SequenceErrorResourceWebM.resource)
   )
 
-  private val SequenceCompleteAudio = Audio.selectPlayable(
+  private val SequenceCompleteAudio   = Audio.selectPlayable(
     new Audio(SequenceCompleteResourceMP3.resource),
     new Audio(SequenceCompleteResourceWebM.resource)
   )
 
-  private val StepBeepAudio =
+  private val StepBeepAudio           =
     Audio.selectPlayable(new Audio(BeepResourceMP3.resource), new Audio(BeepResourceWebM.resource))
 
   private val ObservationStoppedAudio = Audio.selectPlayable(
@@ -131,7 +131,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           curStep       <- sequenceStepT.find(_.id === curSIdx)(obs)
           observeStatus <- Step.observeStatus.getOption(curStep)
           configStatus  <- Step.configStatus.getOption(curStep)
-          d              = configStatus // workaround
+          d = configStatus // workaround
           if observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
           if configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep
@@ -303,7 +303,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updatedL(WebSocketsFocus.alignAndCalib.set(AlignAndCalibStep.fromInt(i)))
   }
 
-  val defaultMessage: PartialFunction[Any, ActionResult[M]] = { case ServerMessage(_) =>
+  val defaultMessage: PartialFunction[Any, ActionResult[M]]  = { case ServerMessage(_) =>
     // Ignore unknown events
     noChange
   }

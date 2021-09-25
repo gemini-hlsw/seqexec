@@ -11,7 +11,7 @@ import squants.time.Time
 import squants.time.TimeUnit
 
 package model {
-  final case class QueueId(self: UUID) extends AnyVal
+  final case class QueueId(self: UUID)  extends AnyVal
   final case class ClientId(self: UUID) extends AnyVal
 }
 
@@ -24,11 +24,11 @@ package object model {
   type ObservationName = String
   type TargetName      = String
 
-  implicit val queueIdEq: Eq[QueueId]                        = Eq.by(x => x.self)
-  implicit val queueIdShow: Show[QueueId]                    = Show.fromToString
-  implicit val queueIdOrder: Order[QueueId]                  =
+  implicit val queueIdEq: Eq[QueueId]                          = Eq.by(x => x.self)
+  implicit val queueIdShow: Show[QueueId]                      = Show.fromToString
+  implicit val queueIdOrder: Order[QueueId]                    =
     Order.by(_.self)
-  implicit val queueIdOrdering: scala.math.Ordering[QueueId] =
+  implicit val queueIdOrdering: scala.math.Ordering[QueueId]   =
     queueIdOrder.toOrdering
 
   implicit val stEq: Eq[StepConfig]                            = Eq.fromUniversalEquals
@@ -40,14 +40,14 @@ package object model {
     clientIdOrder.toOrdering
   val UnknownTargetName                                        = "None"
 
-  val CalibrationQueueName: String = "Calibration Queue"
-  val CalibrationQueueId: QueueId  =
+  val CalibrationQueueName: String    = "Calibration Queue"
+  val CalibrationQueueId: QueueId     =
     QueueId(UUID.fromString("7156fa7e-48a6-49d1-a267-dbf3bbaa7577"))
 
   implicit val timeUnit: Eq[TimeUnit] =
     Eq.by(_.symbol)
 
-  implicit val timeEq: Eq[Time] =
+  implicit val timeEq: Eq[Time]       =
     Eq.by(_.toMilliseconds)
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {

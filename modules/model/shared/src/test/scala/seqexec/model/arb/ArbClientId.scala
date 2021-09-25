@@ -16,10 +16,10 @@ trait ArbClientId {
     arbitrary[UUID].map(ClientId)
   }
 
-  implicit val cogenUUID: Cogen[UUID] =
+  implicit val cogenUUID: Cogen[UUID]           =
     Cogen[(Long, Long)].contramap(u => (u.getMostSignificantBits, u.getLeastSignificantBits))
 
-  implicit val cidCogen: Cogen[ClientId] =
+  implicit val cidCogen: Cogen[ClientId]        =
     Cogen[UUID].contramap(_.self)
 
 }

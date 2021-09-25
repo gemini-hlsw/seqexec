@@ -101,33 +101,33 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
   def apply[F[_]: Sync](config: CleanConfig, site: Site): ObsKeywordsReader[F] =
     new ObsKeywordsReader[F] {
       // Format used on FITS keywords
-      val telescopeName: String = site match {
+      val telescopeName: String                                          = site match {
         case Site.GN => "Gemini-North"
         case Site.GS => "Gemini-South"
       }
 
-      override def obsType: F[String] = EitherT(
+      override def obsType: F[String]                                    = EitherT(
         config
           .extractObsAs[String](OBSERVE_TYPE_PROP)
           .leftMap(explainExtractError)
           .pure[F]
       ).widenRethrowT
 
-      override def obsClass: F[String] = EitherT(
+      override def obsClass: F[String]                                   = EitherT(
         config
           .extractObsAs[String](OBS_CLASS_PROP)
           .leftMap(explainExtractError)
           .pure[F]
       ).widenRethrowT
 
-      override def gemPrgId: F[String] = EitherT(
+      override def gemPrgId: F[String]                                   = EitherT(
         config
           .extractAs[String](OCS_KEY / PROGRAMID_PROP)
           .leftMap(explainExtractError)
           .pure[F]
       ).widenRethrowT
 
-      override def obsId: F[String] = EitherT(
+      override def obsId: F[String]                                      = EitherT(
         config
           .extractAs[String](OCS_KEY / OBSERVATIONID_PROP)
           .leftMap(explainExtractError)
@@ -137,9 +137,9 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       private def explainExtractError(e: ExtractFailure): SeqexecFailure =
         SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-      private val ObsConditionsProp = "obsConditions"
+      private val ObsConditionsProp                                      = "obsConditions"
 
-      override def requestedAirMassAngle: F[Map[String, Double]] = {
+      override def requestedAirMassAngle: F[Map[String, Double]]       = {
         val keys: F[List[Option[(String, Double)]]] =
           List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).map { key =>
             val value: F[Option[Double]] =
@@ -157,7 +157,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         keys.map(_.mapFilter(identity).toMap)
       }
 
-      override def requestedConditions: F[Map[String, String]] = {
+      override def requestedConditions: F[Map[String, String]]         = {
         val keys: F[List[(String, String)]] =
           List(SB, CC, IQ, WV).map { key =>
             val value: F[String] =
@@ -213,7 +213,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         windows.flattenOption.pure[F]
       }
 
-      override def dataLabel: F[String] =
+      override def dataLabel: F[String]                                =
         EitherT(
           config
             .extractObsAs[String](DATA_LABEL_PROP)
@@ -221,17 +221,17 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
             .pure[F]
         ).widenRethrowT
 
-      override def observatory: F[String] = telescopeName.pure[F]
+      override def observatory: F[String]                              = telescopeName.pure[F]
 
       override def telescope: F[String] = telescopeName.pure[F]
 
-      private def decodeGuide(v: StandardGuideOptions.Value): String = v match {
+      private def decodeGuide(v: StandardGuideOptions.Value): String                = v match {
         case StandardGuideOptions.Value.park   => "parked"
         case StandardGuideOptions.Value.guide  => "guiding"
         case StandardGuideOptions.Value.freeze => "frozen"
       }
 
-      override def pwfs1Guide: F[StandardGuideOptions.Value] =
+      override def pwfs1Guide: F[StandardGuideOptions.Value]                        =
         EitherT(
           config
             .extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS1_PROP)
@@ -239,11 +239,11 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
             .pure[F]
         ).widenRethrowT
 
-      override def pwfs1GuideS: F[String] =
+      override def pwfs1GuideS: F[String]                                           =
         pwfs1Guide
           .map(decodeGuide)
 
-      override def pwfs2Guide: F[StandardGuideOptions.Value] =
+      override def pwfs2Guide: F[StandardGuideOptions.Value]                        =
         EitherT(
           config
             .extractTelescopeAs[StandardGuideOptions.Value](Tcs.GUIDE_WITH_PWFS2_PROP)
@@ -251,7 +251,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
             .pure[F]
         ).widenRethrowT
 
-      override def pwfs2GuideS: F[String] =
+      override def pwfs2GuideS: F[String]                                           =
         pwfs2Guide
           .map(decodeGuide)
 
@@ -266,42 +266,42 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
             .pure[F]
         ).widenRethrowT
 
-      override def oiwfsGuide: F[StandardGuideOptions.Value] =
+      override def oiwfsGuide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(GUIDE_WITH_OIWFS_PROP)
 
-      override def oiwfsGuideS: F[String] =
+      override def oiwfsGuideS: F[String]                                           =
         oiwfsGuide
           .map(decodeGuide)
 
-      override def aowfsGuide: F[StandardGuideOptions.Value] =
+      override def aowfsGuide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(Tcs.GUIDE_WITH_AOWFS_PROP)
 
-      override def aowfsGuideS: F[String] =
+      override def aowfsGuideS: F[String]                                           =
         aowfsGuide
           .map(decodeGuide)
 
-      override def cwfs1Guide: F[StandardGuideOptions.Value] =
+      override def cwfs1Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(CanopusWfs.cwfs1.getSequenceProp)
 
-      override def cwfs2Guide: F[StandardGuideOptions.Value] =
+      override def cwfs2Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(CanopusWfs.cwfs2.getSequenceProp)
 
-      override def cwfs3Guide: F[StandardGuideOptions.Value] =
+      override def cwfs3Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(CanopusWfs.cwfs3.getSequenceProp)
 
-      override def odgw1Guide: F[StandardGuideOptions.Value] =
+      override def odgw1Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(GsaoiOdgw.odgw1.getSequenceProp)
 
-      override def odgw2Guide: F[StandardGuideOptions.Value] =
+      override def odgw2Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(GsaoiOdgw.odgw2.getSequenceProp)
 
-      override def odgw3Guide: F[StandardGuideOptions.Value] =
+      override def odgw3Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(GsaoiOdgw.odgw3.getSequenceProp)
 
-      override def odgw4Guide: F[StandardGuideOptions.Value] =
+      override def odgw4Guide: F[StandardGuideOptions.Value]                        =
         extractOptionalGuide(GsaoiOdgw.odgw4.getSequenceProp)
 
-      private implicit val eqVisibility: Eq[Visibility] = Eq.by(_.ordinal())
+      private implicit val eqVisibility: Eq[Visibility]                             = Eq.by(_.ordinal())
 
       private val headerPrivacyF: F[Boolean] =
         (config
@@ -330,7 +330,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
             .sequence
         ).widenRethrowT
 
-      override def releaseDate: F[String] = calcReleaseDate
+      override def releaseDate: F[String]    = calcReleaseDate
 
       private val manualDarkValue    = "Manual Dark"
       private val manualDarkOverride = "Dark"
@@ -343,7 +343,7 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
           .pure[F]
           .safeValOrDefault
 
-      override def geminiQA: F[String] = "UNKNOWN".pure[F]
+      override def geminiQA: F[String]  = "UNKNOWN".pure[F]
 
       override def pIReq: F[String] = "UNKNOWN".pure[F]
 

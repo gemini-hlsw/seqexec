@@ -42,7 +42,7 @@ object GpiHeader {
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
       }
 
-      override def sendAfter(id: ImageFileId): F[Unit] =
+      override def sendAfter(id: ImageFileId): F[Unit]                         =
         Applicative[F].unit
     }
 }

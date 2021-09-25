@@ -24,7 +24,7 @@ trait TcsConfigDecoders {
       if (d === 0) MountGuideOption.MountGuideOff else MountGuideOption.MountGuideOn
     )
 
-  implicit val decodeM1GuideSource: DecodeEpicsValue[String, M1Source] =
+  implicit val decodeM1GuideSource: DecodeEpicsValue[String, M1Source]         =
     DecodeEpicsValue((s: String) =>
       s.trim match {
         case "PWFS1" => M1Source.PWFS1
@@ -44,11 +44,11 @@ trait TcsConfigDecoders {
   implicit val decodeComaOption: DecodeEpicsValue[String, ComaOption] =
     DecodeEpicsValue((s: String) => if (s.trim === "Off") ComaOption.ComaOff else ComaOption.ComaOn)
 
-  def decodeM2Guide(s: BinaryOnOff, u: ComaOption, v: Set[TipTiltSource]): M2GuideConfig =
+  def decodeM2Guide(s: BinaryOnOff, u: ComaOption, v: Set[TipTiltSource]): M2GuideConfig  =
     if (s === BinaryOnOff.Off) M2GuideConfig.M2GuideOff
     else M2GuideConfig.M2GuideOn(u, v)
 
-  implicit val decodeAoFold: DecodeEpicsValue[String, AoFold] = DecodeEpicsValue((s: String) =>
+  implicit val decodeAoFold: DecodeEpicsValue[String, AoFold]                             = DecodeEpicsValue((s: String) =>
     if (s.trim === "IN") AoFold.In
     else AoFold.Out
   )
@@ -61,7 +61,7 @@ trait TcsConfigDecoders {
       if (s === BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn
     )
 
-  implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition] =
+  implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition]    =
     DecodeEpicsValue((t: String) =>
       if (t.trim === "IN") HrwfsPickupPosition.IN
       else HrwfsPickupPosition.OUT

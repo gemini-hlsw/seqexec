@@ -97,7 +97,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
         .getOrElse(noChange)
   }
 
-  def handleMoveCal: PartialFunction[Any, ActionResult[M]] = { case RequestMoveCal(qid, oid, i) =>
+  def handleMoveCal: PartialFunction[Any, ActionResult[M]]   = { case RequestMoveCal(qid, oid, i) =>
     value.clientId
       .map { cid =>
         effectOnly(

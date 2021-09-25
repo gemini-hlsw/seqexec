@@ -106,7 +106,7 @@ object Step {
       }
     }
 
-  implicit val equal: Eq[Step] =
+  implicit val equal: Eq[Step]                                     =
     Eq.instance {
       case (x: StandardStep, y: StandardStep)           =>
         x === y

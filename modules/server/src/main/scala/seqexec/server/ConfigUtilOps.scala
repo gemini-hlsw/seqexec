@@ -35,9 +35,9 @@ object ConfigUtilOps {
    *      of another, which is missing.
    */
   sealed trait ExtractFailure
-  final case class KeyNotFound(key: ItemKey) extends ExtractFailure
+  final case class KeyNotFound(key: ItemKey)                  extends ExtractFailure
   final case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
-  final case class ContentError(msg: String) extends ExtractFailure
+  final case class ContentError(msg: String)                  extends ExtractFailure
 
   def explain(e: ExtractFailure): String = e match {
     case KeyNotFound(k)          => s"Missing config value for key ${k.getPath}"
@@ -67,11 +67,11 @@ object ConfigUtilOps {
     def /(p: PropertyDescriptor): ItemKey = /(p.getName)
   }
 
-  trait ExtractItem[A] {
+  trait ExtractItem[A]                                                                       {
     def itemValue(a: A, key: ItemKey): Option[AnyRef]
   }
 
-  implicit val ConfigExtractItem: ExtractItem[Config]                 =
+  implicit val ConfigExtractItem: ExtractItem[Config] =
     (c: Config, key: ItemKey) => Option(c.getItemValue(key))
 
   implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] =

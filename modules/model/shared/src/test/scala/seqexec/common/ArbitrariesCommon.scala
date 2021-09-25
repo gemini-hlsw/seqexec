@@ -18,7 +18,7 @@ trait ArbitrariesCommon {
       } yield FixedLengthBuffer.unsafeFromInt(l, d: _*)
     }
 
-  implicit def fixedLengthBufferCogen[A: Cogen]: Cogen[FixedLengthBuffer[A]] =
+  implicit def fixedLengthBufferCogen[A: Cogen]: Cogen[FixedLengthBuffer[A]]       =
     Cogen[(Int, Vector[A])].contramap(x => (x.maxLength, x.toChain.toVector))
 
 }

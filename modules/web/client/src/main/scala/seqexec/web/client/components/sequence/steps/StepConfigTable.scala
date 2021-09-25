@@ -183,7 +183,7 @@ object StepConfigTable {
       headerHeight = SeqexecStyles.headerHeight
     )
 
-  protected val component = ScalaComponent
+  protected val component                                     = ScalaComponent
     .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render(b =>

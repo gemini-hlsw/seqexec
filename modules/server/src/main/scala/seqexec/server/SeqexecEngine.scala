@@ -300,7 +300,7 @@ object SeqexecEngine {
      * Extract the target name from a step configuration. Some processing is necessary to get the
      * same string that appears in TCS.
      */
-    private def extractTargetName(config: CleanConfig): Option[String] = {
+    private def extractTargetName(config: CleanConfig): Option[String]                            = {
       val BasePositionKey    = "Base:name"
       val baseName           = config.extractTelescopeAs[String](BasePositionKey).toOption
       val EphemerisExtension = ".eph"
@@ -314,7 +314,7 @@ object SeqexecEngine {
       }
     }
 
-    private def stepRequiresChecks(config: CleanConfig): Boolean = (for {
+    private def stepRequiresChecks(config: CleanConfig): Boolean                                  = (for {
       obsClass <- config.extractObsAs[String](OBS_CLASS_PROP)
       obsType  <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
     } yield (obsClass === ObsClass.SCIENCE.headerValue() ||
@@ -342,7 +342,7 @@ object SeqexecEngine {
 
     val ObsConditionsProp = "obsConditions"
 
-    private def extractCloudCover(config: CleanConfig): Option[SPSiteQuality.CloudCover] =
+    private def extractCloudCover(config: CleanConfig): Option[SPSiteQuality.CloudCover]       =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / CLOUD_COVER_PROP)
         .flatMap(_.parseInt)
@@ -358,7 +358,7 @@ object SeqexecEngine {
           ).find(_.getPercentage.toInt === x)
         }
 
-    private def extractImageQuality(config: CleanConfig): Option[SPSiteQuality.ImageQuality] =
+    private def extractImageQuality(config: CleanConfig): Option[SPSiteQuality.ImageQuality]   =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / IMAGE_QUALITY_PROP)
         .flatMap(_.parseInt)
@@ -386,7 +386,7 @@ object SeqexecEngine {
           ).find(_.getPercentage.toInt === x)
         }
 
-    private def extractWaterVapor(config: CleanConfig): Option[SPSiteQuality.WaterVapor] =
+    private def extractWaterVapor(config: CleanConfig): Option[SPSiteQuality.WaterVapor]       =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / WATER_VAPOR_PROP)
         .flatMap(_.parseInt)
@@ -432,7 +432,7 @@ object SeqexecEngine {
 
     }
 
-    private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
+    private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent]                       = { (s: EngineState[F]) =>
       ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s),
        SeqEvent.NullSeqEvent: SeqEvent
       )
@@ -563,7 +563,7 @@ object SeqexecEngine {
         )
       )
 
-    override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit] =
+    override def requestPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit]    =
       q.enqueue1(Event.pause[F, EngineState[F], SeqEvent](id, user))
 
     override def requestCancelPause(
@@ -582,7 +582,7 @@ object SeqexecEngine {
     ): F[Unit] =
       q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
-    override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
+    override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit]         =
       logDebugEvent(q, s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -617,7 +617,7 @@ object SeqexecEngine {
       user:     UserDetails,
       clientId: ClientId
     ): EventType[F] = {
-      val lens =
+      val lens                                     =
         (EngineState.sequences[F] ^|-? index(sid))
           .modify(SequenceData.observer.set(observer.some)) >>>
           EngineState.instrumentLoadedL[F](i).set(sid.some) >>>
@@ -657,10 +657,10 @@ object SeqexecEngine {
         sync(q, sid) *>
         q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId))
 
-    private def logDebugEvent(q: EventQueue[F], msg: String): F[Unit] =
+    private def logDebugEvent(q: EventQueue[F], msg: String): F[Unit]                              =
       Event.logDebugMsgF[F, EngineState[F], SeqEvent](msg).flatMap(q.enqueue1)
 
-    override def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit] =
+    override def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit]                =
       logDebugEvent(q, "SeqexecEngine: Updating loaded sequences") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -672,7 +672,7 @@ object SeqexecEngine {
           )
         )
 
-    override def resetConditions(q: EventQueue[F]): F[Unit] =
+    override def resetConditions(q: EventQueue[F]): F[Unit]                                        =
       logDebugEvent(q, "SeqexecEngine: Reset conditions") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -696,7 +696,7 @@ object SeqexecEngine {
           )
         )
 
-    override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit] =
+    override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit]   =
       logDebugEvent(q, s"SeqexecEngine: Setting image quality to $iq") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -706,7 +706,7 @@ object SeqexecEngine {
           )
         )
 
-    override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit] =
+    override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit]       =
       logDebugEvent(q, s"SeqexecEngine: Setting water vapor to $wv") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -726,7 +726,7 @@ object SeqexecEngine {
           )
         )
 
-    override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit] =
+    override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit]       =
       logDebugEvent(q, s"SeqexecEngine: Setting cloud cover to $cc") *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
@@ -745,10 +745,10 @@ object SeqexecEngine {
     ): F[Unit] =
       q.enqueue1(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
-    override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit] =
+    override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit]                     =
       q.enqueue1(Event.poll(clientId))
 
-    private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
+    private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]]             = {
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
       Stream
         .fixedDelay[F](fd)
@@ -770,9 +770,9 @@ object SeqexecEngine {
         }
     }
 
-    private val heartbeatPeriod: FiniteDuration = FiniteDuration(10, TimeUnit.SECONDS)
+    private val heartbeatPeriod: FiniteDuration                                                    = FiniteDuration(10, TimeUnit.SECONDS)
 
-    private def heartbeatStream: Stream[F, EventType[F]] = {
+    private def heartbeatStream: Stream[F, EventType[F]]                                           = {
       // If there is no heartbeat in 5 periods throw an error
       val noHeartbeatDetection =
         SeqexecEngine.failIfNoEmitsWithin[F, EventType[F]](5 * heartbeatPeriod,
@@ -786,7 +786,7 @@ object SeqexecEngine {
         }))
     }
 
-    override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
+    override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent]                            =
       stream(
         q.dequeue
           .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream))
@@ -803,7 +803,7 @@ object SeqexecEngine {
     ): Stream[F, (EventResult[SeqEvent], EngineState[F])] =
       executeEngine.process(iterateQueues)(p)(s0)
 
-    override def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit] =
+    override def stopObserve(q: EventQueue[F], seqId: Observation.Id, graceful: Boolean): F[Unit]  =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, StopGracefully)))
         .whenA(graceful) *>
         q.enqueue1(
@@ -812,7 +812,7 @@ object SeqexecEngine {
           )
         )
 
-    override def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] = q.enqueue1(
+    override def abortObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit]                    = q.enqueue1(
       Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
     )
 
@@ -825,14 +825,14 @@ object SeqexecEngine {
           )
         )
 
-    override def resumeObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit] =
+    override def resumeObserve(q: EventQueue[F], seqId: Observation.Id): F[Unit]                   =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(seqId))) *>
         q.enqueue1(Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId)))
 
-    private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
+    private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue]                     =
       EngineState.queues[F] ^|-? index(qid)
 
-    private def cmdStateO(qid: QueueId): Optional[EngineState[F], BatchCommandState] =
+    private def cmdStateO(qid: QueueId): Optional[EngineState[F], BatchCommandState]               =
       queueO(qid) ^|-> ExecutionQueue.cmdState
 
     private def addSeqs(
@@ -938,7 +938,7 @@ object SeqexecEngine {
       )
     )
 
-    private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState[F]] =
+    private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState[F]]     =
       st =>
         st.queues
           .get(qid)
@@ -962,7 +962,7 @@ object SeqexecEngine {
       )
     )
 
-    private def clearQ(qid: QueueId): Endo[EngineState[F]] = st =>
+    private def clearQ(qid: QueueId): Endo[EngineState[F]]                                         = st =>
       st.queues
         .get(qid)
         .filter(_.status(st) =!= BatchExecState.Running)
@@ -971,7 +971,7 @@ object SeqexecEngine {
         }
         .getOrElse(st)
 
-    override def clearQueue(q: EventQueue[F], qid: QueueId): F[Unit] = q.enqueue1(
+    override def clearQueue(q: EventQueue[F], qid: QueueId): F[Unit]                               = q.enqueue1(
       Event.modifyState[F, EngineState[F], SeqEvent](
         clearQ(qid).withEvent(UpdateQueueClear(qid)).toHandle
       )
@@ -1031,7 +1031,7 @@ object SeqexecEngine {
      * runQueue starts the queue. It founds the top eligible sequences in the queue, and runs them.
      */
     private def runQueue(
-      qid: QueueId,
+      qid:      QueueId,
       observer: Observer,
       user:     UserDetails,
       clientId: ClientId
@@ -1085,7 +1085,7 @@ object SeqexecEngine {
       })
     )
 
-    private def stopSequencesInQueue(qid: QueueId): HandleType[F, Unit] =
+    private def stopSequencesInQueue(qid: QueueId): HandleType[F, Unit]                 =
       executeEngine.get
         .map(st =>
           queueO(qid)
@@ -1124,7 +1124,7 @@ object SeqexecEngine {
         )
       )
 
-    private def iterateQueues: PartialFunction[SystemEvent[F], HandleType[F, Unit]] = {
+    private def iterateQueues: PartialFunction[SystemEvent[F], HandleType[F, Unit]]     = {
       // Responds to events that could trigger the scheduling of the next sequence in the queue:
       case SystemEvent.Finished(sid) =>
         executeEngine.get.flatMap(st =>
@@ -1257,12 +1257,12 @@ object SeqexecEngine {
                            )
       )(st)
 
-    private def refreshSequence(id: Observation.Id): Endo[EngineState[F]] = (st: EngineState[F]) =>
+    private def refreshSequence(id: Observation.Id): Endo[EngineState[F]]               = (st: EngineState[F]) =>
       st.sequences.get(id).map(obsseq => updateSequenceEndo(id, obsseq)).foldLeft(st) {
         case (s, f) => f(s)
       }
 
-    private def refreshSequences: Endo[EngineState[F]] = (st: EngineState[F]) =>
+    private def refreshSequences: Endo[EngineState[F]]                                  = (st: EngineState[F]) =>
       st.sequences.map { case (id, obsseq) => updateSequenceEndo(id, obsseq) }.foldLeft(st) {
         case (s, f) => f(s)
       }
@@ -1349,10 +1349,10 @@ object SeqexecEngine {
   def createTranslator[F[_]: Sync: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
     SeqTranslate(site, systems)
 
-  private def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
+  private def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A])                    =
     l.splitAt(l.indexWhere(p))
 
-  private def systemsBeingConfigured[F[_]](st: EngineState[F]): Set[Resource] =
+  private def systemsBeingConfigured[F[_]](st: EngineState[F]): Set[Resource]                   =
     st.sequences.values
       .filter(d => d.seq.status.isError || d.seq.status.isIdle)
       .toList
@@ -1590,11 +1590,11 @@ object SeqexecEngine {
     val seq        = st.toSequence
     val instrument = obsSeq.seqGen.instrument
 
-    def resources(s:     SequenceGen.StepGen[F]): List[Resource] = s match {
+    def resources(s: SequenceGen.StepGen[F]): List[Resource] = s match {
       case s: SequenceGen.PendingStepGen[F] => s.resources.toList
       case _                                => List.empty
     }
-    def engineSteps(seq: Sequence[F]): List[Step]                =
+    def engineSteps(seq: Sequence[F]): List[Step]            =
       obsSeq.seqGen.steps.zip(seq.steps).map { case (a, b) =>
         StepsView
           .stepsView(instrument)

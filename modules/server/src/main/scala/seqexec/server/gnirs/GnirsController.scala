@@ -65,7 +65,7 @@ object GnirsController {
   type Wavelength = Length
 
   sealed trait Filter1
-  object Filter1 {
+  object Filter1    {
     case object Open        extends Filter1
     case object ND100X      extends Filter1
     case object Y_MK        extends Filter1
@@ -96,7 +96,7 @@ object GnirsController {
 
   sealed trait Focus
   object Focus {
-    case object Best extends Focus
+    case object Best                extends Focus
     final case class Manual(v: Int) extends Focus
   }
 

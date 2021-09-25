@@ -27,7 +27,7 @@ trait SeqexecServerArbitraries {
     } yield EngineState.default[IO].copy(queues = q, selected = s, conditions = c, operator = o)
   }
 
-  implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
+  implicit val executionQueueArb: Arbitrary[ExecutionQueue]          = Arbitrary {
     for {
       n <- arbitrary[String]
       s <- arbitrary[BatchCommandState]
@@ -35,7 +35,7 @@ trait SeqexecServerArbitraries {
     } yield ExecutionQueue(n, s, q)
   }
 
-  implicit val executionQueueCogen: Cogen[ExecutionQueue] =
+  implicit val executionQueueCogen: Cogen[ExecutionQueue]            =
     Cogen[(String, BatchCommandState, List[Observation.Id])]
       .contramap(x => (x.name, x.cmdState, x.queue))
 

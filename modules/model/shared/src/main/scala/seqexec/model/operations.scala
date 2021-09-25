@@ -35,8 +35,8 @@ object operations {
 
   sealed trait OperationLevelType[L <: OperationLevel]
   implicit object ObservationLevel extends OperationLevelType[Observation]
-  implicit object NsCycleLevel     extends OperationLevelType[NsCycle]
-  implicit object NsNodLevel       extends OperationLevelType[NsNod]
+  implicit object NsCycleLevel extends OperationLevelType[NsCycle]
+  implicit object NsNodLevel   extends OperationLevelType[NsNod]
 
   sealed trait SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit

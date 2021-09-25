@@ -50,7 +50,7 @@ final case class SeqexecUIModel(
 )
 
 object SeqexecUIModel {
-  val Initial: SeqexecUIModel = SeqexecUIModel(
+  val Initial: SeqexecUIModel         = SeqexecUIModel(
     Pages.Root,
     None,
     SectionClosed,

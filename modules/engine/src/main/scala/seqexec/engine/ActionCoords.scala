@@ -8,12 +8,12 @@ import seqexec.model.Observation
 import seqexec.model.StepId
 
 final case class ActionIndex(self: Long) extends AnyVal
-object ActionIndex {
+object ActionIndex       {
   implicit val actionIndexEq: Eq[ActionIndex] = Eq.by(_.self)
 }
 
 final case class ExecutionIndex(self: Long) extends AnyVal
-object ExecutionIndex {
+object ExecutionIndex    {
   implicit val actionIndexEq: Eq[ExecutionIndex] = Eq.by(_.self)
 }
 

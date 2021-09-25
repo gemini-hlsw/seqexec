@@ -299,7 +299,7 @@ object TableState {
   implicit def eqTs[A: Eq]: Eq[TableState[A]] =
     Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
 
-  implicit val eqSize: Eq[Size] =
+  implicit val eqSize: Eq[Size]               =
     Eq.by(x => (x.width.toDouble, x.height.toDouble))
 
   def userModified[A: Eq]: Lens[TableState[A], UserModified] =

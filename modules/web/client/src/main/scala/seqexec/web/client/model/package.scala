@@ -15,7 +15,7 @@ package object model {
       (x.url, x.protocol, x.readyState)
     }
 
-  implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance {
+  implicit def eqPot[A: Eq]: Eq[Pot[A]]   = Eq.instance {
     case (Empty, Empty)                           => true
     case (Unavailable, Unavailable)               => true
     case (Pending(a), Pending(b))                 => a === b

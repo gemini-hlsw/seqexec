@@ -16,7 +16,7 @@ object AppsCommon {
     taskKey[Seq[File]]("Download a configuration file for an application")
 
   sealed trait LogType
-  object LogType {
+  object LogType                {
     case object ConsoleAndFiles extends LogType
     case object Files           extends LogType
   }
@@ -30,10 +30,10 @@ object AppsCommon {
     }
   }
 
-  sealed trait DeploymentSite {
+  sealed trait DeploymentSite   {
     def site: String
   }
-  object DeploymentSite       {
+  object DeploymentSite         {
     case object GS extends DeploymentSite {
       override def site: String = "gs"
     }
@@ -45,7 +45,7 @@ object AppsCommon {
   /**
    * Mappings common to applications, including configuration and logging conf
    */
-  lazy val deployedAppMappings = Seq(
+  lazy val deployedAppMappings                              = Seq(
     // Don't include the configuration on the jar. Instead we copy it to the conf dir
     mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
 
@@ -74,7 +74,7 @@ object AppsCommon {
     )
   )
 
-  lazy val embeddedJreSettingsLinux64 = embeddedJreSettings(DeploymentTarget.Linux64)
+  lazy val embeddedJreSettingsLinux64                       = embeddedJreSettings(DeploymentTarget.Linux64)
 
   /**
    * Settings for meta projects to make them non-publishable

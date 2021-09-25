@@ -66,7 +66,7 @@ object UserEvent {
 
   // Uses `cont` to resume execution of a paused Action. If the Action is not paused, it does nothing.
   final case class ActionResume[F[_], S, U](id: Observation.Id, i: Int, cont: Stream[F, Result[F]])
-      extends UserEvent[F, S, U] {
+      extends UserEvent[F, S, U]       {
     val user: Option[UserDetails] = None
   }
 

@@ -84,7 +84,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     )
   )
 
-  private val baseConfig = BasicTcsConfig(
+  private val baseConfig        = BasicTcsConfig(
     TelescopeGuideConfig(MountGuideOption.MountGuideOff,
                          M1GuideConfig.M1GuideOff,
                          M2GuideConfig.M2GuideOff
@@ -394,7 +394,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     TestTcsEvent.MountGuideCmd("", "off")
   )
 
-  private val guideOnEvents = List(
+  private val guideOnEvents  = List(
     TestTcsEvent.M1GuideCmd("on"),
     TestTcsEvent.M2GuideCmd("on"),
     TestTcsEvent.MountGuideCmd("", "on")

@@ -83,7 +83,7 @@ object SequenceTabContent {
         }
     }
 
-  protected val component = ScalaComponent
+  protected val component               = ScalaComponent
     .builder[Props]
     .stateless
     .render_P { p =>

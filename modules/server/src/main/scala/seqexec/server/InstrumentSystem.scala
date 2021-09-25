@@ -46,8 +46,8 @@ object InstrumentSystem {
   final case class StopPausedCmd[F[_]](self: F[ObserveCommandResult])
   final case class AbortPausedCmd[F[_]](self: F[ObserveCommandResult])
 
-  sealed trait ObserveControl[+F[_]] extends Product with Serializable
-  case object Uncontrollable         extends ObserveControl[Nothing]
+  sealed trait ObserveControl[+F[_]]       extends Product with Serializable
+  case object Uncontrollable               extends ObserveControl[Nothing]
   final case class CompleteControl[F[_]](
     stop:        StopObserveCmd[F],
     abort:       AbortObserveCmd[F],
@@ -55,7 +55,7 @@ object InstrumentSystem {
     continue:    ContinuePausedCmd[F],
     stopPaused:  StopPausedCmd[F],
     abortPaused: AbortPausedCmd[F]
-  )                                  extends ObserveControl[F]
+  ) extends ObserveControl[F]
   // Special class for instrument, that cannot pause/resume like IR instruments and GSAOI
   final case class UnpausableControl[F[_]](stop: StopObserveCmd[F], abort: AbortObserveCmd[F])
       extends ObserveControl[F]

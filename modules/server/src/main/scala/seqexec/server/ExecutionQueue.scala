@@ -19,6 +19,6 @@ object ExecutionQueue {
   def init(name: String): ExecutionQueue =
     ExecutionQueue(name, BatchCommandState.Idle, List.empty)
 
-  implicit val eq: Eq[ExecutionQueue] =
+  implicit val eq: Eq[ExecutionQueue]    =
     Eq.by(x => (x.name, x.cmdState, x.queue))
 }

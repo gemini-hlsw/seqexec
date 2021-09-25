@@ -123,7 +123,7 @@ object GdsClient {
     }
 
     // Build an xml rpc request to close an observation
-    private def closeObservationRPC(id: ImageFileId): Elem =
+    private def closeObservationRPC(id: ImageFileId): Elem  =
       <methodCall>
         <methodName>HeaderReceiver.closeObservation</methodName>
         <params>
@@ -148,7 +148,7 @@ object GdsClient {
         .void
     }
 
-    private def keywordsParam(ks: KeywordBag): Elem =
+    private def keywordsParam(ks: KeywordBag): Elem         =
       <param>
         <value>
           <array>

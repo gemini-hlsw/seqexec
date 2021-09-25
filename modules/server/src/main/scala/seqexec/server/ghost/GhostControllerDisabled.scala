@@ -16,14 +16,14 @@ import squants.time.Time
 class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController[F] {
   private val name = "GHOST"
 
-  override def gdsClient: GdsClient[F] = new GdsClient[F] {
-    override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] =
+  override def gdsClient: GdsClient[F]                   = new GdsClient[F] {
+    override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit]                            =
       overrideLogMessage(name, "setKeywords")
 
     override def openObservation(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): F[Unit] =
       overrideLogMessage(name, "openObservation")
 
-    override def closeObservation(id: ImageFileId): F[Unit] =
+    override def closeObservation(id: ImageFileId): F[Unit]                                       =
       overrideLogMessage(name, "closeObservation")
   }
 
@@ -32,5 +32,5 @@ class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] =
     overrideLogMessage(name, s"observe $fileId").as(fileId)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                         = overrideLogMessage(name, "endObserve")
 }

@@ -328,7 +328,7 @@ object Sequence {
 
       override def rollback: Zipper[F] = self.copy(zipper = zipper.rollback)
 
-      override def skips: Option[State[F]] = zipper.skips match {
+      override def skips: Option[State[F]]                             = zipper.skips match {
         // Last execution
         case None    => zipper.uncurrentify.map(Final[F](_, status))
         case Some(x) => Zipper(x, status, singleRuns).some
@@ -342,7 +342,7 @@ object Sequence {
         )
       )
 
-      override def setSkipMark(stepId: StepId, v: Boolean): State[F] = self.copy(zipper =
+      override def setSkipMark(stepId: StepId, v: Boolean): State[F]   = self.copy(zipper =
         if (zipper.focus.id == stepId)
           zipper.copy(focus = zipper.focus.copy(skipMark = Step.SkipMark(v)))
         else
@@ -351,21 +351,21 @@ object Sequence {
           )
       )
 
-      override def getCurrentBreakpoint: Boolean =
+      override def getCurrentBreakpoint: Boolean                       =
         zipper.focus.breakpoint.self && zipper.focus.done.isEmpty
 
-      override val done: List[Step[F]] = zipper.done
+      override val done: List[Step[F]]                                 = zipper.done
 
       private val zipperL: Lens[Zipper[F], Sequence.Zipper[F]] =
         GenLens[Zipper[F]](_.zipper)
 
-      override def mark(i: Int)(r: Result[F]): State[F] = {
+      override def mark(i: Int)(r: Result[F]): State[F]        = {
         val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
         currentExecutionL.modify(_.mark(i)(r))(self)
       }
 
-      override def start(i: Int): State[F] = {
+      override def start(i: Int): State[F]                     = {
 
         val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
@@ -390,14 +390,14 @@ object Sequence {
           case _       => this
         }
 
-      override val toSequence: Sequence[F] = zipper.toSequence
+      override val toSequence: Sequence[F]                                    = zipper.toSequence
 
-      override def startSingle(c: ActionCoordsInSeq): State[F] =
+      override def startSingle(c: ActionCoordsInSeq): State[F]                       =
         if (zipper.done.find(_.id === c.stepId).isDefined)
           self
         else self.copy(singleRuns = singleRuns + (c -> ActionState.Started))
 
-      override def failSingle(c:  ActionCoordsInSeq, err: Result.Error): State[F] =
+      override def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F]     =
         if (getSingleState(c).started)
           self.copy(singleRuns = singleRuns + (c -> ActionState.Failed(err)))
         else
@@ -409,10 +409,10 @@ object Sequence {
         else
           self
 
-      override def getSingleState(c: ActionCoordsInSeq): ActionState[F] =
+      override def getSingleState(c: ActionCoordsInSeq): ActionState[F]              =
         singleRuns.getOrElse(c, ActionState.Idle)
 
-      override val getSingleActionStates: Map[ActionCoordsInSeq, ActionState[F]] = singleRuns
+      override val getSingleActionStates: Map[ActionCoordsInSeq, ActionState[F]]     = singleRuns
 
       override def getSingleAction(c: ActionCoordsInSeq): Option[Action[F]] = for {
         step <- toSequence.steps.find(_.id === c.stepId)
@@ -420,7 +420,7 @@ object Sequence {
         act  <- exec.get(c.actIdx.self)
       } yield act
 
-      override def clearSingles: State[F] = self.copy(singleRuns = Map.empty)
+      override def clearSingles: State[F]                                   = self.copy(singleRuns = Map.empty)
     }
 
     /**

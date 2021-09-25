@@ -147,7 +147,7 @@ object GmosControllerSim {
             sim.resumePaused
         }
 
-      override def stopPaused: F[ObserveCommandResult] = sim.stopPaused
+      override def stopPaused: F[ObserveCommandResult]                  = sim.stopPaused
 
       override def abortPaused: F[ObserveCommandResult] = sim.abortPaused
 

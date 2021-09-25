@@ -17,7 +17,7 @@ object GcalHeader {
     gcalReader: GcalKeywordReader[F]
   ): Header[F] =
     new Header[F] {
-      private val gcalKeywords = List(
+      private val gcalKeywords                                                 = List(
         buildString(gcalReader.lamp, KeywordName.GCALLAMP),
         buildString(gcalReader.filter, KeywordName.GCALFILT),
         buildString(gcalReader.diffuser, KeywordName.GCALDIFF),
@@ -27,6 +27,6 @@ object GcalHeader {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(id, kwClient, gcalKeywords)
 
-      override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
+      override def sendAfter(id: ImageFileId): F[Unit]                         = Applicative[F].unit
     }
 }

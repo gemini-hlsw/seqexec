@@ -65,7 +65,7 @@ object CalibrationQueueTabActive {
 }
 
 sealed trait TabSelected extends Product with Serializable
-object TabSelected {
+object TabSelected               {
   case object Selected   extends TabSelected
   case object Background extends TabSelected
 
@@ -118,7 +118,7 @@ final case class CalibrationQueueTab(state: BatchExecState, observer: Option[Obs
 }
 
 object CalibrationQueueTab {
-  val Empty: CalibrationQueueTab =
+  val Empty: CalibrationQueueTab           =
     CalibrationQueueTab(BatchExecState.Idle, None)
 
   implicit val eq: Eq[CalibrationQueueTab] =
@@ -262,7 +262,7 @@ object InstrumentSequenceTab {
   private implicit val loadedEq: Eq[LoadedSequenceView]       = Eq.by(identity)
   private implicit val completedEq: Eq[CompletedSequenceView] = Eq.by(identity)
 
-  implicit val eq: Eq[InstrumentSequenceTab] =
+  implicit val eq: Eq[InstrumentSequenceTab]                                             =
     Eq.by(x =>
       (x.instrument,
        x.sequence,
@@ -277,7 +277,7 @@ object InstrumentSequenceTab {
   implicit val completedSequence: Optional[InstrumentSequenceTab, CompletedSequenceView] =
     InstrumentSequenceTab.curSequence ^<-? stdLeft
 
-  implicit val loadedSequence: Optional[InstrumentSequenceTab, LoadedSequenceView] =
+  implicit val loadedSequence: Optional[InstrumentSequenceTab, LoadedSequenceView]       =
     InstrumentSequenceTab.curSequence ^<-? stdRight
 }
 

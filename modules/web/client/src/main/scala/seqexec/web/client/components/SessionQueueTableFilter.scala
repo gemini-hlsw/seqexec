@@ -37,7 +37,7 @@ object SessionQueueTableFilter {
       case _                  => ObsClass.Nighttime
     }))
 
-  private val component = ScalaComponent
+  private val component       = ScalaComponent
     .builder[Unit]("SessionQueueTableFilter")
     .stateless
     .render_P(_ =>

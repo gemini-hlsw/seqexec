@@ -25,7 +25,7 @@ object F2Config {
   }
 
   object F2FpuChoice {
-    case object Custom extends F2FpuChoice
+    case object Custom                   extends F2FpuChoice
     final case class Builtin(fpu: F2Fpu) extends F2FpuChoice
 
     implicit val EqF2FpuChoice: Eq[F2FpuChoice] =

@@ -41,7 +41,7 @@ object StepToolsCell {
   implicit val propsReuse: Reusability[Props] =
     Reusability.caseClassExcept[Props]("heightChangeCB", "breakPointEnterCB", "breakPointLeaveCB")
 
-  protected val component = ScalaComponent
+  protected val component                     = ScalaComponent
     .builder[Props]("StepToolsCell")
     .stateless
     .render_P { p =>
@@ -98,7 +98,7 @@ object StepIconCell {
       case _                   => iconEmpty
     }
 
-  private def stepStyle(p: Props): Css =
+  private def stepStyle(p: Props): Css     =
     p.status match {
       case StepState.Running   => SeqexecStyles.runningIconCell
       case StepState.Skipped   => SeqexecStyles.skippedIconCell
@@ -108,7 +108,7 @@ object StepIconCell {
       case _                   => SeqexecStyles.iconCell
     }
 
-  protected val component = ScalaComponent
+  protected val component                  = ScalaComponent
     .builder[Props]("StepIconCell")
     .stateless
     .render_P(p =>

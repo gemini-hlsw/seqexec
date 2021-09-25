@@ -37,7 +37,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
   def name: String
   def configuration(config: CFG): F[Configuration]
 
-  private def adaptGiapiError: PartialFunction[Throwable, SeqexecFailure] = {
+  private def adaptGiapiError: PartialFunction[Throwable, SeqexecFailure]  = {
     // The GMP sends these cryptic messages but we can do better
     case CommandResultException(_, "Message cannot be null") =>
       Execution("Unhandled Apply command")
@@ -45,7 +45,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     case f                                                   => SeqexecException(f)
   }
 
-  private def configure(config: CFG): F[CommandResult] = {
+  private def configure(config: CFG): F[CommandResult]                     = {
     val cfg: F[Configuration] = configuration(config)
     val isEmpty               = cfg.map(_.config.isEmpty)
     isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
@@ -54,7 +54,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     )
   }.adaptError(adaptGiapiError)
 
-  override def applyConfig(config: CFG): F[Unit] =
+  override def applyConfig(config: CFG): F[Unit]                           =
     L.debug(s"Start $name configuration") *>
       L.debug(s"$name configuration $config") *>
       configure(config) *>
@@ -68,6 +68,6 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     .as(fileId)
     .adaptError(adaptGiapiError)
 
-  override def endObserve: F[Unit] =
+  override def endObserve: F[Unit]                                         =
     Applicative[F].unit
 }

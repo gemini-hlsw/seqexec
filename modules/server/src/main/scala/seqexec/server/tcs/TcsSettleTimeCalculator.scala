@@ -34,7 +34,7 @@ object TcsSettleTimeCalculator {
     override def counter: Angle = angle
 
     def times(a: Angle): Time = convertToBase(a)
-    def *(a:     Angle): Time = times(a)
+    def *(a: Angle): Time     = times(a)
   }
 
   // We are using constant values for now. Values are taken from old Seqexec
@@ -61,7 +61,7 @@ object TcsSettleTimeCalculator {
       )
       .arcseconds
 
-  implicit val timeOrder: Order[Time] = Order.fromLessThan((a: Time, b: Time) => a < b)
+  implicit val timeOrder: Order[Time]                                                     = Order.fromLessThan((a: Time, b: Time) => a < b)
 
   def calc(
     startOffset: InstrumentOffset,

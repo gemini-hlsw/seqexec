@@ -72,13 +72,13 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
         .flatMap(controller.observe(fileId, _))
     }
 
-  override def calcObserveTime(config: CleanConfig): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time]                           =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(60.seconds)
       .pure[F]
 
-  override def keywordsClient: KeywordsClient[F] = this
+  override def keywordsClient: KeywordsClient[F]                                       = this
 
   override def observeProgress(
     total:   Time,
@@ -100,9 +100,9 @@ final case class Nifs[F[_]: Logger: Concurrent: Timer](
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                        = Sync[F].unit
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                                    =
     controller.endObserve
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
@@ -121,13 +121,13 @@ object Nifs {
       .map(_.doubleValue)
       .map(tag[CentralWavelengthD][Double])
 
-  private def maskOffset(config: CleanConfig): Either[ExtractFailure, MaskOffset] =
+  private def maskOffset(config: CleanConfig): Either[ExtractFailure, MaskOffset]  =
     config
       .extractInstAs[JDouble](MASK_OFFSET_PROP)
       .map(_.doubleValue)
       .map(tag[MaskOffsetD][Double])
 
-  private def windowCoverFromObserveType(observeType: String): WindowCover =
+  private def windowCoverFromObserveType(observeType: String): WindowCover         =
     observeType match {
       case DARK_OBSERVE_TYPE => WindowCover.Closed
       case _                 => WindowCover.Opened
@@ -144,7 +144,7 @@ object Nifs {
       wc        <- extractObsType(config).map(windowCoverFromObserveType)
     } yield StdCCConfig(filter, mask, disperser, imMirror, cw, mo, wc)
 
-  private def getCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig] =
+  private def getCCConfig(config: CleanConfig): Either[ExtractFailure, CCConfig]   =
     extractObsType(config).flatMap {
       case DARK_OBSERVE_TYPE => DarkCCConfig.asRight
       case _                 => otherCCConfig(config)
@@ -157,7 +157,7 @@ object Nifs {
       .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
       .map(_.toDouble.seconds)
 
-  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds] =
+  private def extractCoadds(config: CleanConfig): Either[ExtractFailure, Coadds]   =
     config
       .extractObsAs[JInt](COADDS_PROP)
       .map(_.toInt)
@@ -211,7 +211,7 @@ object Nifs {
   ): Either[ExtractFailure, String] =
     config.extractObsAs[String](OBSERVE_TYPE_PROP)
 
-  private def getDCConfig(config: CleanConfig): Either[ExtractFailure, DCConfig] =
+  private def getDCConfig(config: CleanConfig): Either[ExtractFailure, DCConfig]   =
     for {
       coadds    <- extractCoadds(config)
       period    <- extractPeriod(config)

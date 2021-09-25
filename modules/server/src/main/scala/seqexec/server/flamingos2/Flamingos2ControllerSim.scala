@@ -26,10 +26,10 @@ final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControlle
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
-  override def applyConfig(config: Flamingos2Config): F[Unit] =
+  override def applyConfig(config: Flamingos2Config): F[Unit]                       =
     sim.applyConfig(config)
 
-  override def endObserve: F[Unit] = sim.endObserve
+  override def endObserve: F[Unit]                                                  = sim.endObserve
 
   override def observeProgress(total: Time): Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
@@ -54,7 +54,7 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: L
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
-  override def applyConfig(config: Flamingos2Config): F[Unit] =
+  override def applyConfig(config: Flamingos2Config): F[Unit]                       =
     L.info(s"Simulate applying Flamingos-2 configuration $config") *>
       (counter.modify(x => (x + 1, x + 1)) >>= { c =>
         {
@@ -65,7 +65,7 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: L
       }) <*
       L.info("Completed simulating Flamingos-2 configuration apply")
 
-  override def endObserve: F[Unit] = sim.endObserve
+  override def endObserve: F[Unit]                                                  = sim.endObserve
 
   override def observeProgress(total: Time): Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))

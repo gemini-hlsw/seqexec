@@ -66,7 +66,7 @@ object ACProgressBar {
 
   // The typical AC sequence is like this
   // We use it to guestimate the location when the component is created
-  val stepsOrdering = List(
+  val stepsOrdering       = List(
     SuperContOff,
     OMSSEntShutterOff,
     CalExistShutterOff,

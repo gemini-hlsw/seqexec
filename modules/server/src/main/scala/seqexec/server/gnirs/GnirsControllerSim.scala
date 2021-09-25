@@ -25,7 +25,7 @@ object GnirsControllerSim {
         override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
           sim.observe(fileId, expTime)
 
-        override def applyConfig(config: GnirsConfig): F[Unit] = sim.applyConfig(config)
+        override def applyConfig(config: GnirsConfig): F[Unit]                            = sim.applyConfig(config)
 
         override def stopObserve: F[Unit] = sim.stopObserve
 
@@ -36,7 +36,7 @@ object GnirsControllerSim {
         override def observeProgress(total: Time): fs2.Stream[F, Progress] =
           sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-        override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+        override def calcTotalExposureTime(cfg: DCConfig): F[Time]         =
           GnirsController.calcTotalExposureTime[F](cfg)
       }
     }

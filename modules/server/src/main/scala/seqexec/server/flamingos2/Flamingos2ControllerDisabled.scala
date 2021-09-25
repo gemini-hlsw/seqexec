@@ -14,13 +14,13 @@ import seqexec.server.overrideLogMessage
 import squants.Time
 
 class Flamingos2ControllerDisabled[F[_]: Logger: Functor] extends Flamingos2Controller[F] {
-  override def applyConfig(config: Flamingos2Controller.Flamingos2Config): F[Unit] =
+  override def applyConfig(config: Flamingos2Controller.Flamingos2Config): F[Unit]  =
     overrideLogMessage("Flamingos-2", "applyConfig")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
     overrideLogMessage("Flamingos-2", s"observe $fileId").as(ObserveCommandResult.Success)
 
-  override def endObserve: F[Unit] = overrideLogMessage("FLAMINGOS-2", "endObserve")
+  override def endObserve: F[Unit]                                                  = overrideLogMessage("FLAMINGOS-2", "endObserve")
 
   override def observeProgress(total: Time): Stream[F, Progress] = Stream.empty
 }

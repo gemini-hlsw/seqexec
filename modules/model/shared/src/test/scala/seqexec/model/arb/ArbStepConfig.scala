@@ -34,11 +34,11 @@ trait ArbStepConfig {
       b <- parametersGen
     } yield (a, b)
 
-  val stepConfigGen: Gen[StepConfig] = Gen
+  val stepConfigGen: Gen[StepConfig]                     = Gen
     .chooseNum(0, 3)
     .flatMap(s => Gen.mapOfN[SystemName, Parameters](s, stepConfigG))
 
-  implicit val stParams: Cogen[StepConfig] =
+  implicit val stParams: Cogen[StepConfig]               =
     Cogen[String].contramap(_.mkString(","))
 
   private val perturbations: List[String => Gen[String]] =

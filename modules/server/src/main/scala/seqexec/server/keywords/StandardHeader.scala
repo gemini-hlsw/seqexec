@@ -46,7 +46,7 @@ class StandardHeader[F[_]: Sync: Logger](
 ) extends Header[F]
     with ObsKeywordsReaderConstants {
 
-  val obsObject: F[String] = for {
+  val obsObject: F[String]                                    = for {
     obsType   <- obsReader.obsType
     obsObject <- obsReader.obsObject
     tcsObject <- tcsReader.sourceATarget.objectName
@@ -62,13 +62,13 @@ class StandardHeader[F[_]: Sync: Logger](
   private def mountTcsKeyword[B: DefaultHeaderValue](v: F[B]) =
     optTcsKeyword[B](TcsController.Subsystem.Mount)(v)
 
-  private def m2TcsKeyword[B: DefaultHeaderValue](v: F[B]) =
+  private def m2TcsKeyword[B: DefaultHeaderValue](v: F[B])    =
     optTcsKeyword[B](TcsController.Subsystem.M2)(v)
 
-  private def sfTcsKeyword[B: DefaultHeaderValue](v: F[B]) =
+  private def sfTcsKeyword[B: DefaultHeaderValue](v: F[B])    =
     optTcsKeyword[B](TcsController.Subsystem.AGUnit)(v)
 
-  private val baseKeywords = List(
+  private val baseKeywords                                    = List(
     buildString(OcsBuildInfo.version.pure[F], KeywordName.SEQEXVER),
     buildString(obsObject, KeywordName.OBJECT),
     buildString(obsReader.obsType, KeywordName.OBSTYPE),
@@ -260,7 +260,7 @@ class StandardHeader[F[_]: Sync: Logger](
       aowfsKeywords
   }
 
-  override def sendAfter(id: ImageFileId): F[Unit] = sendKeywords[F](
+  override def sendAfter(id: ImageFileId): F[Unit]                         = sendKeywords[F](
     id,
     kwClient,
     List(

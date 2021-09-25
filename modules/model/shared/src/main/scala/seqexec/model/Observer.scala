@@ -12,10 +12,10 @@ final case class Observer(value: String)
 
 object Observer {
 
-  val Zero: Observer =
+  val Zero: Observer                 =
     Observer("")
 
-  implicit val equal: Eq[Observer] =
+  implicit val equal: Eq[Observer]   =
     Eq.fromUniversalEquals
 
   implicit val shows: Show[Observer] =

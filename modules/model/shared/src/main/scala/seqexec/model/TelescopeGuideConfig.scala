@@ -16,7 +16,7 @@ final case class TelescopeGuideConfig(
 )
 
 object TelescopeGuideConfig {
-  implicit val eq: Eq[TelescopeGuideConfig] =
+  implicit val eq: Eq[TelescopeGuideConfig]     =
     Eq.by(x => (x.mountGuide, x.m1Guide, x.m2Guide))
 
   implicit val show: Show[TelescopeGuideConfig] = Show.fromToString[TelescopeGuideConfig]

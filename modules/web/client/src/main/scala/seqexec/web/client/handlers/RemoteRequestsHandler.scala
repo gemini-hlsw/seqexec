@@ -164,7 +164,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
       effectOnly(effect)
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] =
+  override def handle: PartialFunction[Any, ActionResult[M]]   =
     List(
       handleRun,
       handlePause,

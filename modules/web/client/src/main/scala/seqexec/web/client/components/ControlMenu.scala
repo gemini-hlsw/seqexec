@@ -30,15 +30,15 @@ final case class ControlMenu(status: ClientStatus)
 object ControlMenu {
   implicit val cmReuse: Reusability[ControlMenu] = Reusability.derive
 
-  private val soundConnect =
+  private val soundConnect                                 =
     SeqexecCircuit.connect(SeqexecCircuit.soundSettingReader)
 
-  private val openLogin: Callback =
+  private val openLogin: Callback                          =
     SeqexecCircuit.dispatchCB(OpenLoginBox)
-  private val logout: Callback    =
+  private val logout: Callback                             =
     SeqexecCircuit.dispatchCB(Logout)
 
-  private def loginButton(enabled: Boolean) =
+  private def loginButton(enabled: Boolean)                =
     Button(size = Medium, onClick = openLogin, disabled = !enabled, inverted = true)("Login")
 
   private def logoutButton(text: String, enabled: Boolean) =
@@ -47,7 +47,7 @@ object ControlMenu {
       text
     )
 
-  private val helpButton =
+  private val helpButton                                   =
     Button(size = Medium,
            onClick =
              CallbackTo.windowOpen("http://swg.wikis-internal.gemini.edu/index.php/Seqexec").void,

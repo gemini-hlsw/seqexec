@@ -17,7 +17,7 @@ class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  override def createImage(p: DhsClient.ImageParameters): F[ImageFileId] = for {
+  override def createImage(p: DhsClient.ImageParameters): F[ImageFileId]                       = for {
     _    <- overrideLogMessage("DHS", "setKeywords")
     date <- Sync[F].delay(LocalDate.now)
     time <- Sync[F].delay(System.currentTimeMillis % 1000)

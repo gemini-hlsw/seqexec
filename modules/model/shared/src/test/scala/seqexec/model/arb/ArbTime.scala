@@ -15,7 +15,7 @@ trait ArbTime {
       arbSDuration.arbitrary.map(Time.apply)
     }
 
-  implicit val timeCogen: Cogen[Time] =
+  implicit val timeCogen: Cogen[Time]   =
     Cogen[Long]
       .contramap(_.millis)
 

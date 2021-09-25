@@ -17,13 +17,13 @@ import squants.time.TimeConversions._
 class NiriControllerDisabled[F[_]: Logger: Applicative] extends NiriController[F] {
   private val name = "NIRI"
 
-  override def applyConfig(config: NiriController.NiriConfig): F[Unit] =
+  override def applyConfig(config: NiriController.NiriConfig): F[Unit]                             =
     overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, cfg: NiriController.DCConfig): F[ObserveCommandResult] =
     overrideLogMessage(name, s"observe $fileId").as(ObserveCommandResult.Success)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                                                 = overrideLogMessage(name, "endObserve")
 
   override def stopObserve: F[Unit] = overrideLogMessage(name, "stopObserve")
 

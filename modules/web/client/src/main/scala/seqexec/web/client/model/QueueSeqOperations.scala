@@ -17,7 +17,7 @@ object RemoveSeqQueue {
 }
 
 sealed trait MoveSeqQueue extends Product with Serializable
-object MoveSeqQueue {
+object MoveSeqQueue   {
   case object MoveSeqQueueInFlight extends MoveSeqQueue
   case object MoveSeqQueueIdle     extends MoveSeqQueue
 

@@ -97,12 +97,12 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
         .map(MaskKeywordLUT.get)
         .safeValOrDefault
 
-    override def biasPwr: F[Double] = sys.biasPwr.safeValOrDefault
+    override def biasPwr: F[Double]  = sys.biasPwr.safeValOrDefault
 
     override def centralWavelength: F[Double] =
       sys.centralWavelength.safeValOrDefault
 
-    override def coadds: F[Int] = sys.coadds.safeValOrDefault
+    override def coadds: F[Int]               = sys.coadds.safeValOrDefault
 
     override def dcName: F[String] = sys.dcName.safeValOrDefault
 
@@ -110,10 +110,10 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
 
     override def exposureMode: F[String] = sys.exposureMode.safeValOrDefault
 
-    override def filter: F[String] =
+    override def filter: F[String]        =
       sys.filter.map(FilterKeywordLUT.get).safeValOrDefault
 
-    override def grating: F[String] =
+    override def grating: F[String]       =
       sys.disperser
         .map(_ === Invalid)
         .ifM(sys.lastSelectedDisperser, sys.disperser)
@@ -127,7 +127,7 @@ object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
     override def numberOfFowSamples: F[Int] =
       sys.numberOfFowSamples.safeValOrDefault
 
-    override def numberOfPeriods: F[Int] = sys.numberOfPeriods.safeValOrDefault
+    override def numberOfPeriods: F[Int]    = sys.numberOfPeriods.safeValOrDefault
 
     override def period: F[Double] = sys.period.safeValOrDefault
 

@@ -59,16 +59,16 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
       }
     }
 
-  override def configure(config: CleanConfig): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]]                      =
     Ghost
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
       .as(ConfigResult[F](this))
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                                               =
     controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                                             = Sync[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] = Seconds(360).pure[F]
 

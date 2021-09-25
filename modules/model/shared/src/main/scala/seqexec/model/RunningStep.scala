@@ -22,9 +22,9 @@ object RunningStep {
   def unapply(r: RunningStep): Option[(StepId, StepId)] =
     Some((r.last, r.total))
 
-  implicit val show: Show[RunningStep] =
+  implicit val show: Show[RunningStep]                  =
     Show.show(u => s"${u.last + 1}/${u.total}")
 
-  implicit val eq: Eq[RunningStep] =
+  implicit val eq: Eq[RunningStep]                      =
     Eq.by(x => (x.last, x.total))
 }

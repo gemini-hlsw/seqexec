@@ -74,7 +74,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
       case _ => unit
     }
 
-  def pause(id: Observation.Id): HandleType[Unit] =
+  def pause(id: Observation.Id): HandleType[Unit]               =
     modifyS(id)(Sequence.State.userStopSet(true))
 
   private def cancelPause(id: Observation.Id): HandleType[Unit] =
@@ -91,7 +91,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   def reload(seq: Sequence.State[F], steps: List[Step[F]]): Sequence.State[F] =
     Sequence.State.reload(steps, seq)
 
-  def startSingle(c: ActionCoords): HandleType[Outcome] = get.flatMap { st =>
+  def startSingle(c: ActionCoords): HandleType[Outcome]                               = get.flatMap { st =>
     val x = for {
       seq <- stateL.sequenceStateIndex(c.sid).getOption(st)
       if (seq.status.isIdle || seq.status.isError) && !seq.getSingleState(c.actCoords).active
@@ -122,7 +122,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   private def completeSingleRun[V <: RetVal](c: ActionCoords, r: V): HandleType[Unit] =
     modifyS(c.sid)(_.completeSingle(c.actCoords, r))
 
-  private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] =
+  private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit]       =
     modifyS(c.sid)(_.failSingle(c.actCoords, e))
 
   /**
@@ -235,7 +235,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
         .getOrElse(unit)
     )
 
-  private def getState(f: S => Option[Stream[F, EventType]]): HandleType[Unit] =
+  private def getState(f: S => Option[Stream[F, EventType]]): HandleType[Unit]          =
     get.flatMap(s => Handle[F, S, EventType, Unit](f(s).pure[StateT[F, S, *]].map(((), _))))
 
   private def actionStop(
@@ -315,7 +315,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
     modifyS(id)(_.mark(i)(e)) *>
       switch(id)(SequenceState.Failed(e.msg))
 
-  private def logError(e: Result.Error): HandleType[Unit] = error(e.errMsg.getOrElse(e.msg))
+  private def logError(e: Result.Error): HandleType[Unit]                         = error(e.errMsg.getOrElse(e.msg))
 
   /**
    * Log info lifted into Handle.
@@ -495,16 +495,16 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   val unit: HandleType[Unit] =
     Handle.unit
 
-  val get: Handle[F, S, Event[F, S, U], S] =
+  val get: Handle[F, S, Event[F, S, U], S]         =
     Handle.get
 
   private def inspect[A](f: S => A): HandleType[A] =
     Handle.inspect(f)
 
-  def modify(f: S => S): HandleType[Unit] =
+  def modify(f: S => S): HandleType[Unit]                                                    =
     Handle.modify(f)
 
-  private def getS(id: Observation.Id): HandleType[Option[Sequence.State[F]]] =
+  private def getS(id: Observation.Id): HandleType[Option[Sequence.State[F]]]                =
     get.map(stateL.sequenceStateIndex(id).getOption(_))
 
   private def getSs[A](id: Observation.Id)(f: Sequence.State[F] => A): HandleType[Option[A]] =
@@ -515,7 +515,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   ): HandleType[Unit] =
     modify(stateL.sequenceStateIndex(id).modify(f))
 
-  private def putS(id: Observation.Id)(s: Sequence.State[F]): HandleType[Unit] =
+  private def putS(id: Observation.Id)(s: Sequence.State[F]): HandleType[Unit]               =
     modify(stateL.sequenceStateIndex(id).set(s))
 
   // For debugging

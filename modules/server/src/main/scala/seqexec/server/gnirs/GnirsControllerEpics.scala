@@ -28,7 +28,7 @@ import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 trait GnirsEncoders {
-  val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
+  val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)]                    = EncodeEpicsValue {
     case ReadMode.VERY_BRIGHT => (1, 1)
     case ReadMode.BRIGHT      => (1, 16)
     case ReadMode.FAINT       => (16, 16)
@@ -40,14 +40,14 @@ trait GnirsEncoders {
       Millivolts(w.getBias).toVolts
     }
 
-  implicit val cameraDecoder: EncodeEpicsValue[Camera, String] = EncodeEpicsValue {
+  implicit val cameraDecoder: EncodeEpicsValue[Camera, String]                   = EncodeEpicsValue {
     case Camera.SHORT_RED  => "ShortRed"
     case Camera.SHORT_BLUE => "ShortBlue"
     case Camera.LONG_RED   => "LongRed"
     case Camera.LONG_BLUE  => "LongBlue"
   }
 
-  implicit val slitWidthEncoder: EncodeEpicsValue[SlitWidth, String] = EncodeEpicsValue {
+  implicit val slitWidthEncoder: EncodeEpicsValue[SlitWidth, String]             = EncodeEpicsValue {
     case SlitWidth.Slit0_10     => "0.10arcsec"
     case SlitWidth.Slit0_15     => "0.15arcsec"
     case SlitWidth.Slit0_20     => "0.20arcsec"
@@ -61,7 +61,7 @@ trait GnirsEncoders {
     case SlitWidth.Acquisition  => "Acq"
   }
 
-  implicit val deckerEncoder: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
+  implicit val deckerEncoder: EncodeEpicsValue[Decker, String]                   = EncodeEpicsValue {
     case Decker.ACQUISITION         => "Acq"
     case Decker.PUPIL_VIEWER        => "PV"
     case Decker.SHORT_CAM_LONG_SLIT => "SCLong"
@@ -74,7 +74,7 @@ trait GnirsEncoders {
     case Decker.HR_IFU              => "IFU2"
   }
 
-  implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {
+  implicit val filter1Encoder: EncodeEpicsValue[Filter1, String]                 = EncodeEpicsValue {
     case Filter1.Open        => "Open"
     case Filter1.J_MK        => "J-MK"
     case Filter1.K_MK        => "K-MK"
@@ -85,7 +85,7 @@ trait GnirsEncoders {
     case Filter1.LeftMask    => "LeftMask"
   }
 
-  implicit val filter2Encoder: EncodeEpicsValue[Filter2Pos, String] = EncodeEpicsValue {
+  implicit val filter2Encoder: EncodeEpicsValue[Filter2Pos, String]              = EncodeEpicsValue {
     case Filter2Pos.H    => "H"
     case Filter2Pos.H2   => "H2"
     case Filter2Pos.J    => "J"
@@ -98,7 +98,7 @@ trait GnirsEncoders {
     case Filter2Pos.XD   => "XD"
   }
 
-  implicit val wavelEncoder: EncodeEpicsValue[Wavelength, Double] = EncodeEpicsValue(_.toNanometers)
+  implicit val wavelEncoder: EncodeEpicsValue[Wavelength, Double]                = EncodeEpicsValue(_.toNanometers)
 }
 
 object GnirsControllerEpics extends GnirsEncoders {
@@ -126,22 +126,22 @@ object GnirsControllerEpics extends GnirsEncoders {
       private val ccCmd = epicsSys.configCCCmd
       private val dcCmd = epicsSys.configDCCmd
 
-      private val warnOnDhs =
+      private val warnOnDhs                                                                   =
         epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
 
-      private val warnOnArray =
+      private val warnOnArray                                                                 =
         epicsSys.arrayActive.flatMap(L.warn("GNIRS detector array is not active").unlessA)
 
-      private val checkDhs = failUnlessM(epicsSys.dhsConnected,
+      private val checkDhs                                                                    = failUnlessM(epicsSys.dhsConnected,
                                          SeqexecFailure.Execution("GNIRS is not connected to DHS")
       )
 
-      private val checkArray =
+      private val checkArray                                                                  =
         failUnlessM(epicsSys.arrayActive,
                     SeqexecFailure.Execution("GNIRS detector array is not active")
         )
 
-      private def setAcquisitionMirror(mode: Mode): F[Option[F[Unit]]] = {
+      private def setAcquisitionMirror(mode: Mode): F[Option[F[Unit]]]                        = {
         val v = mode match {
           case Acquisition => "In"
           case _           => "Out"
@@ -150,7 +150,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         smartSetParamF(v, epicsSys.acqMirror.map(removePartName), ccCmd.setAcqMirror(v))
       }
 
-      private def setGrating(s: Spectrography, c: Camera): List[F[Option[F[Unit]]]] = {
+      private def setGrating(s: Spectrography, c: Camera): List[F[Option[F[Unit]]]]           = {
         def stdConversion(d: Disperser): String = (d, c) match {
           case (Disperser.D_10, Camera.SHORT_RED)   => "10/mmSR"
           case (Disperser.D_32, Camera.SHORT_RED)   => "32/mmSR"
@@ -186,7 +186,7 @@ object GnirsControllerEpics extends GnirsEncoders {
           case s: Spectrography => setGrating(s, c) :+ setPrism(s, c)
         }
 
-      private def setPrism(s: Spectrography, c: Camera): F[Option[F[Unit]]] = {
+      private def setPrism(s: Spectrography, c: Camera): F[Option[F[Unit]]]                   = {
         val cameraStr = c match {
           case Camera.LONG_BLUE  => "LB"
           case Camera.LONG_RED   => "LR"
@@ -204,7 +204,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         smartSetParamF(v, epicsSys.prism.map(removePartName), ccCmd.setPrism(v))
       }
 
-      private def setDarkCCParams: List[F[Option[F[Unit]]]] = {
+      private def setDarkCCParams: List[F[Option[F[Unit]]]]                                   = {
         val closed     = "Closed"
         val darkFilter = "Dark"
         List(
@@ -216,7 +216,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         )
       }
 
-      private def setFilter2(f: Filter2, w: Wavelength): F[Option[F[Unit]]] = {
+      private def setFilter2(f: Filter2, w: Wavelength): F[Option[F[Unit]]]                   = {
         val pos = f match {
           case Manual(p) => p
           case Auto      => autoFilter(w)
@@ -227,7 +227,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         )
       }
 
-      private def setOtherCCParams(config: Other): List[F[Option[F[Unit]]]] = {
+      private def setOtherCCParams(config: Other): List[F[Option[F[Unit]]]]                   = {
         val open                             = "Open"
         val bestFocus                        = "best focus"
         val wavelengthTolerance              = 0.0001
@@ -325,7 +325,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         )
       }
 
-      override def applyConfig(config: GnirsConfig): F[Unit] =
+      override def applyConfig(config: GnirsConfig): F[Unit]                            =
         L.debug("Starting GNIRS configuration") *>
           L.debug(s"GNIRS configuration: ${config.show}") *>
           warnOnDhs *>
@@ -343,25 +343,25 @@ object GnirsControllerEpics extends GnirsEncoders {
             .post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
             .flatTap(_ => L.debug("Completed GNIRS observe"))
 
-      override def endObserve: F[Unit] =
+      override def endObserve: F[Unit]                                                  =
         L.debug("Send endObserve to GNIRS") *>
           epicsSys.endObserveCmd.mark *>
           epicsSys.endObserveCmd.post(DefaultTimeout) *>
           L.debug("endObserve sent to GNIRS")
 
-      override def stopObserve: F[Unit] =
+      override def stopObserve: F[Unit]                                                 =
         L.debug("Stop GNIRS exposure") *>
           epicsSys.stopCmd.mark *>
           epicsSys.stopCmd.post(DefaultTimeout) *>
           L.debug("GNIRS stop observe command sent")
 
-      override def abortObserve: F[Unit] =
+      override def abortObserve: F[Unit]                                                =
         L.debug("Abort GNIRS exposure") *>
           epicsSys.abortCmd.mark *>
           epicsSys.abortCmd.post(DefaultTimeout) *>
           L.debug("GNIRS abort observe command sent")
 
-      override def observeProgress(total: Time): Stream[F, Progress] =
+      override def observeProgress(total: Time): Stream[F, Progress]                    =
         ProgressUtil.obsCountdownWithObsStage[F](
           total,
           0.seconds,
@@ -370,11 +370,11 @@ object GnirsControllerEpics extends GnirsEncoders {
           )
         )
 
-      override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time] =
+      override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time]        =
         GnirsController.calcTotalExposureTime[F](cfg)
     }
 
-  private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
-  private val ReadoutTimeout: FiniteDuration = FiniteDuration(120, SECONDS)
-  private val ConfigTimeout: FiniteDuration  = FiniteDuration(240, SECONDS)
+  private val DefaultTimeout: FiniteDuration                        = FiniteDuration(60, SECONDS)
+  private val ReadoutTimeout: FiniteDuration                        = FiniteDuration(120, SECONDS)
+  private val ConfigTimeout: FiniteDuration                         = FiniteDuration(240, SECONDS)
 }

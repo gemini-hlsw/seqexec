@@ -89,7 +89,7 @@ publish / skip := true
 // Projects
 //////////////
 
-lazy val giapi = project
+lazy val giapi    = project
   .in(file("modules/giapi"))
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
@@ -251,7 +251,7 @@ lazy val seqexec_web_client = project
   .dependsOn(seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
-lazy val seqexec_server     = project
+lazy val seqexec_server = project
   .in(file("modules/server"))
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
@@ -293,7 +293,7 @@ lazy val seqexec_server     = project
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
-lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
+lazy val seqexec_model  = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("modules/model"))
   .enablePlugins(GitBranchPrompt)
@@ -332,7 +332,7 @@ lazy val seqexec_engine = project
     ) ++ Monocle.value ++ MUnit.value
   )
 
-lazy val acm = project
+lazy val acm            = project
   .in(file("modules/acm"))
   .settings(commonSettings: _*)
   .settings(

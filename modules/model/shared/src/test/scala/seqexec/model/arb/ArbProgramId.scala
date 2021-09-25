@@ -33,7 +33,7 @@ trait ArbProgramId {
       } yield Science(site, semester, programType, index)
     }
 
-  implicit val arbDaily: Arbitrary[Daily] =
+  implicit val arbDaily: Arbitrary[Daily]     =
     Arbitrary {
       for {
         site        <- arbitrary[Site]
@@ -43,7 +43,7 @@ trait ArbProgramId {
     }
 
   // This one is a little awkward because the only way we can get a Nonstandard is via parsing.
-  implicit val arbNonstandard: Arbitrary[Nonstandard] =
+  implicit val arbNonstandard: Arbitrary[Nonstandard]       =
     Arbitrary {
 
       val gen = for {
@@ -59,7 +59,7 @@ trait ArbProgramId {
 
     }
 
-  implicit val arbProgramId: Arbitrary[ProgramId] =
+  implicit val arbProgramId: Arbitrary[ProgramId]           =
     Arbitrary {
       Gen.oneOf(
         arbitrary[Science].map[ProgramId](identity),
@@ -68,13 +68,13 @@ trait ArbProgramId {
       )
     }
 
-  implicit val cogProgramId: Cogen[ProgramId] =
+  implicit val cogProgramId: Cogen[ProgramId]               =
     Cogen[String].contramap(ProgramId.fromString.reverseGet)
 
-  implicit val cogScience: Cogen[ProgramId.Science] =
+  implicit val cogScience: Cogen[ProgramId.Science]         =
     Cogen[String].contramap(ProgramId.Science.fromString.reverseGet)
 
-  implicit val cogDaily: Cogen[ProgramId.Daily] =
+  implicit val cogDaily: Cogen[ProgramId.Daily]             =
     Cogen[String].contramap(ProgramId.Daily.fromString.reverseGet)
 
   implicit val cogNonstandard: Cogen[ProgramId.Nonstandard] =

@@ -24,7 +24,7 @@ import scala.concurrent.duration.Duration
 
 trait GpiArbitraries extends ArbTime {
 
-  implicit val gpiAOFlagsArb: Arbitrary[AOFlags] = Arbitrary {
+  implicit val gpiAOFlagsArb: Arbitrary[AOFlags]                            = Arbitrary {
     for {
       useAo    <- arbitrary[Boolean]
       useCal   <- arbitrary[Boolean]
@@ -34,11 +34,11 @@ trait GpiArbitraries extends ArbTime {
       magI     <- arbitrary[Double]
     } yield AOFlags(useAo, useCal, aoOpt, alignFpm, magH, magI)
   }
-  implicit val gpiAOFlagsCogen: Cogen[AOFlags]   =
+  implicit val gpiAOFlagsCogen: Cogen[AOFlags]                              =
     Cogen[(Boolean, Boolean, Boolean, Boolean)]
       .contramap(x => (x.useAo, x.useCal, x.aoOptimize, x.alignFpm))
 
-  implicit val gpiArtificialSourcesArb: Arbitrary[ArtificialSources] =
+  implicit val gpiArtificialSourcesArb: Arbitrary[ArtificialSources]        =
     Arbitrary {
       for {
         ir  <- arbitrary[LegacyArtificialSource]
@@ -47,13 +47,13 @@ trait GpiArbitraries extends ArbTime {
         att <- arbitrary[Double]
       } yield ArtificialSources(ir, vis, sc, att)
     }
-  implicit val asCogen: Cogen[LegacyArtificialSource]                =
+  implicit val asCogen: Cogen[LegacyArtificialSource]                       =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiArtificialSourcesCogen: Cogen[ArtificialSources]   =
+  implicit val gpiArtificialSourcesCogen: Cogen[ArtificialSources]          =
     Cogen[(LegacyArtificialSource, LegacyArtificialSource, LegacyArtificialSource, Double)]
       .contramap(x => (x.ir, x.vis, x.sc, x.attenuation))
 
-  implicit val gpiShuttersArb: Arbitrary[Shutters] = Arbitrary {
+  implicit val gpiShuttersArb: Arbitrary[Shutters]                          = Arbitrary {
     for {
       ent <- arbitrary[LegacyShutter]
       cal <- arbitrary[LegacyShutter]
@@ -62,9 +62,9 @@ trait GpiArbitraries extends ArbTime {
     } yield Shutters(ent, cal, sci, ref)
   }
 
-  implicit val shutCogen: Cogen[LegacyShutter]   =
+  implicit val shutCogen: Cogen[LegacyShutter]                              =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiShuttersCogen: Cogen[Shutters] =
+  implicit val gpiShuttersCogen: Cogen[Shutters]                            =
     Cogen[(LegacyShutter, LegacyShutter, LegacyShutter, LegacyShutter)]
       .contramap(x =>
         (x.entranceShutter, x.calEntranceShutter, x.calScienceShutter, x.calReferenceShutter)
@@ -80,19 +80,19 @@ trait GpiArbitraries extends ArbTime {
       } yield NonStandardModeParams(apo, fpm, lyo, fil)
     }
 
-  implicit val apodizerCogen: Cogen[LegacyApodizer]                  =
+  implicit val apodizerCogen: Cogen[LegacyApodizer]                         =
     Cogen[String].contramap(_.displayValue)
-  implicit val fpmCogen: Cogen[LegacyFPM]                            =
+  implicit val fpmCogen: Cogen[LegacyFPM]                                   =
     Cogen[String].contramap(_.displayValue)
-  implicit val lyotCogen: Cogen[LegacyLyot]                          =
+  implicit val lyotCogen: Cogen[LegacyLyot]                                 =
     Cogen[String].contramap(_.displayValue)
-  implicit val filterCogen: Cogen[LegacyFilter]                      =
+  implicit val filterCogen: Cogen[LegacyFilter]                             =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiNonStandardModeCogen: Cogen[NonStandardModeParams] =
+  implicit val gpiNonStandardModeCogen: Cogen[NonStandardModeParams]        =
     Cogen[(LegacyApodizer, LegacyFPM, LegacyLyot, LegacyFilter)]
       .contramap(x => (x.apodizer, x.fpm, x.lyot, x.filter))
 
-  implicit val gpiReadoutArea: Arbitrary[ReadoutArea] =
+  implicit val gpiReadoutArea: Arbitrary[ReadoutArea]                       =
     Arbitrary {
       for {
         startX <- Gen.choose(ReadoutArea.MinValue, ReadoutArea.MaxValue)
@@ -101,10 +101,10 @@ trait GpiArbitraries extends ArbTime {
         endY   <- Gen.choose(ReadoutArea.MinValue, ReadoutArea.MaxValue)
       } yield ReadoutArea.fromValues(startX, startY, endX, endY).getOrElse(ReadoutArea.DefaultArea)
     }
-  implicit val readoutAreaCogen: Cogen[ReadoutArea]   =
+  implicit val readoutAreaCogen: Cogen[ReadoutArea]                         =
     Cogen[(Int, Int, Int, Int)].contramap(x => (x.startX, x.startY, x.endX, x.endY))
 
-  implicit val gpiConfigArb: Arbitrary[RegularGpiConfig] = Arbitrary {
+  implicit val gpiConfigArb: Arbitrary[RegularGpiConfig]                    = Arbitrary {
     for {
       adc   <- arbitrary[LegacyAdc]
       exp   <- arbitrary[Duration]
@@ -121,13 +121,13 @@ trait GpiArbitraries extends ArbTime {
     } yield RegularGpiConfig(adc, exp, coa, readM, area, obsM, disp, dispA, shut, asu, pc, ao)
   }
 
-  implicit val adcCogen: Cogen[LegacyAdc]               =
+  implicit val adcCogen: Cogen[LegacyAdc]                                   =
     Cogen[String].contramap(_.displayValue)
-  implicit val obsModeCogen: Cogen[LegacyObservingMode] =
+  implicit val obsModeCogen: Cogen[LegacyObservingMode]                     =
     Cogen[String].contramap(_.displayValue)
-  implicit val ppCogen: Cogen[LegacyPupilCamera]        =
+  implicit val ppCogen: Cogen[LegacyPupilCamera]                            =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiConfigCogen: Cogen[RegularGpiConfig]  =
+  implicit val gpiConfigCogen: Cogen[RegularGpiConfig]                      =
     Cogen[
       (
         LegacyAdc,

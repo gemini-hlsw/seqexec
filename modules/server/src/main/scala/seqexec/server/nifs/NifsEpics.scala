@@ -27,25 +27,25 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       Option(epicsService.getCommandSender("nifs::config"))
 
     val disperser: Option[CaParameter[String]] = cs.map(_.getString("disperser"))
-    def setDisperser(v: String): F[Unit] = setParameter(disperser, v)
+    def setDisperser(v: String): F[Unit]       = setParameter(disperser, v)
 
     val filter: Option[CaParameter[String]] = cs.map(_.getString("filter"))
-    def setFilter(v: String): F[Unit] = setParameter(filter, v)
+    def setFilter(v: String): F[Unit]       = setParameter(filter, v)
 
     val windowCover: Option[CaParameter[String]] = cs.map(_.getString("windowCover"))
-    def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
+    def setWindowCover(v: String): F[Unit]       = setParameter(windowCover, v)
 
     val maskOffset: Option[CaParameter[JDouble]] = cs.map(_.getDouble("maskOffset"))
-    def setMaskOffset(v: Double): F[Unit] = setParameter(maskOffset, JDouble.valueOf(v))
+    def setMaskOffset(v: Double): F[Unit]        = setParameter(maskOffset, JDouble.valueOf(v))
 
     val imagingMirror: Option[CaParameter[String]] = cs.map(_.getString("imagingMirror"))
-    def setImagingMirror(v: String): F[Unit] = setParameter(imagingMirror, v)
+    def setImagingMirror(v: String): F[Unit]       = setParameter(imagingMirror, v)
 
     val mask: Option[CaParameter[String]] = cs.map(_.getString("mask"))
-    def setMask(v: String): F[Unit] = setParameter(mask, v)
+    def setMask(v: String): F[Unit]       = setParameter(mask, v)
 
     val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
-    def setCentralWavelength(v: Double): F[Unit] =
+    def setCentralWavelength(v: Double): F[Unit]        =
       setParameter(centralWavelength, JDouble.valueOf(v))
 
   }
@@ -54,38 +54,38 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
-    private val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setCoadds(v: Int): F[Unit] = setParameter(coadds, Integer.valueOf(v))
+    private val coadds: Option[CaParameter[Integer]]   = cs.map(_.getInteger("coadds"))
+    def setCoadds(v: Int): F[Unit]                     = setParameter(coadds, Integer.valueOf(v))
 
     private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    def setExposureTime(v: Double): F[Unit]                = setParameter(exposureTime, JDouble.valueOf(v))
 
     private val fowlerSamples: Option[CaParameter[Integer]] =
       cs.map(_.getInteger("numberOfFowSamples"))
-    def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
+    def setFowlerSamples(v: Int): F[Unit]                   = setParameter(fowlerSamples, Integer.valueOf(v))
 
     private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
-    def setPeriod(v: Double): F[Unit] = setParameter(period, JDouble.valueOf(v))
+    def setPeriod(v: Double): F[Unit]                = setParameter(period, JDouble.valueOf(v))
 
     private val readMode: Option[CaParameter[ReadMode]] = cs.map(c =>
       c.addEnum[ReadMode]("readMode", s"${NifsTop}dc:obs_readMode", classOf[ReadMode], false)
     )
-    def setReadMode(v: ReadMode): F[Unit] = setParameter(readMode, v)
+    def setReadMode(v: ReadMode): F[Unit]               = setParameter(readMode, v)
 
-    private val numberOfResets: Option[CaParameter[Integer]] =
+    private val numberOfResets: Option[CaParameter[Integer]]  =
       cs.map(_.getInteger("numberOfResets"))
-    def setnumberOfResets(v: Int): F[Unit] =
+    def setnumberOfResets(v: Int): F[Unit]                    =
       setParameter(numberOfResets, Integer.valueOf(v))
 
     private val numberOfPeriods: Option[CaParameter[Integer]] =
       cs.map(_.getInteger("numberOfPeriods"))
-    def setnumberOfPeriods(v: Int): F[Unit] =
+    def setnumberOfPeriods(v: Int): F[Unit]                   =
       setParameter(numberOfPeriods, Integer.valueOf(v))
 
-    private val timeMode: Option[CaParameter[TimeMode]] = cs.map(c =>
+    private val timeMode: Option[CaParameter[TimeMode]]       = cs.map(c =>
       c.addEnum[TimeMode]("timeMode", s"${NifsTop}dc:obs_timeMode", classOf[TimeMode], false)
     )
-    def setTimeMode(v: TimeMode): F[Unit] =
+    def setTimeMode(v: TimeMode): F[Unit]                     =
       setParameter(timeMode, v)
   }
 
@@ -132,7 +132,7 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     override protected val os: Option[CaApplySender]   = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): F[Unit] = setParameter(label, v)
+    def setLabel(v: String): F[Unit]               = setParameter(label, v)
   }
 
   object endObserveCmd extends EpicsCommandBase[F](sysName) {
@@ -170,7 +170,7 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def numberOfPeriods: F[Int] =
     safeAttributeSIntF(dcStatus.getIntegerAttribute("numberOfPeriods"))
 
-  def timeMode: F[String] =
+  def timeMode: F[String]                                 =
     safeAttributeF(dcStatus.getStringAttribute("timeMode"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
@@ -189,7 +189,7 @@ class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def readTime: F[Double] =
     safeAttributeSDoubleF(dcStatus.getDoubleAttribute("readTime"))
 
-  def biasPwr: F[Double] =
+  def biasPwr: F[Double]                 =
     safeAttributeSDoubleF(dcStatus.getDoubleAttribute("biasPwr"))
 
   private val ccStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::status")

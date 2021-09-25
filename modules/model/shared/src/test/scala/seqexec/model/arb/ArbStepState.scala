@@ -9,7 +9,7 @@ import org.scalacheck.Cogen
 import seqexec.model.StepState
 
 trait ArbStepState {
-  implicit val stepStateArb = Arbitrary[StepState] {
+  implicit val stepStateArb                     = Arbitrary[StepState] {
     for {
       v1 <- Gen.oneOf(StepState.Pending,
                       StepState.Completed,

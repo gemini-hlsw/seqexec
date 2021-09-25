@@ -62,7 +62,7 @@ object GmosController {
 
     sealed trait GmosDisperser extends Product with Serializable
     object GmosDisperser {
-      case object Mirror extends GmosDisperser
+      case object Mirror                        extends GmosDisperser
       case class Order0(disperser: T#Disperser) extends GmosDisperser
       case class OrderN(disperser: T#Disperser, order: DisperserOrder, lambda: Length)
           extends GmosDisperser
@@ -220,7 +220,7 @@ object GmosController {
     type Disperser
   }
 
-  final class SouthTypes extends SiteDependentTypes {
+  final class SouthTypes       extends SiteDependentTypes {
     override type Filter        = edu.gemini.spModel.gemini.gmos.GmosSouthType.FilterSouth
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
@@ -228,12 +228,12 @@ object GmosController {
   }
 
   final class SouthConfigTypes extends Config[SouthTypes] {
-    override val mirror = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth.MIRROR
+    override val mirror                                             = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth.MIRROR
     override def isMirror(v: GmosSouthType.DisperserSouth): Boolean = v === mirror
   }
   val southConfigTypes: SouthConfigTypes = new SouthConfigTypes
 
-  final class NorthTypes extends SiteDependentTypes {
+  final class NorthTypes       extends SiteDependentTypes {
     override type Filter        = edu.gemini.spModel.gemini.gmos.GmosNorthType.FilterNorth
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosNorthType.StageModeNorth
@@ -241,7 +241,7 @@ object GmosController {
   }
 
   final class NorthConfigTypes extends Config[NorthTypes] {
-    override val mirror = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
+    override val mirror                                             = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
     override def isMirror(v: GmosNorthType.DisperserNorth): Boolean = v === mirror
   }
 

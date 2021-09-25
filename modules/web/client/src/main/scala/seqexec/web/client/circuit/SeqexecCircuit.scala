@@ -172,41 +172,41 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
     this.zoomG(CalQueueFocus.calQueueG(id))
 
-  private val wsHandler               = new WebSocketHandler(zoomTo(_.ws))
-  private val serverMessagesHandler   = new ServerMessagesHandler(webSocketFocusRW)
-  private val initialSyncHandler      = new InitialSyncHandler(initialSyncFocusRW)
-  private val navigationHandler       = new NavigationHandler(zoomTo(_.uiModel.navLocation))
-  private val loginBoxHandler         =
+  private val wsHandler                                             = new WebSocketHandler(zoomTo(_.ws))
+  private val serverMessagesHandler                                 = new ServerMessagesHandler(webSocketFocusRW)
+  private val initialSyncHandler                                    = new InitialSyncHandler(initialSyncFocusRW)
+  private val navigationHandler                                     = new NavigationHandler(zoomTo(_.uiModel.navLocation))
+  private val loginBoxHandler                                       =
     new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
-  private val notificationBoxHandler  = new ModalBoxHandler(OpenUserNotificationBox,
+  private val notificationBoxHandler                                = new ModalBoxHandler(OpenUserNotificationBox,
                                                            CloseUserNotificationBox,
                                                            zoomTo(_.uiModel.notification.visibility)
   )
-  private val userLoginHandler        = new UserLoginHandler(zoomTo(_.uiModel.user))
-  private val userNotificationHandler = new NotificationsHandler(zoomTo(_.uiModel.notification))
-  private val userPromptHandler       = new UserPromptHandler(zoomTo(_.uiModel.userPrompt))
-  private val sequenceDisplayHandler  = new SequenceDisplayHandler(sequencesReaderRW)
-  private val sequenceExecHandler     = new SequenceExecutionHandler(zoomTo(_.sequences))
-  private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-  private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
-  private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))
-  private val defaultObserverHandler  = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
-  private val remoteRequestsHandler   = new RemoteRequestsHandler(zoomTo(_.clientId))
-  private val queueRequestsHandler    = new QueueRequestsHandler(queueFocusRW)
-  private val tableStateHandler       = new TableStateHandler(tableStateRW)
-  private val loadSequencesHandler    = new LoadedSequencesHandler(sodLocationReaderRW)
-  private val operationsStateHandler  = new OperationsStateHandler(sequencesOnDisplayRW)
-  private val siteHandler             = new SiteHandler(zoomTo(_.site))
-  private val queueOpsHandler         = new QueueOperationsHandler(queueOperationsRW)
-  private val queueStateHandler       = new QueueStateHandler(queueOperationsRW)
-  private val openConnectionHandler   = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
-  private val observationsProgHandler = new ObservationsProgressStateHandler(
+  private val userLoginHandler                                      = new UserLoginHandler(zoomTo(_.uiModel.user))
+  private val userNotificationHandler                               = new NotificationsHandler(zoomTo(_.uiModel.notification))
+  private val userPromptHandler                                     = new UserPromptHandler(zoomTo(_.uiModel.userPrompt))
+  private val sequenceDisplayHandler                                = new SequenceDisplayHandler(sequencesReaderRW)
+  private val sequenceExecHandler                                   = new SequenceExecutionHandler(zoomTo(_.sequences))
+  private val globalLogHandler                                      = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
+  private val conditionsHandler                                     = new ConditionsHandler(zoomTo(_.sequences.conditions))
+  private val operatorHandler                                       = new OperatorHandler(zoomTo(_.sequences.operator))
+  private val defaultObserverHandler                                = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
+  private val remoteRequestsHandler                                 = new RemoteRequestsHandler(zoomTo(_.clientId))
+  private val queueRequestsHandler                                  = new QueueRequestsHandler(queueFocusRW)
+  private val tableStateHandler                                     = new TableStateHandler(tableStateRW)
+  private val loadSequencesHandler                                  = new LoadedSequencesHandler(sodLocationReaderRW)
+  private val operationsStateHandler                                = new OperationsStateHandler(sequencesOnDisplayRW)
+  private val siteHandler                                           = new SiteHandler(zoomTo(_.site))
+  private val queueOpsHandler                                       = new QueueOperationsHandler(queueOperationsRW)
+  private val queueStateHandler                                     = new QueueStateHandler(queueOperationsRW)
+  private val openConnectionHandler                                 = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
+  private val observationsProgHandler                               = new ObservationsProgressStateHandler(
     zoomTo(_.uiModel.obsProgress)
   )
-  private val sessionFilterHandler    = new SessionQueueFilterHandler(
+  private val sessionFilterHandler                                  = new SessionQueueFilterHandler(
     zoomTo(_.uiModel.sessionQueueFilter)
   )
-  private val soundHandler            = new SoundOnOffHandler(zoomTo(_.uiModel.sound))
+  private val soundHandler                                          = new SoundOnOffHandler(zoomTo(_.uiModel.sound))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 

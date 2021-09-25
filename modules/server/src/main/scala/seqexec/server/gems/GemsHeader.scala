@@ -80,7 +80,7 @@ object GemsHeader {
     ): F[Unit] =
       guiderKeywords(id, baseName(v), tcsReader.gwfsTarget(v), gs)
 
-    def guideWith(gs: GemsSource): F[StandardGuideOptions.Value] = gs match {
+    def guideWith(gs: GemsSource): F[StandardGuideOptions.Value]             = gs match {
       case GemsSource.Cwfs1 => obsReader.cwfs1Guide
       case GemsSource.Cwfs2 => obsReader.cwfs2Guide
       case GemsSource.Cwfs3 => obsReader.cwfs3Guide
@@ -145,7 +145,7 @@ object GemsHeader {
         .filter(_ => guideOp.isActive)
     }
 
-    override def sendAfter(id: ImageFileId): F[Unit] = {
+    override def sendAfter(id: ImageFileId): F[Unit]                         = {
       val keywords = List(
         buildString(tcsReader.crFollow.map(_.map(CRFollow.keywordValue).getOrElse("INDEF")),
                     KeywordName.CRFOLLOW

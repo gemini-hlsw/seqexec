@@ -65,19 +65,19 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
       }
     }
 
-  override def configure(config: CleanConfig): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]]                          =
     EitherT
       .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(f2Controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                                                   =
     f2Controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                                                 = Sync[F].unit
 
-  override def calcObserveTime(config: CleanConfig): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time]                =
     Sync[F].delay(
       config
         .extractObsAs[JDouble](EXPOSURE_TIME_PROP)
@@ -118,7 +118,7 @@ object Flamingos2 {
     case ReadMode.FAINT_OBJECT_SPEC  => Reads.READS_8
   }
 
-  implicit def biasFromDecker(dk: Decker): BiasMode = dk match {
+  implicit def biasFromDecker(dk: Decker): BiasMode                     = dk match {
     case Decker.IMAGING   => BiasMode.Imaging
     case Decker.LONG_SLIT => BiasMode.LongSlit
     case Decker.MOS       => BiasMode.MOS
@@ -136,12 +136,12 @@ object Flamingos2 {
       )
   }
 
-  def windowCoverFromObserveType(observeType: String): WindowCover = observeType match {
+  def windowCoverFromObserveType(observeType: String): WindowCover               = observeType match {
     case DARK_OBSERVE_TYPE => WindowCover.CLOSE
     case _                 => WindowCover.OPEN
   }
 
-  implicit def grismFromSPDisperser(d: Disperser): Grism = d match {
+  implicit def grismFromSPDisperser(d: Disperser): Grism                         = d match {
     case Disperser.NONE    => Grism.Open
     case Disperser.R1200HK => Grism.R1200HK
     case Disperser.R1200JH => Grism.R1200JH
@@ -208,7 +208,7 @@ object Flamingos2 {
     override val instrument: Instrument = Instrument.F2
 
     // TODO Use different value if using electronic offsets
-    override val oiOffsetGuideThreshold: Option[Length] =
+    override val oiOffsetGuideThreshold: Option[Length]     =
       (Arcseconds(0.01) / FOCAL_PLANE_SCALE).some
 
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.F2

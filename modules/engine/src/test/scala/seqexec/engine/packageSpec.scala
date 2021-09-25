@@ -30,7 +30,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
+  private implicit def logger: Logger[IO]       = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 
   object DummyResult extends Result.RetVal
 
@@ -61,7 +61,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
                                       } yield Result.OK(DummyResult)
   )
 
-  val faulty: Action[IO] = fromF[IO](ActionType.Undefined,
+  val faulty: Action[IO]         = fromF[IO](ActionType.Undefined,
                                      for {
                                        _ <- IO(Thread.sleep(100))
                                      } yield Result.Error("There was an error in this action")
@@ -72,8 +72,8 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
   val executions: List[ParallelActions[IO]] =
     List(NonEmptyList.of(configureTcs, configureInst), NonEmptyList.one(observe))
 
-  val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
-  val qs1: TestState        =
+  val seqId: Observation.Id   = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
+  val qs1: TestState          =
     TestState(
       sequences = Map(
         (seqId,
@@ -145,7 +145,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     assert(qs.exists(_.sequences(seqId).done.length === 2))
   }
 
-  private def actionPause: Option[TestState] = {
+  private def actionPause: Option[TestState]            = {
     val s0: TestState = TestState(
       Map(
         seqId -> Sequence.State.init(

@@ -21,11 +21,11 @@ package object circuit {
   implicit def CircuitToOps[T <: AnyRef](c: Circuit[T]): CircuitOps[T] =
     new CircuitOps(c)
 
-  implicit def fastEq[A: Eq]: FastEq[A] = new FastEq[A] {
+  implicit def fastEq[A: Eq]: FastEq[A]                                = new FastEq[A] {
     override def eqv(a: A, b: A): Boolean = a === b
   }
 
-  implicit def fastNelEq[A: Eq]: FastEq[NonEmptyList[A]] =
+  implicit def fastNelEq[A: Eq]: FastEq[NonEmptyList[A]]               =
     new FastEq[NonEmptyList[A]] {
       override def eqv(a: NonEmptyList[A], b: NonEmptyList[A]): Boolean =
         a === b

@@ -98,7 +98,7 @@ object TcsConfigRetriever {
       SeqexecFailure.Unexpected(s"Unable to read guide configuration from TCS: $e")
     }
 
-    private def getAoFold: F[AoFold] = epicsSys.aoFoldPosition.map(decode[String, AoFold])
+    private def getAoFold: F[AoFold]                    = epicsSys.aoFoldPosition.map(decode[String, AoFold])
 
     private def decodeNodChopOption(s: Int): Boolean = s =!= 0
 
@@ -163,7 +163,7 @@ object TcsConfigRetriever {
       else
         GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-    private def getUseAo: F[Boolean] = epicsSys.useAo.map(_ === BinaryYesNo.Yes)
+    private def getUseAo: F[Boolean]      = epicsSys.useAo.map(_ === BinaryYesNo.Yes)
 
     private def getAowfs(getAoFollow: F[Boolean]): F[ProbeTrackingConfig] = for {
       aoFol <- getAoFollow.map(if (_) FollowOn else FollowOff)
@@ -173,7 +173,7 @@ object TcsConfigRetriever {
       if (useAo) calcProbeTrackingConfig(aoFol, trk)
       else calcProbeTrackingConfig(aoFol, NodChopTrackingConfig.AllOff)
 
-    private def getOiwfs: F[GuiderConfig] = for {
+    private def getOiwfs: F[GuiderConfig]                                 = for {
       prk <- epicsSys.oiParked
       trk <- getNodChopTrackingConfig(epicsSys.oiwfsProbeGuideConfig)
       fol <- epicsSys.oiFollowS.map(decode[String, FollowOption])
@@ -182,30 +182,30 @@ object TcsConfigRetriever {
                          wfs
     )
 
-    private def getScienceFoldPosition: F[Option[ScienceFold]] = for {
+    private def getScienceFoldPosition: F[Option[ScienceFold]]            = for {
       sfPos    <- epicsSys.sfName
       sfParked <- epicsSys.sfParked.map(_ =!= 0)
     } yield
       if (sfParked) ScienceFold.Parked.some
       else decode[String, Option[ScienceFold]](sfPos)
 
-    private def getHrwfsPickupPosition: F[HrwfsPickupPosition] = for {
+    private def getHrwfsPickupPosition: F[HrwfsPickupPosition]            = for {
       hwPos    <- epicsSys.agHwName.map(decode[String, HrwfsPickupPosition])
       hwParked <- epicsSys.agHwParked.map(_ =!= 0)
     } yield
       if (hwParked) HrwfsPickupPosition.Parked
       else hwPos
 
-    private def getIAA: F[Angle] = epicsSys.instrAA.map(Degrees(_))
+    private def getIAA: F[Angle]                                          = epicsSys.instrAA.map(Degrees(_))
 
     private def getOffsetX: F[Length] = epicsSys.xoffsetPoA1.map(Millimeters(_))
 
     private def getOffsetY: F[Length] = epicsSys.yoffsetPoA1.map(Millimeters(_))
 
-    private def getWavelength: F[Wavelength] =
+    private def getWavelength: F[Wavelength]                                               =
       epicsSys.sourceAWavelength.map(v => Wavelength(Angstroms(v)))
 
-    private def getGemsMap: F[Map[GemsSource, VirtualGemsTelescope]] = for {
+    private def getGemsMap: F[Map[GemsSource, VirtualGemsTelescope]]                       = for {
       v1 <- epicsSys.g1MapName
       v2 <- epicsSys.g2MapName
       v3 <- epicsSys.g3MapName
@@ -219,7 +219,7 @@ object TcsConfigRetriever {
 
     private def getCwfs[T: DetectorStateOps: Eq](
       getFollow: F[Boolean]
-    )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
+    )(g:         VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
       trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
       fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
       wfs <- active.map { x =>
@@ -262,7 +262,7 @@ object TcsConfigRetriever {
     private val getOdgw4: (VirtualGemsTelescope, F[Odgw4DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw4Parked, epicsSys.odgw4Follow)
 
-    private def getInstrumentPorts: F[InstrumentPorts] = for {
+    private def getInstrumentPorts: F[InstrumentPorts]                                     = for {
       f2    <- epicsSys.f2Port.recover { case NullEpicsError(_) => InvalidPort }
       ghost <- epicsSys.ghostPort.recover { case NullEpicsError(_) => InvalidPort }
       gmos  <- epicsSys.gmosPort.recover { case NullEpicsError(_) => InvalidPort }
@@ -325,7 +325,7 @@ object TcsConfigRetriever {
         odgw4
       )
 
-    override def retrieveBaseConfiguration: F[BaseEpicsTcsConfig] =
+    override def retrieveBaseConfiguration: F[BaseEpicsTcsConfig]                          =
       for {
         iaa    <- getIAA
         offX   <- getOffsetX

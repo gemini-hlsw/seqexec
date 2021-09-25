@@ -77,7 +77,7 @@ final class GiapiStatusSpec extends CatsSuite {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Timer[IO]               =
     IO.timer(ExecutionContext.global)
 
   def client(

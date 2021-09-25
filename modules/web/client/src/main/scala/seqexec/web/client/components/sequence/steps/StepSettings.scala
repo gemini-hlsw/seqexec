@@ -60,7 +60,7 @@ object ExposureTimeCell {
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(p => (p.s.config, p.i))
 
-  protected val component = ScalaComponent
+  protected val component                     = ScalaComponent
     .builder[Props]("ExposureTimeCell")
     .stateless
     .render_P { p =>
@@ -69,13 +69,13 @@ object ExposureTimeCell {
 
       // TODO Find a better way to output math-style text
       val seconds = List(
-        <.span(^.display := "inline-block", ^.marginLeft := 5.px, "["),
-        <.span(^.display := "inline-block",
+        <.span(^.display       := "inline-block", ^.marginLeft := 5.px, "["),
+        <.span(^.display       := "inline-block",
                ^.verticalAlign := "none",
                ^.fontStyle     := "italic",
                "s"
         ),
-        <.span(^.display := "inline-block", "]")
+        <.span(^.display       := "inline-block", "]")
       )
 
       val displayedText: TagMod = (coadds, exposureTime) match {
@@ -162,7 +162,7 @@ object ObjectTypeCell {
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(p => (p.instrument, p.step.config, p.step.status, p.size))
 
-  protected val component = ScalaComponent
+  protected val component                     = ScalaComponent
     .builder[Props]("ObjectTypeCell")
     .stateless
     .render_P { p =>

@@ -37,7 +37,7 @@ object GmosHeader {
           )
         )
 
-      private def adcKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+      private def adcKeywords: F[List[KeywordBag => F[KeywordBag]]]            =
         gmosReader.isADCInUse.ifM(
           List(
             buildDouble(gmosReader.adcPrismEntSt, KeywordName.ADCENPST),
@@ -52,7 +52,7 @@ object GmosHeader {
           List.empty.pure[F]
         )
 
-      private def roiKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+      private def roiKeywords: F[List[KeywordBag => F[KeywordBag]]]            =
         gmosReader.roiValues(none).map {
           _.flatMap { case (i, rv) =>
             List(
@@ -64,7 +64,7 @@ object GmosHeader {
           }
         }
 
-      private def nsBeforeKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+      private def nsBeforeKeywords: F[List[KeywordBag => F[KeywordBag]]]       =
         gmosObsReader.isNS.ifM(
           List(
             buildString(gmosObsReader.nodMode, KeywordName.NODMODE),
@@ -78,7 +78,7 @@ object GmosHeader {
           List.empty.pure[F]
         )
 
-      private def nsAfterKeywords: F[List[KeywordBag => F[KeywordBag]]] =
+      private def nsAfterKeywords: F[List[KeywordBag => F[KeywordBag]]]        =
         gmosObsReader.isNS.ifM(
           List(
             buildInt32(gmosReader.aExpCount, KeywordName.ANODCNT),
@@ -88,8 +88,8 @@ object GmosHeader {
           List.empty.pure[F]
         )
 
-      private val InBeam: Int             = 0
-      private def readMaskName: F[String] =
+      private val InBeam: Int                                                  = 0
+      private def readMaskName: F[String]                                      =
         gmosReader.maskLoc
           .map(_ === InBeam)
           .ifM(gmosReader.maskName, "None".pure[F])
@@ -143,7 +143,7 @@ object GmosHeader {
           ) ::: adcKeywords ::: roiKeywords ::: nsKeywords
         )
 
-      override def sendAfter(id: ImageFileId): F[Unit] =
+      override def sendAfter(id: ImageFileId): F[Unit]                         =
         for {
           adc <- adcKeywords
           roi <- roiKeywords

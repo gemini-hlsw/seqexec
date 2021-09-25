@@ -227,7 +227,7 @@ object CalQueueTable {
       State.tableState ^|-> TableState.columns
   }
 
-  implicit val propsReuse: Reusability[Props]    = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
   implicit val icReuse: Reusability[IndexChange] =
     Reusability.derive[IndexChange]
   implicit val stateReuse: Reusability[State]    =
@@ -241,7 +241,7 @@ object CalQueueTable {
     (_, _, _, r: CalQueueRow, _) =>
       <.p(SeqexecStyles.queueText |+| SeqexecStyles.noselect, r.instrument.show)
 
-  private def removeSeq(qid: QueueId, sid: Observation.Id): Callback =
+  private def removeSeq(qid: QueueId, sid: Observation.Id): Callback      =
     SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(qid, sid))
 
   def removeSeqRenderer(p: Props): CellRenderer[js.Object, js.Object, CalQueueRow] =
@@ -267,7 +267,7 @@ object CalQueueTable {
         )
       )
 
-  private def statusIconRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
+  private def statusIconRenderer: CellRenderer[js.Object, js.Object, CalQueueRow]  =
     (_, _, _, row: CalQueueRow, _) => {
       val selectedIconStyle = SeqexecStyles.selectedIcon
       val icon: TagMod      =
@@ -367,7 +367,7 @@ object CalQueueTable {
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
       }) |+| rowStatusStyle(p, s)(i)).htmlClass
 
-    def updateScrollPosition(pos: JsNumber): Callback =
+    def updateScrollPosition(pos: JsNumber): Callback   =
       b.props.zip(b.state) >>= { case (p, state) =>
         val s =
           State.scrollPosition.set(pos)(state)
@@ -461,7 +461,7 @@ object CalQueueTable {
         .copy(tableState = p.data.tableState, prevLastOp = p.data.lastOp)
     }
 
-  private val component = ScalaComponent
+  private val component             = ScalaComponent
     .builder[Props]
     .initialStateFromProps(initialState)
     .renderBackend[CalQueueTableBackend]

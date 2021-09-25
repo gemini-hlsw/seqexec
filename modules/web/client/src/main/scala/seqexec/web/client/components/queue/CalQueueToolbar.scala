@@ -66,10 +66,10 @@ object CalQueueToolbar {
   def runCal(id: QueueId): Callback =
     SeqexecCircuit.dispatchCB(RequestRunCal(id))
 
-  def stopCal(id: QueueId): Callback =
+  def stopCal(id: QueueId): Callback   =
     SeqexecCircuit.dispatchCB(RequestStopCal(id))
 
-  private def addAllButton(p: Props) =
+  private def addAllButton(p: Props)   =
     controlButton(
       icon =
         if (p.addDayCalRunning) IconRefresh.loading(true)
@@ -98,7 +98,7 @@ object CalQueueToolbar {
       text = "Clear"
     )
 
-  private def runButton(p: Props) =
+  private def runButton(p: Props)      =
     controlButton(
       icon =
         if (p.runRunning) IconRefresh.loading(true)
@@ -110,7 +110,7 @@ object CalQueueToolbar {
       text = "Run"
     )
 
-  private def stopButton(p: Props) =
+  private def stopButton(p: Props)     =
     controlButton(
       icon =
         if (p.runRunning) IconRefresh.loading(true)
@@ -122,7 +122,7 @@ object CalQueueToolbar {
       text = "Stop"
     )
 
-  private val component = ScalaComponent
+  private val component                = ScalaComponent
     .builder[Props]
     .render_P(p =>
       <.div(

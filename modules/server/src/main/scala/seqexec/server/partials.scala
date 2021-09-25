@@ -13,7 +13,7 @@ import squants.Time
 trait InternalPartialVal extends PartialVal
 
 final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
-final case class RemainingTime(self: Time) extends AnyVal
+final case class RemainingTime(self: Time)            extends AnyVal
 
 sealed trait Progress extends PartialVal with Product with Serializable {
   val total: Time
@@ -22,7 +22,7 @@ sealed trait Progress extends PartialVal with Product with Serializable {
   val stage: ObserveStage
 }
 
-object Progress {
+object Progress      {
   implicit class ProgressOps(val a: Progress) extends AnyVal {
     def toNSProgress(sub: NSSubexposure): NSProgress =
       NSProgress.fromObsProgress(a, sub)

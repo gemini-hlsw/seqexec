@@ -38,7 +38,7 @@ object GsaoiControllerEpics {
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
-  implicit val filterEncoder: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
+  implicit val filterEncoder: EncodeEpicsValue[Filter, String]             = EncodeEpicsValue {
     case Filter.BLOCKED      => "Blocked"
     case Filter.BR_GAMMA     => "HI-Brgamm"
     case Filter.CH4_LONG     => "CH4(long)"
@@ -66,7 +66,7 @@ object GsaoiControllerEpics {
     case Filter.Z            => "Z"
   }
 
-  implicit val windowCoverEncoder: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue {
+  implicit val windowCoverEncoder: EncodeEpicsValue[WindowCover, String]   = EncodeEpicsValue {
     case WindowCover.Opened => "Opened"
     case WindowCover.Closed => "Closed"
   }
@@ -78,7 +78,7 @@ object GsaoiControllerEpics {
     case UtilityWheel.PUPIL_IMAGER      => "PupilViewer"
   }
 
-  implicit val exposureTimeEncoder: EncodeEpicsValue[Time, Double] = EncodeEpicsValue(_.toSeconds)
+  implicit val exposureTimeEncoder: EncodeEpicsValue[Time, Double]         = EncodeEpicsValue(_.toSeconds)
 
   implicit val roiEncoder: EncodeEpicsValue[Roi, String] = EncodeEpicsValue(_.sequenceValue)
 
@@ -182,16 +182,16 @@ object GsaoiControllerEpics {
       }
 
       // GSAOI endObserve is a NOP with no CAR associated
-      override def endObserve: F[Unit] =
+      override def endObserve: F[Unit]                                   =
         L.debug("endObserve for GSAOI skipped")
 
-      override def stopObserve: F[Unit] =
+      override def stopObserve: F[Unit]                                  =
         L.debug("Stop GSAOI exposure") *>
           epicsSys.stopCmd.mark *>
           epicsSys.stopCmd.post(DefaultTimeout) *>
           L.debug("Stop observe command sent to GSAOI")
 
-      override def abortObserve: F[Unit] =
+      override def abortObserve: F[Unit]                                 =
         L.debug("Abort GSAOI exposure") *>
           epicsSys.abortCmd.mark *>
           epicsSys.abortCmd.post(DefaultTimeout) *>
@@ -224,7 +224,7 @@ object GsaoiControllerEpics {
         )
       }
 
-      private def retrieveConfig: F[EpicsGsaoiConfig] = for {
+      private def retrieveConfig: F[EpicsGsaoiConfig]       = for {
         fl <- epicsSys.filter
         uw <- epicsSys.utilWheel
         wc <- epicsSys.windowCover
@@ -236,7 +236,7 @@ object GsaoiControllerEpics {
         gd <- epicsSys.guiding
       } yield EpicsGsaoiConfig(fl, uw, wc, rm, ro, co, et, fo, gd)
 
-      override def currentState: F[GsaoiGuider.GuideState] = for {
+      override def currentState: F[GsaoiGuider.GuideState]  = for {
         guide <- epicsSys.guiding
         m1    <- epicsSys.odgw1Multiplier
         m2    <- epicsSys.odgw1Multiplier
@@ -256,10 +256,10 @@ object GsaoiControllerEpics {
         }
       }
 
-      override def guide: F[Unit] =
+      override def guide: F[Unit]                           =
         epicsSys.guideCmd.mark *> epicsSys.guideCmd.post(DefaultTimeout).void
 
-      override def endGuide: F[Unit] =
+      override def endGuide: F[Unit]                        =
         epicsSys.endGuideCmd.mark *> epicsSys.guideCmd.post(DefaultTimeout).void
     }
 }

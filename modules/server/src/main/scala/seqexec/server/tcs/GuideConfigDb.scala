@@ -73,7 +73,7 @@ object GuideConfigDb {
       }
     }
 
-  def constant[F[_]: Applicative]: GuideConfigDb[F] =
+  def constant[F[_]: Applicative]: GuideConfigDb[F]                         =
     new GuideConfigDb[F] {
       override def value: F[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[F]
 
@@ -84,7 +84,7 @@ object GuideConfigDb {
       override def discrete: Stream[F, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
     }
 
-  implicit val altairDecoder: Decoder[AltairConfig] = Decoder.instance[AltairConfig] { c =>
+  implicit val altairDecoder: Decoder[AltairConfig]                         = Decoder.instance[AltairConfig] { c =>
     c.downField("aoOn").as[Boolean].flatMap {
       if (_)
         c.downField("mode").as[String].flatMap {
@@ -115,7 +115,7 @@ object GuideConfigDb {
     }
   }
 
-  implicit val gemsDecoder: Decoder[GemsConfig] = Decoder.instance[GemsConfig] { c =>
+  implicit val gemsDecoder: Decoder[GemsConfig]                             = Decoder.instance[GemsConfig] { c =>
     c.downField("aoOn").as[Boolean].flatMap { x =>
       if (x)
         for {
@@ -146,10 +146,10 @@ object GuideConfigDb {
   implicit val gaosEitherDecoder: Decoder[Either[AltairConfig, GemsConfig]] =
     Decoder.decodeEither("altair", "gems")
 
-  implicit val mountGuideDecoder: Decoder[MountGuideOption] =
+  implicit val mountGuideDecoder: Decoder[MountGuideOption]                 =
     Decoder.decodeBoolean.map(_.fold(MountGuideOn, MountGuideOff))
 
-  implicit val m1GuideSourceDecoder: Decoder[M1Source] = Decoder.decodeString.flatMap {
+  implicit val m1GuideSourceDecoder: Decoder[M1Source]                      = Decoder.decodeString.flatMap {
     case "PWFS1" => Decoder.const(M1Source.PWFS1)
     case "PWFS2" => Decoder.const(M1Source.PWFS2)
     case "OIWFS" => Decoder.const(M1Source.OIWFS)
@@ -158,7 +158,7 @@ object GuideConfigDb {
     case _       => Decoder.failedWithMessage("M1Source")
   }
 
-  implicit val m1GuideDecoder: Decoder[M1GuideConfig] = Decoder.instance[M1GuideConfig] { c =>
+  implicit val m1GuideDecoder: Decoder[M1GuideConfig]                       = Decoder.instance[M1GuideConfig] { c =>
     c.downField("on").as[Boolean].flatMap {
       if (_)
         c.downField("source").as[M1Source].map(M1GuideOn(_))
@@ -166,7 +166,7 @@ object GuideConfigDb {
     }
   }
 
-  implicit val m2GuideSourceDecoder: Decoder[TipTiltSource] = Decoder.decodeString.flatMap {
+  implicit val m2GuideSourceDecoder: Decoder[TipTiltSource]                 = Decoder.decodeString.flatMap {
     case "PWFS1" => Decoder.const(TipTiltSource.PWFS1)
     case "PWFS2" => Decoder.const(TipTiltSource.PWFS2)
     case "OIWFS" => Decoder.const(TipTiltSource.OIWFS)
@@ -174,9 +174,9 @@ object GuideConfigDb {
     case _       => Decoder.failedWithMessage("TipTiltSource")
   }
 
-  implicit val comaDecoder: Decoder[ComaOption] = Decoder.decodeBoolean.map(_.fold(ComaOn, ComaOff))
+  implicit val comaDecoder: Decoder[ComaOption]                             = Decoder.decodeBoolean.map(_.fold(ComaOn, ComaOff))
 
-  implicit val m2GuideDecoder: Decoder[M2GuideConfig] = Decoder.instance[M2GuideConfig] { c =>
+  implicit val m2GuideDecoder: Decoder[M2GuideConfig]               = Decoder.instance[M2GuideConfig] { c =>
     c.downField("on").as[Boolean].flatMap {
       if (_) for {
         srcs <- c.downField("sources").as[Set[TipTiltSource]]
@@ -193,7 +193,7 @@ object GuideConfigDb {
       "m2Guide"
     )(TelescopeGuideConfig(_, _, _))(mountGuideDecoder, m1GuideDecoder, m2GuideDecoder)
 
-  implicit val guideConfigDecoder: Decoder[GuideConfig] =
+  implicit val guideConfigDecoder: Decoder[GuideConfig]             =
     Decoder.forProduct2("tcsGuide", "gaosGuide")(GuideConfig(_, _, false))
 
 }

@@ -27,7 +27,7 @@ private[server] trait ScienceFoldPositionCodex {
   def prefixed(p: String, s: LightSource): Parser[ScienceFold] =
     (string(p) ~> lightSink ~ int).map { case (ls, port) => Position(s, ls, port) }
 
-  val park: Parser[ScienceFold] =
+  val park: Parser[ScienceFold]                                                 =
     (string(PARK_POS) <~ many(anyChar)).as(Parked)
 
   implicit val decodeScienceFold: DecodeEpicsValue[String, Option[ScienceFold]] =
@@ -37,7 +37,7 @@ private[server] trait ScienceFoldPositionCodex {
         .option
     )
 
-  implicit val encodeScienceFold: EncodeEpicsValue[Position, String] = EncodeEpicsValue {
+  implicit val encodeScienceFold: EncodeEpicsValue[Position, String]            = EncodeEpicsValue {
     (a: Position) =>
       val instAGName = a.sink.name + a.port.toString
 

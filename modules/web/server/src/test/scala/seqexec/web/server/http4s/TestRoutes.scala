@@ -31,13 +31,13 @@ trait TestRoutes extends ClientBooEncoders with CatsSuite {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Timer[IO]               =
     IO.timer(ExecutionContext.global)
 
-  private val statusDb    = GiapiStatusDb.simulatedDb[IO]
-  private val config      =
+  private val statusDb                          = GiapiStatusDb.simulatedDb[IO]
+  private val config                            =
     AuthenticationConfig(FiniteDuration(8, HOURS), "token", "abc", useSSL = false, Nil)
-  private val authService = AuthenticationService[IO](Mode.Development, config)
+  private val authService                       = AuthenticationService[IO](Mode.Development, config)
 
   def commandRoutes(engine: SeqexecEngine[IO]) =
     for {

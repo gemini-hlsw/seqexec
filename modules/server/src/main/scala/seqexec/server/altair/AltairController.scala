@@ -33,18 +33,18 @@ object AltairController {
 
   sealed trait AltairConfig
 
-  case object AltairOff extends AltairConfig
-  final case class Ngs(blend: Boolean, starPos: (Length, Length)) extends AltairConfig
+  case object AltairOff                                                         extends AltairConfig
+  final case class Ngs(blend: Boolean, starPos: (Length, Length))               extends AltairConfig
   final case class Lgs(strap: Boolean, sfo: Boolean, starPos: (Length, Length)) extends AltairConfig
-  case object LgsWithP1 extends AltairConfig
-  case object LgsWithOi extends AltairConfig
+  case object LgsWithP1                                                         extends AltairConfig
+  case object LgsWithOi                                                         extends AltairConfig
 
   type FieldLens = edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 
   implicit val ngsEq: Eq[Ngs] = Eq.by(_.blend)
   implicit val lgsEq: Eq[Lgs] = Eq.by(x => (x.strap, x.sfo))
 
-  implicit val eq: Eq[AltairConfig] = Eq.instance {
+  implicit val eq: Eq[AltairConfig]                 = Eq.instance {
     case (AltairOff, AltairOff) => true
     case (a: Lgs, b: Lgs)       => a === b
     case (a: Ngs, b: Ngs)       => a === b

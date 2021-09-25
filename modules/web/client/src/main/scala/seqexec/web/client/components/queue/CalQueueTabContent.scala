@@ -55,7 +55,7 @@ object CalQueueTabContent {
       "Work in progress"
     ).render
 
-  private val component = ScalaComponent
+  private val component      = ScalaComponent
     .builder[Props]("CalQueueTabContent")
     .stateless
     .render_P { p =>

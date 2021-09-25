@@ -25,17 +25,17 @@ package object dhs {
 
   implicit val monoidImageFileId: Monoid[ImageFileId] =
     new Monoid[ImageFileId] {
-      def empty: ImageFileId = toImageFileId(Monoid[String].empty)
+      def empty: ImageFileId                                   = toImageFileId(Monoid[String].empty)
       def combine(x: ImageFileId, y: ImageFileId): ImageFileId =
         toImageFileId(Monoid[String].combine(x, y))
     }
   implicit val monoidDataId: Monoid[DataId]           = new Monoid[DataId] {
-    def empty: DataId = toDataId(Monoid[String].empty)
+    def empty: DataId                         = toDataId(Monoid[String].empty)
     def combine(x: DataId, y: DataId): DataId =
       toDataId(Monoid[String].combine(x, y))
   }
 
   def toImageFileId(i: String): ImageFileId = tag[ImageFileIdT][String](i)
-  def toDataId(i:      String): DataId      = tag[DataIdT][String](i)
+  def toDataId(i: String): DataId           = tag[DataIdT][String](i)
 
 }

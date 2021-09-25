@@ -12,7 +12,7 @@ import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
 
 trait ArbStep {
-  implicit val steArb = Arbitrary[Step] {
+  implicit val steArb                 = Arbitrary[Step] {
     for {
       ss <- arbitrary[StandardStep]
       ns <- arbitrary[NodAndShuffleStep]

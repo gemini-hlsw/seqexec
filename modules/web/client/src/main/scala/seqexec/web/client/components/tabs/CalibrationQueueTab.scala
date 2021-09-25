@@ -55,21 +55,21 @@ object CalibrationQueueTab {
         .unless(p.tab.active === TabSelected.Selected)
         .void
 
-  def addToQueueE(e: ReactDragEvent): Callback =
+  def addToQueueE(e: ReactDragEvent): Callback                     =
     e.preventDefaultCB *>
       Option(e.dataTransfer.getData("text/plain"))
         .flatMap(Observation.Id.fromString)
         .map(id => SeqexecCircuit.dispatchCB(RequestAddSeqCal(CalibrationQueueId, id)))
         .getOrEmpty
 
-  private def onDragEnter(b: Backend)(e: ReactDragEvent) =
+  private def onDragEnter(b: Backend)(e: ReactDragEvent)           =
     b.setStateL(State.draggingOver)(Option(e.dataTransfer.getData("text/plain")))
 
-  private def onDrop(b: Backend)(e: ReactDragEvent) =
+  private def onDrop(b: Backend)(e: ReactDragEvent)                =
     addToQueueE(e) *>
       onDragEnd(b)
 
-  private def onDragEnd(b: Backend) =
+  private def onDragEnd(b: Backend)                                =
     b.setStateL(State.draggingOver)(none)
 
   private def linkTo(b: Backend, page: SeqexecPages)(mod: TagMod*) = {

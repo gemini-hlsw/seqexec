@@ -16,7 +16,7 @@ object ControlStrategy {
   // All system interactions are internally simulated
   case object Simulated   extends ControlStrategy
 
-  def fromString(v: String): Option[ControlStrategy] = v match {
+  def fromString(v: String): Option[ControlStrategy]                  = v match {
     case "full"      => Some(FullControl)
     case "readOnly"  => Some(ReadOnly)
     case "simulated" => Some(Simulated)

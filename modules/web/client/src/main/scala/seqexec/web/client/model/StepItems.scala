@@ -62,7 +62,7 @@ object StepItems {
           s"${formatExposureTime(i)(e)} s".some
         case _                               => none
       }
-    def coAdds: Option[Int] = observeCoaddsO.getOption(s)
+    def coAdds: Option[Int]                               = observeCoaddsO.getOption(s)
 
     def fpu(i: Instrument): Option[String] =
       (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {
@@ -100,7 +100,7 @@ object StepItems {
         .orElse(nodAndShuffle(instrument))
         .orElse(stepTypeO.getOption(s))
 
-    private def gpiFilter: Step => Option[String] =
+    private def gpiFilter: Step => Option[String]          =
       s => {
         // Read the filter, if not found deduce it from the obs mode
         val f: Option[GpiFilter] =
@@ -114,7 +114,7 @@ object StepItems {
         f.map(_.longName)
       }
 
-    def filter(i: Instrument): Option[String] =
+    def filter(i: Instrument): Option[String]                           =
       i match {
         case Instrument.GmosS =>
           instrumentFilterO
@@ -225,7 +225,7 @@ object StepItems {
     val isAC: Boolean =
       step.alignAndCalib(instrument).isDefined
 
-    val isNS: Boolean =
+    val isNS: Boolean     =
       step.nodAndShuffle(instrument).isDefined
 
     private val isRunning =

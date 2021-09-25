@@ -157,7 +157,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       )
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] =
+  override def handle: PartialFunction[Any, ActionResult[M]]              =
     List(
       handleAddAllDayCal,
       handleClearAllCal,

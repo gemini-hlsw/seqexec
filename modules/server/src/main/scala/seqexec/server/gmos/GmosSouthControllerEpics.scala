@@ -21,7 +21,7 @@ import seqexec.server.gmos.GmosController.southConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
 
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
-  override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue {
+  override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String]       = EncodeEpicsValue {
     case Disperser.MIRROR      => "mirror"
     case Disperser.B1200_G5321 => "B1200+_G5321"
     case Disperser.R831_G5322  => "R831+_G5322"
@@ -60,7 +60,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
       r.map(x => (x._1, GmosControllerEpics.beamEncoder.encode(x._2)))
     }
 
-  override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)] = EncodeEpicsValue {
+  override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)]   = EncodeEpicsValue {
     case Filter.Z_G0343                 => ("Z_G0343", "open2-8")
     case Filter.Y_G0344                 => ("Y_G0344", "open2-8")
     case Filter.HeII_G0340              => ("HeII_G0340", "open2-8")
@@ -100,14 +100,14 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Filter.NONE                    => ("open1-6", "open2-8")
   }
 
-  override val stageMode: EncodeEpicsValue[SouthTypes#GmosStageMode, String] = EncodeEpicsValue {
+  override val stageMode: EncodeEpicsValue[SouthTypes#GmosStageMode, String]   = EncodeEpicsValue {
     case StageMode.NO_FOLLOW     => "MOVE"
     case StageMode.FOLLOW_XYZ    => "FOLLOW"
     case StageMode.FOLLOW_XY     => "FOLLOW-XY"
     case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
   }
 
-  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {
+  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]     = EncodeEpicsValue {
     case BuiltinROI.FULL_FRAME       =>
       ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
     case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)

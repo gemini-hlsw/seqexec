@@ -14,7 +14,7 @@ import seqexec.model.arb.ArbStepState._
 import seqexec.model.arb.ArbDhsTypes._
 
 trait ArbStandardStep {
-  implicit val stsArb = Arbitrary[StandardStep] {
+  implicit val stsArb                                 = Arbitrary[StandardStep] {
     for {
       id <- arbitrary[StepId]
       c  <- stepConfigGen

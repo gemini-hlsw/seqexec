@@ -23,7 +23,7 @@ sealed abstract class VariableColumnWidth(val percentage: Double, val minWidth: 
 }
 
 object ColumnWidth {
-  implicit val eq: Eq[ColumnWidth] =
+  implicit val eq: Eq[ColumnWidth]                        =
     Eq[Either[FixedColumnWidth, VariableColumnWidth]].contramap {
       case x: FixedColumnWidth    => x.asLeft
       case x: VariableColumnWidth => x.asRight
@@ -40,7 +40,7 @@ object ColumnWidth {
 
 object FixedColumnWidth {
   implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
-  private[table] def apply(p: Double) = new FixedColumnWidth(p) {}
+  private[table] def apply(p: Double)      = new FixedColumnWidth(p) {}
 
   def fromDouble(width: Double): Option[FixedColumnWidth] =
     (width >= 0).option(FixedColumnWidth(width))
@@ -48,7 +48,7 @@ object FixedColumnWidth {
   def unsafeFromDouble(width: Double): FixedColumnWidth =
     fromDouble(width).getOrElse(sys.error(s"Incorrect width value $width"))
 
-  def unapply(fc: FixedColumnWidth): Option[Double] =
+  def unapply(fc: FixedColumnWidth): Option[Double]              =
     Some(fc.width)
 
   private implicit val doubleReuse: Reusability[Double]          =

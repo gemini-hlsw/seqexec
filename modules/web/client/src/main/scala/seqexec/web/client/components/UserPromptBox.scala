@@ -85,8 +85,8 @@ object UserPromptBox {
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.prompt)
 
-  private val ok     = Callback(SeqexecCircuit.dispatch(CloseUserPromptBox(UserPromptResult.Ok)))
-  private val cancel = Callback(
+  private val ok        = Callback(SeqexecCircuit.dispatch(CloseUserPromptBox(UserPromptResult.Ok)))
+  private val cancel    = Callback(
     SeqexecCircuit.dispatch(CloseUserPromptBox(UserPromptResult.Cancel))
   )
 

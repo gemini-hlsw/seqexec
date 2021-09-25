@@ -20,13 +20,13 @@ object Result {
   trait PartialVal
   trait PauseContext[F[_]]
 
-  final case class OK[R <: RetVal](response: R) extends Result[Nothing]
-  final case class OKStopped[R <: RetVal](response: R) extends Result[Nothing]
+  final case class OK[R <: RetVal](response: R)          extends Result[Nothing]
+  final case class OKStopped[R <: RetVal](response: R)   extends Result[Nothing]
   final case class Partial[R <: PartialVal](response: R) extends Result[Nothing]
-  final case class Paused[F[_]](ctx: PauseContext[F]) extends Result[F]
-  final case class OKAborted[R <: RetVal](response: R) extends Result[Nothing]
+  final case class Paused[F[_]](ctx: PauseContext[F])    extends Result[F]
+  final case class OKAborted[R <: RetVal](response: R)   extends Result[Nothing]
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  final case class Error(msg: String) extends Result[Nothing] {
+  final case class Error(msg: String)                    extends Result[Nothing] {
     override val errMsg: Option[String] = msg.some
   }
   object Error {

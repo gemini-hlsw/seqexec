@@ -24,7 +24,7 @@ final case class SoundControl(sound: SoundSelection)
  * Button to toggle sound on/off
  */
 object SoundControl {
-  private val SoundOn =
+  private val SoundOn                                =
     Audio.selectPlayable(new Audio(SoundOnMP3.resource), new Audio(SoundOnWebM.resource))
 
   implicit val propsReuse: Reusability[SoundControl] = Reusability.derive[SoundControl]
@@ -32,7 +32,7 @@ object SoundControl {
   private def flipSound: Callback =
     SeqexecCircuit.dispatchCB(FlipSoundOnOff)
 
-  private val component = ScalaComponent
+  private val component           = ScalaComponent
     .builder[SoundControl]("SoundControl")
     .stateless
     .render_P { p =>

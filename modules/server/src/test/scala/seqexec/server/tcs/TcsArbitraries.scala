@@ -29,10 +29,10 @@ trait TcsArbitraries {
   implicit val tcsNodChopCogen: Cogen[TcsController.NodChop]   =
     Cogen[(TcsController.Beam, TcsController.Beam)].contramap(x => (x.nod, x.chop))
 
-  private def rangedAngleGen(minVal: Angle, maxVal: Angle) =
+  private def rangedAngleGen(minVal: Angle, maxVal: Angle)     =
     Gen.choose(minVal.toDegrees, maxVal.toDegrees).map(Degrees(_))
 
-  private val offsetLimit: Angle = 120.arcseconds
+  private val offsetLimit: Angle                               = 120.arcseconds
 
   implicit val offsetPArb: Arbitrary[Angle @@ TcsController.OffsetP] = Arbitrary(
     rangedAngleGen(-offsetLimit, offsetLimit).map(tag[TcsController.OffsetP].apply)
@@ -55,13 +55,13 @@ trait TcsArbitraries {
       (x.p, x.q)
     )
 
-  implicit val iaaArb: Arbitrary[Angle] = Arbitrary(rangedAngleGen(-90.degrees, 270.degrees))
-  implicit val iaaCogen: Cogen[Angle]   = Cogen[Double].contramap(_.toDegrees)
+  implicit val iaaArb: Arbitrary[Angle]                              = Arbitrary(rangedAngleGen(-90.degrees, 270.degrees))
+  implicit val iaaCogen: Cogen[Angle]                                = Cogen[Double].contramap(_.toDegrees)
 
-  implicit val crFollowArb: Arbitrary[CRFollow] = Arbitrary {
+  implicit val crFollowArb: Arbitrary[CRFollow]         = Arbitrary {
     Gen.oneOf(CRFollow.On, CRFollow.Off)
   }
-  implicit val crFollowCogen: Cogen[CRFollow]   =
+  implicit val crFollowCogen: Cogen[CRFollow]           =
     Cogen[String].contramap(_.productPrefix)
 
   implicit val binaryYNArb: Arbitrary[BinaryYesNo]      = Arbitrary(

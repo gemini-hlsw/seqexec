@@ -19,7 +19,7 @@ final class EngineSpec extends munit.DisciplineSuite {
   implicit val seqstateEq: Eq[Sequence.State[IO]] = Eq.fromUniversalEquals
   implicit val execstateEq: Eq[TestState]         = Eq.by(x => x.sequences)
 
-  implicit val sequenceArb: Arbitrary[Sequence[IO]] = Arbitrary {
+  implicit val sequenceArb: Arbitrary[Sequence[IO]]            = Arbitrary {
     for {
       id <- arbitrary[Observation.Id](ArbObservationId.arbObservationId)
     } yield Sequence(id, List())
@@ -32,10 +32,10 @@ final class EngineSpec extends munit.DisciplineSuite {
     } yield Sequence.State.Final(seq, st)
   }
 
-  implicit val sequenceStateCogen: Cogen[Sequence.State[IO]] =
+  implicit val sequenceStateCogen: Cogen[Sequence.State[IO]]   =
     Cogen[Observation.Id].contramap(_.toSequence.id)
 
-  implicit val engineStateArb: Arbitrary[TestState] = Arbitrary {
+  implicit val engineStateArb: Arbitrary[TestState]            = Arbitrary {
     for {
       q <- arbitrary[Map[Observation.Id, Sequence.State[IO]]]
     } yield TestState(q)

@@ -193,7 +193,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         // PreviewSequenceTab.tableState.modify(tsUpd) >>>
         PreviewSequenceTab.currentSequence.set(s) >>>
           PreviewSequenceTab.stepConfig.set(None)
-      val q      = withPreviewTab(s).tabs
+      val q = withPreviewTab(s).tabs
         .findFocus(_.isPreview)
         .map(_.modify(SeqexecTab.previewTab.modify(update)))
       q
@@ -402,13 +402,13 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
  */
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview
-  val Empty: SequencesOnDisplay =
+  val Empty: SequencesOnDisplay                                                     =
     SequencesOnDisplay(Zipper.fromNel[SeqexecTab](NonEmptyList.of(CalibrationQueueTab.Empty)))
 
-  implicit val eq: Eq[SequencesOnDisplay] =
+  implicit val eq: Eq[SequencesOnDisplay]                                           =
     Eq.by(_.tabs)
 
-  private def previewMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
+  private def previewMatch(id: Observation.Id)(tab: SeqexecTab): Boolean            =
     tab match {
       case PreviewSequenceTab(curr, _, _, _) => curr.id === id
       case _                                 => false
@@ -425,7 +425,7 @@ object SequencesOnDisplay {
       case _                                                    => false
     }
 
-  private def sequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
+  private def sequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean           =
     tab match {
       case t: InstrumentSequenceTab => t.obsId === id
       case t: PreviewSequenceTab    => t.obsId === id
@@ -453,7 +453,7 @@ object SequencesOnDisplay {
       sequenceMatch(id)
     ) ^<-? SeqexecTab.sequenceTab
 
-  val previewTab: Traversal[SequencesOnDisplay, PreviewSequenceTab] =
+  val previewTab: Traversal[SequencesOnDisplay, PreviewSequenceTab]    =
     SequencesOnDisplay.tabs ^|->> Zipper.unsafeSelect(_.isPreview) ^<-? SeqexecTab.previewTab
 
   private def instrumentMatch(i: Instrument)(tab: SeqexecTab): Boolean =
@@ -469,7 +469,7 @@ object SequencesOnDisplay {
       Zipper.unsafeSelect(instrumentMatch(i)) ^<-?
       SeqexecTab.instrumentTab
 
-  private def instrumentTab(tab: SeqexecTab): Boolean =
+  private def instrumentTab(tab: SeqexecTab): Boolean                  =
     tab match {
       case _: InstrumentSequenceTab => true
       case _                        => false
@@ -480,7 +480,7 @@ object SequencesOnDisplay {
       Zipper.unsafeSelect(instrumentTab) ^<-?
       SeqexecTab.instrumentTab
 
-  private def sequenceTab(tab: SeqexecTab): Boolean =
+  private def sequenceTab(tab: SeqexecTab): Boolean                        =
     tab match {
       case _: InstrumentSequenceTab => true
       case _: PreviewSequenceTab    => true
@@ -492,7 +492,7 @@ object SequencesOnDisplay {
       Zipper.unsafeSelect(sequenceTab) ^<-?
       SeqexecTab.sequenceTab
 
-  private def completedTab(tab: SeqexecTab): Boolean =
+  private def completedTab(tab: SeqexecTab): Boolean           =
     tab match {
       case t: InstrumentSequenceTab => t.isComplete
       case _                        => false

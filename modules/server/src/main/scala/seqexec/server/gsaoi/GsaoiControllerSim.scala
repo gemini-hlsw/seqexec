@@ -28,10 +28,10 @@ object GsaoiControllerSim {
             sim.observe(fileId, _)
           }
 
-        override def applyConfig(config: GsaoiConfig): F[Unit] =
+        override def applyConfig(config: GsaoiConfig): F[Unit]                            =
           sim.applyConfig(config)
 
-        override def stopObserve: F[Unit] = sim.stopObserve
+        override def stopObserve: F[Unit]                                                 = sim.stopObserve
 
         override def abortObserve: F[Unit] = sim.abortObserve
 
@@ -40,13 +40,13 @@ object GsaoiControllerSim {
         override def observeProgress(total: Time): fs2.Stream[F, Progress] =
           sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-        override def currentState: F[GsaoiGuider.GuideState] = (new GsaoiGuider.GuideState {
+        override def currentState: F[GsaoiGuider.GuideState]               = (new GsaoiGuider.GuideState {
           override def isGuideActive: Boolean = false
 
           override def isOdgwGuiding(odgwId: GsaoiGuider.OdgwId): Boolean = false
         }).pure[F]
 
-        override def guide: F[Unit] = Applicative[F].unit
+        override def guide: F[Unit]                                        = Applicative[F].unit
 
         override def endGuide: F[Unit] = Applicative[F].unit
       }

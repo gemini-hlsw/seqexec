@@ -19,22 +19,22 @@ class GpiControllerDisabled[F[_]: Logger: Applicative](override val statusDb: Gi
   private val name = "GPI"
 
   override def gdsClient: GdsClient[F] = new GdsClient[F] {
-    override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] =
+    override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit]                            =
       overrideLogMessage(name, "setKeywords")
 
     override def openObservation(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): F[Unit] =
       overrideLogMessage(name, "openObservation")
 
-    override def closeObservation(id: ImageFileId): F[Unit] =
+    override def closeObservation(id: ImageFileId): F[Unit]                                       =
       overrideLogMessage(name, "closeObservation")
   }
 
-  override def alignAndCalib: F[Unit] = overrideLogMessage(name, "alignAndCalib")
+  override def alignAndCalib: F[Unit]  = overrideLogMessage(name, "alignAndCalib")
 
   override def applyConfig(config: GpiConfig): F[Unit] = overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] =
     overrideLogMessage(name, s"observe $fileId").as(fileId)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                         = overrideLogMessage(name, "endObserve")
 }

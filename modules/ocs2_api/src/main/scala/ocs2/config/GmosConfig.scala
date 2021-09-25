@@ -39,14 +39,14 @@ object GmosConfig {
      * @return
      *   `Some(GmosShuffleOffset(rows))` if `rows` is positive, `None` otherwise
      */
-    def fromRowCount(rows:       Int): Option[GmosShuffleOffset] =
+    def fromRowCount(rows: Int): Option[GmosShuffleOffset] =
       if (rows > 0) Some(new GmosShuffleOffset(rows) {}) else None
 
     /**
      * Constructs the shuffle offset with the given number of detector rows provided `rows` is
      * positive, or throws an exception if zero or negative.
      */
-    def unsafeFromRowCount(rows: Int): GmosShuffleOffset         =
+    def unsafeFromRowCount(rows: Int): GmosShuffleOffset =
       fromRowCount(rows).getOrElse(sys.error(s"Expecting positive detector row count, not $rows"))
 
     /**
@@ -57,7 +57,7 @@ object GmosConfig {
       fromRowCount(detector.shuffleOffset)
         .getOrElse(sys.error(s"Misconfigured GmosDetector $detector"))
 
-    implicit val EqualGmosShuffleOffset: Eq[GmosShuffleOffset] =
+    implicit val EqualGmosShuffleOffset: Eq[GmosShuffleOffset]         =
       Eq.fromUniversalEquals
   }
 
@@ -91,14 +91,14 @@ object GmosConfig {
      * @return
      *   `Some(GmosShuffleCycles(cycles))` if `cycles` is positive, `None` otherwise
      */
-    def fromCycleCount(cycles:       Int): Option[GmosShuffleCycles] =
+    def fromCycleCount(cycles: Int): Option[GmosShuffleCycles] =
       if (cycles > 0) Some(new GmosShuffleCycles(cycles) {}) else None
 
     /**
      * Constructs the shuffle cycles with the given `cycles` count provided it is positive, or else
      * throws an exception if 0 or negative.
      */
-    def unsafeFromCycleCount(cycles: Int): GmosShuffleCycles         =
+    def unsafeFromCycleCount(cycles: Int): GmosShuffleCycles   =
       fromCycleCount(cycles).getOrElse(sys.error(s"Expecting positive shuffle cycles, not $cycles"))
 
     implicit val EqualGmosShuffleCycles: Eq[GmosShuffleCycles] =
@@ -132,7 +132,7 @@ object GmosConfig {
   )
 
   object GmosNodAndShuffle extends GmosNodAndShuffleOptics {
-    val Default: GmosNodAndShuffle =
+    val Default: GmosNodAndShuffle                             =
       GmosNodAndShuffle(
         Offset.Zero,
         Offset.Zero,
@@ -284,7 +284,7 @@ object GmosConfig {
 
   object GmosCommonStaticConfig extends GmosCommonStaticConfigOptics {
 
-    val Default: GmosCommonStaticConfig =
+    val Default: GmosCommonStaticConfig                               =
       GmosCommonStaticConfig(
         GmosDetector.HAMAMATSU,
         MosPreImaging.IsNotMosPreImaging,
@@ -334,7 +334,7 @@ object GmosConfig {
 
   object GmosCcdReadout extends GmosCcdReadoutOptics {
 
-    val Default: GmosCcdReadout =
+    val Default: GmosCcdReadout                          =
       GmosCcdReadout(
         GmosXBinning.One,
         GmosYBinning.One,
@@ -384,7 +384,7 @@ object GmosConfig {
 
   object GmosCommonDynamicConfig extends GmosCommonDynamicConfigOptics {
 
-    val Default: GmosCommonDynamicConfig =
+    val Default: GmosCommonDynamicConfig                                   =
       GmosCommonDynamicConfig(
         GmosCcdReadout.Default,
         GmosDtax.Zero,

@@ -40,7 +40,7 @@ object CalQueueFocus {
 
   def seqQueueOpsT(
     id: Observation.Id
-  ): Traversal[CalQueueFocus, QueueSeqOperations]     =
+  ): Traversal[CalQueueFocus, QueueSeqOperations] =
     CalQueueFocus.seqOps ^|->>
       filterIndex((oid: Observation.Id) => oid === id)
 
@@ -57,7 +57,7 @@ object CalQueueFocus {
       SeqexecUIModel.appTableStates ^|->
       AppTableStates.queueTableAtL(id)
 
-  private def seqOpsL(id: QueueId) =
+  private def seqOpsL(id: QueueId)  =
     SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.queues ^|-?
       CalibrationQueues.calStateSeqOpsT(id)

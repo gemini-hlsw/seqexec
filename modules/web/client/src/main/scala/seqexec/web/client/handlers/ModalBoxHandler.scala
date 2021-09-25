@@ -28,7 +28,7 @@ class ModalBoxHandler[M](
       noChange
   }
 
-  def closeModal: PartialFunction[Any, ActionResult[M]] = {
+  def closeModal: PartialFunction[Any, ActionResult[M]]      = {
     case x if x == closeAction && value === SectionOpen =>
       updated(SectionClosed)
 

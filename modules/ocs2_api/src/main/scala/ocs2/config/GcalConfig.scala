@@ -59,7 +59,7 @@ object GcalConfig extends GcalConfigOptics {
     def of(arc0: GcalArc, arcs: GcalArc*): GcalArcs =
       GcalArcs(NonEmptySet.of(arc0, arcs: _*))
 
-    implicit val EqGcalArcs: Eq[GcalArcs] =
+    implicit val EqGcalArcs: Eq[GcalArcs]           =
       Eq.by(_.arcs)
   }
 

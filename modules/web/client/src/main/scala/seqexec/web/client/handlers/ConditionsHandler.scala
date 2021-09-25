@@ -36,7 +36,7 @@ class ConditionsHandler[M](modelRW: ModelRW[M, Conditions])
     updated(value.copy(sb = sb), updateE)
   }
 
-  val wvHandle: PartialFunction[Any, ActionResult[M]] = { case UpdateWaterVapor(wv) =>
+  val wvHandle: PartialFunction[Any, ActionResult[M]]        = { case UpdateWaterVapor(wv) =>
     val updateE = Effect(SeqexecWebClient.setWaterVapor(wv).as(NoAction))
     updated(value.copy(wv = wv), updateE)
   }

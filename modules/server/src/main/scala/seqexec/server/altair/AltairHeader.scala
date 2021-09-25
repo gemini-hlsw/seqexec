@@ -46,7 +46,7 @@ object AltairHeader {
           )
         )
 
-      override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
+      override def sendAfter(id: ImageFileId): F[Unit]                         = Applicative[F].unit
     }
 
 }

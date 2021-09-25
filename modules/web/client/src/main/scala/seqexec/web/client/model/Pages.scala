@@ -27,13 +27,13 @@ object Pages {
     implicit val equal: Eq[StepIdDisplayed] = Eq.fromUniversalEquals
 
     implicit val monoid: Monoid[StepIdDisplayed] = new Monoid[StepIdDisplayed] {
-      override def empty: StepIdDisplayed = StepIdDisplayed(0)
+      override def empty: StepIdDisplayed                                           = StepIdDisplayed(0)
       override def combine(x: StepIdDisplayed, y: StepIdDisplayed): StepIdDisplayed =
         StepIdDisplayed(x.step + y.step)
     }
   }
 
-  case object Root                 extends SeqexecPages
+  case object Root extends SeqexecPages
   case object SoundTest            extends SeqexecPages
   case object CalibrationQueuePage extends SeqexecPages
   final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepIdDisplayed)
@@ -44,7 +44,7 @@ object Pages {
     instrument: Instrument,
     obsId:      Observation.Id,
     step:       StepIdDisplayed
-  )                                extends SeqexecPages
+  ) extends SeqexecPages
   final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId)
       extends SeqexecPages
 

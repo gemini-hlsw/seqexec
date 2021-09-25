@@ -46,7 +46,7 @@ object Flamingos2Header {
           )
         )
 
-      override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
+      override def sendAfter(id: ImageFileId): F[Unit]                         = Applicative[F].unit
     }
 
   trait ObsKeywordsReader[F[_]] {
@@ -67,7 +67,7 @@ object Flamingos2Header {
             )
           ).rethrowT
 
-        def getReadMode: F[ReadMode] =
+        def getReadMode: F[ReadMode]      =
           EitherT(
             Sync[F].delay(
               config

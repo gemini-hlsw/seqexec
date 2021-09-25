@@ -137,100 +137,100 @@ trait GmosKeywordReader[F[_]] {
 
 object GmosKeywordReaderDummy {
   def apply[F[_]: Applicative]: GmosKeywordReader[F] = new GmosKeywordReader[F] {
-    override def ccName: F[String]                    = strDefault[F]
-    override def maskId: F[Int]                       = intDefault[F]
-    override def maskName: F[String]                  = strDefault[F]
-    override def maskType: F[Int]                     = intDefault[F]
-    override def maskLoc: F[Int]                      = intDefault[F]
-    override def filter1: F[String]                   = strDefault[F]
-    override def filter2: F[String]                   = strDefault[F]
-    override def filter1Id: F[Int]                    = intDefault[F]
-    override def filter2Id: F[Int]                    = intDefault[F]
-    override def grating: F[String]                   = strDefault[F]
-    override def gratingId: F[Int]                    = intDefault[F]
-    override def gratingWavelength: F[Double]         = doubleDefault[F]
-    override def gratingAdjustedWavelength: F[Double] = doubleDefault[F]
-    override def gratingOrder: F[Int]                 = intDefault[F]
-    override def gratingTilt: F[Double]               = doubleDefault[F]
-    override def gratingStep: F[Double]               = doubleDefault[F]
-    override def dtaX: F[Double]                      = doubleDefault[F]
-    override def dtaY: F[Double]                      = doubleDefault[F]
-    override def dtaZ: F[Double]                      = doubleDefault[F]
-    override def dtaZst: F[Double]                    = doubleDefault[F]
-    override def dtaZen: F[Double]                    = doubleDefault[F]
-    override def dtaZme: F[Double]                    = doubleDefault[F]
-    override def stageMode: F[String]                 = strDefault[F]
-    override def adcMode: F[String]                   = strDefault[F]
-    override def dcName: F[String]                    = strDefault[F]
-    override def detectorType: F[String]              = strDefault[F]
-    override def detectorId: F[String]                = strDefault[F]
-    override def exposureTime: F[Double]              = doubleDefault[F]
-    override def adcUsed: F[Int]                      = intDefault[F]
-    override def adcPrismEntSt: F[Double]             = doubleDefault[F]
-    override def adcPrismEntEnd: F[Double]            = doubleDefault[F]
-    override def adcPrismEntMe: F[Double]             = doubleDefault[F]
-    override def adcPrismExtSt: F[Double]             = doubleDefault[F]
-    override def adcPrismExtEnd: F[Double]            = doubleDefault[F]
-    override def adcPrismExtMe: F[Double]             = doubleDefault[F]
-    override def adcWavelength1: F[Double]            = doubleDefault[F]
-    override def adcWavelength2: F[Double]            = doubleDefault[F]
-    override def detNRoi: F[Int]                      = intDefault[F]
+    override def ccName: F[String]                                           = strDefault[F]
+    override def maskId: F[Int]                                              = intDefault[F]
+    override def maskName: F[String]                                         = strDefault[F]
+    override def maskType: F[Int]                                            = intDefault[F]
+    override def maskLoc: F[Int]                                             = intDefault[F]
+    override def filter1: F[String]                                          = strDefault[F]
+    override def filter2: F[String]                                          = strDefault[F]
+    override def filter1Id: F[Int]                                           = intDefault[F]
+    override def filter2Id: F[Int]                                           = intDefault[F]
+    override def grating: F[String]                                          = strDefault[F]
+    override def gratingId: F[Int]                                           = intDefault[F]
+    override def gratingWavelength: F[Double]                                = doubleDefault[F]
+    override def gratingAdjustedWavelength: F[Double]                        = doubleDefault[F]
+    override def gratingOrder: F[Int]                                        = intDefault[F]
+    override def gratingTilt: F[Double]                                      = doubleDefault[F]
+    override def gratingStep: F[Double]                                      = doubleDefault[F]
+    override def dtaX: F[Double]                                             = doubleDefault[F]
+    override def dtaY: F[Double]                                             = doubleDefault[F]
+    override def dtaZ: F[Double]                                             = doubleDefault[F]
+    override def dtaZst: F[Double]                                           = doubleDefault[F]
+    override def dtaZen: F[Double]                                           = doubleDefault[F]
+    override def dtaZme: F[Double]                                           = doubleDefault[F]
+    override def stageMode: F[String]                                        = strDefault[F]
+    override def adcMode: F[String]                                          = strDefault[F]
+    override def dcName: F[String]                                           = strDefault[F]
+    override def detectorType: F[String]                                     = strDefault[F]
+    override def detectorId: F[String]                                       = strDefault[F]
+    override def exposureTime: F[Double]                                     = doubleDefault[F]
+    override def adcUsed: F[Int]                                             = intDefault[F]
+    override def adcPrismEntSt: F[Double]                                    = doubleDefault[F]
+    override def adcPrismEntEnd: F[Double]                                   = doubleDefault[F]
+    override def adcPrismEntMe: F[Double]                                    = doubleDefault[F]
+    override def adcPrismExtSt: F[Double]                                    = doubleDefault[F]
+    override def adcPrismExtEnd: F[Double]                                   = doubleDefault[F]
+    override def adcPrismExtMe: F[Double]                                    = doubleDefault[F]
+    override def adcWavelength1: F[Double]                                   = doubleDefault[F]
+    override def adcWavelength2: F[Double]                                   = doubleDefault[F]
+    override def detNRoi: F[Int]                                             = intDefault[F]
     override def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]] = seqNRois
       .map(n => intDefault[F].map(x => (1 to n).toList.map(i => i -> RoiValues(x, x, x, x))))
       .getOrElse(listDefault[F, (Int, RoiValues)])
-    override def aExpCount: F[Int] = intDefault[F]
-    override def bExpCount: F[Int]      = intDefault[F]
-    override def isADCInUse: F[Boolean] = boolDefault[F]
+    override def aExpCount: F[Int]                                           = intDefault[F]
+    override def bExpCount: F[Int]                                           = intDefault[F]
+    override def isADCInUse: F[Boolean]                                      = boolDefault[F]
   }
 }
 
 object GmosKeywordReaderEpics {
   def apply[F[_]: Sync](sys: GmosEpics[F]): GmosKeywordReader[F] = new GmosKeywordReader[F] {
 
-    override def ccName: F[String]                    = sys.ccName
-    override def maskId: F[Int]                       = sys.maskId
-    override def maskName: F[String]                  = sys.fpu
-    override def maskType: F[Int]                     = sys.maskType
-    override def maskLoc: F[Int]                      = sys.inBeam
-    override def filter1: F[String]                   = sys.filter1
-    override def filter2: F[String]                   = sys.filter2
-    override def filter1Id: F[Int]                    = sys.filter1Id
-    override def filter2Id: F[Int]                    = sys.filter2Id
-    override def grating: F[String]                   = sys.disperser
-    override def gratingId: F[Int]                    = sys.disperserId
-    override def gratingWavelength: F[Double]         = sys.gratingWavel
-    override def gratingAdjustedWavelength: F[Double] = sys.disperserWavel
-    override def gratingOrder: F[Int]                 = sys.disperserOrder
-    override def gratingTilt: F[Double]               = sys.gratingTilt
-    override def gratingStep: F[Double]               =
+    override def ccName: F[String]                                                            = sys.ccName
+    override def maskId: F[Int]                                                               = sys.maskId
+    override def maskName: F[String]                                                          = sys.fpu
+    override def maskType: F[Int]                                                             = sys.maskType
+    override def maskLoc: F[Int]                                                              = sys.inBeam
+    override def filter1: F[String]                                                           = sys.filter1
+    override def filter2: F[String]                                                           = sys.filter2
+    override def filter1Id: F[Int]                                                            = sys.filter1Id
+    override def filter2Id: F[Int]                                                            = sys.filter2Id
+    override def grating: F[String]                                                           = sys.disperser
+    override def gratingId: F[Int]                                                            = sys.disperserId
+    override def gratingWavelength: F[Double]                                                 = sys.gratingWavel
+    override def gratingAdjustedWavelength: F[Double]                                         = sys.disperserWavel
+    override def gratingOrder: F[Int]                                                         = sys.disperserOrder
+    override def gratingTilt: F[Double]                                                       = sys.gratingTilt
+    override def gratingStep: F[Double] =
       // Set the value to the epics channel if inBeam is    1
       sys.disperserInBeam.map(_ === 1).ifM(sys.reqGratingMotorSteps, doubleDefault[F])
-    override def dtaX: F[Double]                      = sys.dtaX
-    override def dtaY: F[Double]                      = sys.dtaY
-    override def dtaZ: F[Double]                      = sys.dtaZ
-    override def dtaZst: F[Double]                    = sys.dtaZStart
-    override def dtaZen: F[Double]                    = sys.dtaZEnd
-    override def dtaZme: F[Double]                    = sys.dtaZMean
-    override def stageMode: F[String]                 = sys.stageMode
-    override def adcMode: F[String]                   = sys.adcMode
-    override def dcName: F[String]                    = sys.dcName
-    override def detectorType: F[String]              = sys.detectorType
-    override def detectorId: F[String]                = sys.detectorId
-    override def exposureTime: F[Double]              = sys.reqExposureTime.map(_.toDouble)
-    override def adcUsed: F[Int]                      = sys.adcUsed
-    override def adcPrismEntSt: F[Double]             = sys.adcPrismEntryAngleStart
-    override def adcPrismEntEnd: F[Double]            = sys.adcPrismEntryAngleEnd
-    override def adcPrismEntMe: F[Double]             = sys.adcPrismEntryAngleMean
-    override def adcPrismExtSt: F[Double]             = sys.adcPrismExitAngleStart
-    override def adcPrismExtEnd: F[Double]            = sys.adcPrismEntryAngleEnd
-    override def adcPrismExtMe: F[Double]             = sys.adcPrismExitAngleEnd
-    override def adcWavelength1: F[Double]            = sys.adcExitLowerWavel
-    override def adcWavelength2: F[Double]            = sys.adcExitUpperWavel
+    override def dtaX: F[Double]                                                              = sys.dtaX
+    override def dtaY: F[Double]                                                              = sys.dtaY
+    override def dtaZ: F[Double]                                                              = sys.dtaZ
+    override def dtaZst: F[Double]                                                            = sys.dtaZStart
+    override def dtaZen: F[Double]                                                            = sys.dtaZEnd
+    override def dtaZme: F[Double]                                                            = sys.dtaZMean
+    override def stageMode: F[String]                                                         = sys.stageMode
+    override def adcMode: F[String]                                                           = sys.adcMode
+    override def dcName: F[String]                                                            = sys.dcName
+    override def detectorType: F[String]                                                      = sys.detectorType
+    override def detectorId: F[String]                                                        = sys.detectorId
+    override def exposureTime: F[Double]                                                      = sys.reqExposureTime.map(_.toDouble)
+    override def adcUsed: F[Int]                                                              = sys.adcUsed
+    override def adcPrismEntSt: F[Double]                                                     = sys.adcPrismEntryAngleStart
+    override def adcPrismEntEnd: F[Double]                                                    = sys.adcPrismEntryAngleEnd
+    override def adcPrismEntMe: F[Double]                                                     = sys.adcPrismEntryAngleMean
+    override def adcPrismExtSt: F[Double]                                                     = sys.adcPrismExitAngleStart
+    override def adcPrismExtEnd: F[Double]                                                    = sys.adcPrismEntryAngleEnd
+    override def adcPrismExtMe: F[Double]                                                     = sys.adcPrismExitAngleEnd
+    override def adcWavelength1: F[Double]                                                    = sys.adcExitLowerWavel
+    override def adcWavelength2: F[Double]                                                    = sys.adcExitUpperWavel
     // The TCL code does some verifications to ensure the value is not negative
-    override def detNRoi: F[Int]                      =
+    override def detNRoi: F[Int]                                                              =
       sys.roiNumUsed.map(_ > 0).ifM(sys.roiNumUsed, intDefault[F])
 
-    private def roi(r: RoiStatus[F]): F[RoiValues] =
+    private def roi(r: RoiStatus[F]): F[RoiValues]                                            =
       (r.ccdXstart, r.ccdXsize, r.ccdYstart, r.ccdYsize).mapN(RoiValues.apply)
 
     private def readRois(count: Int, rois: Map[Int, RoiStatus[F]]): F[List[(Int, RoiValues)]] =
@@ -242,15 +242,15 @@ object GmosKeywordReaderEpics {
         }
       }
 
-    override def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]] =
+    override def roiValues(seqNRois: Option[Int]): F[List[(Int, RoiValues)]]                  =
       (seqNRois.map(_.pure[F]).getOrElse(sys.roiNumUsed), sys.rois)
         .mapN(readRois)
         .flatten
         .handleError(_ => List.empty[(Int, RoiValues)])
 
-    override def aExpCount: F[Int]      = sys.aExpCount
-    override def bExpCount: F[Int]      = sys.aExpCount
-    override def isADCInUse: F[Boolean] =
+    override def aExpCount: F[Int]                                                            = sys.aExpCount
+    override def bExpCount: F[Int]                                                            = sys.aExpCount
+    override def isADCInUse: F[Boolean]                                                       =
       sys.adcUsed
         .map(_ === 1)
         .handleError(_ => false)

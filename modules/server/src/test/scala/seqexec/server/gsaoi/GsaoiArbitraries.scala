@@ -21,7 +21,7 @@ trait GsaoiArbitraries {
   implicit val windowCoverCogen: Cogen[WindowCover]   =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val DCConfigArb: Arbitrary[DCConfig] =
+  implicit val DCConfigArb: Arbitrary[DCConfig]       =
     Arbitrary {
       for {
         readMode           <- arbitrary[ReadMode]
@@ -37,18 +37,18 @@ trait GsaoiArbitraries {
       )
     }
 
-  implicit val readModeCogen: Cogen[ReadMode] =
+  implicit val readModeCogen: Cogen[ReadMode]         =
     Cogen[String].contramap(_.displayValue())
 
-  implicit val roiCogen: Cogen[Roi] =
+  implicit val roiCogen: Cogen[Roi]                   =
     Cogen[String].contramap(_.displayValue())
 
-  implicit val DCConfigCogen: Cogen[DCConfig] =
+  implicit val DCConfigCogen: Cogen[DCConfig]         =
     Cogen[(ReadMode, Roi, Int, ExposureTime, Int)].contramap(x =>
       (x.readMode, x.roi, x.coadds, x.exposureTime, x.numberOfFowSamples)
     )
 
-  implicit val CCConfigArb: Arbitrary[CCConfig] =
+  implicit val CCConfigArb: Arbitrary[CCConfig]       =
     Arbitrary {
       for {
         filter       <- arbitrary[Filter]
@@ -58,16 +58,16 @@ trait GsaoiArbitraries {
       } yield CCConfig(filter, odgwSize, utilityWheel, windowCover)
     }
 
-  implicit val filterCogen: Cogen[Filter] =
+  implicit val filterCogen: Cogen[Filter]             =
     Cogen[String].contramap(_.displayValue())
 
-  implicit val odgwSizeCogen: Cogen[OdgwSize] =
+  implicit val odgwSizeCogen: Cogen[OdgwSize]         =
     Cogen[String].contramap(_.displayValue())
 
   implicit val utilityWheelCogen: Cogen[UtilityWheel] =
     Cogen[String].contramap(_.displayValue())
 
-  implicit val CCConfigCogen: Cogen[CCConfig] =
+  implicit val CCConfigCogen: Cogen[CCConfig]         =
     Cogen[(Filter, OdgwSize, UtilityWheel, WindowCover)].contramap(x =>
       (x.filter, x.odgwSize, x.utilityWheel, x.windowCover)
     )

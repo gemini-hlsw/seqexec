@@ -14,7 +14,7 @@ object Observation {
     def format: String =
       s"${ProgramId.fromString.reverseGet(pid)}-${Index.fromString.reverseGet(index)}"
   }
-  object Id {
+  object Id                                          {
 
     def fromString(s: String): Option[Observation.Id] =
       s.lastIndexOf('-') match {
@@ -30,13 +30,13 @@ object Observation {
       fromString(s).getOrElse(sys.error("Malformed Observation.Id: " + s))
 
     /** Observations are ordered by program id and index. */
-    implicit val OrderId: Order[Id] =
+    implicit val OrderId: Order[Id]                  =
       Order.by(a => (a.pid, a.index))
 
     implicit val OrderingId: scala.math.Ordering[Id] =
       OrderId.toOrdering
 
-    implicit val showId: Show[Id] =
+    implicit val showId: Show[Id]                    =
       Show.fromToString
 
   }

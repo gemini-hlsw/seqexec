@@ -28,7 +28,7 @@ sealed abstract class BundleConfig(val configName: String) {
   }
 }
 
-object BundleConfig {
+object BundleConfig                           {
   case object Standard extends BundleConfig(configName = "IFU_LORES")
   case object HighRes  extends BundleConfig(configName = "IFU_HIRES")
   case object Sky      extends BundleConfig(configName = "IFU_SKY")
@@ -38,19 +38,19 @@ object BundleConfig {
 sealed abstract class IFUNum(val ifuNum: Int) {
   val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
 }
-object IFUNum {
+object IFUNum                                 {
   case object IFU1 extends IFUNum(ifuNum = 1)
   case object IFU2 extends IFUNum(ifuNum = 2)
   implicit val ifuNumConfiguration: GiapiConfig[IFUNum] = _.ifuStr
 }
 
 sealed abstract class IFUTargetType(val targetType: String)
-object IFUTargetType {
-  case object NoTarget    extends IFUTargetType(targetType = "IFU_TARGET_NONE")
-  case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
+object IFUTargetType                          {
+  case object NoTarget                  extends IFUTargetType(targetType = "IFU_TARGET_NONE")
+  case object SkyPosition               extends IFUTargetType(targetType = "IFU_TARGET_SKY")
   final case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
-  def determineType(name: Option[String]): IFUTargetType = name match {
+  def determineType(name: Option[String]): IFUTargetType              = name match {
     case None        => NoTarget
     case Some("Sky") => SkyPosition
     case Some(x)     => Target(x)
@@ -59,10 +59,10 @@ object IFUTargetType {
   implicit val ifuTargetTypeConfiguration: GiapiConfig[IFUTargetType] = _.targetType
 }
 
-sealed trait DemandType {
+sealed trait DemandType                       {
   def demandType: String
 }
-object DemandType       {
+object DemandType                             {
   case object DemandRADec extends DemandType {
     val demandType = "IFU_DEMAND_RADEC"
   }
@@ -179,7 +179,7 @@ object GhostConfig {
     }
   }
 
-  implicit val eq: Eq[GhostConfig] = Eq.instance {
+  implicit val eq: Eq[GhostConfig]                          = Eq.instance {
     case (a: StandardResolutionMode.SingleTarget, b: StandardResolutionMode.SingleTarget)   => a === b
     case (a: StandardResolutionMode.DualTarget, b: StandardResolutionMode.DualTarget)       => a === b
     case (a: StandardResolutionMode.TargetPlusSky, b: StandardResolutionMode.TargetPlusSky) =>
@@ -198,21 +198,21 @@ sealed trait StandardResolutionMode extends GhostConfig {
 
   def ifu1Coordinates: Coordinates
 
-  override def ifu1TargetType: IFUTargetType = this match {
+  override def ifu1TargetType: IFUTargetType        = this match {
     case s: SingleTarget   => IFUTargetType.Target(s.ifu1TargetName)
     case d: DualTarget     => IFUTargetType.Target(d.ifu1TargetName)
     case ts: TargetPlusSky => IFUTargetType.Target(ts.ifu1TargetName)
     case _: SkyPlusTarget  => IFUTargetType.SkyPosition
   }
 
-  override def ifu2TargetType: IFUTargetType = this match {
+  override def ifu2TargetType: IFUTargetType        = this match {
     case _: SingleTarget   => IFUTargetType.NoTarget
     case d: DualTarget     => IFUTargetType.Target(d.ifu2TargetName)
     case st: SkyPlusTarget => IFUTargetType.Target(st.ifu2TargetName)
     case _: TargetPlusSky  => IFUTargetType.SkyPosition
   }
 
-  override def ifu1BundleType: BundleConfig = this match {
+  override def ifu1BundleType: BundleConfig         = this match {
     case _: SingleTarget | _: DualTarget | _: TargetPlusSky => BundleConfig.Standard
     case _: SkyPlusTarget                                   => BundleConfig.Sky
   }
@@ -236,7 +236,7 @@ object StandardResolutionMode {
       GhostConfig.ifuPark(IFUNum.IFU2)
   }
 
-  implicit val srmSingleTargetEq: Eq[SingleTarget] =
+  implicit val srmSingleTargetEq: Eq[SingleTarget]   =
     Eq.by(x => (x.baseCoords, x.expTime, x.fiberAgitator, x.ifu1TargetName, x.ifu1Coordinates))
 
   final case class DualTarget(
@@ -256,7 +256,7 @@ object StandardResolutionMode {
       )
   }
 
-  implicit val srmDualTargetEq: Eq[DualTarget] = Eq.by(x =>
+  implicit val srmDualTargetEq: Eq[DualTarget]       = Eq.by(x =>
     (x.baseCoords,
      x.expTime,
      x.fiberAgitator,
@@ -330,7 +330,7 @@ sealed trait HighResolutionMode extends GhostConfig {
 
   override def ifu1TargetType: IFUTargetType = IFUTargetType.Target(ifu1TargetName)
 
-  override def ifu2TargetType: IFUTargetType = this match {
+  override def ifu2TargetType: IFUTargetType        = this match {
     case _: SingleTarget  => IFUTargetType.NoTarget
     case _: TargetPlusSky => IFUTargetType.SkyPosition
   }
@@ -353,7 +353,7 @@ object HighResolutionMode {
       GhostConfig.ifuPark(IFUNum.IFU2)
   }
 
-  implicit val hrSingleTargetEq: Eq[SingleTarget] =
+  implicit val hrSingleTargetEq: Eq[SingleTarget]   =
     Eq.by(x => (x.baseCoords, x.expTime, x.fiberAgitator, x.ifu1TargetName, x.ifu1Coordinates))
 
   final case class TargetPlusSky(

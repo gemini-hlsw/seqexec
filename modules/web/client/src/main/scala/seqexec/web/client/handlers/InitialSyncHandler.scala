@@ -26,7 +26,7 @@ import seqexec.web.client.model.Pages._
 class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, InitialSyncFocus] {
-  def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
+  def runningSequence(s: SeqexecModelUpdate): Option[SequenceView]        =
     s.view.sessionQueue.filter(_.status.isRunning).sortBy(_.id).headOption
 
   private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
@@ -35,7 +35,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
       .map(p => InitialSyncFocus.location.set(p))
       .getOrElse(identity)
 
-  private val noUpdate: InitialSyncFocus => InitialSyncFocus = identity
+  private val noUpdate: InitialSyncFocus => InitialSyncFocus              = identity
 
   def defaultPage(
     s: SequencesQueue[SequenceView]

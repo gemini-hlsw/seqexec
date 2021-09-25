@@ -34,9 +34,9 @@ class AltairControllerDisabled[F[_]: Logger: Applicative] extends AltairControll
   override def observe(expTime: Time)(cfg: AltairController.AltairConfig): F[Unit] =
     overrideLogMessage("Altair", "observe")
 
-  override def endObserve(cfg: AltairController.AltairConfig): F[Unit] =
+  override def endObserve(cfg: AltairController.AltairConfig): F[Unit]             =
     overrideLogMessage("Altair", "endObserve")
 
-  override def isFollowing: F[Boolean] = false.pure[F]
+  override def isFollowing: F[Boolean]                                             = false.pure[F]
 
 }

@@ -18,7 +18,7 @@ import seqexec.model.enum.Resource
 trait ArbNotification {
   import ArbObservationId._
 
-  implicit val rcArb = Arbitrary[ResourceConflict] {
+  implicit val rcArb                            = Arbitrary[ResourceConflict] {
     for {
       id <- arbitrary[Observation.Id]
     } yield ResourceConflict(id)
@@ -27,24 +27,24 @@ trait ArbNotification {
   implicit val rcCogen: Cogen[ResourceConflict] =
     Cogen[Observation.Id].contramap(_.sid)
 
-  implicit val rfArb = Arbitrary[RequestFailed] {
+  implicit val rfArb                            = Arbitrary[RequestFailed] {
     arbitrary[List[String]].map(RequestFailed.apply)
   }
 
-  implicit val rfCogen: Cogen[RequestFailed] =
+  implicit val rfCogen: Cogen[RequestFailed]    =
     Cogen[List[String]].contramap(_.msgs)
 
-  implicit val inArb = Arbitrary[InstrumentInUse] {
+  implicit val inArb                            = Arbitrary[InstrumentInUse] {
     for {
       id <- arbitrary[Observation.Id]
       i  <- arbitrary[Instrument]
     } yield InstrumentInUse(id, i)
   }
 
-  implicit val inCogen: Cogen[InstrumentInUse] =
+  implicit val inCogen: Cogen[InstrumentInUse]  =
     Cogen[(Observation.Id, Instrument)].contramap(x => (x.sid, x.ins))
 
-  implicit val subsArb = Arbitrary[SubsystemBusy] {
+  implicit val subsArb                          = Arbitrary[SubsystemBusy] {
     for {
       id <- arbitrary[Observation.Id]
       i  <- arbitrary[StepId]
@@ -52,10 +52,10 @@ trait ArbNotification {
     } yield SubsystemBusy(id, i, r)
   }
 
-  implicit val subsCogen: Cogen[SubsystemBusy] =
+  implicit val subsCogen: Cogen[SubsystemBusy]  =
     Cogen[(Observation.Id, StepId, Resource)].contramap(x => (x.oid, x.stepId, x.resource))
 
-  implicit val notArb = Arbitrary[Notification] {
+  implicit val notArb                           = Arbitrary[Notification] {
     for {
       r <- arbitrary[ResourceConflict]
       a <- arbitrary[InstrumentInUse]
@@ -65,7 +65,7 @@ trait ArbNotification {
     } yield s
   }
 
-  implicit val notCogen: Cogen[Notification] =
+  implicit val notCogen: Cogen[Notification]    =
     Cogen[Either[ResourceConflict, Either[InstrumentInUse, Either[RequestFailed, SubsystemBusy]]]]
       .contramap {
         case r: ResourceConflict => Left(r)

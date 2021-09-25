@@ -17,7 +17,7 @@ trait GhostArbitraries extends ArbTime {
 
   import ArbCoordinates._
 
-  val ghostSRSingleTargetConfigGen: Gen[StandardResolutionMode.SingleTarget] =
+  val ghostSRSingleTargetConfigGen: Gen[StandardResolutionMode.SingleTarget]              =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -30,7 +30,7 @@ trait GhostArbitraries extends ArbTime {
     Cogen[(Option[Coordinates], Duration, String, Coordinates)]
       .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
 
-  val ghostSRDualTargetConfigGen: Gen[StandardResolutionMode.DualTarget] =
+  val ghostSRDualTargetConfigGen: Gen[StandardResolutionMode.DualTarget]              =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -60,7 +60,7 @@ trait GhostArbitraries extends ArbTime {
         )
       )
 
-  val ghostSRTargetSkyConfigGen: Gen[StandardResolutionMode.TargetPlusSky] =
+  val ghostSRTargetSkyConfigGen: Gen[StandardResolutionMode.TargetPlusSky]              =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -76,7 +76,7 @@ trait GhostArbitraries extends ArbTime {
         (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates)
       )
 
-  implicit val ghostSRSkyTargetConfigGen: Gen[StandardResolutionMode.SkyPlusTarget] =
+  implicit val ghostSRSkyTargetConfigGen: Gen[StandardResolutionMode.SkyPlusTarget]     =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -92,7 +92,7 @@ trait GhostArbitraries extends ArbTime {
         (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates)
       )
 
-  implicit val ghostHRSingleTargetConfigGen: Gen[HighResolutionMode.SingleTarget] =
+  implicit val ghostHRSingleTargetConfigGen: Gen[HighResolutionMode.SingleTarget]       =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -101,11 +101,11 @@ trait GhostArbitraries extends ArbTime {
       hrifu1Pos  <- arbitrary[Coordinates]
     } yield HighResolutionMode.SingleTarget(basePos, exp, fa, hrifu1Name, hrifu1Pos)
 
-  implicit val ghostHRSingleTargetConfigCogen: Cogen[HighResolutionMode.SingleTarget] =
+  implicit val ghostHRSingleTargetConfigCogen: Cogen[HighResolutionMode.SingleTarget]   =
     Cogen[(Option[Coordinates], Duration, String, Coordinates)]
       .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
 
-  implicit val ghostHRTargetPlusSkyConfigGen: Gen[HighResolutionMode.TargetPlusSky] =
+  implicit val ghostHRTargetPlusSkyConfigGen: Gen[HighResolutionMode.TargetPlusSky]     =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[Duration]
@@ -115,13 +115,13 @@ trait GhostArbitraries extends ArbTime {
       hrifu2Pos  <- arbitrary[Coordinates]
     } yield HighResolutionMode.TargetPlusSky(basePos, exp, fa, hrifu1Name, hrifu1Pos, hrifu2Pos)
 
-  implicit val ghostHRTargetSkyConfigCogen: Cogen[HighResolutionMode.TargetPlusSky] =
+  implicit val ghostHRTargetSkyConfigCogen: Cogen[HighResolutionMode.TargetPlusSky]     =
     Cogen[(Option[Coordinates], Duration, String, Coordinates, Coordinates)]
       .contramap(x =>
         (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates)
       )
 
-  implicit val ghostConfigArb: Arbitrary[GhostConfig] = Arbitrary {
+  implicit val ghostConfigArb: Arbitrary[GhostConfig]                                   = Arbitrary {
     Gen.oneOf(
       ghostSRSingleTargetConfigGen,
       ghostSRDualTargetConfigGen,

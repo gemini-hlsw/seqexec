@@ -36,8 +36,8 @@ object OffsetsDisplayCell {
   implicit val propsReuse: Reusability[Props]        =
     Reusability.by(p => (p.offsetsDisplay, p.step.config))
 
-  private val guidingIcon   = IconCrosshairs.copy(color = Green, size = Large)
-  private val noGuidingIcon = IconBan.size(Large)
+  private val guidingIcon                            = IconCrosshairs.copy(color = Green, size = Large)
+  private val noGuidingIcon                          = IconBan.size(Large)
 
   private def standardOffsetsRender(
     step:           StandardStep,

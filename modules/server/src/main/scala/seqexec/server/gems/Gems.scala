@@ -63,7 +63,7 @@ object Gems {
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
       ().pure[F]
 
-    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = ().pure[F]
+    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit]             = ().pure[F]
 
     override def pauseResume(
       pauseReasons:  PauseConditionSet,
@@ -185,7 +185,7 @@ object Gems {
     val falseVal: T
   }
 
-  object DetectorStateOps {
+  object DetectorStateOps   {
     def apply[T](implicit b: DetectorStateOps[T]): DetectorStateOps[T] = b
 
     def build[T](t: T, f: T): DetectorStateOps[T] = new DetectorStateOps[T] {

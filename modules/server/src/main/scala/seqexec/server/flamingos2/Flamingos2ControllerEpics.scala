@@ -31,23 +31,23 @@ import squants.Time
 import squants.time.TimeConversions._
 
 trait Flamingos2Encoders {
-  implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
+  implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String]              = EncodeEpicsValue {
     case ReadoutMode.SCIENCE     => "SCI"
     case ReadoutMode.ENGINEERING => "ENG"
   }
 
-  implicit val encodeBiasMode: EncodeEpicsValue[BiasMode, String] = EncodeEpicsValue {
+  implicit val encodeBiasMode: EncodeEpicsValue[BiasMode, String]                    = EncodeEpicsValue {
     case BiasMode.Imaging  => "Imaging"
     case BiasMode.LongSlit => "Long_Slit"
     case BiasMode.MOS      => "Mos"
   }
 
-  implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue {
+  implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String]      = EncodeEpicsValue {
     case WindowCover.OPEN  => "Open"
     case WindowCover.CLOSE => "Closed"
   }
 
-  implicit val encodeDeckerPosition: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
+  implicit val encodeDeckerPosition: EncodeEpicsValue[Decker, String]                = EncodeEpicsValue {
     case Decker.IMAGING   => "Open"
     case Decker.LONG_SLIT => "Long_Slit"
     case Decker.MOS       => "Mos"
@@ -84,7 +84,7 @@ trait Flamingos2Encoders {
       case Filter.K_RED   => "K-red_G0815"
     }
 
-  implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String] = EncodeEpicsValue {
+  implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String]             = EncodeEpicsValue {
     case LyotWheel.OPEN       => "f/16_G5830"
     case LyotWheel.HIGH       => "null"
     case LyotWheel.LOW        => "null"
@@ -95,7 +95,7 @@ trait Flamingos2Encoders {
     case LyotWheel.H2         => "Hart2_G5834"
   }
 
-  implicit val encodeGrismPosition: EncodeEpicsValue[Grism, String] = EncodeEpicsValue {
+  implicit val encodeGrismPosition: EncodeEpicsValue[Grism, String]           = EncodeEpicsValue {
     case Grism.Open    => "Open"
     case Grism.R1200HK => "HK_G5802"
     case Grism.R1200JH => "JH_G5801"
@@ -115,14 +115,14 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
     sys:          => Flamingos2Epics[F]
   )(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
-    private def setDCConfig(dc: DCConfig): F[Unit] = for {
+    private def setDCConfig(dc: DCConfig): F[Unit]                                    = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
       _ <- sys.dcConfigCmd.setNumReads(dc.n.getCount)
       _ <- sys.dcConfigCmd.setReadoutMode(encode(dc.r))
       _ <- sys.dcConfigCmd.setBiasMode(encode(dc.b))
     } yield ()
 
-    private def setCCConfig(cc: CCConfig): F[Unit] = {
+    private def setCCConfig(cc: CCConfig): F[Unit]                                    = {
       val fpu    = encode(cc.fpu)
       val filter = encode(cc.f)
       for {
@@ -136,7 +136,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       } yield ()
     }
 
-    override def applyConfig(config: Flamingos2Config): F[Unit] = for {
+    override def applyConfig(config: Flamingos2Config): F[Unit]                       = for {
       _ <- L.debug("Start Flamingos2 configuration")
       _ <- setDCConfig(config.dc)
       _ <- setCCConfig(config.cc)
@@ -151,14 +151,14 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 
-    override def endObserve: F[Unit] = for {
+    override def endObserve: F[Unit]                                                  = for {
       _ <- L.debug("Send endObserve to Flamingos2")
       _ <- sys.endObserveCmd.mark
       _ <- sys.endObserveCmd.post(DefaultTimeout)
       _ <- L.debug("endObserve sent to Flamingos2")
     } yield ()
 
-    override def observeProgress(total: Time): fs2.Stream[F, Progress] = {
+    override def observeProgress(total: Time): fs2.Stream[F, Progress]                = {
       val s = ProgressUtil.fromStateTOption[F, Time](_ =>
         StateT[F, Time, Option[Progress]] { st =>
           val m = if (total >= st) total else st

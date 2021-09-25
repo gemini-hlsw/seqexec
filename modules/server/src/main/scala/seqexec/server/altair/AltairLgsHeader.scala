@@ -19,7 +19,7 @@ object AltairLgsHeader {
   ): Header[F] =
     new Header[F] {
 
-      override def sendAfter(id: ImageFileId): F[Unit] =
+      override def sendAfter(id: ImageFileId): F[Unit]                         =
         sendKeywords(
           id,
           kwClient,

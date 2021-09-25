@@ -35,9 +35,9 @@ object AltairControllerSim {
     override def observe(expTime: Time)(cfg: AltairController.AltairConfig): F[Unit] =
       L.info("Simulate observe notification for Altair")
 
-    override def endObserve(cfg: AltairController.AltairConfig): F[Unit] =
+    override def endObserve(cfg: AltairController.AltairConfig): F[Unit]             =
       L.info("Simulate endObserve notification for Altair")
 
-    override def isFollowing: F[Boolean] = false.pure[F]
+    override def isFollowing: F[Boolean]                                             = false.pure[F]
   }
 }

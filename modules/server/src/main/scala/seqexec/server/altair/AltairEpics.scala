@@ -29,7 +29,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
     val gate: Option[CaParameter[Integer]] =
       cs.map(_.addInteger("gate", s"${AltairTop}wfcs:strapGtCtl.A", "Gate control", false))
-    def setGate(v: Int): F[Unit] = setParameter(gate, Integer.valueOf(v))
+    def setGate(v: Int): F[Unit]           = setParameter(gate, Integer.valueOf(v))
   }
 
   object strapControl extends EpicsCommandBase[F](sysName) {
@@ -43,7 +43,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     val active: Option[CaParameter[Integer]] = cs.map(
       _.addInteger("onoff", s"${AltairTop}wfcs:strapCorrCtl.A", "Strap onoff loop control", false)
     )
-    def setActive(v: Int): F[Unit] = setParameter(active, Integer.valueOf(v))
+    def setActive(v: Int): F[Unit]           = setParameter(active, Integer.valueOf(v))
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
@@ -58,7 +58,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
                                false
       )
     )
-    def setActive(v: LgsSfoControl): F[Unit] = setParameter(active, v)
+    def setActive(v: LgsSfoControl): F[Unit]       = setParameter(active, v)
   }
 
   object btoLoopControl extends EpicsCommandBase[F](sysName) {
@@ -66,7 +66,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 
     val active: Option[CaParameter[String]] = cs.map(_.getString("loop"))
-    def setActive(v: String): F[Unit] = setParameter(active, v)
+    def setActive(v: String): F[Unit]       = setParameter(active, v)
   }
 
   val status: CaStatusAcceptor = service.getStatusAcceptor("aostate")
@@ -74,14 +74,14 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def strapTempStatus: F[Boolean] =
     safeAttributeSIntF(status.getIntegerAttribute("strapTPStat")).map(_ =!= 0)
 
-  private val strapGateAttr = status.getIntegerAttribute("strapgate")
-  def strapGate: F[Int]     = safeAttributeSIntF(strapGateAttr)
+  private val strapGateAttr       = status.getIntegerAttribute("strapgate")
+  def strapGate: F[Int]           = safeAttributeSIntF(strapGateAttr)
 
   def waitForStrapGate(v: Int, timeout: FiniteDuration): F[Unit] =
     EpicsUtil.waitForValueF(strapGateAttr, v: Integer, timeout, "Altair strap gate")
 
-  private val strapLoopAttr = status.getIntegerAttribute("straploop")
-  def strapLoop: F[Boolean] =
+  private val strapLoopAttr                                      = status.getIntegerAttribute("straploop")
+  def strapLoop: F[Boolean]                                      =
     safeAttributeSIntF(strapLoopAttr).map(_ =!= 0)
 
   def waitForStrapLoop(v: Boolean, timeout: FiniteDuration): F[Unit] =
@@ -90,7 +90,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def strapRTStatus: F[Boolean] =
     safeAttributeSIntF(status.getIntegerAttribute("strapRTStat")).map(_ =!= 0)
 
-  def strapHVStatus: F[Boolean] =
+  def strapHVStatus: F[Boolean]                       =
     safeAttributeSIntF(status.getIntegerAttribute("strapHVStat")).map(_ =!= 0)
 
   private val sfoLoopAttr: CaAttribute[LgsSfoControl] =
@@ -123,7 +123,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
   def aobs: F[String] = safeAttributeF(status.getStringAttribute("aobs"))
 
-  def aoLoop: F[Boolean] = safeAttributeSIntF(status.getIntegerAttribute("aowfsOn"))
+  def aoLoop: F[Boolean]    = safeAttributeSIntF(status.getIntegerAttribute("aowfsOn"))
     .map(_ =!= 0)
 
   private val aoSettledAttr = status.getDoubleAttribute("aoSettled")

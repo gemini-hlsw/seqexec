@@ -25,7 +25,7 @@ class GsaoiControllerDisabled[F[_]: Logger: Functor] extends GsaoiController[F] 
   ): F[ObserveCommandResult] =
     overrideLogMessage(name, s"observe $fileId").as(ObserveCommandResult.Success)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                       = overrideLogMessage(name, "endObserve")
 
   override def stopObserve: F[Unit] = overrideLogMessage(name, "stopObserve")
 

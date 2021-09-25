@@ -261,7 +261,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(SequencesOnDisplay.resetResourceOperations(id, r))
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] =
+  override def handle: PartialFunction[Any, ActionResult[M]]         =
     List(
       handleRequestOperation,
       handleOperationResult,

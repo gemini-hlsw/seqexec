@@ -55,7 +55,7 @@ object StepBreakStopCell {
         SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step))
       )
 
-  protected val component = ScalaComponent
+  protected val component                            = ScalaComponent
     .builder[Props]("StepBreakStopCell")
     .stateless
     .render_P { p =>

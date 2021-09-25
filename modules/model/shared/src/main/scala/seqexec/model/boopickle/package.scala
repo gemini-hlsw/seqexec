@@ -29,7 +29,7 @@ package boopickle {
                 state.addIdentityRef(obj)
             }
 
-          override def unpickle(implicit state: UnpickleState): B =
+          override def unpickle(implicit state: UnpickleState): B        =
             state.dec.readInt match {
               case idx if idx < 0 =>
                 state.identityFor[B](-idx)

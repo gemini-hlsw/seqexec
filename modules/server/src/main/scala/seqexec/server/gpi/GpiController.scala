@@ -104,7 +104,7 @@ object ReadoutArea {
       none
     }
 
-  implicit val eqRa: Eq[ReadoutArea] = Eq.by(x => (x.startX, x.startY, x.endX, x.endY))
+  implicit val eqRa: Eq[ReadoutArea]                                                  = Eq.by(x => (x.startX, x.startY, x.endX, x.endY))
 }
 
 sealed trait GpiConfig extends Product with Serializable
@@ -124,7 +124,7 @@ final case class RegularGpiConfig(
   aoFlags:        AOFlags
 ) extends GpiConfig
 
-object RegularGpiConfig extends GpiConfigEq {
+object RegularGpiConfig         extends GpiConfigEq {
   implicit val eq: Eq[RegularGpiConfig] = Eq.by(x =>
     (x.adc,
      x.expTime,
@@ -142,8 +142,8 @@ object RegularGpiConfig extends GpiConfigEq {
   )
 }
 
-case object AlignAndCalibConfig extends GpiConfig {
-  val config: Configuration =
+case object AlignAndCalibConfig extends GpiConfig   {
+  val config: Configuration     =
     Configuration.single(GpiAlignAndCalib.applyItem, GpiClient.ALIGN_AND_CALIB_DEFAULT_MODE)
 
   override def toString: String = s"$config"
@@ -182,7 +182,7 @@ trait GpiConfigEq {
 
 object GpiController extends GpiLookupTables with GpiConfigEq {
 
-  private def obsModeConfiguration(config: RegularGpiConfig): Configuration =
+  private def obsModeConfiguration(config: RegularGpiConfig): Configuration    =
     config.mode.fold(
       m =>
         Configuration.single(GpiObservationMode.applyItem,
@@ -199,7 +199,7 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
           Configuration.single(GpiIFSFilter.applyItem, params.filter.displayValue)
     )
 
-  private def gpiConfiguration(config: GpiConfig): Configuration =
+  private def gpiConfiguration(config: GpiConfig): Configuration               =
     config match {
       case r: RegularGpiConfig => regularGpiConfiguration(r)
       case AlignAndCalibConfig => AlignAndCalibConfig.config
@@ -300,7 +300,7 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
 
       override val name = "GPI"
 
-      override def alignAndCalib: F[Unit] =
+      override def alignAndCalib: F[Unit]                             =
         client.alignAndCalib
           .ensure(SeqexecFailure.Execution("Failure executing Align And Calib"))(
             _.response =!= Response.ERROR
@@ -316,7 +316,7 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
           case AlignAndCalibConfig => AlignAndCalibConfig.config.pure[F]
         }
 
-      override def statusDb: GiapiStatusDb[F] = client.statusDb
+      override def statusDb: GiapiStatusDb[F]                         = client.statusDb
     }
 
 }

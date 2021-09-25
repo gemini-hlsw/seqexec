@@ -62,13 +62,13 @@ object SubsystemControlCell {
     clazz = SeqexecStyles.completedIcon
   )
 
-  private val RunningIcon = IconCircleNotched.copy(
+  private val RunningIcon   = IconCircleNotched.copy(
     fitted = true,
     loading = true,
     clazz = SeqexecStyles.runningIcon
   )
 
-  private val FailureIcon = IconAttention.copy(
+  private val FailureIcon   = IconAttention.copy(
     fitted = true,
     inverted = true,
     clazz = SeqexecStyles.errorIcon
@@ -95,7 +95,7 @@ object SubsystemControlCell {
       case _                                                  => none
     }
 
-  protected val component = ScalaComponent
+  protected val component                                                   = ScalaComponent
     .builder[Props]
     .render_P { p =>
       <.div(

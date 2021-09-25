@@ -234,7 +234,7 @@ object DummyTcsKeywordsReader {
 
     override def ut: F[String] = "00:00:00".pure[F]
 
-    override def date: F[String] =
+    override def date: F[String]     =
       LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
 
     override def m2Baffle: F[String] = "OUT".pure[F]
@@ -292,10 +292,10 @@ object DummyTcsKeywordsReader {
     override def gwfsTarget(v: VirtualGemsTelescope): TargetKeywordsReader[F] =
       DummyTargetKeywordsReader[F]
 
-    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]] =
+    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]]            =
       Map.empty[VirtualGemsTelescope, GemsSource].pure[F]
 
-    override def m2UserFocusOffset: F[Double] = 0.0.pure[F]
+    override def m2UserFocusOffset: F[Double]                                 = 0.0.pure[F]
 
     override def pwfs1Freq: F[Double] = -9999.0.pure[F]
 
@@ -348,7 +348,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def trackingEquinox: F[Double] =
       sys.trackingEquinox.map(translateEpoch).safeValOrDefault
 
-    override def trackingDec: F[Double] = sys.trackingDec.safeValOrDefault
+    override def trackingDec: F[Double]     = sys.trackingDec.safeValOrDefault
 
     override def trackingRA: F[Double] = sys.trackingRA.safeValOrDefault
 
@@ -386,7 +386,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         .map(v => v.get(xoffIndex).map(x => Millimeters(x) * FOCAL_PLANE_SCALE))
         .handleError(_ => none)
 
-    override def xOffset: F[Double] =
+    override def xOffset: F[Double]             =
       Nested(xOffsetOption).map(_.toArcseconds).value.safeValOrDefault
 
     private def yOffsetOption: F[Option[Angle]] =
@@ -394,11 +394,11 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         .map(v => v.get(yoffIndex).map(x => Millimeters(x) * FOCAL_PLANE_SCALE))
         .handleError(_ => none)
 
-    override def yOffset: F[Double] =
+    override def yOffset: F[Double]             =
       Nested(yOffsetOption).map(_.toArcseconds).value.safeValOrDefault
 
-    private val raoffIndex  = 2L
-    private val decoffIndex = 3L
+    private val raoffIndex                      = 2L
+    private val decoffIndex                     = 3L
 
     private def normalizeSignedAngle(v: Angle): Angle = {
       val r = v.value % 360.0
@@ -409,7 +409,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       )
     }
 
-    override def trackingRAOffset: F[Double] = {
+    override def trackingRAOffset: F[Double]          = {
       def raOffset(off: Angle, dec: Angle): Angle = normalizeSignedAngle(off) * dec.cos
 
       sys.targetA
@@ -423,12 +423,12 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         .safeValOrDefault
     }
 
-    override def trackingDecOffset: F[Double] =
+    override def trackingDecOffset: F[Double]         =
       sys.targetA
         .map(v => v.get(decoffIndex).map(Radians(_).toArcseconds))
         .safeValOrDefault
 
-    override def instrumentAA: F[Double] = sys.instrAA.safeValOrDefault
+    override def instrumentAA: F[Double]              = sys.instrAA.safeValOrDefault
 
     override def aoFoldName: F[String] = sys.aoFoldPosition.safeValOrDefault
 
@@ -465,7 +465,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
 
     override def endAirMass: F[Double] = sys.airmassEnd.safeValOrDefault
 
-    override def parallacticAngle: F[Angle] =
+    override def parallacticAngle: F[Angle]           =
       sys.parallacticAngle.map(normalizeSignedAngle).safeValOrDefault
 
     override def pwfs1Target: TargetKeywordsReader[F] = target(sys.pwfs1Target)
@@ -488,7 +488,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       sys.gemsTarget(v)
     )
 
-    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]] = for {
+    override def gwfsMap: F[Map[VirtualGemsTelescope, GemsSource]]            = for {
       s1 <- sys.g1MapName
       s2 <- sys.g2MapName
       s3 <- sys.g3MapName
@@ -500,12 +500,12 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       VirtualGemsTelescope.G4 -> s4
     ).flattenOption
 
-    override def m2UserFocusOffset: F[Double] = sys.m2UserFocusOffset.safeValOrDefault
+    override def m2UserFocusOffset: F[Double]                                 = sys.m2UserFocusOffset.safeValOrDefault
 
     private def calcFrequency(t: Double): Double =
       if (t > 0.0) 1.0 / t else DefaultHeaderValue[Double].default
 
-    override def pwfs1Freq: F[Double] = sys.pwfs1IntegrationTime.map(calcFrequency).safeValOrDefault
+    override def pwfs1Freq: F[Double]            = sys.pwfs1IntegrationTime.map(calcFrequency).safeValOrDefault
 
     override def pwfs2Freq: F[Double] = sys.pwfs2IntegrationTime.map(calcFrequency).safeValOrDefault
 
@@ -525,7 +525,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
 
     override def f2InstPort: F[Int] = sys.f2Port.safeValOrDefault
 
-    override def crFollow: F[Option[CRFollow]] =
+    override def crFollow: F[Option[CRFollow]]  =
       sys.crTrackingFrame
         .map(TrackingFrame.fromString)
         .map {
@@ -543,7 +543,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     ).value
       .handleError(_ => none)
 
-    override def pOffset: F[Double] =
+    override def pOffset: F[Double]             =
       Nested(pOffsetOption).map(_.toArcseconds).value.safeValOrDefault
 
     private def qOffsetOption: F[Option[Angle]] = (
@@ -555,10 +555,10 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     ).value
       .handleError(_ => none)
 
-    override def qOffset: F[Double] =
+    override def qOffset: F[Double]             =
       Nested(qOffsetOption).map(_.toArcseconds).value.safeValOrDefault
 
-    override def raOffset: F[Double] = (
+    override def raOffset: F[Double]            = (
       for {
         p   <- OptionT(pOffsetOption)
         q   <- OptionT(qOffsetOption)
@@ -566,7 +566,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       } yield p * ipa.cos + q * ipa.sin
     ).map(_.toArcseconds).value.safeValOrDefault
 
-    override def decOffset: F[Double] = (
+    override def decOffset: F[Double]           = (
       for {
         p   <- OptionT(pOffsetOption)
         q   <- OptionT(qOffsetOption)

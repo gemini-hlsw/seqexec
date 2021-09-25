@@ -62,7 +62,7 @@ object NiriHeader {
         )
       )
 
-    override def sendAfter(id: ImageFileId): F[Unit] =
+    override def sendAfter(id: ImageFileId): F[Unit]                         =
       sendKeywords(
         id,
         kwClient,

@@ -22,12 +22,12 @@ trait ArbM2GuideConfig {
       } yield M2GuideConfig.M2GuideOn(c, s.sortBy(x => s"$x").toSet)
     }
 
-  implicit val m2GuideOnCogen: Cogen[M2GuideConfig.M2GuideOn] =
+  implicit val m2GuideOnCogen: Cogen[M2GuideConfig.M2GuideOn]   =
     Cogen[(ComaOption, List[TipTiltSource])].contramap(x =>
       (x.coma, x.sources.toList.sortBy(x => s"$x"))
     )
 
-  implicit val arbM2GuideConfig: Arbitrary[M2GuideConfig] =
+  implicit val arbM2GuideConfig: Arbitrary[M2GuideConfig]       =
     Arbitrary {
       for {
         off <- Gen.const(M2GuideConfig.M2GuideOff)
@@ -36,7 +36,7 @@ trait ArbM2GuideConfig {
       } yield l
     }
 
-  implicit val m2GuideConfigCogen: Cogen[M2GuideConfig] =
+  implicit val m2GuideConfigCogen: Cogen[M2GuideConfig]         =
     Cogen[Option[M2GuideConfig.M2GuideOn]].contramap {
       case x: M2GuideConfig.M2GuideOn => Some(x)
       case _                          => None

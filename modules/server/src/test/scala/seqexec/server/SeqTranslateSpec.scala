@@ -29,9 +29,9 @@ class SeqTranslateSpec extends AnyFlatSpec {
   implicit val ioTimer: Timer[IO]        = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  private val config: CleanConfig = CleanConfig.empty
-  private val fileId              = "DummyFileId"
-  private val seqId               = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
+  private val config: CleanConfig                                                     = CleanConfig.empty
+  private val fileId                                                                  = "DummyFileId"
+  private val seqId                                                                   = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState[IO]): NonEmptyList[Action[IO]] =
     NonEmptyList.one(
       Action(ActionType.Observe,
@@ -40,7 +40,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
       )
     )
 
-  private val seqg = SequenceGen(
+  private val seqg                                                                    = SequenceGen(
     seqId,
     "",
     GmosS,
@@ -58,7 +58,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     )
   )
 
-  private val baseState: EngineState[IO] =
+  private val baseState: EngineState[IO]                                              =
     (ODBSequencesLoader.loadSequenceEndo[IO](seqId, seqg, executeEngine) >>>
       (EngineState.sequenceStateIndex[IO](seqId) ^|-> Sequence.State.status)
         .set(SequenceState.Running.init))(EngineState.default[IO])
@@ -102,7 +102,7 @@ class SeqTranslateSpec extends AnyFlatSpec {
     .sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.OKAborted(Response.Aborted(toImageFileId(fileId)))))(baseState)
 
-  private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync()
+  private val translator          = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync()
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId, graceful = false).apply(s0).isDefined)

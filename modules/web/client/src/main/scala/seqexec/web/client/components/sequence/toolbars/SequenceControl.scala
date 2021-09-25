@@ -41,25 +41,25 @@ import seqexec.web.client.services.SeqexecWebClient
 
 final case class SequenceControl(p: SequenceControlFocus)
     extends ReactProps[SequenceControl](SequenceControl.component) {
-  private val runRequested: RunOperation =
+  private val runRequested: RunOperation                 =
     p.control.tabOperations.runRequested
 
-  private val syncRequested: SyncOperation =
+  private val syncRequested: SyncOperation               =
     p.control.tabOperations.syncRequested
 
-  private val pauseRequested: PauseOperation =
+  private val pauseRequested: PauseOperation             =
     p.control.tabOperations.pauseRequested
 
   private val cancelPauseRequested: CancelPauseOperation =
     p.control.tabOperations.cancelPauseRequested
 
-  private val syncIdle: Boolean        =
+  private val syncIdle: Boolean                          =
     syncRequested === SyncOperation.SyncIdle
-  private val runIdle: Boolean         =
+  private val runIdle: Boolean                           =
     runRequested === RunOperation.RunIdle
-  private val pauseIdle: Boolean       =
+  private val pauseIdle: Boolean                         =
     pauseRequested === PauseOperation.PauseIdle
-  private val cancelPauseIdle: Boolean =
+  private val cancelPauseIdle: Boolean                   =
     cancelPauseRequested === CancelPauseOperation.CancelPauseIdle
 
   val canSync: Boolean        =
@@ -90,10 +90,10 @@ object SequenceControl {
   def requestPause(s: Observation.Id): Callback =
     SeqexecCircuit.dispatchCB(RequestPause(s))
 
-  def requestCancelPause(s: Observation.Id): Callback =
+  def requestCancelPause(s: Observation.Id): Callback                                          =
     SeqexecCircuit.dispatchCB(RequestCancelPause(s))
 
-  private def syncButton(id: Observation.Id, canSync: Boolean) =
+  private def syncButton(id: Observation.Id, canSync: Boolean)                                 =
     controlButton(icon = IconRefresh,
                   color = Purple,
                   onClick = requestSync(id),
@@ -121,7 +121,7 @@ object SequenceControl {
     )
   }
 
-  private def cancelPauseButton(id: Observation.Id, canCancelPause: Boolean) =
+  private def cancelPauseButton(id: Observation.Id, canCancelPause: Boolean)                   =
     controlButton(
       icon = IconBan,
       color = Brown,
@@ -131,7 +131,7 @@ object SequenceControl {
       text = "Cancel Pause"
     )
 
-  private def pauseButton(id: Observation.Id, canPause: Boolean) =
+  private def pauseButton(id: Observation.Id, canPause: Boolean)                               =
     controlButton(
       icon = IconPause,
       color = Teal,

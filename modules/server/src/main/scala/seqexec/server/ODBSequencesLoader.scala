@@ -84,7 +84,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
       .flatten
   }
 
-  private def explain(err: Throwable): String =
+  private def explain(err: Throwable): String                  =
     err match {
       case s: SeqexecFailure => SeqexecFailure.explain(s)
       case _                 => SeqexecFailure.explain(SeqexecException(err))

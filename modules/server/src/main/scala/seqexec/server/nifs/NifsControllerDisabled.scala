@@ -16,13 +16,13 @@ import squants.Time
 class NifsControllerDisabled[F[_]: Logger: Applicative] extends NifsController[F] {
   private val name = "NIFS"
 
-  override def applyConfig(config: NifsController.NifsConfig): F[Unit] =
+  override def applyConfig(config: NifsController.NifsConfig): F[Unit]                             =
     overrideLogMessage(name, "applyConfig")
 
   override def observe(fileId: ImageFileId, cfg: NifsController.DCConfig): F[ObserveCommandResult] =
     overrideLogMessage(name, "").as(ObserveCommandResult.Success)
 
-  override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+  override def endObserve: F[Unit]                                                                 = overrideLogMessage(name, "endObserve")
 
   override def stopObserve: F[Unit] = overrideLogMessage(name, "stopObserve")
 

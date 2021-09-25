@@ -26,7 +26,7 @@ final case class AllObservationsProgressState(
 )
 
 object AllObservationsProgressState {
-  val Empty: AllObservationsProgressState =
+  val Empty: AllObservationsProgressState           =
     AllObservationsProgressState(SortedMap.empty)
 
   implicit val eq: Eq[AllObservationsProgressState] =

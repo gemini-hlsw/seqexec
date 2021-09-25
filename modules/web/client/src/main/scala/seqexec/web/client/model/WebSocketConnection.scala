@@ -17,7 +17,7 @@ final case class WebSocketConnection(
 )
 
 object WebSocketConnection {
-  val Empty: WebSocketConnection =
+  val Empty: WebSocketConnection              =
     WebSocketConnection(diode.data.Empty, 0, autoReconnect = true, None)
 
   implicit val equal: Eq[WebSocketConnection] =

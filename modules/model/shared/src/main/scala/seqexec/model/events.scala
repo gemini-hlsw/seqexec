@@ -21,7 +21,7 @@ object events {
   /**
    * Events implementing ForClient will be delivered only to the given clientId
    */
-  sealed trait ForClient extends SeqexecEvent {
+  sealed trait ForClient                                        extends SeqexecEvent {
     def clientId: ClientId
   }
 
@@ -33,7 +33,7 @@ object events {
 
   final case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String)
       extends SeqexecEvent
-  object ServerLogMessage {
+  object ServerLogMessage         {
     private implicit val instantOrder: Order[Instant]           =
       Order.by(_.getNano)
     implicit val serverLogMessageOrder: Order[ServerLogMessage] =

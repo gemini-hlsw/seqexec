@@ -214,7 +214,7 @@ object SessionQueueTable extends Columns {
 
     val user: Option[UserDetails] = sequences.status.u
 
-    val extractors = List[(TableColumn, SequenceInSessionQueue => String)](
+    val extractors               = List[(TableColumn, SequenceInSessionQueue => String)](
       (ObsIdColumn, _.id.format),
       (StateColumn, s => statusText(s.status, s.runningStep)),
       (InstrumentColumn, _.instrument.show),
@@ -222,7 +222,7 @@ object SessionQueueTable extends Columns {
       (ObsNameColumn, _.name)
     ).toMap
 
-    private val columnAdjustmens                    =
+    private val columnAdjustmens =
       Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
 
     val columnWidths: TableColumn => Option[Double] =
@@ -382,7 +382,7 @@ object SessionQueueTable extends Columns {
       mod.toTagMod
     )
 
-  private def pageOf(row: SessionQueueRow): SeqexecPages =
+  private def pageOf(row: SessionQueueRow): SeqexecPages         =
     if (row.loaded) {
       SequencePage(row.instrument, row.obsId, StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
     } else {
@@ -433,7 +433,7 @@ object SessionQueueTable extends Columns {
       e.preventDefaultCB *>
       SeqexecCircuit.dispatchCB(RequestAddSeqCal(CalibrationQueueId, id))
 
-  def removeFromQueueE(id: Observation.Id)(e: ReactEvent): Callback =
+  def removeFromQueueE(id: Observation.Id)(e: ReactEvent): Callback                       =
     e.stopPropagationCB *>
       e.preventDefaultCB *>
       SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(CalibrationQueueId, id))
@@ -493,17 +493,17 @@ object SessionQueueTable extends Columns {
   private def statusText(status: SequenceState, runningStep: Option[RunningStep]): String =
     s"${status.show} ${runningStep.map(u => s" ${u.show}").getOrElse("")}"
 
-  private val statusHeaderRenderer: HeaderRenderer[js.Object] =
+  private val statusHeaderRenderer: HeaderRenderer[js.Object]                             =
     (_, _, _, _, _, _) =>
       <.div(
         ^.title := "Control",
         ^.width := IconColumnWidth.px
       )
 
-  private def addAll: Callback =
+  private def addAll: Callback                                                            =
     SeqexecCircuit.dispatchCB(RequestAllSelectedSequences(CalibrationQueueId))
 
-  private val addHeaderRenderer: HeaderRenderer[js.Object] =
+  private val addHeaderRenderer: HeaderRenderer[js.Object]                                =
     (_, _, _, _, _, _) =>
       <.div(
         ^.title := "Add all to queue",
@@ -516,7 +516,7 @@ object SessionQueueTable extends Columns {
         )
       )
 
-  private val timeHeaderRenderer: HeaderRenderer[js.Object] =
+  private val timeHeaderRenderer: HeaderRenderer[js.Object]                               =
     (_, _, _, _, _, _) =>
       <.div(
         ^.title := "Obs. class",
@@ -526,10 +526,10 @@ object SessionQueueTable extends Columns {
         Icon(name = "clock outline", fitted = true)
       )
 
-  private val draggableRow =
+  private val draggableRow                                                                =
     SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
 
-  private def rowClassName(p: Props)(i: Int): String =
+  private def rowClassName(p: Props)(i: Int): String                                      =
     ((i, p.rowGetter(i)) match {
       case (-1, _)                                                         =>
         SeqexecStyles.headerRowStyle
@@ -545,7 +545,7 @@ object SessionQueueTable extends Columns {
         draggableRow
     }).htmlClass
 
-  private def renderer(c: TableColumn, b: Backend) = c match {
+  private def renderer(c: TableColumn, b: Backend)                                        = c match {
     case IconColumn       => statusIconRenderer(b)
     case AddQueueColumn   => addToQueueRenderer(b)
     case ClassColumn      => classIconRenderer(b)
@@ -556,14 +556,14 @@ object SessionQueueTable extends Columns {
     case ObsNameColumn    => linkedTextRenderer(b.props)(_.name)
   }
 
-  private val fixedHeaderRenderer: TableColumn => HeaderRenderer[js.Object] = {
+  private val fixedHeaderRenderer: TableColumn => HeaderRenderer[js.Object]               = {
     case IconColumn     => statusHeaderRenderer
     case AddQueueColumn => addHeaderRenderer
     case ClassColumn    => timeHeaderRenderer
     case _              => defaultHeaderRendererS
   }
 
-  private val columnStyle: TableColumn => Option[Css] = {
+  private val columnStyle: TableColumn => Option[Css]                                     = {
     case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn | TargetNameColumn =>
       SeqexecStyles.queueTextColumn.some
     case _                                                                               => SeqexecStyles.queueIconColumn.some
@@ -683,7 +683,7 @@ object SessionQueueTable extends Columns {
       e.dataTransfer.setData("text/plain", obsId.format)
     }.when(b.props.canOperate) *> Callback.empty
 
-  private def draggableRowRenderer(b: Backend) =
+  private def draggableRowRenderer(b: Backend)                                  =
     (
       className:        String,
       columns:          Array[VdomNode],
@@ -710,21 +710,21 @@ object SessionQueueTable extends Columns {
         columns.toTagMod
       ): VdomElement
 
-  private def initialState(p: Props): State =
+  private def initialState(p: Props): State                                     =
     (
       State.tableState.set(p.sequences.tableState) >>>
         State.prevObsIds.set(p.obsIds) >>>
         State.prevLoggedIn.set(p.loggedIn)
     )(State.InitialState)
 
-  private def onResize(b: Backend): Size => Callback =
+  private def onResize(b: Backend): Size => Callback                            =
     s =>
       b.setStateL(State.lastSize)(s.some) *>
         b.modStateL(State.tableState)(
           _.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths)
         )
 
-  private val component = ScalaComponent
+  private val component                                                         = ScalaComponent
     .builder[Props]
     .initialStateFromProps(initialState)
     .render(b =>

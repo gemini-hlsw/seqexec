@@ -49,7 +49,7 @@ trait ArbSystemsControlConfiguration {
       )
     }
 
-  implicit val systemsControlConfigurationCogen: Cogen[SystemsControlConfiguration] =
+  implicit val systemsControlConfigurationCogen: Cogen[SystemsControlConfiguration]   =
     Cogen[
       (
         ControlStrategy,

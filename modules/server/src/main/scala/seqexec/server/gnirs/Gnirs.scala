@@ -48,7 +48,7 @@ final case class Gnirs[F[_]: Logger: Concurrent: Timer](
 
   import Gnirs._
   import InstrumentSystem._
-  override def observeControl(config: CleanConfig): ObserveControl[F] =
+  override def observeControl(config: CleanConfig): ObserveControl[F]                      =
     UnpausableControl(
       StopObserveCmd(_ => controller.stopObserve),
       AbortObserveCmd(controller.abortObserve)
@@ -61,12 +61,12 @@ final case class Gnirs[F[_]: Logger: Concurrent: Timer](
       }
     }
 
-  override def calcObserveTime(config: CleanConfig): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time]                               =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
       .getOrElse(60.seconds.pure[F])
 
-  override val resource: Instrument = Instrument.Gnirs
+  override val resource: Instrument                                                        = Instrument.Gnirs
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     EitherT
@@ -75,15 +75,15 @@ final case class Gnirs[F[_]: Logger: Concurrent: Timer](
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                          =
     controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                        = Sync[F].unit
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
 
-  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F]                =
     InstrumentActions.defaultInstrumentActions[F]
 
 }
@@ -101,7 +101,7 @@ object Gnirs {
   def fromSequenceConfig(config: CleanConfig): Either[SeqexecFailure, GnirsController.GnirsConfig] =
     (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
 
-  private def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig] = (for {
+  private def getDCConfig(config: CleanConfig): Either[SeqexecFailure, DCConfig]                   = (for {
     expTime   <- extractExposureTime(config)
     coadds    <- extractCoadds(config)
     readMode  <- config.extractInstAs[ReadMode](READ_MODE_PROP)
@@ -109,7 +109,7 @@ object Gnirs {
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig] = config
+  private def getCCConfig(config: CleanConfig): Either[SeqexecFailure, CCConfig]                   = config
     .extractObsAs[String](OBSERVE_TYPE_PROP)
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
     .flatMap {
@@ -270,7 +270,7 @@ object Gnirs {
     }
 
   object specifics extends InstrumentSpecifics {
-    override val instrument: Instrument = Instrument.Gnirs
+    override val instrument: Instrument                     = Instrument.Gnirs
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gnirs
   }
 

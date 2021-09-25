@@ -29,7 +29,7 @@ object ModelOps {
       case SequenceState.Failed(_)        => s"Error at step "
     }
 
-  implicit val stepShow: Show[Step] = Show.show[Step] { s =>
+  implicit val stepShow: Show[Step]                   = Show.show[Step] { s =>
     s.status match {
       case StepState.Pending                      => "Pending"
       case StepState.Completed                    => "Done"
@@ -44,7 +44,7 @@ object ModelOps {
     }
   }
 
-  implicit val resourceShow: Show[Resource] = Show.show[Resource] {
+  implicit val resourceShow: Show[Resource]           = Show.show[Resource] {
     case Resource.TCS    => "TCS"
     case Resource.Gcal   => "GCAL"
     case Resource.Gems   => "GeMS"

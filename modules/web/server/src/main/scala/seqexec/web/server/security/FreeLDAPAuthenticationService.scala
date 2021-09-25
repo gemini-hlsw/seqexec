@@ -25,7 +25,7 @@ object FreeLDAPAuthenticationService {
     // Operation to authenticate a user, It returns true if it works
     final case class AuthenticateOp(username: String, password: String) extends LdapOp[UID]
     // Read the user display name
-    final case class UserDisplayNameOp(uid: UID) extends LdapOp[DisplayName]
+    final case class UserDisplayNameOp(uid: UID)                        extends LdapOp[DisplayName]
     // Reads the name, groups and thumbnail
     final case class DisplayNameGrpThumbOp(uid: UID)
         extends LdapOp[(DisplayName, Groups, Option[Thumbnail])]
@@ -35,8 +35,8 @@ object FreeLDAPAuthenticationService {
   type LdapM[A] = Free[LdapOp, A]
 
   // Smart constructors for LdapOp[A]
-  def bind(u:            String, p: String): LdapM[UID] = Free.liftF(LdapOp.AuthenticateOp(u, p))
-  def displayName(u:     UID): LdapM[DisplayName] = Free.liftF(LdapOp.UserDisplayNameOp(u))
+  def bind(u: String, p: String): LdapM[UID]                                   = Free.liftF(LdapOp.AuthenticateOp(u, p))
+  def displayName(u: UID): LdapM[DisplayName]                                  = Free.liftF(LdapOp.UserDisplayNameOp(u))
   def nameGroupsThumb(u: UID): LdapM[(DisplayName, Groups, Option[Thumbnail])] =
     Free.liftF(LdapOp.DisplayNameGrpThumbOp(u))
 
@@ -92,7 +92,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
   }
 
   // Will attempt several servers in case they fail
-  lazy val failoverServerSet =
+  lazy val failoverServerSet                                                       =
     new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray, ldapOptions)
 
   override def authenticateUser(username: String, password: String): F[AuthResult] = {

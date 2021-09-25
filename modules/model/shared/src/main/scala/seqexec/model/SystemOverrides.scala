@@ -30,7 +30,7 @@ case class SystemOverrides(
 }
 
 object SystemOverrides {
-  val AllEnabled: SystemOverrides = SystemOverrides(
+  val AllEnabled: SystemOverrides                      = SystemOverrides(
     isTcsEnabled = true,
     isInstrumentEnabled = true,
     isGcalEnabled = true,

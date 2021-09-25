@@ -72,7 +72,7 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
 
   override def observeTimeout: FiniteDuration = 110.seconds
 
-  override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F] =
+  override def observeControl(config: CleanConfig): InstrumentSystem.CompleteControl[F]    =
     if (isNodAndShuffle(config))
       CompleteControl(
         StopObserveCmd(stopNS),
@@ -92,16 +92,16 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
         AbortPausedCmd(controller.abortPaused)
       )
 
-  private def stopNS(gracefully: Boolean): F[Unit] =
+  private def stopNS(gracefully: Boolean): F[Unit]                                         =
     if (gracefully)
       nsCmdRef.set(NSObserveCommand.StopGracefully.some)
     else
       nsCmdRef.set(NSObserveCommand.StopImmediately.some) *> controller.stopObserve
 
-  private def abortNS: F[Unit] =
+  private def abortNS: F[Unit]                                                             =
     nsCmdRef.set(NSObserveCommand.AbortImmediately.some) *> controller.abortObserve
 
-  private def pauseNS(gracefully: Boolean): F[Unit] =
+  private def pauseNS(gracefully: Boolean): F[Unit]                                        =
     if (gracefully)
       nsCmdRef.set(NSObserveCommand.PauseGracefully.some)
     else
@@ -189,22 +189,22 @@ abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDep
       }
     }
 
-  override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
+  override def instrumentActions(config: CleanConfig): InstrumentActions[F]                =
     new GmosInstrumentActions(this, config)
 
-  override def notifyObserveEnd: F[Unit] =
+  override def notifyObserveEnd: F[Unit]                                                   =
     controller.endObserve
 
-  override def notifyObserveStart: F[Unit] = Applicative[F].unit
+  override def notifyObserveStart: F[Unit]                                                 = Applicative[F].unit
 
-  override def configure(config: CleanConfig): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]]                          =
     EitherT
       .fromEither[F](fromSequenceConfig(config))
       .widenRethrowT
       .flatMap(controller.applyConfig)
       .as(ConfigResult(this))
 
-  override def calcObserveTime(config: CleanConfig): F[Time] =
+  override def calcObserveTime(config: CleanConfig): F[Time]                               =
     (Gmos.expTimeF[F](config), Gmos.nsConfigF[F](config)).mapN { (v, ns) =>
       v / ns.exposureDivider.toDouble
     }
@@ -258,12 +258,12 @@ object Gmos {
         ) // We should always set electronic offset to false unless explicitly enabled
     )
 
-  private def configToAngle(s: String): Either[ExtractFailure, Angle] =
+  private def configToAngle(s: String): Either[ExtractFailure, Angle]                              =
     s.parseDoubleOption
       .toRight(ContentError("Invalid offset value"))
       .map(Angle.fromDoubleArcseconds)
 
-  private def extractGuiding(config: CleanConfig, k: ItemKey): Either[ExtractFailure, Guiding] =
+  private def extractGuiding(config: CleanConfig, k: ItemKey): Either[ExtractFailure, Guiding]     =
     config
       .extractAs[StandardGuideOptions.Value](k)
       .flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
@@ -327,7 +327,7 @@ object Gmos {
         expTime(config)
       )
 
-  private def shutterStateObserveType(observeType: String): ShutterState = observeType match {
+  private def shutterStateObserveType(observeType: String): ShutterState              = observeType match {
     case SCIENCE_OBSERVE_TYPE => ShutterState.OpenShutter
     case FLAT_OBSERVE_TYPE    => ShutterState.OpenShutter
     case ARC_OBSERVE_TYPE     => ShutterState.OpenShutter
@@ -336,7 +336,7 @@ object Gmos {
     case _                    => ShutterState.UnsetShutter
   }
 
-  private def customROIs(config: CleanConfig): List[ROI] = {
+  private def customROIs(config: CleanConfig): List[ROI]                              = {
     def attemptROI(i: Int): Option[ROI] =
       (for {
         xStart <- config.extractInstAs[JInt](s"customROI${i}Xmin").map(_.toInt)
@@ -351,7 +351,7 @@ object Gmos {
     rois.toList.flattenOption
   }
 
-  private def toGain(s: String): Either[ExtractFailure, Double] =
+  private def toGain(s: String): Either[ExtractFailure, Double]                       =
     s.parseDoubleOption
       .toRight(ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting"))
 

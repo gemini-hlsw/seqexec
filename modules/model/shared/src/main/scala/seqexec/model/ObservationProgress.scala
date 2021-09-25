@@ -22,20 +22,20 @@ sealed trait Progress extends Product with Serializable {
 
 object Progress {
 
-  implicit val equalProgress: Eq[Progress] =
+  implicit val equalProgress: Eq[Progress]                         =
     Eq.instance {
       case (a: ObservationProgress, b: ObservationProgress)     => a === b
       case (a: NSObservationProgress, b: NSObservationProgress) => a === b
       case _                                                    => false
     }
 
-  implicit val obsProgressP: Prism[Progress, ObservationProgress] =
+  implicit val obsProgressP: Prism[Progress, ObservationProgress]  =
     GenPrism[Progress, ObservationProgress]
 
   implicit val nsProgressP: Prism[Progress, NSObservationProgress] =
     GenPrism[Progress, NSObservationProgress]
 
-  implicit val progressP: Prism[Progress, Progress] =
+  implicit val progressP: Prism[Progress, Progress]                =
     Iso.id[Progress].asPrism
 }
 

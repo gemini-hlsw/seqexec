@@ -28,7 +28,7 @@ trait GpiLookupTables {
   val apodizerLUTNames: Map[String, String] =
     apodizerLUT.map { case (k, v) => (k.name, v) }
 
-  val fpmLUT: Map[LegacyFPM, String]        = Map(
+  val fpmLUT: Map[LegacyFPM, String] = Map(
     LegacyFPM.OPEN     -> "Open",
     LegacyFPM.F50umPIN -> "50umPIN",
     LegacyFPM.WITH_DOT -> "WITH_DOT",

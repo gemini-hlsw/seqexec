@@ -62,7 +62,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
         }
     }).plainText
 
-  override def configure(config: CleanConfig): F[ConfigResult[F]] =
+  override def configure(config: CleanConfig): F[ConfigResult[F]]                =
     buildTcsConfig.flatMap { cfg =>
       subsystems.traverse_(s =>
         Log.debug(s"Applying TCS/$s configuration/config: ${subsystemConfig(cfg, s)}")
@@ -70,7 +70,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
         tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
     }
 
-  override def notifyObserveStart: F[Unit] = tcsController.notifyObserveStart
+  override def notifyObserveStart: F[Unit]                                       = tcsController.notifyObserveStart
 
   override def notifyObserveEnd: F[Unit] = tcsController.notifyObserveEnd
 
@@ -88,7 +88,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
    * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
    * it will not be used for the step, regardless of the sequence values.
    */
-  private def buildBasicTcsConfig(gc: GuideConfig): F[TcsNorthConfig] =
+  private def buildBasicTcsConfig(gc: GuideConfig): F[TcsNorthConfig]             =
     (BasicTcsConfig(
       gc.tcsGuide,
       TelescopeConfig(config.offsetA, config.wavelA),

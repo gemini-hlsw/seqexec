@@ -56,10 +56,10 @@ object Altair {
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
       config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
 
-    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] =
+    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit]             =
       config.swap.map(controller.endObserve).getOrElse(Sync[F].unit)
 
-    override val resource: Resource = Resource.Altair
+    override val resource: Resource                                                        = Resource.Altair
 
     override def usesP1(guide: AltairConfig): Boolean = guide match {
       case LgsWithP1 => true
@@ -71,7 +71,7 @@ object Altair {
       case _                        => false
     }
 
-    override def isFollowing: F[Boolean] = controller.isFollowing
+    override def isFollowing: F[Boolean]              = controller.isFollowing
 
     override def hasTarget(guide: AltairConfig): Boolean = guide match {
       case Lgs(st, sf, _) => st || sf

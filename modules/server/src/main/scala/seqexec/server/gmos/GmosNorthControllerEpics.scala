@@ -22,7 +22,7 @@ import seqexec.server.gmos.GmosController.northConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
 
 object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
-  override val filter: EpicsCodex.EncodeEpicsValue[NorthTypes#Filter, (String, String)] =
+  override val filter: EpicsCodex.EncodeEpicsValue[NorthTypes#Filter, (String, String)]   =
     EncodeEpicsValue {
       case Filter.NONE                    => ("open1-6", "open2-8")
       case Filter.g_G0301                 => ("open1-6", "g_G0301")
@@ -81,7 +81,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
       r.map(x => (x._1, GmosControllerEpics.beamEncoder.encode(x._2)))
     }
 
-  override val stageMode: EpicsCodex.EncodeEpicsValue[NorthTypes#GmosStageMode, String] =
+  override val stageMode: EpicsCodex.EncodeEpicsValue[NorthTypes#GmosStageMode, String]   =
     EncodeEpicsValue {
       case StageMode.NO_FOLLOW     => "MOVE"
       case StageMode.FOLLOW_XYZ    => "FOLLOW"
@@ -89,7 +89,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
       case StageMode.FOLLOW_Z_ONLY => "FOLLOW-Z"
     }
 
-  override val disperser: EpicsCodex.EncodeEpicsValue[NorthTypes#Disperser, String] =
+  override val disperser: EpicsCodex.EncodeEpicsValue[NorthTypes#Disperser, String]       =
     EncodeEpicsValue {
       case Disperser.MIRROR      => "mirror"
       case Disperser.B1200_G5301 => "B1200+_G5301"
@@ -103,7 +103,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
       case Disperser.B480_G5309  => "B480+_G5309"
     }
 
-  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]] = EncodeEpicsValue {
+  override val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]                = EncodeEpicsValue {
     case BuiltinROI.FULL_FRAME       =>
       ROIValues.fromInt(xStart = 1, xSize = 6144, yStart = 1, ySize = 4224)
     case BuiltinROI.CCD2             => ROIValues.fromInt(xStart = 2049, xSize = 2048, yStart = 1, ySize = 4224)

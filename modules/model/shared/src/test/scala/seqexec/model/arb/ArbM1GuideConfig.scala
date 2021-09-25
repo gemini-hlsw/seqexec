@@ -20,10 +20,10 @@ trait ArbM1GuideConfig {
       } yield M1GuideConfig.M1GuideOn(s)
     }
 
-  implicit val m1GuideOnCogen: Cogen[M1GuideConfig.M1GuideOn] =
+  implicit val m1GuideOnCogen: Cogen[M1GuideConfig.M1GuideOn]   =
     Cogen[M1Source].contramap(_.source)
 
-  implicit val arbM1GuideConfig: Arbitrary[M1GuideConfig] =
+  implicit val arbM1GuideConfig: Arbitrary[M1GuideConfig]       =
     Arbitrary {
       for {
         off <- Gen.const(M1GuideConfig.M1GuideOff)
@@ -32,7 +32,7 @@ trait ArbM1GuideConfig {
       } yield l
     }
 
-  implicit val m1GuideConfigCogen: Cogen[M1GuideConfig] =
+  implicit val m1GuideConfigCogen: Cogen[M1GuideConfig]         =
     Cogen[Option[M1GuideConfig.M1GuideOn]].contramap {
       case x: M1GuideConfig.M1GuideOn => Some(x)
       case _                          => None

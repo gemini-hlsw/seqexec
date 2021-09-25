@@ -60,11 +60,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -133,11 +133,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -229,11 +229,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -302,11 +302,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -398,11 +398,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -474,11 +474,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -539,11 +539,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -610,11 +610,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -675,11 +675,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -745,11 +745,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -817,11 +817,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -890,11 +890,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -963,11 +963,11 @@ final class ObserveStateSpec
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -1011,87 +1011,87 @@ final class ObserveStateSpec
 // The workaround is to create classes such as below with concrete type and mock those
 // https://github.com/paulbutcher/ScalaMock/issues/193
 class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] {
-  override def setValue(a: java.util.List[CadDirective]): Unit = {}
-  override def setValue(a: CadDirective): Unit = {}
-  override def getAll: java.util.List[CadDirective] = null
-  override def getDBR: gov.aps.jca.dbr.DBR          = null
-  override def getFirst: CadDirective               = null.asInstanceOf[CadDirective]
-  override def getName: String                      = null
-  override def getType: gov.aps.jca.dbr.DBRType     = null
-  override def isValid: Boolean                     = true
+  override def setValue(a: java.util.List[CadDirective]): Unit                                 = {}
+  override def setValue(a: CadDirective): Unit                                                 = {}
+  override def getAll: java.util.List[CadDirective]                                            = null
+  override def getDBR: gov.aps.jca.dbr.DBR                                                     = null
+  override def getFirst: CadDirective                                                          = null.asInstanceOf[CadDirective]
+  override def getName: String                                                                 = null
+  override def getType: gov.aps.jca.dbr.DBRType                                                = null
+  override def isValid: Boolean                                                                = true
   override def registerListener(
     x: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]
   ): Unit = {}
-  override def registerListener(x: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit = {}
+  override def registerListener(x: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit   = {}
   override def unRegisterListener(
     x: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]
   ): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit = {}
-  override def destroy(): Unit = {}
+  override def destroy(): Unit                                                                 = {}
 }
 
 class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
-  override def setValue(a: java.util.List[CarState]): Unit = {}
-  override def setValue(a: CarState): Unit = {}
-  override def getAll: java.util.List[CarState] = null
-  override def getDBR: gov.aps.jca.dbr.DBR      = null
-  override def getFirst: CarState               = null.asInstanceOf[CarState]
-  override def getName: String                  = null
-  override def getType: gov.aps.jca.dbr.DBRType = null
-  override def isValid: Boolean                 = true
-  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
-  override def registerListener(x: edu.gemini.epics.api.ChannelListener[CarState]): Unit = {}
+  override def setValue(a: java.util.List[CarState]): Unit                                      = {}
+  override def setValue(a: CarState): Unit                                                      = {}
+  override def getAll: java.util.List[CarState]                                                 = null
+  override def getDBR: gov.aps.jca.dbr.DBR                                                      = null
+  override def getFirst: CarState                                                               = null.asInstanceOf[CarState]
+  override def getName: String                                                                  = null
+  override def getType: gov.aps.jca.dbr.DBRType                                                 = null
+  override def isValid: Boolean                                                                 = true
+  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit   = {}
+  override def registerListener(x: edu.gemini.epics.api.ChannelListener[CarState]): Unit        = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
-  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[CarState]): Unit = {}
-  override def destroy(): Unit = {}
+  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[CarState]): Unit      = {}
+  override def destroy(): Unit                                                                  = {}
 }
 
 class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
-  override def setValue(a: java.util.List[JInteger]): Unit = {}
-  override def setValue(a: JInteger): Unit = {}
-  override def getAll: java.util.List[JInteger] = null
-  override def getDBR: gov.aps.jca.dbr.DBR      = null
-  override def getFirst: JInteger               = null.asInstanceOf[JInteger]
-  override def getName: String                  = null
-  override def getType: gov.aps.jca.dbr.DBRType = null
-  override def isValid: Boolean                 = true
-  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
-  override def registerListener(x: edu.gemini.epics.api.ChannelListener[JInteger]): Unit = {}
+  override def setValue(a: java.util.List[JInteger]): Unit                                      = {}
+  override def setValue(a: JInteger): Unit                                                      = {}
+  override def getAll: java.util.List[JInteger]                                                 = null
+  override def getDBR: gov.aps.jca.dbr.DBR                                                      = null
+  override def getFirst: JInteger                                                               = null.asInstanceOf[JInteger]
+  override def getName: String                                                                  = null
+  override def getType: gov.aps.jca.dbr.DBRType                                                 = null
+  override def isValid: Boolean                                                                 = true
+  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit   = {}
+  override def registerListener(x: edu.gemini.epics.api.ChannelListener[JInteger]): Unit        = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
-  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[JInteger]): Unit = {}
-  override def destroy(): Unit = {}
+  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[JInteger]): Unit      = {}
+  override def destroy(): Unit                                                                  = {}
 }
 
 class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
-  override def setValue(a: java.util.List[JShort]): Unit = {}
-  override def setValue(a: JShort): Unit = {}
-  override def getAll: java.util.List[JShort]   = null
-  override def getDBR: gov.aps.jca.dbr.DBR      = null
-  override def getFirst: JShort                 = null.asInstanceOf[JShort]
-  override def getName: String                  = null
-  override def getType: gov.aps.jca.dbr.DBRType = null
-  override def isValid: Boolean                 = true
-  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
-  override def registerListener(x: edu.gemini.epics.api.ChannelListener[JShort]): Unit = {}
+  override def setValue(a: java.util.List[JShort]): Unit                                      = {}
+  override def setValue(a: JShort): Unit                                                      = {}
+  override def getAll: java.util.List[JShort]                                                 = null
+  override def getDBR: gov.aps.jca.dbr.DBR                                                    = null
+  override def getFirst: JShort                                                               = null.asInstanceOf[JShort]
+  override def getName: String                                                                = null
+  override def getType: gov.aps.jca.dbr.DBRType                                               = null
+  override def isValid: Boolean                                                               = true
+  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit   = {}
+  override def registerListener(x: edu.gemini.epics.api.ChannelListener[JShort]): Unit        = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
-  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[JShort]): Unit = {}
-  override def destroy(): Unit = {}
+  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[JShort]): Unit      = {}
+  override def destroy(): Unit                                                                = {}
 }
 
 class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
-  override def setValue(a: java.util.List[String]): Unit = {}
-  override def setValue(a: String): Unit = {}
-  override def getAll: java.util.List[String]   = null
-  override def getDBR: gov.aps.jca.dbr.DBR      = null
-  override def getFirst: String                 = null.asInstanceOf[String]
-  override def getName: String                  = null
-  override def getType: gov.aps.jca.dbr.DBRType = null
-  override def isValid: Boolean                 = true
-  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
-  override def registerListener(x: edu.gemini.epics.api.ChannelListener[String]): Unit = {}
+  override def setValue(a: java.util.List[String]): Unit                                      = {}
+  override def setValue(a: String): Unit                                                      = {}
+  override def getAll: java.util.List[String]                                                 = null
+  override def getDBR: gov.aps.jca.dbr.DBR                                                    = null
+  override def getFirst: String                                                               = null.asInstanceOf[String]
+  override def getName: String                                                                = null
+  override def getType: gov.aps.jca.dbr.DBRType                                               = null
+  override def isValid: Boolean                                                               = true
+  override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit   = {}
+  override def registerListener(x: edu.gemini.epics.api.ChannelListener[String]): Unit        = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
-  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[String]): Unit = {}
-  override def destroy(): Unit = {}
+  override def unRegisterListener(x: edu.gemini.epics.api.ChannelListener[String]): Unit      = {}
+  override def destroy(): Unit                                                                = {}
 }
 
 trait ChannelsFactory extends MockFactory {
@@ -1121,7 +1121,7 @@ trait ChannelsFactory extends MockFactory {
     (m.registerListener(_: ChannelListener[JInteger])).expects(*)
     m
   }
-  def intChannel: IntChannelMock = mock[IntChannelMock]
+  def intChannel: IntChannelMock  = mock[IntChannelMock]
 
   def strChannel: StringChannelMock = mock[StringChannelMock]
 

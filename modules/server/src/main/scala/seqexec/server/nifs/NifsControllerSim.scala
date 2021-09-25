@@ -25,10 +25,10 @@ object NifsControllerSim {
         override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =
           sim.observe(fileId, calcTotalExposureTime(cfg))
 
-        override def applyConfig(config: NifsConfig): F[Unit] =
+        override def applyConfig(config: NifsConfig): F[Unit]                             =
           sim.applyConfig(config)
 
-        override def stopObserve: F[Unit] = sim.stopObserve
+        override def stopObserve: F[Unit]                                                 = sim.stopObserve
 
         override def abortObserve: F[Unit] = sim.abortObserve
 
@@ -37,7 +37,7 @@ object NifsControllerSim {
         override def observeProgress(total: Time): fs2.Stream[F, Progress] =
           sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-        override def calcTotalExposureTime(cfg: DCConfig): Time =
+        override def calcTotalExposureTime(cfg: DCConfig): Time            =
           NifsController.calcTotalExposureTime[F](cfg)
 
       }

@@ -13,7 +13,7 @@ sealed trait M1GuideConfig extends Product with Serializable {
 }
 
 object M1GuideConfig {
-  case object M1GuideOff extends M1GuideConfig {
+  case object M1GuideOff                       extends M1GuideConfig {
     override def uses(s: M1Source): Boolean = false
   }
   final case class M1GuideOn(source: M1Source) extends M1GuideConfig {
@@ -26,7 +26,7 @@ object M1GuideConfig {
   }
 
   implicit val showM1GuideConfig: Show[M1GuideConfig] = Show.fromToString
-  implicit val eqM1GuideConfig: Eq[M1GuideConfig]     = Eq.instance {
+  implicit val eqM1GuideConfig: Eq[M1GuideConfig] = Eq.instance {
     case (M1GuideOff, M1GuideOff)     => true
     case (M1GuideOn(a), M1GuideOn(b)) => a === b
     case _                            => false

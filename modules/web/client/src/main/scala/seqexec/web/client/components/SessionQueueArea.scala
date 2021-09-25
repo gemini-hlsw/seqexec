@@ -19,7 +19,7 @@ object SessionQueueTableSection {
   private val sequencesConnect =
     SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequencesReader)
 
-  private val component = ScalaComponent
+  private val component        = ScalaComponent
     .builder[RouterCtl[SeqexecPages]]("SessionQueueTableSection")
     .stateless
     .render_P(p =>

@@ -17,41 +17,41 @@ trait TableArbitraries {
     Gen.oneOf(IsModified, NotModified)
   }
 
-  implicit val userModifiedCogen: Cogen[UserModified] =
+  implicit val userModifiedCogen: Cogen[UserModified]   =
     Cogen[String].contramap(_.productPrefix)
 
-  val genFixedColumnWidth: Gen[FixedColumnWidth] =
+  val genFixedColumnWidth: Gen[FixedColumnWidth]                =
     Gen.posNum[Double].map(FixedColumnWidth.apply)
 
   implicit val fixedColumnWidthArb: Arbitrary[FixedColumnWidth] =
     Arbitrary(genFixedColumnWidth)
 
-  implicit val fixedColumnWidthCogen: Cogen[FixedColumnWidth] =
+  implicit val fixedColumnWidthCogen: Cogen[FixedColumnWidth]   =
     Cogen[Double].contramap(_.width)
 
-  val genVariableColumnWidth: Gen[VariableColumnWidth] =
+  val genVariableColumnWidth: Gen[VariableColumnWidth]                                    =
     for {
       w <- Gen.choose[Double](0, 1)
       m <- Gen.choose[Double](0, 1)
     } yield VariableColumnWidth.unsafeFromDouble(w, m)
 
-  implicit val VariableColumnWidthArb: Arbitrary[VariableColumnWidth] =
+  implicit val VariableColumnWidthArb: Arbitrary[VariableColumnWidth]                     =
     Arbitrary(genVariableColumnWidth)
 
-  implicit val percentColumnWidthCogen: Cogen[VariableColumnWidth] =
+  implicit val percentColumnWidthCogen: Cogen[VariableColumnWidth]                        =
     Cogen[(Double, Double)].contramap(x => (x.percentage, x.minWidth))
 
-  implicit val arbColumnWidth: Arbitrary[ColumnWidth] = Arbitrary {
+  implicit val arbColumnWidth: Arbitrary[ColumnWidth]                                     = Arbitrary {
     Gen.oneOf(genFixedColumnWidth, genVariableColumnWidth)
   }
 
-  implicit val columnWidthCogen: Cogen[ColumnWidth] =
+  implicit val columnWidthCogen: Cogen[ColumnWidth]                                       =
     Cogen[Either[FixedColumnWidth, VariableColumnWidth]].contramap {
       case x: FixedColumnWidth    => x.asLeft
       case x: VariableColumnWidth => x.asRight
     }
 
-  implicit val arbJsNumber: Arbitrary[JsNumber] = Arbitrary {
+  implicit val arbJsNumber: Arbitrary[JsNumber]                                           = Arbitrary {
     // type JsNumber = Byte | Short | Int | Float | Double
     Gen.oneOf[JsNumber](arbitrary[Byte],
                         arbitrary[Short],
@@ -73,7 +73,7 @@ trait TableArbitraries {
       }
     }
 
-  implicit def columnMetaArb[A: Arbitrary]: Arbitrary[ColumnMeta[A]] =
+  implicit def columnMetaArb[A: Arbitrary]: Arbitrary[ColumnMeta[A]]                      =
     Arbitrary {
       for {
         a <- arbitrary[A]
@@ -84,12 +84,12 @@ trait TableArbitraries {
       } yield ColumnMeta(a, n, l, v, w)
     }
 
-  implicit def columnMetaCogen[A: Cogen]: Cogen[ColumnMeta[A]] =
+  implicit def columnMetaCogen[A: Cogen]: Cogen[ColumnMeta[A]]                            =
     Cogen[(A, String, String, Boolean, ColumnWidth)].contramap(x =>
       (x.column, x.name, x.label, x.visible, x.width)
     )
 
-  implicit def tableStateArb[A: Arbitrary: Eq]: Arbitrary[TableState[A]] =
+  implicit def tableStateArb[A: Arbitrary: Eq]: Arbitrary[TableState[A]]                  =
     Arbitrary {
       for {
         u <- arbitrary[UserModified]
@@ -98,7 +98,7 @@ trait TableArbitraries {
       } yield TableState(u, s, NonEmptyList.fromListUnsafe(c))
     }
 
-  implicit def tableStateCogen[A: Cogen]: Cogen[TableState[A]] =
+  implicit def tableStateCogen[A: Cogen]: Cogen[TableState[A]]                            =
     Cogen[(UserModified, Double, List[ColumnMeta[A]])].contramap(x =>
       (x.userModified, x.scrollPosition.toDouble, x.columns.toList)
     )
@@ -110,7 +110,7 @@ trait TableArbitraries {
       } yield NonEmptyList.fromListUnsafe(c)
     }
 
-  implicit def columnMetaNelCogen[A: Cogen]: Cogen[NonEmptyList[ColumnMeta[A]]] =
+  implicit def columnMetaNelCogen[A: Cogen]: Cogen[NonEmptyList[ColumnMeta[A]]]           =
     Cogen[List[ColumnMeta[A]]].contramap(_.toList)
 }
 

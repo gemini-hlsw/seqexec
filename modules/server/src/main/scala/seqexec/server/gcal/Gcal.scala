@@ -38,7 +38,7 @@ final case class Gcal[F[_]: Sync] private (controller: GcalController[F], cfg: G
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     controller.applyConfig(cfg).map(const(ConfigResult(this)))
 
-  override def notifyObserveStart: F[Unit] = Sync[F].unit
+  override def notifyObserveStart: F[Unit]                        = Sync[F].unit
 
   override def notifyObserveEnd: F[Unit] = Sync[F].unit
 
@@ -48,7 +48,7 @@ object Gcal {
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  implicit val shutterEq: Eq[Shutter] = Eq.by(_.ordinal)
+  implicit val shutterEq: Eq[Shutter]                        = Eq.by(_.ordinal)
 
   def fromConfig[F[_]: Sync](
     isCP:   Boolean,
@@ -59,24 +59,24 @@ object Gcal {
       .map(_.asScala.toList)
       .recover { case ConfigUtilOps.KeyNotFound(_) => List.empty[Lamp] }
 
-    val arLamp                                                  = lamps.map(v => if (v.contains(Lamp.AR_ARC)) LampState.On else LampState.Off)
-    val cuarLamp                                                = lamps.map(v => if (v.contains(Lamp.CUAR_ARC)) LampState.On else LampState.Off)
-    val tharLamp                                                = lamps.map(v => if (v.contains(Lamp.THAR_ARC)) LampState.On else LampState.Off)
-    val qhLamp                                                  = lamps.map(v => if (v.contains(Lamp.QUARTZ)) LampState.On else LampState.Off)
-    val xeLamp                                                  = lamps.map(v => if (v.contains(Lamp.XE_ARC)) LampState.On else LampState.Off)
-    val irLampCP                                                = lamps.map(v =>
+    val arLamp   = lamps.map(v => if (v.contains(Lamp.AR_ARC)) LampState.On else LampState.Off)
+    val cuarLamp = lamps.map(v => if (v.contains(Lamp.CUAR_ARC)) LampState.On else LampState.Off)
+    val tharLamp = lamps.map(v => if (v.contains(Lamp.THAR_ARC)) LampState.On else LampState.Off)
+    val qhLamp   = lamps.map(v => if (v.contains(Lamp.QUARTZ)) LampState.On else LampState.Off)
+    val xeLamp   = lamps.map(v => if (v.contains(Lamp.XE_ARC)) LampState.On else LampState.Off)
+    val irLampCP = lamps.map(v =>
       if (v.contains(Lamp.IR_GREY_BODY_HIGH) || v.contains(Lamp.IR_GREY_BODY_LOW))
         Some(LampState.On)
       else None
     )
-    val irLampMK                                                = lamps.map(v =>
+    val irLampMK = lamps.map(v =>
       if (v.contains(Lamp.IR_GREY_BODY_HIGH)) Some(LampState.On)
       else if (v.contains(Lamp.IR_GREY_BODY_LOW)) Some(LampState.Off)
       else None
     )
-    val shutter                                                 = config.extractCalibrationAs[Shutter](SHUTTER_PROP)
-    val filter                                                  = config.extractCalibrationAs[Filter](FILTER_PROP)
-    val diffuser                                                = config.extractCalibrationAs[Diffuser](DIFFUSER_PROP)
+    val shutter  = config.extractCalibrationAs[Shutter](SHUTTER_PROP)
+    val filter   = config.extractCalibrationAs[Filter](FILTER_PROP)
+    val diffuser = config.extractCalibrationAs[Diffuser](DIFFUSER_PROP)
 
     for {
       _    <- lamps

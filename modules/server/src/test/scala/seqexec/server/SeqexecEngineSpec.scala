@@ -370,7 +370,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
   private def simpleSequenceWithTargetName(name: String): SequenceGen[IO] =
     testTargetSequence(name, 1, List(ObsClass.SCIENCE), List(SCIENCE_OBSERVE_TYPE))
 
-  private def systemsWithTargetName(name: String): Systems[IO] =
+  private def systemsWithTargetName(name: String): Systems[IO]            =
     defaultSystems.copy(tcsKeywordReader =
       new DummyTcsKeywordsReader.DummyTcsKeywordReaderImpl[IO] {
         override def sourceATarget: TargetKeywordsReader[IO] =
@@ -674,7 +674,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     }).unsafeRunSync()
   }
 
-  private val testConditionsSequence: SequenceGen[IO] = {
+  private val testConditionsSequence: SequenceGen[IO]                     = {
     val resources         = Set(Instrument.GmosS, TCS)
     val obsClass          = List(ObsClass.PROG_CAL, ObsClass.SCIENCE)
     val obsType           = List(DARK_OBSERVE_TYPE, SCIENCE_OBSERVE_TYPE)

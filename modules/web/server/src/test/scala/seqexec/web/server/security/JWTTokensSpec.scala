@@ -17,9 +17,9 @@ class JWTTokensSpec extends CatsSuite {
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
-  private val config      =
+  private val config              =
     AuthenticationConfig(FiniteDuration(8, HOURS), "token", "key", useSSL = false, Nil)
-  private val authService = AuthenticationService[IO](Mode.Production, config)
+  private val authService         = AuthenticationService[IO](Mode.Production, config)
 
   test("JWT Tokens: encode/decode") {
     forAll { (u: String, p: String) =>

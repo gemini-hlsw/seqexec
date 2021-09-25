@@ -61,6 +61,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
       )
   }
 
-  override def handle: PartialFunction[Any, ActionResult[M]] =
+  override def handle: PartialFunction[Any, ActionResult[M]]          =
     List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
 }

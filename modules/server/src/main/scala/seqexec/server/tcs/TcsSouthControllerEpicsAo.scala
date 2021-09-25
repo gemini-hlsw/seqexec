@@ -75,9 +75,9 @@ object TcsSouthControllerEpicsAo {
     implicit L:                                                                   Logger[F]
   ) extends TcsSouthControllerEpicsAo[F]
       with TcsControllerEncoders {
-    private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
-    private val commonController   = TcsControllerEpicsCommon[F](epicsSys)
-    private val trace              =
+    private val tcsConfigRetriever                                           = TcsConfigRetriever[F](epicsSys)
+    private val commonController                                             = TcsControllerEpicsCommon[F](epicsSys)
+    private val trace                                                        =
       Option(System.getProperty("seqexec.server.tcs.trace")).flatMap(_.toBooleanOption).isDefined
 
     def setNgsGuide(followCmd: ProbeFollowCmd[F], l: Lens[EpicsTcsAoConfig, GuiderConfig])(
@@ -376,7 +376,7 @@ object TcsSouthControllerEpicsAo {
       demand:      TcsSouthAoConfig,
       gaosEnabled: Boolean
     ): TcsSouthAoConfig = {
-      val mustOff = mustPauseWhileOffsetting(current, demand)
+      val mustOff                                            = mustPauseWhileOffsetting(current, demand)
       // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
       def calc(c: GuiderSensorOption, d: GuiderSensorOption) =
         (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)

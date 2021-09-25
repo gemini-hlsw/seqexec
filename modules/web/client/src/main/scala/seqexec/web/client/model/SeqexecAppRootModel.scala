@@ -102,7 +102,7 @@ object SeqexecAppRootModel {
 
   def executionQueuesT(
     id: QueueId
-  ): Traversal[SeqexecAppRootModel, ExecutionQueueView]           =
+  ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
       SequencesQueue.queues ^|->>
       filterIndex((qid: QueueId) => qid === id)
@@ -117,6 +117,6 @@ object SeqexecAppRootModel {
       SequencesQueue.queues ^|->
       at(CalibrationQueueId)).asGetter
 
-  implicit val eq: Eq[SeqexecAppRootModel] =
+  implicit val eq: Eq[SeqexecAppRootModel]                             =
     Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion))
 }

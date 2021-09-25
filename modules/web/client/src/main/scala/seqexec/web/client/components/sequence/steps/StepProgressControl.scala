@@ -160,7 +160,7 @@ object StepProgressCell {
       stepControlButtons(props)
     )
 
-  private def textWithPopup(text: String): VdomNode =
+  private def textWithPopup(text: String): VdomNode     =
     Popup(
       trigger = <.span(text)
     )(text)
@@ -229,7 +229,7 @@ object StepProgressCell {
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
-  protected val component = ScalaComponent
+  protected val component                    = ScalaComponent
     .builder[Props]("StepProgressCell")
     .stateless
     .render_P(stepDisplay)

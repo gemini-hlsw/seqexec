@@ -48,10 +48,10 @@ object ProgramId {
     index:       Index
   ) extends ProgramId {
 
-    override def siteOption: Option[Site] =
+    override def siteOption: Option[Site]               =
       Some(site)
 
-    override def semesterOption: Option[Semester] =
+    override def semesterOption: Option[Semester]       =
       Some(semester)
 
     override def programTypeOption: Option[ProgramType] =
@@ -96,13 +96,13 @@ object ProgramId {
       dailyProgramType.toProgramType
 
     /** True if the given instant falls within the observing day defined by `start` and `end`. */
-    def includes(i: Instant): Boolean =
+    def includes(i: Instant): Boolean                   =
       start.toInstant <= i && i <= end.toInstant
 
-    override def siteOption: Option[Site] =
+    override def siteOption: Option[Site]               =
       Some(site)
 
-    override def semesterOption: Option[Semester] =
+    override def semesterOption: Option[Semester]       =
       Some(semester)
 
     override def programTypeOption: Option[ProgramType] =
@@ -201,7 +201,7 @@ object ProgramId {
   implicit val ProgramIdOrdering: scala.math.Ordering[ProgramId] =
     ProgramIdOrder.toOrdering
 
-  implicit val ProgramIdShow: Show[ProgramId] =
+  implicit val ProgramIdShow: Show[ProgramId]                    =
     Show.fromToString
 
   /**
