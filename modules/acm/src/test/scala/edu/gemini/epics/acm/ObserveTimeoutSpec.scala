@@ -44,11 +44,11 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -115,11 +115,11 @@ final class ObserveTimeoutSpec extends AnyFunSuite with NiriMocks with GsaoiMock
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }

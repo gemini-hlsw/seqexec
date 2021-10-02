@@ -44,7 +44,7 @@ final case class SequenceGen[F[_]](
       .flatMap(_.generator.configActionCoord(r))
       .map { case (ex, ac) => ActionCoordsInSeq(stepId, ex, ac) }
 
-  def resourceAtCoords(c:       ActionCoordsInSeq): Option[Resource] =
+  def resourceAtCoords(c: ActionCoordsInSeq): Option[Resource] =
     steps
       .find(_.id === c.stepId)
       .collect { case p: SequenceGen.PendingStepGen[F] => p }
@@ -77,17 +77,17 @@ object SequenceGen {
     configs: Map[Resource, SystemOverrides => Action[F]],
     post:    (HeaderExtraData, SystemOverrides) => List[ParallelActions[F]]
   ) {
-    def generate(ctx:        HeaderExtraData, overrides: SystemOverrides): List[ParallelActions[F]] =
+    def generate(ctx: HeaderExtraData, overrides: SystemOverrides): List[ParallelActions[F]] =
       NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
         post(ctx, overrides)
 
-    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {
+    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)]   = {
       val i = configs.keys.toIndexedSeq.indexOf(r)
       (i >= 0)
         .option(i)
         .map(i => (ExecutionIndex(0), ActionIndex(i.toLong)))
     }
-    def resourceAtCoords(ex: ExecutionIndex, ac:         ActionIndex): Option[Resource]             =
+    def resourceAtCoords(ex: ExecutionIndex, ac: ActionIndex): Option[Resource] =
       if (ex.self === 0) configs.keys.toList.get(ac.self)
       else None
 

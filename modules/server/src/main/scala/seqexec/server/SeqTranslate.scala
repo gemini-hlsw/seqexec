@@ -542,7 +542,7 @@ object SeqTranslate {
       def adaptGcal(b: GcalController[F] => Gcal[F])(ov: SystemOverrides): Gcal[F] = b(
         overriddenSystems.gcal(ov)
       )
-      def defaultGcal: SystemOverrides => Gcal[F] = adaptGcal(Gcal.defaultGcal)
+      def defaultGcal: SystemOverrides => Gcal[F]                                  = adaptGcal(Gcal.defaultGcal)
 
       stepType match {
         case StepType.CelestialObject(inst) =>
@@ -573,7 +573,7 @@ object SeqTranslate {
             )
           }
 
-        case StepType.FlatOrArc(inst)   =>
+        case StepType.FlatOrArc(inst) =>
           for {
             tcs  <- getTcs(flatOrArcTcsSubsystems(inst),
                            useGaos = false,
@@ -595,7 +595,7 @@ object SeqTranslate {
             gcal <- Gcal.fromConfig(site == Site.GS, config)
           } yield Map(Resource.TCS -> tcs, Resource.Gcal -> adaptGcal(gcal) _)
 
-        case StepType.DarkOrBias(_)     => Map.empty[Resource, SystemOverrides => System[F]].pure[F]
+        case StepType.DarkOrBias(_) => Map.empty[Resource, SystemOverrides => System[F]].pure[F]
 
         case StepType.ExclusiveDarkOrBias(_) | StepType.DarkOrBiasNS(_) =>
           Map[Resource, SystemOverrides => System[F]](

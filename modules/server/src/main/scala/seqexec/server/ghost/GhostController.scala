@@ -38,7 +38,7 @@ object BundleConfig {
 sealed abstract class IFUNum(val ifuNum: Int) {
   val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
 }
-object IFUNum {
+object IFUNum                                 {
   case object IFU1 extends IFUNum(ifuNum = 1)
   case object IFU2 extends IFUNum(ifuNum = 2)
   implicit val ifuNumConfiguration: GiapiConfig[IFUNum] = _.ifuStr
@@ -46,8 +46,8 @@ object IFUNum {
 
 sealed abstract class IFUTargetType(val targetType: String)
 object IFUTargetType {
-  case object NoTarget    extends IFUTargetType(targetType = "IFU_TARGET_NONE")
-  case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
+  case object NoTarget                  extends IFUTargetType(targetType = "IFU_TARGET_NONE")
+  case object SkyPosition               extends IFUTargetType(targetType = "IFU_TARGET_SKY")
   final case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
   def determineType(name: Option[String]): IFUTargetType = name match {

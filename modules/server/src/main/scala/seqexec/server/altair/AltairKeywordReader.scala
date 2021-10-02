@@ -114,7 +114,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
     override def fsmtip: F[Double]   = sys.fsmtip.safeValOrDefault
     override def fsmtilt: F[Double]  = sys.fsmtilt.safeValOrDefault
     override def lgzmpos: F[Double]  = sys.lgzmpos.safeValOrDefault
-    override def naalt: F[Double] = {
+    override def naalt: F[Double]    = {
       val modela: Double = 210.0
       val modelb: Double = 1.01
       val f: Double      = 128.0

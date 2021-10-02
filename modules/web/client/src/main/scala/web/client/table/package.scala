@@ -118,10 +118,10 @@ package object table {
    */
   def colWidthsO[A, B, G[_]: Foldable](
     items: G[A],
-    cols: NonEmptyList[B],
-    get:  Map[B, A => Option[String]],
-    minW: Map[B, Double],
-    adj:  Map[B, Double]
+    cols:  NonEmptyList[B],
+    get:   Map[B, A => Option[String]],
+    minW:  Map[B, Double],
+    adj:   Map[B, Double]
   ): B => Option[Double] =
     // Find the longest string per column
     items

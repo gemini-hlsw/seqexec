@@ -11,7 +11,7 @@ import squants.time.Time
 import squants.time.TimeUnit
 
 package model {
-  final case class QueueId(self: UUID) extends AnyVal
+  final case class QueueId(self: UUID)  extends AnyVal
   final case class ClientId(self: UUID) extends AnyVal
 }
 

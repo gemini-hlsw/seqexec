@@ -31,7 +31,7 @@ object Formatting {
       offsetsWidth:    Double,
       axisLabelWidth:  Double,
       nsNodLabelWidth: Double
-    )                     extends OffsetsDisplay
+    ) extends OffsetsDisplay
     implicit val eq: Eq[OffsetsDisplay] =
       Eq.by {
         case NoDisplay                  => None

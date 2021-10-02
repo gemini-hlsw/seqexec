@@ -202,11 +202,11 @@ object GPIExample extends cats.effect.IOApp {
   val gpiSequence: IO[CommandResult] =
     gpi.use { client =>
       for {
-        _ <- client.calExitShutter(true) // Open the shutter
-        _ <- client.observingMode("Y_coron") // Change observing mode
-        _ <- client.ifsConfigure(1.5, 1, 4) // Configure the IFS
+        _ <- client.calExitShutter(true)                 // Open the shutter
+        _ <- client.observingMode("Y_coron")             // Change observing mode
+        _ <- client.ifsConfigure(1.5, 1, 4)              // Configure the IFS
         f <- client.observe("TEST_S20180509", 5.seconds) // observe
-        _ <- client.park // Park at the end
+        _ <- client.park                                 // Park at the end
       } yield f
     }
 

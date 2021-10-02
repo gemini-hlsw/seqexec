@@ -20,13 +20,13 @@ import seqexec.model.UserDetails
 import seqexec.model.config._
 import seqexec.web.server.security.AuthenticationService.AuthResult
 
-sealed trait AuthenticationFailure extends Product with Serializable
-final case class UserNotFound(user: String) extends AuthenticationFailure
+sealed trait AuthenticationFailure            extends Product with Serializable
+final case class UserNotFound(user: String)   extends AuthenticationFailure
 final case class BadCredentials(user: String) extends AuthenticationFailure
-case object NoAuthenticator        extends AuthenticationFailure
-final case class GenericFailure(msg: String) extends AuthenticationFailure
+case object NoAuthenticator                   extends AuthenticationFailure
+final case class GenericFailure(msg: String)  extends AuthenticationFailure
 final case class DecodingFailure(msg: String) extends AuthenticationFailure
-case object MissingCookie          extends AuthenticationFailure
+case object MissingCookie                     extends AuthenticationFailure
 
 /**
  * Interface for implementations that can authenticate users from a username/pwd pair

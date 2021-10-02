@@ -29,9 +29,9 @@ class SeqTranslateSpec extends AnyFlatSpec {
   implicit val ioTimer: Timer[IO]        = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
-  private val config: CleanConfig = CleanConfig.empty
-  private val fileId              = "DummyFileId"
-  private val seqId               = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
+  private val config: CleanConfig                                                     = CleanConfig.empty
+  private val fileId                                                                  = "DummyFileId"
+  private val seqId                                                                   = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState[IO]): NonEmptyList[Action[IO]] =
     NonEmptyList.one(
       Action(ActionType.Observe,

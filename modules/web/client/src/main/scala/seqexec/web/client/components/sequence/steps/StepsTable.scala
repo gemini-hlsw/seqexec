@@ -362,7 +362,7 @@ final case class StepsTable(
     stepsTable.configTableState
   // Find out if offsets should be displayed
   val offsetsDisplay: OffsetsDisplay                            = stepsList.offsetsDisplay
-  private def showProp(p: InstrumentProperties): Boolean =
+  private def showProp(p: InstrumentProperties): Boolean        =
     steps.exists(s => s.instrument.displayItems.contains(p))
 
   val showOffsets: Boolean =
@@ -616,7 +616,7 @@ object StepsTable extends Columns {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) => ObjectTypeCell(i, row.step, size)
 
-  private val stepRowStyle: Step => Css          = {
+  private val stepRowStyle: Step => Css = {
     case s if s.hasError                       => SeqexecStyles.rowError
     case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
     case s if s.status === StepState.Paused    => SeqexecStyles.rowWarning

@@ -21,7 +21,7 @@ object SystemEvent {
     stepId: StepId,
     i:      Int,
     r:      OKStopped[R]
-  )                extends SystemEvent[Nothing]
+  ) extends SystemEvent[Nothing]
   final case class Aborted[R <: RetVal](id: Observation.Id, stepId: StepId, i: Int, r: OKAborted[R])
       extends SystemEvent[Nothing]
   final case class PartialResult[R <: PartialVal](
@@ -29,16 +29,16 @@ object SystemEvent {
     stepId: StepId,
     i:      Int,
     r:      Partial[R]
-  )                extends SystemEvent[Nothing]
+  ) extends SystemEvent[Nothing]
   final case class Paused[F[_]](id: Observation.Id, i: Int, r: Result.Paused[F])
       extends SystemEvent[F]
   final case class Failed(id: Observation.Id, i: Int, e: Result.Error) extends SystemEvent[Nothing]
-  final case class Busy(id: Observation.Id, clientId: ClientId) extends SystemEvent[Nothing]
-  final case class BreakpointReached(id: Observation.Id) extends SystemEvent[Nothing]
-  final case class Executed(id: Observation.Id) extends SystemEvent[Nothing]
-  final case class Executing(id: Observation.Id) extends SystemEvent[Nothing]
-  final case class Finished(id: Observation.Id) extends SystemEvent[Nothing]
-  case object Null extends SystemEvent[Nothing]
+  final case class Busy(id: Observation.Id, clientId: ClientId)        extends SystemEvent[Nothing]
+  final case class BreakpointReached(id: Observation.Id)               extends SystemEvent[Nothing]
+  final case class Executed(id: Observation.Id)                        extends SystemEvent[Nothing]
+  final case class Executing(id: Observation.Id)                       extends SystemEvent[Nothing]
+  final case class Finished(id: Observation.Id)                        extends SystemEvent[Nothing]
+  case object Null                                                     extends SystemEvent[Nothing]
 
   // Single action commands
   final case class SingleRunCompleted[R <: RetVal](actionCoords: ActionCoords, r: OK[R])

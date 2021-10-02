@@ -59,7 +59,7 @@ class SeqexecUIApiRoutesSpec extends CatsSuite with ClientBooEncoders with TestR
       s <- r.map(_.status).pure[IO]
       k <- r.map(_.cookies).orEmpty.pure[IO]
       t  = k.find(_.name === "token")
-      c  = t.map(_.content).exists(_ === "") // Cleared cookie
+      c = t.map(_.content).exists(_ === "") // Cleared cookie
     } yield assert(c && s === Some(Status.Ok))).unsafeRunSync()
   }
 

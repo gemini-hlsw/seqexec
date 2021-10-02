@@ -193,7 +193,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         // PreviewSequenceTab.tableState.modify(tsUpd) >>>
         PreviewSequenceTab.currentSequence.set(s) >>>
           PreviewSequenceTab.stepConfig.set(None)
-      val q      = withPreviewTab(s).tabs
+      val q = withPreviewTab(s).tabs
         .findFocus(_.isPreview)
         .map(_.modify(SeqexecTab.previewTab.modify(update)))
       q
