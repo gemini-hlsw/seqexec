@@ -41,7 +41,7 @@ object TcsSettleTimeCalculator {
   val settleTimeCalculators: Map[Subsystem, SettleTimeCalculator] = Map(
     Subsystem.Mount -> constantSettleTime(1.seconds),
     Subsystem.PWFS1 -> constantSettleTime(1.seconds),
-    Subsystem.PWFS2 -> constantSettleTime(1.seconds)
+    Subsystem.PWFS2 -> constantSettleTime(2.seconds)
   )
 
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
@@ -70,7 +70,7 @@ object TcsSettleTimeCalculator {
     inst:        Instrument
   ): Time = {
     val displacement = calcDisplacement(startOffset, endOffset)
-    (subsystems.exists(_ === Subsystem.OIWFS).option(oiwfsSettleTimeCalculators(inst))
+    (subsystems.contains(Subsystem.OIWFS).option(oiwfsSettleTimeCalculators(inst))
       :: subsystems.toList.map(settleTimeCalculators.get)).flattenOption
       .map(_.calc(displacement))
       .maximumOption
