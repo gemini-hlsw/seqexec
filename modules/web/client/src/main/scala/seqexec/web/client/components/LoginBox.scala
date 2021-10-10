@@ -71,13 +71,13 @@ object LoginBox {
       b.modState(State.username.set(v))
     }
 
-    def loggedInEvent(u:     UserDetails): Callback =
+    def loggedInEvent(u: UserDetails): Callback =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(LoggedIn(u))
-    def updateProgressMsg(m: String): Callback      =
+    def updateProgressMsg(m: String): Callback  =
       b.modState(State.progressMsg.set(m.some) >>> State.errorMsg.set(none))
-    def updateErrorMsg(m:    String): Callback      =
+    def updateErrorMsg(m: String): Callback     =
       b.modState(State.errorMsg.set(m.some) >>> State.progressMsg.set(none))
-    def closeBox: Callback =
+    def closeBox: Callback                      =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
     val attemptLogin = (e: ReactEvent, _: Form.FormProps) =>

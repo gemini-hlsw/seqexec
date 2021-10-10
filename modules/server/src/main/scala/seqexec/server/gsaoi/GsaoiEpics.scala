@@ -36,28 +36,28 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
 
     val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
-    def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
+    def setFowlerSamples(v: Int): F[Unit]           = setParameter(fowlerSamples, Integer.valueOf(v))
 
     val readMode: Option[CaParameter[String]] = cs.map(_.getString("readMode"))
-    def setReadMode(v: String): F[Unit] = setParameter(readMode, v)
+    def setReadMode(v: String): F[Unit]       = setParameter(readMode, v)
 
     val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    def setExposureTime(v: Double): F[Unit]        = setParameter(exposureTime, JDouble.valueOf(v))
 
     val roi: Option[CaParameter[String]] = cs.map(_.getString("roi"))
-    def setRoi(v: String): F[Unit] = setParameter(roi, v)
+    def setRoi(v: String): F[Unit]       = setParameter(roi, v)
 
     val resetDelay: Option[CaParameter[JDouble]] = cs.map(_.getDouble("resetDelay"))
-    def setResetDelay(v: Double): F[Unit] = setParameter(resetDelay, JDouble.valueOf(v))
+    def setResetDelay(v: Double): F[Unit]        = setParameter(resetDelay, JDouble.valueOf(v))
 
     val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
-    def setNumberOfResets(v: Int): F[Unit] = setParameter(numberOfResets, Integer.valueOf(v))
+    def setNumberOfResets(v: Int): F[Unit]           = setParameter(numberOfResets, Integer.valueOf(v))
 
     val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setNumberOfCoadds(v: Int): F[Unit] = setParameter(coadds, Integer.valueOf(v))
+    def setNumberOfCoadds(v: Int): F[Unit]   = setParameter(coadds, Integer.valueOf(v))
 
     val referenceSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfRefSamples"))
-    def setReferenceSamples(v: Int): F[Unit] = setParameter(referenceSamples, Integer.valueOf(v))
+    def setReferenceSamples(v: Int): F[Unit]           = setParameter(referenceSamples, Integer.valueOf(v))
 
   }
 
@@ -67,13 +67,13 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
 
     val filter: Option[CaParameter[String]] = cs.map(_.getString("filter"))
-    def setFilter(v: String): F[Unit] = setParameter(filter, v)
+    def setFilter(v: String): F[Unit]       = setParameter(filter, v)
 
     val utilWheel: Option[CaParameter[String]] = cs.map(_.getString("utilWheel"))
-    def setUtilWheel(v: String): F[Unit] = setParameter(utilWheel, v)
+    def setUtilWheel(v: String): F[Unit]       = setParameter(utilWheel, v)
 
     val windowCover: Option[CaParameter[String]] = cs.map(_.getString("windowCover"))
-    def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
+    def setWindowCover(v: String): F[Unit]       = setParameter(windowCover, v)
 
   }
 
@@ -107,7 +107,7 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     override protected val os: Option[CaApplySender]   = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): F[Unit] = setParameter(label, v)
+    def setLabel(v: String): F[Unit]               = setParameter(label, v)
   }
 
   object endObserveCmd extends EpicsCommandBase[F](sysName) {

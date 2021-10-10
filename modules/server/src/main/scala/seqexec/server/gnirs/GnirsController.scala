@@ -91,12 +91,12 @@ object GnirsController {
   }
 
   sealed trait Filter2
-  case object Auto extends Filter2
+  case object Auto                       extends Filter2
   final case class Manual(f: Filter2Pos) extends Filter2
 
   sealed trait Focus
   object Focus {
-    case object Best extends Focus
+    case object Best                extends Focus
     final case class Manual(v: Int) extends Focus
   }
 

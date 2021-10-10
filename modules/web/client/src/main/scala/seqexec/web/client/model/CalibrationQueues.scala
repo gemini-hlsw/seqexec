@@ -62,7 +62,7 @@ object CalibrationQueues {
   implicit val eq: Eq[CalibrationQueues] =
     Eq.by(_.queues)
 
-  val Default: CalibrationQueues                =
+  val Default: CalibrationQueues =
     CalibrationQueues(SortedMap(CalibrationQueueId -> CalQueueState.Default))
 
   def queueO(

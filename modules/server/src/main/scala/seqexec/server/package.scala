@@ -47,7 +47,7 @@ package server {
     sequences:  Map[Observation.Id, SequenceData[F]]
   )
 
-  object EngineState {
+  object EngineState     {
     def default[F[_]]: EngineState[F] =
       EngineState[F](
         Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
@@ -99,7 +99,7 @@ package server {
 
 }
 
-package object server {
+package object server    {
   implicit def geEq[D <: SequenceableSpType]: Eq[D] =
     Eq[String].contramap(_.sequenceValue())
 
@@ -163,12 +163,12 @@ package object server {
       }
     }
 
-    def addSeq(sid:    Observation.Id): ExecutionQueue = q.copy(queue = q.queue :+ sid)
-    def addSeqs(sids:  List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
-    def removeSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue.filter(_ =!= sid))
-    def moveSeq(sid:   Observation.Id, delta: Int): ExecutionQueue =
+    def addSeq(sid: Observation.Id): ExecutionQueue              = q.copy(queue = q.queue :+ sid)
+    def addSeqs(sids: List[Observation.Id]): ExecutionQueue      = q.copy(queue = q.queue ++ sids)
+    def removeSeq(sid: Observation.Id): ExecutionQueue           = q.copy(queue = q.queue.filter(_ =!= sid))
+    def moveSeq(sid: Observation.Id, delta: Int): ExecutionQueue =
       q.copy(queue = moveElement(q.queue, sid, delta))
-    def clear: ExecutionQueue = q.copy(queue = List.empty)
+    def clear: ExecutionQueue                                    = q.copy(queue = List.empty)
   }
 
   implicit final class ToHandle[F[_]: Applicative, A](f: EngineState[F] => (EngineState[F], A)) {

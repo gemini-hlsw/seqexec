@@ -214,7 +214,7 @@ object TcsControllerEpicsCommon {
     }(cfg)
 
   private def calcGuideOff(current: BaseEpicsTcsConfig, demand: BasicTcsConfig): BasicTcsConfig = {
-    val mustOff = mustPauseWhileOffsetting(current, demand)
+    val mustOff                                            = mustPauseWhileOffsetting(current, demand)
     // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
     def calc(c: GuiderSensorOption, d: GuiderSensorOption) =
       (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
@@ -747,7 +747,7 @@ object TcsControllerEpicsCommon {
         _  <- guideOn(subsystems, s2, tcs)
       } yield ()
     }
-    override def notifyObserveStart: F[Unit]                        =
+    override def notifyObserveStart: F[Unit]              =
       L.debug("Send observe to TCS") *>
         epicsSys.observe.mark *>
         epicsSys.post(DefaultTimeout) *>

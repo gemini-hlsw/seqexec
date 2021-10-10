@@ -34,14 +34,14 @@ object TcsSettleTimeCalculator {
     override def counter: Angle = angle
 
     def times(a: Angle): Time = convertToBase(a)
-    def *(a:     Angle): Time = times(a)
+    def *(a: Angle): Time     = times(a)
   }
 
   // We are using constant values for now. Values are taken from old Seqexec
   val settleTimeCalculators: Map[Subsystem, SettleTimeCalculator] = Map(
     Subsystem.Mount -> constantSettleTime(1.seconds),
     Subsystem.PWFS1 -> constantSettleTime(1.seconds),
-    Subsystem.PWFS2 -> constantSettleTime(1.seconds)
+    Subsystem.PWFS2 -> constantSettleTime(2.seconds)
   )
 
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
@@ -70,7 +70,7 @@ object TcsSettleTimeCalculator {
     inst:        Instrument
   ): Time = {
     val displacement = calcDisplacement(startOffset, endOffset)
-    (subsystems.exists(_ === Subsystem.OIWFS).option(oiwfsSettleTimeCalculators(inst))
+    (subsystems.contains(Subsystem.OIWFS).option(oiwfsSettleTimeCalculators(inst))
       :: subsystems.toList.map(settleTimeCalculators.get)).flattenOption
       .map(_.calc(displacement))
       .maximumOption

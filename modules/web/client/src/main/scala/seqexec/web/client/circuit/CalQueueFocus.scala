@@ -40,7 +40,7 @@ object CalQueueFocus {
 
   def seqQueueOpsT(
     id: Observation.Id
-  ): Traversal[CalQueueFocus, QueueSeqOperations]     =
+  ): Traversal[CalQueueFocus, QueueSeqOperations] =
     CalQueueFocus.seqOps ^|->>
       filterIndex((oid: Observation.Id) => oid === id)
 

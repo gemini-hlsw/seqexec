@@ -55,7 +55,7 @@ object InstrumentSystem {
     continue:    ContinuePausedCmd[F],
     stopPaused:  StopPausedCmd[F],
     abortPaused: AbortPausedCmd[F]
-  )                                  extends ObserveControl[F]
+  ) extends ObserveControl[F]
   // Special class for instrument, that cannot pause/resume like IR instruments and GSAOI
   final case class UnpausableControl[F[_]](stop: StopObserveCmd[F], abort: AbortObserveCmd[F])
       extends ObserveControl[F]

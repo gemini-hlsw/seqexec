@@ -263,8 +263,8 @@ object NifsControllerEpics extends NifsEncoders {
 
     private def setMask(cfg: CCConfig): F[Option[F[Unit]]] = {
       def setMaskEpics(lm: LegacyMask): F[Option[F[Unit]]] = {
-        val mask      = encode(lm)
-        val setMaskIO = epicsSys.ccConfigCmd.setMask(mask)
+        val mask                                              = encode(lm)
+        val setMaskIO                                         = epicsSys.ccConfigCmd.setMask(mask)
         // Here we can assume that we are actually in the right position but have been offset if:
         // * The current position is INVALID
         // * The last selected position (which was validated) is the same as where we are demanded to go

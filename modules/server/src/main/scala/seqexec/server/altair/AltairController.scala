@@ -33,11 +33,11 @@ object AltairController {
 
   sealed trait AltairConfig
 
-  case object AltairOff extends AltairConfig
-  final case class Ngs(blend: Boolean, starPos: (Length, Length)) extends AltairConfig
+  case object AltairOff                                                         extends AltairConfig
+  final case class Ngs(blend: Boolean, starPos: (Length, Length))               extends AltairConfig
   final case class Lgs(strap: Boolean, sfo: Boolean, starPos: (Length, Length)) extends AltairConfig
-  case object LgsWithP1 extends AltairConfig
-  case object LgsWithOi extends AltairConfig
+  case object LgsWithP1                                                         extends AltairConfig
+  case object LgsWithOi                                                         extends AltairConfig
 
   type FieldLens = edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 

@@ -219,7 +219,7 @@ object TcsConfigRetriever {
 
     private def getCwfs[T: DetectorStateOps: Eq](
       getFollow: F[Boolean]
-    )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
+    )(g:         VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
       trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
       fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
       wfs <- active.map { x =>

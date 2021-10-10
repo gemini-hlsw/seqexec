@@ -30,7 +30,7 @@ package tcs {
     override def counter: Length = length
 
     def times(l: Length): Angle = convertToBase(l)
-    def *(l:     Length): Angle = times(l)
+    def *(l: Length): Angle     = times(l)
 
     def divide(a: Angle): Length = convertToCounter(a)
   }
@@ -39,12 +39,12 @@ package tcs {
 
     implicit class AngleOps(a: Angle) {
       def dividedBy(fps: FocalPlaneScale): Length = fps.divide(a)
-      def /(fps:         FocalPlaneScale): Length = dividedBy(fps)
+      def /(fps: FocalPlaneScale): Length         = dividedBy(fps)
     }
 
     implicit class LengthOps(l: Length) {
       def times(fps: FocalPlaneScale): Angle = fps * l
-      def *(fps:     FocalPlaneScale): Angle = times(fps)
+      def *(fps: FocalPlaneScale): Angle     = times(fps)
     }
 
   }
@@ -55,7 +55,7 @@ package tcs {
 
 }
 
-package object tcs {
+package object tcs                                       {
   val BottomPort: Int  = 1
   val InvalidPort: Int = 0
 

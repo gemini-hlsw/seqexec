@@ -10,7 +10,7 @@ import seqexec.model.StepId
 sealed trait StepsTableTypeSelection extends Product with Serializable
 
 object StepsTableTypeSelection {
-  case object StepsTableSelected extends StepsTableTypeSelection
+  case object StepsTableSelected                         extends StepsTableTypeSelection
   final case class StepConfigTableSelected(step: StepId) extends StepsTableTypeSelection
 
   implicit val eq: Eq[StepsTableTypeSelection] = Eq.instance {

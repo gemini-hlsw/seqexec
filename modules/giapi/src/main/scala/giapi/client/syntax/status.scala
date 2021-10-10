@@ -16,15 +16,15 @@ object status {
   }
 
   implicit class ToGiapiStatusOpsOpt(val s: Option[StatusValue]) extends AnyVal {
-    def intValue: Option[Int]       = s.flatMap(StatusValue.intValue)
-    def stringValue: Option[String] = s.flatMap(StatusValue.stringValue)
-    def floatValue: Option[Float]   = s.flatMap(StatusValue.floatValue)
-    def doubleValue: Option[Double] = s.flatMap(StatusValue.doubleValue)
-    def intCfg(implicit ev:    GiapiConfig[Int]): Option[String]    =
+    def intValue: Option[Int]                                       = s.flatMap(StatusValue.intValue)
+    def stringValue: Option[String]                                 = s.flatMap(StatusValue.stringValue)
+    def floatValue: Option[Float]                                   = s.flatMap(StatusValue.floatValue)
+    def doubleValue: Option[Double]                                 = s.flatMap(StatusValue.doubleValue)
+    def intCfg(implicit ev: GiapiConfig[Int]): Option[String]       =
       intValue.map(ev.configValue)
     def stringCfg(implicit ev: GiapiConfig[String]): Option[String] =
       stringValue.map(ev.configValue)
-    def floatCfg(implicit ev:  GiapiConfig[Float]): Option[String]  =
+    def floatCfg(implicit ev: GiapiConfig[Float]): Option[String]   =
       floatValue.map(ev.configValue)
     def doubleCfg(implicit ev: GiapiConfig[Double]): Option[String] =
       doubleValue.map(ev.configValue)

@@ -102,7 +102,7 @@ object SeqexecAppRootModel {
 
   def executionQueuesT(
     id: QueueId
-  ): Traversal[SeqexecAppRootModel, ExecutionQueueView]           =
+  ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
       SequencesQueue.queues ^|->>
       filterIndex((qid: QueueId) => qid === id)

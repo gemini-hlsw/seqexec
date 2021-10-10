@@ -52,13 +52,13 @@ trait ModelLenses {
 
   // Focus on params with a prefix
   def paramValuesWithPrefixT(param: ParamName): Traversal[Parameters, String] =
-    parametersRoot ^|->> // map of parameters
+    parametersRoot ^|->>                                  // map of parameters
       filterIndex { n: ParamName => n.startsWith(param) } // parameter containing the name
 
   // Possible set of observe parameters
   def systemConfigL(system: SystemName): Lens[StepConfig, Option[Parameters]] =
-    stepConfigRoot ^|->  // map of systems
-      at(system)         // subsystem name
+    stepConfigRoot ^|-> // map of systems
+      at(system)        // subsystem name
 
   // Param name of a StepConfig
   def configParamValueO(
@@ -68,7 +68,7 @@ trait ModelLenses {
     systemConfigL(system) ^<-?                  // observe parameters
       some ^|->                                 // focus on the option
       paramValueL(system.withParam(param)) ^<-? // find the target name
-      some                                      // focus on the option
+      some // focus on the option
 
   // Focus on the sequence view
   val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] =
@@ -154,12 +154,12 @@ trait ModelLenses {
 
   def stepObserveOptional[A](
     systemName: SystemName,
-    param: String,
-    prism: Prism[String, A]
+    param:      String,
+    prism:      Prism[String, A]
   ): Optional[Step, A] =
     Step.config ^|-? // configuration of the step
       configParamValueO(systemName, param) ^<-?
-      prism          // step type
+      prism // step type
 
   val stringToStepTypeP: Prism[String, StepType] =
     Prism(StepType.fromString)(_.label)

@@ -222,7 +222,7 @@ object SessionQueueTable extends Columns {
       (ObsNameColumn, _.name)
     ).toMap
 
-    private val columnAdjustmens                    =
+    private val columnAdjustmens =
       Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
 
     val columnWidths: TableColumn => Option[Double] =

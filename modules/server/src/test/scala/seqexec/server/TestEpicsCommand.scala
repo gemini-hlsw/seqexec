@@ -120,7 +120,7 @@ object TestEpicsCommand {
   class DummyCmd[F[_]: Applicative] extends EpicsCommand[F] {
     override def post(timeout: FiniteDuration): F[ApplyCommandResult] =
       ApplyCommandResult.Completed.pure[F].widen[ApplyCommandResult]
-    override def mark: F[Unit] = Applicative[F].unit
+    override def mark: F[Unit]                                        = Applicative[F].unit
   }
 
 }

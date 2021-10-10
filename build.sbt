@@ -251,7 +251,7 @@ lazy val seqexec_web_client = project
   .dependsOn(seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
-lazy val seqexec_server     = project
+lazy val seqexec_server = project
   .in(file("modules/server"))
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)

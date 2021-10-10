@@ -85,7 +85,7 @@ object NifsController {
     numberOfResets:  Option[NumberOfResets],
     numberOfPeriods: Option[NumberOfPeriods],
     numberOfSamples: Option[NumberOfSamples]
-  )                     extends DCConfig                  {
+  ) extends DCConfig {
 
     val readMode: Either[EngReadMode, ReadMode] =
       edu.gemini.spModel.gemini.nifs.NIFSParams.ReadMode.BRIGHT_OBJECT_SPEC.asRight
@@ -111,7 +111,7 @@ object NifsController {
     wavelength:    CentralWavelength,
     maskOffset:    MaskOffset,
     windowCover:   WindowCover
-  )                        extends CCConfig
+  ) extends CCConfig
 
   final case class NifsConfig(cc: CCConfig, dc: DCConfig)
 

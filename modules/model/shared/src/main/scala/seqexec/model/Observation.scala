@@ -14,7 +14,7 @@ object Observation {
     def format: String =
       s"${ProgramId.fromString.reverseGet(pid)}-${Index.fromString.reverseGet(index)}"
   }
-  object Id {
+  object Id                                          {
 
     def fromString(s: String): Option[Observation.Id] =
       s.lastIndexOf('-') match {

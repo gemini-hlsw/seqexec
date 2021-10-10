@@ -20,10 +20,10 @@ import shapeless.tag
 import shapeless.tag.@@
 
 package config {
-  final case class SiteValueUnknown(site: String) extends FailureReason {
+  final case class SiteValueUnknown(site: String)         extends FailureReason {
     def description: String = s"site '$site' invalid"
   }
-  final case class ModeValueUnknown(mode: String) extends FailureReason {
+  final case class ModeValueUnknown(mode: String)         extends FailureReason {
     def description: String = s"mode '$mode' invalid"
   }
   final case class StrategyValueUnknown(strategy: String) extends FailureReason {

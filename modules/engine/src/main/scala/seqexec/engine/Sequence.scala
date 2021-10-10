@@ -397,7 +397,7 @@ object Sequence {
           self
         else self.copy(singleRuns = singleRuns + (c -> ActionState.Started))
 
-      override def failSingle(c:  ActionCoordsInSeq, err: Result.Error): State[F] =
+      override def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F] =
         if (getSingleState(c).started)
           self.copy(singleRuns = singleRuns + (c -> ActionState.Failed(err)))
         else

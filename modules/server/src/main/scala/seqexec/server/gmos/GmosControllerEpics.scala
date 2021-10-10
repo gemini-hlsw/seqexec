@@ -88,7 +88,7 @@ trait GmosEncoders {
     _.toSeconds.toInt
   )
 
-  implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double]         =
+  implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] =
     EncodeEpicsValue((l: Length) => l.toNanometers)
 
   implicit val electronicOffsetEncoder: EncodeEpicsValue[ElectronicOffset, Int] =
@@ -607,7 +607,7 @@ object GmosControllerEpics extends GmosEncoders {
         .mapN(new ROIValues(_, _, _, _) {})
 
     // Built from OCS ROI values
-    def fromOCS(roi:    ROI): Option[ROIValues] =
+    def fromOCS(roi: ROI): Option[ROIValues] =
       (XStart.fromInt(roi.getXStart),
        XSize.fromInt(roi.getXSize),
        YStart.fromInt(roi.getYStart),

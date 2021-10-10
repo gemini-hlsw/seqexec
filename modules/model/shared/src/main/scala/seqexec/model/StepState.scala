@@ -10,13 +10,13 @@ sealed abstract class StepState extends Product with Serializable
 
 object StepState {
 
-  case object Pending   extends StepState
-  case object Completed extends StepState
-  case object Skipped   extends StepState
-  case object Aborted   extends StepState
+  case object Pending                  extends StepState
+  case object Completed                extends StepState
+  case object Skipped                  extends StepState
+  case object Aborted                  extends StepState
   final case class Failed(msg: String) extends StepState
-  case object Running   extends StepState
-  case object Paused    extends StepState
+  case object Running                  extends StepState
+  case object Paused                   extends StepState
 
   implicit val equal: Eq[StepState] =
     Eq.instance {

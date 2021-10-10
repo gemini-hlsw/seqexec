@@ -48,11 +48,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -111,11 +111,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -159,11 +159,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -221,11 +221,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -281,11 +281,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -342,11 +342,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -402,11 +402,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }
@@ -462,11 +462,11 @@ final class ApplySenderSpec extends AnyFunSuite {
         observeErrorCount.incrementAndGet()
         ()
       }
-      def onPause(): Unit = {
+      def onPause(): Unit                = {
         observePauseCount.incrementAndGet()
         ()
       }
-      def onSuccess(): Unit = {
+      def onSuccess(): Unit              = {
         observeSuccessCount.incrementAndGet()
         ()
       }

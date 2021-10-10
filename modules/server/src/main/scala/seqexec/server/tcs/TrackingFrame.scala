@@ -9,10 +9,10 @@ import cats.implicits._
 sealed trait TrackingFrame
 
 object TrackingFrame {
-  case object AzimuthElevation extends TrackingFrame
-  case object FK5              extends TrackingFrame
-  case object FK4              extends TrackingFrame
-  case object Apparent         extends TrackingFrame
+  case object AzimuthElevation   extends TrackingFrame
+  case object FK5                extends TrackingFrame
+  case object FK4                extends TrackingFrame
+  case object Apparent           extends TrackingFrame
   case class Other(name: String) extends TrackingFrame
 
   implicit var trackingFrameEq: Eq[TrackingFrame] = Eq.instance {

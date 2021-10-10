@@ -1,6 +1,6 @@
 addSbtPlugin("edu.gemini" % "sbt-lucuma" % "0.3.8")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.7.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.7.1")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.1.0")
 
@@ -11,13 +11,13 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.10.0")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.8.1")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.0")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 
 // Built the version out of git
-addSbtPlugin("com.typesafe.sbt" % "sbt-git"    % "1.0.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git"    % "1.0.2")
 addSbtPlugin("com.dwijnand"     % "sbt-dynver" % "4.1.1")
 
 // Use NPM modules rather than webjars

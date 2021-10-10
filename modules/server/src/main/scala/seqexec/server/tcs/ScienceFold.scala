@@ -11,7 +11,7 @@ import seqexec.server.tcs.TcsController._
 sealed trait ScienceFold extends Product with Serializable
 
 object ScienceFold {
-  case object Parked extends ScienceFold
+  case object Parked                                                             extends ScienceFold
   final case class Position(source: LightSource, sink: LightSinkName, port: Int) extends ScienceFold
 
   implicit val positionEq: Eq[Position] = Eq.by(x => (x.source, x.sink, x.port))
