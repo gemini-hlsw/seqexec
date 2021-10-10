@@ -37,7 +37,7 @@ object StepItems {
   val gpiDispersers: Map[String, String] =
     GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
 
-  private val obsNames                   =
+  private val obsNames =
     GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
 
   implicit class StepOps(val s: Step) extends AnyVal {
@@ -62,7 +62,7 @@ object StepItems {
           s"${formatExposureTime(i)(e)} s".some
         case _                               => none
       }
-    def coAdds: Option[Int] = observeCoaddsO.getOption(s)
+    def coAdds: Option[Int]                               = observeCoaddsO.getOption(s)
 
     def fpu(i: Instrument): Option[String] =
       (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {

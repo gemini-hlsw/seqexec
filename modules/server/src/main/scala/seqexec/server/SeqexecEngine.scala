@@ -617,7 +617,7 @@ object SeqexecEngine {
       user:     UserDetails,
       clientId: ClientId
     ): EventType[F] = {
-      val lens =
+      val lens                                     =
         (EngineState.sequences[F] ^|-? index(sid))
           .modify(SequenceData.observer.set(observer.some)) >>>
           EngineState.instrumentLoadedL[F](i).set(sid.some) >>>
@@ -1031,7 +1031,7 @@ object SeqexecEngine {
      * runQueue starts the queue. It founds the top eligible sequences in the queue, and runs them.
      */
     private def runQueue(
-      qid: QueueId,
+      qid:      QueueId,
       observer: Observer,
       user:     UserDetails,
       clientId: ClientId
@@ -1590,11 +1590,11 @@ object SeqexecEngine {
     val seq        = st.toSequence
     val instrument = obsSeq.seqGen.instrument
 
-    def resources(s:     SequenceGen.StepGen[F]): List[Resource] = s match {
+    def resources(s: SequenceGen.StepGen[F]): List[Resource] = s match {
       case s: SequenceGen.PendingStepGen[F] => s.resources.toList
       case _                                => List.empty
     }
-    def engineSteps(seq: Sequence[F]): List[Step]                =
+    def engineSteps(seq: Sequence[F]): List[Step]            =
       obsSeq.seqGen.steps.zip(seq.steps).map { case (a, b) =>
         StepsView
           .stepsView(instrument)

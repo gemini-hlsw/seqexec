@@ -99,10 +99,10 @@ sealed trait ResourceRunRequested extends ResourceRunOperation {
 }
 
 object ResourceRunOperation {
-  case object ResourceRunIdle extends ResourceRunOperation
-  final case class ResourceRunInFlight(stepId: StepId) extends ResourceRunRequested
+  case object ResourceRunIdle                           extends ResourceRunOperation
+  final case class ResourceRunInFlight(stepId: StepId)  extends ResourceRunRequested
   final case class ResourceRunCompleted(stepId: StepId) extends ResourceRunRequested
-  final case class ResourceRunFailed(stepId: StepId) extends ResourceRunRequested
+  final case class ResourceRunFailed(stepId: StepId)    extends ResourceRunRequested
 
   def fromActionStatus(stepId: StepId): ActionStatus => Option[ResourceRunOperation] = {
     case ActionStatus.Running   => ResourceRunOperation.ResourceRunInFlight(stepId).some

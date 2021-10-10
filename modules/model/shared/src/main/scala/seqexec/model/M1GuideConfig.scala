@@ -13,7 +13,7 @@ sealed trait M1GuideConfig extends Product with Serializable {
 }
 
 object M1GuideConfig {
-  case object M1GuideOff extends M1GuideConfig {
+  case object M1GuideOff                       extends M1GuideConfig {
     override def uses(s: M1Source): Boolean = false
   }
   final case class M1GuideOn(source: M1Source) extends M1GuideConfig {

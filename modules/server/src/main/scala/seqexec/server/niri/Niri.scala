@@ -57,7 +57,7 @@ final case class Niri[F[_]: Timer: Logger: Concurrent](
 
   import Niri._
 
-  override val contributorName: String = "mko-dc-data-niri"
+  override val contributorName: String                                                 = "mko-dc-data-niri"
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     UnpausableControl(
       StopObserveCmd(_ => controller.stopObserve),

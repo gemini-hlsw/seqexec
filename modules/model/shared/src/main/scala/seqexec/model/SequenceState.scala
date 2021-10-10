@@ -46,11 +46,11 @@ sealed trait SequenceState extends Product with Serializable {
 
 object SequenceState {
 
-  case object Completed extends SequenceState
-  case object Idle      extends SequenceState
+  case object Completed                                              extends SequenceState
+  case object Idle                                                   extends SequenceState
   final case class Running(userStop: Boolean, internalStop: Boolean) extends SequenceState
-  final case class Failed(msg: String) extends SequenceState
-  case object Aborted   extends SequenceState
+  final case class Failed(msg: String)                               extends SequenceState
+  case object Aborted                                                extends SequenceState
 
   object Running {
     val init: Running =

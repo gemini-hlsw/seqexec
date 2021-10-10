@@ -11,8 +11,8 @@ sealed trait ActionType extends Product with Serializable
 
 object ActionType {
 
-  case object Observe   extends ActionType
-  case object Undefined extends ActionType // Used in tests
+  case object Observe                       extends ActionType
+  case object Undefined                     extends ActionType // Used in tests
   final case class Configure(sys: Resource) extends ActionType
 
   implicit val equal: Eq[ActionType] =

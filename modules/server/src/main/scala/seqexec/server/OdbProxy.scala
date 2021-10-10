@@ -45,18 +45,18 @@ object OdbProxy {
             .leftMap(SeqexecFailure.OdbSeqError)
         }).widenRethrowT
 
-      def queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences
-      def datasetStart(obsId:    Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
+      def queuedSequences: F[List[Observation.Id]]                                                = cmds.queuedSequences
+      def datasetStart(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean]    =
         cmds.datasetStart(obsId, dataId, fileId)
       def datasetComplete(obsId: Observation.Id, dataId: DataId, fileId: ImageFileId): F[Boolean] =
         cmds.datasetComplete(obsId, dataId, fileId)
-      def obsAbort(obsId:        Observation.Id, reason: String): F[Boolean] = cmds.obsAbort(obsId, reason)
-      def sequenceEnd(obsId:     Observation.Id): F[Boolean] = cmds.sequenceEnd(obsId)
-      def sequenceStart(obsId:   Observation.Id, dataId: DataId): F[Boolean] =
+      def obsAbort(obsId: Observation.Id, reason: String): F[Boolean]                             = cmds.obsAbort(obsId, reason)
+      def sequenceEnd(obsId: Observation.Id): F[Boolean]                                          = cmds.sequenceEnd(obsId)
+      def sequenceStart(obsId: Observation.Id, dataId: DataId): F[Boolean]                        =
         cmds.sequenceStart(obsId, dataId)
-      def obsContinue(obsId:     Observation.Id): F[Boolean] = cmds.obsContinue(obsId)
-      def obsPause(obsId:        Observation.Id, reason: String): F[Boolean] = cmds.obsPause(obsId, reason)
-      def obsStop(obsId:         Observation.Id, reason: String): F[Boolean] = cmds.obsStop(obsId, reason)
+      def obsContinue(obsId: Observation.Id): F[Boolean]                                          = cmds.obsContinue(obsId)
+      def obsPause(obsId: Observation.Id, reason: String): F[Boolean]                             = cmds.obsPause(obsId, reason)
+      def obsStop(obsId: Observation.Id, reason: String): F[Boolean]                              = cmds.obsStop(obsId, reason)
     }
 
   final class DummyOdbCommands[F[_]: Applicative] extends OdbCommands[F] {
@@ -70,13 +70,13 @@ object OdbProxy {
       dataId: DataId,
       fileId: ImageFileId
     ): F[Boolean] = true.pure[F]
-    override def obsAbort(obsId:      Observation.Id, reason: String): F[Boolean] = false.pure[F]
-    override def sequenceEnd(obsId:   Observation.Id): F[Boolean] = false.pure[F]
+    override def obsAbort(obsId: Observation.Id, reason: String): F[Boolean]      = false.pure[F]
+    override def sequenceEnd(obsId: Observation.Id): F[Boolean]                   = false.pure[F]
     override def sequenceStart(obsId: Observation.Id, dataId: DataId): F[Boolean] = false.pure[F]
-    override def obsContinue(obsId:   Observation.Id): F[Boolean] = false.pure[F]
-    override def obsPause(obsId:      Observation.Id, reason: String): F[Boolean] = false.pure[F]
-    override def obsStop(obsId:       Observation.Id, reason: String): F[Boolean] = false.pure[F]
-    override def queuedSequences: F[List[Observation.Id]] = List.empty.pure[F]
+    override def obsContinue(obsId: Observation.Id): F[Boolean]                   = false.pure[F]
+    override def obsPause(obsId: Observation.Id, reason: String): F[Boolean]      = false.pure[F]
+    override def obsStop(obsId: Observation.Id, reason: String): F[Boolean]       = false.pure[F]
+    override def queuedSequences: F[List[Observation.Id]]                         = List.empty.pure[F]
   }
 
   implicit class SeqexecSequenceOps(val s: SeqexecSequence) extends AnyVal {

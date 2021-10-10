@@ -27,7 +27,7 @@ object ProgressUtil {
 
   def fromFOption[F[_]: Functor: Timer](
     f: FiniteDuration => F[Option[Progress]]
-  ): Stream[F, Progress]      =
+  ): Stream[F, Progress] =
     Stream.awakeEvery[F](PollPeriod).evalMap(f).collect { case Some(p) => p }
 
   def fromStateT[F[_]: FlatMap: Timer, S](

@@ -63,7 +63,7 @@ package keywords {
   object GdsInstrument {
     def bundleKeywords[F[_]: Monad](
       ks: List[KeywordBag => F[KeywordBag]]
-    ): F[KeywordBag]                        =
+    ): F[KeywordBag] =
       ks.foldLeft(Applicative[F].pure(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
 
     def kb[F[_]: Monad]: KeywordsBundler[F] = new KeywordsBundler[F] {
@@ -139,11 +139,11 @@ package keywords {
   final case class StringKeyword(name: KeywordName, value: String)
       extends Keyword[String](name, TypeString, value)
   final case class FloatPrecisionKeyword(name: KeywordName, precision: Int, value: Float)
-      extends Keyword[Float](name, TypeFloat, value)   {
+      extends Keyword[Float](name, TypeFloat, value)                                   {
     override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value.toDouble)
   }
   final case class DoublePrecisionKeyword(name: KeywordName, precision: Int, value: Double)
-      extends Keyword[Double](name, TypeDouble, value) {
+      extends Keyword[Double](name, TypeDouble, value)                                 {
     override val stringValue: String = s"%.${precision}f".formatLocal(USLocale, value)
   }
 
@@ -177,7 +177,7 @@ package keywords {
 
     implicit val eq: Eq[KeywordBag]         = Eq.by(_.keywords)
     implicit val monoid: Monoid[KeywordBag] = new Monoid[KeywordBag] {
-      override def empty: KeywordBag = KeywordBag.empty
+      override def empty: KeywordBag                     = KeywordBag.empty
       override def combine(a: KeywordBag, b: KeywordBag) =
         KeywordBag(a.keywords |+| b.keywords)
     }
@@ -318,7 +318,7 @@ package object keywords {
     buildKeyword(get, name, BooleanKeyword)
   }
   def buildString[F[_]: MonadError[*[_], Throwable]](
-    get: F[String],
+    get:  F[String],
     name: KeywordName
   ): KeywordBag => F[KeywordBag] = buildKeyword(get, name, StringKeyword)
 
@@ -337,7 +337,7 @@ package object keywords {
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       Applicative[F].unit
-    override def sendAfter(id:     ImageFileId): F[Unit] =
+    override def sendAfter(id: ImageFileId): F[Unit]                         =
       Applicative[F].unit
   }
 

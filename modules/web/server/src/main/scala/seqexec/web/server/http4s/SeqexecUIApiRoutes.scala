@@ -161,8 +161,8 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
             .filter(filterOutNull)
             .filter(filterOutOnClientId(clientId))
             .map(toFrame)
-        val clientSocket = (ws.req.remoteAddr, ws.req.remotePort).mapN((a, p) => s"$a:$p").orEmpty
-        val userAgent    = ws.req.headers.get(`User-Agent`)
+        val clientSocket                                                = (ws.req.remoteAddr, ws.req.remotePort).mapN((a, p) => s"$a:$p").orEmpty
+        val userAgent                                                   = ws.req.headers.get(`User-Agent`)
 
         // We don't care about messages sent over ws by clients but we want to monitor
         // control frames and track that pings arrive from clients

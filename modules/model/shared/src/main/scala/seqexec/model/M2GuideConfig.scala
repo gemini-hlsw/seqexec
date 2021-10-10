@@ -14,7 +14,7 @@ sealed trait M2GuideConfig extends Product with Serializable {
 }
 
 object M2GuideConfig {
-  case object M2GuideOff extends M2GuideConfig {
+  case object M2GuideOff                                                    extends M2GuideConfig {
     override def uses(s: TipTiltSource): Boolean = false
   }
   final case class M2GuideOn(coma: ComaOption, sources: Set[TipTiltSource]) extends M2GuideConfig {

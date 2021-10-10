@@ -20,7 +20,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
   private implicit def unsafeLogger = NoOpLogger.impl[IO]
 
   val noWaitTio: Timer[IO] = new Timer[IO] {
-    override def clock: Clock[IO] = Clock.create[IO]
+    override def clock: Clock[IO]                          = Clock.create[IO]
     override def sleep(duration: FiniteDuration): IO[Unit] =
       IO.unit
   }

@@ -58,7 +58,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
 
   def valuesMapPickler[A: Enumerated, B: Monoid: Pickler](
     valuesMap: Map[B, A]
-  ): Pickler[A]                                    =
+  ): Pickler[A] =
     transformPickler((t: B) =>
       valuesMap
         .get(t)
@@ -71,8 +71,8 @@ trait ModelBooPicklers extends BooPicklerSyntax {
   implicit val timeProgressPickler =
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
 
-  implicit val instrumentPickler   = enumeratedPickler[Instrument]
-  implicit val resourcePickler     = enumeratedPickler[Resource]
+  implicit val instrumentPickler = enumeratedPickler[Instrument]
+  implicit val resourcePickler   = enumeratedPickler[Resource]
 
   implicit val operatorPickler  = generatePickler[Operator]
   implicit val overridesPickler = generatePickler[SystemOverrides]
@@ -83,7 +83,7 @@ trait ModelBooPicklers extends BooPicklerSyntax {
 
   implicit val userDetailsPickler = generatePickler[UserDetails]
 
-  implicit val instantPickler       =
+  implicit val instantPickler =
     transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
 
   implicit val cloudCoverPickler    = enumeratedPickler[CloudCover]

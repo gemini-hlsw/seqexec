@@ -959,9 +959,9 @@ object TestTcsEpics {
 
   sealed trait TestTcsEvent extends Product with Serializable
   object TestTcsEvent {
-    final case class M1GuideCmd(newState: String) extends TestTcsEvent
-    final case class M2GuideCmd(newState: String) extends TestTcsEvent
-    final case class M2GuideModeCmd(newComaState: String) extends TestTcsEvent
+    final case class M1GuideCmd(newState: String)                extends TestTcsEvent
+    final case class M2GuideCmd(newState: String)                extends TestTcsEvent
+    final case class M2GuideModeCmd(newComaState: String)        extends TestTcsEvent
     final case class M2GuideConfigCmd(source: String, beam: String, reset: String)
         extends TestTcsEvent
     final case class MountGuideCmd(source: String, mode: String) extends TestTcsEvent
@@ -970,33 +970,33 @@ object TestTcsEpics {
       nodchopb:  String,
       nodbchopa: String,
       nodbchopb: String
-    )                               extends TestTcsEvent
+    ) extends TestTcsEvent
     final case class Pwfs2ProbeGuideConfig(
       nodachopa: String,
       nodchopb:  String,
       nodbchopa: String,
       nodbchopb: String
-    )                               extends TestTcsEvent
+    ) extends TestTcsEvent
     final case class OiwfsProbeGuideConfig(
       nodachopa: String,
       nodchopb:  String,
       nodbchopa: String,
       nodbchopb: String
-    )                               extends TestTcsEvent
-    final case class OffsetACmd(p: Double, q: Double) extends TestTcsEvent
-    final case class WavelSourceACmd(w: Double) extends TestTcsEvent
-    final case class Pwfs1ProbeFollowCmd(state: String) extends TestTcsEvent
-    final case class Pwfs2ProbeFollowCmd(state: String) extends TestTcsEvent
-    final case class OiwfsProbeFollowCmd(state: String) extends TestTcsEvent
-    case object Pwfs1ParkCmd        extends TestTcsEvent
-    case object Pwfs2ParkCmd        extends TestTcsEvent
-    case object OiwfsParkCmd        extends TestTcsEvent
-    case object Pwfs1ObserveCmd     extends TestTcsEvent
-    case object Pwfs2ObserveCmd     extends TestTcsEvent
-    case object OiwfsObserveCmd     extends TestTcsEvent
-    case object Pwfs1StopObserveCmd extends TestTcsEvent
-    case object Pwfs2StopObserveCmd extends TestTcsEvent
-    case object OiwfsStopObserveCmd extends TestTcsEvent
+    ) extends TestTcsEvent
+    final case class OffsetACmd(p: Double, q: Double)            extends TestTcsEvent
+    final case class WavelSourceACmd(w: Double)                  extends TestTcsEvent
+    final case class Pwfs1ProbeFollowCmd(state: String)          extends TestTcsEvent
+    final case class Pwfs2ProbeFollowCmd(state: String)          extends TestTcsEvent
+    final case class OiwfsProbeFollowCmd(state: String)          extends TestTcsEvent
+    case object Pwfs1ParkCmd                                     extends TestTcsEvent
+    case object Pwfs2ParkCmd                                     extends TestTcsEvent
+    case object OiwfsParkCmd                                     extends TestTcsEvent
+    case object Pwfs1ObserveCmd                                  extends TestTcsEvent
+    case object Pwfs2ObserveCmd                                  extends TestTcsEvent
+    case object OiwfsObserveCmd                                  extends TestTcsEvent
+    case object Pwfs1StopObserveCmd                              extends TestTcsEvent
+    case object Pwfs2StopObserveCmd                              extends TestTcsEvent
+    case object OiwfsStopObserveCmd                              extends TestTcsEvent
 
     implicit val eqTestTcsEvPent: Eq[TestTcsEvent] = Eq.instance {
       case (Pwfs1ParkCmd, Pwfs1ParkCmd)                                           => true

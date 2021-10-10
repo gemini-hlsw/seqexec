@@ -33,15 +33,15 @@ object Flamingos2Controller {
 
   sealed trait FocalPlaneUnit extends Product with Serializable
   object FocalPlaneUnit {
-    case object Open        extends FocalPlaneUnit
-    case object GridSub1Pix extends FocalPlaneUnit
-    case object Grid2Pix    extends FocalPlaneUnit
-    case object Slit1Pix    extends FocalPlaneUnit
-    case object Slit2Pix    extends FocalPlaneUnit
-    case object Slit3Pix    extends FocalPlaneUnit
-    case object Slit4Pix    extends FocalPlaneUnit
-    case object Slit6Pix    extends FocalPlaneUnit
-    case object Slit8Pix    extends FocalPlaneUnit
+    case object Open                      extends FocalPlaneUnit
+    case object GridSub1Pix               extends FocalPlaneUnit
+    case object Grid2Pix                  extends FocalPlaneUnit
+    case object Slit1Pix                  extends FocalPlaneUnit
+    case object Slit2Pix                  extends FocalPlaneUnit
+    case object Slit3Pix                  extends FocalPlaneUnit
+    case object Slit4Pix                  extends FocalPlaneUnit
+    case object Slit6Pix                  extends FocalPlaneUnit
+    case object Slit8Pix                  extends FocalPlaneUnit
     final case class Custom(mask: String) extends FocalPlaneUnit
     implicit val equal: Eq[FocalPlaneUnit] = Eq.fromUniversalEquals
   }
@@ -80,19 +80,19 @@ object Flamingos2Controller {
     l:   Lyot,
     g:   Grism
   ) {
-    def setWindowCover(windowCover: WindowCover): CCConfig    = this.copy(w = windowCover)
-    def setDecker(decker:           Decker): CCConfig         = this.copy(d = decker)
-    def setFPU(focalPlaneUnit:      FocalPlaneUnit): CCConfig = this.copy(fpu = focalPlaneUnit)
-    def setFilter(filter:           Filter): CCConfig         = this.copy(f = filter)
-    def setLyot(lyot:               Lyot): CCConfig           = this.copy(l = lyot)
-    def setGrism(grism:             Grism): CCConfig          = this.copy(g = grism)
+    def setWindowCover(windowCover: WindowCover): CCConfig = this.copy(w = windowCover)
+    def setDecker(decker: Decker): CCConfig                = this.copy(d = decker)
+    def setFPU(focalPlaneUnit: FocalPlaneUnit): CCConfig   = this.copy(fpu = focalPlaneUnit)
+    def setFilter(filter: Filter): CCConfig                = this.copy(f = filter)
+    def setLyot(lyot: Lyot): CCConfig                      = this.copy(l = lyot)
+    def setGrism(grism: Grism): CCConfig                   = this.copy(g = grism)
   }
 
   final case class DCConfig(t: ExposureTime, n: Reads, r: ReadoutMode, b: BiasMode) {
     def setExposureTime(exposureTime: ExposureTime): DCConfig = this.copy(t = exposureTime)
-    def setNumReads(numReads:         Reads): DCConfig        = this.copy(n = numReads)
-    def setReadoutMode(readoutMode:   ReadoutMode): DCConfig  = this.copy(r = readoutMode)
-    def setBiasMode(biasMode:         BiasMode): DCConfig     = this.copy(b = biasMode)
+    def setNumReads(numReads: Reads): DCConfig                = this.copy(n = numReads)
+    def setReadoutMode(readoutMode: ReadoutMode): DCConfig    = this.copy(r = readoutMode)
+    def setBiasMode(biasMode: BiasMode): DCConfig             = this.copy(b = biasMode)
   }
 
   final case class Flamingos2Config(cc: CCConfig, dc: DCConfig) {

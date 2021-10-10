@@ -12,12 +12,12 @@ import fs2.concurrent.SignallingRef
 sealed trait StatusValue extends Product with Serializable
 
 object StatusValue {
-  final case class IntValue(value: Int) extends StatusValue
+  final case class IntValue(value: Int)       extends StatusValue
   final case class StringValue(value: String) extends StatusValue
-  final case class FloatValue(value: Float) extends StatusValue
+  final case class FloatValue(value: Float)   extends StatusValue
   final case class DoubleValue(value: Double) extends StatusValue
 
-  def intValue(s:    StatusValue): Option[Int]    = s match {
+  def intValue(s: StatusValue): Option[Int]       = s match {
     case IntValue(v) => ItemGetter[Int].value(v)
     case _           => none
   }
@@ -25,7 +25,7 @@ object StatusValue {
     case StringValue(v) => ItemGetter[String].value(v)
     case _              => none
   }
-  def floatValue(s:  StatusValue): Option[Float]  = s match {
+  def floatValue(s: StatusValue): Option[Float]   = s match {
     case FloatValue(v) => ItemGetter[Float].value(v)
     case _             => none
   }

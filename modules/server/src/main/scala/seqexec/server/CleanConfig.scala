@@ -45,7 +45,7 @@ final case class CleanConfig(config: Config, overrides: Map[ItemKey, AnyRef]) {
       overrides.map { case (k, v) => new ItemEntry(k, v) }
 
   // config syntax: cfg.toStepConfig
-  def toStepConfig: StepConfig     =
+  def toStepConfig: StepConfig =
     itemEntries.groupBy(_.getKey.getRoot).map { case (subsystem, entries) =>
       SystemName.unsafeFromString(subsystem.getName) ->
         entries.map { e =>

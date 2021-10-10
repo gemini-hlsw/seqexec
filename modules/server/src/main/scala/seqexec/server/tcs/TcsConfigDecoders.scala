@@ -53,7 +53,7 @@ trait TcsConfigDecoders {
     else AoFold.Out
   )
 
-  implicit val decodeFollowOption: DecodeEpicsValue[String, FollowOption]                 =
+  implicit val decodeFollowOption: DecodeEpicsValue[String, FollowOption] =
     DecodeEpicsValue((s: String) => if (s.trim === "Off") FollowOff else FollowOn)
 
   implicit val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] =

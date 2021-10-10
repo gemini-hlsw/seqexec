@@ -241,8 +241,8 @@ package client {
         def connect: F[Giapi[F]] =
           for {
             c <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
-            _ <- Sync[F].delay(c.startConnection()) // Start the connection
-            c <- build(c) // Build the interpreter
+            _ <- Sync[F].delay(c.startConnection())          // Start the connection
+            c <- build(c)                                    // Build the interpreter
           } yield c
       }
 
@@ -251,14 +251,14 @@ package client {
      */
     def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
-        override def get[A: ItemGetter](statusItem:    String): Id[A] =
+        override def get[A: ItemGetter](statusItem: String): Id[A]                         =
           sys.error(s"Cannot read $statusItem")
-        override def getO[A: ItemGetter](statusItem:   String): Id[Option[A]] = None
-        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] =
+        override def getO[A: ItemGetter](statusItem: String): Id[Option[A]]                = None
+        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]]          =
           sys.error(s"Cannot read $statusItem")
-        override def command(command:                  Command, timeout: FiniteDuration): Id[CommandResult] =
+        override def command(command: Command, timeout: FiniteDuration): Id[CommandResult] =
           CommandResult(Response.COMPLETED)
-        override def close: Id[Unit] = ()
+        override def close: Id[Unit]                                                       = ()
       }
     }
 
@@ -270,12 +270,12 @@ package client {
       F: ApplicativeError[F, Throwable]
     ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {
-        override def get[A: ItemGetter](statusItem:    String): F[A] =
+        override def get[A: ItemGetter](statusItem: String): F[A]                         =
           F.raiseError(new RuntimeException(s"Cannot read $statusItem"))
-        override def getO[A: ItemGetter](statusItem:   String): F[Option[A]] = F.pure(None)
-        override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =
+        override def getO[A: ItemGetter](statusItem: String): F[Option[A]]                = F.pure(None)
+        override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]]           =
           F.pure(Stream.empty.covary[F])
-        override def command(command:                  Command, timeout: FiniteDuration): F[CommandResult] =
+        override def command(command: Command, timeout: FiniteDuration): F[CommandResult] =
           if (command.sequenceCommand === SequenceCommand.OBSERVE) {
             T.sleep(timeout) *>
               F.pure(CommandResult(Response.COMPLETED))
@@ -283,7 +283,7 @@ package client {
             T.sleep(5.seconds) *>
               F.pure(CommandResult(Response.COMPLETED))
           }
-        override def close: F[Unit] = F.unit
+        override def close: F[Unit]                                                       = F.unit
       })
     }
 

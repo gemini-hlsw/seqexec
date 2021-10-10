@@ -14,9 +14,9 @@ sealed trait QueueManipulationOp extends Product with Serializable {
 object QueueManipulationOp {
   final case class Moved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int)
       extends QueueManipulationOp
-  final case class Started(qid: QueueId) extends QueueManipulationOp
-  final case class Stopped(qid: QueueId) extends QueueManipulationOp
-  final case class Clear(qid: QueueId) extends QueueManipulationOp
+  final case class Started(qid: QueueId)                               extends QueueManipulationOp
+  final case class Stopped(qid: QueueId)                               extends QueueManipulationOp
+  final case class Clear(qid: QueueId)                                 extends QueueManipulationOp
   final case class AddedSeqs(qid: QueueId, seqs: List[Observation.Id]) extends QueueManipulationOp
   final case class RemovedSeqs(qid: QueueId, seqs: List[Observation.Id], positions: List[Int])
       extends QueueManipulationOp

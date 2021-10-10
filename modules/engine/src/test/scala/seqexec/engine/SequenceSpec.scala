@@ -195,14 +195,14 @@ class SequenceSpec extends AnyFlatSpec {
 
   def simpleSequenceZipper(focus: Step.Zipper[IO]): Sequence.Zipper[IO] =
     Sequence.Zipper(seqId, Nil, focus, Nil)
-  val seqz0: Sequence.Zipper[IO]   = simpleSequenceZipper(stepz0)
-  val seqza0: Sequence.Zipper[IO]  = simpleSequenceZipper(stepza0)
-  val seqza1: Sequence.Zipper[IO]  = simpleSequenceZipper(stepza1)
-  val seqzr0: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr0)
-  val seqzr1: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr1)
-  val seqzr2: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr2)
-  val seqzar0: Sequence.Zipper[IO] = simpleSequenceZipper(stepzar0)
-  val seqzar1: Sequence.Zipper[IO] = simpleSequenceZipper(stepzar1)
+  val seqz0: Sequence.Zipper[IO]                                        = simpleSequenceZipper(stepz0)
+  val seqza0: Sequence.Zipper[IO]                                       = simpleSequenceZipper(stepza0)
+  val seqza1: Sequence.Zipper[IO]                                       = simpleSequenceZipper(stepza1)
+  val seqzr0: Sequence.Zipper[IO]                                       = simpleSequenceZipper(stepzr0)
+  val seqzr1: Sequence.Zipper[IO]                                       = simpleSequenceZipper(stepzr1)
+  val seqzr2: Sequence.Zipper[IO]                                       = simpleSequenceZipper(stepzr2)
+  val seqzar0: Sequence.Zipper[IO]                                      = simpleSequenceZipper(stepzar0)
+  val seqzar1: Sequence.Zipper[IO]                                      = simpleSequenceZipper(stepzar1)
 
   "next" should "be None when there are no more pending executions" in {
     assert(seqz0.next.isEmpty)

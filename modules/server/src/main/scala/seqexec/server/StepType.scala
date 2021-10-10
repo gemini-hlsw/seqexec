@@ -12,18 +12,18 @@ sealed trait StepType {
 }
 
 object StepType {
-  final case class CelestialObject(override val instrument: Instrument) extends StepType
-  final case class NodAndShuffle(override val instrument: Instrument) extends StepType
-  final case class Gems(override val instrument: Instrument) extends StepType
-  final case class AltairObs(override val instrument: Instrument) extends StepType
+  final case class CelestialObject(override val instrument: Instrument)     extends StepType
+  final case class NodAndShuffle(override val instrument: Instrument)       extends StepType
+  final case class Gems(override val instrument: Instrument)                extends StepType
+  final case class AltairObs(override val instrument: Instrument)           extends StepType
   // Flats or Arcs that can be taken without caring about OI guiding
-  final case class FlatOrArc(override val instrument: Instrument) extends StepType
+  final case class FlatOrArc(override val instrument: Instrument)           extends StepType
   // Flats or Arcs that must care about OI guiding
-  final case class NightFlatOrArc(override val instrument: Instrument) extends StepType
-  final case class DarkOrBias(override val instrument: Instrument) extends StepType
-  final case class DarkOrBiasNS(override val instrument: Instrument) extends StepType
+  final case class NightFlatOrArc(override val instrument: Instrument)      extends StepType
+  final case class DarkOrBias(override val instrument: Instrument)          extends StepType
+  final case class DarkOrBiasNS(override val instrument: Instrument)        extends StepType
   final case class ExclusiveDarkOrBias(override val instrument: Instrument) extends StepType
-  case object AlignAndCalib extends StepType {
+  case object AlignAndCalib                                                 extends StepType {
     override val instrument: Instrument = Instrument.Gpi
   }
 
