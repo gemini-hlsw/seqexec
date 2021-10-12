@@ -204,7 +204,7 @@ object AltairControllerEpics {
         aogsy <- epicsTcs.aoGuideStarY.map(Millimeters(_))
         _     <-
           L.warn(
-            s"Altair prepared matrix coordinates (pmtxx, pmtyx) don't match guide star coordinates (aogsx, aogsy)"
+            s"Altair prepared matrix coordinates ($pmtxx, $pmtxy) don't match guide star coordinates ($aogsx, $aogsy)"
           ).whenA(
             (pmtxx - aogsx) * (pmtxx - aogsx) + (pmtxy - aogsy) * (pmtxy - aogsy) > tolerance * tolerance
           )
