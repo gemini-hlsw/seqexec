@@ -982,5 +982,5 @@ object TcsControllerEpicsCommonSpec {
     for {
       stR  <- Ref.of[F, TestTcsEpics.State](baseState)
       outR <- Ref.of[F, List[TestTcsEpics.TestTcsEvent]](List.empty)
-    } yield new TestTcsEpics[F](stR, outR)
+    } yield TestTcsEpics[F](stR, outR)
 }

@@ -14,15 +14,15 @@ import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.TestEpicsCommand._
 import seqexec.server.EpicsCommand
 import seqexec.server.tcs.TcsEpics._
+import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.{ AoCorrectCmd, AoPrepareMatrix }
 import squants.Angle
 import squants.space.AngleConversions._
 
 import java.util.concurrent.TimeUnit.SECONDS
 import java.time.Duration
-
 import scala.concurrent.duration.FiniteDuration
 
-class TestTcsEpics[F[_]: Sync](
+case class TestTcsEpics[F[_]: Sync](
   state: Ref[F, TestTcsEpics.State],
   out:   Ref[F, List[TestTcsEpics.TestTcsEvent]]
 ) extends TcsEpics[F] {
@@ -216,9 +216,12 @@ class TestTcsEpics[F[_]: Sync](
     TestTcsEvent.OiwfsProbeFollowCmd
   )
 
-  override val aoProbeFollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val aoProbeFollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.aoProbeFollowCmd,
+    State.aoFollowS,
+    State.aoParked,
+    TestTcsEvent.AoProbeFollowCmd
+  )
 
   override val pwfs1Park: EpicsCommand[F] =
     new TestEpicsCommand0[F, State, TestTcsEvent](State.pwfs1ParkCmd, state, out) {
@@ -287,26 +290,51 @@ class TestTcsEpics[F[_]: Sync](
 
   override val endObserve: EpicsCommand[F] = new DummyCmd[F]
 
-  override val aoCorrect: AoCorrect[F] = new DummyCmd[F] with AoCorrect[F] {
-    override def setCorrections(v: String): F[Unit] = Applicative[F].unit
+  override val aoCorrect: AoCorrect[F] =
+    new TestEpicsCommand2[F, State, TestTcsEvent, String, Int](State.aoCorrectCmd, state, out)
+      with AoCorrect[F] {
+      override def setCorrections(v: String): F[Unit] = setParameter1(v)
 
-    override def setGains(v: Int): F[Unit] = Applicative[F].unit
+      override def setGains(v: Int): F[Unit] = setParameter2(v)
 
-    override def setMatrix(v: Int): F[Unit] = Applicative[F].unit
-  }
+      override def setMatrix(v: Int): F[Unit] = Applicative[F].unit
 
-  override val aoPrepareControlMatrix: AoPrepareControlMatrix[F] = new DummyCmd[F]
-    with AoPrepareControlMatrix[F] {
-    override def setX(v: Double): F[Unit] = Applicative[F].unit
+      override protected def event(st: State): TestTcsEvent = AoCorrectCmd(
+        st.aoCorrectCmd.param1,
+        st.aoCorrectCmd.param2
+      )
 
-    override def setY(v: Double): F[Unit] = Applicative[F].unit
+      override protected def cmd(st: State): State = st.copy(
+        aoCorrect = st.aoCorrectCmd.param1,
+        aoGains = st.aoCorrectCmd.param2
+      )
+    }
 
-    override def setSeeing(v: Double): F[Unit] = Applicative[F].unit
+  override val aoPrepareControlMatrix: AoPrepareControlMatrix[F] =
+    new TestEpicsCommand2[F, State, TestTcsEvent, Double, Double](State.aoPrepareControlMatrixCmd,
+                                                                  state,
+                                                                  out
+    ) with AoPrepareControlMatrix[F] {
+      override def setX(v: Double): F[Unit] = setParameter1(v)
 
-    override def setStarMagnitude(v: Double): F[Unit] = Applicative[F].unit
+      override def setY(v: Double): F[Unit] = setParameter2(v)
 
-    override def setWindSpeed(v: Double): F[Unit] = Applicative[F].unit
-  }
+      override def setSeeing(v: Double): F[Unit] = Applicative[F].unit
+
+      override def setStarMagnitude(v: Double): F[Unit] = Applicative[F].unit
+
+      override def setWindSpeed(v: Double): F[Unit] = Applicative[F].unit
+
+      override protected def event(st: State): TestTcsEvent = AoPrepareMatrix(
+        st.aoPrepareControlMatrixCmd.param1,
+        st.aoPrepareControlMatrixCmd.param2
+      )
+
+      override protected def cmd(st: State): State = st.copy(
+        aoPreparedCMX = st.aoPrepareControlMatrixCmd.param1,
+        aoPreparedCMY = st.aoPrepareControlMatrixCmd.param2
+      )
+    }
 
   override val aoFlatten: EpicsCommand[F] = new DummyCmd[F]
 
@@ -746,145 +774,151 @@ object TestTcsEpics {
 
   @Lenses
   case class State(
-    absorbTipTilt:            Int,
-    m1GuideSource:            String,
-    m1Guide:                  BinaryOnOff,
-    m2p1Guide:                String,
-    m2p2Guide:                String,
-    m2oiGuide:                String,
-    m2aoGuide:                String,
-    comaCorrect:              String,
-    m2GuideState:             BinaryOnOff,
-    xoffsetPoA1:              Double,
-    yoffsetPoA1:              Double,
-    xoffsetPoB1:              Double,
-    yoffsetPoB1:              Double,
-    xoffsetPoC1:              Double,
-    yoffsetPoC1:              Double,
-    sourceAWavelength:        Double,
-    sourceBWavelength:        Double,
-    sourceCWavelength:        Double,
-    chopBeam:                 String,
-    p1FollowS:                String,
-    p2FollowS:                String,
-    oiFollowS:                String,
-    aoFollowS:                String,
-    p1Parked:                 Boolean,
-    p2Parked:                 Boolean,
-    oiParked:                 Boolean,
-    oiName:                   String,
-    pwfs1On:                  BinaryYesNo,
-    pwfs2On:                  BinaryYesNo,
-    oiwfsOn:                  BinaryYesNo,
-    sfName:                   String,
-    sfParked:                 Int,
-    agHwName:                 String,
-    agHwParked:               Int,
-    instrAA:                  Double,
-    inPosition:               String,
-    agInPosition:             Double,
-    pwfs1ProbeGuideConfig:    ProbeGuideConfigVals,
-    pwfs2ProbeGuideConfig:    ProbeGuideConfigVals,
-    oiwfsProbeGuideConfig:    ProbeGuideConfigVals,
-    hourAngle:                String,
-    localTime:                String,
-    trackingFrame:            String,
-    trackingEpoch:            Double,
-    equinox:                  Double,
-    trackingEquinox:          String,
-    trackingDec:              Double,
-    trackingRA:               Double,
-    elevation:                Double,
-    azimuth:                  Double,
-    crPositionAngle:          Double,
-    ut:                       String,
-    date:                     String,
-    m2Baffle:                 String,
-    m2CentralBaffle:          String,
-    st:                       String,
-    sfRotation:               Double,
-    sfTilt:                   Double,
-    sfLinear:                 Double,
-    instrPA:                  Double,
-    targetA:                  List[Double],
-    aoFoldPosition:           String,
-    useAo:                    BinaryYesNo,
-    airmass:                  Double,
-    airmassStart:             Double,
-    airmassEnd:               Double,
-    carouselMode:             String,
-    crFollow:                 Int,
-    crTrackingFrame:          String,
-    sourceATarget:            TargetVals,
-    pwfs1Target:              TargetVals,
-    pwfs2Target:              TargetVals,
-    oiwfsTarget:              TargetVals,
-    parallacticAngle:         Angle,
-    m2UserFocusOffset:        Double,
-    pwfs1IntegrationTime:     Double,
-    pwfs2IntegrationTime:     Double,
-    oiwfsIntegrationTime:     Double,
-    gsaoiPort:                Int,
-    gpiPort:                  Int,
-    f2Port:                   Int,
-    niriPort:                 Int,
-    gnirsPort:                Int,
-    nifsPort:                 Int,
-    gmosPort:                 Int,
-    ghostPort:                Int,
-    aoGuideStarX:             Double,
-    aoGuideStarY:             Double,
-    aoPreparedCMX:            Double,
-    aoPreparedCMY:            Double,
-    gwfs1Target:              TargetVals,
-    gwfs2Target:              TargetVals,
-    gwfs3Target:              TargetVals,
-    gwfs4Target:              TargetVals,
-    cwfs1Follow:              Boolean,
-    cwfs2Follow:              Boolean,
-    cwfs3Follow:              Boolean,
-    odgw1Follow:              Boolean,
-    odgw2Follow:              Boolean,
-    odgw3Follow:              Boolean,
-    odgw4Follow:              Boolean,
-    odgw1Parked:              Boolean,
-    odgw2Parked:              Boolean,
-    odgw3Parked:              Boolean,
-    odgw4Parked:              Boolean,
-    g1MapName:                Option[GemsSource],
-    g2MapName:                Option[GemsSource],
-    g3MapName:                Option[GemsSource],
-    g4MapName:                Option[GemsSource],
-    g1Wavelength:             Double,
-    g2Wavelength:             Double,
-    g3Wavelength:             Double,
-    g4Wavelength:             Double,
-    g1GuideConfig:            ProbeGuideConfigVals,
-    g2GuideConfig:            ProbeGuideConfigVals,
-    g3GuideConfig:            ProbeGuideConfigVals,
-    g4GuideConfig:            ProbeGuideConfigVals,
-    m1GuideCmd:               TestEpicsCommand1.State[String],
-    m2GuideCmd:               TestEpicsCommand1.State[String],
-    m2GuideModeCmd:           TestEpicsCommand1.State[String],
-    m2GuideConfigCmd:         TestEpicsCommand3.State[String, String, String],
-    mountGuideCmd:            TestEpicsCommand2.State[String, String],
-    pwfs1ProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
-    pwfs2ProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
-    oiwfsProbeGuideConfigCmd: TestEpicsCommand4.State[String, String, String, String],
-    pwfs1ProbeFollowCmd:      TestEpicsCommand1.State[String],
-    pwfs2ProbeFollowCmd:      TestEpicsCommand1.State[String],
-    oiwfsProbeFollowCmd:      TestEpicsCommand1.State[String],
-    offsetACmd:               TestEpicsCommand2.State[Double, Double],
-    wavelSourceACmd:          TestEpicsCommand1.State[Double],
-    pwfs1ParkCmd:             TestEpicsCommand0.State,
-    pwfs2ParkCmd:             TestEpicsCommand0.State,
-    oiwfsParkCmd:             TestEpicsCommand0.State,
-    pwfs1ObserveCmd:          TestEpicsCommand1.State[Int],
-    pwfs2ObserveCmd:          TestEpicsCommand1.State[Int],
-    oiwfsObserveCmd:          TestEpicsCommand1.State[Int],
-    pwfs1StopObserveCmd:      TestEpicsCommand0.State,
-    pwfs2StopObserveCmd:      TestEpicsCommand0.State,
-    oiwfsStopObserveCmd:      TestEpicsCommand0.State
+    absorbTipTilt:             Int,
+    m1GuideSource:             String,
+    m1Guide:                   BinaryOnOff,
+    m2p1Guide:                 String,
+    m2p2Guide:                 String,
+    m2oiGuide:                 String,
+    m2aoGuide:                 String,
+    comaCorrect:               String,
+    m2GuideState:              BinaryOnOff,
+    xoffsetPoA1:               Double,
+    yoffsetPoA1:               Double,
+    xoffsetPoB1:               Double,
+    yoffsetPoB1:               Double,
+    xoffsetPoC1:               Double,
+    yoffsetPoC1:               Double,
+    sourceAWavelength:         Double,
+    sourceBWavelength:         Double,
+    sourceCWavelength:         Double,
+    chopBeam:                  String,
+    p1FollowS:                 String,
+    p2FollowS:                 String,
+    oiFollowS:                 String,
+    aoFollowS:                 String,
+    p1Parked:                  Boolean,
+    p2Parked:                  Boolean,
+    oiParked:                  Boolean,
+    aoParked:                  Boolean,
+    oiName:                    String,
+    pwfs1On:                   BinaryYesNo,
+    pwfs2On:                   BinaryYesNo,
+    oiwfsOn:                   BinaryYesNo,
+    sfName:                    String,
+    sfParked:                  Int,
+    agHwName:                  String,
+    agHwParked:                Int,
+    instrAA:                   Double,
+    inPosition:                String,
+    agInPosition:              Double,
+    pwfs1ProbeGuideConfig:     ProbeGuideConfigVals,
+    pwfs2ProbeGuideConfig:     ProbeGuideConfigVals,
+    oiwfsProbeGuideConfig:     ProbeGuideConfigVals,
+    hourAngle:                 String,
+    localTime:                 String,
+    trackingFrame:             String,
+    trackingEpoch:             Double,
+    equinox:                   Double,
+    trackingEquinox:           String,
+    trackingDec:               Double,
+    trackingRA:                Double,
+    elevation:                 Double,
+    azimuth:                   Double,
+    crPositionAngle:           Double,
+    ut:                        String,
+    date:                      String,
+    m2Baffle:                  String,
+    m2CentralBaffle:           String,
+    st:                        String,
+    sfRotation:                Double,
+    sfTilt:                    Double,
+    sfLinear:                  Double,
+    instrPA:                   Double,
+    targetA:                   List[Double],
+    aoFoldPosition:            String,
+    useAo:                     BinaryYesNo,
+    airmass:                   Double,
+    airmassStart:              Double,
+    airmassEnd:                Double,
+    carouselMode:              String,
+    crFollow:                  Int,
+    crTrackingFrame:           String,
+    sourceATarget:             TargetVals,
+    pwfs1Target:               TargetVals,
+    pwfs2Target:               TargetVals,
+    oiwfsTarget:               TargetVals,
+    parallacticAngle:          Angle,
+    m2UserFocusOffset:         Double,
+    pwfs1IntegrationTime:      Double,
+    pwfs2IntegrationTime:      Double,
+    oiwfsIntegrationTime:      Double,
+    gsaoiPort:                 Int,
+    gpiPort:                   Int,
+    f2Port:                    Int,
+    niriPort:                  Int,
+    gnirsPort:                 Int,
+    nifsPort:                  Int,
+    gmosPort:                  Int,
+    ghostPort:                 Int,
+    aoGuideStarX:              Double,
+    aoGuideStarY:              Double,
+    aoPreparedCMX:             Double,
+    aoPreparedCMY:             Double,
+    gwfs1Target:               TargetVals,
+    gwfs2Target:               TargetVals,
+    gwfs3Target:               TargetVals,
+    gwfs4Target:               TargetVals,
+    cwfs1Follow:               Boolean,
+    cwfs2Follow:               Boolean,
+    cwfs3Follow:               Boolean,
+    odgw1Follow:               Boolean,
+    odgw2Follow:               Boolean,
+    odgw3Follow:               Boolean,
+    odgw4Follow:               Boolean,
+    odgw1Parked:               Boolean,
+    odgw2Parked:               Boolean,
+    odgw3Parked:               Boolean,
+    odgw4Parked:               Boolean,
+    g1MapName:                 Option[GemsSource],
+    g2MapName:                 Option[GemsSource],
+    g3MapName:                 Option[GemsSource],
+    g4MapName:                 Option[GemsSource],
+    g1Wavelength:              Double,
+    g2Wavelength:              Double,
+    g3Wavelength:              Double,
+    g4Wavelength:              Double,
+    g1GuideConfig:             ProbeGuideConfigVals,
+    g2GuideConfig:             ProbeGuideConfigVals,
+    g3GuideConfig:             ProbeGuideConfigVals,
+    g4GuideConfig:             ProbeGuideConfigVals,
+    aoCorrect:                 String,
+    aoGains:                   Int,
+    m1GuideCmd:                TestEpicsCommand1.State[String],
+    m2GuideCmd:                TestEpicsCommand1.State[String],
+    m2GuideModeCmd:            TestEpicsCommand1.State[String],
+    m2GuideConfigCmd:          TestEpicsCommand3.State[String, String, String],
+    mountGuideCmd:             TestEpicsCommand2.State[String, String],
+    pwfs1ProbeGuideConfigCmd:  TestEpicsCommand4.State[String, String, String, String],
+    pwfs2ProbeGuideConfigCmd:  TestEpicsCommand4.State[String, String, String, String],
+    oiwfsProbeGuideConfigCmd:  TestEpicsCommand4.State[String, String, String, String],
+    pwfs1ProbeFollowCmd:       TestEpicsCommand1.State[String],
+    pwfs2ProbeFollowCmd:       TestEpicsCommand1.State[String],
+    oiwfsProbeFollowCmd:       TestEpicsCommand1.State[String],
+    offsetACmd:                TestEpicsCommand2.State[Double, Double],
+    wavelSourceACmd:           TestEpicsCommand1.State[Double],
+    pwfs1ParkCmd:              TestEpicsCommand0.State,
+    pwfs2ParkCmd:              TestEpicsCommand0.State,
+    oiwfsParkCmd:              TestEpicsCommand0.State,
+    pwfs1ObserveCmd:           TestEpicsCommand1.State[Int],
+    pwfs2ObserveCmd:           TestEpicsCommand1.State[Int],
+    oiwfsObserveCmd:           TestEpicsCommand1.State[Int],
+    pwfs1StopObserveCmd:       TestEpicsCommand0.State,
+    pwfs2StopObserveCmd:       TestEpicsCommand0.State,
+    oiwfsStopObserveCmd:       TestEpicsCommand0.State,
+    aoProbeFollowCmd:          TestEpicsCommand1.State[String],
+    aoCorrectCmd:              TestEpicsCommand2.State[String, Int],
+    aoPrepareControlMatrixCmd: TestEpicsCommand2.State[Double, Double]
   )
 
   @Lenses
@@ -959,12 +993,12 @@ object TestTcsEpics {
 
   sealed trait TestTcsEvent extends Product with Serializable
   object TestTcsEvent {
-    final case class M1GuideCmd(newState: String)                extends TestTcsEvent
-    final case class M2GuideCmd(newState: String)                extends TestTcsEvent
-    final case class M2GuideModeCmd(newComaState: String)        extends TestTcsEvent
+    final case class M1GuideCmd(newState: String)                  extends TestTcsEvent
+    final case class M2GuideCmd(newState: String)                  extends TestTcsEvent
+    final case class M2GuideModeCmd(newComaState: String)          extends TestTcsEvent
     final case class M2GuideConfigCmd(source: String, beam: String, reset: String)
         extends TestTcsEvent
-    final case class MountGuideCmd(source: String, mode: String) extends TestTcsEvent
+    final case class MountGuideCmd(source: String, mode: String)   extends TestTcsEvent
     final case class Pwfs1ProbeGuideConfig(
       nodachopa: String,
       nodchopb:  String,
@@ -983,20 +1017,23 @@ object TestTcsEpics {
       nodbchopa: String,
       nodbchopb: String
     ) extends TestTcsEvent
-    final case class OffsetACmd(p: Double, q: Double)            extends TestTcsEvent
-    final case class WavelSourceACmd(w: Double)                  extends TestTcsEvent
-    final case class Pwfs1ProbeFollowCmd(state: String)          extends TestTcsEvent
-    final case class Pwfs2ProbeFollowCmd(state: String)          extends TestTcsEvent
-    final case class OiwfsProbeFollowCmd(state: String)          extends TestTcsEvent
-    case object Pwfs1ParkCmd                                     extends TestTcsEvent
-    case object Pwfs2ParkCmd                                     extends TestTcsEvent
-    case object OiwfsParkCmd                                     extends TestTcsEvent
-    case object Pwfs1ObserveCmd                                  extends TestTcsEvent
-    case object Pwfs2ObserveCmd                                  extends TestTcsEvent
-    case object OiwfsObserveCmd                                  extends TestTcsEvent
-    case object Pwfs1StopObserveCmd                              extends TestTcsEvent
-    case object Pwfs2StopObserveCmd                              extends TestTcsEvent
-    case object OiwfsStopObserveCmd                              extends TestTcsEvent
+    final case class OffsetACmd(p: Double, q: Double)              extends TestTcsEvent
+    final case class WavelSourceACmd(w: Double)                    extends TestTcsEvent
+    final case class Pwfs1ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Pwfs2ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class OiwfsProbeFollowCmd(state: String)            extends TestTcsEvent
+    case object Pwfs1ParkCmd                                       extends TestTcsEvent
+    case object Pwfs2ParkCmd                                       extends TestTcsEvent
+    case object OiwfsParkCmd                                       extends TestTcsEvent
+    case object Pwfs1ObserveCmd                                    extends TestTcsEvent
+    case object Pwfs2ObserveCmd                                    extends TestTcsEvent
+    case object OiwfsObserveCmd                                    extends TestTcsEvent
+    case object Pwfs1StopObserveCmd                                extends TestTcsEvent
+    case object Pwfs2StopObserveCmd                                extends TestTcsEvent
+    case object OiwfsStopObserveCmd                                extends TestTcsEvent
+    final case class AoProbeFollowCmd(state: String)               extends TestTcsEvent
+    final case class AoCorrectCmd(correct: String, gains: Int)     extends TestTcsEvent
+    final case class AoPrepareMatrix(aogsx: Double, aogsy: Double) extends TestTcsEvent
 
     implicit val eqTestTcsEvPent: Eq[TestTcsEvent] = Eq.instance {
       case (Pwfs1ParkCmd, Pwfs1ParkCmd)                                           => true
@@ -1055,6 +1092,7 @@ object TestTcsEpics {
     p1Parked = true,
     p2Parked = true,
     oiParked = true,
+    aoParked = true,
     oiName = "None",
     pwfs1On = BinaryYesNo.No,
     pwfs2On = BinaryYesNo.No,
@@ -1146,6 +1184,8 @@ object TestTcsEpics {
     g2GuideConfig = ProbeGuideConfigVals.default,
     g3GuideConfig = ProbeGuideConfigVals.default,
     g4GuideConfig = ProbeGuideConfigVals.default,
+    aoCorrect = "Off",
+    aoGains = 0,
     m1GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
     m2GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
     m2GuideModeCmd = TestEpicsCommand1.State[String](mark = false, ""),
@@ -1170,7 +1210,10 @@ object TestTcsEpics {
     oiwfsObserveCmd = TestEpicsCommand1.State[Int](mark = false, -1),
     pwfs1StopObserveCmd = false,
     pwfs2StopObserveCmd = false,
-    oiwfsStopObserveCmd = false
+    oiwfsStopObserveCmd = false,
+    aoProbeFollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    aoCorrectCmd = TestEpicsCommand2.State[String, Int](mark = false, "OFF", 0),
+    aoPrepareControlMatrixCmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0)
   )
 
 }
