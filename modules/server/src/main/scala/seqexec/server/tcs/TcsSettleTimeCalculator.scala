@@ -41,7 +41,7 @@ object TcsSettleTimeCalculator {
   val settleTimeCalculators: Map[Subsystem, SettleTimeCalculator] = Map(
     Subsystem.Mount -> constantSettleTime(1.seconds),
     Subsystem.PWFS1 -> constantSettleTime(1.seconds),
-    Subsystem.PWFS2 -> constantSettleTime(2.seconds)
+    Subsystem.PWFS2 -> constantSettleTime(1.seconds)
   )
 
   val oiwfsSettleTimeCalculators: Map[Instrument, SettleTimeCalculator] = Map(
