@@ -159,7 +159,7 @@ object AltairControllerEpics {
       val newPos                = pauseReasons.offsetO
         .map(x => newPosition(startPos)(x.to))
         .getOrElse(newPosition(startPos)(currOffset))
-      val forceFreeze           = newPosInRange(newPos)
+      val forceFreeze           = !newPosInRange(newPos)
       val adjustedPauseReasons  =
         forceFreeze.fold(pauseReasons + PauseCondition.GaosGuideOff, pauseReasons)
       val adjustedResumeReasons =
@@ -216,7 +216,7 @@ object AltairControllerEpics {
     ): F[Unit] = {
       val guidedStep = reasons.contains(ResumeCondition.GaosGuideOn)
 
-      if (aoOn || !guidedStep)
+      if ((aoOn && !wasPaused) || !guidedStep)
         L.debug("Skipped resuming Altair NGS guiding")
       else
         L.debug("Resume Altair NGS guiding") *>
@@ -283,14 +283,15 @@ object AltairControllerEpics {
     implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
 
     private def startSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
-      epicsAltair.sfoControl
-        .setActive(LgsSfoControl.Enable)
+      (epicsAltair.sfoControl
+        .setActive(LgsSfoControl.Enable) *>
+        epicsAltair.sfoControl.post(DefaultTimeout))
         .unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
     private def pauseSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
-      epicsAltair.sfoControl
-        .setActive(LgsSfoControl.Pause)
-        .whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
+      (epicsAltair.sfoControl
+        .setActive(LgsSfoControl.Pause) *>
+        epicsAltair.sfoControl.post(DefaultTimeout)).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
     private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): F[Unit] =
       checkStrapLoopState(currCfg).fold(ApplicativeError[F, Throwable].raiseError,
@@ -321,7 +322,7 @@ object AltairControllerEpics {
       val newPos                = pauseReasons.offsetO
         .map(x => newPosition(startPos)(x.to))
         .getOrElse(newPosition(startPos)(currOffset))
-      val forceFreeze           = newPosInRange(newPos)
+      val forceFreeze           = !newPosInRange(newPos)
       val adjustedPauseReasons  =
         forceFreeze.fold(pauseReasons + PauseCondition.GaosGuideOff, pauseReasons)
       val adjustedResumeReasons =

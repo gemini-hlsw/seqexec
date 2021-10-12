@@ -32,8 +32,8 @@ object TestEpicsCommand {
   ) extends EpicsCommand[F] {
     override def post(timeout: FiniteDuration): F[ApplyCommandResult] = st.get.flatMap { s =>
       if (markL.get(s))
-        out.modify(x => (x :+ event(s), ())) *>
-          st.modify(s => (markL.set(false)(cmd(s)), ApplyCommandResult.Completed))
+        out.update(x => x :+ event(s)) *>
+          st.update(s => markL.set(false)(cmd(s))).as(ApplyCommandResult.Completed)
       else
         ApplyCommandResult.Completed.pure[F].widen[ApplyCommandResult]
     }
