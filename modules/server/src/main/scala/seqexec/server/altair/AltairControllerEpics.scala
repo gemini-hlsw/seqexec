@@ -118,7 +118,9 @@ object AltairControllerEpics {
       val configActions = mustPrepareMatrix.option(prepareMatrix(position))
 
       val pauseAction =
-        L.debug("Pausing Altair NGS guiding") *>
+        L.debug(
+          s"Pausing Altair NGS guiding because guidedStep=$guidedStep, isSmallOffset=$isSmallOffset, currMatrixOk=$currMatrixOk"
+        ) *>
           setCorrectionsOff *>
           L.debug("Altair guiding NGS paused")
 
@@ -217,9 +219,11 @@ object AltairControllerEpics {
       val guidedStep = reasons.contains(ResumeCondition.GaosGuideOn)
 
       if ((aoOn && !wasPaused) || !guidedStep)
-        L.debug("Skipped resuming Altair NGS guiding")
+        L.debug(
+          s"Skipped resuming Altair NGS guiding because wasPaused=$wasPaused, guidedStep=$guidedStep"
+        )
       else
-        L.debug("Resume Altair NGS guiding") *>
+        L.debug(s"Resume Altair NGS guiding because guidedStep=$guidedStep") *>
           epicsAltair.controlMatrixCalc.flatMap { x =>
             (L.debug("Altair control matrix calculation not yet ready, waiting for it") *>
               epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout)).whenA(x.isBusy)
@@ -352,7 +356,9 @@ object AltairControllerEpics {
       val isSmallOffset = reasons.offsetO.forall(canGuideWhileOffseting(_, instrument))
       val mustPauseNGS  = !(guidedStep && isSmallOffset) && (strap || sfo)
 
-      val pauseAction = L.debug(s"Pausing Altair LGS(strap = $strap, sfo = $sfo) guiding") *>
+      val pauseAction = L.debug(
+        s"Pausing Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep, isSmallOffset=$isSmallOffset"
+      ) *>
         ttgsOff(currCfg) *>
         L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding paused")
 
@@ -389,7 +395,9 @@ object AltairControllerEpics {
         (currentCfg.sfoLoop === LgsSfoControl.Enable && sfo) && (currentCfg.strapLoop && strap)
 
       if (!alreadyThere && guidedStep)
-        L.debug(s"Resuming Altair LGS(strap = $strap, sfo = $sfo) guiding") *>
+        L.debug(
+          s"Resuming Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep"
+        ) *>
           ttgsOn(strap, sfo, currentCfg) *>
           L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding resumed")
       else
