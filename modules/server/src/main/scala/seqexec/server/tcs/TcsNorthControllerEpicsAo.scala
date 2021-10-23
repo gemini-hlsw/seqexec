@@ -117,7 +117,7 @@ object TcsNorthControllerEpicsAo {
       def executeTargetFilterConf(filterEnabled: Boolean): F[Unit] =
         L.debug(s"${filterEnabled.fold("Activating", "Deactivating")} target filtering.") *>
           epicsSys.targetFilter.setShortCircuit(
-            filterEnabled.fold(TargetFilterClosed, TargetFilterOpen)
+            filterEnabled.fold(TargetFilterShortcircuitOpen, TargetFilterShortcircuitClosed)
           ) *>
           epicsSys.targetFilter.post(TcsControllerEpicsCommon.DefaultTimeout) *>
           L.debug(s"Target filtering ${filterEnabled.fold("activated", "deactivated")}.")
@@ -469,7 +469,7 @@ object TcsNorthControllerEpicsAo {
     aowfs: ProbeTrackingConfig
   )
 
-  val TargetFilterOpen: String   = "Open"
-  val TargetFilterClosed: String = "Closed"
+  val TargetFilterShortcircuitOpen: String   = "Open"
+  val TargetFilterShortcircuitClosed: String = "Closed"
 
 }

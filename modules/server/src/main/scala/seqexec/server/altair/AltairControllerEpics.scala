@@ -96,20 +96,18 @@ object AltairControllerEpics {
 
     private def pauseNgsMode(
       position:     (Length, Length),
-      currCfg:      EpicsAltairConfig,
-      inst:         Instrument
+      currCfg:      EpicsAltairConfig
     )(pauseReasons: PauseConditionSet): PauseReturn[F] = {
-      // There are three reasons to stop NGS:
+      // There are two reasons to stop NGS:
       // 1. This is an unguided step
-      // 2. There is an offset too big to guide while applying it
-      // 3. The current control matrix will not be valid for the end position after applying an offset.
+      // 2. The current control matrix will not be valid for the end position after applying an offset (i.e. the offset
+      // is too big).
 
-      val guidedStep    = !pauseReasons.contains(PauseCondition.GaosGuideOff)
-      val isSmallOffset = pauseReasons.offsetO.forall(canGuideWhileOffseting(_, inst))
-      val currMatrixOk  = validateCurrentControlMatrix(currCfg, position)
-      val prepMatrixOk  = validatePreparedControlMatrix(currCfg, position)
+      val guidedStep   = !pauseReasons.contains(PauseCondition.GaosGuideOff)
+      val currMatrixOk = validateCurrentControlMatrix(currCfg, position)
+      val prepMatrixOk = validatePreparedControlMatrix(currCfg, position)
 
-      val needsToStop = !guidedStep || !isSmallOffset || !currMatrixOk
+      val needsToStop = !guidedStep || !currMatrixOk
 
       val mustPrepareMatrix = (!currCfg.aoLoop || needsToStop) && guidedStep && !prepMatrixOk
 
@@ -119,7 +117,7 @@ object AltairControllerEpics {
 
       val pauseAction =
         L.debug(
-          s"Pausing Altair NGS guiding because guidedStep=$guidedStep, isSmallOffset=$isSmallOffset, currMatrixOk=$currMatrixOk"
+          s"Pausing Altair NGS guiding because guidedStep=$guidedStep, currMatrixOk=$currMatrixOk"
         ) *>
           setCorrectionsOff *>
           L.debug("Altair guiding NGS paused")
@@ -128,16 +126,18 @@ object AltairControllerEpics {
         PauseReturn[F](
           wasPaused = true,
           pauseAction.some,
-          filterTarget = false,                                               // it was guiding, it will continue guiding, but there is an offset
+          filterTarget = false,
           GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
           configActions
         )
       else
         PauseReturn[F](
           wasPaused = false,
-          L.debug("Skipped pausing Altair NGS guiding").some,
+          L.debug(
+            s"Skipped pausing Altair NGS guiding because guidedStep=$guidedStep, needsToStop = $needsToStop, currMatrixOk=$currMatrixOk"
+          ).some,
           filterTarget =
-            currCfg.aoLoop && !needsToStop && pauseReasons.offsetO.isDefined, // it was guiding, it will continue guiding, but there is an offset
+            currCfg.aoLoop && !needsToStop && pauseReasons.offsetO.isDefined, // it was guiding, it will continue guiding, and there is an offset
           GuideCapabilities(canGuideM2 = currCfg.aoLoop, canGuideM1 = currCfg.aoLoop),
           configActions
         )
@@ -155,8 +155,7 @@ object AltairControllerEpics {
     private def pauseResumeNgsMode(
       startPos:     (Length, Length),
       currCfg:      EpicsAltairConfig,
-      currOffset:   FocalPlaneOffset,
-      instrument:   Instrument
+      currOffset:   FocalPlaneOffset
     )(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet): AltairPauseResume[F] = {
       val newPos                = pauseReasons.offsetO
         .map(x => newPosition(startPos)(x.to))
@@ -167,7 +166,7 @@ object AltairControllerEpics {
       val adjustedResumeReasons =
         forceFreeze.fold(resumeReasons - ResumeCondition.GaosGuideOn, resumeReasons)
 
-      val pauseResult = pauseNgsMode(newPos, currCfg, instrument)(adjustedPauseReasons)
+      val pauseResult = pauseNgsMode(newPos, currCfg)(adjustedPauseReasons)
       val resume      = resumeNgsMode(
         currCfg.aoLoop,
         currCfg.aoLoop && pauseResult.wasPaused,
@@ -434,9 +433,7 @@ object AltairControllerEpics {
       retrieveConfig.map { currCfg =>
         cfg match {
           case Ngs(_, starPos)      =>
-            pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument)(pauseReasons,
-                                                                            resumeReasons
-            )
+            pauseResumeNgsMode(starPos, currCfg, currentOffset)(pauseReasons, resumeReasons)
           case Lgs(false, false, _) =>
             AltairPauseResume(
               none,
