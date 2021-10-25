@@ -2,7 +2,7 @@ package seqexec.server.ghost
 
 import cats.Eq
 import cats.implicits._
-import gem.util.Enumerated
+import lucuma.core.util.Enumerated
 import giapi.client.GiapiConfig
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.concurrent.duration.FiniteDuration
@@ -30,7 +30,7 @@ sealed trait DemandType extends Product with Serializable {
   def demandType: String
 }
 
-object DemandType    {
+object DemandType {
   case object DemandRADec extends DemandType {
     val demandType = "IFU_DEMAND_RADEC"
   }
@@ -55,7 +55,7 @@ sealed abstract class IFUNum(val ifuNum: Int) extends Product with Serializable 
   val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
 }
 
-object IFUNum        {
+object IFUNum {
   case object IFU1 extends IFUNum(ifuNum = 1)
   case object IFU2 extends IFUNum(ifuNum = 2)
   implicit val ifuNumConfiguration: GiapiConfig[IFUNum] = _.ifuStr
@@ -83,8 +83,8 @@ object BundleConfig {
 sealed abstract class IFUTargetType(val targetType: String) extends Product with Serializable
 object IFUTargetType {
 
-  case object NoTarget    extends IFUTargetType(targetType = "IFU_TARGET_NONE")
-  case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
+  case object NoTarget                  extends IFUTargetType(targetType = "IFU_TARGET_NONE")
+  case object SkyPosition               extends IFUTargetType(targetType = "IFU_TARGET_SKY")
   final case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
   def determineType(name: Option[String]): IFUTargetType =

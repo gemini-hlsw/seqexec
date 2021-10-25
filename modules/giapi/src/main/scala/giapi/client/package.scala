@@ -38,6 +38,7 @@ package object client {
   implicit val intItemGetter: ItemGetter[Int] = new ItemGetter[Int] {}
 
   implicit val floatItemGetter: ItemGetter[Float] = new ItemGetter[Float] {}
+
 }
 
 package client {

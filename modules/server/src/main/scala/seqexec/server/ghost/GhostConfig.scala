@@ -3,19 +3,18 @@
 
 package seqexec.server.ghost
 
-import cats.implicits._
 import cats.Eq
-import gem.enum.GiapiStatusApply._
-import gsp.math.Coordinates
+import cats.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
-import giapi.client.syntax.giapiconfig._
+import giapi.client.syntax.all._
 import scala.concurrent.duration._
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.giapiConfig
-import gem.{ Target => GemTarget }
-import gem.enum.GiapiStatusApply
+import lucuma.core.model.{ Target => GemTarget }
+import lucuma.core.math.Coordinates
+import lucuma.core.enum.GiapiStatusApply
+import GhostConfig._
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig {
@@ -36,28 +35,35 @@ sealed trait GhostConfig {
 
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
-    t.track.map(_.baseCoordinates).map { c =>
-      Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem), c.dec.toAngle.toSignedDoubleDegrees) |+|
-      Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem), c.ra.toAngle.toDoubleDegrees) |+|
-      Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._1.applyItem), t.name)
-    }.getOrElse(Configuration.Zero)
+    t.track
+      .map(_.baseCoordinates)
+      .map { c =>
+        Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem),
+                             c.dec.toAngle.toSignedDoubleDegrees
+        ) |+|
+          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem),
+                               c.ra.toAngle.toDoubleDegrees
+          ) |+|
+          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._1.applyItem), t.name)
+      }
+      .getOrElse(Configuration.Zero)
 
   def userTargetsConfig: Configuration =
     userTargets.zipWithIndex.map(Function.tupled(targetConfig)).combineAll |+|
       giapiConfig(GiapiStatusApply.GhostUserTargetCount, userTargets.length)
 
-  def ifu1Config: Configuration =
+  def ifu1Config: Configuration    =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
   def ifu2Config: Configuration
   def channelConfig: Configuration =
     giapiConfig(GhostBlueExposureBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
-    giapiConfig(GhostBlueExposureBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
-    giapiConfig(GhostRedExposureBinningRcf, redConfig.binning.getSpectralBinning()) |+|
-    giapiConfig(GhostRedExposureBinningCcf, redConfig.binning.getSpatialBinning()) |+|
-    giapiConfig(GhostBlueExposureTime, blueConfig.exposure.toSeconds.toInt) |+|
-    giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
-    giapiConfig(GhostRedExposureTime, redConfig.exposure.toSeconds.toInt) |+|
-    giapiConfig(GhostRedExposureCount, redConfig.count)
+      giapiConfig(GhostBlueExposureBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
+      giapiConfig(GhostRedExposureBinningRcf, redConfig.binning.getSpectralBinning()) |+|
+      giapiConfig(GhostRedExposureBinningCcf, redConfig.binning.getSpatialBinning()) |+|
+      giapiConfig(GhostBlueExposureTime, blueConfig.exposure.toSeconds.toInt) |+|
+      giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
+      giapiConfig(GhostRedExposureTime, redConfig.exposure.toSeconds.toInt) |+|
+      giapiConfig(GhostRedExposureCount, redConfig.count)
 
   def configuration: Configuration =
     GhostConfig.fiberConfig1(fiberAgitator1) |+|
@@ -68,27 +74,31 @@ sealed trait GhostConfig {
 
 // These are the parameters passed to GHOST from the WDBA.
 // We use them to determine the type of configuration being used by GHOST, and instantiate it.
-object GhostConfig            {
+object GhostConfig {
+
+  def giapiConfig[A](app: GiapiStatusApply, value: A): Configuration =
+    Configuration.Zero
+
   private[ghost] def ifuConfig(
     ifuNum:        IFUNum,
     ifuTargetType: IFUTargetType,
     coordinates:   Coordinates,
-    bundleConfig:  BundleConfig,
+    bundleConfig:  BundleConfig
     // guideConfig:   Option[GuideFiberState]
   ): Configuration = {
     def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
-    val demand: DemandType = DemandType.DemandRADec
+    val demand: DemandType                                  = DemandType.DemandRADec
 
     val current = cfg("target", ifuTargetType.configValue) |+|
       cfg("type", demand) |+|
       cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
       cfg("dec", coordinates.dec.toAngle.toSignedDoubleDegrees) |+|
       cfg("bundle", bundleConfig.configValue)
-      current
+    current
     // guideConfig match {
     //   case Some(g) => current |+| cfg(g)
-    //   case _ => current
+    //   case _ => current1
     // }
   }
 
@@ -101,7 +111,8 @@ object GhostConfig            {
       4 -> ((GhostUserTarget4Name, GhostUserTarget4CoordsRADeg, GhostUserTarget4CoordsDecDeg)),
       5 -> ((GhostUserTarget5Name, GhostUserTarget5CoordsRADeg, GhostUserTarget5CoordsDecDeg)),
       6 -> ((GhostUserTarget6Name, GhostUserTarget6CoordsRADeg, GhostUserTarget6CoordsDecDeg)),
-      7 -> ((GhostUserTarget7Name, GhostUserTarget7CoordsRADeg, GhostUserTarget7CoordsDecDeg)))
+      7 -> ((GhostUserTarget7Name, GhostUserTarget7CoordsRADeg, GhostUserTarget7CoordsDecDeg))
+    )
 
   private[ghost] def ifuPark(ifuNum: IFUNum): Configuration = {
     def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
@@ -144,31 +155,90 @@ object GhostConfig            {
       case (Target(t), NoTarget, NoTarget, NoTarget)    =>
         srifu1Coords.map(
           StandardResolutionMode
-            .SingleTarget(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, t, _, userTargets)
+            .SingleTarget(blueConfig,
+                          redConfig,
+                          baseCoords,
+                          expTime,
+                          fiberAgitator1,
+                          fiberAgitator2,
+                          t,
+                          _,
+                          userTargets
+            )
         )
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .DualTarget(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, t1, _, t2, _, userTargets)
+            .DualTarget(blueConfig,
+                        redConfig,
+                        baseCoords,
+                        expTime,
+                        fiberAgitator1,
+                        fiberAgitator2,
+                        t1,
+                        _,
+                        t2,
+                        _,
+                        userTargets
+            )
         )
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .TargetPlusSky(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, t, _, _, userTargets)
+            .TargetPlusSky(blueConfig,
+                           redConfig,
+                           baseCoords,
+                           expTime,
+                           fiberAgitator1,
+                           fiberAgitator2,
+                           t,
+                           _,
+                           _,
+                           userTargets
+            )
         )
       case (SkyPosition, Target(t), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .SkyPlusTarget(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, _, t, _, userTargets)
+            .SkyPlusTarget(blueConfig,
+                           redConfig,
+                           baseCoords,
+                           expTime,
+                           fiberAgitator1,
+                           fiberAgitator2,
+                           _,
+                           t,
+                           _,
+                           userTargets
+            )
         )
       case (NoTarget, NoTarget, Target(t), NoTarget)    =>
         hrifu1Coords.map(
-          HighResolutionMode.SingleTarget(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, t, _, userTargets)
+          HighResolutionMode.SingleTarget(blueConfig,
+                                          redConfig,
+                                          baseCoords,
+                                          expTime,
+                                          fiberAgitator1,
+                                          fiberAgitator2,
+                                          t,
+                                          _,
+                                          userTargets
+          )
         )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
-            .TargetPlusSky(blueConfig, redConfig, baseCoords, expTime, fiberAgitator1, fiberAgitator2, t, _, _, userTargets)
+            .TargetPlusSky(blueConfig,
+                           redConfig,
+                           baseCoords,
+                           expTime,
+                           fiberAgitator1,
+                           fiberAgitator2,
+                           t,
+                           _,
+                           _,
+                           userTargets
+            )
         )
       case _                                            =>
         None
@@ -195,7 +265,7 @@ sealed trait StandardResolutionMode extends GhostConfig {
 
   def ifu1Coordinates: Coordinates
 
-  override def ifu1TargetType: IFUTargetType        =
+  override def ifu1TargetType: IFUTargetType =
     this match {
       case s: SingleTarget   => IFUTargetType.Target(s.ifu1TargetName)
       case d: DualTarget     => IFUTargetType.Target(d.ifu1TargetName)
@@ -203,7 +273,7 @@ sealed trait StandardResolutionMode extends GhostConfig {
       case _: SkyPlusTarget  => IFUTargetType.SkyPosition
     }
 
-  override def ifu2TargetType: IFUTargetType        =
+  override def ifu2TargetType: IFUTargetType =
     this match {
       case _: SingleTarget   => IFUTargetType.NoTarget
       case d: DualTarget     => IFUTargetType.Target(d.ifu2TargetName)
@@ -211,7 +281,7 @@ sealed trait StandardResolutionMode extends GhostConfig {
       case _: TargetPlusSky  => IFUTargetType.SkyPosition
     }
 
-  override def ifu1BundleType: BundleConfig         =
+  override def ifu1BundleType: BundleConfig =
     this match {
       case _: SingleTarget | _: DualTarget | _: TargetPlusSky => BundleConfig.Standard
       case _: SkyPlusTarget                                   => BundleConfig.Sky
@@ -235,7 +305,7 @@ object StandardResolutionMode {
     override val fiberAgitator2:  FiberAgitator,
     ifu1TargetName:               String,
     override val ifu1Coordinates: Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
     println(s"Single target $ifu1TargetName")
     override def ifu2Config: Configuration =
@@ -265,7 +335,7 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     ifu2TargetName:               String,
     ifu2Coordinates:              Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -299,7 +369,7 @@ object StandardResolutionMode {
     ifu1TargetName:               String,
     override val ifu1Coordinates: Coordinates,
     ifu2Coordinates:              Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -332,7 +402,7 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     ifu2TargetName:               String,
     ifu2Coordinates:              Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -366,7 +436,7 @@ sealed trait HighResolutionMode extends GhostConfig {
 
   override def ifu1TargetType: IFUTargetType = IFUTargetType.Target(ifu1TargetName)
 
-  override def ifu2TargetType: IFUTargetType        =
+  override def ifu2TargetType: IFUTargetType =
     this match {
       case _: SingleTarget  => IFUTargetType.NoTarget
       case _: TargetPlusSky => IFUTargetType.SkyPosition
@@ -379,7 +449,7 @@ sealed trait HighResolutionMode extends GhostConfig {
     }
 }
 
-object HighResolutionMode     {
+object HighResolutionMode {
   final case class SingleTarget(
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
@@ -389,7 +459,7 @@ object HighResolutionMode     {
     override val fiberAgitator2:  FiberAgitator,
     override val ifu1TargetName:  String,
     override val ifu1Coordinates: Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends HighResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
@@ -417,7 +487,7 @@ object HighResolutionMode     {
     override val ifu1TargetName:  String,
     override val ifu1Coordinates: Coordinates,
     ifu2Coordinates:              Coordinates,
-    override val userTargets: List[GemTarget]
+    override val userTargets:     List[GemTarget]
   ) extends HighResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,

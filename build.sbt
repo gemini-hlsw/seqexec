@@ -260,7 +260,6 @@ lazy val seqexec_server = project
   .in(file("modules/server"))
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
-  .disablePlugins(HydraPlugin)
   .settings(commonSettings: _*)
   .settings(
     scalacOptions += "-Ymacro-annotations",
