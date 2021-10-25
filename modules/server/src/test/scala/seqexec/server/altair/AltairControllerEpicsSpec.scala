@@ -152,7 +152,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     }
   }
 
-  test("AltairControllerEpics should pause and not resume NGS AO for unguided stap with offset") {
+  test("AltairControllerEpics should pause and not resume NGS AO for unguided step with offset") {
     val altairEpics = buildAltairController[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
