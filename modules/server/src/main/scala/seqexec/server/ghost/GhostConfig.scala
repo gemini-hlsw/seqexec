@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -14,7 +14,9 @@ import seqexec.server.ConfigUtilOps.ExtractFailure
 import lucuma.core.model.{ Target => GemTarget }
 import lucuma.core.math.Coordinates
 import lucuma.core.enum.GiapiStatusApply
+import lucuma.core.enum.GiapiStatusApply._
 import GhostConfig._
+import scala.annotation.nowarn
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig {
@@ -44,7 +46,9 @@ sealed trait GhostConfig {
           Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem),
                                c.ra.toAngle.toDoubleDegrees
           ) |+|
-          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._1.applyItem), t.name)
+          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._1.applyItem),
+                               t.name.value
+          )
       }
       .getOrElse(Configuration.Zero)
 
@@ -76,8 +80,11 @@ sealed trait GhostConfig {
 // We use them to determine the type of configuration being used by GHOST, and instantiate it.
 object GhostConfig {
 
-  def giapiConfig[A](app: GiapiStatusApply, value: A): Configuration =
+  @nowarn
+  def giapiConfig[A](app: GiapiStatusApply, value: A): Configuration = {
+    println(app)
     Configuration.Zero
+  }
 
   private[ghost] def ifuConfig(
     ifuNum:        IFUNum,
@@ -96,10 +103,6 @@ object GhostConfig {
       cfg("dec", coordinates.dec.toAngle.toSignedDoubleDegrees) |+|
       cfg("bundle", bundleConfig.configValue)
     current
-    // guideConfig match {
-    //   case Some(g) => current |+| cfg(g)
-    //   case _ => current1
-    // }
   }
 
   val UserTargetsApply: Map[Int, (GiapiStatusApply, GiapiStatusApply, GiapiStatusApply)] =

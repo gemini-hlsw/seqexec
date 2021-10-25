@@ -24,6 +24,6 @@ object GhostController {
       override val name = "GHOST"
 
       override def configuration(config: GhostConfig): F[Configuration] =
-        config.configuration.pure[F]
+        Logger[F].info(s"ABC ${config.configuration}") *> config.configuration.pure[F]
     }
 }
