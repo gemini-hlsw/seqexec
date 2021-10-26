@@ -13,6 +13,8 @@ name := "seqexec"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+Global / semanticdbEnabled := true
+
 ThisBuild / Compile / packageDoc / publishArtifact := false
 
 // Gemini repository
@@ -143,7 +145,8 @@ lazy val seqexec_web_server = project
       Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
     reStart / javaOptions += s"-javaagent:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
-    reStart / mainClass := Some("seqexec.web.server.http4s.WebServerLauncher")
+    reStart / mainClass := Some("seqexec.web.server.http4s.WebServerLauncher"),
+    Compile / bspEnabled := false,
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -347,6 +350,7 @@ lazy val acm = project
     ) ++ Logback ++ JAXB,
     Test / libraryDependencies ++= Logback,
     Test / testOptions := Seq(),
+    Compile / bspEnabled := false,
     Compile / sourceGenerators += Def.task {
       import scala.sys.process._
       val pkg = "edu.gemini.epics.acm.generated"
