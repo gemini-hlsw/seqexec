@@ -52,7 +52,7 @@ object Settings {
 
     // test libraries
     val xmlUnit                     = "1.6"
-    val jUnitInterface              = "0.11"
+    val jUnitInterface              = "0.13.2"
     val scalaMock                   = "5.1.0"
     lazy val munitVersion           = "0.7.29"
     lazy val munitDisciplineVersion = "1.0.9"
@@ -102,7 +102,7 @@ object Settings {
     )
     val XmlUnit        = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface =
-      "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
+      "com.github.sbt" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
     val ScalaMock   = "org.scalamock"     %% "scalamock"          % LibraryVersions.scalaMock  % "test"
     // Server side libraries
     val Cats        = Def.setting("org.typelevel" %%% "cats-core" % LibraryVersions.catsVersion)
