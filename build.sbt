@@ -22,6 +22,8 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
+Global / resolvers += Resolver.sonatypeRepo("public")
+
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
 ThisBuild / ocsJreDir := Path.userHome / ".jres8_ocs3"
@@ -277,7 +279,8 @@ lazy val seqexec_server = project
         Log4Cats.value,
         Log4CatsNoop.value,
         TestLibs.value,
-        PPrint.value
+        PPrint.value,
+        ACM
       ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
@@ -290,8 +293,7 @@ lazy val seqexec_server = project
   .dependsOn(seqexec_engine    % "compile->compile;test->test",
              giapi,
              ocs2_api.jvm,
-             seqexec_model.jvm % "compile->compile;test->test",
-             acm               % "compile->compile;test->test"
+             seqexec_model.jvm % "compile->compile;test->test"
   )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
@@ -333,43 +335,6 @@ lazy val seqexec_engine = project
                                 Log4s.value,
                                 Log4Cats.value
     ) ++ Monocle.value ++ MUnit.value
-  )
-
-lazy val acm = project
-  .in(file("modules/acm"))
-  .settings(commonSettings: _*)
-  .settings(
-    libraryDependencies ++= Seq(
-      EpicsService,
-      GmpCommandsRecords,
-      Guava,
-      Slf4j,
-      XmlUnit,
-      ScalaMock,
-      JUnitInterface
-    ) ++ Logback ++ JAXB,
-    Test / libraryDependencies ++= Logback,
-    Test / testOptions := Seq(),
-    Compile / bspEnabled := false,
-    Compile / sourceGenerators += Def.task {
-      import scala.sys.process._
-      val pkg = "edu.gemini.epics.acm.generated"
-      val log = state.value.log
-      val gen = (Compile / sourceManaged).value
-      val out = pkg.split("\\.").foldLeft(gen)(_ / _)
-      val xsd = sourceDirectory.value / "main" / "resources" / "CaSchema.xsd"
-      val cmd = List("xjc", "-d", gen.getAbsolutePath, "-p", pkg, xsd.getAbsolutePath)
-      val mod = xsd.getParentFile.listFiles.map(_.lastModified).max
-      val cur =
-        if (out.exists && out.listFiles.nonEmpty) out.listFiles.map(_.lastModified).min
-        else Int.MaxValue
-      if (mod > cur) {
-        out.mkdirs
-        val err = cmd.run(ProcessLogger(log.info(_), log.error(_))).exitValue
-        if (err != 0) sys.error("xjc failed")
-      }
-      out.listFiles.toSeq
-    }.taskValue
   )
 
 /**
