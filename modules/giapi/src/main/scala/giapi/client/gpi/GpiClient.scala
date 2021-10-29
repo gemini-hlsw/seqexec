@@ -59,9 +59,9 @@ object GpiClient {
     // in case of error
     val ACCommandTimeout: FiniteDuration = 6.minutes
 
-    ///////////////
+    // /////////////
     // Status items
-    ///////////////
+    // /////////////
     def heartbeat: F[Int] =
       giapi.get[Int]("gpi:heartbeat")
 
@@ -71,15 +71,15 @@ object GpiClient {
     def aoDarkLevel: F[Float] =
       giapi.get[Float]("gpi:ao:darkLevel")
 
-    /////////////////////
+    // ///////////////////
     // Streaming statuses
-    /////////////////////
+    // ///////////////////
     def heartbeatS: F[Stream[F, Int]] =
       giapi.stream[Int]("gpi:heartbeat")
 
-    ////////////////////////
+    // //////////////////////
     // GPI Specific commands
-    ////////////////////////
+    // //////////////////////
 
     // TODO Use OCS constants for open/close
     private def shutter(shutterName: String, position: Boolean): F[CommandResult] =

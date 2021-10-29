@@ -169,7 +169,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
     )
     val p             = Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId)))
 
-    //take(3): Start, Executing, Paused
+    // take(3): Start, Executing, Paused
     executionEngine
       .process(PartialFunction.empty)(p)(s0)
       .take(3)

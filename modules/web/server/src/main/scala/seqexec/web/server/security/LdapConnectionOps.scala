@@ -75,7 +75,7 @@ object LdapConnectionOps {
         Filter.createEqualityFilter("objectClass", "user")
       )
 
-      //val attributes = List("displayName", "memberOf", "thumbnailPhoto")
+      // val attributes = List("displayName", "memberOf", "thumbnailPhoto")
       val search       = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
       // Search to read user data, it may throw an exception
       val searchResult = c.search(search)
