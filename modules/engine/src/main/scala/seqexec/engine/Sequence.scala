@@ -69,7 +69,7 @@ object Sequence {
 
     def rollback: Zipper[F] = this.copy(focus = focus.rollback)
 
-    //Skips steps before starting a sequence.
+    // Skips steps before starting a sequence.
     def skips: Option[Zipper[F]] =
       if (focus.skipMark.self) {
         remaining match {

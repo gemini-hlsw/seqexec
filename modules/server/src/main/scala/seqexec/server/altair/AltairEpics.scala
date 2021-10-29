@@ -29,7 +29,7 @@ trait AltairEpics[F[_]] {
   def waitAoSettled(timeout: FiniteDuration): F[Unit]
   def waitMatrixCalc(v:      CarStateGEM5, timeout: FiniteDuration): F[Unit]
 
-  //Statuses
+  // Statuses
   def strapTempStatus: F[Boolean]
   def strapGate: F[Int]
   def strapLoop: F[Boolean]

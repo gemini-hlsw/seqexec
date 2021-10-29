@@ -44,7 +44,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
     cio:                Concurrent[F],
     tio:                Timer[F]
   ): F[List[EventType[F]]] = {
-    //Three ways of handling errors are mixed here: java exceptions, Either and MonadError
+    // Three ways of handling errors are mixed here: java exceptions, Either and MonadError
     val t: F[(List[Throwable], Option[SequenceGen[F]])] =
       odbProxy.read(seqId).flatMap { odbSeq =>
         val configObsId: F[String] =

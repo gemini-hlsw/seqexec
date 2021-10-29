@@ -172,7 +172,7 @@ abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveC
 }
 
 object EpicsCodex {
-  //This code deals with decoding and encoding the EPICS values
+  // This code deals with decoding and encoding the EPICS values
   trait EncodeEpicsValue[A, T] {
     def encode(a: A): T
   }
@@ -198,7 +198,7 @@ object EpicsCodex {
 
 object EpicsUtil {
 
-  //`locked` gets a piece of code and runs it protected by `lock`
+  // `locked` gets a piece of code and runs it protected by `lock`
   private def locked[A](lock: ReentrantLock)(f: => A): A = {
     lock.lock()
     try f
@@ -212,10 +212,10 @@ object EpicsUtil {
     name:    String
   ): F[T] =
     Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
-      //The task is created with async. So we do whatever we need to do,
+      // The task is created with async. So we do whatever we need to do,
       // and then call `f` to signal the completion of the task.
 
-      //`resultGuard` and `lock` are used for synchronization.
+      // `resultGuard` and `lock` are used for synchronization.
       val resultGuard = new AtomicInteger(1)
       val lock        = new ReentrantLock()
 

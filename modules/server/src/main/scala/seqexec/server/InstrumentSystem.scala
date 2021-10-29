@@ -22,7 +22,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
 
   def observe(config: CleanConfig): Kleisli[F, ImageFileId, ObserveCommandResult]
 
-  //Expected total observe lapse, used to calculate timeout
+  // Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: CleanConfig): F[Time]
 
   def observeTimeout: FiniteDuration = 1.minute

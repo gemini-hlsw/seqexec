@@ -43,7 +43,7 @@ class SequenceSpec extends AnyFlatSpec {
   // Be careful that resume command really arrives while sequence is running.
   ignore should "ignore resume command if sequence is already running." in {}
 
-  //For this test, an action in one of the steps in the sequence must return an error.
+  // For this test, an action in one of the steps in the sequence must return an error.
   ignore should "stop execution and propagate error when an Action ends in error." in {}
 
   private val user            = UserDetails("telops", "Telops")

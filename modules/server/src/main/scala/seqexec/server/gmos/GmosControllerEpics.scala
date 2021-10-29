@@ -333,12 +333,12 @@ object GmosControllerEpics extends GmosEncoders {
               )
             }
 
-          //TODO Improve data model to remove this case. It is here because search includes types of
+          // TODO Improve data model to remove this case. It is here because search includes types of
           // both sites.
           case _ => List.empty
         }
 
-        //If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways
+        // If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways
         if (params.exists(_.isDefined)) params :+ CC.setDisperserMode(disperserMode0).some
         else
           List(
@@ -377,7 +377,7 @@ object GmosControllerEpics extends GmosEncoders {
           case CustomMaskFPU(name) =>
             L.debug(s"Set GMOS custom fpu $name").some +: setFPUParams(customFPU(name))
           case UnknownFPU          => List.empty
-          //TODO Improve data model to remove this case. It is here because the BuiltInFPU of the
+          // TODO Improve data model to remove this case. It is here because the BuiltInFPU of the
           // other site is also a type of GmosFPU, even if it never will appear here.
           case _                   => List.empty
         }
@@ -433,7 +433,7 @@ object GmosControllerEpics extends GmosEncoders {
           setGainSetting(state, config.r.ampReadMode, config.r.ampGain),
           applyParam(state.ampCount, encode(config.r.ampCount), DC.setAmpCount),
           // TODO revert this change when FR-41232 is resolved
-          //applyParam(state.roiNumUsed, roiNumUsed(config.roi), DC.setRoiNumUsed),
+          // applyParam(state.roiNumUsed, roiNumUsed(config.roi), DC.setRoiNumUsed),
           DC.setRoiNumUsed(roiNumUsed(config.roi)).some,
           applyParam(state.ccdXBinning, encode(config.bi.x), DC.setCcdXBinning),
           applyParam(state.ccdYBinning, encode(config.bi.y), DC.setCcdYBinning)

@@ -100,13 +100,13 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
   )
 
   "TcsControllerEpicsCommon" should "not pause guiding if it is not necessary" in {
-    //No offset
+    // No offset
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       baseConfig
     ) shouldBe false
 
-    //Offset, but no guider in use
+    // Offset, but no guider in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -119,7 +119,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
   }
 
   it should "decide if it can keep PWFS1 guiding active when applying an offset" in {
-    //Big offset with PWFS1 in use
+    // Big offset with PWFS1 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
@@ -166,7 +166,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       )(baseConfig)
     ) shouldBe true
 
-    //Small offset with PWFS1 in use
+    // Small offset with PWFS1 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
@@ -192,7 +192,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
   }
 
   it should "decide if it can keep PWFS2 guiding active when applying an offset" in {
-    //Big offset with PWFS2 in use
+    // Big offset with PWFS2 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
@@ -239,7 +239,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       )(baseConfig)
     ) shouldBe true
 
-    //Small offset with PWFS2 in use
+    // Small offset with PWFS2 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
@@ -268,7 +268,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
   it should "decide if it can keep OIWFS guiding active when applying an offset" in {
     val threshold = Millimeters(1.0)
 
-    //Big offset with OIWFS in use
+    // Big offset with OIWFS in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
@@ -317,7 +317,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       )(baseConfig)
     ) shouldBe true
 
-    //Small offset with OIWFS in use
+    // Small offset with OIWFS in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
