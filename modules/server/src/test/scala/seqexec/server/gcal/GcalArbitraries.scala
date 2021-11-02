@@ -28,11 +28,14 @@ trait GcalArbitraries {
   implicit val gcalCuArLampCogen: Cogen[GcalController.CuArLampState] =
     Cogen[GcalController.LampState].contramap(_.self)
 
-  implicit val gcalQhLampArb: Arbitrary[GcalController.QH5WLampState] =
+  implicit val gcalQh5WLampArb: Arbitrary[GcalController.QH5WLampState] =
     Arbitrary(arbitrary[GcalController.LampState].map(QH5WLampState.apply))
 
   implicit val gcalQh5WLampCogen: Cogen[GcalController.QH5WLampState] =
     Cogen[GcalController.LampState].contramap(_.self)
+
+  implicit val gcalQh1000WLampArb: Arbitrary[GcalController.QH100WLampState] =
+    Arbitrary(arbitrary[GcalController.LampState].map(QH100WLampState.apply))
 
   implicit val gcalQh100WLampCogen: Cogen[GcalController.QH100WLampState] =
     Cogen[GcalController.LampState].contramap(_.self)
