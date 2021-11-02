@@ -67,9 +67,13 @@ object GcalControllerEpics {
     sys.lampsCmd.setThArLampName("ThAr") *>
       sys.lampsCmd.setThArLampOn(v)
 
-  private def setQHLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
-    sys.lampsCmd.setQHLampName("QH") *>
-      sys.lampsCmd.setQHLampOn(v)
+  private def setQH5WLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setQH5WLampName("QH") *>
+      sys.lampsCmd.setQH5WLampOn(v)
+
+  private def setQH100WLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
+    sys.lampsCmd.setQH100WLampName("QH") *>
+      sys.lampsCmd.setQH100WLampOn(v)
 
   private def setXeLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
     sys.lampsCmd.setXeLampName("Xe") *>
@@ -86,31 +90,34 @@ object GcalControllerEpics {
     }
 
   final case class EpicsGcalConfig(
-    lampAr:   BinaryOnOff,
-    lampCuAr: BinaryOnOff,
-    lampQh:   BinaryOnOff,
-    lampThAr: BinaryOnOff,
-    lampXe:   BinaryOnOff,
-    lampIr:   BinaryOnOff,
-    shutter:  String,
-    filter:   String,
-    diffuser: String
+    lampAr:     BinaryOnOff,
+    lampCuAr:   BinaryOnOff,
+    lampQh5W:   BinaryOnOff,
+    lampQh100W: BinaryOnOff,
+    lampThAr:   BinaryOnOff,
+    lampXe:     BinaryOnOff,
+    lampIr:     BinaryOnOff,
+    shutter:    String,
+    filter:     String,
+    diffuser:   String
   )
 
   def retrieveConfig[F[_]: Async](epics: GcalEpics[F]): F[EpicsGcalConfig] = for {
-    ar   <- epics.lampAr
-    cuAr <- epics.lampCuAr
-    qh   <- epics.lampQH
-    thAr <- epics.lampThAr
-    xe   <- epics.lampXe
-    ir   <- epics.lampIr
-    shut <- epics.shutter
-    filt <- epics.filter
-    diff <- epics.diffuser
+    ar    <- epics.lampAr
+    cuAr  <- epics.lampCuAr
+    qh5   <- epics.lampQH5W
+    qh100 <- epics.lampQH100W
+    thAr  <- epics.lampThAr
+    xe    <- epics.lampXe
+    ir    <- epics.lampIr
+    shut  <- epics.shutter
+    filt  <- epics.filter
+    diff  <- epics.diffuser
   } yield EpicsGcalConfig(
     ar,
     cuAr,
-    qh,
+    qh5,
+    qh100,
     thAr,
     xe,
     ir,
@@ -125,7 +132,8 @@ object GcalControllerEpics {
     val params: List[F[Unit]] = List(
       applyParam(current.lampAr, encode(demand.lampAr.self), setArLampParams(epics)),
       applyParam(current.lampCuAr, encode(demand.lampCuAr.self), setCuArLampParams(epics)),
-      applyParam(current.lampQh, encode(demand.lampQh.self), setQHLampParams(epics)),
+      applyParam(current.lampQh5W, encode(demand.lampQh5W.self), setQH5WLampParams(epics)),
+      applyParam(current.lampQh5W, encode(demand.lampQh100W.self), setQH100WLampParams(epics)),
       applyParam(current.lampThAr, encode(demand.lampThAr.self), setThArLampParams(epics)),
       applyParam(current.lampXe, encode(demand.lampXe.self), setXeLampParams(epics)),
       demand.lampIrO.flatMap(d =>
