@@ -50,16 +50,16 @@ object Settings {
     val flywayVersion  = "6.0.4"
 
     // test libraries
-    val xmlUnit                     = "1.6"
-    val jUnitInterface              = "0.13.2"
-    val scalaMock                   = "5.1.0"
-    lazy val munitVersion           = "0.7.29"
-    lazy val munitDisciplineVersion = "1.0.9"
-    lazy val munitCatsEffectVersion = "0.3.0"
+    val xmlUnit                = "1.6"
+    val jUnitInterface         = "0.13.2"
+    val scalaMock              = "5.1.0"
+    val munitVersion           = "0.7.29"
+    val munitDisciplineVersion = "1.0.9"
+    val munitCatsEffectVersion = "0.3.0"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
-    val ocsVersion = "2021101.2.2"
+    val ocsVersion = "2021101.1.3"
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.1"

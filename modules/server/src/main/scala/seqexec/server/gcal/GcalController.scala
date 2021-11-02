@@ -44,10 +44,17 @@ object GcalController {
       Eq[LampState].contramap(_.self)
   }
 
-  final case class QHLampState(self: LampState)
+  final case class QH5WLampState(self: LampState)
 
-  object QHLampState {
-    implicit val eq: Eq[QHLampState] =
+  object QH5WLampState {
+    implicit val eq: Eq[QH5WLampState] =
+      Eq[LampState].contramap(_.self)
+  }
+
+  final case class QH100WLampState(self: LampState)
+
+  object QH100WLampState {
+    implicit val eq: Eq[QH100WLampState] =
       Eq[LampState].contramap(_.self)
   }
 
@@ -81,7 +88,8 @@ object GcalController {
   sealed trait GcalConfig {
     val lampAr: ArLampState
     val lampCuAr: CuArLampState
-    val lampQh: QHLampState
+    val lampQh5W: QH5WLampState
+    val lampQh100W: QH100WLampState
     val lampThAr: ThArLampState
     val lampXe: XeLampState
     val lampIrO: Option[IrLampState]
@@ -93,15 +101,16 @@ object GcalController {
   object GcalConfig {
 
     final case class GcalOn(
-      lampAr:   ArLampState,
-      lampCuAr: CuArLampState,
-      lampQh:   QHLampState,
-      lampThAr: ThArLampState,
-      lampXe:   XeLampState,
-      lampIrO:  Option[IrLampState],
-      shutter:  Shutter,
-      filter:   Filter,
-      diffuser: Diffuser
+      lampAr:     ArLampState,
+      lampCuAr:   CuArLampState,
+      lampQh5W:   QH5WLampState,
+      lampQh100W: QH100WLampState,
+      lampThAr:   ThArLampState,
+      lampXe:     XeLampState,
+      lampIrO:    Option[IrLampState],
+      shutter:    Shutter,
+      filter:     Filter,
+      diffuser:   Diffuser
     ) extends GcalConfig {
       override val filterO: Option[Filter]     = filter.some
       override val diffuserO: Option[Diffuser] = diffuser.some
@@ -110,7 +119,8 @@ object GcalController {
     case object GcalOff extends GcalConfig {
       override val lampAr: ArLampState          = ArLampState(LampState.Off)
       override val lampCuAr: CuArLampState      = CuArLampState(LampState.Off)
-      override val lampQh: QHLampState          = QHLampState(LampState.Off)
+      override val lampQh5W: QH5WLampState      = QH5WLampState(LampState.Off)
+      override val lampQh100W: QH100WLampState  = QH100WLampState(LampState.Off)
       override val lampThAr: ThArLampState      = ThArLampState(LampState.Off)
       override val lampXe: XeLampState          = XeLampState(LampState.Off)
       override val lampIrO: Option[IrLampState] = IrLampState(LampState.Off).some
@@ -123,7 +133,8 @@ object GcalController {
     case object GcalOffIgnoringIr extends GcalConfig {
       override val lampAr: ArLampState          = ArLampState(LampState.Off)
       override val lampCuAr: CuArLampState      = CuArLampState(LampState.Off)
-      override val lampQh: QHLampState          = QHLampState(LampState.Off)
+      override val lampQh5W: QH5WLampState      = QH5WLampState(LampState.Off)
+      override val lampQh100W: QH100WLampState  = QH100WLampState(LampState.Off)
       override val lampThAr: ThArLampState      = ThArLampState(LampState.Off)
       override val lampXe: XeLampState          = XeLampState(LampState.Off)
       override val lampIrO: Option[IrLampState] = none
@@ -138,7 +149,8 @@ object GcalController {
     List(
       s"lampAr = ${config.lampAr}",
       s"lampCuar = ${config.lampCuAr}",
-      s"lampQH = ${config.lampQh}",
+      s"lampQH5W = ${config.lampQh5W}",
+      s"lampQH100W = ${config.lampQh100W}",
       s"lampThAr = ${config.lampThAr}",
       s"lampXe = ${config.lampXe}",
       s"lampIr = ${config.lampIrO}",

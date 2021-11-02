@@ -79,11 +79,17 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
     private val stateIR                      = cs.map(_.getString("stateIR"))
     def setIRLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateIR, v, toLampState)
 
-    private val nameQH                    = cs.map(_.getString("nameQH"))
-    def setQHLampName(v: String): F[Unit] = setParameter(nameQH, v)
+    private val nameQH5W                    = cs.map(_.getString("nameQH5W"))
+    def setQH5WLampName(v: String): F[Unit] = setParameter(nameQH5W, v)
 
-    private val stateQH                      = cs.map(_.getString("stateQH"))
-    def setQHLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateQH, v, toLampState)
+    private val stateQH5W                      = cs.map(_.getString("stateQH5W"))
+    def setQH5WLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateQH5W, v, toLampState)
+
+    private val nameQH100W                    = cs.map(_.getString("nameQH100W"))
+    def setQH100WLampName(v: String): F[Unit] = setParameter(nameQH100W, v)
+
+    private val stateQH100W                      = cs.map(_.getString("stateQH100W"))
+    def setQH100WLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateQH100W, v, toLampState)
 
     private val nameXe                    = cs.map(_.getString("nameXe"))
     def setXeLampName(v: String): F[Unit] = setParameter(nameXe, v)
@@ -108,23 +114,27 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       s"$longName lamp state"
     )
 
-  val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
-  def lampAr: F[BinaryOnOff]               = safeAttributeF(lampArAttr)
+  private val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
+  def lampAr: F[BinaryOnOff]                       = safeAttributeF(lampArAttr)
 
-  val lampQHAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH", "Quartz Halogen")
-  def lampQH: F[BinaryOnOff]               = safeAttributeF(lampQHAttr)
+  private val lampQH5WAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH5W", "Quartz Halogen")
+  def lampQH5W: F[BinaryOnOff]                       = safeAttributeF(lampQH5WAttr)
 
-  val lampCuArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
-  def lampCuAr: F[BinaryOnOff]               = safeAttributeF(lampCuArAttr)
+  private val lampQH100WAttr: CaAttribute[BinaryOnOff] =
+    createLampAttribute("QH100W", "Quartz Halogen")
+  def lampQH100W: F[BinaryOnOff]                       = safeAttributeF(lampQH100WAttr)
 
-  val lampXeAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Xe", "Xenon")
-  def lampXe: F[BinaryOnOff]               = safeAttributeF(lampXeAttr)
+  private val lampCuArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
+  def lampCuAr: F[BinaryOnOff]                       = safeAttributeF(lampCuArAttr)
 
-  val lampThArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("ThAr", "Thorium Argon")
-  def lampThAr: F[BinaryOnOff]               = safeAttributeF(lampThArAttr)
+  private val lampXeAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Xe", "Xenon")
+  def lampXe: F[BinaryOnOff]                       = safeAttributeF(lampXeAttr)
 
-  val lampIrAttr: CaAttribute[BinaryOnOff] = createLampAttribute("IR", "Infrared")
-  def lampIr: F[BinaryOnOff]               = safeAttributeF(lampIrAttr)
+  private val lampThArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("ThAr", "Thorium Argon")
+  def lampThAr: F[BinaryOnOff]                       = safeAttributeF(lampThArAttr)
+
+  private val lampIrAttr: CaAttribute[BinaryOnOff] = createLampAttribute("IR", "Infrared")
+  def lampIr: F[BinaryOnOff]                       = safeAttributeF(lampIrAttr)
 
   def shutter: F[String] =
     safeAttributeF(state.getStringAttribute("shutter"))
