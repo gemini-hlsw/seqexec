@@ -61,7 +61,7 @@
                 <description>QH 5W Lamp name</description>
             </parameter>
             <parameter name="nameQH100W">
-                <channel>lampSel.C</channel>
+                <channel>lampSel.N</channel>
                 <type>STRING</type>
                 <description>QH 100W Lamp name</description>
             </parameter>
