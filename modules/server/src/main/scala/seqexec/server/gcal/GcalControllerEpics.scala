@@ -72,7 +72,7 @@ object GcalControllerEpics {
       sys.lampsCmd.setQH5WLampOn(v)
 
   private def setQH100WLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
-    sys.lampsCmd.setQH100WLampName("QH") *>
+    sys.lampsCmd.setQH100WLampName("QH100") *>
       sys.lampsCmd.setQH100WLampOn(v)
 
   private def setXeLampParams[F[_]: Async](sys: GcalEpics[F])(v: BinaryOnOff): F[Unit] =
