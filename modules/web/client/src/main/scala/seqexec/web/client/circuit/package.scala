@@ -95,9 +95,10 @@ package circuit {
 
   @Lenses
   final case class InitialSyncFocus(
-    location:  Pages.SeqexecPages,
-    sod:       SequencesOnDisplay,
-    firstLoad: Boolean
+    location:     Pages.SeqexecPages,
+    sod:          SequencesOnDisplay,
+    displayNames: Map[String, String],
+    firstLoad:    Boolean
   )
 
   object InitialSyncFocus {
@@ -106,9 +107,14 @@ package circuit {
 
     val initialSyncFocusL: Lens[SeqexecUIModel, InitialSyncFocus] =
       Lens[SeqexecUIModel, InitialSyncFocus](m =>
-        InitialSyncFocus(m.navLocation, m.sequencesOnDisplay, m.firstLoad)
+        InitialSyncFocus(m.navLocation, m.sequencesOnDisplay, m.displayNames, m.firstLoad)
       )(v =>
-        m => m.copy(navLocation = v.location, sequencesOnDisplay = v.sod, firstLoad = v.firstLoad)
+        m =>
+          m.copy(navLocation = v.location,
+                 sequencesOnDisplay = v.sod,
+                 displayNames = v.displayNames,
+                 firstLoad = v.firstLoad
+          )
       )
   }
 

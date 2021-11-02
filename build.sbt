@@ -246,7 +246,7 @@ lazy val seqexec_web_client = project
       LucumaUI.value,
       PPrint.value,
       TestLibs.value
-    ) ++ MUnit.value ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value
+    ) ++ MUnit.value ++ ReactScalaJS.value ++ Diode.value ++ Log4CatsLogLevel.value ++ Circe.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -347,12 +347,12 @@ lazy val seqexecCommonSettings = Seq(
   // This is important to keep the file generation order correctly
   Universal / parallelExecution     := false,
   // Depend on webpack and add the assets created by webpack
-  Compile / packageBin / mappings ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value
+  Compile / packageBin / mappings ++= (seqexec_web_client/ Compile/ fullOptJS / webpack).value
     .map(f => f.data -> f.data.getName()),
   // Name of the launch script
   executableScriptName              := "seqexec-server",
   // No javadocs
-  mappings in (Compile, packageDoc) := Seq(),
+  Compile / packageDoc / mappings := Seq(),
   // Don't create launchers for Windows
   makeBatScripts                    := Seq.empty,
   // Specify a different name for the config file
@@ -361,7 +361,7 @@ lazy val seqexecCommonSettings = Seq(
   bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
   Universal / mappings += {
-    val f = (resourceDirectory in (seqexec_web_server, Compile)).value / "logback.xml"
+    val f = (seqexec_web_server / Compile / resourceDirectory).value / "logback.xml"
     f -> ("conf/" + f.getName)
   },
   // Launch options
@@ -463,7 +463,7 @@ lazy val app_seqexec_server_gs_test =
       applicationConfSite  := DeploymentSite.GS,
       Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
-        val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+        val universalMappings = (app_seqexec_server / Universal / mappings).value
         val filtered          = universalMappings.filter { case (_, name) =>
           !name.contains("_sjs")
         }
@@ -492,7 +492,7 @@ lazy val app_seqexec_server_gn_test =
       applicationConfSite  := DeploymentSite.GN,
       Universal / mappings := {
         // filter out sjs jar files. otherwise it could generate some conflicts
-        val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+        val universalMappings = (app_seqexec_server / Universal / mappings).value
         val filtered          = universalMappings.filter { case (_, name) =>
           !name.contains("_sjs")
         }
@@ -520,7 +520,7 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
     applicationConfSite  := DeploymentSite.GS,
     Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val universalMappings = (app_seqexec_server / Universal / mappings).value
       val filtered          = universalMappings.filter { case (_, name) =>
         !name.contains("_sjs")
       }
@@ -548,7 +548,7 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
     applicationConfSite  := DeploymentSite.GN,
     Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (mappings in (app_seqexec_server, Universal)).value
+      val universalMappings = (app_seqexec_server / Universal / mappings).value
       val filtered          = universalMappings.filter { case (_, name) =>
         !name.contains("_sjs")
       }

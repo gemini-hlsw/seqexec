@@ -21,7 +21,7 @@ import react.common._
 import react.semanticui.collections.form._
 import react.semanticui.elements.segment.Segment
 import react.semanticui.widths._
-import seqexec.model.Observer
+// import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
@@ -38,9 +38,10 @@ import seqexec.web.client.reusability._
 final case class HeadersSideBar(model: HeaderSideBarFocus)
     extends ReactProps[HeadersSideBar](HeadersSideBar.component) {
 
-  def canOperate: Boolean                                                                    = model.status.canOperate
-  def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
-    model.observer
+  def canOperate: Boolean = model.status.canOperate
+
+  // def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
+  //   model.observer
 }
 
 /**
@@ -67,73 +68,37 @@ object HeadersSideBar {
   @Lenses
   final case class State(
     operator:     Option[Operator],
-    observer:     Option[Observer],
-    prevOperator: Option[Operator],
-    prevObserver: Option[Observer]
+    prevOperator: Option[Operator]
   )
 
   object State {
-    def apply(operator: Option[Operator], observer: Option[Observer]): State =
-      State(operator, observer, operator, observer)
+    def apply(operator: Option[Operator]): State =
+      State(operator, operator)
 
-    implicit val stateEquals: Eq[State] = Eq.fromUniversalEquals
+    implicit val stateEquals: Eq[State] = Eq.by(_.operator)
 
-    implicit val stateReuse: Reusability[State] = Reusability.by(s => (s.operator, s.observer))
+    implicit val stateReuse: Reusability[State] = Reusability.by(_.operator)
   }
 
   class Backend(val $ : BackendScope[HeadersSideBar, State]) extends TimerSupport {
     private def updateOperator(name: Operator): Callback =
       $.props >>= { p => SeqexecCircuit.dispatchCB(UpdateOperator(name)).when_(p.canOperate) }
 
-    private def updateObserver(name: Observer): Callback =
-      $.props >>= { p =>
-        (p.selectedObserver match {
-          case Right(Right(a)) =>
-            SeqexecCircuit.dispatchCB(UpdateObserver(a.obsId, name))
-          case Right(Left(_))  =>
-            SeqexecCircuit.dispatchCB(UpdateCalTabObserver(name))
-          case Left(_)         =>
-            SeqexecCircuit.dispatchCB(UpdateDefaultObserver(name))
-        }).when_(p.canOperate)
-      }
-
     def updateStateOp(value: Option[Operator], cb: Callback = Callback.empty): Callback =
       $.setStateL(State.operator)(value) >> cb
 
-    def updateStateOb(value: Option[Observer], cb: Callback = Callback.empty): Callback =
-      $.setStateL(State.observer)(value) >> cb
-
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
-      setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
+      // setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
+      setInterval(submitIfChangedOp, 2.second)
 
     def submitIfChangedOp: Callback =
       ($.state.zip($.props)) >>= { case (s, p) =>
+        // println(s"OOOOOP ${s.operator}")
         s.operator
           .map(updateOperator)
           .getOrEmpty
           .when_(p.model.operator =!= s.operator)
-      }
-
-    def submitIfChangedOb: Callback =
-      ($.state.zip($.props)) >>= { case (s, p) =>
-        p.selectedObserver match {
-          case Right(Right(a)) =>
-            s.observer
-              .map(updateObserver)
-              .getOrEmpty
-              .when_(a.observer.forall(_.some =!= s.observer))
-          case Right(Left(a))  =>
-            s.observer
-              .map(updateObserver)
-              .getOrEmpty
-              .when_(a.observer.forall(_.some =!= s.observer))
-          case Left(o)         =>
-            s.observer
-              .map(updateObserver)
-              .getOrEmpty
-              .when_(o.some =!= s.observer)
-        }
       }
 
     def iqChanged(iq: ImageQuality): Callback =
@@ -149,23 +114,29 @@ object HeadersSideBar {
       SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
     def render(p: HeadersSideBar, s: State): VdomNode = {
-      val enabled       = p.model.status.canOperate
-      val operatorEV    =
+      val enabled    = p.model.status.canOperate
+      val operatorEV =
         StateSnapshot[Operator](s.operator.getOrElse(Operator.Zero))(updateStateOp)
-      val observerEV    =
-        StateSnapshot[Observer](s.observer.getOrElse(Observer.Zero))(updateStateOb)
-      val instrument    = p.selectedObserver
-        .map(i => i.fold(_ => "Daycal", _.instrument.show))
-        .getOrElse("Default")
-      val obsCompleted  =
-        p.selectedObserver.map(_.fold(_ => false, _.completed)).getOrElse(false)
-      val observerField = s"Observer - $instrument"
-
       Segment(secondary = true, clazz = SeqexecStyles.headerSideBarStyle)(
         Form()(
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
             <.div(
-              ^.cls := "eight wide field",
+              ^.cls := "sixteen wide field",
+              FormLabel("My display name", Some("displayName")),
+              InputEV[StateSnapshot, Operator](
+                "operator",
+                "operator",
+                operatorEV,
+                format = InputFormat.fromIso(Operator.valueI.reverse),
+                placeholder = "Display name...",
+                disabled = !enabled,
+                onBlur = _ => submitIfChangedOp
+              )
+            )
+          ),
+          FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
+            <.div(
+              ^.cls := "sixteen wide field",
               FormLabel("Operator", Some("operator")),
               InputEV[StateSnapshot, Operator](
                 "operator",
@@ -175,19 +146,6 @@ object HeadersSideBar {
                 placeholder = "Operator...",
                 disabled = !enabled,
                 onBlur = _ => submitIfChangedOp
-              )
-            ),
-            <.div(
-              ^.cls := "eight wide field",
-              FormLabel(observerField, Some("observer")),
-              InputEV[StateSnapshot, Observer](
-                "observer",
-                "observer",
-                observerEV,
-                format = InputFormat.fromIso(Observer.valueI.reverse),
-                placeholder = "Observer...",
-                disabled = !enabled || obsCompleted,
-                onBlur = _ => submitIfChangedOb
               )
             )
           ),
@@ -228,34 +186,22 @@ object HeadersSideBar {
     .builder[HeadersSideBar]
     .getDerivedStateFromPropsAndState[State] { (p, sOpt) =>
       val operator = p.model.operator
-      val observer =
-        p.selectedObserver match {
-          case Right(Right(a)) => a.observer
-          case Right(Left(a))  => a.observer
-          case Left(o)         => o.some
-        }
 
-      sOpt.fold(State(operator, observer)) { s =>
+      sOpt.fold(State(operator)) { s =>
         Function.chain(
           List(
             State.operator.set(operator),
             State.prevOperator.set(operator)
           ).some
             .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
-            .orEmpty :::
-            List(
-              State.observer.set(observer),
-              State.prevObserver.set(observer)
-            ).some
-              .filter(_ => (observer =!= s.prevObserver) && observer.nonEmpty)
-              .orEmpty
+            .orEmpty
         )(s)
       }
     }
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentDidMount(_.backend.setupTimer)
-    .configure(Reusability.shouldComponentUpdate)
+    .configure(Reusability.shouldComponentUpdateAndLog("AAAA"))
     .build
 
 }

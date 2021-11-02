@@ -62,7 +62,7 @@ object ControlMenu {
       val status = p.status
       <.div(
         ^.cls := "ui secondary right menu",
-        status.u match {
+        status.user match {
           case Some(u) =>
             Menu(secondary = true, floated = MenuFloated.Right)(
               MenuHeader(clazz =

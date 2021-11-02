@@ -38,7 +38,7 @@ object SessionQueueTableFilter {
     }))
 
   private val component = ScalaComponent
-    .builder[Unit]("SessionQueueTableFilter")
+    .builder[Unit]
     .stateless
     .render_P(_ =>
       React.Fragment(

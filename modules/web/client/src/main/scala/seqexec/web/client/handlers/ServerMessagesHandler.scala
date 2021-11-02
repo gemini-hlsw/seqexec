@@ -112,9 +112,9 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
         }
       updated(
         value.copy(user = u,
-                   defaultObserver = u
-                     .map(m => Observer(m.displayName))
-                     .getOrElse(value.defaultObserver),
+                   // defaultObserver = u
+                   //   .map(m => Observer(m.displayName))
+                   //   .getOrElse(value.defaultObserver),
                    clientId = c.some,
                    serverVersion = v.some
         ),

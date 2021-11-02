@@ -19,14 +19,14 @@ import react.semanticui.elements.label.Label
 import react.semanticui.modules.popup.Popup
 import react.semanticui.sizes._
 import seqexec.model.Observation
-import seqexec.model.Observer
+// import seqexec.model.Observer
 import seqexec.model.RunningStep
 import seqexec.model.SequenceState
 import seqexec.model.SystemOverrides
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import seqexec.web.client.actions.LoadSequence
-import seqexec.web.client.circuit.SeqexecCircuit
+// import seqexec.web.client.actions.LoadSequence
+// import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.AvailableTab
@@ -40,7 +40,7 @@ final case class SequenceTab(
   router:             RouterCtl[SeqexecPages],
   tab:                AvailableTab,
   loggedIn:           Boolean,
-  defaultObserver:    Observer,
+  // defaultObserver:    Observer,
   systemOverrides:    SystemOverrides,
   runningInstruments: List[Instrument]
 ) extends ReactProps[SequenceTab](SequenceTab.component)
@@ -65,8 +65,8 @@ object SequenceTab {
     (e: ReactMouseEvent, _: Button.ButtonProps) =>
       e.preventDefaultCB *>
         e.stopPropagationCB *>
-        b.setStateL(State.loading)(true) *>
-        SeqexecCircuit.dispatchCB(LoadSequence(b.props.defaultObserver, inst, id))
+        b.setStateL(State.loading)(true) // *>
+  // SeqexecCircuit.dispatchCB(LoadSequence(b.props.defaultObserver, inst, id))
 
   private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback =
     // prevent default to avoid the link jumping

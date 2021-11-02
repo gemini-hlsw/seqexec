@@ -51,7 +51,7 @@ object SeqexecTabs {
                 SequenceTab(p.router,
                             t,
                             x().canOperate,
-                            x().defaultObserver,
+                            // x().defaultObserver,
                             t.systemOverrides,
                             runningInstruments
                 )

@@ -7,7 +7,7 @@ import cats.Eq
 import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.common.FixedLengthBuffer
-import seqexec.model.Observer
+// import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.client.model.SectionVisibilityState._
 
@@ -35,11 +35,12 @@ object SoundSelection {
 final case class SeqexecUIModel(
   navLocation:        Pages.SeqexecPages,
   user:               Option[UserDetails],
+  displayNames:       Map[String, String],
   loginBox:           SectionVisibilityState,
   globalLog:          GlobalLog,
   sequencesOnDisplay: SequencesOnDisplay,
   appTableStates:     AppTableStates,
-  defaultObserver:    Observer,
+  // defaultObserver:    Observer,
   notification:       UserNotificationState,
   userPrompt:         UserPromptState,
   queues:             CalibrationQueues,
@@ -53,11 +54,12 @@ object SeqexecUIModel {
   val Initial: SeqexecUIModel = SeqexecUIModel(
     Pages.Root,
     None,
+    Map.empty,
     SectionClosed,
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
     AppTableStates.Initial,
-    Observer(""),
+    // Observer(""),
     UserNotificationState.Empty,
     UserPromptState.Empty,
     CalibrationQueues.Default,
@@ -71,11 +73,12 @@ object SeqexecUIModel {
     Eq.by(x =>
       (x.navLocation,
        x.user,
+       x.displayNames,
        x.loginBox,
        x.globalLog,
        x.sequencesOnDisplay,
        x.appTableStates,
-       x.defaultObserver,
+       // x.defaultObserver,
        x.notification,
        x.userPrompt,
        x.queues,
@@ -85,5 +88,5 @@ object SeqexecUIModel {
       )
     )
 
-  val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
+  // val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
 }

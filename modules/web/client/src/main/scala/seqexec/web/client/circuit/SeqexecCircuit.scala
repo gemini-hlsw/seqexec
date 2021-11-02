@@ -190,7 +190,7 @@ object SeqexecCircuit
   private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
   private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))
-  private val defaultObserverHandler  = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
+  // private val defaultObserverHandler  = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler   = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val queueRequestsHandler    = new QueueRequestsHandler(queueFocusRW)
   private val tableStateHandler       = new TableStateHandler(tableStateRW)
@@ -233,7 +233,7 @@ object SeqexecCircuit
       globalLogHandler,
       conditionsHandler,
       operatorHandler,
-      defaultObserverHandler,
+      // defaultObserverHandler,
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
       foldHandlers(queueOpsHandler, queueRequestsHandler),
       navigationHandler,

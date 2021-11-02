@@ -212,7 +212,7 @@ object SessionQueueTable extends Columns {
 
     val loggedIn: Boolean = sequences.status.isLogged
 
-    val user: Option[UserDetails] = sequences.status.u
+    val user: Option[UserDetails] = None //sequences.status.user
 
     val extractors = List[(TableColumn, SequenceInSessionQueue => String)](
       (ObsIdColumn, _.id.format),
@@ -654,11 +654,11 @@ object SessionQueueTable extends Columns {
             <.div(
               ^.cls    := "ui center aligned segment noRows",
               SeqexecStyles.noRowsSegment,
-              ^.height := 180.px,
+              ^.height := 230.px,
               "Session queue empty"
             ),
           overscanRowCount = SeqexecStyles.overscanRowCount,
-          height = 180,
+          height = 230,
           rowCount = b.props.rowCount,
           rowHeight = SeqexecStyles.rowHeight,
           rowClassName = rowClassName(b.props) _,

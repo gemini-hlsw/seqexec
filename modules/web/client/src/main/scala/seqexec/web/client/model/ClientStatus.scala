@@ -12,19 +12,19 @@ import seqexec.model.UserDetails
  * Utility class to let components more easily switch parts of the UI depending on the user and
  * connection state
  */
-final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection) {
-  def isLogged: Boolean    = u.isDefined
+final case class ClientStatus(user: Option[UserDetails], w: WebSocketConnection) {
+  def isLogged: Boolean    = user.isDefined
   def isConnected: Boolean = w.ws.isReady
   def canOperate: Boolean  = isLogged && isConnected
 }
 
 object ClientStatus {
   implicit val eq: Eq[ClientStatus] =
-    Eq.by(x => (x.u, x.w))
+    Eq.by(x => (x.user, x.w))
 
   val clientStatusFocusL: Lens[SeqexecAppRootModel, ClientStatus] =
     Lens[SeqexecAppRootModel, ClientStatus](m => ClientStatus(m.uiModel.user, m.ws))(v =>
-      m => m.copy(ws = v.w, uiModel = m.uiModel.copy(user = v.u))
+      m => m.copy(ws = v.w, uiModel = m.uiModel.copy(user = v.user))
     )
 
   val canOperateG: Getter[SeqexecAppRootModel, Boolean] =

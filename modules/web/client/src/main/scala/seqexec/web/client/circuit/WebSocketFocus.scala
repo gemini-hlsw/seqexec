@@ -27,7 +27,7 @@ final case class WebSocketsFocus(
   sequences:            SequencesQueue[SequenceView],
   resourceRunRequested: Map[Observation.Id, SortedMap[Resource, ResourceRunOperation]],
   user:                 Option[UserDetails],
-  defaultObserver:      Observer,
+  // defaultObserver:      Observer,
   clientId:             Option[ClientId],
   site:                 Option[Site],
   sound:                SoundSelection,
@@ -42,7 +42,7 @@ object WebSocketsFocus {
       (x.location,
        x.sequences,
        x.user,
-       x.defaultObserver,
+       // x.defaultObserver,
        x.clientId,
        x.site,
        x.serverVersion,
@@ -61,7 +61,7 @@ object WebSocketsFocus {
           .map(t => t.obsId -> t.tabOperations.resourceRunRequested)
           .toMap,
         m.uiModel.user,
-        m.uiModel.defaultObserver,
+        // m.uiModel.defaultObserver,
         m.clientId,
         m.site,
         m.uiModel.sound,
@@ -81,7 +81,7 @@ object WebSocketsFocus {
                   .getOrElse(seqTab.obsId, SortedMap.empty)
               )(seqTab)
             )(m.uiModel.sequencesOnDisplay),
-            defaultObserver = v.defaultObserver,
+            // defaultObserver = v.defaultObserver,
             sound = v.sound
           ),
           clientId = v.clientId,

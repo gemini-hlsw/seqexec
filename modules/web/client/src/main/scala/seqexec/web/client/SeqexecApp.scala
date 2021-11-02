@@ -18,12 +18,25 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.SeqexecWebClient
 import typings.loglevel.mod.{ ^ => logger }
+// import japgolly.scalajs.react.ScalaJsReactConfig
 
 /**
  * Seqexec WebApp entry point
  */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
-  // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
+  // private object logComponents extends ScalaJsReactConfig.DevOnly.ReusabilityOverride {
+  //   import japgolly.scalajs.react._
+  //   override def apply[P: Reusability, C <: Children, S: Reusability, B, U <: UpdateSnapshot] = b =>
+  //     {
+  //       println(
+  //         "Detected component with Reusability.shouldComponentUpdate: " + b.name
+  //       ) // b.SnapshotValue
+  //       b
+  //     }
+  // }
+  japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
+
+  // ScalaJsReactConfig.DevOnly.overrideReusability(logComponents)
 
   def serverSite(implicit cs: ContextShift[IO]): F[Site] =
     L.liftIO(IO.fromFuture {
@@ -51,6 +64,15 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
         elem
       }
     }
+
+//   def storedDisplayNames: F[Map[String, String]] = F.delay {
+//     import io.circe.parser.decode
+//     (for {
+//       ls <- Option(window.localStorage)
+//       dn <- Option(ls.getItem("displayNames"))
+//       m <- decode[Map[String, String]](dn).toOption //.getOrElse(Map.empty)
+//     } yield m).getOrElse(Map.empty)
+//   }
 }
 
 /**
@@ -63,7 +85,8 @@ object SeqexecApp extends IOApp {
     // Render the UI using React
     for {
       seqexecSite <- launcher.serverSite
-      _           <- launcher.initializeDataModel(seqexecSite)
+      // dispNames   <- launcher.serverSite
+      // _           <- launcher.storedDisplayNames
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
       _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(logger.error(p.toString)))
