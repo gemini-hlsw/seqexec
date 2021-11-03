@@ -71,7 +71,7 @@ object LdapConnectionOps {
 
       val baseDN = c.getRootDSE.getAttributeValue("namingContexts")
       val filter = Filter.createANDFilter(
-        Filter.createEqualityFilter("uid", uid),
+        Filter.createEqualityFilter("sAMAccountName", uid),
         Filter.createEqualityFilter("objectClass", "user")
       )
 
