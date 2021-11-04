@@ -14,7 +14,7 @@ object LdapConnectionOps {
   // Extension methods for ldap connection
   implicit class LdapConnectionOps(val c: LDAPConnection) extends AnyVal {
     def authenticate(u: String, p: String): UID = {
-      val UidExtractor = s"(\\w*)@(.*)?".r
+      val UidExtractor = s"([\\w\\.]*)(\\@.*)?".r
 
       val bindRequest = new SimpleBindRequest(u, p)
       // Authenticate, it throws an exception if it fails
