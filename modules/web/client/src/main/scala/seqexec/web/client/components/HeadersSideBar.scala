@@ -67,34 +67,52 @@ object HeadersSideBar {
 
   @Lenses
   final case class State(
-    operator:     Option[Operator],
-    prevOperator: Option[Operator]
+    operator:        Option[Operator],
+    prevOperator:    Option[Operator],
+    displayName:     Option[String],
+    prevDisplayName: Option[String]
   )
 
   object State {
-    def apply(operator: Option[Operator]): State =
-      State(operator, operator)
+    def apply(operator: Option[Operator], displayName: Option[String]): State =
+      State(operator, operator, displayName, displayName)
 
-    implicit val stateEquals: Eq[State] = Eq.by(_.operator)
+    implicit val stateEquals: Eq[State] = Eq.by(s => (s.operator, s.displayName))
 
-    implicit val stateReuse: Reusability[State] = Reusability.by(_.operator)
+    implicit val stateReuse: Reusability[State] = Reusability.byEq
   }
 
   class Backend(val $ : BackendScope[HeadersSideBar, State]) extends TimerSupport {
     private def updateOperator(name: Operator): Callback =
       $.props >>= { p => SeqexecCircuit.dispatchCB(UpdateOperator(name)).when_(p.canOperate) }
 
+    private def updateDisplayName(dn: String): Callback =
+      Callback.log(dn)
+    // $.props >>= { p =>
+    //   SeqexecCircuit.dispatchCB(UpdateObserver(Observer(dn))).when_(p.canOperate)
+    // }
+
     def updateStateOp(value: Option[Operator], cb: Callback = Callback.empty): Callback =
       $.setStateL(State.operator)(value) >> cb
+
+    def updateStateDN(value: Option[String], cb: Callback = Callback.empty): Callback =
+      $.setStateL(State.displayName)(value) >> cb
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
       // setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
       setInterval(submitIfChangedOp, 2.second)
 
+    def submitIfChangedDN: Callback =
+      ($.state.zip($.props)) >>= { case (s, p) =>
+        s.displayName
+          .map(updateDisplayName)
+          .getOrEmpty
+          .when_(p.model.displayName =!= s.displayName)
+      }
+
     def submitIfChangedOp: Callback =
       ($.state.zip($.props)) >>= { case (s, p) =>
-        // println(s"OOOOOP ${s.operator}")
         s.operator
           .map(updateOperator)
           .getOrEmpty
@@ -117,20 +135,24 @@ object HeadersSideBar {
       val enabled    = p.model.status.canOperate
       val operatorEV =
         StateSnapshot[Operator](s.operator.getOrElse(Operator.Zero))(updateStateOp)
+
+      val displayNameEV =
+        StateSnapshot[String](s.displayName.orEmpty)(updateStateDN)
+
       Segment(secondary = true, clazz = SeqexecStyles.headerSideBarStyle)(
         Form()(
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
             <.div(
               ^.cls := "sixteen wide field",
               FormLabel("My display name", Some("displayName")),
-              InputEV[StateSnapshot, Operator](
-                "operator",
-                "operator",
-                operatorEV,
-                format = InputFormat.fromIso(Operator.valueI.reverse),
+              InputEV[StateSnapshot, String](
+                "displayName",
+                "displayName",
+                displayNameEV,
+                // format = InputFormat.fromIso(Operator.valueI.reverse),
                 placeholder = "Display name...",
                 disabled = !enabled,
-                onBlur = _ => submitIfChangedOp
+                onBlur = _ => submitIfChangedDN
               )
             )
           ),
@@ -186,8 +208,9 @@ object HeadersSideBar {
     .builder[HeadersSideBar]
     .getDerivedStateFromPropsAndState[State] { (p, sOpt) =>
       val operator = p.model.operator
+      // p.model.status.user.foldMap(_.username)
 
-      sOpt.fold(State(operator)) { s =>
+      sOpt.fold(State(operator, p.model.displayName)) { s =>
         Function.chain(
           List(
             State.operator.set(operator),
@@ -201,7 +224,7 @@ object HeadersSideBar {
     .renderBackend[Backend]
     .configure(TimerSupport.install)
     .componentDidMount(_.backend.setupTimer)
-    .configure(Reusability.shouldComponentUpdateAndLog("AAAA"))
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
 }

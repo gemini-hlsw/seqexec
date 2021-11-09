@@ -12,31 +12,12 @@ import seqexec.model._
 // import seqexec.model.enum.Instrument
 import seqexec.web.client.model._
 
-// final case class SequenceObserverFocus(
-//   instrument: Instrument,
-//   obsId:      Observation.Id,
-//   completed:  Boolean,
-//   observer:   Option[Observer]
-// )
-//
-// object SequenceObserverFocus {
-//   implicit val eq: Eq[SequenceObserverFocus] =
-//     Eq.by(x => (x.instrument, x.obsId, x.completed, x.observer))
-// }
-
-// final case class DayCalObserverFocus(queueId: QueueId, observer: Option[Observer])
-//
-// object DayCalObserverFocus {
-//   implicit val eq: Eq[DayCalObserverFocus] =
-//     Eq.by(x => (x.queueId, x.observer))
-// }
-//
 @Lenses
 final case class HeaderSideBarFocus(
-  status:     ClientStatus,
-  conditions: Conditions,
-  operator:   Option[Operator]
-  // observer:   Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]]
+  status:      ClientStatus,
+  conditions:  Conditions,
+  operator:    Option[Operator],
+  displayName: Option[String]
 )
 
 object HeaderSideBarFocus {
@@ -46,8 +27,7 @@ object HeaderSideBarFocus {
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
       val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      // val obs          = c.uiModel.sequencesOnDisplay.selectedObserver
-      //   .toRight(c.uiModel.defaultObserver)
-      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator) //, obs)
+      val displayName  = c.uiModel.user.flatMap(u => c.uiModel.displayNames.get(u.username))
+      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, displayName)
     }
 }
