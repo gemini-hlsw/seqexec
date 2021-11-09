@@ -33,10 +33,18 @@ class SeqexecCommandRoutes[F[_]: Sync](
   private val httpAuthentication = new Http4sAuthentication(auth)
 
   private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
-    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) :? OptionalRunOverride(
+    case POST -> Root / ObsIdVar(obsId) / "start" / ObserverVar(obs) / ClientIDVar(
+          clientId
+        ) :? OptionalRunOverride(
           runOverride
         ) as user =>
-      se.start(inputQueue, obsId, user, clientId, runOverride.getOrElse(RunOverride.Default)) *>
+      se.start(inputQueue,
+               obsId,
+               user,
+               obs,
+               clientId,
+               runOverride.getOrElse(RunOverride.Default)
+      ) *>
         Ok(s"Started sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(
@@ -50,7 +58,7 @@ class SeqexecCommandRoutes[F[_]: Sync](
       ) *>
         Ok(s"Started sequence ${obsId.format} from step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
+    case POSSeT -> Root / ObsIdVar(obsId) / "pause" as user =>
       se.requestPause(inputQueue, obsId, user) *>
         Ok(s"Pause sequence ${obsId.format}")
 

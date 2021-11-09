@@ -32,7 +32,7 @@ import seqexec.model.enum.MountGuideOption._
 import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.handlers.UserLoginFocus
+import seqexec.web.client.circuit.UserLoginFocus
 import web.client.table._
 
 /**

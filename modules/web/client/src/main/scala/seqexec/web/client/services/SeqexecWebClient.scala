@@ -75,15 +75,21 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to execute a sequence
    */
-  def run(id: Observation.Id, clientId: ClientId, options: RunOptions): Future[Unit] = {
+  def run(
+    id:       Observation.Id,
+    name:     Observer,
+    clientId: ClientId,
+    options:  RunOptions
+  ): Future[Unit] = {
     val param = options match {
       case RunOptions.Normal         => ""
       case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
+    println("AA")
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/${encodeURI(id.format)}/start/${encodeURI(clientId.self.show)}$param"
+          s"$baseUrl/commands/${encodeURI(id.format)}/start/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}$param"
       )
       .void
   }

@@ -38,6 +38,7 @@ import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.services.SeqexecWebClient
+import seqexec.model.Observer
 
 final case class SequenceControl(p: SequenceControlFocus)
     extends ReactProps[SequenceControl](SequenceControl.component) {
@@ -81,8 +82,8 @@ object SequenceControl {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  def requestRun(s: Observation.Id): Callback =
-    SeqexecCircuit.dispatchCB(RequestRun(s, RunOptions.Normal))
+  def requestRun(s: Observation.Id, observer: Observer): Callback =
+    SeqexecCircuit.dispatchCB(RequestRun(s, observer, RunOptions.Normal))
 
   def requestSync(s: Observation.Id): Callback =
     SeqexecCircuit.dispatchCB(RequestSync(s))
@@ -106,7 +107,8 @@ object SequenceControl {
     id:                  Observation.Id,
     isPartiallyExecuted: Boolean,
     nextStepToRun:       Int,
-    canRun:              Boolean
+    canRun:              Boolean,
+    displayName:         String
   ) = {
     val runContinueTooltip =
       s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
@@ -114,7 +116,7 @@ object SequenceControl {
       s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
     controlButton(icon = IconPlay,
                   color = Blue,
-                  onClick = requestRun(id),
+                  onClick = requestRun(id, Observer(displayName)),
                   disabled = !canRun,
                   tooltip = runContinueTooltip,
                   text = runContinueButton
@@ -182,9 +184,9 @@ object SequenceControl {
     ScalaComponent
       .builder[Props]
       .renderP { ($, p) =>
-        val SequenceControlFocus(_, _, overrides, _, _, control) = p.p
-        val ControlModel(id, partial, nextStep, status, _)       = control
-        val nextStepToRun                                        = nextStep.foldMap(_ + 1)
+        val SequenceControlFocus(_, _, overrides, _, _, control, displayName) = p.p
+        val ControlModel(id, partial, nextStep, status, _)                    = control
+        val nextStepToRun                                                     = nextStep.foldMap(_ + 1)
 
         <.div(
           SeqexecStyles.SequenceControlForm,
@@ -193,7 +195,7 @@ object SequenceControl {
             syncButton(id, p.canSync)
               .when(status.isIdle || status.isError),
             // Run button
-            runButton(id, partial, nextStepToRun, p.canRun)
+            runButton(id, partial, nextStepToRun, p.canRun, displayName)
               .when(status.isIdle || status.isError),
             // Cancel pause button
             cancelPauseButton(id, p.canCancelPause)

@@ -10,7 +10,8 @@ import monocle.Lens
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.UserDetails
 import seqexec.web.client.model.SectionVisibilityState._
-import seqexec.web.client.handlers.UserLoginFocus
+import seqexec.web.client.circuit.UserLoginFocus
+import monocle.Getter
 
 sealed trait SoundSelection extends Product with Serializable
 
@@ -90,5 +91,8 @@ object SeqexecUIModel {
        x.firstLoad
       )
     )
+
+  val displayNameG: Getter[SeqexecUIModel, Option[String]] =
+    Getter[SeqexecUIModel, Option[String]](x => x.user.flatMap(r => x.displayNames.get(r.username)))
 
 }

@@ -21,12 +21,12 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[ClientId]] {
 
-  def handleRun: PartialFunction[Any, ActionResult[M]] = { case RequestRun(s, options) =>
+  def handleRun: PartialFunction[Any, ActionResult[M]] = { case RequestRun(s, observer, options) =>
     val effect = value
       .map(clientId =>
         Effect(
           SeqexecWebClient
-            .run(s, clientId, options)
+            .run(s, observer, clientId, options)
             .as(RunStarted(s))
             .recover { case _ =>
               RunStartFailed(s)

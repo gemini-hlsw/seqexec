@@ -56,8 +56,10 @@ trait Columns {
   val InstrumentMinWidth    = 90.4333 + SeqexecStyles.TableBorderWidth
   val TargetNameColumnWidth = 140.0
   val TargetMinWidth        = 60.0167 + SeqexecStyles.TableBorderWidth
-  val ObsNameColumnWidth    = 140.0
+  val ObsNameColumnWidth    = 100.0
   val ObsNameMinWidth       = 89.7340 + SeqexecStyles.TableBorderWidth
+  val ObserverColumnWidth   = 100.0
+  val ObserverMinWidth      = 89.7340 + SeqexecStyles.TableBorderWidth
 
   sealed trait TableColumn     extends Product with Serializable
   case object IconColumn       extends TableColumn
@@ -68,6 +70,7 @@ trait Columns {
   case object InstrumentColumn extends TableColumn
   case object ObsNameColumn    extends TableColumn
   case object TargetNameColumn extends TableColumn
+  case object ObserverColumn   extends TableColumn
 
   object TableColumn {
     implicit val equal: Eq[TableColumn] = Eq.fromUniversalEquals
@@ -146,14 +149,26 @@ trait Columns {
     width = VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth)
   )
 
-  val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta,
-                                                                   AddQueueColumnMeta,
-                                                                   ClassColumnMeta,
-                                                                   ObsIdColumnMeta,
-                                                                   StateColumnMeta,
-                                                                   InstrumentColumnMeta,
-                                                                   TargetNameColumnMeta,
-                                                                   ObsNameColumnMeta
+  val ObserverColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ObserverColumn,
+    name = "observer",
+    label = "Observer",
+    visible = true,
+    removeable = 3,
+    grow = 3,
+    width = VariableColumnWidth.unsafeFromDouble(0.25, ObserverMinWidth)
+  )
+
+  val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
+    IconColumnMeta,
+    AddQueueColumnMeta,
+    ClassColumnMeta,
+    ObsIdColumnMeta,
+    StateColumnMeta,
+    InstrumentColumnMeta,
+    TargetNameColumnMeta,
+    ObsNameColumnMeta,
+    ObserverColumnMeta
   )
 
   val allTC = all.map(_.column)
@@ -166,7 +181,8 @@ trait Columns {
     StateColumn      -> StateColumnWidth,
     InstrumentColumn -> InstrumentColumnWidth,
     TargetNameColumn -> TargetNameColumnWidth,
-    ObsNameColumn    -> ObsNameColumnWidth
+    ObsNameColumn    -> ObsNameColumnWidth,
+    ObserverColumn   -> ObserverColumnWidth
   )
 
   val columnsMinWidth: Map[TableColumn, Double] = Map(
@@ -174,7 +190,8 @@ trait Columns {
     StateColumn      -> StateMinWidth,
     InstrumentColumn -> InstrumentMinWidth,
     TargetNameColumn -> TargetMinWidth,
-    ObsNameColumn    -> ObsNameMinWidth
+    ObsNameColumn    -> ObsNameMinWidth,
+    ObserverColumn   -> ObserverMinWidth
   )
 }
 
@@ -195,6 +212,7 @@ object SessionQueueTable extends Columns {
                           s.status,
                           s.instrument,
                           s.targetName,
+                          s.observer,
                           s.name,
                           s.obsClass,
                           s.active,
@@ -289,6 +307,7 @@ object SessionQueueTable extends Columns {
     var status: SequenceState
     var instrument: Instrument
     var targetName: Option[String]
+    var observer: Option[Observer]
     var name: String
     var obsClass: ObsClass
     var active: Boolean
@@ -305,6 +324,7 @@ object SessionQueueTable extends Columns {
       status:        SequenceState,
       instrument:    Instrument,
       targetName:    Option[String],
+      observer:      Option[Observer],
       name:          String,
       obsClass:      ObsClass,
       active:        Boolean,
@@ -318,6 +338,7 @@ object SessionQueueTable extends Columns {
       p.status = status
       p.instrument = instrument
       p.targetName = targetName
+      p.observer = observer
       p.name = name
       p.obsClass = obsClass
       p.active = active
@@ -334,6 +355,7 @@ object SessionQueueTable extends Columns {
         SequenceState,
         Instrument,
         Option[String],
+        Option[Observer],
         String,
         ObsClass,
         Boolean,
@@ -348,6 +370,7 @@ object SessionQueueTable extends Columns {
          l.status,
          l.instrument,
          l.targetName,
+         l.observer,
          l.name,
          l.obsClass,
          l.active,
@@ -363,6 +386,7 @@ object SessionQueueTable extends Columns {
         Observation.Id.unsafeFromString("Zero-1"),
         SequenceState.Idle,
         Instrument.F2,
+        None,
         None,
         "",
         ObsClass.Nighttime,
@@ -554,6 +578,7 @@ object SessionQueueTable extends Columns {
     case InstrumentColumn => linkedTextRenderer(b.props)(_.instrument.show)
     case TargetNameColumn => linkedTextRenderer(b.props)(_.targetName.getOrElse(UnknownTargetName))
     case ObsNameColumn    => linkedTextRenderer(b.props)(_.name)
+    case ObserverColumn   => linkedTextRenderer(b.props)(_.observer.foldMap(_.value))
   }
 
   private val fixedHeaderRenderer: TableColumn => HeaderRenderer[js.Object] = {

@@ -6,7 +6,6 @@ package seqexec.web.client.handlers
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import cats.Eq
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -14,16 +13,10 @@ import diode.Effect
 import diode.ModelRW
 import diode.NoAction
 import seqexec.common.HttpStatusCodes
-import seqexec.model.UserDetails
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.DisplayNamePersistence
-
-final case class UserLoginFocus(user: Option[UserDetails], displayNames: Map[String, String])
-
-object UserLoginFocus {
-  implicit val eqUserLoginFocus: Eq[UserLoginFocus] = Eq.by(u => (u.user, u.displayNames))
-}
+import seqexec.web.client.circuit.UserLoginFocus
 
 /**
  * Handles actions related to opening/closing the login box
