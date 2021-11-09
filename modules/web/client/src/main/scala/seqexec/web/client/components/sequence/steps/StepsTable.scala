@@ -322,6 +322,7 @@ final case class StepsTable(
     InstrumentProperties.ImagingMirror
   )
   val isPreview: Boolean                  = steps.exists(_.isPreview)
+  val displayName: Option[String]         = stepsTable.displayName
   val hasControls: Boolean                = canOperate && !isPreview
   val canSetBreakpoint: Boolean           = canOperate && !isPreview
   val showObservingMode: Boolean          = showProp(
@@ -598,7 +599,8 @@ object StepsTable extends Columns {
         $.props.status,
         StepStateSummary(row.step, f.id, f.instrument, $.props.tabOperations, f.state),
         $.state.selected,
-        $.props.isPreview
+        $.props.isPreview,
+        $.props.displayName.orEmpty
       )
 
   def stepStatusRenderer(

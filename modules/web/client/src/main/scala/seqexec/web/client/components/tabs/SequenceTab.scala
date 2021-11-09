@@ -172,8 +172,6 @@ object SequenceTab {
             ("DHS", b.props.systemOverrides.isDhsEnabled),
             ("INST", b.props.systemOverrides.isInstrumentEnabled)
           ).map { case (l, b) =>
-            println(l)
-            println(b)
             <.div(SeqexecStyles.DisabledSubsystem, l).unless(b)
           }.toTagMod
         )

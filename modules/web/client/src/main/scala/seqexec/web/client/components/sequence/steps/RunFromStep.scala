@@ -21,6 +21,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.reusability._
+import seqexec.model.Observer
 
 /**
  * Contains the control to start a step from an arbitrary point
@@ -29,7 +30,8 @@ final case class RunFromStep(
   id:               Observation.Id,
   stepId:           Int,
   resourceInFlight: Boolean,
-  runFrom:          StartFromOperation
+  runFrom:          StartFromOperation,
+  displayName:      String
 ) extends ReactProps[RunFromStep](RunFromStep.component)
 
 object RunFromStep {
@@ -38,16 +40,17 @@ object RunFromStep {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestRunFrom(
-    id:     Observation.Id,
-    stepId: Int
+    id:          Observation.Id,
+    displayName: String,
+    stepId:      Int
   ): (ReactMouseEvent, Button.ButtonProps) => Callback =
     (e: ReactMouseEvent, _: Button.ButtonProps) =>
       SeqexecCircuit
-        .dispatchCB(RequestRunFrom(id, stepId, RunOptions.Normal))
+        .dispatchCB(RequestRunFrom(id, Observer(displayName), stepId, RunOptions.Normal))
         .unless_(e.altKey || e.button === StepsTable.MiddleButton)
 
   protected val component = ScalaComponent
-    .builder[Props]("RunFromStep")
+    .builder[Props]
     .render_P { p =>
       <.div(
         SeqexecStyles.runFrom,
@@ -56,7 +59,7 @@ object RunFromStep {
           trigger = Button(
             icon = true,
             color = Blue,
-            onClickE = requestRunFrom(p.id, p.stepId),
+            onClickE = requestRunFrom(p.id, p.displayName, p.stepId),
             disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
           )(IconPlay)
         )(s"Run from step ${p.stepId + 1}")

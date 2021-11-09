@@ -15,28 +15,30 @@ import seqexec.model.UserPrompt
 import seqexec.model.events.UserPromptNotification
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
+import seqexec.web.client.circuit.UserPromptFocus
+import seqexec.model.Observer
 
-class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
+class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptFocus])
     extends ActionHandler(modelRW)
-    with Handlers[M, UserPromptState] {
+    with Handlers[M, UserPromptFocus] {
+  val lens                                                          = UserPromptFocus.user ^|-> UserPromptState.notification
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(UserPromptNotification(not, _)) =>
-      // Update the notification state
-      val lens         = UserPromptState.notification.set(not.some)
       // Update the model as load failed
       val modelUpdateE = not match {
         case UserPrompt.ChecksOverride(id, _, _) => Effect(Future(RunStartFailed(id)))
       }
-      updatedLE(lens, modelUpdateE)
+      updatedLE(lens.set(not.some), modelUpdateE)
   }
 
   def handleClosePrompt: PartialFunction[Any, ActionResult[M]] = { case CloseUserPromptBox(x) =>
-    val overrideEffect = this.value.notification match {
-      case Some(UserPrompt.ChecksOverride(id, stp, _)) if x === UserPromptResult.Cancel =>
-        Effect(Future(RequestRunFrom(id, stp, RunOptions.ChecksOverride)))
-      case _                                                                            => VoidEffect
+    val overrideEffect = (this.value.user.notification, this.value.displayName) match {
+      case (Some(UserPrompt.ChecksOverride(id, stp, _)), Some(dn))
+          if x === UserPromptResult.Cancel =>
+        Effect(Future(RequestRunFrom(id, Observer(dn), stp, RunOptions.ChecksOverride)))
+      case _ => VoidEffect
     }
-    updatedLE(UserPromptState.notification.set(none), overrideEffect)
+    updatedLE(lens.set(none), overrideEffect)
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] =

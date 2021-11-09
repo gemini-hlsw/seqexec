@@ -42,11 +42,11 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
   }
 
   def handleRunFrom: PartialFunction[Any, ActionResult[M]] = {
-    case RequestRunFrom(id, stepId, options) =>
+    case RequestRunFrom(id, observer, stepId, options) =>
       val effect = value
         .map(clientId =>
           requestEffect(id,
-                        SeqexecWebClient.runFrom(_, stepId, clientId, options),
+                        SeqexecWebClient.runFrom(_, stepId, observer, clientId, options),
                         RunFromComplete(_, stepId),
                         RunFromFailed(_, stepId)
           )

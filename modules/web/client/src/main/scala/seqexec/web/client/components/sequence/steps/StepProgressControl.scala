@@ -39,7 +39,8 @@ final case class StepProgressCell(
   clientStatus: ClientStatus,
   stateSummary: StepStateSummary,
   selectedStep: Option[StepId],
-  isPreview:    Boolean
+  isPreview:    Boolean,
+  displayName:  String
 ) extends ReactProps[StepProgressCell](StepProgressCell.component) {
 
   val step: Step                   = stateSummary.step
@@ -172,7 +173,8 @@ object StepProgressCell {
         props.obsId,
         props.step.id,
         props.tabOperations.resourceInFlight(props.step.id),
-        props.tabOperations.startFromRequested
+        props.tabOperations.startFromRequested,
+        props.displayName
       ).when(!props.step.isFinished && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,

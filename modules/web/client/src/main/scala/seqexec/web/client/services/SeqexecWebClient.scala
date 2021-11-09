@@ -85,7 +85,6 @@ object SeqexecWebClient extends ModelBooPicklers {
       case RunOptions.Normal         => ""
       case RunOptions.ChecksOverride => "?overrideTargetCheck=true"
     }
-    println("AA")
     Ajax
       .post(
         url =
@@ -432,6 +431,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def runFrom(
     obsId:    Observation.Id,
     stepId:   StepId,
+    name:     Observer,
     clientId: ClientId,
     options:  RunOptions
   ): Future[Unit] = {
@@ -441,8 +441,9 @@ object SeqexecWebClient extends ModelBooPicklers {
     }
     Ajax
       .post(
-        url =
-          s"$baseUrl/commands/${encodeURI(obsId.self.format)}/$stepId/startFrom/${encodeURI(clientId.self.show)}$param"
+        url = s"$baseUrl/commands/${encodeURI(obsId.self.format)}/$stepId/startFrom/${encodeURI(
+          name.value
+        )}/${encodeURI(clientId.self.show)}$param"
       )
       .void
   }

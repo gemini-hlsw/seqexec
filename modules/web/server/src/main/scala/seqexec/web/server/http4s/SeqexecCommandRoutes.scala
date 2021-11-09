@@ -47,18 +47,21 @@ class SeqexecCommandRoutes[F[_]: Sync](
       ) *>
         Ok(s"Started sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ObserverVar(
+          obs
+        ) / ClientIDVar(
           clientId
         ) :? OptionalRunOverride(runOverride) as _ =>
       se.startFrom(inputQueue,
                    obsId,
+                   obs,
                    stepId,
                    clientId,
                    runOverride.getOrElse(RunOverride.Default)
       ) *>
         Ok(s"Started sequence ${obsId.format} from step $stepId")
 
-    case POSSeT -> Root / ObsIdVar(obsId) / "pause" as user =>
+    case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
       se.requestPause(inputQueue, obsId, user) *>
         Ok(s"Pause sequence ${obsId.format}")
 

@@ -11,6 +11,7 @@ import seqexec.common.FixedLengthBuffer
 import seqexec.model.UserDetails
 import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit.UserLoginFocus
+import seqexec.web.client.circuit.UserPromptFocus
 import monocle.Getter
 
 sealed trait SoundSelection extends Product with Serializable
@@ -73,6 +74,11 @@ object SeqexecUIModel {
     Lens[SeqexecUIModel, UserLoginFocus](m => UserLoginFocus(m.user, m.displayNames))(n =>
       a => a.copy(user = n.user, displayNames = n.displayNames)
     )
+
+  val unsafeUserPromptFocus: Lens[SeqexecUIModel, UserPromptFocus] =
+    Lens[SeqexecUIModel, UserPromptFocus](m =>
+      UserPromptFocus(m.userPrompt, m.user.flatMap(u => m.displayNames.get(u.username)))
+    )(n => a => a.copy(userPrompt = n.user))
 
   implicit val eq: Eq[SeqexecUIModel] =
     Eq.by(x =>

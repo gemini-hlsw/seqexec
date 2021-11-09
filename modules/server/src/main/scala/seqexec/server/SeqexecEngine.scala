@@ -80,6 +80,7 @@ trait SeqexecEngine[F[_]] {
   def startFrom(
     q:           EventQueue[F],
     id:          Observation.Id,
+    observer:    Observer,
     stp:         StepId,
     clientId:    ClientId,
     runOverride: RunOverride
@@ -555,17 +556,19 @@ object SeqexecEngine {
     override def startFrom(
       q:           EventQueue[F],
       id:          Observation.Id,
+      observer:    Observer,
       stp:         StepId,
       clientId:    ClientId,
       runOverride: RunOverride
     ): F[Unit] =
       q.enqueue1(
         Event.modifyState[F, EngineState[F], SeqEvent](
-          clearObsCmd(id) *> startChecks(executeEngine.startFrom(id, stp),
-                                         id,
-                                         clientId,
-                                         stp.some,
-                                         runOverride
+          setObserver(id, observer) *> clearObsCmd(id) *> startChecks(
+            executeEngine.startFrom(id, stp),
+            id,
+            clientId,
+            stp.some,
+            runOverride
           )
         )
       )

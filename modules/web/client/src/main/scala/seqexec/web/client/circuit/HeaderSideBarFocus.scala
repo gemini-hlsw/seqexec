@@ -29,8 +29,17 @@ object HeaderSideBarFocus {
     }
 }
 
-final case class UserLoginFocus(user: Option[UserDetails], displayNames: Map[String, String])
+final case class UserLoginFocus(user: Option[UserDetails], displayNames: Map[String, String]) {
+  val displayName: Option[String] = user.flatMap(u => displayNames.get(u.username))
+}
 
 object UserLoginFocus {
   implicit val eqUserLoginFocus: Eq[UserLoginFocus] = Eq.by(u => (u.user, u.displayNames))
+}
+
+@Lenses
+final case class UserPromptFocus(user: UserPromptState, displayName: Option[String])
+
+object UserPromptFocus {
+  implicit val eqUserPromptFocus: Eq[UserPromptFocus] = Eq.by(u => (u.user, u.displayName))
 }

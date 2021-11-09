@@ -63,7 +63,6 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
       updatedL(SODLocationFocus.sod.modify(_.updateFromQueue(s.view)))
 
     case LoadSequence(observer, i, id) =>
-      println(s"LOAD $observer")
       val loadSequence = value.clientId
         .map(cid =>
           Effect(
