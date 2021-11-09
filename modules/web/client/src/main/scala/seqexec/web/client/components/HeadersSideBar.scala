@@ -87,10 +87,11 @@ object HeadersSideBar {
       $.props >>= { p => SeqexecCircuit.dispatchCB(UpdateOperator(name)).when_(p.canOperate) }
 
     private def updateDisplayName(dn: String): Callback =
-      Callback.log(dn)
-    // $.props >>= { p =>
-    //   SeqexecCircuit.dispatchCB(UpdateObserver(Observer(dn))).when_(p.canOperate)
-    // }
+      $.props >>= { p =>
+        SeqexecCircuit
+          .dispatchCB(UpdateDisplayName(p.model.status.user.foldMap(_.username), dn))
+          .when_(p.canOperate)
+      }
 
     def updateStateOp(value: Option[Operator], cb: Callback = Callback.empty): Callback =
       $.setStateL(State.operator)(value) >> cb
@@ -100,8 +101,7 @@ object HeadersSideBar {
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
-      // setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
-      setInterval(submitIfChangedOp, 2.second)
+      setInterval(submitIfChangedOp *> submitIfChangedDN, 2.second)
 
     def submitIfChangedDN: Callback =
       ($.state.zip($.props)) >>= { case (s, p) =>
@@ -149,7 +149,6 @@ object HeadersSideBar {
                 "displayName",
                 "displayName",
                 displayNameEV,
-                // format = InputFormat.fromIso(Operator.valueI.reverse),
                 placeholder = "Display name...",
                 disabled = !enabled,
                 onBlur = _ => submitIfChangedDN
@@ -207,17 +206,23 @@ object HeadersSideBar {
   private val component = ScalaComponent
     .builder[HeadersSideBar]
     .getDerivedStateFromPropsAndState[State] { (p, sOpt) =>
-      val operator = p.model.operator
-      // p.model.status.user.foldMap(_.username)
+      val operator    = p.model.operator
+      val displayName = p.model.displayName
 
-      sOpt.fold(State(operator, p.model.displayName)) { s =>
+      sOpt.fold(State(operator, displayName)) { s =>
         Function.chain(
           List(
             State.operator.set(operator),
             State.prevOperator.set(operator)
           ).some
             .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
-            .orEmpty
+            .orEmpty :::
+            List(
+              State.displayName.set(displayName),
+              State.prevDisplayName.set(displayName)
+            ).some
+              .filter(_ => (displayName =!= s.prevDisplayName) && displayName.nonEmpty)
+              .orEmpty
         )(s)
       }
     }

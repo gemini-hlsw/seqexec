@@ -12,10 +12,10 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import org.scalajs.dom.window
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.events.SeqexecModelUpdate
+import seqexec.web.client.services.DisplayNamePersistence
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
@@ -26,18 +26,10 @@ import seqexec.web.client.model.Pages._
  */
 class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
     extends ActionHandler(modelRW)
-    with Handlers[M, InitialSyncFocus] {
+    with Handlers[M, InitialSyncFocus]
+    with DisplayNamePersistence {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.sessionQueue.filter(_.status.isRunning).sortBy(_.id).headOption
-
-  def storedDisplayNames: Map[String, String] = {
-    import io.circe.parser.decode
-    (for {
-      ls <- Option(window.localStorage)
-      dn <- Option(ls.getItem("displayNames"))
-      m <- decode[Map[String, String]](dn).toOption //.getOrElse(Map.empty)
-    } yield m).getOrElse(Map.empty)
-  }
 
   private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
     PageActionP

@@ -32,6 +32,7 @@ import seqexec.model.enum.MountGuideOption._
 import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.handlers.UserLoginFocus
 import web.client.table._
 
 /**
@@ -70,6 +71,10 @@ object SeqexecAppRootModel {
     SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.globalLog ^|->
       GlobalLog.display
+
+  val userLoginFocus: Lens[SeqexecAppRootModel, UserLoginFocus] =
+    SeqexecAppRootModel.uiModel ^|->
+      SeqexecUIModel.userLoginFocus
 
   val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
     SeqexecAppRootModel.uiModel ^|->

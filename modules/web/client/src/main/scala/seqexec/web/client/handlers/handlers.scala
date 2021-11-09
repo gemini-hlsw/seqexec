@@ -12,11 +12,11 @@ import diode.Effect
 import diode.ModelRW
 import diode.NoAction
 import lucuma.core.enum.Site
-import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.web.client.actions._
 import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.services.SeqexecWebClient
+import seqexec.web.client.services.DisplayNamePersistence
 
 /**
  * Handles updates to the operator
@@ -27,6 +27,22 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]])
   override def handle: PartialFunction[Any, ActionResult[M]] = { case UpdateOperator(name) =>
     val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).as(NoAction))
     updated(name.some, updateOperatorE)
+  }
+}
+
+/**
+ * Handles updates to the operator
+ */
+class DisplayNameHandler[M](modelRW: ModelRW[M, Map[String, String]])
+    extends ActionHandler(modelRW)
+    with Handlers[M, Map[String, String]]
+    with DisplayNamePersistence {
+
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateDisplayName(username, dn) =>
+      val result    = value + (username -> dn)
+      val persistDN = Effect(persistDisplayName(result).as(NoAction))
+      updated(result, persistDN)
   }
 }
 
@@ -54,16 +70,5 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog])
 
     case ToggleLogArea =>
       updated(value.copy(display = value.display.toggle))
-  }
-}
-
-/**
- * Handles updates to the defaultObserver
- */
-class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer])
-    extends ActionHandler(modelRW)
-    with Handlers[M, Observer] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = { case UpdateDefaultObserver(o) =>
-    updated(o)
   }
 }

@@ -23,19 +23,19 @@ import seqexec.web.client.services.SeqexecWebClient
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesQueue[SequenceView]] {
-  def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateObserver(sequenceId, name) =>
-      val updateObserverE  = Effect(
-        SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction)
-      ) + Effect.action(UpdateDefaultObserver(name))
-      val updatedSequences =
-        value.copy(sessionQueue = value.sessionQueue.collect {
-          case s if s.id === sequenceId =>
-            s.copy(metadata = s.metadata.copy(observer = Some(name)))
-          case s                        => s
-        })
-      updated(updatedSequences, updateObserverE)
-  }
+  // def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
+  //   case UpdateObserver(sequenceId, name) =>
+  //     val updateObserverE  = Effect(
+  //       SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction)
+  //     ) + Effect.action(UpdateDefaultObserver(name))
+  //     val updatedSequences =
+  //       value.copy(sessionQueue = value.sessionQueue.collect {
+  //         case s if s.id === sequenceId =>
+  //           s.copy(metadata = s.metadata.copy(observer = Some(name)))
+  //         case s                        => s
+  //       })
+  //     updated(updatedSequences, updateObserverE)
+  // }
 
   def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequenceId, step) =>
@@ -62,5 +62,5 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
+    List(handleFlipSkipBreakpoint).combineAll
 }

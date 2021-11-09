@@ -163,9 +163,10 @@ object actions {
 
   final case object FlipSoundOnOff extends Action
 
+  final case class UpdateDisplayName(username: String, name: String)  extends Action
   final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
-  final case class UpdateDefaultObserver(name: Observer)              extends Action
-  final case class UpdateCalTabObserver(name: Observer)               extends Action
+  // final case class UpdateDefaultObserver(name: Observer)              extends Action
+  // final case class UpdateCalTabObserver(name: Observer)               extends Action
   final case class UpdateOperator(name: Operator)                     extends Action
   final case class UpdateImageQuality(iq: ImageQuality)               extends Action
   final case class UpdateCloudCover(cc: CloudCover)                   extends Action

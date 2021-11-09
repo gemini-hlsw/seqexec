@@ -123,6 +123,9 @@ object SeqexecCircuit
   val acProgressRW: ModelRW[SeqexecAppRootModel, AlignAndCalibStep] =
     this.zoomRWL(SeqexecAppRootModel.alignAndCalib)
 
+  val userLoginRW: ModelRW[SeqexecAppRootModel, UserLoginFocus] =
+    this.zoomRWL(SeqexecAppRootModel.userLoginFocus)
+
   def sequenceTab(
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
@@ -182,7 +185,7 @@ object SeqexecCircuit
                                                            CloseUserNotificationBox,
                                                            zoomTo(_.uiModel.notification.visibility)
   )
-  private val userLoginHandler        = new UserLoginHandler(zoomTo(_.uiModel.user))
+  private val userLoginHandler        = new UserLoginHandler(userLoginRW)
   private val userNotificationHandler = new NotificationsHandler(zoomTo(_.uiModel.notification))
   private val userPromptHandler       = new UserPromptHandler(zoomTo(_.uiModel.userPrompt))
   private val sequenceDisplayHandler  = new SequenceDisplayHandler(sequencesReaderRW)
@@ -190,7 +193,7 @@ object SeqexecCircuit
   private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
   private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))
-  // private val defaultObserverHandler  = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
+  private val displayNameHandler      = new DisplayNameHandler(zoomTo(_.uiModel.displayNames))
   private val remoteRequestsHandler   = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val queueRequestsHandler    = new QueueRequestsHandler(queueFocusRW)
   private val tableStateHandler       = new TableStateHandler(tableStateRW)
@@ -233,7 +236,7 @@ object SeqexecCircuit
       globalLogHandler,
       conditionsHandler,
       operatorHandler,
-      // defaultObserverHandler,
+      displayNameHandler,
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
       foldHandlers(queueOpsHandler, queueRequestsHandler),
       navigationHandler,

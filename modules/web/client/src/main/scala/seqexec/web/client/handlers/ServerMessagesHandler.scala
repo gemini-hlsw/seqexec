@@ -15,7 +15,7 @@ import diode.Effect
 import diode.ModelRW
 import diode.NoAction
 import org.scalajs.dom.window
-import seqexec.model.Observer
+// import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.SingleActionOp
@@ -99,16 +99,16 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, c, v)) =>
       // After connected to the Websocket request a refresh
-      val refreshRequestE   = Effect(SeqexecWebClient.refresh(c).as(NoAction))
+      val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
       // This is a hack
-      val calQueueObserverE = u
-        .map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName)))))
-        .getOrElse(VoidEffect)
-      val openEffect        =
+      // val calQueueObserverE = u
+      //   .map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName)))))
+      //   .getOrElse(VoidEffect)
+      val openEffect      =
         if (value.serverVersion.exists(_ =!= v)) {
           Effect(Future(window.location.reload(true)).as(NoAction))
         } else {
-          refreshRequestE + calQueueObserverE
+          refreshRequestE //+ calQueueObserverE
         }
       updated(
         value.copy(user = u,
