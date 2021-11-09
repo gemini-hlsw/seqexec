@@ -94,23 +94,25 @@ object AuthenticationService {
 
   // Allows calling authenticate on a list of authenticator, stopping at the first
   // that succeeds
-  implicit class ComposedAuth[F[_]: MonadError[*[_], Throwable]](val s: AuthenticationServices[F]) {
+  implicit class ComposedAuth[F[_]: MonadError[*[_], Throwable]: Logger](
+    val s: AuthenticationServices[F]
+  ) {
 
     def authenticateUser(username: String, password: String): F[AuthResult] = {
       def go(l: List[AuthService[F]]): F[AuthResult] = l match {
-        case Nil      => NoAuthenticator.asLeft[UserDetails].pure[F].widen[AuthResult]
-        case x :: Nil => x.authenticateUser(username, password)
-        case x :: xs  =>
+        case Nil     => NoAuthenticator.asLeft[UserDetails].pure[F].widen[AuthResult]
+        case x :: xs =>
           x.authenticateUser(username, password).attempt.flatMap {
-            case Right(u) => u.pure[F]
-            case Left(_)  => go(xs)
+            case Right(Right(u)) => u.asRight.pure[F]
+            case Right(Left(e))  => Logger[F].warn(s"Auth method error $x with $e") *> go(xs)
+            case _               => go(xs)
           }
       }
       // Discard empty values right away
       if (username.isEmpty || password.isEmpty) {
         BadCredentials(username).asLeft[UserDetails].pure[F].widen[AuthResult]
       } else {
-        go(s)
+        go(s).flatTap(a => Logger[F].info(a.toString))
       }
     }
   }
