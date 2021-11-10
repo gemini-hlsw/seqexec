@@ -91,11 +91,12 @@ trait SeqexecEngine[F[_]] {
   def requestCancelPause(q: EventQueue[F], id: Observation.Id, user: UserDetails): F[Unit]
 
   def setBreakpoint(
-    q:      EventQueue[F],
-    seqId:  Observation.Id,
-    user:   UserDetails,
-    stepId: StepId,
-    v:      Boolean
+    q:        EventQueue[F],
+    seqId:    Observation.Id,
+    user:     UserDetails,
+    observer: Observer,
+    stepId:   StepId,
+    v:        Boolean
   ): F[Unit]
 
   def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit]
@@ -584,13 +585,15 @@ object SeqexecEngine {
       q.enqueue1(Event.cancelPause[F, EngineState[F], SeqEvent](id, user))
 
     override def setBreakpoint(
-      q:      EventQueue[F],
-      seqId:  Observation.Id,
-      user:   UserDetails,
-      stepId: StepId,
-      v:      Boolean
+      q:        EventQueue[F],
+      seqId:    Observation.Id,
+      user:     UserDetails,
+      observer: Observer,
+      stepId:   StepId,
+      v:        Boolean
     ): F[Unit] =
-      q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+        q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}") *>
@@ -602,12 +605,15 @@ object SeqexecEngine {
           )
         )
 
-    private def setObserver(id: Observation.Id, observer: Observer): HandleType[F, SeqEvent] = {
-      (s: EngineState[F]) =>
-        ((EngineState.sequences[F] ^|-? index(id))
-           .modify(SequenceData.observer.set(observer.some))(s),
-         SeqEvent.NullSeqEvent: SeqEvent
-        )
+    private def setObserver(
+      id:       Observation.Id,
+      observer: Observer,
+      event:    SeqEvent = SeqEvent.NullSeqEvent
+    ): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
+      ((EngineState.sequences[F] ^|-? index(id))
+         .modify(SequenceData.observer.set(observer.some))(s),
+       event
+      )
     }.toHandle
 
     override def setObserver(

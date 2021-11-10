@@ -129,6 +129,9 @@ object SeqexecCircuit
   val userPromptRW: ModelRW[SeqexecAppRootModel, UserPromptFocus] =
     this.zoomRWL(SeqexecAppRootModel.userPromptFocus)
 
+  val sequencesQueueRW: ModelRW[SeqexecAppRootModel, SequencesQueueFocus] =
+    this.zoomRWL(SeqexecAppRootModel.unsafeSequencesQueueFocus)
+
   def sequenceTab(
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
@@ -192,7 +195,7 @@ object SeqexecCircuit
   private val userNotificationHandler = new NotificationsHandler(zoomTo(_.uiModel.notification))
   private val userPromptHandler       = new UserPromptHandler(userPromptRW)
   private val sequenceDisplayHandler  = new SequenceDisplayHandler(sequencesReaderRW)
-  private val sequenceExecHandler     = new SequenceExecutionHandler(zoomTo(_.sequences))
+  private val sequenceExecHandler     = new SequenceExecutionHandler(sequencesQueueRW)
   private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
   private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))

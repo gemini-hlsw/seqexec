@@ -8,6 +8,7 @@ import monocle.Getter
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.web.client.model._
+import monocle.Lens
 
 @Lenses
 final case class HeaderSideBarFocus(
@@ -42,4 +43,18 @@ final case class UserPromptFocus(user: UserPromptState, displayName: Option[Stri
 
 object UserPromptFocus {
   implicit val eqUserPromptFocus: Eq[UserPromptFocus] = Eq.by(u => (u.user, u.displayName))
+}
+
+@Lenses
+final case class SequencesQueueFocus(
+  sequences:   SequencesQueue[SequenceView],
+  displayName: Option[String]
+)
+
+object SequencesQueueFocus {
+  implicit val eqSequencesQueueFocus: Eq[SequencesQueueFocus] =
+    Eq.by(u => (u.sequences, u.displayName))
+
+  val sessionQueue: Lens[SequencesQueueFocus, List[SequenceView]] =
+    sequences ^|-> SequencesQueue.sessionQueue
 }

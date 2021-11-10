@@ -34,6 +34,7 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.circuit.UserLoginFocus
 import seqexec.web.client.circuit.UserPromptFocus
+import seqexec.web.client.circuit.SequencesQueueFocus
 import web.client.table._
 
 /**
@@ -80,6 +81,13 @@ object SeqexecAppRootModel {
   val userPromptFocus: Lens[SeqexecAppRootModel, UserPromptFocus] =
     SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.unsafeUserPromptFocus
+
+  val unsafeSequencesQueueFocus: Lens[SeqexecAppRootModel, SequencesQueueFocus] =
+    Lens[SeqexecAppRootModel, SequencesQueueFocus](m =>
+      SequencesQueueFocus(m.sequences,
+                          m.uiModel.user.flatMap(u => m.uiModel.displayNames.get(u.username))
+      )
+    )(n => a => a.copy(sequences = n.sequences))
 
   val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
     SeqexecAppRootModel.uiModel ^|->
