@@ -333,7 +333,9 @@ final case class StepsTable(
   val sequenceState: Option[SequenceState] = steps.map(_.state)
 
   def stepSummary(step: Step): Option[StepStateSummary] =
-    (obsId, instrument, sequenceState).mapN(StepStateSummary(step, _, _, tabOperations, _))
+    (obsId, instrument, sequenceState).mapN(
+      StepStateSummary(step, displayName, _, _, tabOperations, _)
+    )
 
   def detailRowCount(step: Step, selected: Option[StepId]): Option[Int] =
     stepSummary(step).map(_.detailRows(selected, hasControls).rows)
@@ -597,7 +599,13 @@ object StepsTable extends Columns {
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(
         $.props.status,
-        StepStateSummary(row.step, f.id, f.instrument, $.props.tabOperations, f.state),
+        StepStateSummary(row.step,
+                         $.props.displayName,
+                         f.id,
+                         f.instrument,
+                         $.props.tabOperations,
+                         f.state
+        ),
         $.state.selected,
         $.props.isPreview,
         $.props.displayName.orEmpty

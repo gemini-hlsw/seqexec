@@ -65,11 +65,11 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
     )
   }
 
-  def handleStop: PartialFunction[Any, ActionResult[M]] = { case RequestStop(id, step) =>
+  def handleStop: PartialFunction[Any, ActionResult[M]] = { case RequestStop(id, observer, step) =>
     effectOnly(
       Effect(
         SeqexecWebClient
-          .stop(id, step)
+          .stop(id, observer, step)
           .as(RunStop(id))
           .recover { case _ =>
             RunStopFailed(id)
@@ -79,11 +79,11 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
   }
 
   def handleGracefulStop: PartialFunction[Any, ActionResult[M]] = {
-    case RequestGracefulStop(id, step) =>
+    case RequestGracefulStop(id, observer, step) =>
       effectOnly(
         Effect(
           SeqexecWebClient
-            .stopGracefully(id, step)
+            .stopGracefully(id, observer, step)
             .as(RunGracefulStop(id))
             .recover { case _ =>
               RunGracefulStopFailed(id)

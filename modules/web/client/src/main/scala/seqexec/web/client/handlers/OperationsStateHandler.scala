@@ -39,7 +39,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         )
       )
 
-    case RequestStop(id, _) =>
+    case RequestStop(id, _, _) =>
       updatedL(
         SequencesOnDisplay.markOperations(
           id,

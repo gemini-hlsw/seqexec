@@ -91,12 +91,16 @@ class SeqexecCommandRoutes[F[_]: Sync](
       se.setSkipMark(inputQueue, obsId, user, obs, stepId, bp) *>
         Ok(s"Set skip mark in step $stepId of sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>
-      se.stopObserve(inputQueue, obsId, graceful = false) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" / ObserverVar(
+          obs
+        ) as _ =>
+      se.stopObserve(inputQueue, obsId, obs, graceful = false) *>
         Ok(s"Stop requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" as _ =>
-      se.stopObserve(inputQueue, obsId, graceful = true) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" / ObserverVar(
+          obs
+        ) as _ =>
+      se.stopObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Stop gracefully requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>

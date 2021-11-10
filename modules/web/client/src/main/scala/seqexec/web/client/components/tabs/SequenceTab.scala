@@ -65,7 +65,7 @@ object SequenceTab {
     (e: ReactMouseEvent, _: Button.ButtonProps) =>
       e.preventDefaultCB *>
         e.stopPropagationCB *>
-        b.setStateL(State.loading)(true) *>
+        b.setStateL(State.loading)(true).when(b.props.displayName.isDefined) *>
         b.props.displayName
           .map(d => SeqexecCircuit.dispatchCB(LoadSequence(Observer(d), inst, id)))
           .getOrEmpty

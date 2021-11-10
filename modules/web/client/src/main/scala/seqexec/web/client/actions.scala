@@ -63,16 +63,17 @@ object actions {
 
   final case class RequestRun(s: Observation.Id, observer: Observer, options: RunOptions)
       extends Action
-  final case class RequestSync(s: Observation.Id)                            extends Action
-  final case class RequestPause(s: Observation.Id)                           extends Action
-  final case class RequestCancelPause(s: Observation.Id)                     extends Action
-  final case class RequestStop(id: Observation.Id, step: StepId)             extends Action
-  final case class RequestGracefulStop(id: Observation.Id, step: StepId)     extends Action
-  final case class RequestAbort(id: Observation.Id, step: StepId)            extends Action
-  final case class RequestObsPause(id: Observation.Id, step: StepId)         extends Action
-  final case class RequestGracefulObsPause(id: Observation.Id, step: StepId) extends Action
-  final case class RequestObsResume(id: Observation.Id, step: StepId)        extends Action
-  case object RequestSoundEcho                                               extends Action
+  final case class RequestSync(s: Observation.Id)                                    extends Action
+  final case class RequestPause(s: Observation.Id)                                   extends Action
+  final case class RequestCancelPause(s: Observation.Id)                             extends Action
+  final case class RequestStop(id: Observation.Id, observer: Observer, step: StepId) extends Action
+  final case class RequestGracefulStop(id: Observation.Id, observer: Observer, step: StepId)
+      extends Action
+  final case class RequestAbort(id: Observation.Id, step: StepId)                    extends Action
+  final case class RequestObsPause(id: Observation.Id, step: StepId)                 extends Action
+  final case class RequestGracefulObsPause(id: Observation.Id, step: StepId)         extends Action
+  final case class RequestObsResume(id: Observation.Id, step: StepId)                extends Action
+  case object RequestSoundEcho                                                       extends Action
 
   final case class RequestResourceRun(id: Observation.Id, step: StepId, resource: Resource)
       extends Action

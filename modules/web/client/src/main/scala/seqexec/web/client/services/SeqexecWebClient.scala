@@ -118,20 +118,21 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to stop this sequence immediately
    */
-  def stop(sid: Observation.Id, step: StepId): Future[Unit] =
+  def stop(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stop"
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stop/${encodeURI(name.value)}"
       )
       .void
 
   /**
    * Requests the backend to stop this sequence gracefully
    */
-  def stopGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
+  def stopGracefully(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stopGracefully"
+        url =
+          s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stopGracefully/${encodeURI(name.value)}"
       )
       .void
 

@@ -34,6 +34,7 @@ import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
+import seqexec.web.client.services.DisplayNamePersistence
 import web.client.Audio
 
 /**
@@ -41,7 +42,8 @@ import web.client.Audio
  */
 class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     extends ActionHandler(modelRW)
-    with Handlers[M, WebSocketsFocus] {
+    with Handlers[M, WebSocketsFocus]
+    with DisplayNamePersistence {
 
   // Global references to audio files
   private val SequencePausedAudio = Audio.selectPlayable(
@@ -100,21 +102,21 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     case ServerMessage(ConnectionOpenEvent(u, c, v)) =>
       // After connected to the Websocket request a refresh
       val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
-      // This is a hack
-      // val calQueueObserverE = u
-      //   .map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName)))))
-      //   .getOrElse(VoidEffect)
       val openEffect      =
         if (value.serverVersion.exists(_ =!= v)) {
           Effect(Future(window.location.reload(true)).as(NoAction))
         } else {
           refreshRequestE //+ calQueueObserverE
         }
+      val displayNames    =
+        (u.map(u =>
+          if (value.displayNames.contains(u.username))
+            value.displayNames
+          else value.displayNames + (u.username -> u.displayName)
+        )).getOrElse(value.displayNames)
       updated(
         value.copy(user = u,
-                   // defaultObserver = u
-                   //   .map(m => Observer(m.displayName))
-                   //   .getOrElse(value.defaultObserver),
+                   displayNames = displayNames,
                    clientId = c.some,
                    serverVersion = v.some
         ),
