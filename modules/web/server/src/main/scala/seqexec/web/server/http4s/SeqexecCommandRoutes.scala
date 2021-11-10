@@ -69,7 +69,9 @@ class SeqexecCommandRoutes[F[_]: Sync](
       se.requestCancelPause(inputQueue, obsId, user) *>
         Ok(s"Cancel Pause sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / ObserverVar(obs) / BooleanVar(
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / ObserverVar(
+          obs
+        ) / BooleanVar(
           bp
         ) as user =>
       se.setBreakpoint(inputQueue, obsId, user, obs, stepId, bp) *>
@@ -83,8 +85,10 @@ class SeqexecCommandRoutes[F[_]: Sync](
                 )
       } yield resp
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / BooleanVar(bp) as user =>
-      se.setSkipMark(inputQueue, obsId, user, stepId, bp) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / ObserverVar(
+          obs
+        ) / BooleanVar(bp) as user =>
+      se.setSkipMark(inputQueue, obsId, user, obs, stepId, bp) *>
         Ok(s"Set skip mark in step $stepId of sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>

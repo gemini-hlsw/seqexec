@@ -107,10 +107,11 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set a breakpoint
    */
-  def skip(sid: Observation.Id, step: Step): Future[Unit] =
+  def skip(sid: Observation.Id, name: Observer, step: Step): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/skip/${step.skip}"
+        url =
+          s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/skip/${encodeURI(name.value)}/${step.skip}"
       )
       .void
 
