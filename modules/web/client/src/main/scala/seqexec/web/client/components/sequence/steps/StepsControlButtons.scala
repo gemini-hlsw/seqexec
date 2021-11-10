@@ -58,14 +58,18 @@ object ControlButtons {
   private def requestGracefulStop(obsId: Observation.Id, name: Observer, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestGracefulStop(obsId, name, stepId))
 
-  private def requestAbort(obsId: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestAbort(obsId, stepId))
+  private def requestAbort(obsId: Observation.Id, name: Observer, stepId: Int): Callback =
+    SeqexecCircuit.dispatchCB(RequestAbort(obsId, name, stepId))
 
-  private def requestObsPause(obsId: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestObsPause(obsId, stepId))
+  private def requestObsPause(obsId: Observation.Id, name: Observer, stepId: Int): Callback =
+    SeqexecCircuit.dispatchCB(RequestObsPause(obsId, name, stepId))
 
-  private def requestGracefulObsPause(obsId: Observation.Id, stepId: Int): Callback =
-    SeqexecCircuit.dispatchCB(RequestGracefulObsPause(obsId, stepId))
+  private def requestGracefulObsPause(
+    obsId:  Observation.Id,
+    name:   Observer,
+    stepId: Int
+  ): Callback =
+    SeqexecCircuit.dispatchCB(RequestGracefulObsPause(obsId, name, stepId))
 
   private def requestObsResume(obsId: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(obsId, stepId))
@@ -95,6 +99,7 @@ object ControlButtons {
 
       p.connect { proxy =>
         val isReadingOut = proxy().exists(_.stage === ObserveStage.ReadingOut)
+        val observer     = Observer(p.displayName)
 
         <.div(
           ^.cls := "ui icon buttons",
@@ -106,7 +111,7 @@ object ControlButtons {
                 trigger = Button(
                   icon = true,
                   color = Teal,
-                  onClick = requestObsPause(p.obsId, p.stepId),
+                  onClick = requestObsPause(p.obsId, observer, p.stepId),
                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
                 )(IconPause)
               )("Pause the current exposure")
@@ -116,7 +121,7 @@ object ControlButtons {
                 trigger = Button(
                   icon = true,
                   color = Orange,
-                  onClick = requestStop(p.obsId, Observer(p.displayName), p.stepId),
+                  onClick = requestStop(p.obsId, observer, p.stepId),
                   disabled = p.requestInFlight || isReadingOut
                 )(IconStop)
               )("Stop the current exposure early")
@@ -126,7 +131,7 @@ object ControlButtons {
                 trigger = Button(
                   icon = true,
                   color = Red,
-                  onClick = requestAbort(p.obsId, p.stepId),
+                  onClick = requestAbort(p.obsId, observer, p.stepId),
                   disabled = p.requestInFlight || isReadingOut
                 )(IconTrash)
               )("Abort the current exposure")
@@ -148,7 +153,7 @@ object ControlButtons {
                   icon = true,
                   color = Teal,
                   basic = true,
-                  onClick = requestObsPause(p.obsId, p.stepId),
+                  onClick = requestObsPause(p.obsId, observer, p.stepId),
                   disabled = p.requestInFlight || p.isObservePaused || isReadingOut
                 )(IconPause)
               )("Pause the current exposure immediately")
@@ -158,7 +163,7 @@ object ControlButtons {
                 trigger = Button(
                   icon = true,
                   color = Teal,
-                  onClick = requestGracefulObsPause(p.obsId, p.stepId),
+                  onClick = requestGracefulObsPause(p.obsId, observer, p.stepId),
                   disabled =
                     p.requestInFlight || p.isObservePaused || p.nsPendingObserveCmd.isDefined || isReadingOut
                 )(pauseGracefullyIcon)

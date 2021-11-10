@@ -62,7 +62,8 @@ final case class StepProgressCell(
 object StepProgressCell {
   type Props = StepProgressCell
 
-  implicit val propsReuse: Reusability[Props]                           = Reusability.derive[Props]
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
   implicit val propsControlButtonResolver: ControlButtonResolver[Props] =
     ControlButtonResolver.build(p => (p.clientStatus, p.state, p.step))
 
@@ -196,7 +197,8 @@ object StepProgressCell {
         props.step.id,
         Nested(Step.configStatus.getOption(props.step)).map(_._1).value.orEmpty,
         props.resourceRunRequested,
-        props.clientStatus.canOperate
+        props.clientStatus.canOperate,
+        props.displayName
       )
     )
 
@@ -233,7 +235,7 @@ object StepProgressCell {
     }
 
   protected val component = ScalaComponent
-    .builder[Props]("StepProgressCell")
+    .builder[Props]
     .stateless
     .render_P(stepDisplay)
     .configure(Reusability.shouldComponentUpdate)

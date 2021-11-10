@@ -139,30 +139,31 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to abort this sequenece immediately
    */
-  def abort(sid: Observation.Id, step: StepId): Future[Unit] =
+  def abort(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abort"
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abort/${encodeURI(name.value)}"
       )
       .void
 
   /**
    * Requests the backend to hold the current exposure immediately
    */
-  def pauseObs(sid: Observation.Id, step: StepId): Future[Unit] =
+  def pauseObs(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObs"
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObs/${encodeURI(name.value)}"
       )
       .void
 
   /**
    * Requests the backend to hold the current exposure gracefully
    */
-  def pauseObsGracefully(sid: Observation.Id, step: StepId): Future[Unit] =
+  def pauseObsGracefully(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObsGracefully"
+        url =
+          s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObsGracefully/${encodeURI(name.value)}"
       )
       .void
 
@@ -417,6 +418,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def runResource(
     pos:      Int,
     resource: Resource,
+    name:     Observer,
     obsId:    Observation.Id,
     clientId: ClientId
   ): Future[Unit] =
@@ -424,7 +426,7 @@ object SeqexecWebClient extends ModelBooPicklers {
       .post(
         url = s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(
           resource.show
-        )}/${encodeURI(clientId.self.show)}"
+        )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
       )
       .void
 

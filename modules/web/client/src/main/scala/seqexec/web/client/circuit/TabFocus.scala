@@ -26,7 +26,6 @@ object TabFocus {
         .zip(SeqexecUIModel.displayNameG)
     )
     ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
-      println(s"Tab focu $ob")
       TabFocus(o, t, ob)
     }
   }

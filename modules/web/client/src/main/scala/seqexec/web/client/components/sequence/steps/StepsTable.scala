@@ -546,6 +546,7 @@ object StepsTable extends Columns {
     Reusability.by(x =>
       (x.canOperate,
        x.selectedStep,
+       x.stepsTable.displayName,
        x.stepsList,
        x.stepsList.map(x.visibleColumnValues),
        x.tabOperations.resourceRunRequested

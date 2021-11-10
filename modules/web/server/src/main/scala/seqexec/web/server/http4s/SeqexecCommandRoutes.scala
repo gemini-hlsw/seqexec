@@ -103,16 +103,18 @@ class SeqexecCommandRoutes[F[_]: Sync](
       se.stopObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Stop gracefully requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
-      se.abortObserve(inputQueue, obsId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" / ObserverVar(obs) as _ =>
+      se.abortObserve(inputQueue, obsId, obs) *>
         Ok(s"Abort requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>
-      se.pauseObserve(inputQueue, obsId, graceful = false) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" / ObserverVar(obs) as _ =>
+      se.pauseObserve(inputQueue, obsId, obs, graceful = false) *>
         Ok(s"Pause observation requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" as _ =>
-      se.pauseObserve(inputQueue, obsId, graceful = true) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" / ObserverVar(
+          obs
+        ) as _ =>
+      se.pauseObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Pause observation gracefully requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>
@@ -209,9 +211,9 @@ class SeqexecCommandRoutes[F[_]: Sync](
 
     case POST -> Root / "execute" / ObsIdVar(oid) / PosIntVar(step) / ResourceVar(
           resource
-        ) / ClientIDVar(clientId) as u =>
-      se.configSystem(inputQueue, oid, step, resource, clientId) *>
-        Ok(s"Run ${resource.show} from config at ${oid.format}/$step by ${u.username}")
+        ) / ObserverVar(obs) / ClientIDVar(clientId) as u =>
+      se.configSystem(inputQueue, oid, obs, step, resource, clientId) *>
+        Ok(s"Run ${resource.show} from config at ${oid.format}/$step by ${u.username}/${obs.value}")
 
   }
 
