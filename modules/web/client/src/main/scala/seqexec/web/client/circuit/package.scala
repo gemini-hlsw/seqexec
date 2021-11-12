@@ -242,7 +242,7 @@ package circuit {
                                status,
                                ControlModel.controlModelG.get(tab)
           ).some
-        case _                                                                                   => none
+        case _                                        => none
       }
     }
   }
