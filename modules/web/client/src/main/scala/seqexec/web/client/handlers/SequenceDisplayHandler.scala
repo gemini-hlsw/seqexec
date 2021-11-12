@@ -67,9 +67,5 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleSelectSequenceDisplay,
-         handleShowHideStep,
-         handleLoadFailed,
-         handleClean
-    ).combineAll
+    List(handleSelectSequenceDisplay, handleShowHideStep, handleLoadFailed, handleClean).combineAll
 }
