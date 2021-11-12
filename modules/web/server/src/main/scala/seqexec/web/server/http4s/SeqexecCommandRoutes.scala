@@ -61,12 +61,12 @@ class SeqexecCommandRoutes[F[_]: Sync](
       ) *>
         Ok(s"Started sequence ${obsId.format} from step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
-      se.requestPause(inputQueue, obsId, user) *>
+    case POST -> Root / ObsIdVar(obsId) / "pause" / ObserverVar(obs) as user =>
+      se.requestPause(inputQueue, obsId, obs, user) *>
         Ok(s"Pause sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / "cancelpause" as user =>
-      se.requestCancelPause(inputQueue, obsId, user) *>
+    case POST -> Root / ObsIdVar(obsId) / "cancelpause" / ObserverVar(obs) as user =>
+      se.requestCancelPause(inputQueue, obsId, obs, user) *>
         Ok(s"Cancel Pause sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / ObserverVar(

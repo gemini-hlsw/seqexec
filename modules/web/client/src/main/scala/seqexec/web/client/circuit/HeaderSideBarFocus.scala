@@ -12,21 +12,19 @@ import monocle.Lens
 
 @Lenses
 final case class HeaderSideBarFocus(
-  status:      ClientStatus,
-  conditions:  Conditions,
-  operator:    Option[Operator],
-  displayName: Option[String]
+  status:     ClientStatus,
+  conditions: Conditions,
+  operator:   Option[Operator]
 )
 
 object HeaderSideBarFocus {
   implicit val eq: Eq[HeaderSideBarFocus] =
-    Eq.by(x => (x.status, x.conditions, x.operator, x.displayName))
+    Eq.by(x => (x.status, x.conditions, x.operator))
 
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
-      val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      val displayName  = c.uiModel.user.flatMap(u => c.uiModel.displayNames.get(u.username))
-      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, displayName)
+      val clientStatus = ClientStatus.clientStatusFocusL.get(c)
+      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator)
     }
 }
 
@@ -36,13 +34,6 @@ final case class UserLoginFocus(user: Option[UserDetails], displayNames: Map[Str
 
 object UserLoginFocus {
   implicit val eqUserLoginFocus: Eq[UserLoginFocus] = Eq.by(u => (u.user, u.displayNames))
-}
-
-@Lenses
-final case class UserPromptFocus(user: UserPromptState, displayName: Option[String])
-
-object UserPromptFocus {
-  implicit val eqUserPromptFocus: Eq[UserPromptFocus] = Eq.by(u => (u.user, u.displayName))
 }
 
 @Lenses

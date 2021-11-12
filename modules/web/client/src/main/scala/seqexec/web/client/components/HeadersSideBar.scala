@@ -108,7 +108,7 @@ object HeadersSideBar {
         s.displayName
           .map(updateDisplayName)
           .getOrEmpty
-          .when_(p.model.displayName =!= s.displayName)
+          .when_(p.model.status.displayName =!= s.displayName)
       }
 
     def submitIfChangedOp: Callback =
@@ -207,7 +207,7 @@ object HeadersSideBar {
     .builder[HeadersSideBar]
     .getDerivedStateFromPropsAndState[State] { (p, sOpt) =>
       val operator    = p.model.operator
-      val displayName = p.model.displayName
+      val displayName = p.model.status.displayName
 
       sOpt.fold(State(operator, displayName)) { s =>
         Function.chain(

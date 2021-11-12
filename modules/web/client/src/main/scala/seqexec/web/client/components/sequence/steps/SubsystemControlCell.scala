@@ -30,7 +30,6 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.reusability._
-import seqexec.model.Observer
 
 /**
  * Contains the control buttons for each subsystem
@@ -40,8 +39,7 @@ final case class SubsystemControlCell(
   stepId:         Int,
   resources:      List[Resource],
   resourcesCalls: SortedMap[Resource, ResourceRunOperation],
-  canOperate:     Boolean,
-  displayName:    String
+  canOperate:     Boolean
 ) extends ReactProps[SubsystemControlCell](SubsystemControlCell.component)
 
 object SubsystemControlCell {
@@ -50,14 +48,13 @@ object SubsystemControlCell {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestResourceCall(
-    id:       Observation.Id,
-    stepId:   StepId,
-    observer: Observer,
-    r:        Resource
+    id:     Observation.Id,
+    stepId: StepId,
+    r:      Resource
   ): (ReactMouseEvent, Button.ButtonProps) => Callback =
     (e: ReactMouseEvent, _: Button.ButtonProps) =>
       (e.preventDefaultCB *> e.stopPropagationCB *>
-        SeqexecCircuit.dispatchCB(RequestResourceRun(id, observer, stepId, r)))
+        SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r)))
         .unless_(e.altKey || e.button === StepsTable.MiddleButton)
 
   private val CompletedIcon = IconCheckmark.copy(
@@ -120,7 +117,7 @@ object SubsystemControlCell {
               labelPosition = labeled,
               icon = buttonIcon.isDefined,
               onClickE =
-                if (p.canOperate)(requestResourceCall(p.id, p.stepId, Observer(p.displayName), r))
+                if (p.canOperate)(requestResourceCall(p.id, p.stepId, r))
                 else js.undefined,
               clazz = SeqexecStyles.defaultCursor.unless_(p.canOperate)
             )(buttonIcon.whenDefined(identity), r.show)

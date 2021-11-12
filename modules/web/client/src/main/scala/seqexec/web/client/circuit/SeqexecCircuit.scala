@@ -76,8 +76,8 @@ object SeqexecCircuit
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates)
 
   // Reader to indicate the allowed interactions
-  val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =
-    this.zoomL(ClientStatus.clientStatusFocusL)
+  val statusReader: ModelRW[SeqexecAppRootModel, ClientStatus] =
+    this.zoomRWL(ClientStatus.clientStatusFocusL)
 
   // Reader to read/write the sound setting
   val soundSettingReader: ModelR[SeqexecAppRootModel, SoundSelection] =
@@ -125,9 +125,6 @@ object SeqexecCircuit
 
   val userLoginRW: ModelRW[SeqexecAppRootModel, UserLoginFocus] =
     this.zoomRWL(SeqexecAppRootModel.userLoginFocus)
-
-  val userPromptRW: ModelRW[SeqexecAppRootModel, UserPromptFocus] =
-    this.zoomRWL(SeqexecAppRootModel.userPromptFocus)
 
   val sequencesQueueRW: ModelRW[SeqexecAppRootModel, SequencesQueueFocus] =
     this.zoomRWL(SeqexecAppRootModel.unsafeSequencesQueueFocus)
@@ -193,14 +190,14 @@ object SeqexecCircuit
   )
   private val userLoginHandler        = new UserLoginHandler(userLoginRW)
   private val userNotificationHandler = new NotificationsHandler(zoomTo(_.uiModel.notification))
-  private val userPromptHandler       = new UserPromptHandler(userPromptRW)
+  private val userPromptHandler       = new UserPromptHandler(zoomTo(_.uiModel.userPrompt))
   private val sequenceDisplayHandler  = new SequenceDisplayHandler(sequencesReaderRW)
   private val sequenceExecHandler     = new SequenceExecutionHandler(sequencesQueueRW)
   private val globalLogHandler        = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler       = new ConditionsHandler(zoomTo(_.sequences.conditions))
   private val operatorHandler         = new OperatorHandler(zoomTo(_.sequences.operator))
   private val displayNameHandler      = new DisplayNameHandler(zoomTo(_.uiModel.displayNames))
-  private val remoteRequestsHandler   = new RemoteRequestsHandler(zoomTo(_.clientId))
+  private val remoteRequestsHandler   = new RemoteRequestsHandler(statusReader)
   private val queueRequestsHandler    = new QueueRequestsHandler(queueFocusRW)
   private val tableStateHandler       = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler    = new LoadedSequencesHandler(sodLocationReaderRW)

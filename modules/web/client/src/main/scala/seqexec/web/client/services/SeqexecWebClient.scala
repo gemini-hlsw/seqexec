@@ -254,20 +254,20 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to pause a sequence
    */
-  def pause(id: Observation.Id): Future[Unit] =
+  def pause(id: Observation.Id, name: Observer): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(id.format)}/pause"
+        url = s"$baseUrl/commands/${encodeURI(id.format)}/pause/${encodeURI(name.value)}"
       )
       .void
 
   /**
    * Requests the backend to cancel a pausing request in process
    */
-  def cancelPause(id: Observation.Id): Future[Unit] =
+  def cancelPause(id: Observation.Id, name: Observer): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(id.format)}/cancelpause"
+        url = s"$baseUrl/commands/${encodeURI(id.format)}/cancelpause/${encodeURI(name.value)}"
       )
       .void
 
