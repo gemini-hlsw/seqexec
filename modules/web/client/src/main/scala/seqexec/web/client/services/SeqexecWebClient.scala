@@ -170,10 +170,10 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to resume the current exposure
    */
-  def resumeObs(sid: Observation.Id, step: StepId): Future[Unit] =
+  def resumeObs(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
-        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/resumeObs"
+        url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/resumeObs/${encodeURI(name.value)}"
       )
       .void
 

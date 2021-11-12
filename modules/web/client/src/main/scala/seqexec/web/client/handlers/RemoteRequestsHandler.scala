@@ -166,14 +166,18 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
 
   def handleObsResume: PartialFunction[Any, ActionResult[M]] = { case RequestObsResume(id, step) =>
     effectOnly(
-      Effect(
-        SeqexecWebClient
-          .resumeObs(id, step)
-          .as(RunObsResume(id))
-          .recover { case _ =>
-            RunObsResumeFailed(id)
-          }
-      )
+      (value.clientId, value.observer)
+        .mapN((clientId, observer) =>
+          Effect(
+            SeqexecWebClient
+              .resumeObs(id, observer, step)
+              .as(RunObsResume(id))
+              .recover { case _ =>
+                RunObsResumeFailed(id)
+              }
+          )
+        )
+        .getOrElse(VoidEffect)
     )
   }
 
