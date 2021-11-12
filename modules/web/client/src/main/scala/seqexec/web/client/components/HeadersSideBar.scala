@@ -21,7 +21,6 @@ import react.common._
 import react.semanticui.collections.form._
 import react.semanticui.elements.segment.Segment
 import react.semanticui.widths._
-// import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
@@ -40,8 +39,6 @@ final case class HeadersSideBar(model: HeaderSideBarFocus)
 
   def canOperate: Boolean = model.status.canOperate
 
-  // def selectedObserver: Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
-  //   model.observer
 }
 
 /**

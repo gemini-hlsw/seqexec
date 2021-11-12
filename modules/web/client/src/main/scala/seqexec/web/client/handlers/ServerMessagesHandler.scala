@@ -15,7 +15,6 @@ import diode.Effect
 import diode.ModelRW
 import diode.NoAction
 import org.scalajs.dom.window
-// import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.SingleActionOp
@@ -106,7 +105,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
         if (value.serverVersion.exists(_ =!= v)) {
           Effect(Future(window.location.reload(true)).as(NoAction))
         } else {
-          refreshRequestE //+ calQueueObserverE
+          refreshRequestE
         }
       val displayNames    =
         (u.map(u =>

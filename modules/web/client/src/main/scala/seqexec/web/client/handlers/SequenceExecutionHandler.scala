@@ -23,19 +23,6 @@ import seqexec.web.client.circuit.SequencesQueueFocus
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueueFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesQueueFocus] {
-  // def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
-  //   case UpdateObserver(sequenceId, name) =>
-  //     val updateObserverE  = Effect(
-  //       SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction)
-  //     ) + Effect.action(UpdateDefaultObserver(name))
-  //     val updatedSequences =
-  //       value.copy(sessionQueue = value.sessionQueue.collect {
-  //         case s if s.id === sequenceId =>
-  //           s.copy(metadata = s.metadata.copy(observer = Some(name)))
-  //         case s                        => s
-  //       })
-  //     updated(updatedSequences, updateObserverE)
-  // }
 
   def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequenceId, step) =>

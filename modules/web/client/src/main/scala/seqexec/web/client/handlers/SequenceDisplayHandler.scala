@@ -39,11 +39,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   }
 
-  // private def handleCalTabObserver: PartialFunction[Any, ActionResult[M]] = {
-  //   case UpdateCalTabObserver(o) =>
-  //     updatedL(SequencesFocus.sod.modify(_.updateCalTabObserver(o)))
-  // }
-
   private def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowPreviewStepConfig(i, id, step) =>
       val seq = SequencesQueue
@@ -76,6 +71,5 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
          handleShowHideStep,
          handleLoadFailed,
          handleClean
-         // handleCalTabObserver
     ).combineAll
 }

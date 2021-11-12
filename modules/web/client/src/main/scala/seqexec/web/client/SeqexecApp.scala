@@ -23,7 +23,7 @@ import typings.loglevel.mod.{ ^ => logger }
  * Seqexec WebApp entry point
  */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
-  japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
+  // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
 
   def serverSite(implicit cs: ContextShift[IO]): F[Site] =
     L.liftIO(IO.fromFuture {
