@@ -235,7 +235,13 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
+              seqexecEngine.start(q,
+                                  seqObsId2,
+                                  UserDetails("", ""),
+                                  Observer(""),
+                                  clientId,
+                                  RunOverride.Default
+              )
             )
     } yield inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
       case Some(status) => assert(status.isIdle)
@@ -262,7 +268,13 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       sf <- advanceN(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default),
+              seqexecEngine.start(q,
+                                  seqObsId2,
+                                  UserDetails("", ""),
+                                  Observer(""),
+                                  clientId,
+                                  RunOverride.Default
+              ),
               2
             )
     } yield inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
@@ -281,7 +293,8 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
+      sf <-
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Started))(
@@ -301,7 +314,8 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
+      sf <-
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -326,7 +340,11 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
+      sf <- advanceOne(
+              q,
+              s0,
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+            )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -351,7 +369,11 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
+      sf <- advanceOne(
+              q,
+              s0,
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+            )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Started))(
@@ -368,7 +390,13 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId1, runStepId, clientId, RunOverride.Default)
+      _  <- seqexecEngine.startFrom(q,
+                                    seqObsId1,
+                                    Observer(""),
+                                    runStepId,
+                                    clientId,
+                                    RunOverride.Default
+            )
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -402,7 +430,13 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId2, runStepId, clientId, RunOverride.Default)
+      _  <- seqexecEngine.startFrom(q,
+                                    seqObsId2,
+                                    Observer(""),
+                                    runStepId,
+                                    clientId,
+                                    RunOverride.Default
+            )
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)

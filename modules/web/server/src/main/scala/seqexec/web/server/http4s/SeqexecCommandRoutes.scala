@@ -117,8 +117,8 @@ class SeqexecCommandRoutes[F[_]: Sync](
       se.pauseObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Pause observation gracefully requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>
-      se.resumeObserve(inputQueue, obsId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" / ObserverVar(obs) as _ =>
+      se.resumeObserve(inputQueue, obsId, obs) *>
         Ok(s"Resume observation requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / "operator" / OperatorVar(op) as user =>

@@ -462,7 +462,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default)
+              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
             )
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) { case Some(s) =>
       assert(s.seq.status === SequenceState.Idle)
@@ -479,7 +479,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceN(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default),
+              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), Observer(""), clientId, RunOverride.Default),
               2
             )
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) { case Some(s) =>
@@ -502,7 +502,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default)
+              seqexecEngine.start(q, seqObsId3, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
             )
     } yield inside(sf.flatMap(_.sequences.get(seqObsId3))) { case Some(s) =>
       assert(s.seq.status === SequenceState.Idle)
@@ -521,7 +521,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
+      _  <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -548,7 +548,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
+      _  <- seqexecEngine.start(q, seqObsId2, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -575,7 +575,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 1 is started. It should run. And when finishes, sequence 3 should be run too.
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+      _  <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -603,7 +603,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Sequence 2 is started. SeqexecEngine must not schedule 1 nor 3 when 2 completes.
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+      _  <- seqexecEngine.start(q, seqObsId1, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -629,7 +629,7 @@ class QueueExecutionSpec extends AnyFlatSpec with Matchers with NonImplicitAsser
     // Attempt to run sequence 3. it should fail, because it uses the same instrument as sequence 1
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.start(q, seqObsId3, UserDetails("", ""), clientId, RunOverride.Default)
+      _  <- seqexecEngine.start(q, seqObsId3, UserDetails("", ""), Observer(""), clientId, RunOverride.Default)
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)

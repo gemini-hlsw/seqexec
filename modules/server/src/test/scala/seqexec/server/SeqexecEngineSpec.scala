@@ -147,7 +147,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default)
+              seqexecEngine.start(q,
+                                  seqObsId2,
+                                  UserDetails("", ""),
+                                  Observer(""),
+                                  clientId,
+                                  RunOverride.Default
+              )
             )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId2).getOption).map(_.status)
@@ -176,7 +182,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf <- advanceN(
               q,
               s0,
-              seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId, RunOverride.Default),
+              seqexecEngine.start(q,
+                                  seqObsId2,
+                                  UserDetails("", ""),
+                                  Observer(""),
+                                  clientId,
+                                  RunOverride.Default
+              ),
               2
             )
     } yield inside(
@@ -197,7 +209,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
+      sf <-
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Started))(
@@ -217,7 +230,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
+      sf <-
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -242,7 +256,11 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
+      sf <- advanceOne(
+              q,
+              s0,
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+            )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -267,7 +285,11 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
+      sf <- advanceOne(
+              q,
+              s0,
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+            )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Started))(
@@ -284,7 +306,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId1, runStepId, clientId, RunOverride.Default)
+      _  <- seqexecEngine.startFrom(q,
+                                    seqObsId1,
+                                    Observer(""),
+                                    runStepId,
+                                    clientId,
+                                    RunOverride.Default
+            )
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -318,7 +346,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
-      _  <- seqexecEngine.startFrom(q, seqObsId2, runStepId, clientId, RunOverride.Default)
+      _  <- seqexecEngine.startFrom(q,
+                                    seqObsId2,
+                                    Observer(""),
+                                    runStepId,
+                                    clientId,
+                                    RunOverride.Default
+            )
       sf <- seqexecEngine
               .stream(q.dequeue)(s0)
               .map(_._2)
@@ -396,7 +430,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -421,7 +461,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -446,7 +492,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -471,7 +523,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -496,7 +554,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -521,7 +585,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Override)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Override
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -546,7 +616,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Override)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Override
+                         )
                        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
@@ -573,7 +649,11 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
-        advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default))
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default)
+        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
     ) { case Some(status) =>
@@ -599,7 +679,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
-        seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default) *>
+        seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default) *>
           seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
     } yield inside(result) { case Some((out, sf)) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
@@ -638,7 +718,11 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
-        advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Override))
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Override)
+        )
     } yield inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption)) {
       case Some(s) =>
         assert(s.status.isRunning)
@@ -666,7 +750,11 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
-        advanceOne(q, s0, seqexecEngine.startFrom(q, seqObsId1, 2, clientId, RunOverride.Default))
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default)
+        )
     } yield inside(
       sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption).map(_.status)
     ) { case Some(status) =>
@@ -731,7 +819,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf            <- advanceOne(
                          q,
                          s0,
-                         seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default)
+                         seqexecEngine.start(q,
+                                             seqObsId1,
+                                             UserDetails("", ""),
+                                             Observer(""),
+                                             clientId,
+                                             RunOverride.Default
+                         )
                        )
     } yield inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption)) {
       case Some(s) =>
@@ -757,7 +851,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
-        seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Default) *>
+        seqexecEngine.start(q,
+                            seqObsId1,
+                            UserDetails("", ""),
+                            Observer(""),
+                            clientId,
+                            RunOverride.Default
+        ) *>
           seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
     } yield inside(result) { case Some((out, sf)) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
@@ -797,7 +897,8 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceN(
           q,
           s0,
-          seqexecEngine.start(q, seqObsId1, UserDetails("", ""), clientId, RunOverride.Override),
+          seqexecEngine
+            .start(q, seqObsId1, UserDetails("", ""), Observer(""), clientId, RunOverride.Override),
           3
         )
     } yield inside(sf.flatMap(EngineState.sequenceStateIndex[IO](seqObsId1).getOption)) {
