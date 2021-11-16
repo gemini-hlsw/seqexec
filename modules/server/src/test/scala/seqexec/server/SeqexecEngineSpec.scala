@@ -213,7 +213,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
-        assertResult(Some(Action.ActionState.Started))(
+        assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
     }).unsafeRunSync()
@@ -292,7 +292,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
             )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
-        assertResult(Some(Action.ActionState.Started))(
+        assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
     }).unsafeRunSync()
