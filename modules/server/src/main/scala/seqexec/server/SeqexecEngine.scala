@@ -1268,15 +1268,14 @@ object SeqexecEngine {
       stepId:   StepId,
       sys:      Resource,
       clientID: ClientId
-    ): F[Unit] = {
-      println(observer)
-      q.enqueue1(
-        Event.modifyState[F, EngineState[F], SeqEvent](
-          configSystemHandle(sid, stepId, sys, clientID)
-        )
-      ) *>
-        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(sid, observer)))
-    }
+    ): F[Unit] =
+      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(sid, observer))) *>
+        q.enqueue1(
+          Event.modifyState[F, EngineState[F], SeqEvent](
+            configSystemHandle(sid, stepId, sys, clientID)
+          )
+        ) *>
+        requestRefresh(q, clientID)
 
     def notifyODB(
       i: (EventResult[SeqEvent], EngineState[F])
