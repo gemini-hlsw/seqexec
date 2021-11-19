@@ -141,7 +141,7 @@ object HeadersSideBar {
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
             <.div(
               ^.cls := "sixteen wide field",
-              FormLabel("My display name", Some("displayName")),
+              FormLabel("My observer name", Some("displayName")),
               InputEV[StateSnapshot, String](
                 "displayName",
                 "displayName",
