@@ -43,7 +43,7 @@ object Settings {
     val log4catsLevel  = "0.2.0"
     val logback        = "1.2.7"
     val janino         = "3.1.6"
-    val pureConfig     = "0.14.1"
+    val pureConfig     = "0.17.1"
     val monocleVersion = "2.1.0"
     val circeVersion   = "0.14.1"
     val doobieVersion  = "0.6.0"
