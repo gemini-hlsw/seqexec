@@ -81,7 +81,7 @@ object Gcal {
     val diffuser   = config.extractCalibrationAs[Diffuser](DIFFUSER_PROP)
 
     for {
-      _     <- lamps
+      l     <- lamps
       ar    <- arLamp.map(ArLampState.apply)
       cuar  <- cuarLamp.map(CuArLampState.apply)
       thar  <- tharLamp.map(ThArLampState.apply)
@@ -94,7 +94,7 @@ object Gcal {
       dif   <- diffuser
     } yield { controller: GcalController[F] =>
       new Gcal[F](controller,
-                  if (lamps.isEmpty && sht === Shutter.CLOSED) GcalConfig.GcalOff
+                  if (l.isEmpty && sht === Shutter.CLOSED) GcalConfig.GcalOff
                   else GcalConfig.GcalOn(ar, cuar, qh5, qh100, thar, xe, ir, sht, flt, dif)
       )
     }
