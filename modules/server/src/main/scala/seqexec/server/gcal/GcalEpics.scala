@@ -117,11 +117,11 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   private val lampArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
   def lampAr: F[BinaryOnOff]                       = safeAttributeF(lampArAttr)
 
-  private val lampQH5WAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH5W", "Quartz Halogen")
+  private val lampQH5WAttr: CaAttribute[BinaryOnOff] = createLampAttribute("QH", "Quartz Halogen")
   def lampQH5W: F[BinaryOnOff]                       = safeAttributeF(lampQH5WAttr)
 
   private val lampQH100WAttr: CaAttribute[BinaryOnOff] =
-    createLampAttribute("QH100W", "Quartz Halogen")
+    createLampAttribute("QH100", "Quartz Halogen")
   def lampQH100W: F[BinaryOnOff]                       = safeAttributeF(lampQH100WAttr)
 
   private val lampCuArAttr: CaAttribute[BinaryOnOff] = createLampAttribute("CuAr", "Copper Argon")
