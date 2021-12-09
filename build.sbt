@@ -16,6 +16,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / semanticdbEnabled := true
 
 ThisBuild / Compile / packageDoc / publishArtifact := false
+ThisBuild / Test / bspEnabled := false
 
 // Gemini repository
 ThisBuild / resolvers += "Gemini Repository".at(

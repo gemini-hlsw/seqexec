@@ -35,10 +35,15 @@
                 <type>STRING</type>
                 <description>IR Lamp name</description>
             </parameter>
-            <parameter name="stateQH">
+            <parameter name="stateQH5W">
                 <channel>lampSel.D</channel>
                 <type>STRING</type>
-                <description>QH lamp state (ON/OFF)</description>
+                <description>QH 5W lamp state (ON/OFF)</description>
+            </parameter>
+            <parameter name="stateQH100W">
+                <channel>lampSel.N</channel>
+                <type>STRING</type>
+                <description>QH 100W lamp state (ON/OFF)</description>
             </parameter>
             <parameter name="stateXe">
                 <channel>lampSel.H</channel>
@@ -50,10 +55,15 @@
                 <type>STRING</type>
                 <description>Ar Lamp name</description>
             </parameter>
-            <parameter name="nameQH">
+            <parameter name="nameQH5W">
                 <channel>lampSel.C</channel>
                 <type>STRING</type>
-                <description>QH Lamp name</description>
+                <description>QH 5W Lamp name</description>
+            </parameter>
+            <parameter name="nameQH100W">
+                <channel>lampSel.M</channel>
+                <type>STRING</type>
+                <description>QH 100W Lamp name</description>
             </parameter>
             <parameter name="nameXe">
                 <channel>lampSel.G</channel>
@@ -103,10 +113,15 @@
             <type>STRING</type>
             <description>Argon lamp state</description>
         </attribute>
-        <attribute name="QHLampState">
+        <attribute name="QH5WLampState">
             <channel>QH_LampState</channel>
             <type>STRING</type>
-            <description>Quartz Halogen lamp state</description>
+            <description>Quartz Halogen 5W lamp state</description>
+        </attribute>
+        <attribute name="QH100WLampState">
+            <channel>QH100_LampState</channel>
+            <type>STRING</type>
+            <description>Quartz Halogen 5W lamp state</description>
         </attribute>
         <attribute name="CuArLampState">
             <channel>CuAr_LampState</channel>
