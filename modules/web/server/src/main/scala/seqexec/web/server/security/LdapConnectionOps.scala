@@ -39,7 +39,7 @@ object LdapConnectionOps {
 
       val dn = for {
         a <- attrs.get("displayName")
-        d <- a.headOption
+        d <- a.headOption.filter(_ => false)
       } yield d
 
       // Read the groups

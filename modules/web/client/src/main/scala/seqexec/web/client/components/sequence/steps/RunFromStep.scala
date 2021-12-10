@@ -47,7 +47,7 @@ object RunFromStep {
         .unless_(e.altKey || e.button === StepsTable.MiddleButton)
 
   protected val component = ScalaComponent
-    .builder[Props]("RunFromStep")
+    .builder[Props]
     .render_P { p =>
       <.div(
         SeqexecStyles.runFrom,

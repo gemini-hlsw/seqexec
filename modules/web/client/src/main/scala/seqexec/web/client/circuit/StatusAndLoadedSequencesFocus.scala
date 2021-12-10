@@ -25,6 +25,7 @@ final case class SequenceInSessionQueue(
   name:          String,
   obsClass:      ObsClass,
   targetName:    Option[TargetName],
+  observer:      Option[Observer],
   runningStep:   Option[RunningStep],
   nextStepToRun: Option[Int],
   inDayCalQueue: Boolean
@@ -41,6 +42,7 @@ object SequenceInSessionQueue {
        x.name,
        x.obsClass,
        x.targetName,
+       x.observer,
        x.runningStep,
        x.nextStepToRun,
        x.inDayCalQueue
@@ -60,17 +62,19 @@ object SequenceInSessionQueue {
         .headOption(s)
         .map(ObsClass.fromString)
         .getOrElse(ObsClass.Nighttime)
-      SequenceInSessionQueue(s.id,
-                             s.status,
-                             s.metadata.instrument,
-                             active,
-                             loaded,
-                             s.metadata.name,
-                             obsClass,
-                             targetName,
-                             s.runningStep,
-                             s.nextStepToRun,
-                             dayCal.contains(s.id)
+      SequenceInSessionQueue(
+        s.id,
+        s.status,
+        s.metadata.instrument,
+        active,
+        loaded,
+        s.metadata.name,
+        obsClass,
+        targetName,
+        s.metadata.observer,
+        s.runningStep,
+        s.nextStepToRun,
+        dayCal.contains(s.id)
       )
     }
 

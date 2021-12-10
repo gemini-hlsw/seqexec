@@ -6,10 +6,12 @@ package seqexec.web.client.model
 import cats.Eq
 import lucuma.core.util.Enumerated
 import monocle.macros.Lenses
+import monocle.Lens
 import seqexec.common.FixedLengthBuffer
-import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.client.model.SectionVisibilityState._
+import seqexec.web.client.circuit.UserLoginFocus
+import monocle.Getter
 
 sealed trait SoundSelection extends Product with Serializable
 
@@ -35,11 +37,11 @@ object SoundSelection {
 final case class SeqexecUIModel(
   navLocation:        Pages.SeqexecPages,
   user:               Option[UserDetails],
+  displayNames:       Map[String, String],
   loginBox:           SectionVisibilityState,
   globalLog:          GlobalLog,
   sequencesOnDisplay: SequencesOnDisplay,
   appTableStates:     AppTableStates,
-  defaultObserver:    Observer,
   notification:       UserNotificationState,
   userPrompt:         UserPromptState,
   queues:             CalibrationQueues,
@@ -53,11 +55,11 @@ object SeqexecUIModel {
   val Initial: SeqexecUIModel = SeqexecUIModel(
     Pages.Root,
     None,
+    Map.empty,
     SectionClosed,
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
     AppTableStates.Initial,
-    Observer(""),
     UserNotificationState.Empty,
     UserPromptState.Empty,
     CalibrationQueues.Default,
@@ -67,15 +69,20 @@ object SeqexecUIModel {
     firstLoad = true
   )
 
+  val userLoginFocus: Lens[SeqexecUIModel, UserLoginFocus] =
+    Lens[SeqexecUIModel, UserLoginFocus](m => UserLoginFocus(m.user, m.displayNames))(n =>
+      a => a.copy(user = n.user, displayNames = n.displayNames)
+    )
+
   implicit val eq: Eq[SeqexecUIModel] =
     Eq.by(x =>
       (x.navLocation,
        x.user,
+       x.displayNames,
        x.loginBox,
        x.globalLog,
        x.sequencesOnDisplay,
        x.appTableStates,
-       x.defaultObserver,
        x.notification,
        x.userPrompt,
        x.queues,
@@ -85,5 +92,7 @@ object SeqexecUIModel {
       )
     )
 
-  val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
+  val displayNameG: Getter[SeqexecUIModel, Option[String]] =
+    Getter[SeqexecUIModel, Option[String]](x => x.user.flatMap(r => x.displayNames.get(r.username)))
+
 }

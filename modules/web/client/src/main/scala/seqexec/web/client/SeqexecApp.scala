@@ -51,6 +51,7 @@ final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
         elem
       }
     }
+
 }
 
 /**

@@ -47,19 +47,19 @@ object AppsCommon {
    */
   lazy val deployedAppMappings = Seq(
     // Don't include the configuration on the jar. Instead we copy it to the conf dir
-    mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) },
+    Compile / packageBin / mappings ~= { _.filter(!_._1.getName.endsWith(".conf")) },
 
     // Copy the configuration file
-    mappings in Universal in packageZipTarball += {
-      val f = (resourceDirectory in Compile).value / "app.conf"
+    Universal / packageZipTarball / mappings += {
+      val f = (Compile / resourceDirectory).value / "app.conf"
       f -> ("conf/" + f.getName)
     }
   )
 
   private def embeddedJreSettings(target: DeploymentTarget) = Seq(
     // Put the jre in the tarball
-    mappings in Universal ++= {
-      val jresDir    = (ocsJreDir in ThisBuild).value
+    Universal / mappings ++= {
+      val jresDir   = (ThisBuild / ocsJreDir).value
       // Map the location of jre files
       val jreLink    = "JRE64_1.8"
       val linux64Jre = jresDir.toPath.resolve(target.subdir).resolve(jreLink)
@@ -69,7 +69,7 @@ object AppsCommon {
     },
 
     // Make the launcher use the embedded jre
-    javaOptions in Universal ++= Seq(
+    Universal / javaOptions ++= Seq(
       "-java-home ${app_home}/../jre"
     )
   )

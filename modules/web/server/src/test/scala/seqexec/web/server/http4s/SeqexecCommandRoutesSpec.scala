@@ -128,7 +128,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.start _)
-        .expects(*, *, *, *, *)
+        .expects(*, *, *, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -139,7 +139,7 @@ class SeqexecCommandRoutesSpec
         l <- s(
                Request[IO](method = Method.POST,
                            uri = Uri.unsafeFromString(
-                             s"/${obsId.format}/start/${clientId.self}"
+                             s"/${obsId.format}/start/obs/${clientId.self}"
                            )
                )
                  .addCookie("token", t)
@@ -154,14 +154,14 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.startFrom _)
-        .expects(*, *, *, *, *)
+        .expects(*, *, *, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, clientId: ClientId) =>
       val startFrom = abs(step / 2) + 1
       val uri       = Uri.unsafeFromString(
-        s"/${obsId.format}/$startFrom/startFrom/${clientId.self}"
+        s"/${obsId.format}/$startFrom/startFrom/obs/${clientId.self}"
       )
       val (s, b)    = (for {
         s <- commandRoutes(engine)
@@ -183,12 +183,12 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.requestPause _)
-        .expects(*, *, *)
+        .expects(*, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id) =>
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/pause")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/pause/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -205,12 +205,12 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.requestCancelPause _)
-        .expects(*, *, *)
+        .expects(*, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id) =>
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/cancelpause")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/cancelpause/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -227,13 +227,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.setBreakpoint _)
-        .expects(*, *, *, *, *)
+        .expects(*, *, *, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
       val toSet  = abs(step / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/breakpoint/$set")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/breakpoint/obs/$set")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -254,13 +254,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.setSkipMark _)
-        .expects(*, *, *, *, *)
+        .expects(*, *, *, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
       val toSet  = abs(step / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/skip/$set")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/skip/obs/$set")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -281,13 +281,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.stopObserve _)
-        .expects(*, *, false)
+        .expects(*, *, *, false)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stop")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stop/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -308,13 +308,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.stopObserve _)
-        .expects(*, *, true)
+        .expects(*, *, *, true)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stopGracefully")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stopGracefully/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -335,13 +335,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.abortObserve _)
-        .expects(*, *)
+        .expects(*, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/abort")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/abort/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -362,13 +362,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.pauseObserve _)
-        .expects(*, *, false)
+        .expects(*, *, *, false)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObs/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -389,14 +389,14 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.pauseObserve _)
-        .expects(*, *, true)
+        .expects(*, *, *, true)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
       val uri    =
-        Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObsGracefully")
+        Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObsGracefully/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken
@@ -417,13 +417,13 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.resumeObserve _)
-        .expects(*, *)
+        .expects(*, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/resumeObs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/resumeObs/obs")
       val (s, b) = (for {
         s <- commandRoutes(engine)
         t <- newLoginToken

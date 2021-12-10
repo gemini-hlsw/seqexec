@@ -11,56 +11,47 @@ import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
-import seqexec.model.SequenceView
-import seqexec.model.SequencesQueue
+import seqexec.model.Observer
 import seqexec.web.client.actions._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.services.SeqexecWebClient
+import seqexec.web.client.circuit.SequencesQueueFocus
 
 /**
  * Handles sequence execution actions
  */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]])
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueueFocus])
     extends ActionHandler(modelRW)
-    with Handlers[M, SequencesQueue[SequenceView]] {
-  def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateObserver(sequenceId, name) =>
-      val updateObserverE  = Effect(
-        SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction)
-      ) + Effect.action(UpdateDefaultObserver(name))
-      val updatedSequences =
-        value.copy(sessionQueue = value.sessionQueue.collect {
-          case s if s.id === sequenceId =>
-            s.copy(metadata = s.metadata.copy(observer = Some(name)))
-          case s                        => s
-        })
-      updated(updatedSequences, updateObserverE)
-  }
+    with Handlers[M, SequencesQueueFocus] {
 
   def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequenceId, step) =>
-      val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).as(NoAction))
-      updated(value.copy(sessionQueue = value.sessionQueue.collect {
-                case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
-                case s                        => s
-              }),
-              skipRequest
+      val skipRequest = Effect(
+        SeqexecWebClient
+          .skip(sequenceId, Observer(value.displayName.orEmpty), step.flipSkip)
+          .as(NoAction)
+      )
+      updatedLE(SequencesQueueFocus.sessionQueue.modify(_.collect {
+                  case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
+                  case s                        => s
+                }),
+                skipRequest
       )
 
     case FlipBreakpointStep(sequenceId, step) =>
       val breakpointRequest = Effect(
         SeqexecWebClient
-          .breakpoint(sequenceId, step.flipBreakpoint)
+          .breakpoint(sequenceId, Observer(value.displayName.orEmpty), step.flipBreakpoint)
           .as(NoAction)
       )
-      updated(value.copy(sessionQueue = value.sessionQueue.collect {
-                case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
-                case s                        => s
-              }),
-              breakpointRequest
+      updatedLE(SequencesQueueFocus.sessionQueue.modify(_.collect {
+                  case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
+                  case s                        => s
+                }),
+                breakpointRequest
       )
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
+    List(handleFlipSkipBreakpoint).combineAll
 }

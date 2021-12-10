@@ -5,7 +5,6 @@ package seqexec.web.client.components
 
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
@@ -15,28 +14,30 @@ import seqexec.web.client.model.Pages._
 /**
  * Container for the queue table
  */
+final case class SessionQueueTableSection(pages: RouterCtl[SeqexecPages])
+    extends ReactProps[SessionQueueTableSection](SessionQueueTableSection.component)
+
 object SessionQueueTableSection {
+  type Props = SessionQueueTableSection
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.pages)
+
   private val sequencesConnect =
     SeqexecCircuit.connect(SeqexecCircuit.statusAndLoadedSequencesReader)
 
   private val component = ScalaComponent
-    .builder[RouterCtl[SeqexecPages]]("SessionQueueTableSection")
+    .builder[Props]
     .stateless
     .render_P(p =>
       React.Fragment(
         <.div(
           SeqexecStyles.queueListPane,
-          sequencesConnect(c => SessionQueueTable(p, c()))
+          sequencesConnect(c => SessionQueueTable(p.pages, c()))
         ),
         SessionQueueTableFilter()
       )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
-
-  def apply(
-    ctl: RouterCtl[SeqexecPages]
-  ): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
-    component(ctl)
 
 }

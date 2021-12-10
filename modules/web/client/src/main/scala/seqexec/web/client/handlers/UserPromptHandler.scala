@@ -19,15 +19,16 @@ import seqexec.web.client.model._
 class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
     extends ActionHandler(modelRW)
     with Handlers[M, UserPromptState] {
+
+  val lens = UserPromptState.notification
+
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(UserPromptNotification(not, _)) =>
-      // Update the notification state
-      val lens         = UserPromptState.notification.set(not.some)
       // Update the model as load failed
       val modelUpdateE = not match {
         case UserPrompt.ChecksOverride(id, _, _) => Effect(Future(RunStartFailed(id)))
       }
-      updatedLE(lens, modelUpdateE)
+      updatedLE(lens.set(not.some), modelUpdateE)
   }
 
   def handleClosePrompt: PartialFunction[Any, ActionResult[M]] = { case CloseUserPromptBox(x) =>
@@ -36,7 +37,7 @@ class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
         Effect(Future(RequestRunFrom(id, stp, RunOptions.ChecksOverride)))
       case _                                                                            => VoidEffect
     }
-    updatedLE(UserPromptState.notification.set(none), overrideEffect)
+    updatedLE(lens.set(none), overrideEffect)
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] =

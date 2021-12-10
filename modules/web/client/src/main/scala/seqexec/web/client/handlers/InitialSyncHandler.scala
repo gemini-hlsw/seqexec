@@ -15,6 +15,7 @@ import diode.ModelRW
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.events.SeqexecModelUpdate
+import seqexec.web.client.services.DisplayNamePersistence
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
@@ -25,7 +26,8 @@ import seqexec.web.client.model.Pages._
  */
 class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
     extends ActionHandler(modelRW)
-    with Handlers[M, InitialSyncFocus] {
+    with Handlers[M, InitialSyncFocus]
+    with DisplayNamePersistence {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.sessionQueue.filter(_.status.isRunning).sortBy(_.id).headOption
 
@@ -100,7 +102,9 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
           // No matches
           (noUpdate, VoidEffect)
       }
-      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> update,
+      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> InitialSyncFocus.displayNames.set(
+                  storedDisplayNames
+                ) >>> update,
                 Effect(Future(CleanSequences)) >> effect
       )
   }

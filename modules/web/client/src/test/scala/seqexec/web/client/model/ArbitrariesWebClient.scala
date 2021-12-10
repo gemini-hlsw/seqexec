@@ -267,12 +267,15 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
     Arbitrary {
       for {
         u <- arbitrary[Option[UserDetails]]
+        c <- arbitrary[Option[ClientId]]
+        d <- arbitrary[Map[String, String]]
         w <- arbitrary[WebSocketConnection]
-      } yield ClientStatus(u, w)
+      } yield ClientStatus(u, c, d, w)
     }
 
   implicit val cssCogen: Cogen[ClientStatus] =
-    Cogen[(Option[UserDetails], WebSocketConnection)].contramap(x => (x.u, x.w))
+    Cogen[(Option[UserDetails], Option[ClientId], Map[String, String], WebSocketConnection)]
+      .contramap(x => (x.user, x.clientId, x.displayNames, x.w))
 
   implicit val arbTableType: Arbitrary[StepsTableTypeSelection] =
     Arbitrary(
@@ -681,11 +684,11 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
       for {
         navLocation        <- arbitrary[Pages.SeqexecPages]
         user               <- arbitrary[Option[UserDetails]]
+        displayNames       <- arbitrary[Map[String, String]]
         loginBox           <- arbitrary[SectionVisibilityState]
         globalLog          <- arbitrary[GlobalLog]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
         appTableStates     <- arbitrary[AppTableStates]
-        defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         prompt             <- arbitrary[UserPromptState]
         queues             <- arbitrary[CalibrationQueues]
@@ -696,11 +699,11 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
       } yield SeqexecUIModel(
         navLocation,
         user,
+        displayNames,
         loginBox,
         globalLog,
         sequencesOnDisplay,
         appTableStates,
-        defaultObserver,
         notification,
         prompt,
         queues,
@@ -716,11 +719,11 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
       (
         Pages.SeqexecPages,
         Option[UserDetails],
+        Map[String, String],
         SectionVisibilityState,
         GlobalLog,
         SequencesOnDisplay,
         AppTableStates,
-        Observer,
         UserNotificationState,
         CalibrationQueues,
         AllObservationsProgressState,
@@ -732,11 +735,11 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
       .contramap(x =>
         (x.navLocation,
          x.user,
+         x.displayNames,
          x.loginBox,
          x.globalLog,
          x.sequencesOnDisplay,
          x.appTableStates,
-         x.defaultObserver,
          x.notification,
          x.queues,
          x.obsProgress,
@@ -767,7 +770,7 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         resourceRunRequested <-
           arbitrary[Map[Observation.Id, SortedMap[Resource, ResourceRunOperation]]]
         user                 <- arbitrary[Option[UserDetails]]
-        observer             <- arbitrary[Observer]
+        displayNames         <- arbitrary[Map[String, String]]
         clientId             <- arbitrary[Option[ClientId]]
         site                 <- arbitrary[Option[Site]]
         sound                <- arbitrary[SoundSelection]
@@ -778,7 +781,7 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
                               sequences,
                               resourceRunRequested,
                               user,
-                              observer,
+                              displayNames,
                               clientId,
                               site,
                               sound,
@@ -794,7 +797,7 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         Pages.SeqexecPages,
         SequencesQueue[SequenceView],
         Option[UserDetails],
-        Observer,
+        Map[String, String],
         Option[ClientId],
         Option[Site],
         SoundSelection,
@@ -807,7 +810,7 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         (x.location,
          x.sequences,
          x.user,
-         x.defaultObserver,
+         x.displayNames,
          x.clientId,
          x.site,
          x.sound,
@@ -823,12 +826,13 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
         navLocation        <- arbitrary[Pages.SeqexecPages]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
         firstLoad          <- arbitrary[Boolean]
-      } yield InitialSyncFocus(navLocation, sequencesOnDisplay, firstLoad)
+        displayNames       <- arbitrary[Map[String, String]]
+      } yield InitialSyncFocus(navLocation, sequencesOnDisplay, displayNames, firstLoad)
     }
 
   implicit val initialSyncFocusCogen: Cogen[InitialSyncFocus] =
-    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Boolean)].contramap(x =>
-      (x.location, x.sod, x.firstLoad)
+    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Map[String, String], Boolean)].contramap(x =>
+      (x.location, x.sod, x.displayNames, x.firstLoad)
     )
 
   implicit val arbSeqexecAppRootModel: Arbitrary[SeqexecAppRootModel] =

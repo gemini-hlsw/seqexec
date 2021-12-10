@@ -76,7 +76,7 @@ object ControlButtons {
     )
 
   protected val component = ScalaComponent
-    .builder[Props]("ControlButtons")
+    .builder[Props]
     .render_P { p =>
       val pauseGracefullyIcon: VdomNode =
         p.nsPendingObserveCmd

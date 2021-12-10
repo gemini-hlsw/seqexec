@@ -7,24 +7,23 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import monocle.Getter
-import seqexec.model._
 import seqexec.web.client.model._
 
 final case class TabFocus(
-  canOperate:      Boolean,
-  tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
-  defaultObserver: Observer
+  canOperate:  Boolean,
+  tabs:        NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
+  displayName: Option[String]
 )
 
 object TabFocus {
   implicit val eq: Eq[TabFocus] =
-    Eq.by(x => (x.canOperate, x.tabs, x.defaultObserver))
+    Eq.by(x => (x.canOperate, x.tabs, x.displayName))
 
   val tabFocusG: Getter[SeqexecAppRootModel, TabFocus] = {
     val getter = SeqexecAppRootModel.uiModel.composeGetter(
       (SeqexecUIModel.sequencesOnDisplay
         .composeGetter(SequencesOnDisplay.availableTabsG))
-        .zip(SeqexecUIModel.defaultObserverG)
+        .zip(SeqexecUIModel.displayNameG)
     )
     ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
       TabFocus(o, t, ob)

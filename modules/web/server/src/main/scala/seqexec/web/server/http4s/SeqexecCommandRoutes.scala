@@ -33,35 +33,48 @@ class SeqexecCommandRoutes[F[_]: Sync](
   private val httpAuthentication = new Http4sAuthentication(auth)
 
   private val commandServices: AuthedRoutes[UserDetails, F] = AuthedRoutes.of {
-    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) :? OptionalRunOverride(
+    case POST -> Root / ObsIdVar(obsId) / "start" / ObserverVar(obs) / ClientIDVar(
+          clientId
+        ) :? OptionalRunOverride(
           runOverride
         ) as user =>
-      se.start(inputQueue, obsId, user, clientId, runOverride.getOrElse(RunOverride.Default)) *>
+      se.start(inputQueue,
+               obsId,
+               user,
+               obs,
+               clientId,
+               runOverride.getOrElse(RunOverride.Default)
+      ) *>
         Ok(s"Started sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ObserverVar(
+          obs
+        ) / ClientIDVar(
           clientId
         ) :? OptionalRunOverride(runOverride) as _ =>
       se.startFrom(inputQueue,
                    obsId,
+                   obs,
                    stepId,
                    clientId,
                    runOverride.getOrElse(RunOverride.Default)
       ) *>
         Ok(s"Started sequence ${obsId.format} from step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
-      se.requestPause(inputQueue, obsId, user) *>
+    case POST -> Root / ObsIdVar(obsId) / "pause" / ObserverVar(obs) as user =>
+      se.requestPause(inputQueue, obsId, obs, user) *>
         Ok(s"Pause sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / "cancelpause" as user =>
-      se.requestCancelPause(inputQueue, obsId, user) *>
+    case POST -> Root / ObsIdVar(obsId) / "cancelpause" / ObserverVar(obs) as user =>
+      se.requestCancelPause(inputQueue, obsId, obs, user) *>
         Ok(s"Cancel Pause sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / BooleanVar(
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / ObserverVar(
+          obs
+        ) / BooleanVar(
           bp
         ) as user =>
-      se.setBreakpoint(inputQueue, obsId, user, stepId, bp) *>
+      se.setBreakpoint(inputQueue, obsId, user, obs, stepId, bp) *>
         Ok(s"Set breakpoint in step $stepId of sequence ${obsId.format}")
 
     case POST -> Root / ObsIdVar(obsId) / "sync" as _ =>
@@ -72,32 +85,40 @@ class SeqexecCommandRoutes[F[_]: Sync](
                 )
       } yield resp
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / BooleanVar(bp) as user =>
-      se.setSkipMark(inputQueue, obsId, user, stepId, bp) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / ObserverVar(
+          obs
+        ) / BooleanVar(bp) as user =>
+      se.setSkipMark(inputQueue, obsId, user, obs, stepId, bp) *>
         Ok(s"Set skip mark in step $stepId of sequence ${obsId.format}")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>
-      se.stopObserve(inputQueue, obsId, graceful = false) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" / ObserverVar(
+          obs
+        ) as _ =>
+      se.stopObserve(inputQueue, obsId, obs, graceful = false) *>
         Ok(s"Stop requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" as _ =>
-      se.stopObserve(inputQueue, obsId, graceful = true) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stopGracefully" / ObserverVar(
+          obs
+        ) as _ =>
+      se.stopObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Stop gracefully requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
-      se.abortObserve(inputQueue, obsId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" / ObserverVar(obs) as _ =>
+      se.abortObserve(inputQueue, obsId, obs) *>
         Ok(s"Abort requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>
-      se.pauseObserve(inputQueue, obsId, graceful = false) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" / ObserverVar(obs) as _ =>
+      se.pauseObserve(inputQueue, obsId, obs, graceful = false) *>
         Ok(s"Pause observation requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" as _ =>
-      se.pauseObserve(inputQueue, obsId, graceful = true) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObsGracefully" / ObserverVar(
+          obs
+        ) as _ =>
+      se.pauseObserve(inputQueue, obsId, obs, graceful = true) *>
         Ok(s"Pause observation gracefully requested for ${obsId.format} on step $stepId")
 
-    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>
-      se.resumeObserve(inputQueue, obsId) *>
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" / ObserverVar(obs) as _ =>
+      se.resumeObserve(inputQueue, obsId, obs) *>
         Ok(s"Resume observation requested for ${obsId.format} on step $stepId")
 
     case POST -> Root / "operator" / OperatorVar(op) as user =>
@@ -190,9 +211,9 @@ class SeqexecCommandRoutes[F[_]: Sync](
 
     case POST -> Root / "execute" / ObsIdVar(oid) / PosIntVar(step) / ResourceVar(
           resource
-        ) / ClientIDVar(clientId) as u =>
-      se.configSystem(inputQueue, oid, step, resource, clientId) *>
-        Ok(s"Run ${resource.show} from config at ${oid.format}/$step by ${u.username}")
+        ) / ObserverVar(obs) / ClientIDVar(clientId) as u =>
+      se.configSystem(inputQueue, oid, obs, step, resource, clientId) *>
+        Ok(s"Run ${resource.show} from config at ${oid.format}/$step by ${u.username}/${obs.value}")
 
   }
 

@@ -55,7 +55,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
   }
 
   def handleRunCal: PartialFunction[Any, ActionResult[M]] = { case RequestRunCal(qid) =>
-    (value.clientId, value.queuesObserver.get(qid).orElse(value.calTabObserver))
+    (value.clientStatus.clientId, value.clientStatus.observer)
       .mapN { (cid, obs) =>
         effectOnly(
           requestEffect2((qid, cid),
@@ -69,7 +69,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
   }
 
   def handleStopCal: PartialFunction[Any, ActionResult[M]] = { case RequestStopCal(qid) =>
-    value.clientId
+    value.clientStatus.clientId
       .map { cid =>
         effectOnly(
           requestEffect2((qid, cid),
@@ -84,7 +84,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
 
   def handleRemoveSeqCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestRemoveSeqCal(qid, id) =>
-      value.clientId
+      value.clientStatus.clientId
         .map { _ =>
           effectOnly(
             requestEffect2((qid, id),
@@ -98,7 +98,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
   }
 
   def handleMoveCal: PartialFunction[Any, ActionResult[M]] = { case RequestMoveCal(qid, oid, i) =>
-    value.clientId
+    value.clientStatus.clientId
       .map { cid =>
         effectOnly(
           requestEffect2((qid, cid),

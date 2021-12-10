@@ -9,7 +9,7 @@ import cats.Eq
 final case class UserLoginRequest(username: String, password: String)
 
 object UserLoginRequest {
-  implicit val eq: Eq[UserLoginRequest] = Eq.fromUniversalEquals
+  implicit val eq: Eq[UserLoginRequest] = Eq.by(x => (x.username, x.password))
 }
 
 final case class UserDetails(username: String, displayName: String)
@@ -21,5 +21,5 @@ object UserDetails {
   type Groups      = List[String]
   type Thumbnail   = Array[Byte]
 
-  implicit val eq: Eq[UserDetails] = Eq.fromUniversalEquals
+  implicit val eq: Eq[UserDetails] = Eq.by(x => (x.username, x.displayName))
 }

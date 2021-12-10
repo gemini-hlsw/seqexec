@@ -29,7 +29,7 @@ object FooterStatus {
   private val gcConnect                       = SeqexecCircuit.connect(_.guideConfig)
 
   private val component = ScalaComponent
-    .builder[Props]("FooterStatus")
+    .builder[Props]
     .stateless
     .render_P(p =>
       React.Fragment(

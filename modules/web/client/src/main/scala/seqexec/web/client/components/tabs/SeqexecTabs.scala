@@ -26,15 +26,17 @@ final case class SeqexecTabs(
 object SeqexecTabs {
   type Props = SeqexecTabs
 
-  implicit val propsReuse: Reusability[Props] = Reusability.always
-  private val tabConnect                      = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.router)
+
+  private val tabConnect = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
 
   val component = ScalaComponent
     .builder[Props]
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val tabsL                = x().tabs.toList
+        val model                = x()
+        val tabsL                = model.tabs.toList
         val runningInstruments   = tabsL.collect {
           case Right(AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _, _, _)) =>
             i
@@ -50,8 +52,8 @@ object SeqexecTabs {
               case Right(t) =>
                 SequenceTab(p.router,
                             t,
-                            x().canOperate,
-                            x().defaultObserver,
+                            model.canOperate,
+                            model.displayName,
                             t.systemOverrides,
                             runningInstruments
                 )

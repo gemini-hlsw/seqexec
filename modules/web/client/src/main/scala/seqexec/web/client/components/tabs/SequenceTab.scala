@@ -40,7 +40,7 @@ final case class SequenceTab(
   router:             RouterCtl[SeqexecPages],
   tab:                AvailableTab,
   loggedIn:           Boolean,
-  defaultObserver:    Observer,
+  displayName:        Option[String],
   systemOverrides:    SystemOverrides,
   runningInstruments: List[Instrument]
 ) extends ReactProps[SequenceTab](SequenceTab.component)
@@ -65,8 +65,10 @@ object SequenceTab {
     (e: ReactMouseEvent, _: Button.ButtonProps) =>
       e.preventDefaultCB *>
         e.stopPropagationCB *>
-        b.setStateL(State.loading)(true) *>
-        SeqexecCircuit.dispatchCB(LoadSequence(b.props.defaultObserver, inst, id))
+        b.setStateL(State.loading)(true).when(b.props.displayName.isDefined) *>
+        b.props.displayName
+          .map(d => SeqexecCircuit.dispatchCB(LoadSequence(Observer(d), inst, id)))
+          .getOrEmpty
 
   private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback =
     // prevent default to avoid the link jumping
@@ -170,8 +172,6 @@ object SequenceTab {
             ("DHS", b.props.systemOverrides.isDhsEnabled),
             ("INST", b.props.systemOverrides.isInstrumentEnabled)
           ).map { case (l, b) =>
-            println(l)
-            println(b)
             <.div(SeqexecStyles.DisabledSubsystem, l).unless(b)
           }.toTagMod
         )
