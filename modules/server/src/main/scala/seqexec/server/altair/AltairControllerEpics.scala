@@ -335,13 +335,18 @@ object AltairControllerEpics {
       val updatedCfg = pause.wasPaused.fold(ttgsOffEndo(currCfg), currCfg)
       val resume     = resumeLgsMode(strap, sfo, updatedCfg, adjustedResumeReasons)
 
-      AltairPauseResume(pause.pauseAction,
-                        pause.keepGuiding,
-                        pause.filterTarget,
-                        resume.some,
-                        GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
-                        none,
-                        forceFreeze
+      AltairPauseResume(
+        pause.pauseAction,
+        pause.keepGuiding,
+        pause.filterTarget,
+        resume.some,
+        GuideCapabilities(
+          canGuideM2 =
+            (strap || sfo) && adjustedResumeReasons.contains(ResumeCondition.GaosGuideOn),
+          canGuideM1 = true
+        ),
+        none,
+        forceFreeze
       )
     }
 

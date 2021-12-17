@@ -68,6 +68,10 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(ao2.isEmpty)
       assert(tcs2.isEmpty)
       assert(!r.forceFreeze)
+      assert(r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+      assert(r.restoreOnResume.canGuideM2)
+      assert(r.restoreOnResume.canGuideM1)
     }
   }
 
@@ -110,6 +114,10 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(ao2.isEmpty)
       assert(tcs2.contains(AoCorrectCmd("ON", 1)))
       assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(!r.guideWhilePaused.canGuideM1)
+      assert(r.restoreOnResume.canGuideM2)
+      assert(r.restoreOnResume.canGuideM1)
     }
   }
 
@@ -149,6 +157,10 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(ao2.isEmpty)
       assert(!tcs2.contains(AoCorrectCmd("ON", 1)))
       assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(!r.guideWhilePaused.canGuideM1)
+      assert(!r.restoreOnResume.canGuideM2)
+      assert(!r.restoreOnResume.canGuideM1)
     }
   }
 
@@ -191,6 +203,10 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(ao2.isEmpty)
       assert(!tcs2.contains(AoCorrectCmd("ON", 1)))
       assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(!r.guideWhilePaused.canGuideM1)
+      assert(!r.restoreOnResume.canGuideM2)
+      assert(!r.restoreOnResume.canGuideM1)
     }
   }
 
@@ -246,6 +262,10 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(ao2.contains(TestAltairEpics.Event.SfoControlCmd(LgsSfoControl.Enable)))
       assert(!tcs2.contains(AoCorrectCmd("ON", 1)))
       assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+      assert(r.restoreOnResume.canGuideM2)
+      assert(r.restoreOnResume.canGuideM1)
     }
   }
 
