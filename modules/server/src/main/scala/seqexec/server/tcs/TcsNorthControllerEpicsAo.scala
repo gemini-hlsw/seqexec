@@ -201,7 +201,7 @@ object TcsNorthControllerEpicsAo {
                            pr.config
                          )
         _             <- guideOn(subsystems, s2, adjustedDemand, pr.restoreOnResume)
-        _ <- pr.resume.getOrElse(Applicative[F].unit) // resume Gaos
+        _             <- pr.resume.getOrElse(Applicative[F].unit) // resume Gaos
       } yield ()
     }
 

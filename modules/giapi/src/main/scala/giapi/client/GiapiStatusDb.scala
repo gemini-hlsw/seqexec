@@ -148,11 +148,11 @@ object GiapiStatusDb {
     items: List[String]
   ): F[GiapiStatusDb[F]] =
     for {
-      c <- Sync[F].delay(new ActiveMQJmsProvider(url))       // Build the connection
-      ss <- Giapi.statusStreamer[F](c)                       // giapi artifacts
+      c  <- Sync[F].delay(new ActiveMQJmsProvider(url))       // Build the connection
+      ss <- Giapi.statusStreamer[F](c)                        // giapi artifacts
       db <- GiapiDb.newDb
-      _ <- initDb[F](c, db, items)                           // Get the initial values
-      f <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
+      _  <- initDb[F](c, db, items)                           // Get the initial values
+      f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
     } yield new GiapiStatusDb[F] {
       def optional(i: String): F[Option[StatusValue]] =
         db.value(i)
