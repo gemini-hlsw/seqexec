@@ -52,7 +52,7 @@ trait ModelLenses {
 
   // Focus on params with a prefix
   def paramValuesWithPrefixT(param: ParamName): Traversal[Parameters, String] =
-    parametersRoot ^|->>                                  // map of parameters
+    parametersRoot ^|->> // map of parameters
       filterIndex { n: ParamName => n.startsWith(param) } // parameter containing the name
 
   // Possible set of observe parameters

@@ -16,7 +16,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / semanticdbEnabled := true
 
 ThisBuild / Compile / packageDoc / publishArtifact := false
-ThisBuild / Test / bspEnabled := false
+ThisBuild / Test / bspEnabled                      := false
 
 // Gemini repository
 ThisBuild / resolvers += "Gemini Repository".at(
@@ -343,20 +343,20 @@ lazy val seqexec_engine = project
  */
 lazy val seqexecCommonSettings = Seq(
   // Main class for launching
-  Compile / mainClass               := Some("seqexec.web.server.http4s.WebServerLauncher"),
+  Compile / mainClass             := Some("seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
-  Universal / parallelExecution     := false,
+  Universal / parallelExecution   := false,
   // Depend on webpack and add the assets created by webpack
-  Compile / packageBin / mappings ++= (seqexec_web_client/ Compile/ fullOptJS / webpack).value
+  Compile / packageBin / mappings ++= (seqexec_web_client / Compile / fullOptJS / webpack).value
     .map(f => f.data -> f.data.getName()),
   // Name of the launch script
-  executableScriptName              := "seqexec-server",
+  executableScriptName            := "seqexec-server",
   // No javadocs
   Compile / packageDoc / mappings := Seq(),
   // Don't create launchers for Windows
-  makeBatScripts                    := Seq.empty,
+  makeBatScripts                  := Seq.empty,
   // Specify a different name for the config file
-  bashScriptConfigLocation          := Some("${app_home}/../conf/launcher.args"),
+  bashScriptConfigLocation        := Some("${app_home}/../conf/launcher.args"),
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
