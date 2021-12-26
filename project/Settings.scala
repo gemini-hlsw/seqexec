@@ -52,7 +52,7 @@ object Settings {
     // test libraries
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
-    val scalaMock              = "5.1.0"
+    val scalaMock              = "5.2.0"
     val munitVersion           = "0.7.29"
     val munitDisciplineVersion = "1.0.9"
     val munitCatsEffectVersion = "0.3.0"
