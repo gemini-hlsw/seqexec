@@ -59,7 +59,7 @@ object AppsCommon {
   private def embeddedJreSettings(target: DeploymentTarget) = Seq(
     // Put the jre in the tarball
     Universal / mappings ++= {
-      val jresDir   = (ThisBuild / ocsJreDir).value
+      val jresDir    = (ThisBuild / ocsJreDir).value
       // Map the location of jre files
       val jreLink    = "JRE64_1.8"
       val linux64Jre = jresDir.toPath.resolve(target.subdir).resolve(jreLink)
