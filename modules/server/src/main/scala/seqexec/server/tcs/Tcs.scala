@@ -46,10 +46,9 @@ object Tcs {
       case StandardGuideOptions.Value.guide  => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     }
 
-    val toGuideSensorOption: GuiderSensorOption = {
+    val toGuideSensorOption: GuiderSensorOption =
       if (guideWith.isActive) GuiderSensorOn
       else GuiderSensorOff
-    }
   }
 
   def calcGuiderInUse(

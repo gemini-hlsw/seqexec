@@ -114,7 +114,7 @@ object StatusAndLoadedSequencesFocus {
       )
     }
 
-  val filteredSequencesG: Getter[SeqexecAppRootModel, List[SequenceInSessionQueue]] = {
+  val filteredSequencesG: Getter[SeqexecAppRootModel, List[SequenceInSessionQueue]] =
     sessionQueueFilterG.zip(sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.dayCalG))) >>> {
       case (f, (s, (sod, dayCal))) =>
         f.filter(
@@ -122,6 +122,5 @@ object StatusAndLoadedSequencesFocus {
             .toSequenceInSessionQueue(sod, s, dayCal.foldMap(_.queue))
         )
     }
-  }
 
 }
