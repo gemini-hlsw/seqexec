@@ -210,7 +210,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -231,7 +231,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), 1, TCS, clientId))
+        advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId))
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
@@ -259,7 +259,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), UserDetails("", ""), 1, Instrument.F2, clientId)
             )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
@@ -288,7 +288,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf <- advanceOne(
               q,
               s0,
-              seqexecEngine.configSystem(q, seqObsId2, Observer(""), 1, Instrument.F2, clientId)
+              seqexecEngine.configSystem(q, seqObsId2, Observer(""), UserDetails("", ""), 1, Instrument.F2, clientId)
             )
     } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
       case Some(s) =>
