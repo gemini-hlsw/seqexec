@@ -281,7 +281,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.stopObserve _)
-        .expects(*, *, *, false)
+        .expects(*, *, *, *, false)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -308,7 +308,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.stopObserve _)
-        .expects(*, *, *, true)
+        .expects(*, *, *, *, true)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -335,7 +335,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.abortObserve _)
-        .expects(*, *, *)
+        .expects(*, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -362,7 +362,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.pauseObserve _)
-        .expects(*, *, *, false)
+        .expects(*, *, *, *, false)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -389,7 +389,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.pauseObserve _)
-        .expects(*, *, *, true)
+        .expects(*, *, *, *, true)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }
@@ -417,7 +417,7 @@ class SeqexecCommandRoutesSpec
     val engine = mock[SeqexecEngine[IO]]
     inAnyOrder {
       (engine.resumeObserve _)
-        .expects(*, *, *)
+        .expects(*, *, *, *)
         .anyNumberOfTimes()
         .returning(IO.unit)
     }

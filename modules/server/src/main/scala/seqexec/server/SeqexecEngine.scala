@@ -185,19 +185,31 @@ trait SeqexecEngine[F[_]] {
     q:        EventQueue[F],
     seqId:    Observation.Id,
     observer: Observer,
+    user:     UserDetails,
     graceful: Boolean
   ): F[Unit]
 
-  def abortObserve(q: EventQueue[F], seqId: Observation.Id, observer: Observer): F[Unit]
+  def abortObserve(
+    q:        EventQueue[F],
+    seqId:    Observation.Id,
+    observer: Observer,
+    user:     UserDetails
+  ): F[Unit]
 
   def pauseObserve(
     q:        EventQueue[F],
     seqId:    Observation.Id,
     observer: Observer,
+    user:     UserDetails,
     graceful: Boolean
   ): F[Unit]
 
-  def resumeObserve(q: EventQueue[F], seqId: Observation.Id, observer: Observer): F[Unit]
+  def resumeObserve(
+    q:        EventQueue[F],
+    seqId:    Observation.Id,
+    observer: Observer,
+    user:     UserDetails
+  ): F[Unit]
 
   def addSequencesToQueue(q: EventQueue[F], qid: QueueId, seqIds: List[Observation.Id]): F[Unit]
 
@@ -232,6 +244,7 @@ trait SeqexecEngine[F[_]] {
     q:        EventQueue[F],
     sid:      Observation.Id,
     observer: Observer,
+    user:     UserDetails,
     stepId:   StepId,
     sys:      Resource,
     clientID: ClientId
@@ -595,7 +608,7 @@ object SeqexecEngine {
       observer: Observer,
       user:     UserDetails
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.pause[F, EngineState[F], SeqEvent](seqId, user))
 
     override def requestCancelPause(
@@ -604,7 +617,7 @@ object SeqexecEngine {
       observer: Observer,
       user:     UserDetails
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.cancelPause[F, EngineState[F], SeqEvent](seqId, user))
 
     override def setBreakpoint(
@@ -615,7 +628,7 @@ object SeqexecEngine {
       stepId:   StepId,
       v:        Boolean
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
@@ -791,7 +804,7 @@ object SeqexecEngine {
       stepId:   StepId,
       v:        Boolean
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit] =
@@ -856,9 +869,10 @@ object SeqexecEngine {
       q:        EventQueue[F],
       seqId:    Observation.Id,
       observer: Observer,
+      user:     UserDetails,
       graceful: Boolean
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, StopGracefully)))
           .whenA(graceful) *>
         q.enqueue1(
@@ -870,9 +884,10 @@ object SeqexecEngine {
     override def abortObserve(
       q:        EventQueue[F],
       seqId:    Observation.Id,
-      observer: Observer
+      observer: Observer,
+      user:     UserDetails
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(
           Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
         )
@@ -881,9 +896,10 @@ object SeqexecEngine {
       q:        EventQueue[F],
       seqId:    Observation.Id,
       observer: Observer,
+      user:     UserDetails,
       graceful: Boolean
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+      setObserver(q, seqId, user, observer) *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, PauseGracefully))
         ).whenA(graceful) *>
@@ -896,10 +912,11 @@ object SeqexecEngine {
     override def resumeObserve(
       q:        EventQueue[F],
       seqId:    Observation.Id,
-      observer: Observer
+      observer: Observer,
+      user:     UserDetails
     ): F[Unit] =
       q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(seqId))) *>
-        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(seqId, observer))) *>
+        setObserver(q, seqId, user, observer) *>
         q.enqueue1(Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId)))
 
     private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
@@ -1265,17 +1282,17 @@ object SeqexecEngine {
       q:        EventQueue[F],
       sid:      Observation.Id,
       observer: Observer,
+      user:     UserDetails,
       stepId:   StepId,
       sys:      Resource,
       clientID: ClientId
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObserver(sid, observer))) *>
+      setObserver(q, sid, user, observer) *>
         q.enqueue1(
           Event.modifyState[F, EngineState[F], SeqEvent](
             configSystemHandle(sid, stepId, sys, clientID)
           )
-        ) *>
-        requestRefresh(q, clientID)
+        )
 
     def notifyODB(
       i: (EventResult[SeqEvent], EngineState[F])
