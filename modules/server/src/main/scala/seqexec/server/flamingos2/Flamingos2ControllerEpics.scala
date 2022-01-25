@@ -70,7 +70,7 @@ trait Flamingos2Encoders {
   // Removed obsolete filter positions Open and DK_G0807
   implicit val encodeFilterPosition: EncodeEpicsValue[Filter, Option[String]] =
     EncodeEpicsValue.applyO {
-      case Filter.Y       => "Y_G0811"
+      case Filter.Y       => "YJH_G0818"
       case Filter.F1056   => "F1056"
       case Filter.F1063   => "F1063"
       case Filter.J_LOW   => "J-lo_G0801"
