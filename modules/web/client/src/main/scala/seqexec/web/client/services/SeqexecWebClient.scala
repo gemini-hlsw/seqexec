@@ -316,8 +316,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(
-          id.format
-        )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
+            id.format
+          )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
       )
       .void
 
@@ -407,8 +407,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(
-          obsId.self.format
-        )}/$pos/${encodeURI(clientId.self.show)}"
+            obsId.self.format
+          )}/$pos/${encodeURI(clientId.self.show)}"
       )
       .void
 
@@ -425,8 +425,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(
-          resource.show
-        )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
+            resource.show
+          )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
       )
       .void
 
@@ -447,8 +447,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/${encodeURI(obsId.self.format)}/$stepId/startFrom/${encodeURI(
-          name.value
-        )}/${encodeURI(clientId.self.show)}$param"
+            name.value
+          )}/${encodeURI(clientId.self.show)}$param"
       )
       .void
   }

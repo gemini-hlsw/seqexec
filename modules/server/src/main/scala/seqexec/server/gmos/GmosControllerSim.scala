@@ -57,8 +57,8 @@ final case class NSCurrent(
 object NSCurrent {
   implicit val showNSCurrent: Show[NSCurrent] = Show.show { a =>
     s"NS State: file=${a.fileId}, cycle=${a.cycle + 1}, stage=${NsSequence.toList
-      .lift(a.exposureCount % NsSequence.length)
-      .getOrElse("Unknown")}/${(a.exposureCount % NsSequence.length) + 1}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
+        .lift(a.exposureCount % NsSequence.length)
+        .getOrElse("Unknown")}/${(a.exposureCount % NsSequence.length) + 1}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
   }
 }
 
