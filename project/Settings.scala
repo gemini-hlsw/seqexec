@@ -59,7 +59,7 @@ object Settings {
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
-    val ocsVersion = "2021101.1.4"
+    val ocsVersion = "2022001.1.2"
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.1"
