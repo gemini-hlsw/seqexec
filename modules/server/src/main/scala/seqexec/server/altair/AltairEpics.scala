@@ -3,6 +3,8 @@
 
 package seqexec.server.altair
 
+import cats.Applicative
+
 import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.IO
@@ -11,6 +13,7 @@ import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import mouse.boolean._
+import seqexec.model.`enum`.ApplyCommandResult
 import seqexec.server.{ EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil }
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsUtil._
@@ -109,19 +112,24 @@ class AltairEpicsImpl[F[_]: Async](service: CaService, tops: Map[String, String]
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
-  override val sfoControl: SfoControlCommand[F] = new EpicsCommandBase[F](sysName)
-    with SfoControlCommand[F] {
-    override protected val cs: Option[CaCommandSender] =
+  // post and mark don't have any effect
+  override val sfoControl: SfoControlCommand[F] = new SfoControlCommand[F] {
+    private val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
 
-    val active: Option[CaParameter[LgsSfoControl]] = cs.map(
+    private val active: Option[CaParameter[LgsSfoControl]] = cs.map(
       _.addEnum[LgsSfoControl]("active",
                                s"${AltairTop}cc:lgszoomSfoLoop.VAL",
                                classOf[LgsSfoControl],
                                false
       )
     )
-    def setActive(v: LgsSfoControl): F[Unit]       = setParameter(active, v)
+    def setActive(v: LgsSfoControl): F[Unit]               = setParameter(active, v)
+
+    override def post(timeout: FiniteDuration): F[ApplyCommandResult] =
+      ApplyCommandResult.Completed.pure[F].widen
+
+    override def mark: F[Unit] = Applicative[F].unit
   }
 
   override val btoLoopControl: BtoLoopControlCommand[F] = new EpicsCommandBase[F](sysName)
