@@ -285,16 +285,19 @@ object AltairControllerEpics {
 
     implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
 
-    private def startSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
-      (epicsAltair.sfoControl
-        .setActive(LgsSfoControl.Enable) *>
-        epicsAltair.sfoControl.post(DefaultTimeout))
-        .unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
+    private def startSfoLoop(currCfg: EpicsAltairConfig): F[Unit] = (
+      L.debug("Start SFO loop in Altair") *>
+        epicsAltair.sfoControl.setActive(LgsSfoControl.Enable) *>
+        epicsAltair.sfoControl.post(DefaultTimeout) *>
+        L.debug("SFO loop started")
+    ).unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
-    private def pauseSfoLoop(currCfg: EpicsAltairConfig): F[Unit] =
-      (epicsAltair.sfoControl
-        .setActive(LgsSfoControl.Pause) *>
-        epicsAltair.sfoControl.post(DefaultTimeout)).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
+    private def pauseSfoLoop(currCfg: EpicsAltairConfig): F[Unit] = (
+      L.debug("Pause SFO loop in Altair") *>
+        epicsAltair.sfoControl.setActive(LgsSfoControl.Pause) *>
+        epicsAltair.sfoControl.post(DefaultTimeout) *>
+        L.debug("SFO loop paused")
+    ).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
     private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): F[Unit] =
       checkStrapLoopState(currCfg).fold(ApplicativeError[F, Throwable].raiseError,
