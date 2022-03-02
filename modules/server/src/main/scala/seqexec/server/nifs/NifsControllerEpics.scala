@@ -271,25 +271,27 @@ object NifsControllerEpics extends NifsEncoders {
         // * The the current offset is not  0 (if it was then, the current position should not be INVALID.
         // So if any of those conditions is not true; need to move the mask to the new position.
         def checkInvalid(current: String): F[Option[F[Unit]]] =
-          (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
-            (!(current === "INVALID" && lsm === mask &&
-              mo =!= 0.0)).option(setMaskIO)
-          }
+          for {
+            mo   <- epicsSys.maskOffset
+            lsm  <- epicsSys.lastSelectedMask
+            check = !(current === "INVALID" && lsm === mask && mo =!= 0.0)
+            _    <-
+              L.debug(
+                s"Check NIFS mask ($check): !(current ($current) === ${'"'}INVALID${'"'} && lsm ($lsm) === mask ($mask) && mo ($mo) =!= 0.0)"
+              )
+          } yield check.option(setMaskIO)
 
         // We need an even smarter set param
         for {
           instMask     <- epicsSys.mask
           setIfInvalid <- checkInvalid(instMask)
-        } yield if (instMask =!= mask) setMaskIO.some else setIfInvalid
+          _            <- L.debug(s"Check NIFS mask: instMask ($instMask) === mask ($mask)")
+        } yield if (instMask === mask) none else setIfInvalid
       }
 
       cfg match {
-        case DarkCCConfig     =>
-          epicsSys.mask
-            .map(_ =!= encode(LegacyMask.BLOCKED))
-            .ifM(setMaskEpics(LegacyMask.BLOCKED), none.pure[F])
-        case cfg: StdCCConfig =>
-          setMaskEpics(cfg.mask)
+        case DarkCCConfig     => setMaskEpics(LegacyMask.BLOCKED)
+        case cfg: StdCCConfig => setMaskEpics(cfg.mask)
       }
     }
 
@@ -310,12 +312,14 @@ object NifsControllerEpics extends NifsEncoders {
       cfg match {
         case DarkCCConfig     => none.pure[F]
         case cfg: StdCCConfig =>
-          epicsSys.maskOffset.map { curMo =>
-            (abs(curMo - cfg.maskOffset) > MaskOffsetTolerance)
-              .option {
-                epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset)
-              }
-          }
+          for {
+            curMo <- epicsSys.maskOffset
+            _     <-
+              L.debug(
+                s"Check NIFS mask offset: (abs(curMo ($curMo) - cfg.maskOffset ($cfg.maskOffset)) > MaskOffsetTolerance)"
+              )
+          } yield (abs(curMo - cfg.maskOffset) > MaskOffsetTolerance)
+            .option(epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset))
       }
 
     private val postCcConfig = epicsSys.ccConfigCmd.post(ConfigTimeout)
