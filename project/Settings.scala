@@ -77,7 +77,7 @@ object Settings {
     val guava               = "31.0.1-jre"
     val prometheusClient    = "0.15.0"
     val geminiLocales       = "0.7.0"
-    val pprint              = "0.7.1"
+    val pprint              = "0.7.2"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
