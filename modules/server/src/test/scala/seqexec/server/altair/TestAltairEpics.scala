@@ -5,7 +5,6 @@ package seqexec.server.altair
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.implicits._
 import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl
@@ -20,6 +19,7 @@ import seqexec.server.altair.AltairEpics.{
 
 import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.Ref
 
 case class TestAltairEpics[F[_]: Sync](
   state: Ref[F, TestAltairEpics.State],

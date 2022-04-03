@@ -4,8 +4,7 @@
 package seqexec.server.tcs
 
 import cats.{ Applicative, Eq }
-import cats.effect.{ Sync, Timer }
-import cats.effect.concurrent.Ref
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import monocle.{ Getter, Lens }
@@ -21,6 +20,7 @@ import squants.space.AngleConversions._
 import java.util.concurrent.TimeUnit.SECONDS
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.{ Ref, Temporal }
 
 case class TestTcsEpics[F[_]: Sync](
   state: Ref[F, TestTcsEpics.State],
@@ -442,11 +442,11 @@ case class TestTcsEpics[F[_]: Sync](
     probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
 
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Timer[F]
+    T:                                           Temporal[F]
   ): F[Unit] =
     Applicative[F].unit
 
-  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit] =
     Applicative[F].unit
 
   override def hourAngle: F[String] = state.get.map(_.hourAngle)

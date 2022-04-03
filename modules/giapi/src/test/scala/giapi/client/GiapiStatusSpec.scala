@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Resource, Timer }
+import cats.effect.{ IO, Resource }
 import cats.tests.CatsSuite
 import edu.gemini.aspen.giapi.status.impl.BasicStatus
 import edu.gemini.aspen.giapi.util.jms.JmsKeys
@@ -16,6 +16,7 @@ import edu.gemini.jms.api.DestinationData
 import edu.gemini.jms.api.DestinationType
 import edu.gemini.jms.api.JmsSimpleMessageSelector
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 final case class GmpStatus(
   amq:         ActiveMQJmsProvider,
@@ -77,7 +78,7 @@ final class GiapiStatusSpec extends CatsSuite {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   def client(

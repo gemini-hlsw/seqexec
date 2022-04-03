@@ -4,7 +4,6 @@
 package seqexec.server.gnirs
 
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -16,9 +15,10 @@ import seqexec.server.gnirs.GnirsController.DCConfig
 import seqexec.server.gnirs.GnirsController.GnirsConfig
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object GnirsControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[GnirsController[F]] =
+  def apply[F[_]: Sync: Logger: Temporal]: F[GnirsController[F]] =
     InstrumentControllerSim[F]("GNIRS").map { sim =>
       new GnirsController[F] {
 

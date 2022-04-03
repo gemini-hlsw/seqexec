@@ -4,7 +4,6 @@
 package seqexec.server.nifs
 
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -16,9 +15,10 @@ import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object NifsControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[NifsController[F]] =
+  def apply[F[_]: Sync: Logger: Temporal]: F[NifsController[F]] =
     InstrumentControllerSim[F](s"NIFS").map { sim =>
       new NifsController[F] {
 

@@ -5,7 +5,6 @@ package seqexec.server.gsaoi
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -17,9 +16,10 @@ import seqexec.server.gsaoi.GsaoiController.DCConfig
 import seqexec.server.gsaoi.GsaoiController.GsaoiConfig
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object GsaoiControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[GsaoiFullHandler[F]] =
+  def apply[F[_]: Sync: Logger: Temporal]: F[GsaoiFullHandler[F]] =
     InstrumentControllerSim[F]("GSAOI").map { sim =>
       new GsaoiFullHandler[F] {
 

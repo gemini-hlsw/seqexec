@@ -10,7 +10,6 @@ import scala.concurrent.duration.FiniteDuration
 
 import cats.Applicative
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.{ BeamSplitter => JBeamSplitter }
 import edu.gemini.seqexec.server.niri.{ BuiltInROI => JBuiltInROI }
@@ -36,6 +35,7 @@ import seqexec.server.SeqexecFailure
 import seqexec.server.niri.NiriController._
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 trait NiriEncoders {
 
@@ -142,7 +142,7 @@ object NiriControllerEpics extends NiriEncoders {
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(180, SECONDS)
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
-  def apply[F[_]: Timer: Async](
+  def apply[F[_]: Temporal: Async](
     epicsSys:   => NiriEpics[F]
   )(implicit L: Logger[F]): NiriController[F] =
     new NiriController[F] {

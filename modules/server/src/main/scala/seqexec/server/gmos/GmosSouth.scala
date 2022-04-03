@@ -4,8 +4,6 @@
 package seqexec.server.gmos
 
 import cats.effect.Concurrent
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
@@ -29,8 +27,9 @@ import seqexec.server.keywords.DhsClient
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
+import cats.effect.{ Ref, Temporal }
 
-final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
+final case class GmosSouth[F[_]: Concurrent: Temporal: Logger] private (
   c:         GmosSouthController[F],
   dhsClient: DhsClient[F],
   nsCmdR:    Ref[F, Option[NSObserveCommand]]
@@ -75,7 +74,7 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: Concurrent: Timer: Logger](
+  def apply[F[_]: Concurrent: Temporal: Logger](
     c:         GmosController[F, SouthTypes],
     dhsClient: DhsClient[F],
     nsCmdR:    Ref[F, Option[NSObserveCommand]]

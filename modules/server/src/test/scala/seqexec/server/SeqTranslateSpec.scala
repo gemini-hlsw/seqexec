@@ -22,11 +22,12 @@ import seqexec.server.Response.Observed
 import seqexec.server.TestCommon.defaultSystems
 import squants.time.Seconds
 import org.scalatest.flatspec.AnyFlatSpec
+import cats.effect.Temporal
 
 class SeqTranslateSpec extends AnyFlatSpec {
   private implicit def logger: Logger[IO] = NoOpLogger.impl[IO]
 
-  implicit val ioTimer: Timer[IO]        = IO.timer(ExecutionContext.global)
+  implicit val ioTimer: Temporal[IO]        = IO.timer(ExecutionContext.global)
   implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   private val config: CleanConfig                                                     = CleanConfig.empty

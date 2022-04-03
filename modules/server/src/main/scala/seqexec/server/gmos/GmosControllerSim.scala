@@ -5,8 +5,6 @@ package seqexec.server.gmos
 
 import cats._
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -33,6 +31,7 @@ import seqexec.server.gmos.GmosController.SouthTypes
 import shapeless.tag
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.{ Ref, Temporal }
 
 /**
  * Keep track of the current execution state
@@ -86,7 +85,7 @@ object NSObsState {
 }
 
 object GmosControllerSim {
-  def apply[F[_]: Monad: Timer, T <: SiteDependentTypes](
+  def apply[F[_]: Monad: Temporal, T <: SiteDependentTypes](
     sim:      InstrumentControllerSim[F],
     nsConfig: Ref[F, NSObsState]
   ): GmosController[F, T] =
@@ -189,12 +188,12 @@ object GmosControllerSim {
       override def nsCount: F[Int] = nsConfig.get.map(_.current.foldMap(_.exposureCount))
     }
 
-  def south[F[_]: Sync: Logger: Timer]: F[GmosController[F, SouthTypes]] =
+  def south[F[_]: Sync: Logger: Temporal]: F[GmosController[F, SouthTypes]] =
     (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS South")).mapN { (nsConfig, sim) =>
       GmosControllerSim[F, SouthTypes](sim, nsConfig)
     }
 
-  def north[F[_]: Sync: Logger: Timer]: F[GmosController[F, NorthTypes]] =
+  def north[F[_]: Sync: Logger: Temporal]: F[GmosController[F, NorthTypes]] =
     (Ref.of(NSObsState.Zero), InstrumentControllerSim[F](s"GMOS North")).mapN { (nsConfig, sim) =>
       GmosControllerSim[F, NorthTypes](sim, nsConfig)
     }

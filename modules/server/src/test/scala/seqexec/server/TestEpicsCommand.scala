@@ -4,13 +4,13 @@
 package seqexec.server
 
 import cats.{ Applicative, Monad }
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model.enum.ApplyCommandResult
 
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.Ref
 
 object TestEpicsCommand {
 
