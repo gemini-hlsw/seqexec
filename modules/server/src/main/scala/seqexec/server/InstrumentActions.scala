@@ -5,7 +5,6 @@ package seqexec.server
 
 import cats.data.NonEmptyList
 import cats.effect.Concurrent
-import cats.effect.Timer
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import seqexec.engine.Action
@@ -14,6 +13,7 @@ import seqexec.engine.ParallelActions
 import seqexec.engine.Result
 import seqexec.model.ActionType
 import seqexec.model.dhs.ImageFileId
+import cats.effect.Temporal
 
 /**
  * Algebra to generate actions for an observation. Most instruments behave the same but in some
@@ -73,7 +73,7 @@ object InstrumentActions {
   /**
    * Default Actions for most instruments it basically delegates to ObserveActions
    */
-  def defaultInstrumentActions[F[_]: Concurrent: Timer: Logger]: InstrumentActions[F] =
+  def defaultInstrumentActions[F[_]: Concurrent: Temporal: Logger]: InstrumentActions[F] =
     new InstrumentActions[F] {
       def observationProgressStream(
         env: ObserveEnvironment[F]

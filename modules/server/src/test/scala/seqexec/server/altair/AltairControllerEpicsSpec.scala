@@ -5,7 +5,6 @@ package seqexec.server.altair
 
 import cats.syntax.all._
 import cats.effect.{ IO, Sync }
-import cats.effect.concurrent.Ref
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
@@ -15,6 +14,7 @@ import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.AoCorrectCmd
 import seqexec.server.tcs.{ Gaos, TestTcsEpics }
 import shapeless.tag
 import squants.space.LengthConversions._
+import cats.effect.Ref
 
 class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   import AltairControllerEpicsSpec._

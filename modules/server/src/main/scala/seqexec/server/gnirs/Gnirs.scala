@@ -10,7 +10,6 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
@@ -35,8 +34,9 @@ import seqexec.server.keywords.KeywordsClient
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
-final case class Gnirs[F[_]: Logger: Concurrent: Timer](
+final case class Gnirs[F[_]: Logger: Concurrent: Temporal](
   controller: GnirsController[F],
   dhsClient:  DhsClient[F]
 ) extends DhsInstrument[F]

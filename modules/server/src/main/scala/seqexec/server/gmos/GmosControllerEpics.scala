@@ -11,7 +11,6 @@ import scala.concurrent.duration.FiniteDuration
 import cats.Applicative
 import cats.ApplicativeError
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -40,6 +39,7 @@ import shapeless.tag
 import squants.Length
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
@@ -169,7 +169,7 @@ object GmosControllerEpics extends GmosEncoders {
   )(implicit
     e:   Encoders[T],
     L:   Logger[F],
-    T:   Timer[F]
+    T:   Temporal[F]
   ): GmosController[F, T] =
     new GmosController[F, T] {
       private val CC = sys.configCmd

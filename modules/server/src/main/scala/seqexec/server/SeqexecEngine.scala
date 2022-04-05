@@ -15,8 +15,6 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.effect.ConcurrentEffect
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
@@ -61,6 +59,7 @@ import seqexec.model.events.{ SequenceStart => ClientSequenceStart, _ }
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.EngineState.atSequence
 import seqexec.server.SeqEvent._
+import cats.effect.{ Ref, Temporal }
 
 trait SeqexecEngine[F[_]] {
 
@@ -260,7 +259,7 @@ trait SeqexecEngine[F[_]] {
 
 object SeqexecEngine {
 
-  private class SeqexecEngineImpl[F[_]: ConcurrentEffect: Timer: Logger](
+  private class SeqexecEngineImpl[F[_]: ConcurrentEffect: Temporal: Logger](
     override val systems: Systems[F],
     settings:             SeqexecEngineConfiguration,
     sm:                   SeqexecMetrics,
@@ -1492,12 +1491,12 @@ object SeqexecEngine {
    * Credit: Fabio Labella
    * https://gitter.im/functional-streams-for-scala/fs2?at=5e0a6efbfd580457e79aaf0a
    */
-  def failIfNoEmitsWithin[F[_]: Concurrent: Timer, A](
+  def failIfNoEmitsWithin[F[_]: Concurrent: Temporal, A](
     timeout: FiniteDuration,
     msg:     String
   ): Pipe[F, A, A] = in => {
     import scala.concurrent.TimeoutException
-    def now = Timer[F].clock.monotonic(NANOSECONDS).map(_.nanos)
+    def now = Temporal[F].clock.monotonic(NANOSECONDS).map(_.nanos)
 
     Stream.eval(now.flatMap(Ref[F].of)).flatMap { lastActivityAt =>
       in.evalTap(_ => now.flatMap(lastActivityAt.set))
@@ -1510,7 +1509,7 @@ object SeqexecEngine {
 
                 Sync[F]
                   .raiseError[Unit](new TimeoutException(msg))
-                  .whenA(t <= 0.nanos) >> Timer[F].sleep(t)
+                  .whenA(t <= 0.nanos) >> Temporal[F].sleep(t)
               }
           }
         }
@@ -1611,7 +1610,7 @@ object SeqexecEngine {
   /**
    * Build the seqexec and setup epics
    */
-  def build[F[_]: ConcurrentEffect: Timer: Logger](
+  def build[F[_]: ConcurrentEffect: Temporal: Logger](
     site:          Site,
     systems:       Systems[F],
     conf:          SeqexecEngineConfiguration,

@@ -5,8 +5,6 @@ package seqexec.server.flamingos2
 
 import cats.MonadError
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -19,6 +17,7 @@ import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.{ Ref, Temporal }
 
 final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControllerSim[F])
     extends Flamingos2Controller[F] {
@@ -36,7 +35,7 @@ final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControlle
 }
 
 object Flamingos2ControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[Flamingos2Controller[F]] =
+  def apply[F[_]: Sync: Logger: Temporal]: F[Flamingos2Controller[F]] =
     InstrumentControllerSim("FLAMINGOS-2").map(Flamingos2ControllerSim(_))
 
 }
@@ -72,7 +71,7 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: L
 }
 
 object Flamingos2ControllerSimBad {
-  def apply[F[_]: Sync: Logger: Timer](failAt: Int): F[Flamingos2Controller[F]] =
+  def apply[F[_]: Sync: Logger: Temporal](failAt: Int): F[Flamingos2Controller[F]] =
     (Ref.of[F, Int](0), InstrumentControllerSim("FLAMINGOS-2 (bad)")).mapN { (counter, sim) =>
       Flamingos2ControllerSimBad(
         failAt,

@@ -12,8 +12,6 @@ import cats.FlatMap
 import cats.data.EitherT
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import io.circe.Decoder
@@ -33,11 +31,12 @@ import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import seqexec.server.keywords.DhsClient.ImageParameters
+import cats.effect.{ Ref, Temporal }
 
 /**
  * Implementation of DhsClient that interfaces with the real DHS over the http interface
  */
-class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F])
+class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Temporal[F])
     extends DhsClient[F]
     with Http4sClientDsl[F] {
   import DhsClientHttp._
@@ -173,7 +172,7 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] =
+  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Temporal[F]): DhsClient[F] =
     new DhsClientHttp[F](client, uri)
 }
 

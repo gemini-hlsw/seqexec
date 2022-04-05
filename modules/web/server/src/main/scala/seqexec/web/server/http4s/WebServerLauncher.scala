@@ -15,7 +15,6 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration._
 
 import cats.effect._
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
@@ -58,6 +57,7 @@ import seqexec.web.server.security.AuthenticationService
 import web.server.common.LogInitialization
 import web.server.common.RedirectToHttpsRoutes
 import web.server.common.StaticRoutes
+import cats.effect.{ Ref, Resource, Temporal }
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
@@ -115,7 +115,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Resource that yields the running web server */
-  def webServer[F[_]: ContextShift: Logger: ConcurrentEffect: Timer](
+  def webServer[F[_]: ContextShift: Logger: ConcurrentEffect: Temporal](
     conf:      SeqexecConfiguration,
     cal:       SmartGcal,
     as:        AuthenticationService[F],
@@ -123,9 +123,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
     outputs:   Topic[F, SeqexecEvent],
     se:        SeqexecEngine[F],
     cr:        CollectorRegistry,
-    clientsDb: ClientsSetDb[F],
-    bec:       Blocker
-  ): Resource[F, Server[F]] = {
+    clientsDb: ClientsSetDb[F]): Resource[F, Server[F]] = {
 
     // The prometheus route does not get logged
     val prRouter = Router[F](
@@ -177,7 +175,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
   }
 
-  def redirectWebServer[F[_]: ConcurrentEffect: Logger: Timer](
+  def redirectWebServer[F[_]: ConcurrentEffect: Logger: Temporal](
     gcdb: GuideConfigDb[F],
     cal:  SmartGcal
   )(conf: WebServerConfiguration): Resource[F, Server[F]] = {
@@ -271,9 +269,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
       out:  Topic[IO, SeqexecEvent],
       en:   SeqexecEngine[IO],
       cr:   CollectorRegistry,
-      cs:   ClientsSetDb[IO],
-      b:    Blocker
-    ): Resource[IO, Unit] =
+      cs:   ClientsSetDb[IO]): Resource[IO, Unit] =
       for {
         as <- Resource.eval(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.eval(SmartGcalInitializer.init[IO](conf.smartGcal))
@@ -281,12 +277,12 @@ object WebServerLauncher extends IOApp with LogInitialization {
         _  <- webServer[IO](conf, ca, as, in, out, en, cr, cs, b)
       } yield ()
 
-    def publishStats[F[_]: Timer](cs: ClientsSetDb[F]): Stream[F, Unit] =
+    def publishStats[F[_]: Temporal](cs: ClientsSetDb[F]): Stream[F, Unit] =
       Stream.fixedRate[F](10.minute).flatMap(_ => Stream.eval(cs.report))
 
     val seqexec: Resource[IO, ExitCode] =
       for {
-        b      <- Blocker[IO]
+        b      <- Resource.unit[IO]
         _      <- Resource.eval(configLog[IO]) // Initialize log before the engine is setup
         conf   <- Resource.eval(config[IO].flatMap(loadConfiguration[IO](_, b)))
         _      <- Resource.eval(printBanner(conf))
