@@ -11,7 +11,7 @@ object Settings {
   object LibraryVersions {
     // ScalaJS libraries
     val scalaDom                = "1.2.0"
-    val scalajsReact            = "1.7.7"
+    val scalajsReact            = "2.1.0"
     val booPickle               = "1.4.0"
     val diode                   = "1.1.14"
     val javaTimeJS              = "2.3.0"
