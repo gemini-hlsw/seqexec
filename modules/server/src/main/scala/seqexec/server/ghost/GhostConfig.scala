@@ -16,7 +16,6 @@ import lucuma.core.math.Coordinates
 import lucuma.core.enum.GiapiStatusApply
 import lucuma.core.enum.GiapiStatusApply._
 import GhostConfig._
-import scala.annotation.nowarn
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig {
@@ -80,11 +79,8 @@ sealed trait GhostConfig {
 // We use them to determine the type of configuration being used by GHOST, and instantiate it.
 object GhostConfig {
 
-  @nowarn
-  def giapiConfig[A](app: GiapiStatusApply, value: A): Configuration = {
-    println(app)
-    Configuration.Zero
-  }
+  def giapiConfig[A: GiapiConfig](app: GiapiStatusApply, value: A): Configuration =
+    Configuration.single(app.applyItem, value.configValue)
 
   private[ghost] def ifuConfig(
     ifuNum:        IFUNum,

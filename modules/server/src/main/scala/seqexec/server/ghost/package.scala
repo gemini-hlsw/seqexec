@@ -21,8 +21,8 @@ object FiberAgitator {
 
   implicit val FiberAgitatorGiapi: GiapiConfig[FiberAgitator] =
     GiapiConfig.instance {
-      case On  => "1"
-      case Off => "0"
+      case On  => "FA_DEMAND_ON"
+      case Off => "FA_DEMAND_OFF"
     }
 
   def fromBoolean(b: Boolean): FiberAgitator =

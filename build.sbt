@@ -172,6 +172,7 @@ lazy val seqexec_web_client = project
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
+    scalacOptions += "-P:scalajs:nowarnGlobalExecutionContext",
     scalacOptions ~= (_.filterNot(
       Set(
         // By necessity facades will have unused params
