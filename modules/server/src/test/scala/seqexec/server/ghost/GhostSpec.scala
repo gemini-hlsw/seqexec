@@ -18,9 +18,12 @@ import scala.concurrent.duration._
 final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   // checkAll("Eq[GHOSTConfig]", EqTests[GhostConfig].eqv)
 
-  val dec   = Declination.fromRadians(1.0).getOrElse(Declination.Max)
-  val ra    = RightAscension.fromRadians(2.0)
-  val coord = Coordinates(ra, dec)
+  val dec    = Declination.fromRadians(1.0).getOrElse(Declination.Max)
+  val ra     = RightAscension.fromRadians(2.0)
+  val coord1 = Coordinates(ra, dec)
+  val dec2   = Declination.fromRadians(1.2).getOrElse(Declination.Max)
+  val ra2    = RightAscension.fromRadians(0.3)
+  val coord2 = Coordinates(ra2, dec2)
 
   test("binning") {
     val cfg = GhostConfig(
@@ -87,7 +90,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       FiberAgitator.Off,
       FiberAgitator.Off,
       "target".some,
-      coord.some,
+      coord1.some,
       none,
       none,
       none,
@@ -96,7 +99,6 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       Nil
     )
-    println(cfg.map(_.configuration))
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
                  "IFU_DEMAND_RADEC".some
     )
@@ -115,6 +117,140 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     // ifu2 not used
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
                  "IFU_DEMAND_PARK".some
+    )
+    assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
+                 "IFU_TARGET_NONE".some
+    )
+  }
+  test("sru ifu1/2 ra/dec") {
+    val cfg = GhostConfig(
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      none,
+      1.seconds,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      "target".some,
+      coord1.some,
+      "target2".some,
+      coord2.some,
+      none,
+      none,
+      none,
+      none,
+      Nil
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
+                 "IFU_DEMAND_RADEC".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
+                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
+                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
+                 "IFU_STDRES".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
+                 "IFU_TARGET_OBJECT".some
+    )
+    // ifu2 not used
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
+                 "IFU_DEMAND_RADEC".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")),
+                 "IFU_STDRES".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
+                 "IFU_TARGET_OBJECT".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.ra")),
+                 ra2.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.dec")),
+                 dec2.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+  }
+  test("hru ifu1 ra/dec") {
+    val cfg = GhostConfig(
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      none,
+      1.seconds,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      none,
+      none,
+      none,
+      none,
+      "target".some,
+      coord1.some,
+      none,
+      none,
+      Nil
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
+                 "IFU_DEMAND_RADEC".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
+                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
+                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
+                 "IFU_HIRES".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
+                 "IFU_TARGET_OBJECT".some
+    )
+    // ifu2 not used
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
+                 "IFU_DEMAND_PARK".some
+    )
+    assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
+                 "IFU_TARGET_NONE".some
+    )
+  }
+  test("hru ifu1/ifu2 ra/dec") {
+    val cfg = GhostConfig(
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      none,
+      1.seconds,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      none,
+      none,
+      none,
+      none,
+      "target".some,
+      coord1.some,
+      "target2".some,
+      coord2.some,
+      Nil
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
+                 "IFU_DEMAND_RADEC".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
+                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
+                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
+                 "IFU_HIRES".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
+                 "IFU_TARGET_OBJECT".some
+    )
+    // ifu2 not used
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
+                 "IFU_DEMAND_RADEC".some
     )
     assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
