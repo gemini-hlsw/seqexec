@@ -8,6 +8,8 @@ import cats.implicits._
 import lucuma.core.util.Enumerated
 import giapi.client.GiapiConfig
 import edu.gemini.spModel.gemini.ghost.GhostBinning
+import lucuma.core.enum.GiapiStatusApply
+import lucuma.core.enum.GiapiStatusApply._
 import scala.concurrent.duration.FiniteDuration
 
 sealed trait FiberAgitator extends Product with Serializable
@@ -46,16 +48,27 @@ object DemandType {
   implicit val FiberAgitatorEnumerated: Enumerated[DemandType] =
     Enumerated.of(DemandRADec, DemandXY, DemandPark)
 
-  implicit val DemandTypeCconfiguration: GiapiConfig[DemandType] =
-    GiapiConfig.instance {
-      case DemandRADec => "1"
-      case DemandXY    => "2"
-      case DemandPark  => "5"
-    }
+  implicit val DemandTypeCconfiguration: GiapiConfig[DemandType] = _.demandType
 }
 
 sealed abstract class IFUNum(val ifuNum: Int) extends Product with Serializable {
   val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
+
+  def demandItem: GiapiStatusApply = this match {
+    case IFUNum.IFU1 => GhostIFU1Type
+    case IFUNum.IFU2 => GhostIFU2Type
+  }
+
+  def bundleItem: GiapiStatusApply = this match {
+    case IFUNum.IFU1 => GhostIFU1Bundle
+    case IFUNum.IFU2 => GhostIFU2Bundle
+  }
+
+  def targetItem: GiapiStatusApply = this match {
+    case IFUNum.IFU1 => GhostIFU1Target
+    case IFUNum.IFU2 => GhostIFU2Target
+  }
+
 }
 
 object IFUNum {
@@ -73,14 +86,10 @@ sealed abstract class BundleConfig(val configName: String) extends Product with 
 }
 
 object BundleConfig {
-  case object Standard extends BundleConfig(configName = "IFU_LORES")
+  case object Standard extends BundleConfig(configName = "IFU_STDRES")
   case object HighRes  extends BundleConfig(configName = "IFU_HIRES")
   case object Sky      extends BundleConfig(configName = "IFU_SKY")
-  implicit val bundleConfiguration: GiapiConfig[BundleConfig] = {
-    case Standard => "0"
-    case HighRes  => "1"
-    case Sky      => "2"
-  }
+  implicit val bundleConfiguration: GiapiConfig[BundleConfig] = _.configName
 }
 
 sealed abstract class IFUTargetType(val targetType: String) extends Product with Serializable
@@ -97,11 +106,7 @@ object IFUTargetType {
       case Some(x)     => Target(x)
     }
 
-  implicit val ifuTargetTypeConfiguration: GiapiConfig[IFUTargetType] = {
-    case NoTarget    => "0"
-    case SkyPosition => "1"
-    case Target(_)   => "2"
-  }
+  implicit val ifuTargetTypeConfiguration: GiapiConfig[IFUTargetType] = _.targetType
 }
 
 final case class ChannelConfig(binning: GhostBinning, exposure: FiniteDuration, count: Int)

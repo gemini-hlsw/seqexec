@@ -39,15 +39,14 @@ sealed trait GhostConfig {
     t.track
       .map(_.baseCoordinates)
       .map { c =>
-        Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem),
-                             c.dec.toAngle.toSignedDoubleDegrees
-        ) |+|
-          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._3.applyItem),
-                               c.ra.toAngle.toDoubleDegrees
-          ) |+|
-          Configuration.single(GhostConfig.UserTargetsApply.get(i).foldMap(_._1.applyItem),
-                               t.name.value
-          )
+        GhostConfig.UserTargetsApply
+          .get(i + 1)
+          .map { case (name, ra, dec) =>
+            GhostConfig.giapiConfig(name, t.name.value) |+|
+              GhostConfig.giapiConfig(ra, c.ra.toAngle.toDoubleDegrees) |+|
+              GhostConfig.giapiConfig(dec, c.dec.toAngle.toSignedDoubleDegrees)
+          }
+          .combineAll
       }
       .getOrElse(Configuration.Zero)
 
@@ -55,14 +54,17 @@ sealed trait GhostConfig {
     userTargets.zipWithIndex.map(Function.tupled(targetConfig)).combineAll |+|
       giapiConfig(GiapiStatusApply.GhostUserTargetCount, userTargets.length)
 
-  def ifu1Config: Configuration    =
+  def ifu1Config: Configuration =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
+  println(ifu1Config)
+  println(s"fiber $fiberAgitator1 ${GhostConfig.fiberConfig1(fiberAgitator1)}")
+
   def ifu2Config: Configuration
   def channelConfig: Configuration =
-    giapiConfig(GhostBlueExposureBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
-      giapiConfig(GhostBlueExposureBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
-      giapiConfig(GhostRedExposureBinningRcf, redConfig.binning.getSpectralBinning()) |+|
-      giapiConfig(GhostRedExposureBinningCcf, redConfig.binning.getSpatialBinning()) |+|
+    giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
+      giapiConfig(GhostBlueBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
+      giapiConfig(GhostRedBinningRcf, redConfig.binning.getSpectralBinning()) |+|
+      giapiConfig(GhostRedBinningCcf, redConfig.binning.getSpatialBinning()) |+|
       giapiConfig(GhostBlueExposureTime, blueConfig.exposure.toSeconds.toInt) |+|
       giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
       giapiConfig(GhostRedExposureTime, redConfig.exposure.toSeconds.toInt) |+|
@@ -87,39 +89,37 @@ object GhostConfig {
     ifuTargetType: IFUTargetType,
     coordinates:   Coordinates,
     bundleConfig:  BundleConfig
-    // guideConfig:   Option[GuideFiberState]
+    // guideConfig:   Option[]
   ): Configuration = {
     def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
-    val demand: DemandType                                  = DemandType.DemandRADec
 
-    val current = cfg("target", ifuTargetType.configValue) |+|
-      cfg("type", demand) |+|
-      cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
-      cfg("dec", coordinates.dec.toAngle.toSignedDoubleDegrees) |+|
-      cfg("bundle", bundleConfig.configValue)
+    val demand: DemandType = DemandType.DemandRADec
+
+    val current =
+      giapiConfig(ifuNum.targetItem, ifuTargetType) |+|
+        giapiConfig(ifuNum.demandItem, demand) |+|
+        cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
+        cfg("dec", coordinates.dec.toAngle.toSignedDoubleDegrees) |+|
+        giapiConfig(ifuNum.bundleItem, bundleConfig)
     current
   }
 
   val UserTargetsApply: Map[Int, (GiapiStatusApply, GiapiStatusApply, GiapiStatusApply)] =
     Map(
-      0 -> ((GhostUserTarget0Name, GhostUserTarget0CoordsRADeg, GhostUserTarget0CoordsDecDeg)),
       1 -> ((GhostUserTarget1Name, GhostUserTarget1CoordsRADeg, GhostUserTarget1CoordsDecDeg)),
       2 -> ((GhostUserTarget2Name, GhostUserTarget2CoordsRADeg, GhostUserTarget2CoordsDecDeg)),
       3 -> ((GhostUserTarget3Name, GhostUserTarget3CoordsRADeg, GhostUserTarget3CoordsDecDeg)),
       4 -> ((GhostUserTarget4Name, GhostUserTarget4CoordsRADeg, GhostUserTarget4CoordsDecDeg)),
       5 -> ((GhostUserTarget5Name, GhostUserTarget5CoordsRADeg, GhostUserTarget5CoordsDecDeg)),
       6 -> ((GhostUserTarget6Name, GhostUserTarget6CoordsRADeg, GhostUserTarget6CoordsDecDeg)),
-      7 -> ((GhostUserTarget7Name, GhostUserTarget7CoordsRADeg, GhostUserTarget7CoordsDecDeg))
+      7 -> ((GhostUserTarget7Name, GhostUserTarget7CoordsRADeg, GhostUserTarget7CoordsDecDeg)),
+      8 -> ((GhostUserTarget8Name, GhostUserTarget8CoordsRADeg, GhostUserTarget8CoordsDecDeg))
     )
 
-  private[ghost] def ifuPark(ifuNum: IFUNum): Configuration = {
-    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
-      Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
-
-    cfg("target", IFUTargetType.NoTarget: IFUTargetType) |+|
-      cfg("type", DemandType.DemandPark: DemandType)
-  }
+  private[ghost] def ifuPark(ifuNum: IFUNum): Configuration =
+    giapiConfig(ifuNum.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+      giapiConfig(ifuNum.demandItem, DemandType.DemandPark: DemandType)
 
   private[ghost] def fiberConfig1(fa: FiberAgitator): Configuration =
     giapiConfig(GhostFiberAgitator1, fa)
@@ -306,9 +306,9 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
-    println(s"Single target $ifu1TargetName")
     override def ifu2Config: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
+    println(s"Single target $ifu2Config")
   }
 
   implicit val srmSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
