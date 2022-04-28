@@ -161,6 +161,8 @@ trait ModelLenses {
       configParamValueO(systemName, param) ^<-?
       prism // step type
 
+  val stringToString = Iso.id[String].asPrism
+
   val stringToStepTypeP: Prism[String, StepType] =
     Prism(StepType.fromString)(_.label)
 
@@ -187,47 +189,47 @@ trait ModelLenses {
 
   // Composite lens to find the instrument fpu
   val instrumentFPUO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "fpu", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "fpu", stringToString)
 
   // Composite lens to find the instrument slit width
   val instrumentSlitWidthO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "slitWidth", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "slitWidth", stringToString)
 
   // Composite lens to find the instrument fpu custom mask
   val instrumentFPUCustomMaskO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "fpuCustomMask", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "fpuCustomMask", stringToString)
 
   // Composite lens to find the instrument filter
   val instrumentFilterO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "filter", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "filter", stringToString)
 
   // Composite lens to find the instrument camera, e.g. Niri
   val instrumentCameraO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "camera", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "camera", stringToString)
 
   // Composite lens to find the instrument disperser for GMOS
   val instrumentDisperserO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "disperser", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "disperser", stringToString)
 
   // Composite lens to find the instrument decker on GNIRS
   val instrumentDeckerO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "decker", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "decker", stringToString)
 
   // Composite lens to find the instrument decker on GNIRS
   val instrumentImagingMirrorO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "imagingMirror", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "imagingMirror", stringToString)
 
   // Instrument's mask
   val instrumentMaskO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "mask", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "mask", stringToString)
 
   // Instrument's readMode
   val instrumentReadModeO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "readMode", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "readMode", stringToString)
 
   // Composite lens to find the instrument observing mode on GPI
   val instrumentObservingModeO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "observingMode", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "observingMode", stringToString)
 
   // Composite lens to find the central wavelength for a disperser
   val instrumentDisperserLambdaO: Optional[Step, Double] =
