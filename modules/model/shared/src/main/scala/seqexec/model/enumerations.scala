@@ -77,23 +77,6 @@ object enumerations {
       "u_G0308"                 -> "u"
     )
 
-    val F2Filter: Map[String, String] = Map(
-      "OPEN"    -> "Open",
-      "Y"       -> "Y (1.02 um)",
-      "F1056"   -> "F1056 (1.056 um)",
-      "F1063"   -> "F1063 (1.063 um)",
-      "J_LOW"   -> "J-low (1.15 um)",
-      "J"       -> "J (1.25 um)",
-      "H"       -> "H (1.65 um)",
-      "K_LONG"  -> "K-long (2.20 um)",
-      "K_SHORT" -> "K-short (2.15 um)",
-      "K_BLUE"  -> "K-blue (2.06 um)",
-      "K_RED"   -> "K-red (2.31 um)",
-      "JH"      -> "JH (spectroscopic)",
-      "HK"      -> "HK (spectroscopic)",
-      "DARK"    -> "Dark"
-    )
-
     val Niri: Map[String, String] = Map(
       "BBF_Y"            -> "Y (1.02 um)",
       "BBF_J"            -> "J (1.25 um)",
@@ -195,18 +178,6 @@ object enumerations {
       "CUSTOM_MASK" -> "Custom Mask"
     )
 
-    val Flamingos2: Map[String, String] = Map(
-      "FPU_NONE"       -> "Imaging (none)",
-      "LONGSLIT_1"     -> "1-pix longslit",
-      "LONGSLIT_2"     -> "2-pix longslit",
-      "LONGSLIT_3"     -> "3-pix longslit",
-      "LONGSLIT_4"     -> "4-pix longslit",
-      "LONGSLIT_6"     -> "6-pix longslit",
-      "LONGSLIT_8"     -> "8-pix longslit",
-      "PINHOLE"        -> "2-pix pinhole grid",
-      "SUBPIX_PINHOLE" -> "subpix pinhole grid",
-      "CUSTOM_MASK"    -> "Custom Mask"
-    )
   }
 
   object disperser {

@@ -184,7 +184,7 @@ lazy val seqexec_web_client = project
     fullOptJS / webpackBundlingMode := BundlingMode.Application,
     webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort            := 9090,
-    webpack / version               := "4.44.1",
+    webpack / version               := "4.46.0",
     startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     fullOptJS / webpackConfigFile   := Some(
@@ -200,8 +200,6 @@ lazy val seqexec_web_client = project
     Test / parallelExecution        := false,
     installJsdom / version          := "16.4.0",
     Test / requireJsDomEnv          := true,
-    // Use yarn as it is faster than npm
-    useYarn                         := true,
     // JS dependencies via npm
     Compile / npmDependencies ++= Seq(
       "fomantic-ui-less" -> LibraryVersions.fomanticUI,

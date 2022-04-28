@@ -45,7 +45,6 @@ object StepItems {
       i match {
         case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
         case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
-        case Instrument.F2    => enumerations.fpu.Flamingos2.get
         case _                => _ => none
       }
 
@@ -68,7 +67,9 @@ object StepItems {
       (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK"), c) => c
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, None, c @ Some(_))      => c
-        case (_, Some(b), _)                                                               => fpuNameMapper(i)(b)
+        case (Instrument.F2, a @ Some(_), _)                                               => a
+        case (_, Some(b), _)                                                               =>
+          fpuNameMapper(i)(b)
         case _                                                                             => none
       }
 
@@ -127,7 +128,6 @@ object StepItems {
         case Instrument.F2    =>
           instrumentFilterO
             .getOption(s)
-            .flatMap(enumerations.filter.F2Filter.get)
         case Instrument.Niri  =>
           instrumentFilterO
             .getOption(s)
