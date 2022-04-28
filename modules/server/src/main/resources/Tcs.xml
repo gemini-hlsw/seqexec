@@ -990,7 +990,7 @@
             <description>Name of GeMS WFS for G3</description>
         </attribute>
         <attribute name="port1Label">
-            <channel>port:port1</channel>
+            <channel>port:port1.VAL</channel>
             <type>STRING</type>
             <description>ISS port 1 label</description>
             <top>ag</top>
@@ -1184,12 +1184,12 @@
             <description>M2 Guide control input</description>
         </attribute>
         <attribute name="agInPosition">
-            <channel>agInPosCalc</channel>
+            <channel>agInPosCalc.VAL</channel>
             <type>DOUBLE</type>
             <description>A&amp;G in position</description>
         </attribute>
         <attribute name="port3Label">
-            <channel>port:port3</channel>
+            <channel>port:port3.VAL</channel>
             <type>STRING</type>
             <description>ISS port 3 label</description>
             <top>ag</top>
@@ -1205,24 +1205,24 @@
             <description>Guide star Y</description>
         </attribute>
         <attribute name="oiName">
-            <channel>oi:name</channel>
+            <channel>oi:name.VAL</channel>
             <type>STRING</type>
             <description>selected OI</description>
             <top>ag</top>
         </attribute>
         <attribute name="oiParked">
-            <channel>oi:probeParked</channel>
+            <channel>oi:probeParked.VAL</channel>
             <type>INTEGER</type>
             <description>OI probe parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="m2p2Guide">
-            <channel>drives:p2GuideConfig</channel>
+            <channel>drives:p2GuideConfig.VAL</channel>
             <type>STRING</type>
             <description>M2 P2 guide config</description>
         </attribute>
         <attribute name="chopState">
-            <channel>sad:chopState</channel>
+            <channel>sad:chopState.VAL</channel>
             <type>STRING</type>
             <description>Chop State</description>
         </attribute>
@@ -1244,18 +1244,18 @@
                     </attribute>
         -->
         <attribute name="port5Label">
-            <channel>port:port5</channel>
+            <channel>port:port5.VAL</channel>
             <type>STRING</type>
             <description>ISS port 5 label</description>
             <top>ag</top>
         </attribute>
         <attribute name="chopFreq">
-            <channel>sad:chopFreq</channel>
+            <channel>sad:chopFreq.VAL</channel>
             <type>DOUBLE</type>
             <description>Chop Frequency</description>
         </attribute>
         <attribute name="oiFollowS">
-            <channel>oi:followS</channel>
+            <channel>oi:followS.VAL</channel>
             <type>STRING</type>
             <description>OI follow mode</description>
             <top>ag</top>
@@ -1266,13 +1266,13 @@
             <description>Name of GeMS WFS for G4</description>
         </attribute>
         <attribute name="agHwName">
-            <channel>drives:agHwName</channel>
+            <channel>drives:agHwName.VAL</channel>
             <type>STRING</type>
             <description>AcqCam pickoff</description>
         </attribute>
         <!--
         <attribute name="pwfs2On">
-            <channel>drives:p2Integrating</channel>
+            <channel>drives:p2Integrating.VAL</channel>
             <type>STRING</type>
             <description>P2 integrating</description>
                     </attribute>
@@ -1298,13 +1298,13 @@
             <description>X offset</description>
         </attribute>
         <attribute name="p1FollowS">
-            <channel>p1:followS</channel>
+            <channel>p1:followS.VAL</channel>
             <type>STRING</type>
             <description>P1 follow mode</description>
             <top>ag</top>
         </attribute>
         <attribute name="nodState">
-            <channel>drives:nodState</channel>
+            <channel>drives:nodState.VAL</channel>
             <type>STRING</type>
             <description>Nod State</description>
         </attribute>
@@ -1314,39 +1314,39 @@
             <description>ODGW 1 parked</description>
         </attribute>
         <attribute name="inPosition">
-            <channel>sad:inPosition</channel>
+            <channel>sad:inPosition.VAL</channel>
             <type>STRING</type>
             <description>TCS in position</description>
         </attribute>
         <attribute name="instrAA">
-            <channel>sad:instrAA</channel>
+            <channel>sad:instrAA.VAL</channel>
             <type>DOUBLE</type>
             <description>Instrument alignment angle</description>
         </attribute>
         <attribute name="g1Wavelength">
-            <channel>sad:g1Wavelength</channel>
+            <channel>sad:g1Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Wavelength</description>
         </attribute>
         <attribute name="chopDutyCycle">
-            <channel>sad:chopDutyCycle</channel>
+            <channel>sad:chopDutyCycle.VAL</channel>
             <type>DOUBLE</type>
             <description>Chop Duty Cycle</description>
         </attribute>
         <attribute name="g3Wavelength">
-            <channel>sad:g3Wavelength</channel>
+            <channel>sad:g3Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Wavelength</description>
         </attribute>
         <attribute name="oiguideoutput">
-            <channel>dc:outGuide</channel>
+            <channel>dc:outGuide.VAL</channel>
             <type>STRING</type>
             <description>OI guide signal output</description>
             <top>oiwfs</top>
         </attribute>
         <!--
         <attribute name="oiwfsOn">
-            <channel>drives:oiIntegrating</channel>
+            <channel>drives:oiIntegrating.VAL</channel>
             <type>STRING</type>
             <description>OI integrating</description>
                     </attribute>
@@ -1357,18 +1357,18 @@
             <description>Prepared control matrix X</description>
         </attribute>
         <attribute name="m2aoGuide">
-            <channel>drives:aoGuideConfig</channel>
+            <channel>drives:aoGuideConfig.VAL</channel>
             <type>STRING</type>
             <description>M2 AO guide config</description>
         </attribute>
         <attribute name="p1Parked">
-            <channel>p1:probeParked</channel>
+            <channel>p1:probeParked.VAL</channel>
             <type>INTEGER</type>
             <description>P1 probe parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="sfName">
-            <channel>sfName</channel>
+            <channel>sfName.VAL</channel>
             <type>STRING</type>
             <description>Science fold position</description>
             <top>ag</top>
@@ -1380,30 +1380,30 @@
         </attribute>
         <!--
         <attribute name="m1Guide">
-            <channel>im:m1GuideOn</channel>
+            <channel>im:m1GuideOn.VAL</channel>
             <type>STRING</type>
             <description>M1 guide</description>
                     </attribute>
         -->
         <attribute name="m2p1Guide">
-            <channel>drives:p1GuideConfig</channel>
+            <channel>drives:p1GuideConfig.VAL</channel>
             <type>STRING</type>
             <description>M2 P1 guide config</description>
         </attribute>
         <attribute name="agHwParked">
-            <channel>hwParked</channel>
+            <channel>hwParked.VAL</channel>
             <type>INTEGER</type>
             <description>AcqCam parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="p2Parked">
-            <channel>p2:probeParked</channel>
+            <channel>p2:probeParked.VAL</channel>
             <type>INTEGER</type>
             <description>P2 probe parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="comaCorrect">
-            <channel>comaCorrect</channel>
+            <channel>comaCorrect.VAL</channel>
             <type>STRING</type>
             <description>Apply Coma Corrections</description>
         </attribute>
@@ -1413,18 +1413,18 @@
             <description>ODGW 2 parked</description>
         </attribute>
         <attribute name="rotTrackFrame">
-            <channel>sad:rotTrackFrame</channel>
+            <channel>sad:rotTrackFrame.VAL</channel>
             <type>STRING</type>
             <description>Cass Rotator tracking frame</description>
         </attribute>
         <attribute name="p2FollowS">
-            <channel>p2:followS</channel>
+            <channel>p2:followS.VAL</channel>
             <type>STRING</type>
             <description>P2 follow mode</description>
             <top>ag</top>
         </attribute>
         <attribute name="g2Wavelength">
-            <channel>sad:g2Wavelength</channel>
+            <channel>sad:g2Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Wavelength</description>
         </attribute>
@@ -1435,7 +1435,7 @@
         </attribute>
         <!--
         <attribute name="pwfs1On">
-            <channel>drives:p1Integrating</channel>
+            <channel>drives:p1Integrating.VAL</channel>
             <type>STRING</type>
             <description>P1 integrating</description>
                     </attribute>
@@ -1456,7 +1456,7 @@
             <description>Source C Wavelength</description>
         </attribute>
         <attribute name="port2Label">
-            <channel>port:port2</channel>
+            <channel>port:port2.VAL</channel>
             <type>STRING</type>
             <description>ISS port 2 label</description>
             <top>ag</top>
@@ -1467,29 +1467,29 @@
             <description>Name of GeMS WFS for G1</description>
         </attribute>
         <attribute name="chopAngle">
-            <channel>sad:chopPA</channel>
+            <channel>sad:chopPA.VAL</channel>
             <type>DOUBLE</type>
             <description>Chop PA</description>
         </attribute>
         <attribute name="chopThrow">
-            <channel>sad:chopThrow</channel>
+            <channel>sad:chopThrow.VAL</channel>
             <type>DOUBLE</type>
             <description>Chop Throw</description>
         </attribute>
         <attribute name="sfParked">
-            <channel>sfParked</channel>
+            <channel>sfParked.VAL</channel>
             <type>INTEGER</type>
             <description>Science Fold parked</description>
             <top>ag</top>
         </attribute>
         <attribute name="g4Wavelength">
-            <channel>sad:g4Wavelength</channel>
+            <channel>sad:g4Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Wavelength</description>
         </attribute>
         <!--
         <attribute name="m2GuideState">
-            <channel>om:m2GuideState</channel>
+            <channel>om:m2GuideState.VAL</channel>
             <type>STRING</type>
             <description>M2 guiding state</description>
         </attribute>
@@ -1525,17 +1525,17 @@
             <description>Y offset source C</description>
         </attribute>
         <attribute name="m2oiGuide">
-            <channel>drives:oiGuideConfig</channel>
+            <channel>drives:oiGuideConfig.VAL</channel>
             <type>STRING</type>
             <description>M2 OI guide config</description>
         </attribute>
         <attribute name="absorbTipTilt">
-            <channel>absorbTipTiltFlag</channel>
+            <channel>absorbTipTiltFlag.VAL</channel>
             <type>INTEGER</type>
             <description>Absorb Tip/Tilt</description>
         </attribute>
         <attribute name="port4Label">
-            <channel>port:port4</channel>
+            <channel>port:port4.VAL</channel>
             <type>STRING</type>
             <description>ISS port 4 label</description>
             <top>ag</top>
@@ -1547,87 +1547,87 @@
         </attribute>
         <!-- FITS header values -->
         <attribute name="ha">
-            <channel>sad:currentHAString</channel>
+            <channel>sad:currentHAString.VAL</channel>
             <type>STRING</type>
             <description>Hour Angle</description>
         </attribute>
         <attribute name="lt">
-            <channel>sad:localTime</channel>
+            <channel>sad:localTime.VAL</channel>
             <type>STRING</type>
             <description>Local time</description>
         </attribute>
         <attribute name="azimuth">
-            <channel>currentAz</channel>
+            <channel>currentAz.VAL</channel>
             <type>DOUBLE</type>
             <description>Current Azimuth</description>
         </attribute>
         <attribute name="elevatio">
-            <channel>currentEl</channel>
+            <channel>currentEl.VAL</channel>
             <type>DOUBLE</type>
             <description>Current Elevation</description>
         </attribute>
         <attribute name="crpa">
-            <channel>currentRma</channel>
+            <channel>currentRma.VAL</channel>
             <type>DOUBLE</type>
             <description>Current Cass Rotator Position Angle</description>
         </attribute>
         <attribute name="ut">
-            <channel>UTC</channel>
+            <channel>UTC.VAL</channel>
             <type>STRING</type>
             <description>UT at observation start</description>
         </attribute>
         <attribute name="date">
-            <channel>sad:date</channel>
+            <channel>sad:date.VAL</channel>
             <type>STRING</type>
             <description>Date FITS file was generated</description>
         </attribute>
         <attribute name="m2baffle">
-            <channel>DeployBafflePos</channel>
+            <channel>DeployBafflePos.VAL</channel>
             <type>STRING</type>
             <description>Deployable Baffle</description>
             <top>m2</top>
         </attribute>
         <attribute name="m2cenbaff">
-            <channel>CentralBafflePos</channel>
+            <channel>CentralBafflePos.VAL</channel>
             <type>STRING</type>
             <description>Central Baffle</description>
             <top>m2</top>
         </attribute>
         <attribute name="st">
-            <channel>LST</channel>
+            <channel>LST.VAL</channel>
             <type>STRING</type>
             <description>Siderial time at the start of the exposure</description>
         </attribute>
         <attribute name="sfrt2">
-            <channel>sfRot</channel>
+            <channel>sfRot.VAL</channel>
             <type>DOUBLE</type>
             <description>Science fold rotation</description>
             <top>ag</top>
         </attribute>
         <attribute name="sftilt">
-            <channel>sfTilt</channel>
+            <channel>sfTilt.VAL</channel>
             <type>DOUBLE</type>
             <description>Science fold tilt</description>
             <top>ag</top>
         </attribute>
         <attribute name="sflinear">
-            <channel>sfLin</channel>
+            <channel>sfLin.VAL</channel>
             <type>DOUBLE</type>
             <description>Science fold linear pos</description>
             <top>ag</top>
         </attribute>
         <attribute name="instrPA">
-            <channel>sad:instrPA</channel>
+            <channel>sad:instrPA.VAL</channel>
             <type>DOUBLE</type>
             <description>Instrument position angle</description>
         </attribute>
         <attribute name="targetA">
-            <channel>sad:targetA</channel>
+            <channel>sad:targetA.VAL</channel>
             <type>DOUBLE</type>
             <description>Target A tracking data</description>
         </attribute>
         <attribute name="aoName">
-            <channel>aoName</channel>
+            <channel>aoName.VAL</channel>
             <type>STRING</type>
             <description>AO fold position</description>
             <top>ag</top>
@@ -1638,482 +1638,482 @@
             <!--<description>Using AO flag</description>-->
         <!--</attribute>-->
         <attribute name="airmass">
-            <channel>sad:airMass</channel>
+            <channel>sad:airMass.VAL</channel>
             <type>DOUBLE</type>
             <description>Average airmass</description>
         </attribute>
         <attribute name="amstart">
-            <channel>sad:amStart</channel>
+            <channel>sad:amStart.VAL</channel>
             <type>DOUBLE</type>
             <description>Airmass at start</description>
         </attribute>
         <attribute name="amend">
-            <channel>sad:amEnd</channel>
+            <channel>sad:amEnd.VAL</channel>
             <type>DOUBLE</type>
             <description>Airmass at end</description>
         </attribute>
         <attribute name="sourceAObjectName">
-            <channel>sad:sourceAObjectName</channel>
+            <channel>sad:sourceAObjectName.VAL</channel>
             <type>STRING</type>
             <description>Object name</description>
         </attribute>
         <attribute name="trkframe">
-            <channel>sad:sourceADiffFrame</channel>
+            <channel>sad:sourceADiffFrame.VAL</channel>
             <type>STRING</type>
             <description>Tracking frame</description>
         </attribute>
         <attribute name="trkepoch">
-            <channel>sad:sourceADiffEpoch</channel>
+            <channel>sad:sourceADiffEpoch.VAL</channel>
             <type>DOUBLE</type>
             <description>Diff Tracking Epoch</description>
         </attribute>
         <attribute name="dectrack">
-            <channel>sad:sourceADiffDec</channel>
+            <channel>sad:sourceADiffDec.VAL</channel>
             <type>DOUBLE</type>
             <description>Diff Tracking Dec</description>
         </attribute>
         <attribute name="sourceAEquinox">
-            <channel>sad:sourceAEquinox</channel>
+            <channel>sad:sourceAEquinox.VAL</channel>
             <type>STRING</type>
             <description>Equinox for Target coordinates</description>
         </attribute>
         <attribute name="sourceATrackEq">
-            <channel>sad:sourceATrackEq</channel>
+            <channel>sad:sourceATrackEq.VAL</channel>
             <type>STRING</type>
             <description>Tracking equinox</description>
         </attribute>
         <attribute name="ratrack">
-            <channel>sad:sourceADiffRA</channel>
+            <channel>sad:sourceADiffRA.VAL</channel>
             <type>DOUBLE</type>
             <description>Diff Tracking RA</description>
         </attribute>
         <attribute name="dec">
-            <channel>sad:sourceADec</channel>
+            <channel>sad:sourceADec.VAL</channel>
             <type>DOUBLE</type>
             <description>DEC</description>
         </attribute>
         <attribute name="ra">
-            <channel>sad:sourceARA</channel>
+            <channel>sad:sourceARA.VAL</channel>
             <type>DOUBLE</type>
             <description>RA</description>
         </attribute>
         <attribute name="frame">
-            <channel>sad:sourceAInputFrame</channel>
+            <channel>sad:sourceAInputFrame.VAL</channel>
             <type>STRING</type>
             <description>Frame</description>
         </attribute>
         <attribute name="pmra">
-            <channel>sad:sourceAPMRA</channel>
+            <channel>sad:sourceAPMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>Proper motion RA</description>
         </attribute>
         <attribute name="pmdec">
-            <channel>sad:sourceAPMDec</channel>
+            <channel>sad:sourceAPMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>Proper motion Dec</description>
         </attribute>
         <attribute name="radvel">
-            <channel>sad:sourceARV</channel>
+            <channel>sad:sourceARV.VAL</channel>
             <type>DOUBLE</type>
             <description></description>
         </attribute>
         <attribute name="sourceAEpoch">
-            <channel>sad:sourceAEpoch</channel>
+            <channel>sad:sourceAEpoch.VAL</channel>
             <type>STRING</type>
             <description>Epoch for Target coordinates</description>
         </attribute>
         <attribute name="parallax">
-            <channel>sad:sourceAParallax</channel>
+            <channel>sad:sourceAParallax.VAL</channel>
             <type>DOUBLE</type>
             <description></description>
         </attribute>
         <attribute name="p1aepoch">
-            <channel>sad:pwfs1Epoch</channel>
+            <channel>sad:pwfs1Epoch.VAL</channel>
             <type>STRING</type>
             <description>P1 Epoch</description>
         </attribute>
         <attribute name="p1aequin">
-            <channel>sad:pwfs1Equinox</channel>
+            <channel>sad:pwfs1Equinox.VAL</channel>
             <type>STRING</type>
             <description>P1 Equinox</description>
         </attribute>
         <attribute name="p1arv">
-            <channel>sad:pwfs1RV</channel>
+            <channel>sad:pwfs1RV.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 Radial Velocity</description>
         </attribute>
         <attribute name="p1adec">
-            <channel>sad:pwfs1Dec</channel>
+            <channel>sad:pwfs1Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 DEC</description>
         </attribute>
         <attribute name="p1ara">
-            <channel>sad:pwfs1RA</channel>
+            <channel>sad:pwfs1RA.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 RA</description>
         </attribute>
         <attribute name="p1awavel">
-            <channel>sad:pwfs1Wavelength</channel>
+            <channel>sad:pwfs1Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 Wavelength</description>
         </attribute>
         <attribute name="p1aobjec">
-            <channel>sad:pwfs1ObjectName</channel>
+            <channel>sad:pwfs1ObjectName.VAL</channel>
             <type>STRING</type>
             <description>P1 Object Name</description>
         </attribute>
         <attribute name="p1aparal">
-            <channel>sad:pwfs1Parallax</channel>
+            <channel>sad:pwfs1Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 Parallax</description>
         </attribute>
         <attribute name="p1aframe">
-            <channel>sad:pwfs1InputFrame</channel>
+            <channel>sad:pwfs1InputFrame.VAL</channel>
             <type>STRING</type>
             <description>P1 Frame</description>
         </attribute>
         <attribute name="p1apmdec">
-            <channel>sad:pwfs1PMDec</channel>
+            <channel>sad:pwfs1PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 Proper motion Dec</description>
         </attribute>
         <attribute name="p1apmra">
-            <channel>sad:pwfs1PMRA</channel>
+            <channel>sad:pwfs1PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>P1 Proper motion RA</description>
         </attribute>
         <attribute name="p2aobjec">
-            <channel>sad:pwfs2ObjectName</channel>
+            <channel>sad:pwfs2ObjectName.VAL</channel>
             <type>STRING</type>
             <description>P2 Object Name</description>
         </attribute>
         <attribute name="p2ara">
-            <channel>sad:pwfs2RA</channel>
+            <channel>sad:pwfs2RA.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 RA</description>
         </attribute>
         <attribute name="p2arv">
-            <channel>sad:pwfs2RV</channel>
+            <channel>sad:pwfs2RV.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 Radial Velocity</description>
         </attribute>
         <attribute name="p2adec">
-            <channel>sad:pwfs2Dec</channel>
+            <channel>sad:pwfs2Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 DEC</description>
         </attribute>
         <attribute name="p2aparal">
-            <channel>sad:pwfs2Parallax</channel>
+            <channel>sad:pwfs2Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 Parallax</description>
         </attribute>
         <attribute name="p2awavel">
-            <channel>sad:pwfs2Wavelength</channel>
+            <channel>sad:pwfs2Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 Wavelength</description>
         </attribute>
         <attribute name="p2aequin">
-            <channel>sad:pwfs2Equinox</channel>
+            <channel>sad:pwfs2Equinox.VAL</channel>
             <type>STRING</type>
             <description>P2 Equinox</description>
         </attribute>
         <attribute name="p2aframe">
-            <channel>sad:pwfs2InputFrame</channel>
+            <channel>sad:pwfs2InputFrame.VAL</channel>
             <type>STRING</type>
             <description>P2 Frame</description>
         </attribute>
         <attribute name="p2aepoch">
-            <channel>sad:pwfs2Epoch</channel>
+            <channel>sad:pwfs2Epoch.VAL</channel>
             <type>STRING</type>
             <description>P2 Epoch</description>
         </attribute>
         <attribute name="p2apmdec">
-            <channel>sad:pwfs2PMDec</channel>
+            <channel>sad:pwfs2PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 Proper motion Dec</description>
         </attribute>
         <attribute name="p2apmra">
-            <channel>sad:pwfs2PMRA</channel>
+            <channel>sad:pwfs2PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>P2 Proper motion RA</description>
         </attribute>
         <attribute name="oiapmdec">
-            <channel>sad:oiwfsPMDec</channel>
+            <channel>sad:oiwfsPMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS Proper motion Dec</description>
         </attribute>
         <attribute name="oiaparal">
-            <channel>sad:oiwfsParallax</channel>
+            <channel>sad:oiwfsParallax.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS Parallax</description>
         </attribute>
         <attribute name="oiaobjec">
-            <channel>sad:oiwfsObjectName</channel>
+            <channel>sad:oiwfsObjectName.VAL</channel>
             <type>STRING</type>
             <description>OIWFS Object Name</description>
         </attribute>
         <attribute name="oiapmra">
-            <channel>sad:oiwfsPMRA</channel>
+            <channel>sad:oiwfsPMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS Proper motion RA</description>
         </attribute>
         <attribute name="oiawavel">
-            <channel>sad:oiwfsWavelength</channel>
+            <channel>sad:oiwfsWavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS Wavelength</description>
         </attribute>
         <attribute name="oiadec">
-            <channel>sad:oiwfsDec</channel>
+            <channel>sad:oiwfsDec.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS DEC</description>
         </attribute>
         <attribute name="oiaepoch">
-            <channel>sad:oiwfsEpoch</channel>
+            <channel>sad:oiwfsEpoch.VAL</channel>
             <type>STRING</type>
             <description>OIWFS Epoch</description>
         </attribute>
         <attribute name="oiara">
-            <channel>sad:oiwfsRA</channel>
+            <channel>sad:oiwfsRA.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS RA</description>
         </attribute>
         <attribute name="oiaframe">
-            <channel>sad:oiwfsInputFrame</channel>
+            <channel>sad:oiwfsInputFrame.VAL</channel>
             <type>STRING</type>
             <description>OIWFS Frame</description>
         </attribute>
         <attribute name="oiarv">
-            <channel>sad:oiwfsRV</channel>
+            <channel>sad:oiwfsRV.VAL</channel>
             <type>DOUBLE</type>
             <description>OIWFS Radial Velocity</description>
         </attribute>
         <attribute name="oiaequin">
-            <channel>sad:oiwfsEquinox</channel>
+            <channel>sad:oiwfsEquinox.VAL</channel>
             <type>STRING</type>
             <description>OIWFS Equinox</description>
         </attribute>
         <attribute name="g1apmra">
-            <channel>sad:g1PMRA</channel>
+            <channel>sad:g1PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Proper motion RA</description>
         </attribute>
         <attribute name="g1arv">
-            <channel>sad:g1RV</channel>
+            <channel>sad:g1RV.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Radial Velocity</description>
         </attribute>
         <attribute name="g1aparal">
-            <channel>sad:g1Parallax</channel>
+            <channel>sad:g1Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Parallax</description>
         </attribute>
         <attribute name="g1adec">
-            <channel>sad:g1Dec</channel>
+            <channel>sad:g1Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 DEC</description>
         </attribute>
         <attribute name="g1apmdec">
-            <channel>sad:g1PMDec</channel>
+            <channel>sad:g1PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Proper motion Dec</description>
         </attribute>
         <attribute name="g1aepoch">
-            <channel>sad:g1Epoch</channel>
+            <channel>sad:g1Epoch.VAL</channel>
             <type>STRING</type>
             <description>G1 Epoch</description>
         </attribute>
         <attribute name="g1aobjec">
-            <channel>sad:g1ObjectName</channel>
+            <channel>sad:g1ObjectName.VAL</channel>
             <type>STRING</type>
             <description>G1 Object Name</description>
         </attribute>
         <attribute name="g1awavel">
-            <channel>sad:g1Wavelength</channel>
+            <channel>sad:g1Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 Wavelength</description>
         </attribute>
         <attribute name="g1aequin">
-            <channel>sad:g1Equinox</channel>
+            <channel>sad:g1Equinox.VAL</channel>
             <type>STRING</type>
             <description>G1 Equinox</description>
         </attribute>
         <attribute name="g1ara">
-            <channel>sad:g1RA</channel>
+            <channel>sad:g1RA.VAL</channel>
             <type>DOUBLE</type>
             <description>G1 RA</description>
         </attribute>
         <attribute name="g1aframe">
-            <channel>sad:g2InputFrame</channel>
+            <channel>sad:g2InputFrame.VAL</channel>
             <type>STRING</type>
             <description>G1 Frame</description>
         </attribute>
         <attribute name="g2apmra">
-            <channel>sad:g2PMRA</channel>
+            <channel>sad:g2PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Proper motion RA</description>
         </attribute>
         <attribute name="g2arv">
-            <channel>sad:g2RV</channel>
+            <channel>sad:g2RV.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Radial Velocity</description>
         </attribute>
         <attribute name="g2aparal">
-            <channel>sad:g2Parallax</channel>
+            <channel>sad:g2Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Parallax</description>
         </attribute>
         <attribute name="g2adec">
-            <channel>sad:g2Dec</channel>
+            <channel>sad:g2Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 DEC</description>
         </attribute>
         <attribute name="g2apmdec">
-            <channel>sad:g2PMDec</channel>
+            <channel>sad:g2PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Proper motion Dec</description>
         </attribute>
         <attribute name="g2aepoch">
-            <channel>sad:g2Epoch</channel>
+            <channel>sad:g2Epoch.VAL</channel>
             <type>STRING</type>
             <description>G2 Epoch</description>
         </attribute>
         <attribute name="g2aobjec">
-            <channel>sad:g2ObjectName</channel>
+            <channel>sad:g2ObjectName.VAL</channel>
             <type>STRING</type>
             <description>G2 Object Name</description>
         </attribute>
         <attribute name="g2awavel">
-            <channel>sad:g2Wavelength</channel>
+            <channel>sad:g2Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 Wavelength</description>
         </attribute>
         <attribute name="g2aequin">
-            <channel>sad:g2Equinox</channel>
+            <channel>sad:g2Equinox.VAL</channel>
             <type>STRING</type>
             <description>G2 Equinox</description>
         </attribute>
         <attribute name="g2ara">
-            <channel>sad:g2RA</channel>
+            <channel>sad:g2RA.VAL</channel>
             <type>DOUBLE</type>
             <description>G2 RA</description>
         </attribute>
         <attribute name="g2aframe">
-            <channel>sad:g2InputFrame</channel>
+            <channel>sad:g2InputFrame.VAL</channel>
             <type>STRING</type>
             <description>G2 Frame</description>
         </attribute>
         <attribute name="g3apmra">
-            <channel>sad:g3PMRA</channel>
+            <channel>sad:g3PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Proper motion RA</description>
         </attribute>
         <attribute name="g3arv">
-            <channel>sad:g3RV</channel>
+            <channel>sad:g3RV.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Radial Velocity</description>
         </attribute>
         <attribute name="g3aparal">
-            <channel>sad:g3Parallax</channel>
+            <channel>sad:g3Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Parallax</description>
         </attribute>
         <attribute name="g3adec">
-            <channel>sad:g3Dec</channel>
+            <channel>sad:g3Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 DEC</description>
         </attribute>
         <attribute name="g3apmdec">
-            <channel>sad:g3PMDec</channel>
+            <channel>sad:g3PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Proper motion Dec</description>
         </attribute>
         <attribute name="g3aepoch">
-            <channel>sad:g3Epoch</channel>
+            <channel>sad:g3Epoch.VAL</channel>
             <type>STRING</type>
             <description>G3 Epoch</description>
         </attribute>
         <attribute name="g3aobjec">
-            <channel>sad:g3ObjectName</channel>
+            <channel>sad:g3ObjectName.VAL</channel>
             <type>STRING</type>
             <description>G3 Object Name</description>
         </attribute>
         <attribute name="g3awavel">
-            <channel>sad:g3Wavelength</channel>
+            <channel>sad:g3Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 Wavelength</description>
         </attribute>
         <attribute name="g3aequin">
-            <channel>sad:g3Equinox</channel>
+            <channel>sad:g3Equinox.VAL</channel>
             <type>STRING</type>
             <description>G3 Equinox</description>
         </attribute>
         <attribute name="g3ara">
-            <channel>sad:g3RA</channel>
+            <channel>sad:g3RA.VAL</channel>
             <type>DOUBLE</type>
             <description>G3 RA</description>
         </attribute>
         <attribute name="g3aframe">
-            <channel>sad:g3InputFrame</channel>
+            <channel>sad:g3InputFrame.VAL</channel>
             <type>STRING</type>
             <description>G3 Frame</description>
         </attribute>
         <attribute name="g4apmra">
-            <channel>sad:g4PMRA</channel>
+            <channel>sad:g4PMRA.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Proper motion RA</description>
         </attribute>
         <attribute name="g4arv">
-            <channel>sad:g4RV</channel>
+            <channel>sad:g4RV.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Radial Velocity</description>
         </attribute>
         <attribute name="g4aparal">
-            <channel>sad:g4Parallax</channel>
+            <channel>sad:g4Parallax.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Parallax</description>
         </attribute>
         <attribute name="g4adec">
-            <channel>sad:g4Dec</channel>
+            <channel>sad:g4Dec.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 DEC</description>
         </attribute>
         <attribute name="g4apmdec">
-            <channel>sad:g4PMDec</channel>
+            <channel>sad:g4PMDec.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Proper motion Dec</description>
         </attribute>
         <attribute name="g4aepoch">
-            <channel>sad:g4Epoch</channel>
+            <channel>sad:g4Epoch.VAL</channel>
             <type>STRING</type>
             <description>G4 Epoch</description>
         </attribute>
         <attribute name="g4aobjec">
-            <channel>sad:g4ObjectName</channel>
+            <channel>sad:g4ObjectName.VAL</channel>
             <type>STRING</type>
             <description>G4 Object Name</description>
         </attribute>
         <attribute name="g4awavel">
-            <channel>sad:g4Wavelength</channel>
+            <channel>sad:g4Wavelength.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 Wavelength</description>
         </attribute>
         <attribute name="g4aequin">
-            <channel>sad:g4Equinox</channel>
+            <channel>sad:g4Equinox.VAL</channel>
             <type>STRING</type>
             <description>G4 Equinox</description>
         </attribute>
         <attribute name="g4ara">
-            <channel>sad:g4RA</channel>
+            <channel>sad:g4RA.VAL</channel>
             <type>DOUBLE</type>
             <description>G4 RA</description>
         </attribute>
         <attribute name="g4aframe">
-            <channel>sad:g4InputFrame</channel>
+            <channel>sad:g4InputFrame.VAL</channel>
             <type>STRING</type>
             <description>G4 Frame</description>
         </attribute>
         <attribute name="m2ZUserOffset">
-            <channel>sad:m2ZUserOffset</channel>
+            <channel>sad:m2ZUserOffset.VAL</channel>
             <type>DOUBLE</type>
             <description>M2 z user offset</description>
         </attribute>

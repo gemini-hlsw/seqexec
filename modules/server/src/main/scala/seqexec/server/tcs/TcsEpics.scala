@@ -768,7 +768,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   )
 
   private val m1GuideAttr: CaAttribute[BinaryOnOff] =
-    tcsState.addEnum("m1Guide", s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide")
+    tcsState.addEnum("m1Guide", s"${TcsTop}im:m1GuideOn.VAL", classOf[BinaryOnOff], "M1 guide")
 
   override def m1Guide: F[BinaryOnOff] = safeAttributeF(m1GuideAttr)
 
@@ -784,7 +784,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val m2GuideStateAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum(
     "m2GuideState",
-    s"${TcsTop}om:m2GuideState",
+    s"${TcsTop}om:m2GuideState.VAL",
     classOf[BinaryOnOff],
     "M2 guiding state"
   )
@@ -850,7 +850,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "pwfs1On",
-    s"${TcsTop}drives:p1Integrating",
+    s"${TcsTop}drives:p1Integrating.VAL",
     classOf[BinaryYesNo],
     "P1 integrating"
   )
@@ -859,7 +859,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val pwfs2OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "pwfs2On",
-    s"${TcsTop}drives:p2Integrating",
+    s"${TcsTop}drives:p2Integrating.VAL",
     classOf[BinaryYesNo],
     "P2 integrating"
   )
@@ -868,7 +868,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val oiwfsOnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "oiwfsOn",
-    s"${TcsTop}drives:oiIntegrating",
+    s"${TcsTop}drives:oiIntegrating.VAL",
     classOf[BinaryYesNo],
     "P2 integrating"
   )
