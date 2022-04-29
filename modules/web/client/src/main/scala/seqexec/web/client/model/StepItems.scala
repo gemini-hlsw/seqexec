@@ -67,6 +67,7 @@ object StepItems {
       (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK"), c) => c
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, None, c @ Some(_))      => c
+        case (Instrument.F2, Some("Custom Mask"), c)                                       => c
         case (Instrument.F2, a @ Some(_), _)                                               => a
         case (_, Some(b), _)                                                               =>
           fpuNameMapper(i)(b)
