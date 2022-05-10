@@ -381,7 +381,7 @@ object AltairControllerEpics {
         PauseReturn(
           wasPaused = false,
           L.debug(s"Skipped pausing Altair LGS(strap = $strap, sfo = $sfo) guiding").some,
-          reasons.offsetO.isDefined,
+          reasons.offsetO.isDefined && (currCfg.sfoLoop === LgsSfoControl.Enable || currCfg.strapLoop),
           GuideCapabilities(canGuideM2 =
                               currCfg.sfoLoop === LgsSfoControl.Enable || currCfg.strapLoop,
                             canGuideM1 = true
