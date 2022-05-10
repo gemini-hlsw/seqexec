@@ -65,7 +65,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Filter.Y_G0344                 => ("Y_G0344", "open2-8")
     case Filter.HeII_G0340              => ("HeII_G0340", "open2-8")
     case Filter.HeIIC_G0341             => ("open1-6", "HeIIC_G0341")
-    case Filter.SII_G0335               => ("open1-6", "SII_G0335")
+    case Filter.SII_G0335               => ("SII_G0335", "open2-8")
     case Filter.Ha_G0336                => ("open1-6", "Ha_G0336")
     case Filter.HaC_G0337               => ("open1-6", "HaC_G0337")
     case Filter.OIII_G0338              => ("open1-6", "OIII_G0338")
