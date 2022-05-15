@@ -217,7 +217,7 @@ object EpicsUtil {
 
       // `resultGuard` and `lock` are used for synchronization.
       val resultGuard = new AtomicInteger(1)
-      val lock        = new ReentrantLock()
+      val lock        = new ReentrantLock
 
       // First we verify that the attribute doesn't already have the required value.
       // NOTE: It was possible to lose a change to the right value if it happened between here and the line that

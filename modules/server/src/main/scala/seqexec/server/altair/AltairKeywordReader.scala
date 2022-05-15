@@ -123,7 +123,7 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         zaO   <- sys.aoza
       } yield {
         val d = (modela - roofO) / modelb
-        val k = f + (d / 1000.0)
+        val k = f + d / 1000.0
         val r = f * k / (k - f)
         r * math.cos(zaO.toRadians) / 1000.0
       }

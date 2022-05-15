@@ -136,7 +136,7 @@ package client {
 
     def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] =
       Sync[F].delay {
-        val aggregate     = new StatusHandlerAggregate()
+        val aggregate     = new StatusHandlerAggregate
         val statusService = new StatusService(aggregate, "statusService", "*")
         statusService.startJms(c)
         StatusStreamer(aggregate, statusService)

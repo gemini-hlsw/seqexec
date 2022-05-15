@@ -33,8 +33,8 @@ object CalQueueSeq {
     val siO  = seqO ^|-> SequenceView.metadata ^|-> SequenceMetadata.instrument
     val siS  = seqO ^|-> SequenceView.status
 
-    (Getter(sidO.headOption)
-      .zip(Getter(siO.headOption).zip(Getter(siS.headOption)))) >>> {
+    Getter(sidO.headOption)
+      .zip(Getter(siO.headOption).zip(Getter(siS.headOption))) >>> {
       case (Some(id), (Some(i), Some(s))) => CalQueueSeq(id, i, s).some
       case _                              => none
     }

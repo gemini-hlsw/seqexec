@@ -205,9 +205,9 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
     assert(
       qso.forall(x =>
-        x.sequences(seqId).current.actions.isEmpty && (x
+        x.sequences(seqId).current.actions.isEmpty && x
           .sequences(seqId)
-          .status === SequenceState.Completed)
+          .status === SequenceState.Completed
       )
     )
 

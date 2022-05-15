@@ -131,10 +131,10 @@ package object table {
             fb(a).flatMap { v =>
               cw.get(b)
                 .map {
-                  case b @ Some((l, _)) =>
+                  case b @ Some(l, _) =>
                     val vl = v.length
                     if (vl > l) (vl, v).some else b
-                  case _                => none
+                  case _              => none
                 }
                 .getOrElse((v.length, v).some)
             }
@@ -142,7 +142,7 @@ package object table {
         }
         m.toList.toMap
       }
-      .collect { case (b, Some((_, t))) =>
+      .collect { case (b, Some(_, t)) =>
         b -> {
           // We calculate the actual pixel width at the end
           val v = tableTextWidth(t) + adj.get(b).orEmpty

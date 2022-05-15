@@ -214,10 +214,10 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
   // Stream seqexec events to clients and a ping
   private def anonymize(e: SeqexecEvent) =
     // Hide the name and target name for anonymous users
-    (telescopeTargetNameT
+    telescopeTargetNameT
       .set("*****")
       .andThen(observeTargetNameT.set("*****"))
-      .andThen(sequenceNameT.set("")))(e)
+      .andThen(sequenceNameT.set(""))(e)
 
   // Filter out NullEvents from the engine
   private def filterOutNull =

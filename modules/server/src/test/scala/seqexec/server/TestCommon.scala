@@ -170,7 +170,7 @@ object TestCommon {
       .get(oid)
       .exists(_.seq.status.isCompleted)
 
-  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
+  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry).unsafeRunSync()
 
   private val gpiSim: IO[GpiController[IO]] = GpiClient
     .simulatedGpiClient[IO]

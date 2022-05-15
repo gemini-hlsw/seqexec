@@ -26,7 +26,7 @@ final case class StateKeywordsReader[F[_]: Applicative](
   observer:   Option[Observer]
 ) {
   private def encodeCondition(c: Option[Int]): F[String] =
-    c.map(c => (if (c === 100) "Any" else s"$c-percentile")).getOrElse("UNKNOWN").pure[F]
+    c.map(c => if (c === 100) "Any" else s"$c-percentile").getOrElse("UNKNOWN").pure[F]
 
   def observerName: F[String]       =
     observer.map(_.value).filter(_.nonEmpty).getOrElse("observer").pure[F]

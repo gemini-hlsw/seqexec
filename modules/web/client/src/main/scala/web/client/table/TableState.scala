@@ -99,7 +99,7 @@ final case class TableState[A: Eq](
           case _ => (id, id)
         }
       }
-      (TableState.userModified[A].set(IsModified) >>> rc >>> nc)(this)
+      TableState.userModified[A].set(IsModified) >>> rc >>> nc (this)
     }
   }
 
@@ -231,7 +231,7 @@ final case class TableState[A: Eq](
           cb(ColumnRenderArgs(m, i, w, false)).some
 
         case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _), i) =>
-          val beforeLast = i < (lf - 1)
+          val beforeLast = i < lf - 1
           val w          = max((s.width.toDouble - fw) * p, mw)
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
 

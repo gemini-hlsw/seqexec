@@ -45,7 +45,7 @@ final case class NSCurrent(
   expTime:       Time
 ) {
   def lastSubexposure: Boolean =
-    (exposureCount + 1) === totalCycles * NsSequence.length
+    exposureCount + 1 === totalCycles * NsSequence.length
 
   def firstSubexposure: Boolean = exposureCount === 0
 
@@ -58,7 +58,7 @@ object NSCurrent {
   implicit val showNSCurrent: Show[NSCurrent] = Show.show { a =>
     s"NS State: file=${a.fileId}, cycle=${a.cycle + 1}, stage=${NsSequence.toList
         .lift(a.exposureCount % NsSequence.length)
-        .getOrElse("Unknown")}/${(a.exposureCount % NsSequence.length) + 1}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
+        .getOrElse("Unknown")}/${a.exposureCount % NsSequence.length + 1}, subexposure=${a.exposureCount + 1}, expTime=${a.expTime}"
   }
 }
 

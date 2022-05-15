@@ -746,11 +746,9 @@ object SessionQueueTable extends Columns {
       ): VdomElement
 
   private def initialState(p: Props): State =
-    (
-      State.tableState.set(p.sequences.tableState) >>>
-        State.prevObsIds.set(p.obsIds) >>>
-        State.prevLoggedIn.set(p.loggedIn)
-    )(State.InitialState)
+    State.tableState.set(p.sequences.tableState) >>>
+      State.prevObsIds.set(p.obsIds) >>>
+      State.prevLoggedIn.set(p.loggedIn) (State.InitialState)
 
   private def onResize(b: Backend): Size => Callback =
     s =>
@@ -775,20 +773,18 @@ object SessionQueueTable extends Columns {
           List(
             (s: State) =>
               s.lastSize.fold(s)(ls =>
-                (
-                  State.userModified
-                    .modify { um =>
-                      // If login state changes discard user modifications
-                      if (props.loggedIn =!= state.prevLoggedIn) {
-                        NotModified
-                      } else um
-                    }
-                    .andThen(
-                      State.tableState.modify(
-                        _.recalculateWidths(ls, props.visibleColumns, props.columnWidths)
-                      )
+                State.userModified
+                  .modify { um =>
+                    // If login state changes discard user modifications
+                    if (props.loggedIn =!= state.prevLoggedIn) {
+                      NotModified
+                    } else um
+                  }
+                  .andThen(
+                    State.tableState.modify(
+                      _.recalculateWidths(ls, props.visibleColumns, props.columnWidths)
                     )
-                )(s)
+                  )(s)
               ),
             State.prevObsIds.set(props.obsIds),
             State.prevLoggedIn.set(props.loggedIn)

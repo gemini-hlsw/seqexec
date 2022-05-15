@@ -137,7 +137,7 @@ final case class CalQueueTable(queueId: QueueId, data: CalQueueFocus)
       .find { case (s, _) =>
         seqState(s.id).exists(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
       }
-      .map(i => ((i._2 + 1) to rowCount).toList)
+      .map(i => (i._2 + 1 to rowCount).toList)
       .orEmpty
 }
 
@@ -487,12 +487,10 @@ object CalQueueTable {
         State.DefaultRO.tableState.columns
       }
 
-      (
-        State.animationRendered.set(animationRendered) >>>
-          State.moved.set(moved) >>>
-          State.columns.set(cols) >>>
-          State.prevLastOp.set(props.data.lastOp)
-      )(state)
+      State.animationRendered.set(animationRendered) >>>
+        State.moved.set(moved) >>>
+        State.columns.set(cols) >>>
+        State.prevLastOp.set(props.data.lastOp) (state)
     }
     .componentDidMount($ => $.backend.resetAnim($.props))
     .componentDidUpdate($ => $.backend.setTimeout($.backend.resetAnim($.currentProps), 1.second))

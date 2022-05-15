@@ -29,13 +29,13 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
     Event.modifyState[F, EngineState[F], SeqEvent](
       { st: EngineState[F] =>
         if (execEngine.canUnload(seqId)(st)) {
-          (EngineState.sequences[F].modify(ss => ss - seqId) >>>
+          EngineState.sequences[F].modify(ss => ss - seqId) >>>
             EngineState.selected.modify(ss =>
               ss.toList.filter { case (_, x) => x =!= seqId }.toMap
             ) >>>
             EngineState.queues.modify(
               _.view.mapValues(ExecutionQueue.queue.modify(_.filterNot(_ === seqId))).toMap
-            ))(st)
+            ) (st)
         } else st
       }.withEvent(UnloadSequence(seqId)).toHandle
     )

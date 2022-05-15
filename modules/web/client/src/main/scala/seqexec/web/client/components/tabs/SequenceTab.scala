@@ -233,7 +233,7 @@ object SequenceTab {
         State.loading
           .set(false)
           .some
-          .filter(_ => preview && (id =!= newId || (wasLoading && !isLoading)))
+          .filter(_ => preview && (id =!= newId || wasLoading && !isLoading))
           .toList :::
           List(
             State.prevTabId.set(newId),

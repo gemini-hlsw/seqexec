@@ -42,7 +42,7 @@ object FreeLDAPAuthenticationService {
 
   // Natural transformation to IO
   def toF[F[_]: Sync](c: LDAPConnection): LdapOp ~> F =
-    new (LdapOp ~> F) {
+    new LdapOp ~> F {
       def apply[A](fa: LdapOp[A]) =
         fa match {
           case LdapOp.AuthenticateOp(u, p)       => Sync[F].delay(c.authenticate(u, p))
@@ -86,7 +86,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
   private val Domain  = "@gemini.edu"
 
   lazy val ldapOptions: LDAPConnectionOptions = {
-    val opts = new LDAPConnectionOptions()
+    val opts = new LDAPConnectionOptions
     opts.setConnectTimeoutMillis(Timeout)
     opts
   }

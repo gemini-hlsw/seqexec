@@ -94,7 +94,7 @@ object InstrumentControllerSim {
         obsStateRef.update(ObserveState.remainingTime.set(observeState.remainingTime)) *>
           ObserveCommandResult.Paused.pure[F].widen
       } else if (timeout.exists(_ <= 0)) {
-        F.raiseError(SeqexecException(new TimeoutException()))
+        F.raiseError(SeqexecException(new TimeoutException))
       } else if (observeState.remainingTime < TIC) {
         log(s"Simulate $name observation completed") *>
           ObserveCommandResult.Success.pure[F].widen

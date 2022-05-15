@@ -417,7 +417,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           startStepId + i,
           Monoid.empty[DataId],
           config = CleanConfig(
-            new DefaultConfig(),
+            new DefaultConfig,
             Map(
               (TELESCOPE_KEY / "Base:name", targetName),
               (OBSERVE_KEY / OBS_CLASS_PROP, obC.headerValue()),
@@ -458,7 +458,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -489,7 +489,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -520,7 +520,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -551,7 +551,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -582,7 +582,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -613,7 +613,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -644,7 +644,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -679,7 +679,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
@@ -709,13 +709,13 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
         seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default) *>
           seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
-    } yield inside(result) { case Some((out, sf)) =>
+    } yield inside(result) { case Some(out, sf) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
@@ -748,7 +748,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
@@ -780,7 +780,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
@@ -818,7 +818,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
           startStepId + i,
           Monoid.empty[DataId],
           config = CleanConfig(
-            new DefaultConfig(),
+            new DefaultConfig,
             Map(
               (OBSERVE_KEY / OBS_CLASS_PROP, obC.headerValue()),
               (OBSERVE_KEY / OBSERVE_TYPE_PROP, obT)
@@ -847,7 +847,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
@@ -881,7 +881,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
@@ -893,7 +893,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                             RunOverride.Default
         ) *>
           seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
-    } yield inside(result) { case Some((out, sf)) =>
+    } yield inside(result) { case Some(out, sf) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
@@ -924,7 +924,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
+      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry)
       seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-

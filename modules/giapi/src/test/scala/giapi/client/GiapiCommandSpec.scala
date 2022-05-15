@@ -39,7 +39,7 @@ object GmpCommands {
     // Local in memory broker
     val amq                     = new ActiveMQJmsProvider(amqUrl)
     amq.startConnection()
-    val cs                      = new CommandSender() {
+    val cs                      = new CommandSender {
       // This is essentially an instrument simulator
       // we test several possible scenarios
       override def sendCommand(command: JCommand, listener: CompletionListener): HandlerResponse =

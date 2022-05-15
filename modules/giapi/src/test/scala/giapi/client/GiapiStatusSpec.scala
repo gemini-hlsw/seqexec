@@ -41,7 +41,7 @@ object GmpStatus {
       amq.startConnection()
 
       // Setup status listeners and db to answer status queries
-      val database    = new StatusDatabase()
+      val database    = new StatusDatabase
       val dispatcher  = new JmsStatusDispatcher("Status Dispatcher")
       dispatcher.startJms(amq)
       val msgConsumer = new BaseMessageConsumer(

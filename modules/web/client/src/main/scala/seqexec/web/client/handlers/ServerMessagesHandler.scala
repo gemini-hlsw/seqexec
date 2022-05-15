@@ -108,11 +108,12 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           refreshRequestE
         }
       val displayNames    =
-        (u.map(u =>
+        u.map(
+        u =>
           if (value.displayNames.contains(u.username))
             value.displayNames
-          else value.displayNames + (u.username -> u.displayName)
-        )).getOrElse(value.displayNames)
+          else value.displayNames + (u.username -> u.displayName))
+          .getOrElse(value.displayNames)
       updated(
         value.copy(user = u,
                    displayNames = displayNames,

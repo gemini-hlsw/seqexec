@@ -281,18 +281,18 @@ object TcsSouthControllerEpicsAo {
     ): Boolean = {
       val distanceSquared = calcMoveDistanceSquared(current.base, demand.tc)
 
-      val isAnyGemsSourceUsed = (demand.gaos.isCwfs1Used && current.cwfs1.isActive) ||
-        (demand.gaos.isCwfs2Used && !current.cwfs2.isActive) ||
-        (demand.gaos.isCwfs3Used && !current.cwfs3.isActive) ||
-        (demand.gaos.isOdgw1Used && !current.odgw1.isActive) ||
-        (demand.gaos.isOdgw2Used && !current.odgw2.isActive) ||
-        (demand.gaos.isOdgw3Used && !current.odgw3.isActive) ||
-        (demand.gaos.isOdgw4Used && !current.odgw4.isActive)
+      val isAnyGemsSourceUsed = demand.gaos.isCwfs1Used && current.cwfs1.isActive ||
+        demand.gaos.isCwfs2Used && !current.cwfs2.isActive ||
+        demand.gaos.isCwfs3Used && !current.cwfs3.isActive ||
+        demand.gaos.isOdgw1Used && !current.odgw1.isActive ||
+        demand.gaos.isOdgw2Used && !current.odgw2.isActive ||
+        demand.gaos.isOdgw3Used && !current.odgw3.isActive ||
+        demand.gaos.isOdgw4Used && !current.odgw4.isActive
 
       distanceSquared.exists(dd =>
-        (isAnyGemsSourceUsed && dd > AoOffsetThreshold * AoOffsetThreshold) ||
-          (demand.gaos.isP1Used && dd > pwfs1OffsetThreshold * pwfs1OffsetThreshold) ||
-          (demand.gaos.isOIUsed && demand.inst.oiOffsetGuideThreshold.exists(t => dd > t * t))
+        isAnyGemsSourceUsed && dd > AoOffsetThreshold * AoOffsetThreshold ||
+          demand.gaos.isP1Used && dd > pwfs1OffsetThreshold * pwfs1OffsetThreshold ||
+          demand.gaos.isOIUsed && demand.inst.oiOffsetGuideThreshold.exists(t => dd > t * t)
       )
 
     }
@@ -381,7 +381,7 @@ object TcsSouthControllerEpicsAo {
       def calc(c: GuiderSensorOption, d: GuiderSensorOption) =
         (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
 
-      (AoTcsConfig
+      AoTcsConfig
         .gds[GemsGuiders, GemsConfig]
         .modify(
           (AoGuidersConfig.pwfs1[GemsGuiders] ^<-> tagIso ^|-> GuiderConfig.detector)
@@ -404,7 +404,7 @@ object TcsSouthControllerEpicsAo {
                 (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff)
                   .fold(M2GuideConfig.M2GuideOff, current.base.telescopeGuideConfig.m2Guide)
               )
-          ) >>> normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(
+          ) >>> normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding (
         demand
       )
 
@@ -468,8 +468,8 @@ object TcsSouthControllerEpicsAo {
       gaosEnabled: Boolean
     ): F[EpicsTcsAoConfig] = {
       // If the demand turned off any WFS, normalize will turn off the corresponding processing
-      val normalizedGuiding = (normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>>
-        normalizeMountGuiding)(demand)
+      val normalizedGuiding = normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>>
+        normalizeMountGuiding (demand)
 
       val paramList = guideParams(subsystems, current, normalizedGuiding)
 
