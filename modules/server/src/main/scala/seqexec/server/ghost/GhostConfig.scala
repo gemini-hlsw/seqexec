@@ -56,8 +56,6 @@ sealed trait GhostConfig {
 
   def ifu1Config: Configuration =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
-  println(ifu1Config)
-  println(s"fiber $fiberAgitator1 ${GhostConfig.fiberConfig1(fiberAgitator1)}")
 
   def ifu2Config: Configuration
   def channelConfig: Configuration =
