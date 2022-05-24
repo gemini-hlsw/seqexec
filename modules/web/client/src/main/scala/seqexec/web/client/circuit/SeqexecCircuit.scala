@@ -63,7 +63,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
 object SeqexecCircuit
     extends Circuit[SeqexecAppRootModel]
     with ReactConnector[SeqexecAppRootModel] {
-  addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
+  addProcessor(new LoggingProcessor[SeqexecAppRootModel])
 
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =

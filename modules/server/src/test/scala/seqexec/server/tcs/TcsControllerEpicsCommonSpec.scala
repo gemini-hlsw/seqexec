@@ -122,72 +122,66 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     // Big offset with PWFS1 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
-            tag[P1Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
+          tag[P1Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe true
 
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs1OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
+          M1GuideConfig.M1GuideOn(M1Source.PWFS1)
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideConfig.M1GuideOn(M1Source.PWFS1)
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
-            tag[P1Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
+          tag[P1Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe true
 
     // Small offset with PWFS1 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs1OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs1OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
-            tag[P1Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs1).set(
+          tag[P1Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe false
   }
 
@@ -195,72 +189,66 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     // Big offset with PWFS2 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
-            tag[P2Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
+          tag[P2Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe true
 
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs2OffsetThreshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
+          M1GuideConfig.M1GuideOn(M1Source.PWFS2)
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideConfig.M1GuideOn(M1Source.PWFS2)
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
-            tag[P2Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
+          tag[P2Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe true
 
     // Small offset with PWFS2 in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](pwfs2OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](pwfs2OffsetThreshold / 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
-            tag[P2Config](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.pwfs2).set(
+          tag[P2Config](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
           )
-      )(baseConfig)
+        ) (baseConfig)
     ) shouldBe false
 
   }
@@ -271,75 +259,69 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     // Big offset with OIWFS in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](threshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](threshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
-            tag[OIConfig](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
+          tag[OIConfig](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
-          ) >>>
-          BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some))
-      )(baseConfig)
+          )
+        ) >>>
+        BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some)) (baseConfig)
     ) shouldBe true
 
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](threshold * 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](threshold * 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
+          M1GuideConfig.M1GuideOn(M1Source.OIWFS)
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideConfig.M1GuideOn(M1Source.OIWFS)
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
-            tag[OIConfig](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
+          tag[OIConfig](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
-          ) >>>
-          BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some))
-      )(baseConfig)
+          )
+        ) >>>
+        BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some)) (baseConfig)
     ) shouldBe true
 
     // Small offset with OIWFS in use
     TcsControllerEpicsCommon.mustPauseWhileOffsetting(
       baseCurrentStatus,
-      (
-        (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
-          InstrumentOffset(
-            tag[OffsetP](threshold / 2.0 * FOCAL_PLANE_SCALE),
-            tag[OffsetQ](Arcseconds(0.0))
-          ).some
+      (BasicTcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
+        InstrumentOffset(
+          tag[OffsetP](threshold / 2.0 * FOCAL_PLANE_SCALE),
+          tag[OffsetQ](Arcseconds(0.0))
+        ).some
+      ) >>>
+        (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
+          M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
         ) >>>
-          (BasicTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
-          ) >>>
-          (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
-            tag[OIConfig](
-              GuiderConfig(
-                ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
-                GuiderSensorOn
-              )
+        (BasicTcsConfig.gds ^|-> BasicGuidersConfig.oiwfs).set(
+          tag[OIConfig](
+            GuiderConfig(
+              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal),
+              GuiderSensorOn
             )
-          ) >>>
-          BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some))
-      )(baseConfig)
+          )
+        ) >>>
+        BasicTcsConfig.inst.set(DummyInstrument(Instrument.GmosS, threshold.some)) (baseConfig)
     ) shouldBe false
   }
 
@@ -459,7 +441,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       TestTcsEvent.Pwfs1StopObserveCmd,
       TestTcsEvent.Pwfs1ProbeFollowCmd("Off"),
       TestTcsEvent.Pwfs1ProbeGuideConfig("Off", "Off", "Off", "Off")
-    ).map(head should not contain (_))
+    ).map(head should not contain _)
 
     guideOnEvents.map(tail should contain(_))
 
@@ -611,7 +593,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       TestTcsEvent.Pwfs2StopObserveCmd,
       TestTcsEvent.Pwfs2ProbeFollowCmd("Off"),
       TestTcsEvent.Pwfs2ProbeGuideConfig("Off", "Off", "Off", "Off")
-    ).map(head should not contain (_))
+    ).map(head should not contain _)
 
     guideOnEvents.map(tail should contain(_))
 
@@ -764,7 +746,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       TestTcsEvent.OiwfsStopObserveCmd,
       TestTcsEvent.OiwfsProbeFollowCmd("Off"),
       TestTcsEvent.OiwfsProbeGuideConfig("Off", "Off", "Off", "Off")
-    ).map(head should not contain (_))
+    ).map(head should not contain _)
 
     guideOnEvents.map(tail should contain(_))
 

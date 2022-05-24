@@ -310,7 +310,7 @@ object TcsNorthControllerEpicsAo {
           )
       }
 
-      (AoTcsConfig
+      AoTcsConfig
         .gds[GuiderConfig @@ AoGuide, AltairConfig]
         .modify(
           (AoGuidersConfig.pwfs1[GuiderConfig @@ AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
@@ -323,7 +323,7 @@ object TcsNorthControllerEpicsAo {
           .set(M1GuideConfig.M1GuideOff)
       ) >>> (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
         m2config
-      ) >>> normalizeMountGuiding)(demand)
+      ) >>> normalizeMountGuiding (demand)
     }
 
     def calcAoPauseConditions(
@@ -400,9 +400,9 @@ object TcsNorthControllerEpicsAo {
       aoWhatCanGuide: GuideCapabilities
     ): F[EpicsTcsAoConfig] = {
 
-      val enableM1Guide = (demand.gds.pwfs1.isActive && demand.gc.m1Guide.uses(M1Source.PWFS1)) ||
-        (demand.gds.oiwfs.isActive && demand.gc.m1Guide.uses(M1Source.OIWFS)) ||
-        (aoWhatCanGuide.canGuideM1 && demand.gc.m1Guide.uses(M1Source.GAOS))
+      val enableM1Guide = demand.gds.pwfs1.isActive && demand.gc.m1Guide.uses(M1Source.PWFS1) ||
+        demand.gds.oiwfs.isActive && demand.gc.m1Guide.uses(M1Source.OIWFS) ||
+        aoWhatCanGuide.canGuideM1 && demand.gc.m1Guide.uses(M1Source.GAOS)
 
       val m2config = demand.gc.m2Guide match {
         case M2GuideConfig.M2GuideOff               => M2GuideConfig.M2GuideOff
@@ -423,14 +423,13 @@ object TcsNorthControllerEpicsAo {
       }
 
       // If the demand turned off any WFS, normalize will turn off the corresponding processing
-      val newGuideConfig = (
+      val newGuideConfig =
         enableM1Guide.fold[TcsNorthAoConfig => TcsNorthAoConfig](
           identity,
           (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(M1GuideConfig.M1GuideOff)
         ) >>> (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
           m2config
-        ) >>> normalizeMountGuiding
-      )(demand)
+        ) >>> normalizeMountGuiding (demand)
 
       val paramList = guideParams(subsystems, current, newGuideConfig)
 

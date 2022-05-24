@@ -182,7 +182,7 @@ lazy val seqexec_web_client = project
     // Configurations for webpack
     fastOptJS / webpackBundlingMode := BundlingMode.LibraryOnly(),
     fullOptJS / webpackBundlingMode := BundlingMode.Application,
-    webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackResources                := baseDirectory.value / "src" / "webpack" * "*.js",
     webpackDevServerPort            := 9090,
     webpack / version               := "4.46.0",
     startWebpackDevServer / version := "3.11.0",

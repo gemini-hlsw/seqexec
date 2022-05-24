@@ -229,7 +229,7 @@ object GmosConfig {
       xRange: Short,
       yRange: Short
     ): Option[GmosCustomRoiEntry] =
-      if ((xMin > 0) && (yMin > 0) && (xRange > 0) && (yRange > 0))
+      if (xMin > 0 && yMin > 0 && xRange > 0 && yRange > 0)
         Some(new GmosCustomRoiEntry(xMin, yMin, xRange, yRange) {})
       else
         None

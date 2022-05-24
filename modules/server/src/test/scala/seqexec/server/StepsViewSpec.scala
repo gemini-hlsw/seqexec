@@ -217,7 +217,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   "StepsView" should "not run 2nd sequence because it's using the same resource" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
@@ -228,7 +228,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         executeEngine
       ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -250,7 +250,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
@@ -261,7 +261,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         executeEngine
       ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -314,13 +314,13 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "not run a system configuration if sequence is running" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
     ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -345,7 +345,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "not run a system configuration if system is in use" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
@@ -356,7 +356,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         executeEngine
       ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -381,7 +381,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   it should "run a system configuration when other sequence is running with other systems" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.GmosS, TCS)),
       executeEngine
@@ -392,7 +392,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         executeEngine
       ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -447,7 +447,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
   }
 
   "StepsView startFrom" should "not start the sequence if there is a resource conflict" in {
-    val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](
+    val s0 = ODBSequencesLoader.loadSequenceEndo[IO](
       seqObsId1,
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
@@ -458,7 +458,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         executeEngine
       ) >>>
       (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
     val runStepId = 2
 

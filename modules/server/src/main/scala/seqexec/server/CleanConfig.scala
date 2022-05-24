@@ -63,7 +63,7 @@ object CleanConfig {
   type ConfigWiper = Config => Map[ItemKey, AnyRef]
 
   // We want a new one each time this is called as the underlying Config is mutable
-  def empty: CleanConfig = apply(new DefaultConfig())
+  def empty: CleanConfig = apply(new DefaultConfig)
 
   // GMOS arcs, flats and biases in a N&S sequence have shuffle parameters, even if that is
   // not supported. The shuffling is automatically disabled by setting the useNS flag to false.

@@ -473,7 +473,7 @@ object StepsTable extends Columns {
     }
 
     def unapply(l: StepRow): Option[Step] =
-      Some((l.step))
+      Some(l.step)
 
     val Zero: StepRow =
       (new js.Object).asInstanceOf[StepRow]
@@ -851,7 +851,7 @@ object StepsTable extends Columns {
     // Separately calculate the state to send upstream
     val newTs             =
       if (hasScrolledBefore)
-        (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))($.state)
+        State.userModified.set(IsModified) >>> State.scrollPosition.set(pos) ($.state)
       else
         State.scrollPosition.set(pos)($.state)
     val posDiff           = abs(pos.toDouble - $.state.tableState.scrollPosition.toDouble)
@@ -1072,15 +1072,13 @@ object StepsTable extends Columns {
     )
 
   def initialState(p: Props): State =
-    (
-      State.tableState.set(p.tableState) >>>
-        State.selected.set(p.selectedStep) >>>
-        State.prevStepSummaries.set(p.stepsList.map(StepSummary.fromStep)) >>>
-        State.prevSelectedStep.set(p.selectedStep) >>>
-        State.prevSequenceState.set(p.sequenceState) >>>
-        State.prevRunning.set(p.runningStep) >>>
-        State.prevResourceRunRequested.set(p.tabOperations.resourceRunRequested)
-    )(State.InitialState)
+    State.tableState.set(p.tableState) >>>
+      State.selected.set(p.selectedStep) >>>
+      State.prevStepSummaries.set(p.stepsList.map(StepSummary.fromStep)) >>>
+      State.prevSelectedStep.set(p.selectedStep) >>>
+      State.prevSequenceState.set(p.sequenceState) >>>
+      State.prevRunning.set(p.runningStep) >>>
+      State.prevResourceRunRequested.set(p.tabOperations.resourceRunRequested) (State.InitialState)
 
   private def updateStep(obsId: Observation.Id, i: StepId): Callback =
     SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i))

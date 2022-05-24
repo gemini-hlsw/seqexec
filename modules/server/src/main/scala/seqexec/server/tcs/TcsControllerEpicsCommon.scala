@@ -219,7 +219,7 @@ object TcsControllerEpicsCommon {
     def calc(c: GuiderSensorOption, d: GuiderSensorOption) =
       (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
 
-    (BasicTcsConfig.gds.modify(
+    BasicTcsConfig.gds.modify(
       (BasicGuidersConfig.pwfs1 ^<-> tagIso ^|-> GuiderConfig.detector)
         .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
         (BasicGuidersConfig.pwfs2 ^<-> tagIso ^|-> GuiderConfig.detector)
@@ -239,7 +239,7 @@ object TcsControllerEpicsCommon {
           (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff)
             .fold(M2GuideConfig.M2GuideOff, current.telescopeGuideConfig.m2Guide)
         )
-    ) >>> normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>> normalizeMountGuiding)(demand)
+    ) >>> normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>> normalizeMountGuiding (demand)
   }
 
   def applyParam[F[_]: Applicative, T: Eq, C](
@@ -675,8 +675,8 @@ object TcsControllerEpicsCommon {
     ): F[BaseEpicsTcsConfig] = {
 
       // If the demand turned off any WFS, normalize will turn off the corresponding processing
-      val normalizedGuiding = (normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>>
-        normalizeMountGuiding)(demand)
+      val normalizedGuiding = normalizeM1Guiding(false) >>> normalizeM2Guiding(false) >>>
+        normalizeMountGuiding (demand)
 
       val paramList = guideParams(subsystems, current, normalizedGuiding)
 

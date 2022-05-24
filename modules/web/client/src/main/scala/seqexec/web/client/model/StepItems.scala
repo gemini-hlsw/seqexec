@@ -257,7 +257,7 @@ object StepItems {
       hasControls && selected.exists(_ === step.id)
 
     def detailRows(selected: Option[StepId], hasControls: Boolean): DetailRows =
-      if (((isNS || isNSInError) && canControlThisStep(selected, hasControls)) || isNSObserving)
+      if ((isNS || isNSInError) && canControlThisStep(selected, hasControls) || isNSObserving)
         DetailRows.TwoDetailRows
       else if (isACRunning || isACInError)
         DetailRows.OneDetailRow

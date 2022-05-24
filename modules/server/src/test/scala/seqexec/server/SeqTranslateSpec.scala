@@ -59,9 +59,9 @@ class SeqTranslateSpec extends AnyFlatSpec {
   )
 
   private val baseState: EngineState[IO] =
-    (ODBSequencesLoader.loadSequenceEndo[IO](seqId, seqg, executeEngine) >>>
+    ODBSequencesLoader.loadSequenceEndo[IO](seqId, seqg, executeEngine) >>>
       (EngineState.sequenceStateIndex[IO](seqId) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+        .set(SequenceState.Running.init) (EngineState.default[IO])
 
   // Observe started
   private val s0: EngineState[IO] = EngineState

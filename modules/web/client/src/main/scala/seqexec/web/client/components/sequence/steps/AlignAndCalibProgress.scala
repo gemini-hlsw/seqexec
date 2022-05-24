@@ -98,7 +98,7 @@ object ACProgressBar {
       )(s"Align and Calib: $msg")
     }
     .getDerivedStateFromProps((p, s) =>
-      (State.counter.modify(_ + 1) >>> State.msg.set(p.step.show))(s)
+      State.counter.modify(_ + 1) >>> State.msg.set(p.step.show) (s)
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

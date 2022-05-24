@@ -101,7 +101,7 @@ object HeadersSideBar {
       setInterval(submitIfChangedOp *> submitIfChangedDN, 2.second)
 
     def submitIfChangedDN: Callback =
-      ($.state.zip($.props)) >>= { case (s, p) =>
+      $.state.zip($.props) >>= { case (s, p) =>
         s.displayName
           .map(updateDisplayName)
           .getOrEmpty
@@ -109,7 +109,7 @@ object HeadersSideBar {
       }
 
     def submitIfChangedOp: Callback =
-      ($.state.zip($.props)) >>= { case (s, p) =>
+      $.state.zip($.props) >>= { case (s, p) =>
         s.operator
           .map(updateOperator)
           .getOrEmpty
@@ -212,13 +212,13 @@ object HeadersSideBar {
             State.operator.set(operator),
             State.prevOperator.set(operator)
           ).some
-            .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
+            .filter(_ => operator =!= s.prevOperator && operator.nonEmpty)
             .orEmpty :::
             List(
               State.displayName.set(displayName),
               State.prevDisplayName.set(displayName)
             ).some
-              .filter(_ => (displayName =!= s.prevDisplayName) && displayName.nonEmpty)
+              .filter(_ => displayName =!= s.prevDisplayName && displayName.nonEmpty)
               .orEmpty
         )(s)
       }

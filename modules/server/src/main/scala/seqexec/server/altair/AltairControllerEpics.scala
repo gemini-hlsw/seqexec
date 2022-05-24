@@ -217,7 +217,7 @@ object AltairControllerEpics {
     ): F[Unit] = {
       val guidedStep = reasons.contains(ResumeCondition.GaosGuideOn)
 
-      if ((aoOn && !wasPaused) || !guidedStep)
+      if (aoOn && !wasPaused || !guidedStep)
         L.debug(
           s"Skipped resuming Altair NGS guiding because wasPaused=$wasPaused, guidedStep=$guidedStep"
         )
@@ -399,7 +399,7 @@ object AltairControllerEpics {
     ): F[Unit] = {
       val guidedStep   = reasons.contains(ResumeCondition.GaosGuideOn)
       val alreadyThere =
-        (currentCfg.sfoLoop === LgsSfoControl.Enable && sfo) && (currentCfg.strapLoop && strap)
+        currentCfg.sfoLoop === LgsSfoControl.Enable && sfo && (currentCfg.strapLoop && strap)
 
       if (!alreadyThere && guidedStep)
         L.debug(

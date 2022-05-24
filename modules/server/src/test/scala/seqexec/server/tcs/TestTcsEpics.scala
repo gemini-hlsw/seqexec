@@ -738,9 +738,9 @@ case class TestTcsEpics[F[_]: Sync](
       override protected def event(st: State): TestTcsEvent = evBuilder(cmdL.get(st).param1)
 
       override protected def cmd(st: State): State =
-        (statusL.set(cmdL.get(st).param1) >>> parkL.modify { v =>
+        statusL.set(cmdL.get(st).param1) >>> parkL.modify { v =>
           if (cmdL.get(st).param1 === "On") false else v
-        })(st)
+        }(st)
     }
 
   private def wfsObserveCmd(
