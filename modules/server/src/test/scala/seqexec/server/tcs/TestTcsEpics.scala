@@ -1216,4 +1216,10 @@ object TestTcsEpics {
     aoPrepareControlMatrixCmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0)
   )
 
+  def build[F[_]: Sync](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =
+    for {
+      stR  <- Ref.of[F, TestTcsEpics.State](baseState)
+      outR <- Ref.of[F, List[TestTcsEpics.TestTcsEvent]](List.empty)
+    } yield TestTcsEpics[F](stR, outR)
+
 }

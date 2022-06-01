@@ -280,4 +280,10 @@ object TestAltairEpics {
     btoControlCmd = TestEpicsCommand1.State[String](false, "OFF")
   )
 
+  def build[F[_]: Sync](baseState: TestAltairEpics.State): F[TestAltairEpics[F]] =
+    for {
+      st  <- Ref.of(baseState)
+      out <- Ref.of(List.empty[TestAltairEpics.Event])
+    } yield TestAltairEpics[F](st, out)
+
 }

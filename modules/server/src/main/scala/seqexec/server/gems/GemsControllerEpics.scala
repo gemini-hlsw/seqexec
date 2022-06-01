@@ -69,9 +69,9 @@ class GemsControllerEpics[F[_]: Async](
 
     reasons.nonEmpty.option {
       L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
-        epicsSys.LoopControl.setCommand(PauseCmd) *>
-        epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.post(CmdTimeout) *>
+        epicsSys.loopControl.setCommand(PauseCmd) *>
+        epicsSys.loopControl.setReasons(reasons.mkString("|")) *>
+        epicsSys.loopControl.post(CmdTimeout) *>
         L.debug("Pause command sent to GeMS")
     }
 
@@ -87,9 +87,9 @@ class GemsControllerEpics[F[_]: Async](
 
     reasons.nonEmpty.option {
       L.debug(s"Send resume command to GeMS, reasons: $reasons") *>
-        epicsSys.LoopControl.setCommand(ResumeCmd) *>
-        epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.post(CmdTimeout) *>
+        epicsSys.loopControl.setCommand(ResumeCmd) *>
+        epicsSys.loopControl.setReasons(reasons.mkString("|")) *>
+        epicsSys.loopControl.post(CmdTimeout) *>
         epicsSys.waitForStableLoops(LoopStabilizationTimeout) *>
         L.debug("Resume command sent to GeMS")
     }
