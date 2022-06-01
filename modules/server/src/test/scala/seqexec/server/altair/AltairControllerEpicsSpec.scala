@@ -4,8 +4,7 @@
 package seqexec.server.altair
 
 import cats.syntax.all._
-import cats.effect.{ IO, Sync }
-import cats.effect.concurrent.Ref
+import cats.effect.IO
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
@@ -25,7 +24,6 @@ import squants.space.LengthConversions._
 import squants.space.AngleConversions._
 
 class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
-  import AltairControllerEpicsSpec._
 
   private implicit def unsafeLogger: Logger[IO] = NoOpLogger.impl[IO]
 
@@ -41,7 +39,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     FocalPlaneOffset(tag[OffsetX](0.0.millimeters), tag[OffsetY](0.0.millimeters))
 
   test("AltairControllerEpics should not pause nor resume NGS AO guiding if nothing has changed") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -49,7 +47,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg = AltairController.Ngs(false, (0.0.millimeters, 0.0.millimeters))
 
@@ -84,7 +82,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test("AltairControllerEpics should pause and resume NGS AO guiding for big enough offsets") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -92,7 +90,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg = AltairController.Ngs(false, (0.0.millimeters, 0.0.millimeters))
 
@@ -130,7 +128,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test("AltairControllerEpics should enable target filter for small offsets") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -138,7 +136,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg = AltairController.Ngs(false, (0.0.millimeters, 0.0.millimeters))
 
@@ -164,7 +162,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test("AltairControllerEpics should not enable target filter when coming form unguided step") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = false,
         aoFollow = true,
@@ -175,7 +173,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
       .toFocalPlaneOffset(0.0.arcseconds)
 
-    val tcsEpics = buildTcsController[IO](
+    val tcsEpics = TestTcsEpics.build[IO](
       aoGuidedTcs.copy(xoffsetPoA1 = skyOffset.x.toMillimeters,
                        yoffsetPoA1 = skyOffset.y.toMillimeters
       )
@@ -205,7 +203,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test("AltairControllerEpics should pause and not resume NGS AO for unguided step") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -213,7 +211,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg = AltairController.Ngs(false, (0.0.millimeters, 0.0.millimeters))
 
@@ -248,7 +246,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test("AltairControllerEpics should pause and not resume NGS AO for unguided step with offset") {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -256,7 +254,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg = AltairController.Ngs(false, (0.0.millimeters, 0.0.millimeters))
 
@@ -296,7 +294,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   test(
     "AltairControllerEpics should control sfo and strap for LGS AO on big offsets, but not pause AO"
   ) {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -310,7 +308,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg =
       AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
@@ -355,7 +353,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   test(
     "AltairControllerEpics should not enable target filter for LGS mode when coming from an unguided step."
   ) {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -372,7 +370,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
       .toFocalPlaneOffset(0.0.arcseconds)
 
-    val tcsEpics = buildTcsController[IO](
+    val tcsEpics = TestTcsEpics.build[IO](
       aoGuidedTcs.copy(xoffsetPoA1 = skyOffset.x.toMillimeters,
                        yoffsetPoA1 = skyOffset.y.toMillimeters
       )
@@ -404,7 +402,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   test(
     "AltairControllerEpics should enable target filter for LGS mode when applying small offsets."
   ) {
-    val altairEpics = buildAltairController[IO](
+    val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = true,
         aoFollow = true,
@@ -418,7 +416,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       )
     )
 
-    val tcsEpics = buildTcsController[IO](aoGuidedTcs)
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
 
     val altairCfg =
       AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
@@ -443,20 +441,5 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(r.guideWhilePaused.canGuideM1)
     }
   }
-
-}
-
-object AltairControllerEpicsSpec {
-  def buildAltairController[F[_]: Sync](baseState: TestAltairEpics.State): F[TestAltairEpics[F]] =
-    for {
-      st  <- Ref.of(baseState)
-      out <- Ref.of(List.empty[TestAltairEpics.Event])
-    } yield TestAltairEpics[F](st, out)
-
-  def buildTcsController[F[_]: Sync](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =
-    for {
-      stR  <- Ref.of[F, TestTcsEpics.State](baseState)
-      outR <- Ref.of[F, List[TestTcsEpics.TestTcsEvent]](List.empty)
-    } yield TestTcsEpics[F](stR, outR)
 
 }
