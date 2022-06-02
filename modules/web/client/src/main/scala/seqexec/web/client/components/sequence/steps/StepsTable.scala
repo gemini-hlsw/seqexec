@@ -473,7 +473,7 @@ object StepsTable extends Columns {
     }
 
     def unapply(l: StepRow): Option[Step] =
-      Some((l.step))
+      Some(l.step)
 
     val Zero: StepRow =
       (new js.Object).asInstanceOf[StepRow]

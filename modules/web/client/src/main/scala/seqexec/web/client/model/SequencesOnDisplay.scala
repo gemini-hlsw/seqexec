@@ -502,12 +502,14 @@ object SequencesOnDisplay {
     id: Observation.Id
   ): Getter[SequencesOnDisplay, Option[SeqexecTabActive]] =
     SequencesOnDisplay.tabs.asGetter >>> {
-      _.withFocus.toList.collect {
-        case (i: SequenceTab, a) if i.obsId === id =>
-          val selected =
-            if (a) TabSelected.Selected else TabSelected.Background
-          SeqexecTabActive(i, selected)
-      }.headOption
+      _.withFocus.toList
+        .collect {
+          case (i: SequenceTab, a) if i.obsId === id =>
+            val selected =
+              if (a) TabSelected.Selected else TabSelected.Background
+            SeqexecTabActive(i, selected)
+        }
+        .headOption
     }
 
   def changeOverrideControls(

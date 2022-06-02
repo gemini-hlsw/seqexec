@@ -176,9 +176,11 @@ object GemsHeader {
       sendKeywords[F](id, kwClient, keywords) *>
         tcsReader.gwfsMap
           .flatMap {
-            _.toList.map { case (v, gs) =>
-              guideWith(gs).map(cntKeywords(v, gs, _))
-            }.sequence
+            _.toList
+              .map { case (v, gs) =>
+                guideWith(gs).map(cntKeywords(v, gs, _))
+              }
+              .sequence
           }
           .map(_.flattenOption)
           .flatMap(sendKeywords(id, kwClient, _))

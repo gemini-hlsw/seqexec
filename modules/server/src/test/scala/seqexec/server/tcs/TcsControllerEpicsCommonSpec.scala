@@ -96,7 +96,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff))
     ),
     AGConfig(LightPath(Sky, Gmos), None),
-    DummyInstrument(Instrument.GmosS, (1.millimeters).some)
+    DummyInstrument(Instrument.GmosS, 1.millimeters.some)
   )
 
   "TcsControllerEpicsCommon" should "not pause guiding if it is not necessary" in {

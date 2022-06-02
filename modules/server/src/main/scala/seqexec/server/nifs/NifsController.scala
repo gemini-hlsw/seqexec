@@ -125,7 +125,7 @@ object NifsController {
       case Left(_)                                  => 1 // TBD What should this be?
     }
 
-    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds))
+    cfg.coadds * (cfg.exposureTime + readOutTime.seconds)
   }
 
 }

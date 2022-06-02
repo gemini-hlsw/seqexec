@@ -690,7 +690,7 @@ object SeqexecEngine {
       Event.modifyState[F, EngineState[F], SeqEvent] {
         (
           (st: EngineState[F]) =>
-            if (!testRunning(st))(lens.withEvent(AddLoadedSequence(i, sid, user, clientId)))(st)
+            if (!testRunning(st)) lens.withEvent(AddLoadedSequence(i, sid, user, clientId))(st)
             else (st, NotifyUser(InstrumentInUse(sid, i), clientId))
         ).toHandle
       }
@@ -1074,32 +1074,30 @@ object SeqexecEngine {
       clientId: ClientId
     ): HandleType[F, Unit] = Handle(
       StateT[F, EngineState[F], (Unit, Option[Stream[F, EventType[F]]])] { st: EngineState[F] =>
-        (
-          (EngineState.sequences[F] ^|-? index(sid))
-            .getOption(st)
-            .map { obsseq =>
-              (EngineState
-                .sequences[F]
-                .modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
-                refreshSequence(sid) >>>
-                EngineState.instrumentLoadedL[F](obsseq.seqGen.instrument).set(sid.some) >>> {
-                  (_,
-                   ((),
-                    Stream[Pure, EventType[F]](
-                      Event.modifyState[F, EngineState[F], SeqEvent](
-                        { s: EngineState[F] => s }
-                          .withEvent(
-                            AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
-                          )
-                          .toHandle
-                      )
-                    ).covary[F].some
-                   )
-                  )
-                })(st)
-            }
-            .getOrElse((st, ((), None)))
-          )
+        (EngineState.sequences[F] ^|-? index(sid))
+          .getOption(st)
+          .map { obsseq =>
+            (EngineState
+              .sequences[F]
+              .modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
+              refreshSequence(sid) >>>
+              EngineState.instrumentLoadedL[F](obsseq.seqGen.instrument).set(sid.some) >>> {
+                (_,
+                 ((),
+                  Stream[Pure, EventType[F]](
+                    Event.modifyState[F, EngineState[F], SeqEvent](
+                      { s: EngineState[F] => s }
+                        .withEvent(
+                          AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
+                        )
+                        .toHandle
+                    )
+                  ).covary[F].some
+                 )
+                )
+              })(st)
+          }
+          .getOrElse((st, ((), None)))
           .pure[F]
       }
     )

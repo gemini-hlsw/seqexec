@@ -48,8 +48,8 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
   private def configure(config: CFG): F[CommandResult] = {
     val cfg: F[Configuration] = configuration(config)
     val isEmpty               = cfg.map(_.config.isEmpty)
-    isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
-                  .pure[F]),
+    isEmpty.ifM(CommandResult(HandlerResponse.Response.ACCEPTED)
+                  .pure[F],
                 cfg.flatMap(client.genericApply)
     )
   }.adaptError(adaptGiapiError)
