@@ -88,8 +88,8 @@ object GpiStatusApply extends GpiLookupTables {
             subSystemsNotMatching.map {
               case true  =>
                 // force the obs mode if a subsystem doesn't match
-                (config.remove(GpiObservationMode.applyItem) |+| Configuration
-                  .single(GpiObservationMode.applyItem, obsModeLUT.getOrElse(o, UNKNOWN_SETTING)))
+                config.remove(GpiObservationMode.applyItem) |+| Configuration
+                  .single(GpiObservationMode.applyItem, obsModeLUT.getOrElse(o, UNKNOWN_SETTING))
               case false =>
                 config
             }

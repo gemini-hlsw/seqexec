@@ -22,8 +22,8 @@ class EpicsUtilSpec extends munit.CatsEffectSuite {
     val filtered: CaWindowStabilizer[Integer] =
       new CaWindowStabilizer(attr, Duration.ofMillis(50), executor)
     attr.setValue(1)
-    (IO.delay(filtered.restart) *>
-      EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), ""))
+    IO.delay(filtered.restart) *>
+      EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), "")
   }
 
 }

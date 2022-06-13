@@ -121,15 +121,13 @@ object LoginBox {
                 <.div(Icon("attention"), m)
               )
             ),
-            (
-              GridColumn(
-                textAlign = Right,
-                floated = floats.Right,
-                width = Six
-              )(
-                Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
-                Button(^.tpe := "submit")("Login")
-              )
+            GridColumn(
+              textAlign = Right,
+              floated = floats.Right,
+              width = Six
+            )(
+              Button(onClick = closeBox)(^.tpe := "button")("Cancel"),
+              Button(^.tpe := "submit")("Login")
             )
           )
         )

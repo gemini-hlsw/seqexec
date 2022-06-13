@@ -21,19 +21,19 @@ trait DisplayNamePersistence {
   def persistDisplayName(result: Map[String, String])(implicit ec: ExecutionContext): Future[Unit] =
     Future {
       import io.circe.syntax._
-      (for {
+      for {
         ls <- Option(window.localStorage)
         m  <- Option(result.asJson.spaces2SortKeys)
-      } yield ls.setItem("displayNames", m))
+      } yield ls.setItem("displayNames", m)
     }.void
 
   def removeDisplayName(result: Map[String, String])(implicit ec: ExecutionContext): Future[Unit] =
     Future {
       import io.circe.syntax._
-      (for {
+      for {
         ls <- Option(window.localStorage)
         m  <- Option(result.asJson.spaces2SortKeys)
-      } yield ls.setItem("displayNames", m))
+      } yield ls.setItem("displayNames", m)
     }.void
 
 }

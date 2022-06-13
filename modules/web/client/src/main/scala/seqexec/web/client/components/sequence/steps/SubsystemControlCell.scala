@@ -117,7 +117,7 @@ object SubsystemControlCell {
               labelPosition = labeled,
               icon = buttonIcon.isDefined,
               onClickE =
-                if (p.canOperate)(requestResourceCall(p.id, p.stepId, r))
+                if (p.canOperate) requestResourceCall(p.id, p.stepId, r)
                 else js.undefined,
               clazz = SeqexecStyles.defaultCursor.unless_(p.canOperate)
             )(buttonIcon.whenDefined(identity), r.show)

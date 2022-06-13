@@ -57,7 +57,7 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
     def tickTotal: Callback =
       b.props.zip(b.state) >>= { case (p, s) =>
         val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-        (b.setStateL(State.value)(min(p.maxValue, next)))
+        b.setStateL(State.value)(min(p.maxValue, next))
           .when(!p.paused && !p.stopping)
           .void
       }
