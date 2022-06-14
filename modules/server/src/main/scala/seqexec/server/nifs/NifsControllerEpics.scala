@@ -12,7 +12,6 @@ import scala.math.abs
 import cats._
 import cats.data.OptionT
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
@@ -36,6 +35,7 @@ import seqexec.server.failUnlessM
 import shapeless.tag
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object NifsLookupTables {
 
@@ -117,7 +117,7 @@ object NifsControllerEpics extends NifsEncoders {
     }.map(tag[NumberOfFowSamplesI][Int])
       .toOption
 
-  def apply[F[_]: Timer: Async](
+  def apply[F[_]: Temporal: Async](
     epicsSys:   => NifsEpics[F]
   )(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
 

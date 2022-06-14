@@ -10,7 +10,6 @@ import cats._
 import cats.data._
 import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import org.typelevel.log4cats.Logger
@@ -33,6 +32,7 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
@@ -265,7 +265,7 @@ object TcsControllerEpicsCommon {
       .option((c: C) => act(demand) *> lens.set(demand)(c).pure[F])
       .map(_.withDebug(s"$name($current =!= $demand"))
 
-  private class TcsControllerEpicsCommonImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(implicit
+  private class TcsControllerEpicsCommonImpl[F[_]: Async: Temporal](epicsSys: TcsEpics[F])(implicit
     L:                                                                     Logger[F]
   ) extends TcsControllerEpicsCommon[F]
       with TcsControllerEncoders
@@ -798,7 +798,7 @@ object TcsControllerEpicsCommon {
 
   }
 
-  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
+  def apply[F[_]: Async: Logger: Temporal](epicsSys: TcsEpics[F]): TcsControllerEpicsCommon[F] =
     new TcsControllerEpicsCommonImpl(epicsSys)
 
   val DefaultTimeout: FiniteDuration = FiniteDuration(10, SECONDS)

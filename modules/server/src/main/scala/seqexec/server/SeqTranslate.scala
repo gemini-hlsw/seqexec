@@ -10,8 +10,6 @@ import cats.data.EitherT
 import cats.data.NonEmptySet
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.ExecutedDataset
 import edu.gemini.seqexec.odb.SeqexecSequence
@@ -79,32 +77,33 @@ import seqexec.server.tcs.TcsController.LightSource
 import seqexec.server.tcs._
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.{ Ref, Temporal }
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
     cio:              Concurrent[F],
-    tio:              Timer[F]
+    tio:              Temporal[F]
   ): F[(List[Throwable], Option[SequenceGen[F]])]
 
   def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
     cio:                 Concurrent[F],
-    tio:                 Timer[F]
+    tio:                 Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def abortObserve(seqId: Observation.Id)(implicit
     cio:                  Concurrent[F],
-    tio:                  Timer[F]
+    tio:                  Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-    tio:                  Timer[F],
+    tio:                  Temporal[F],
     cio:                  Concurrent[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def resumePaused(seqId: Observation.Id)(implicit
     cio:                  Concurrent[F],
-    tio:                  Timer[F]
+    tio:                  Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
 }
@@ -127,7 +126,7 @@ object SeqTranslate {
       isNightSeq: Boolean
     )(implicit
       cio:        Concurrent[F],
-      tio:        Timer[F]
+      tio:        Temporal[F]
     ): F[StepGen[F]] = {
       def buildStep(
         dataId:    DataId,
@@ -219,7 +218,7 @@ object SeqTranslate {
 
     override def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
       cio:                       Concurrent[F],
-      tio:                       Timer[F]
+      tio:                       Temporal[F]
     ): F[(List[Throwable], Option[SequenceGen[F]])] = {
 
       // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
@@ -298,7 +297,7 @@ object SeqTranslate {
 
     override def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
       cio:                          Concurrent[F],
-      tio:                          Timer[F]
+      tio:                          Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
         case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop(graceful)
@@ -310,7 +309,7 @@ object SeqTranslate {
 
     override def abortObserve(seqId: Observation.Id)(implicit
       cio:                           Concurrent[F],
-      tio:                           Timer[F]
+      tio:                           Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
         case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
@@ -322,7 +321,7 @@ object SeqTranslate {
     }
 
     override def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-      tio:                           Timer[F],
+      tio:                           Temporal[F],
       cio:                           Concurrent[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
@@ -334,7 +333,7 @@ object SeqTranslate {
 
     override def resumePaused(seqId: Observation.Id)(implicit
       cio:                           Concurrent[F],
-      tio:                           Timer[F]
+      tio:                           Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = (st: EngineState[F]) => {
       val observeIndex: Option[(ObserveContext[F], Option[Time], Int)] =
         st.sequences
@@ -400,7 +399,7 @@ object SeqTranslate {
       endPaused(seqId, _.abortPaused)
 
     def toInstrumentSys(inst: Instrument)(implicit
-      ev:                     Timer[F],
+      ev:                     Temporal[F],
       cio:                    Concurrent[F]
     ): SystemOverrides => InstrumentSystem[F] = inst match {
       case Instrument.F2    =>

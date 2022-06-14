@@ -13,8 +13,6 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
@@ -51,8 +49,9 @@ import squants.Seconds
 import squants.Time
 import squants.space.Length
 import squants.space.LengthConversions._
+import cats.effect.{ Ref, Temporal }
 
-abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes](
+abstract class Gmos[F[_]: Concurrent: Temporal: Logger, T <: GmosController.SiteDependentTypes](
   val controller: GmosController[F, T],
   ss:             SiteSpecifics[T],
   nsCmdR:         Ref[F, Option[NSObserveCommand]]

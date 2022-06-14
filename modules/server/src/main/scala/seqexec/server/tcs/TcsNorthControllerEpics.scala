@@ -5,7 +5,6 @@ package seqexec.server.tcs
 
 import cats.data._
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
@@ -14,8 +13,9 @@ import seqexec.server.altair.Altair
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
+import cats.effect.Temporal
 
-final case class TcsNorthControllerEpics[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F])
+final case class TcsNorthControllerEpics[F[_]: Async: Logger: Temporal](epicsSys: TcsEpics[F])
     extends TcsNorthController[F] {
   private val commonController = TcsControllerEpicsCommon(epicsSys)
   private val aoController     = TcsNorthControllerEpicsAo(epicsSys)

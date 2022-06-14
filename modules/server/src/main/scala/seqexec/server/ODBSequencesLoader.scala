@@ -6,7 +6,6 @@ package seqexec.server
 import cats.ApplicativeError
 import cats.Endo
 import cats.effect.Concurrent
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
@@ -19,6 +18,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent._
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.UnrecognizedInstrument
+import cats.effect.Temporal
 
 final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
   odbProxy:            OdbProxy[F],
@@ -42,7 +42,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
 
   def loadEvents(seqId: Observation.Id)(implicit
     cio:                Concurrent[F],
-    tio:                Timer[F]
+    tio:                Temporal[F]
   ): F[List[EventType[F]]] = {
     // Three ways of handling errors are mixed here: java exceptions, Either and MonadError
     val t: F[(List[Throwable], Option[SequenceGen[F]])] =
@@ -92,7 +92,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
 
   def refreshSequenceList(odbList: List[Observation.Id], st: EngineState[F])(implicit
     cio:                           Concurrent[F],
-    tio:                           Timer[F]
+    tio:                           Temporal[F]
   ): F[List[EventType[F]]] = {
     val seqexecList = st.sequences.keys.toList
 

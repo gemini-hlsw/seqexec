@@ -3,8 +3,6 @@
 
 package seqexec.web.server
 
-import cats.effect.Blocker
-import cats.effect.ContextShift
 import cats.effect.Sync
 import cats.syntax.all._
 import lucuma.core.enum.Site
@@ -76,9 +74,7 @@ package object config {
     ProductHint[SystemsControlConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
 
   def loadConfiguration[F[_]: Sync: ContextShift](
-    config:  ConfigObjectSource,
-    blocker: Blocker
-  ): F[SeqexecConfiguration] =
+    config:  ConfigObjectSource): F[SeqexecConfiguration] =
     config.loadF[F, SeqexecConfiguration](blocker)
 
 }

@@ -8,7 +8,6 @@ import scala.xml.Elem
 
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.client.Client
@@ -21,6 +20,7 @@ import org.http4s.scalaxml._
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
+import cats.effect.Temporal
 
 /**
  * Gemini Data service client
@@ -40,7 +40,7 @@ trait GdsClient[F[_]] extends Http4sClientDsl[F] {
 object GdsClient {
 
   def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit
-    timer:                          Timer[F]
+    timer:                          Temporal[F]
   ): GdsClient[F] = new GdsClient[F] {
 
     private val client = {

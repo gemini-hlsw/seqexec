@@ -3,8 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.effect.{ IO, Sync, Timer }
-import cats.effect.concurrent.Ref
+import cats.effect.{ IO, Sync }
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import edu.gemini.spModel.core.Wavelength
@@ -48,13 +47,14 @@ import squants.space.AngleConversions._
 import squants.space.LengthConversions._
 
 import scala.concurrent.ExecutionContext
+import cats.effect.{ Ref, Temporal }
 
 class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester {
 
   import TcsControllerEpicsCommonSpec._
 
   private implicit def unsafeLogger: Logger[IO] = NoOpLogger.impl[IO]
-  private implicit val ioTimer: Timer[IO]       = IO.timer(ExecutionContext.global)
+  private implicit val ioTimer: Temporal[IO]       = IO.timer(ExecutionContext.global)
 
   private val baseCurrentStatus = BaseEpicsTcsConfig(
     Arcseconds(33.8),

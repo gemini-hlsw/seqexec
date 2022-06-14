@@ -10,7 +10,6 @@ import cats.Applicative
 import cats.FlatMap
 import cats.Functor
 import cats.data.StateT
-import cats.effect.Timer
 import cats.syntax.all._
 import fs2.Stream
 import seqexec.model.ObserveStage
@@ -18,19 +17,20 @@ import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object ProgressUtil {
   private val PollPeriod = FiniteDuration(1, SECONDS)
 
-  def fromF[F[_]: Functor: Timer](f: FiniteDuration => F[Progress]): Stream[F, Progress] =
+  def fromF[F[_]: Functor: Temporal](f: FiniteDuration => F[Progress]): Stream[F, Progress] =
     Stream.awakeEvery[F](PollPeriod).evalMap(f)
 
-  def fromFOption[F[_]: Functor: Timer](
+  def fromFOption[F[_]: Functor: Temporal](
     f: FiniteDuration => F[Option[Progress]]
   ): Stream[F, Progress] =
     Stream.awakeEvery[F](PollPeriod).evalMap(f).collect { case Some(p) => p }
 
-  def fromStateT[F[_]: FlatMap: Timer, S](
+  def fromStateT[F[_]: FlatMap: Temporal, S](
     fs: FiniteDuration => StateT[F, S, Progress]
   ): S => Stream[F, Progress] = s0 =>
     Stream
@@ -38,7 +38,7 @@ object ProgressUtil {
       .evalMapAccumulate(s0) { case (st, t) => fs(t).run(st) }
       .map(_._2)
 
-  def fromStateTOption[F[_]: FlatMap: Timer, S](
+  def fromStateTOption[F[_]: FlatMap: Temporal, S](
     fs: FiniteDuration => StateT[F, S, Option[Progress]]
   ): S => Stream[F, Progress] = s0 =>
     Stream
@@ -50,7 +50,7 @@ object ProgressUtil {
   /**
    * Simple simulated countdown
    */
-  def countdown[F[_]: Applicative: Timer](total: Time, elapsed: Time): Stream[F, Progress] =
+  def countdown[F[_]: Applicative: Temporal](total: Time, elapsed: Time): Stream[F, Progress] =
     ProgressUtil
       .fromF[F] { t: FiniteDuration =>
         val progress  = Milliseconds(t.toMillis) + elapsed
@@ -63,7 +63,7 @@ object ProgressUtil {
   /**
    * Simulated countdown with simulated observation stage
    */
-  def obsCountdown[F[_]: Applicative: Timer](total: Time, elapsed: Time): Stream[F, Progress] =
+  def obsCountdown[F[_]: Applicative: Temporal](total: Time, elapsed: Time): Stream[F, Progress] =
     Stream.emit(ObsProgress(total, RemainingTime(total), ObserveStage.Preparing)) ++
       countdown[F](total, elapsed) ++
       Stream.emit(ObsProgress(total, RemainingTime(0.0.seconds), ObserveStage.ReadingOut))
@@ -71,7 +71,7 @@ object ProgressUtil {
   /**
    * Simulated countdown with observation stage provided by instrument
    */
-  def obsCountdownWithObsStage[F[_]: Applicative: Timer](
+  def obsCountdownWithObsStage[F[_]: Applicative: Temporal](
     total:   Time,
     elapsed: Time,
     stage:   F[ObserveStage]
