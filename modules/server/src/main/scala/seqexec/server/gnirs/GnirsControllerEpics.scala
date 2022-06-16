@@ -59,6 +59,8 @@ trait GnirsEncoders {
     case SlitWidth.SmallPinhole => "SmPinholes"
     case SlitWidth.LargePinhole => "LgPinholes"
     case SlitWidth.Acquisition  => "Acq"
+    case SlitWidth.HR_IFU       => "HR-IFU"
+    case SlitWidth.LR_IFU       => "LR-IFU"
   }
 
   implicit val deckerEncoder: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
@@ -70,8 +72,8 @@ trait GnirsEncoders {
     case Decker.LONG_CAM_X_DISP     => "LCXD"
     case Decker.IFU                 => "IFU1"
     case Decker.WOLLASTON           => "Woll"
-    case Decker.LR_IFU              => "IFU1"
-    case Decker.HR_IFU              => "IFU2"
+    case Decker.LR_IFU              => "LR-IFU"
+    case Decker.HR_IFU              => "HR-IFU"
   }
 
   implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {
