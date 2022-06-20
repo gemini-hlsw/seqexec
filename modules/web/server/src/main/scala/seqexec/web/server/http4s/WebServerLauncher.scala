@@ -30,13 +30,13 @@ import org.asynchttpclient.AsyncHttpClientConfig
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.http4s.asynchttpclient.client.AsyncHttpClient
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.Router
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.Server
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
 import org.http4s.server.middleware.{ Logger => Http4sLogger }
 import org.http4s.syntax.kleisli._
