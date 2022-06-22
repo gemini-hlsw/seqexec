@@ -115,6 +115,8 @@ object GnirsController {
     case object SmallPinhole extends SlitWidth
     case object LargePinhole extends SlitWidth
     case object Acquisition  extends SlitWidth
+    case object LR_IFU       extends SlitWidth
+    case object HR_IFU       extends SlitWidth
 
     implicit val eq: Eq[SlitWidth] = Eq.fromUniversalEquals
   }

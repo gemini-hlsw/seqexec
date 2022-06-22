@@ -261,6 +261,9 @@ object Gnirs {
     case SlitWidth.SW_6         => GnirsController.SlitWidth.Slit0_68.some
     case SlitWidth.SW_7         => GnirsController.SlitWidth.Slit1_00.some
     case SlitWidth.PUPIL_VIEWER => GnirsController.SlitWidth.PupilViewer.some
+    case SlitWidth.LR_IFU       => GnirsController.SlitWidth.LR_IFU.some
+    case SlitWidth.IFU          => GnirsController.SlitWidth.LR_IFU.some
+    case SlitWidth.HR_IFU       => GnirsController.SlitWidth.HR_IFU.some
     case _                      => None
   }
 
