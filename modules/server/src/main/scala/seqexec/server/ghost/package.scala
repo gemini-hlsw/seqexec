@@ -109,13 +109,30 @@ object IFUTargetType {
   implicit val ifuTargetTypeConfiguration: GiapiConfig[IFUTargetType] = _.targetType
 }
 
-final case class ChannelConfig(binning: GhostBinning, exposure: FiniteDuration, count: Int)
+sealed abstract class ReadNoiseGain(val value: String) extends Product with Serializable
+object ReadNoiseGain {
+
+  case object SlowLow  extends ReadNoiseGain(value = "CHIP_READOUT_SLOW")
+  case object FastLow  extends ReadNoiseGain(value = "CHIP_READOUT_MEDIUM")
+  case object FastHigh extends ReadNoiseGain(value = "CHIP_READOUT_FAST")
+
+  // implicit val ifuTargetTypeConfiguration: GiapiConfig[ReadNoiseGain] = _.targetType
+}
+
+final case class ChannelConfig(
+  binning:  GhostBinning,
+  exposure: FiniteDuration,
+  count:    Int,
+  readMode: ReadNoiseGain
+)
 
 object ChannelConfig {
 
-  implicit val eqGhostBinning: Eq[GhostBinning] = Eq.fromUniversalEquals
+  implicit val eqGhostBinning: Eq[GhostBinning]   = Eq.fromUniversalEquals
+  implicit val eqReadNoiseGain: Eq[ReadNoiseGain] = Eq.fromUniversalEquals
 
-  implicit val eqChannelConfig: Eq[ChannelConfig] = Eq.by(x => (x.binning, x.exposure, x.count))
+  implicit val eqChannelConfig: Eq[ChannelConfig] =
+    Eq.by(x => (x.binning, x.exposure, x.count, x.readMode))
 }
 
 // final case class TargetConfig(name: String, coords: Coordinates, guideFiber: Option[GuideFiberState])

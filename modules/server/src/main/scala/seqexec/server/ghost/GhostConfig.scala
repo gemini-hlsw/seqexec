@@ -19,6 +19,7 @@ import GhostConfig._
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig {
+  def obsType: String
   def blueConfig: ChannelConfig
   def redConfig: ChannelConfig
 
@@ -57,16 +58,41 @@ sealed trait GhostConfig {
   def ifu1Config: Configuration =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
 
+  def imageTypeConf = obsType.toLowerCase match {
+    case "bias" => "BIAS"
+    case "flat" => "FLAT"
+    case "dark" => "DARK"
+    case _      => "object"
+  }
+
   def ifu2Config: Configuration
+
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostBlueBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
+      giapiConfig(GhostBlueDuration, blueConfig.exposure.toMillis.toInt) |+|
+      giapiConfig(GhostBlueUnit, 0.001) |+|
+      giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
+      giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
+      giapiConfig(GhostBlueImageType, imageTypeConf) |+|
+      giapiConfig(GhostBlueDoDisplay, 1) |+|
+      giapiConfig(GhostBlueDoFlush, 1) |+|
+      giapiConfig(GhostBlueDoContinuous, 0) |+|
+      giapiConfig(GhostBlueDoReadout, 1) |+|
+      giapiConfig(GhostBlueDoSave, 1) |+|
+      giapiConfig(GhostBlueReadMode, blueConfig.readMode.value) |+|
       giapiConfig(GhostRedBinningRcf, redConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostRedBinningCcf, redConfig.binning.getSpatialBinning()) |+|
-      giapiConfig(GhostBlueExposureTime, blueConfig.exposure.toSeconds.toInt) |+|
-      giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
-      giapiConfig(GhostRedExposureTime, redConfig.exposure.toSeconds.toInt) |+|
-      giapiConfig(GhostRedExposureCount, redConfig.count)
+      giapiConfig(GhostRedDuration, blueConfig.exposure.toMillis.toInt) |+|
+      giapiConfig(GhostRedUnit, 0.001) |+|
+      giapiConfig(GhostRedRequestType, "HARDWARE") |+|
+      giapiConfig(GhostRedExposureCount, redConfig.count) |+|
+      giapiConfig(GhostRedImageType, imageTypeConf) |+|
+      giapiConfig(GhostRedDoDisplay, 1) |+|
+      giapiConfig(GhostRedDoFlush, 1) |+|
+      giapiConfig(GhostRedDoContinuous, 0) |+|
+      giapiConfig(GhostRedDoReadout, 1) |+|
+      giapiConfig(GhostRedDoSave, 1)
 
   def configuration: Configuration =
     GhostConfig.fiberConfig1(fiberAgitator1) |+|
@@ -126,6 +152,7 @@ object GhostConfig {
     giapiConfig(GhostFiberAgitator2, fa)
 
   def apply(
+    obsType:        String,
     blueConfig:     ChannelConfig,
     redConfig:      ChannelConfig,
     baseCoords:     Option[Coordinates],
@@ -144,15 +171,17 @@ object GhostConfig {
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
 
-    val sifu1     = determineType(srifu1Name)
-    val sifu2     = determineType(srifu2Name)
-    val hifu1     = determineType(hrifu1Name)
-    val hifu2     = determineType(hrifu2Name)
+    val sifu1 = determineType(srifu1Name)
+    val sifu2 = determineType(srifu2Name)
+    val hifu1 = determineType(hrifu1Name)
+    val hifu2 = determineType(hrifu2Name)
+
     val extracted = (sifu1, sifu2, hifu1, hifu2) match {
       case (Target(t), NoTarget, NoTarget, NoTarget)    =>
         srifu1Coords.map(
           StandardResolutionMode
-            .SingleTarget(blueConfig,
+            .SingleTarget(obsType,
+                          blueConfig,
                           redConfig,
                           baseCoords,
                           expTime,
@@ -166,7 +195,8 @@ object GhostConfig {
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .DualTarget(blueConfig,
+            .DualTarget(obsType,
+                        blueConfig,
                         redConfig,
                         baseCoords,
                         expTime,
@@ -182,7 +212,8 @@ object GhostConfig {
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .TargetPlusSky(blueConfig,
+            .TargetPlusSky(obsType,
+                           blueConfig,
                            redConfig,
                            baseCoords,
                            expTime,
@@ -197,7 +228,8 @@ object GhostConfig {
       case (SkyPosition, Target(t), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .SkyPlusTarget(blueConfig,
+            .SkyPlusTarget(obsType,
+                           blueConfig,
                            redConfig,
                            baseCoords,
                            expTime,
@@ -211,7 +243,8 @@ object GhostConfig {
         )
       case (NoTarget, NoTarget, Target(t), NoTarget)    =>
         hrifu1Coords.map(
-          HighResolutionMode.SingleTarget(blueConfig,
+          HighResolutionMode.SingleTarget(obsType,
+                                          blueConfig,
                                           redConfig,
                                           baseCoords,
                                           expTime,
@@ -225,7 +258,8 @@ object GhostConfig {
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
-            .TargetPlusSky(blueConfig,
+            .TargetPlusSky(obsType,
+                           blueConfig,
                            redConfig,
                            baseCoords,
                            expTime,
@@ -240,6 +274,7 @@ object GhostConfig {
       case _                                            =>
         None
     }
+
     extracted.toRight(ContentError("Response does not constitute a valid GHOST configuration"))
   }
 
@@ -294,6 +329,7 @@ sealed trait StandardResolutionMode extends GhostConfig {
 
 object StandardResolutionMode {
   final case class SingleTarget(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -306,11 +342,11 @@ object StandardResolutionMode {
   ) extends StandardResolutionMode {
     override def ifu2Config: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
-    println(s"Single target $ifu2Config")
   }
 
   implicit val srmSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,
@@ -322,6 +358,7 @@ object StandardResolutionMode {
   )
 
   final case class DualTarget(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -343,7 +380,8 @@ object StandardResolutionMode {
   }
 
   implicit val srmDualTargetEq: Eq[DualTarget] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,
@@ -357,6 +395,7 @@ object StandardResolutionMode {
   )
 
   final case class TargetPlusSky(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -377,7 +416,8 @@ object StandardResolutionMode {
   }
 
   implicit val srmTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,
@@ -390,6 +430,7 @@ object StandardResolutionMode {
   )
 
   final case class SkyPlusTarget(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -411,7 +452,8 @@ object StandardResolutionMode {
   }
 
   implicit val srmSkyPlusTargetEq: Eq[SkyPlusTarget] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,
@@ -448,6 +490,7 @@ sealed trait HighResolutionMode extends GhostConfig {
 
 object HighResolutionMode {
   final case class SingleTarget(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -463,7 +506,8 @@ object HighResolutionMode {
   }
 
   implicit val hrSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,
@@ -475,6 +519,7 @@ object HighResolutionMode {
   )
 
   final case class TargetPlusSky(
+    override val obsType:         String,
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
@@ -495,7 +540,8 @@ object HighResolutionMode {
   }
 
   implicit val hrTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
-    (x.blueConfig,
+    (x.obsType,
+     x.blueConfig,
      x.redConfig,
      x.baseCoords,
      x.expTime,

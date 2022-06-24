@@ -13,6 +13,8 @@ import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import lucuma.core.enum.LightSinkName
@@ -119,6 +121,12 @@ object Ghost {
 
     val MaxTargets = 8
 
+    def gainFromODB(n: GhostReadNoiseGain): ReadNoiseGain = n match {
+      case GhostReadNoiseGain.SLOW_LOW  => ReadNoiseGain.SlowLow
+      case GhostReadNoiseGain.FAST_LOW  => ReadNoiseGain.FastLow
+      case GhostReadNoiseGain.FAST_HIGH => ReadNoiseGain.FastHigh
+    }
+
     def userTargets: List[Option[Target]] = (for {
       i <- 1 to MaxTargets
     } yield {
@@ -160,6 +168,7 @@ object Ghost {
 
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
+          obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
 
           blueBinning  <- config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
           redBinning   <- config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
@@ -168,11 +177,26 @@ object Ghost {
           redExposure  <-
             config.extractObsAs[JDouble](SPGhost.RED_EXPOSURE_TIME_PROP).map(_.doubleValue())
           blueCount    <- config.extractObsAs[JInt](SPGhost.BLUE_EXPOSURE_COUNT_PROP).map(_.intValue())
+          blueReadMode <-
+            config
+              .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
           redCount     <- config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
+          redReadMode  <-
+            config
+              .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
 
           config <- GhostConfig.apply(
-                      blueConfig = ChannelConfig(blueBinning, blueExposure.second, blueCount),
-                      redConfig = ChannelConfig(redBinning, redExposure.second, redCount),
+                      obsType = obsType,
+                      blueConfig = ChannelConfig(blueBinning,
+                                                 blueExposure.second,
+                                                 blueCount,
+                                                 gainFromODB(blueReadMode)
+                      ),
+                      redConfig = ChannelConfig(redBinning,
+                                                redExposure.second,
+                                                redCount,
+                                                gainFromODB(redReadMode)
+                      ),
                       baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                       expTime = 1.minute,
                       fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
