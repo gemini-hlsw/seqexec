@@ -81,9 +81,10 @@ sealed trait GhostConfig {
       giapiConfig(GhostBlueDoReadout, 1) |+|
       giapiConfig(GhostBlueDoSave, 1) |+|
       giapiConfig(GhostBlueReadMode, blueConfig.readMode.value) |+|
+      giapiConfig(GhostBlueCcdRequestType, "CCD_CAMERA_EXPOSE") |+|
       giapiConfig(GhostRedBinningRcf, redConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostRedBinningCcf, redConfig.binning.getSpatialBinning()) |+|
-      giapiConfig(GhostRedDuration, blueConfig.exposure.toMillis.toInt) |+|
+      giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
       giapiConfig(GhostRedUnit, 0.001) |+|
       giapiConfig(GhostRedRequestType, "HARDWARE") |+|
       giapiConfig(GhostRedExposureCount, redConfig.count) |+|
@@ -92,7 +93,9 @@ sealed trait GhostConfig {
       giapiConfig(GhostRedDoFlush, 1) |+|
       giapiConfig(GhostRedDoContinuous, 0) |+|
       giapiConfig(GhostRedDoReadout, 1) |+|
-      giapiConfig(GhostRedDoSave, 1)
+      giapiConfig(GhostRedDoSave, 1) |+|
+      giapiConfig(GhostRedReadMode, redConfig.readMode.value) |+|
+      giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_EXPOSE")
 
   def configuration: Configuration =
     GhostConfig.fiberConfig1(fiberAgitator1) |+|
