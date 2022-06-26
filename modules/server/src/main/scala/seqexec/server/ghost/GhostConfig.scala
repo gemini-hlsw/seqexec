@@ -55,17 +55,32 @@ sealed trait GhostConfig {
     userTargets.zipWithIndex.map(Function.tupled(targetConfig)).combineAll |+|
       giapiConfig(GiapiStatusApply.GhostUserTargetCount, userTargets.length)
 
+  def ifuNone(ifuNum: IFUNum): Configuration =
+    giapiConfig(ifuNum.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+      giapiConfig(ifuNum.demandItem, DemandType.DemandNone: DemandType)
+
   def ifu1Config: Configuration =
-    GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
+    if (isScience)
+      GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
+    else
+      ifuNone(IFUNum.IFU1)
 
   def imageTypeConf = obsType.toLowerCase match {
     case "bias" => "BIAS"
     case "flat" => "FLAT"
     case "dark" => "DARK"
-    case _      => "object"
+    case _      => "OBJECT"
   }
 
-  def ifu2Config: Configuration
+  def isScience: Boolean = obsType.equalsIgnoreCase("object")
+
+  def ifu2Configuration: Configuration
+
+  final def ifu2Config: Configuration =
+    if (isScience)
+      ifu2Configuration
+    else
+      ifuNone(IFUNum.IFU1)
 
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
@@ -343,7 +358,7 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
   }
 
@@ -374,7 +389,7 @@ object StandardResolutionMode {
     ifu2Coordinates:              Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.Target(ifu2TargetName),
                             ifu2Coordinates,
@@ -410,7 +425,7 @@ object StandardResolutionMode {
     ifu2Coordinates:              Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.SkyPosition,
                             ifu2Coordinates,
@@ -445,7 +460,7 @@ object StandardResolutionMode {
     ifu2Coordinates:              Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends StandardResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.Target(ifu2TargetName),
                             ifu2Coordinates,
@@ -504,7 +519,7 @@ object HighResolutionMode {
     override val ifu1Coordinates: Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends HighResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
   }
 
@@ -534,7 +549,7 @@ object HighResolutionMode {
     ifu2Coordinates:              Coordinates,
     override val userTargets:     List[GemTarget]
   ) extends HighResolutionMode {
-    override def ifu2Config: Configuration =
+    override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.SkyPosition,
                             ifu2Coordinates,

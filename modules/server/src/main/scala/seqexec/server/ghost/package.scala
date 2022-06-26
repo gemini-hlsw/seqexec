@@ -45,8 +45,11 @@ object DemandType {
   case object DemandPark  extends DemandType {
     val demandType = "IFU_DEMAND_PARK"
   }
+  case object DemandNone  extends DemandType {
+    val demandType = "IFU_DEMAND_NONE"
+  }
   implicit val FiberAgitatorEnumerated: Enumerated[DemandType] =
-    Enumerated.of(DemandRADec, DemandXY, DemandPark)
+    Enumerated.of(DemandRADec, DemandXY, DemandPark, DemandNone)
 
   implicit val DemandTypeCconfiguration: GiapiConfig[DemandType] = _.demandType
 }
