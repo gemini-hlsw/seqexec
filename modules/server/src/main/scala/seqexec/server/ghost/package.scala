@@ -15,16 +15,18 @@ import scala.concurrent.duration.FiniteDuration
 sealed trait FiberAgitator extends Product with Serializable
 
 object FiberAgitator {
-  case object On  extends FiberAgitator
-  case object Off extends FiberAgitator
+  case object On   extends FiberAgitator
+  case object Off  extends FiberAgitator
+  case object None extends FiberAgitator
 
   implicit val FiberAgitatorEnumerated: Enumerated[FiberAgitator] =
-    Enumerated.of(On, Off)
+    Enumerated.of(On, Off, None)
 
   implicit val FiberAgitatorGiapi: GiapiConfig[FiberAgitator] =
     GiapiConfig.instance {
-      case On  => "FA_DEMAND_ON"
-      case Off => "FA_DEMAND_OFF"
+      case On   => "FA_DEMAND_ON"
+      case Off  => "FA_DEMAND_OFF"
+      case None => "FA_DEMAND_NONE"
     }
 
   def fromBoolean(b: Boolean): FiberAgitator =

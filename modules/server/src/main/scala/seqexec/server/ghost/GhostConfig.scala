@@ -80,7 +80,7 @@ sealed trait GhostConfig {
     if (isScience)
       ifu2Configuration
     else
-      ifuNone(IFUNum.IFU1)
+      ifuNone(IFUNum.IFU2)
 
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
@@ -113,8 +113,13 @@ sealed trait GhostConfig {
       giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_EXPOSE")
 
   def configuration: Configuration =
-    GhostConfig.fiberConfig1(fiberAgitator1) |+|
-      GhostConfig.fiberConfig2(fiberAgitator2) |+|
+    if (isScience) {
+      GhostConfig.fiberConfig1(fiberAgitator1) |+|
+        GhostConfig.fiberConfig2(fiberAgitator2)
+    } else {
+      GhostConfig.fiberConfig1(FiberAgitator.None) |+|
+        GhostConfig.fiberConfig2(FiberAgitator.None)
+    } |+|
       ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig
 
 }
