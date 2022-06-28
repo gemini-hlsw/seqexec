@@ -5,9 +5,6 @@ package seqexec.server
 
 import cats.effect.IO
 import cats.effect.Clock
-import cats.effect.ContextShift
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import org.typelevel.log4cats.noop.NoOpLogger
 import scala.concurrent.duration._
 import seqexec.model.enum.ObserveCommandResult
@@ -15,11 +12,12 @@ import seqexec.model.dhs._
 import squants.time.TimeConversions._
 import scala.concurrent.ExecutionContext
 import cats.tests.CatsSuite
+import cats.effect.{ Ref, Temporal }
 
 class InstrumentControllerSimSpec extends CatsSuite {
   private implicit def unsafeLogger = NoOpLogger.impl[IO]
 
-  val noWaitTio: Timer[IO] = new Timer[IO] {
+  val noWaitTio: Temporal[IO] = new Temporal[IO] {
     override def clock: Clock[IO]                          = Clock.create[IO]
     override def sleep(duration: FiniteDuration): IO[Unit] =
       IO.unit
@@ -27,7 +25,7 @@ class InstrumentControllerSimSpec extends CatsSuite {
 
   val tick = FiniteDuration(250, MILLISECONDS)
 
-  def simulator(implicit t: Timer[IO]) =
+  def simulator(implicit t: Temporal[IO]) =
     InstrumentControllerSim.unsafeWithTimes[IO]("sim",
                                                 FiniteDuration(10, MILLISECONDS),
                                                 FiniteDuration(5, MILLISECONDS),

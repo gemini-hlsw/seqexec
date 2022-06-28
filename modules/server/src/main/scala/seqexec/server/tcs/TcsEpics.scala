@@ -13,7 +13,6 @@ import cats.effect.Async
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
@@ -28,6 +27,7 @@ import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Angle
 import squants.space.Degrees
+import cats.effect.Temporal
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all
@@ -200,14 +200,14 @@ trait TcsEpics[F[_]] {
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                  Timer[F]
+    T:                                  Temporal[F]
   ): F[Unit]
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
-  def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit]
+  def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit]
 
   def hourAngle: F[String]
 
@@ -912,7 +912,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Timer[F]
+    T:                                           Temporal[F]
   ): F[Unit] =
     T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *> (
       if (stabilizationTime.isZero) {
@@ -936,7 +936,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
   private val AGSettleTime                                                              = FiniteDuration(1100, MILLISECONDS)
-  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit] =
     T.sleep(AGSettleTime) *>
       Sync[F]
         .delay(filteredAGInPositionAttr.restart)

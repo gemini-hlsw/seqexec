@@ -19,6 +19,7 @@ import seqexec.server.gmos.GmosController.Config.Beam
 import seqexec.server.gmos.GmosController.SouthTypes
 import seqexec.server.gmos.GmosController.southConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
+import cats.effect.Temporal
 
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue {
@@ -129,7 +130,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
 }
 
 object GmosSouthControllerEpics {
-  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, SouthTypes] = {
+  def apply[F[_]: Async: Temporal: Logger](sys: => GmosEpics[F]): GmosController[F, SouthTypes] = {
     implicit val encoders = GmosSouthEncoders
     GmosControllerEpics[F, SouthTypes](sys, southConfigTypes)
   }

@@ -7,7 +7,6 @@ import java.time.Duration
 import cats._
 import cats.data.NonEmptySet
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import monocle.Lens
@@ -44,6 +43,7 @@ import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
 import squants.time.TimeConversions._
 import TcsSouthController._
 import seqexec.server.tcs.TcsControllerEpicsCommon.calcMoveDistanceSquared
+import cats.effect.Temporal
 
 /**
  * Controller of Gemini's South AO system over epics
@@ -71,7 +71,7 @@ object TcsSouthControllerEpicsAo {
     odgw4:   GuiderConfig
   )
 
-  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(
+  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async: Temporal](epicsSys: TcsEpics[F])(
     implicit L:                                                                   Logger[F]
   ) extends TcsSouthControllerEpicsAo[F]
       with TcsControllerEncoders {
@@ -610,7 +610,7 @@ object TcsSouthControllerEpicsAo {
       }
     }(cfg)
 
-  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger: Temporal](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
     new TcsSouthControllerEpicsAoImpl(epicsSys)
 
 }

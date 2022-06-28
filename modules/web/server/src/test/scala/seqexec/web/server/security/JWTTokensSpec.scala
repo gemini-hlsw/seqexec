@@ -4,17 +4,17 @@
 package seqexec.web.server.security
 
 import cats.effect.IO
-import cats.effect.Timer
 import cats.tests.CatsSuite
 import org.typelevel.log4cats.noop.NoOpLogger
 import seqexec.model.config._
 import seqexec.model.UserDetails
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 class JWTTokensSpec extends CatsSuite {
   private implicit def logger     = NoOpLogger.impl[IO]
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   private val config      =

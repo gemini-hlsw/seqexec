@@ -18,7 +18,6 @@ import cats._
 import cats.data.Nested
 import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import fs2.Stream
@@ -30,6 +29,7 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.NullEpicsError
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Time
+import cats.effect.Temporal
 
 trait EpicsCommand[F[_]] {
   def post(timeout: FiniteDuration): F[ApplyCommandResult]
@@ -43,7 +43,7 @@ abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsComma
 
   override def post(timeout: FiniteDuration): F[ApplyCommandResult] = setTimeout(timeout) *>
     Async[F]
-      .async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
+      .async_[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
         cs.map { ccs =>
           ccs.postCallback {
             new CaCommandListener {
@@ -143,7 +143,7 @@ abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveC
 
   override def post(timeout: FiniteDuration): F[ObserveCommandResult] = setTimeout(timeout) *>
     Async[F]
-      .async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
+      .async_[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
         os.map { oos =>
           oos.postCallback {
             new CaCommandListener {
@@ -211,7 +211,7 @@ object EpicsUtil {
     timeout: FiniteDuration,
     name:    String
   ): F[T] =
-    Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
+    Async[F].async_[T] { (f: Either[Throwable, T] => Unit) =>
       // The task is created with async. So we do whatever we need to do,
       // and then call `f` to signal the completion of the task.
 
@@ -417,7 +417,7 @@ object EpicsUtil {
   ): F[Progress] =
     ObsProgress(time, remaining, stage).pure[F].widen[Progress]
 
-  def countdown[F[_]: Monad: Timer](
+  def countdown[F[_]: Monad: Temporal](
     total:    Time,
     rem:      F[Time],
     obsState: F[CarStateGeneric],

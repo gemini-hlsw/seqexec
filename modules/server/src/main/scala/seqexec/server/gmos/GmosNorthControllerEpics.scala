@@ -20,6 +20,7 @@ import seqexec.server.gmos.GmosController.Config.Beam
 import seqexec.server.gmos.GmosController.NorthTypes
 import seqexec.server.gmos.GmosController.northConfigTypes
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
+import cats.effect.Temporal
 
 object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
   override val filter: EpicsCodex.EncodeEpicsValue[NorthTypes#Filter, (String, String)] =
@@ -126,7 +127,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
 }
 
 object GmosNorthControllerEpics {
-  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
+  def apply[F[_]: Async: Temporal: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
     implicit val encoders = GmosNorthEncoders
     GmosControllerEpics[F, NorthTypes](sys, northConfigTypes)
   }

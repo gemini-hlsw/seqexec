@@ -5,7 +5,6 @@ package seqexec.server.gems
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import mouse.boolean._
 import edu.gemini.seqexec.server.gems.LoopState
@@ -21,6 +20,7 @@ import seqexec.server.gems.GemsControllerEpics.{
 import seqexec.server.gems.GemsEpics.LoopControl
 
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.Ref
 
 case class TestGemsEpics[F[_]: Sync](
   state: Ref[F, TestGemsEpics.State],

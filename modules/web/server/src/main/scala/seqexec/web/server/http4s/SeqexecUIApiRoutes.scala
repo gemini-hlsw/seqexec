@@ -11,7 +11,6 @@ import scala.math._
 import cats.data.NonEmptyList
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import fs2.Pipe
 import fs2.Stream
@@ -46,11 +45,12 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
+import cats.effect.Temporal
 
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
+class SeqexecUIApiRoutes[F[_]: Concurrent: Temporal](
   site:         Site,
   mode:         Mode,
   auth:         AuthenticationService[F],

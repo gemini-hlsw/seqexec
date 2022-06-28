@@ -3,10 +3,7 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.ContextShift
 import cats.effect.IO
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.tests.CatsSuite
 import fs2.concurrent.Queue
 import fs2.concurrent.Topic
@@ -24,6 +21,7 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.model.UserLoginRequest
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import cats.effect.{ Ref, Temporal }
 
 trait TestRoutes extends ClientBooEncoders with CatsSuite {
   private implicit def logger = NoOpLogger.impl[IO]
@@ -31,7 +29,7 @@ trait TestRoutes extends ClientBooEncoders with CatsSuite {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   private val statusDb    = GiapiStatusDb.simulatedDb[IO]
