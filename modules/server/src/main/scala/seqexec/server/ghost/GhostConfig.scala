@@ -96,7 +96,7 @@ sealed trait GhostConfig {
       giapiConfig(GhostBlueDoReadout, 1) |+|
       giapiConfig(GhostBlueDoSave, 1) |+|
       giapiConfig(GhostBlueReadMode, blueConfig.readMode.value) |+|
-      giapiConfig(GhostBlueCcdRequestType, "CCD_CAMERA_SET") |+|
+      giapiConfig(GhostBlueCcdRequestType, "CCD_CAMERA_EXPOSE") |+|
       giapiConfig(GhostRedBinningRcf, redConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostRedBinningCcf, redConfig.binning.getSpatialBinning()) |+|
       giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
@@ -110,7 +110,7 @@ sealed trait GhostConfig {
       giapiConfig(GhostRedDoReadout, 1) |+|
       giapiConfig(GhostRedDoSave, 1) |+|
       giapiConfig(GhostRedReadMode, redConfig.readMode.value) |+|
-      giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_SET")
+      giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_EXPOSE")
 
   def configuration: Configuration =
     if (isScience) {
