@@ -123,10 +123,11 @@ object TcsNorthControllerEpicsAo {
           L.debug(s"Target filtering ${filterEnabled.fold("activated", "deactivated")}.")
 
       def sysConfig(
-        current:      EpicsTcsAoConfig,
-        demand:       TcsNorthAoConfig,
-        filterTarget: Boolean,
-        aoConfigO:    Option[F[Unit]]
+        current:            EpicsTcsAoConfig,
+        demand:             TcsNorthAoConfig,
+        pauseTargetFilter:  Boolean,
+        resumeTargetFilter: Boolean,
+        aoConfigO:          Option[F[Unit]]
       ): F[EpicsTcsAoConfig] = {
         val mountConfigParams   =
           commonController.configMountPos(subsystems, current, demand.tc, EpicsTcsAoConfig.base)
@@ -147,7 +148,7 @@ object TcsNorthControllerEpicsAo {
             _ <- L.debug(s"TCS configuration: ${demand.show}")
             _ <- L.debug(s"for subsystems $subsystems")
             _ <- L.debug(s"TCS set because $debug").whenA(trace)
-            _ <- executeTargetFilterConf(true).whenA(filterTarget && demand.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(false).whenA(pauseTargetFilter && mountMoves)
             _ <- aoConfigO.getOrElse(Applicative[F].unit)
             s <- params
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
@@ -162,7 +163,7 @@ object TcsNorthControllerEpicsAo {
                  )
                    epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
                  else Applicative[F].unit
-            _ <- executeTargetFilterConf(false).whenA(filterTarget && demand.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(true).whenA(resumeTargetFilter)
             _ <- L.debug("Completed TCS configuration")
           } yield s
         } else
@@ -197,7 +198,8 @@ object TcsNorthControllerEpicsAo {
         s2            <- sysConfig(
                            s1,
                            adjustedDemand,
-                           pr.filterTarget,
+                           pr.pauseTargetFilter,
+                           pr.resumeTargetFilter,
                            pr.config
                          )
         _             <- guideOn(subsystems, s2, adjustedDemand, pr.restoreOnResume)

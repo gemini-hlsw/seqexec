@@ -56,13 +56,14 @@ object AltairController {
   implicit val showAltairConfig: Show[AltairConfig] = Show.fromToString[AltairConfig]
 
   sealed case class AltairPauseResume[F[_]](
-    pause:            Option[F[Unit]],
-    guideWhilePaused: GuideCapabilities,
-    filterTarget:     Boolean,
-    resume:           Option[F[Unit]],
-    restoreOnResume:  GuideCapabilities,
-    config:           Option[F[Unit]],
-    forceFreeze:      Boolean
+    pause:              Option[F[Unit]],
+    guideWhilePaused:   GuideCapabilities,
+    pauseTargetFilter:  Boolean,
+    resume:             Option[F[Unit]],
+    restoreOnResume:    GuideCapabilities,
+    resumeTargetFilter: Boolean,
+    config:             Option[F[Unit]],
+    forceFreeze:        Boolean
   )
 
 }
