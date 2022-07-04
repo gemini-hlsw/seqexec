@@ -126,7 +126,7 @@ object AltairControllerEpics {
         PauseReturn[F](
           wasPaused = true,
           pauseAction.some,
-          filterTarget = false,
+          pauseTargetFilter = true,
           GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
           configActions
         )
@@ -136,8 +136,7 @@ object AltairControllerEpics {
           L.debug(
             s"Skipped pausing Altair NGS guiding because guidedStep=$guidedStep, needsToStop = $needsToStop, currMatrixOk=$currMatrixOk"
           ).some,
-          filterTarget =
-            currCfg.aoLoop && !needsToStop && pauseReasons.offsetO.isDefined, // it was guiding, it will continue guiding, and there is an offset
+          pauseTargetFilter = false,
           GuideCapabilities(canGuideM2 = currCfg.aoLoop, canGuideM1 = currCfg.aoLoop),
           configActions
         )
@@ -176,11 +175,10 @@ object AltairControllerEpics {
       AltairPauseResume(
         pauseResult.pauseAction,
         pauseResult.keepGuiding,
-        pauseResult.filterTarget,
-        resume.some,
-        GuideCapabilities(canGuideM2 = resumeReasons.contains(ResumeCondition.GaosGuideOn),
-                          canGuideM1 = resumeReasons.contains(ResumeCondition.GaosGuideOn)
-        ),
+        pauseResult.pauseTargetFilter,
+        resume.resumeAction,
+        resume.keepGuiding,
+        resume.resumeTargetFilter,
         pauseResult.config,
         forceFreeze
       )
@@ -214,10 +212,10 @@ object AltairControllerEpics {
       aoOn:      Boolean,
       wasPaused: Boolean,
       reasons:   ResumeConditionSet
-    ): F[Unit] = {
+    ): ResumeReturn[F] = {
       val guidedStep = reasons.contains(ResumeCondition.GaosGuideOn)
 
-      if ((aoOn && !wasPaused) || !guidedStep)
+      val action = if ((aoOn && !wasPaused) || !guidedStep)
         L.debug(
           s"Skipped resuming Altair NGS guiding because wasPaused=$wasPaused, guidedStep=$guidedStep"
         )
@@ -233,6 +231,14 @@ object AltairControllerEpics {
           L.debug("Altair NGS guiding resumed, waiting for it ti settle") *>
           epicsAltair.waitAoSettled(AoSettledTimeout) *>
           L.debug("Altair NGS guiding settled")
+
+      ResumeReturn(
+        action.some,
+        !((aoOn && !wasPaused) || !guidedStep),
+        GuideCapabilities(canGuideM2 = reasons.contains(ResumeCondition.GaosGuideOn),
+                          canGuideM1 = reasons.contains(ResumeCondition.GaosGuideOn)
+        )
+      )
     }
 
     private def checkStrapLoopState(currCfg: EpicsAltairConfig): Either[SeqexecFailure, Unit] =
@@ -341,13 +347,10 @@ object AltairControllerEpics {
       AltairPauseResume(
         pause.pauseAction,
         pause.keepGuiding,
-        pause.filterTarget,
-        resume.some,
-        GuideCapabilities(
-          canGuideM2 =
-            (strap || sfo) && adjustedResumeReasons.contains(ResumeCondition.GaosGuideOn),
-          canGuideM1 = true
-        ),
+        pause.pauseTargetFilter,
+        resume.resumeAction,
+        resume.keepGuiding,
+        resume.resumeTargetFilter,
         none,
         forceFreeze
       )
@@ -373,7 +376,7 @@ object AltairControllerEpics {
         PauseReturn(
           wasPaused = true,
           pauseAction.some,
-          filterTarget = false,
+          pauseTargetFilter = true,
           GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
           none
         )
@@ -381,7 +384,7 @@ object AltairControllerEpics {
         PauseReturn(
           wasPaused = false,
           L.debug(s"Skipped pausing Altair LGS(strap = $strap, sfo = $sfo) guiding").some,
-          reasons.offsetO.isDefined && (currCfg.sfoLoop === LgsSfoControl.Enable || currCfg.strapLoop),
+          pauseTargetFilter = false,
           GuideCapabilities(canGuideM2 =
                               currCfg.sfoLoop === LgsSfoControl.Enable || currCfg.strapLoop,
                             canGuideM1 = true
@@ -396,12 +399,12 @@ object AltairControllerEpics {
       sfo:        Boolean,
       currentCfg: EpicsAltairConfig,
       reasons:    ResumeConditionSet
-    ): F[Unit] = {
+    ): ResumeReturn[F] = {
       val guidedStep   = reasons.contains(ResumeCondition.GaosGuideOn)
       val alreadyThere =
         (currentCfg.sfoLoop === LgsSfoControl.Enable && sfo) && (currentCfg.strapLoop && strap)
 
-      if (!alreadyThere && guidedStep)
+      val action = if (!alreadyThere && guidedStep)
         L.debug(
           s"Resuming Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep"
         ) *>
@@ -409,6 +412,15 @@ object AltairControllerEpics {
           L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding resumed")
       else
         L.debug(s"Skipped resuming Altair LGS(strap = $strap, sfo = $sfo) guiding")
+
+      ResumeReturn(
+        action.some,
+        !alreadyThere && guidedStep,
+        GuideCapabilities(
+          canGuideM2 = (strap || sfo) && reasons.contains(ResumeCondition.GaosGuideOn),
+          canGuideM1 = true
+        )
+      )
     }
 
     private def turnOff(currentCfg: EpicsAltairConfig): AltairPauseResume[F] = {
@@ -424,9 +436,10 @@ object AltairControllerEpics {
       AltairPauseResume(
         pauseAction.some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
-        filterTarget = false,
+        pauseTargetFilter = true,
         none,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
+        resumeTargetFilter = false,
         none,
         forceFreeze = true
       )
@@ -446,9 +459,10 @@ object AltairControllerEpics {
             AltairPauseResume(
               none,
               GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
-              filterTarget = false,
+              pauseTargetFilter = true,
               none,
               GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
+              resumeTargetFilter = false,
               none,
               forceFreeze = true
             )
@@ -460,9 +474,10 @@ object AltairControllerEpics {
             AltairPauseResume(
               none,
               GuideCapabilities(!pauseReasons.fixed.contains(P1Off), canGuideM1 = true),
-              filterTarget = false,
+              pauseTargetFilter = false,
               none,
               GuideCapabilities(resumeReasons.fixed.contains(P1On), canGuideM1 = true),
+              resumeTargetFilter = false,
               none,
               forceFreeze = true
             )
@@ -470,9 +485,10 @@ object AltairControllerEpics {
             AltairPauseResume(
               none,
               GuideCapabilities(!pauseReasons.fixed.contains(OiOff), canGuideM1 = true),
-              filterTarget = false,
+              pauseTargetFilter = false,
               none,
               GuideCapabilities(resumeReasons.fixed.contains(OiOn), canGuideM1 = true),
+              resumeTargetFilter = false,
               none,
               forceFreeze = true
             )
@@ -540,11 +556,18 @@ object AltairControllerEpics {
 
   // Auxiliary class that contains all the information from a pause calculation
   private sealed case class PauseReturn[F[_]](
-    wasPaused:    Boolean,           // Flag for the resume calculation
-    pauseAction:  Option[F[Unit]],   // The pause action
-    filterTarget: Boolean,           // Does the offset need the target filter (info for TCS configuration)
-    keepGuiding:  GuideCapabilities, // What guiding to keep enabled between the pause and resume
-    config:       Option[F[Unit]]    // Optional Altair configuration (to run as part of TCS configuration)
+    wasPaused:         Boolean,           // Flag for the resume calculation
+    pauseAction:       Option[F[Unit]],   // The pause action
+    pauseTargetFilter: Boolean,           // Does the target filter need to be disabled ?(info for TCS configuration)
+    keepGuiding:       GuideCapabilities, // What guiding to keep enabled between the pause and resume
+    config:            Option[F[Unit]]    // Optional Altair configuration (to run as part of TCS configuration)
+  )
+
+  // Auxiliary class that contains all the information from a resume calculation
+  private sealed case class ResumeReturn[F[_]](
+    resumeAction:       Option[F[Unit]],  // The resume action
+    resumeTargetFilter: Boolean,          // Does the target filter need to be enabled ? (info for TCS configuration)
+    keepGuiding:        GuideCapabilities // What guiding to enable after resume
   )
 
   private val DefaultTimeout = FiniteDuration(10, SECONDS)

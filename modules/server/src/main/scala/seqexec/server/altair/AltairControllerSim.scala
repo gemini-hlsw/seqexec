@@ -25,9 +25,10 @@ object AltairControllerSim {
       AltairPauseResume(
         L.info(s"Simulate pausing Altair loops because of $pauseReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
-        filterTarget = false,
+        pauseTargetFilter = false,
         L.info(s"Simulate restoring Altair configuration $cfg because of $resumeReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
+        resumeTargetFilter = false,
         none,
         forceFreeze = true
       ).pure[F]
