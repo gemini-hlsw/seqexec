@@ -161,10 +161,179 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     }
   }
 
-  test("AltairControllerEpics should enable target filter after coming from unguided step") {
+  test("AltairControllerEpics should disable and enable target filter when applying a sky offset") {
     val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
         aoLoop = false,
+        aoFollow = true,
+        aoSettled = true
+      )
+    )
+
+    val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = baseOffset.x.toMillimeters,
+                       yoffsetPoA1 = baseOffset.y.toMillimeters
+      )
+    )
+
+    val altairCfg =
+      AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(baseOffset,
+                                                                             skyOffset
+               ) + Gaos.PauseCondition.GaosGuideOff,
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition
+                 .OffsetReached(skyOffset),
+               baseOffset,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test(
+    "AltairControllerEpics should disable and enable target filter when moving between two skies"
+  ) {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = false,
+        aoFollow = true,
+        aoSettled = true
+      )
+    )
+
+    val skyOffset0 = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = skyOffset0.x.toMillimeters,
+                       yoffsetPoA1 = skyOffset0.y.toMillimeters
+      )
+    )
+
+    val altairCfg  =
+      AltairController.Lgs(strap = true, sfo = true, (skyOffset0.x, skyOffset0.y))
+    val skyOffset1 =
+      InstrumentOffset(tag[OffsetP](-30.0.arcseconds), tag[OffsetQ](-30.0.arcseconds))
+        .toFocalPlaneOffset(0.0.arcseconds)
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset0,
+                                                                             skyOffset1
+               ) + Gaos.PauseCondition.GaosGuideOff,
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition
+                 .OffsetReached(skyOffset1),
+               skyOffset0,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test(
+    "AltairControllerEpics should disable and enable target filter when coming from a sky offset"
+  ) {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = false,
+        aoFollow = false,
+        aoSettled = true
+      )
+    )
+
+    val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = skyOffset.x.toMillimeters,
+                       yoffsetPoA1 = skyOffset.y.toMillimeters
+      )
+    )
+
+    val altairCfg =
+      AltairController.Lgs(strap = true, sfo = true, (skyOffset.x, skyOffset.y))
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset, baseOffset),
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.GaosGuideOn + Gaos.ResumeCondition
+                 .OffsetReached(baseOffset),
+               skyOffset,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test("AltairControllerEpics should disable and enable target filter when applying a big offset") {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
+        aoFollow = true,
+        aoSettled = true
+      )
+    )
+
+    val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = baseOffset.x.toMillimeters,
+                       yoffsetPoA1 = baseOffset.y.toMillimeters
+      )
+    )
+
+    val altairCfg =
+      AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(baseOffset, skyOffset),
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.GaosGuideOn + Gaos.ResumeCondition
+                 .OffsetReached(skyOffset),
+               baseOffset,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test(
+    "AltairControllerEpics should disable and enable target filter when coming back from big offset"
+  ) {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
         aoFollow = true,
         aoSettled = true
       )
@@ -180,24 +349,21 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     )
 
     val altairCfg =
-      AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
-
-    val offset = FocalPlaneOffset(tag[OffsetX](0.0.millimeters), tag[OffsetY](0.0.millimeters))
+      AltairController.Lgs(strap = true, sfo = true, (skyOffset.x, skyOffset.y))
 
     for {
       ao  <- altairEpics
       tcs <- tcsEpics
       c    = AltairControllerEpics(ao, tcs)
       r   <- c.pauseResume(
-               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(baseOffset, offset),
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset, baseOffset),
                Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.GaosGuideOn + Gaos.ResumeCondition
-                 .OffsetReached(offset),
-               baseOffset,
+                 .OffsetReached(baseOffset),
+               skyOffset,
                Instrument.Gnirs
              )(altairCfg)
     } yield {
-      assert(!r.pauseTargetFilter)
-      assert(r.resumeTargetFilter)
+      assert(r.pauseTargetFilter)
       assert(!r.guideWhilePaused.canGuideM2)
       assert(r.guideWhilePaused.canGuideM1)
     }
@@ -243,8 +409,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(!r.guideWhilePaused.canGuideM1)
       assert(!r.restoreOnResume.canGuideM2)
       assert(!r.restoreOnResume.canGuideM1)
-      assert(r.pauseTargetFilter)
-      assert(!r.resumeTargetFilter)
+      assert(!r.pauseTargetFilter)
     }
   }
 
@@ -292,7 +457,6 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(!r.restoreOnResume.canGuideM2)
       assert(!r.restoreOnResume.canGuideM1)
       assert(r.pauseTargetFilter)
-      assert(!r.resumeTargetFilter)
     }
   }
 
@@ -352,11 +516,111 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(r.guideWhilePaused.canGuideM1)
       assert(r.restoreOnResume.canGuideM2)
       assert(r.restoreOnResume.canGuideM1)
+      assert(r.pauseTargetFilter)
     }
   }
 
   test(
-    "AltairControllerEpics should enable target filter for LGS mode after coming from an unguided step."
+    "AltairControllerEpics should disable and enable enable target filter for LGS mode when applying a sky offset."
+  ) {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
+        aoFollow = true,
+        aoSettled = true,
+        strapLoop = false,
+        sfoLoop = LgsSfoControl.Disable,
+        strapGate = 1,
+        strapHVStatus = true,
+        strapRTStatus = true,
+        strapTempStatus = true
+      )
+    )
+
+    val skyOffset = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = baseOffset.x.toMillimeters,
+                       yoffsetPoA1 = baseOffset.y.toMillimeters
+      )
+    )
+
+    val altairCfg =
+      AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(baseOffset,
+                                                                             skyOffset
+               ) + Gaos.PauseCondition.GaosGuideOff,
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.OffsetReached(skyOffset),
+               baseOffset,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test(
+    "AltairControllerEpics should disable and enable target filter for LGS mode when moving between two skies."
+  ) {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
+        aoFollow = true,
+        aoSettled = true,
+        strapLoop = false,
+        sfoLoop = LgsSfoControl.Disable,
+        strapGate = 1,
+        strapHVStatus = true,
+        strapRTStatus = true,
+        strapTempStatus = true
+      )
+    )
+
+    val skyOffset0 = InstrumentOffset(tag[OffsetP](30.0.arcseconds), tag[OffsetQ](30.0.arcseconds))
+      .toFocalPlaneOffset(0.0.arcseconds)
+
+    val tcsEpics = TestTcsEpics.build[IO](
+      aoGuidedTcs.copy(xoffsetPoA1 = skyOffset0.x.toMillimeters,
+                       yoffsetPoA1 = skyOffset0.y.toMillimeters
+      )
+    )
+
+    val altairCfg =
+      AltairController.Lgs(strap = true, sfo = true, (skyOffset0.x, skyOffset0.y))
+
+    val skyOffset1 =
+      InstrumentOffset(tag[OffsetP](-30.0.arcseconds), tag[OffsetQ](-30.0.arcseconds))
+        .toFocalPlaneOffset(0.0.arcseconds)
+
+    for {
+      ao  <- altairEpics
+      tcs <- tcsEpics
+      c    = AltairControllerEpics(ao, tcs)
+      r   <- c.pauseResume(
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset0, skyOffset1),
+               Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition
+                 .OffsetReached(skyOffset1),
+               skyOffset0,
+               Instrument.Gnirs
+             )(altairCfg)
+    } yield {
+      assert(r.pauseTargetFilter)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test(
+    "AltairControllerEpics should disable and enable target filter for LGS mode when coming back from big offset."
   ) {
     val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
@@ -384,22 +648,19 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     val altairCfg =
       AltairController.Lgs(strap = true, sfo = true, (0.0.millimeters, 0.0.millimeters))
 
-    val offset = FocalPlaneOffset(tag[OffsetX](0.0.millimeters), tag[OffsetY](0.0.millimeters))
-
     for {
       ao  <- altairEpics
       tcs <- tcsEpics
       c    = AltairControllerEpics(ao, tcs)
       r   <- c.pauseResume(
-               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset, offset),
+               Gaos.PauseConditionSet.empty + Gaos.PauseCondition.OffsetMove(skyOffset, baseOffset),
                Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.GaosGuideOn + Gaos.ResumeCondition
-                 .OffsetReached(offset),
+                 .OffsetReached(baseOffset),
                skyOffset,
                Instrument.Gnirs
              )(altairCfg)
     } yield {
-      assert(!r.pauseTargetFilter)
-      assert(r.resumeTargetFilter)
+      assert(r.pauseTargetFilter)
       assert(!r.guideWhilePaused.canGuideM2)
       assert(r.guideWhilePaused.canGuideM1)
     }
