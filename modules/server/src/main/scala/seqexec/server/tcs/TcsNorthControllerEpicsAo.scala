@@ -123,11 +123,10 @@ object TcsNorthControllerEpicsAo {
           L.debug(s"Target filtering ${filterEnabled.fold("activated", "deactivated")}.")
 
       def sysConfig(
-        current:            EpicsTcsAoConfig,
-        demand:             TcsNorthAoConfig,
-        pauseTargetFilter:  Boolean,
-        resumeTargetFilter: Boolean,
-        aoConfigO:          Option[F[Unit]]
+        current:           EpicsTcsAoConfig,
+        demand:            TcsNorthAoConfig,
+        pauseTargetFilter: Boolean,
+        aoConfigO:         Option[F[Unit]]
       ): F[EpicsTcsAoConfig] = {
         val mountConfigParams   =
           commonController.configMountPos(subsystems, current, demand.tc, EpicsTcsAoConfig.base)
@@ -163,7 +162,7 @@ object TcsNorthControllerEpicsAo {
                  )
                    epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
                  else Applicative[F].unit
-            _ <- executeTargetFilterConf(true).whenA(resumeTargetFilter)
+            _ <- executeTargetFilterConf(true).whenA(pauseTargetFilter && mountMoves)
             _ <- L.debug("Completed TCS configuration")
           } yield s
         } else
@@ -199,7 +198,6 @@ object TcsNorthControllerEpicsAo {
                            s1,
                            adjustedDemand,
                            pr.pauseTargetFilter,
-                           pr.resumeTargetFilter,
                            pr.config
                          )
         _             <- guideOn(subsystems, s2, adjustedDemand, pr.restoreOnResume)

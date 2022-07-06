@@ -27,7 +27,6 @@ class AltairControllerDisabled[F[_]: Logger: Applicative] extends AltairControll
       pauseTargetFilter = false,
       overrideLogMessage("Altair", "resume AO loops").some,
       GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
-      resumeTargetFilter = false,
       none,
       forceFreeze = true
     ).pure[F]
