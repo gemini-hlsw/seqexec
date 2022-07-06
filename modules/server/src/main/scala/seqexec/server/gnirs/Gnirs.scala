@@ -236,11 +236,7 @@ object Gnirs {
         case Filter.H_plus_ND100X  => GnirsController.Filter2Pos.H
         case Filter.H2_plus_ND100X => GnirsController.Filter2Pos.H2
         case Filter.PAH            => GnirsController.Filter2Pos.PAH
-        /* REL-4082: Workaround for Filter 2 wheel mechanical problems.
-   TODO: Revert when filter wheel is repaired.
-      case _                     => GnirsController.Filter2Pos.Open
-         */
-        case _                     => GnirsController.Filter2Pos.XD
+        case _                     => GnirsController.Filter2Pos.Open
       }
       .map(GnirsController.Manual)
       .getOrElse {
