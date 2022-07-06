@@ -39,7 +39,7 @@ object Settings {
     val jwt            = "5.0.0"
     val slf4j          = "1.7.36"
     val log4s          = "1.10.0"
-    val log4cats       = "1.4.0"
+    val log4cats       = "1.7.0"
     val log4catsLevel  = "0.2.0"
     val logback        = "1.2.11"
     val janino         = "3.1.7"
