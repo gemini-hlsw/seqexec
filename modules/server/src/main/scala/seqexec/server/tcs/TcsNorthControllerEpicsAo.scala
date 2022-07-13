@@ -7,7 +7,6 @@ import java.time.Duration
 import cats._
 import cats.data._
 import cats.effect.Async
-import cats.effect.Timer
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
@@ -33,6 +32,7 @@ import squants.time.TimeConversions._
 import TcsNorthController._
 import seqexec.server.altair.AltairController.AltairPauseResume
 import seqexec.server.tcs.TcsControllerEpicsCommon.{ calcMoveDistanceSquared, offsetNear }
+import cats.effect.Temporal
 
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(
@@ -44,7 +44,7 @@ trait TcsNorthControllerEpicsAo[F[_]] {
 
 object TcsNorthControllerEpicsAo {
 
-  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(
+  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async: Temporal](epicsSys: TcsEpics[F])(
     implicit L:                                                                   Logger[F]
   ) extends TcsNorthControllerEpicsAo[F]
       with TcsControllerEncoders {
@@ -460,7 +460,7 @@ object TcsNorthControllerEpicsAo {
 
   }
 
-  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger: Temporal](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
     new TcsNorthControllerEpicsAoImpl(epicsSys)
 
   @Lenses

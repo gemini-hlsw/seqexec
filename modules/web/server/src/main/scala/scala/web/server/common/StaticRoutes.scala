@@ -7,8 +7,6 @@ import scala.concurrent.duration._
 
 import cats.data.NonEmptyList
 import cats.data.OptionT
-import cats.effect.Blocker
-import cats.effect.ContextShift
 import cats.effect.Sync
 import cats.instances.string._
 import cats.syntax.eq._

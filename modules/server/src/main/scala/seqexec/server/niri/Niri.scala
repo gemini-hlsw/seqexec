@@ -10,7 +10,6 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.ReadMode
 import edu.gemini.spModel.gemini.niri.InstNIRI._
@@ -48,8 +47,9 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
-final case class Niri[F[_]: Timer: Logger: Concurrent](
+final case class Niri[F[_]: Temporal: Logger: Concurrent](
   controller: NiriController[F],
   dhsClient:  DhsClient[F]
 ) extends DhsInstrument[F]

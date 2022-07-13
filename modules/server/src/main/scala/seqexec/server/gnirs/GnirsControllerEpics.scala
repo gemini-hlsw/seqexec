@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Camera, Decker, Disperser, ReadMode }
@@ -26,6 +25,7 @@ import squants.Time
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
@@ -120,7 +120,7 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
   }
 
-  def apply[F[_]: Async: Timer](
+  def apply[F[_]: Async: Temporal](
     epicsSys:   => GnirsEpics[F]
   )(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {

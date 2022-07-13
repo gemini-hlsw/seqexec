@@ -13,8 +13,9 @@ import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsSouthController._
+import cats.effect.Temporal
 
-final case class TcsSouthControllerEpics[F[_]: Async: Logger: Timer](
+final case class TcsSouthControllerEpics[F[_]: Async: Logger: Temporal](
   epicsSys:      TcsEpics[F],
   guideConfigDb: GuideConfigDb[F]
 ) extends TcsSouthController[F] {

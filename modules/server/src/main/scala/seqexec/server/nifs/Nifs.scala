@@ -10,7 +10,6 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
@@ -46,8 +45,9 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
-final case class Nifs[F[_]: Logger: Concurrent: Timer](
+final case class Nifs[F[_]: Logger: Concurrent: Temporal](
   controller: NifsController[F],
   dhsClient:  DhsClient[F]
 ) extends DhsInstrument[F]

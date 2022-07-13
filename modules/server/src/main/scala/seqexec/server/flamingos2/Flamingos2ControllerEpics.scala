@@ -10,7 +10,6 @@ import scala.concurrent.duration.FiniteDuration
 
 import cats.data.StateT
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -29,6 +28,7 @@ import seqexec.server.RemainingTime
 import seqexec.server.flamingos2.Flamingos2Controller._
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
@@ -114,7 +114,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
   def apply[F[_]: Async](
     sys:          => Flamingos2Epics[F]
-  )(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+  )(implicit tio: Temporal[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)

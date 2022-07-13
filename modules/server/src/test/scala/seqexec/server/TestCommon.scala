@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats.{ Applicative, Monoid }
-import cats.effect.{ ContextShift, IO, Timer }
+import cats.effect.IO
 import cats.syntax.all._
 import cats.data.NonEmptyList
 import io.prometheus.client.CollectorRegistry
@@ -51,13 +51,14 @@ import shapeless.tag
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import cats.effect.Temporal
 
 object TestCommon {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  implicit val ioTimer: Timer[IO] =
+  implicit val ioTimer: Temporal[IO] =
     IO.timer(ExecutionContext.global)
 
   implicit val logger: Logger[IO] = NoOpLogger.impl[IO]

@@ -32,6 +32,7 @@ import seqexec.server.keywords._
 import seqexec.server.nifs._
 import seqexec.server.niri._
 import seqexec.server.tcs._
+import cats.effect.Temporal
 
 final case class Systems[F[_]](
   odb:                 OdbProxy[F],
@@ -69,7 +70,7 @@ object Systems {
     settings:   SeqexecEngineConfiguration,
     service:    CaService,
     tops:       Map[String, String]
-  )(implicit L: Logger[IO], T: Timer[IO]) {
+  )(implicit L: Logger[IO], T: Temporal[IO]) {
     def odbProxy[F[_]: Sync: Logger]: OdbProxy[F] = OdbProxy[F](
       new Peer(settings.odb.renderString, 8443, null),
       if (settings.odbNotifications)
@@ -77,7 +78,7 @@ object Systems {
       else new OdbProxy.DummyOdbCommands[F]
     )
 
-    def dhs[F[_]: Concurrent: Timer: Logger](httpClient: Client[F]): F[DhsClient[F]] =
+    def dhs[F[_]: Concurrent: Temporal: Logger](httpClient: Client[F]): F[DhsClient[F]] =
       if (settings.systemControl.dhs.command)
         DhsClientHttp[F](httpClient, settings.dhsServer).pure[F]
       else
@@ -291,7 +292,7 @@ object Systems {
       else if (settings.instForceError) Flamingos2ControllerSimBad[IO](settings.failAt)
       else Flamingos2ControllerSim[IO]
 
-    def gpi[F[_]: ConcurrentEffect: Timer: Logger](
+    def gpi[F[_]: ConcurrentEffect: Temporal: Logger](
       httpClient: Client[F]
     ): Resource[F, GpiController[F]] = {
       def gpiClient: Resource[F, GpiClient[F]] =
@@ -310,7 +311,7 @@ object Systems {
       (gpiClient, gpiGDS(httpClient)).mapN(GpiController(_, _))
     }
 
-    def ghost[F[_]: ConcurrentEffect: Timer: Logger](
+    def ghost[F[_]: ConcurrentEffect: Temporal: Logger](
       httpClient: Client[F]
     ): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
@@ -334,9 +335,7 @@ object Systems {
         GwsEpics.instance[IO](service, tops).map(GwsKeywordsReaderEpics[IO])
       else DummyGwsKeywordsReader[IO].pure[IO]
 
-    def build(site: Site, httpClient: Client[IO])(implicit
-      C:            ContextShift[IO]
-    ): Resource[IO, Systems[IO]] =
+    def build(site: Site, httpClient: Client[IO]): Resource[IO, Systems[IO]] =
       for {
         odbProxy                                   <- Resource.pure[IO, OdbProxy[IO]](odbProxy[IO])
         dhsClient                                  <- Resource.eval(dhs[IO](httpClient))
@@ -396,6 +395,6 @@ object Systems {
     httpClient: Client[IO],
     settings:   SeqexecEngineConfiguration,
     service:    CaService
-  )(implicit T: Timer[IO], L: Logger[IO], C: ContextShift[IO]): Resource[IO, Systems[IO]] =
+  )(implicit T: Temporal[IO], L: Logger[IO]): Resource[IO, Systems[IO]] =
     Builder(settings, service, decodeTops(settings.tops)).build(site, httpClient)
 }

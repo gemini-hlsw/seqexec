@@ -6,11 +6,11 @@ package seqexec.web.server.http4s
 import java.time.Instant
 
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import org.http4s.headers.`User-Agent`
 import seqexec.model.ClientId
+import cats.effect.Ref
 
 trait ClientsSetDb[F[_]] {
   def newClient(

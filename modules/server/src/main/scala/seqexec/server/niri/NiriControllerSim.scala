@@ -4,7 +4,6 @@
 package seqexec.server.niri
 
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -16,9 +15,10 @@ import seqexec.server.niri.NiriController.DCConfig
 import seqexec.server.niri.NiriController.NiriConfig
 import squants.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 object NiriControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[NiriController[F]] =
+  def apply[F[_]: Sync: Logger: Temporal]: F[NiriController[F]] =
     InstrumentControllerSim[F](s"NIRI").map { sim =>
       new NiriController[F] {
         override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =

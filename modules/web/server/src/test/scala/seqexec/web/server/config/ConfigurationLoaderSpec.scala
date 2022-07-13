@@ -3,7 +3,7 @@
 
 package seqexec.web.server.config
 
-import cats.effect.{ Blocker, ContextShift, IO }
+import cats.effect.IO
 import lucuma.core.enum.Site
 import java.nio.file.Paths
 import org.http4s.Uri
