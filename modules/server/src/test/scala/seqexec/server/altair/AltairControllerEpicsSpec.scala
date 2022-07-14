@@ -521,7 +521,7 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   test(
-    "AltairControllerEpics should disable and enable enable target filter for LGS mode when applying a sky offset."
+    "AltairControllerEpics should disable and enable target filter for LGS mode when applying a sky offset."
   ) {
     val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(
