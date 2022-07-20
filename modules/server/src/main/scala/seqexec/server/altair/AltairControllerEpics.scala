@@ -456,25 +456,15 @@ object AltairControllerEpics {
     )(cfg:           AltairConfig): F[AltairPauseResume[F]] =
       retrieveConfig.map { currCfg =>
         cfg match {
-          case Ngs(_, starPos)      =>
+          case Ngs(_, starPos)    =>
             pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument)(pauseReasons,
                                                                             resumeReasons
             )
-          case Lgs(false, false, _) =>
-            AltairPauseResume(
-              none,
-              GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
-              pauseTargetFilter = true,
-              none,
-              GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
-              none,
-              forceFreeze = true
-            )
-          case Lgs(str, sfo, pos)   =>
+          case Lgs(str, sfo, pos) =>
             pauseResumeLgsMode(str, sfo, pos, currCfg, currentOffset, instrument)(pauseReasons,
                                                                                   resumeReasons
             )
-          case LgsWithP1            =>
+          case LgsWithP1          =>
             AltairPauseResume(
               none,
               GuideCapabilities(!pauseReasons.fixed.contains(P1Off), canGuideM1 = true),
@@ -482,9 +472,9 @@ object AltairControllerEpics {
               none,
               GuideCapabilities(resumeReasons.fixed.contains(P1On), canGuideM1 = true),
               none,
-              forceFreeze = true
+              forceFreeze = false
             )
-          case LgsWithOi            =>
+          case LgsWithOi          =>
             AltairPauseResume(
               none,
               GuideCapabilities(!pauseReasons.fixed.contains(OiOff), canGuideM1 = true),
@@ -492,9 +482,9 @@ object AltairControllerEpics {
               none,
               GuideCapabilities(resumeReasons.fixed.contains(OiOn), canGuideM1 = true),
               none,
-              forceFreeze = true
+              forceFreeze = false
             )
-          case AltairOff            => turnOff(currCfg)
+          case AltairOff          => turnOff(currCfg)
         }
       }
 
