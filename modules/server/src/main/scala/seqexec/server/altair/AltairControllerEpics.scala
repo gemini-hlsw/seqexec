@@ -373,6 +373,7 @@ object AltairControllerEpics {
         s"Pausing Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep, isSmallOffset=$isSmallOffset"
       ) *>
         ttgsOff(currCfg) *>
+        setCorrectionsOff *>
         L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding paused")
 
       if (usingNGS && mustPauseNGS)
@@ -380,7 +381,7 @@ object AltairControllerEpics {
           wasPaused = true,
           pauseAction.some,
           pauseTargetFilter = reasons.offsetO.nonEmpty,
-          GuideCapabilities(canGuideM2 = false, canGuideM1 = true),
+          GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
           none
         )
       else
@@ -413,6 +414,7 @@ object AltairControllerEpics {
         L.debug(
           s"Resuming Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep"
         ) *>
+          setCorrectionsOn *>
           ttgsOn(strap, sfo, currentCfg) *>
           L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding resumed")
       else
@@ -421,8 +423,8 @@ object AltairControllerEpics {
       ResumeReturn(
         action.some,
         GuideCapabilities(
-          canGuideM2 = (strap || sfo) && reasons.contains(ResumeCondition.GaosGuideOn),
-          canGuideM1 = true
+          canGuideM2 = (strap || sfo) && guidedStep,
+          canGuideM1 = (strap || sfo) && guidedStep
         )
       )
     }
@@ -431,8 +433,7 @@ object AltairControllerEpics {
       val pauseAction =
         if (currentCfg.aoLoop)
           L.debug("Turning Altair guiding off") *>
-            epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-            epicsTcs.targetFilter.post(DefaultTimeout) *>
+            setCorrectionsOff *>
             L.debug("Altair guiding turned off")
         else
           L.debug("Skipped turning Altair guiding off")
@@ -466,21 +467,31 @@ object AltairControllerEpics {
             )
           case LgsWithP1          =>
             AltairPauseResume(
-              none,
-              GuideCapabilities(!pauseReasons.fixed.contains(P1Off), canGuideM1 = true),
+              (currCfg.aoLoop && pauseReasons.fixed.contains(P1Off)).option(setCorrectionsOff.void),
+              GuideCapabilities(!pauseReasons.fixed.contains(P1Off),
+                                canGuideM1 = !pauseReasons.fixed.contains(P1Off)
+              ),
               pauseTargetFilter = false,
-              none,
-              GuideCapabilities(resumeReasons.fixed.contains(P1On), canGuideM1 = true),
+              (resumeReasons.fixed.contains(P1On) && (!currCfg.aoLoop || pauseReasons.fixed
+                .contains(P1Off))).option(setCorrectionsOn.void),
+              GuideCapabilities(resumeReasons.fixed.contains(P1On),
+                                canGuideM1 = resumeReasons.fixed.contains(P1On)
+              ),
               none,
               forceFreeze = false
             )
           case LgsWithOi          =>
             AltairPauseResume(
-              none,
-              GuideCapabilities(!pauseReasons.fixed.contains(OiOff), canGuideM1 = true),
+              (currCfg.aoLoop && pauseReasons.fixed.contains(OiOff)).option(setCorrectionsOff.void),
+              GuideCapabilities(!pauseReasons.fixed.contains(OiOff),
+                                canGuideM1 = !pauseReasons.fixed.contains(OiOff)
+              ),
               pauseTargetFilter = false,
-              none,
-              GuideCapabilities(resumeReasons.fixed.contains(OiOn), canGuideM1 = true),
+              (resumeReasons.fixed.contains(OiOn) && (!currCfg.aoLoop || pauseReasons.fixed
+                .contains(OiOff))).option(setCorrectionsOn.void),
+              GuideCapabilities(resumeReasons.fixed.contains(OiOn),
+                                canGuideM1 = resumeReasons.fixed.contains(OiOn)
+              ),
               none,
               forceFreeze = false
             )
