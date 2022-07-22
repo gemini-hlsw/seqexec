@@ -22,8 +22,8 @@ import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
-import seqexec.server.tcs.Gaos.PauseCondition.{ OiOff, P1Off }
-import seqexec.server.tcs.Gaos.ResumeCondition.{ OiOn, P1On }
+import seqexec.server.tcs.Gaos.PauseCondition.{ GaosGuideOff, OiOff, P1Off }
+import seqexec.server.tcs.Gaos.ResumeCondition.{ GaosGuideOn, OiOn, P1On }
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import seqexec.server.tcs.TcsEpics
@@ -122,7 +122,8 @@ object AltairControllerEpics {
           s"Pausing Altair NGS guiding because guidedStep=$guidedStep, currMatrixOk=$currMatrixOk"
         ) *>
           setCorrectionsOff *>
-          L.debug("Altair guiding NGS paused")
+          L.debug("Altair guiding NGS paused") *>
+          (L.debug("Flatting Altair DM") *> dmFlattenAction).whenA(!guidedStep)
 
       if (currCfg.aoLoop && needsToStop)
         PauseReturn[F](
@@ -230,7 +231,6 @@ object AltairControllerEpics {
               epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, MatrixPrepTimeout)).whenA(x.isBusy)
           } *>
           checkControlMatrix *>
-          (L.debug("Flatting Altair DM") *> dmFlattenAction).whenA(!wasPaused) *>
           setCorrectionsOn *>
           L.debug("Altair NGS guiding resumed, waiting for it ti settle") *>
           epicsAltair.waitAoSettled(AoSettledTimeout) *>
@@ -374,7 +374,8 @@ object AltairControllerEpics {
       ) *>
         ttgsOff(currCfg) *>
         setCorrectionsOff *>
-        L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding paused")
+        L.debug(s"Altair LGS(strap = $strap, sfo = $sfo) guiding paused") *>
+        (L.debug("Flatting Altair DM") *> dmFlattenAction).whenA(!guidedStep)
 
       if (usingNGS && mustPauseNGS)
         PauseReturn(
@@ -454,7 +455,18 @@ object AltairControllerEpics {
       resumeReasons: ResumeConditionSet,
       currentOffset: FocalPlaneOffset,
       instrument:    Instrument
-    )(cfg:           AltairConfig): F[AltairPauseResume[F]] =
+    )(cfg:           AltairConfig): F[AltairPauseResume[F]] = {
+      val unguidedStep                                = pauseReasons.contains(GaosGuideOff)
+      def guideOff(turnOff: Boolean): Option[F[Unit]] =
+        (turnOff || unguidedStep).option(
+          L.debug(
+            s"Pausing Altair guiding"
+          ) *>
+            setCorrectionsOff *>
+            L.debug("Altair guiding paused") *>
+            (L.debug("Flatting Altair DM") *> dmFlattenAction).whenA(unguidedStep).void
+        )
+
       retrieveConfig.map { currCfg =>
         cfg match {
           case Ngs(_, starPos)    =>
@@ -467,12 +479,14 @@ object AltairControllerEpics {
             )
           case LgsWithP1          =>
             AltairPauseResume(
-              (currCfg.aoLoop && pauseReasons.fixed.contains(P1Off)).option(setCorrectionsOff.void),
+              guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(P1Off)),
               GuideCapabilities(!pauseReasons.fixed.contains(P1Off),
                                 canGuideM1 = !pauseReasons.fixed.contains(P1Off)
               ),
               pauseTargetFilter = false,
-              (resumeReasons.fixed.contains(P1On) && (!currCfg.aoLoop || pauseReasons.fixed
+              (resumeReasons.contains(P1On) && resumeReasons.contains(
+                GaosGuideOn
+              ) && (!currCfg.aoLoop || pauseReasons
                 .contains(P1Off))).option(setCorrectionsOn.void),
               GuideCapabilities(resumeReasons.fixed.contains(P1On),
                                 canGuideM1 = resumeReasons.fixed.contains(P1On)
@@ -482,12 +496,14 @@ object AltairControllerEpics {
             )
           case LgsWithOi          =>
             AltairPauseResume(
-              (currCfg.aoLoop && pauseReasons.fixed.contains(OiOff)).option(setCorrectionsOff.void),
+              guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(OiOff)),
               GuideCapabilities(!pauseReasons.fixed.contains(OiOff),
                                 canGuideM1 = !pauseReasons.fixed.contains(OiOff)
               ),
               pauseTargetFilter = false,
-              (resumeReasons.fixed.contains(OiOn) && (!currCfg.aoLoop || pauseReasons.fixed
+              (resumeReasons.contains(OiOn) && resumeReasons.contains(
+                GaosGuideOn
+              ) && (!currCfg.aoLoop || pauseReasons
                 .contains(OiOff))).option(setCorrectionsOn.void),
               GuideCapabilities(resumeReasons.fixed.contains(OiOn),
                                 canGuideM1 = resumeReasons.fixed.contains(OiOn)
@@ -498,6 +514,7 @@ object AltairControllerEpics {
           case AltairOff          => turnOff(currCfg)
         }
       }
+    }
 
     override def observe(expTime: Time)(cfg: AltairConfig): F[Unit] = Sync[F]
       .delay(LocalDate.now)
