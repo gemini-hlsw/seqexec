@@ -23,15 +23,15 @@ provided by ITS.
 Those certificates have the following chain:
 
 ```
-gn-ca0
+InCommon CA
   |
-  |- GN-CA1
+  |- InCommon intermediate
        |
        |- site certificate
 ```
 
-From ITS we get two files in PEM format the cert: `site.cert.pem` and the private key `site.key.pem`.
-Additionally there is the intermediate certificate in a file `GN-CA1.pem`
+From ITS we get two files in PEM format the cert: `site.cert.cer` and the private key `site.key.pem`.
+The `cer` file can just be renamed to `pem`
 
 Now we are ready to build the keystore as follows:
 
@@ -41,12 +41,6 @@ The keystore and certificate passwords are stored on each target host at
 
 ```
 /gemsoft/etc/seqexec/conf.d/tls.conf
-```
-
-## Concatenate the intermediate and the site certificates
-
-```
-cat gn-ca0.pem GN-CA1.pem site.cert.pem > site.cert.pem
 ```
 
 ## Make a PKCS12 keystore
@@ -61,7 +55,9 @@ This will give you a pkcs12 store with the certificate and key
 
 ## Construct a java keystore from the pkcs12
 
-** Note:** Delete any existing keystore before importing
+** Notes:
+  ** Delete any existing keystore before importing
+  ** keytool is part of the jdk and not installed on the VMs, do the procedure below on your dev machine
 
 ```
 keytool -importkeystore -deststorepass <keystorepass> -destkeypass <certpass> -destkeystore site.jks -srckeystore site.p12 -srcstoretype PKCS12 -srcstorepass <certpass> -alias seqexec-gs-test
