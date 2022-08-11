@@ -67,7 +67,9 @@ final case class GmosSouth[F[_]: Concurrent: Timer: Logger] private (
           }
       },
       nsCmdR
-    )(southConfigTypes) {
+    )(
+      southConfigTypes
+    ) {
   override val resource: Instrument      = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
 }
