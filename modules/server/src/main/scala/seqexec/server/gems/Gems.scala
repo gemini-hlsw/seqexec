@@ -163,19 +163,20 @@ object Gems {
       odgw4 <-
         config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
     } yield { c: GemsController[F] =>
-      new GemsImpl[F](c,
-                      GemsController.GemsOn(
-                        Cwfs1Usage.fromBoolean(cwfs1.isActive),
-                        Cwfs2Usage.fromBoolean(cwfs2.isActive),
-                        Cwfs3Usage.fromBoolean(cwfs3.isActive),
-                        Odgw1Usage.fromBoolean(odgw1.isActive),
-                        Odgw2Usage.fromBoolean(odgw2.isActive),
-                        Odgw3Usage.fromBoolean(odgw3.isActive),
-                        Odgw4Usage.fromBoolean(odgw4.isActive),
-                        P1Usage.fromBoolean(p1.isActive),
-                        OIUsage.fromBoolean(oi.exists(_.isActive))
-                      ),
-                      guideConfigDb
+      new GemsImpl[F](
+        c,
+        GemsController.GemsOn(
+          Cwfs1Usage.fromBoolean(cwfs1.isActive),
+          Cwfs2Usage.fromBoolean(cwfs2.isActive),
+          Cwfs3Usage.fromBoolean(cwfs3.isActive),
+          Odgw1Usage.fromBoolean(odgw1.isActive),
+          Odgw2Usage.fromBoolean(odgw2.isActive),
+          Odgw3Usage.fromBoolean(odgw3.isActive),
+          Odgw4Usage.fromBoolean(odgw4.isActive),
+          P1Usage.fromBoolean(p1.isActive),
+          OIUsage.fromBoolean(oi.exists(_.isActive))
+        ),
+        guideConfigDb
       ): Gems[F]
     }
   }.toF[F]

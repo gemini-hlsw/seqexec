@@ -492,18 +492,19 @@ object SeqTranslate {
                       w
                     ): System[F]
                 )
-            else { (ov: SystemOverrides) =>
-              TcsSouth.fromConfig[F](overriddenSystems.tcsSouth(ov),
-                                     subs,
-                                     None,
-                                     inst,
-                                     systemss.guideDb
-              )(
-                config,
-                LightPath(lsource, inst.sfName(config)),
-                w
-              ): System[F]
-            }.pure[F]
+            else
+              { (ov: SystemOverrides) =>
+                TcsSouth.fromConfig[F](overriddenSystems.tcsSouth(ov),
+                                       subs,
+                                       None,
+                                       inst,
+                                       systemss.guideDb
+                )(
+                  config,
+                  LightPath(lsource, inst.sfName(config)),
+                  w
+                ): System[F]
+              }.pure[F]
 
           case Site.GN =>
             if (useGaos) { (ov: SystemOverrides) =>
@@ -518,18 +519,19 @@ object SeqTranslate {
                 w
               ): System[F]
             }.pure[F]
-            else { (ov: SystemOverrides) =>
-              TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
-                                     subs,
-                                     none,
-                                     inst,
-                                     systemss.guideDb
-              )(
-                config,
-                LightPath(lsource, inst.sfName(config)),
-                w
-              ): System[F]
-            }.pure[F]
+            else
+              { (ov: SystemOverrides) =>
+                TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
+                                       subs,
+                                       none,
+                                       inst,
+                                       systemss.guideDb
+                )(
+                  config,
+                  LightPath(lsource, inst.sfName(config)),
+                  w
+                ): System[F]
+              }.pure[F]
         }
       }
 
