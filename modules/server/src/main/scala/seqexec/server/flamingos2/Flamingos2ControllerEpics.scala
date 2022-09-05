@@ -139,7 +139,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       val fpu                      = encode(cc.fpu)
       val (filterValue, lyotValue) = filterAndLyot(cc)
       for {
-        // _ <- sys.configCmd.setWindowCover(encode(cc.w))
+        _ <- sys.configCmd.setWindowCover(encode(cc.w))
         _ <- sys.configCmd.setDecker(encode(cc.d))
         _ <- sys.configCmd.setMOS(fpu._1)
         _ <- sys.configCmd.setMask(fpu._2)
