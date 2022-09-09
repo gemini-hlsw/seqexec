@@ -8,7 +8,6 @@ import cats.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
 import giapi.client.syntax.all._
-import scala.concurrent.duration._
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import lucuma.core.model.{ Target => GemTarget }
@@ -24,7 +23,6 @@ sealed trait GhostConfig {
   def redConfig: ChannelConfig
 
   def baseCoords: Option[Coordinates]
-  def expTime: Duration
   def userTargets: List[GemTarget]
 
   def fiberAgitator1: FiberAgitator
@@ -179,7 +177,6 @@ object GhostConfig {
     blueConfig:     ChannelConfig,
     redConfig:      ChannelConfig,
     baseCoords:     Option[Coordinates],
-    expTime:        Duration,
     fiberAgitator1: FiberAgitator,
     fiberAgitator2: FiberAgitator,
     srifu1Name:     Option[String],
@@ -207,7 +204,6 @@ object GhostConfig {
                           blueConfig,
                           redConfig,
                           baseCoords,
-                          expTime,
                           fiberAgitator1,
                           fiberAgitator2,
                           t,
@@ -222,7 +218,6 @@ object GhostConfig {
                         blueConfig,
                         redConfig,
                         baseCoords,
-                        expTime,
                         fiberAgitator1,
                         fiberAgitator2,
                         t1,
@@ -239,7 +234,6 @@ object GhostConfig {
                            blueConfig,
                            redConfig,
                            baseCoords,
-                           expTime,
                            fiberAgitator1,
                            fiberAgitator2,
                            t,
@@ -255,7 +249,6 @@ object GhostConfig {
                            blueConfig,
                            redConfig,
                            baseCoords,
-                           expTime,
                            fiberAgitator1,
                            fiberAgitator2,
                            _,
@@ -270,7 +263,6 @@ object GhostConfig {
                                           blueConfig,
                                           redConfig,
                                           baseCoords,
-                                          expTime,
                                           fiberAgitator1,
                                           fiberAgitator2,
                                           t,
@@ -285,7 +277,6 @@ object GhostConfig {
                            blueConfig,
                            redConfig,
                            baseCoords,
-                           expTime,
                            fiberAgitator1,
                            fiberAgitator2,
                            t,
@@ -312,6 +303,35 @@ object GhostConfig {
     case (a: HighResolutionMode.TargetPlusSky, b: HighResolutionMode.TargetPlusSky)         => a === b
     case _                                                                                  => false
   }
+
+}
+
+case class GhostCalibration(
+  override val obsType:        String,
+  override val blueConfig:     ChannelConfig,
+  override val redConfig:      ChannelConfig,
+  override val baseCoords:     Option[Coordinates],
+  override val fiberAgitator1: FiberAgitator,
+  override val fiberAgitator2: FiberAgitator
+) extends GhostConfig {
+
+  override def ifu1TargetType: IFUTargetType =
+    IFUTargetType.NoTarget
+
+  override def ifu2TargetType: IFUTargetType =
+    IFUTargetType.NoTarget
+
+  override def ifu1BundleType: BundleConfig =
+    BundleConfig.Standard
+
+  override def ifu2BundleType: Option[BundleConfig] =
+    None
+
+  override def ifu2Configuration: Configuration = Configuration.Zero
+
+  override val ifu1Coordinates: Coordinates = Coordinates.Zero
+
+  override val userTargets: List[GemTarget] = Nil
 
 }
 
@@ -356,7 +376,6 @@ object StandardResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     ifu1TargetName:               String,
@@ -372,7 +391,6 @@ object StandardResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1TargetName,
@@ -385,7 +403,6 @@ object StandardResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     ifu1TargetName:               String,
@@ -407,7 +424,6 @@ object StandardResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1TargetName,
@@ -422,7 +438,6 @@ object StandardResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     ifu1TargetName:               String,
@@ -443,7 +458,6 @@ object StandardResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1TargetName,
@@ -457,7 +471,6 @@ object StandardResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     override val ifu1Coordinates: Coordinates,
@@ -479,7 +492,6 @@ object StandardResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1Coordinates,
@@ -517,7 +529,6 @@ object HighResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     override val ifu1TargetName:  String,
@@ -533,7 +544,6 @@ object HighResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1TargetName,
@@ -546,7 +556,6 @@ object HighResolutionMode {
     override val blueConfig:      ChannelConfig,
     override val redConfig:       ChannelConfig,
     override val baseCoords:      Option[Coordinates],
-    override val expTime:         Duration,
     override val fiberAgitator1:  FiberAgitator,
     override val fiberAgitator2:  FiberAgitator,
     override val ifu1TargetName:  String,
@@ -567,7 +576,6 @@ object HighResolutionMode {
      x.blueConfig,
      x.redConfig,
      x.baseCoords,
-     x.expTime,
      x.fiberAgitator1,
      x.fiberAgitator2,
      x.ifu1TargetName,

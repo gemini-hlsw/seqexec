@@ -14,6 +14,7 @@ import eu.timepit.refined.collection.NonEmpty
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -156,7 +157,6 @@ object Ghost {
           srifu1Name     = extractor[String](SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
-          // srifu1Guiding = extractor[GuideFiberState](SPGhost.SRIFU1_GUIDING)
 
           srifu2Name     = extractor[String](SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
@@ -169,6 +169,7 @@ object Ghost {
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
+          science        = obsType === SCIENCE_OBSERVE_TYPE
 
           blueBinning  <- config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
           redBinning   <- config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
@@ -185,32 +186,45 @@ object Ghost {
             config
               .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
 
-          config <- GhostConfig.apply(
-                      obsType = obsType,
-                      blueConfig = ChannelConfig(blueBinning,
-                                                 blueExposure.second,
-                                                 blueCount,
-                                                 gainFromODB(blueReadMode)
-                      ),
-                      redConfig = ChannelConfig(redBinning,
-                                                redExposure.second,
-                                                redCount,
-                                                gainFromODB(redReadMode)
-                      ),
-                      baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
-                      expTime = 1.minute,
-                      fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
-                      fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                      srifu1Name = srifu1Name,
-                      srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
-                      srifu2Name = srifu2Name,
-                      srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
-                      hrifu1Name = hrifu1Name,
-                      hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-                      hrifu2Name = hrifu2RAHMS.as("Sky"),
-                      hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
-                      userTargets = userTargets.flatten
-                    )
+          config <- {
+            if (science) {
+              GhostConfig.apply(
+                obsType = obsType,
+                blueConfig = ChannelConfig(blueBinning,
+                                           blueExposure.second,
+                                           blueCount,
+                                           gainFromODB(blueReadMode)
+                ),
+                redConfig =
+                  ChannelConfig(redBinning, redExposure.second, redCount, gainFromODB(redReadMode)),
+                baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+                fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
+                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
+                srifu1Name = srifu1Name,
+                srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
+                srifu2Name = srifu2Name,
+                srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
+                hrifu1Name = hrifu1Name,
+                hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
+                hrifu2Name = hrifu2RAHMS.as("Sky"),
+                hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
+                userTargets = userTargets.flatten
+              )
+            } else
+              GhostCalibration(
+                obsType = obsType,
+                blueConfig = ChannelConfig(blueBinning,
+                                           blueExposure.second,
+                                           blueCount,
+                                           gainFromODB(blueReadMode)
+                ),
+                redConfig =
+                  ChannelConfig(redBinning, redExposure.second, redCount, gainFromODB(redReadMode)),
+                baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+                fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
+                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false))
+              ).asRight
+          }
         } yield config).leftMap { e =>
           System.out.println(e); SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
         }
