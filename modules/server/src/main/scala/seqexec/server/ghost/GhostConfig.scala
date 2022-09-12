@@ -118,7 +118,7 @@ sealed trait GhostConfig {
       GhostConfig.fiberConfig1(FiberAgitator.None) |+|
         GhostConfig.fiberConfig2(FiberAgitator.None)
     } |+|
-      ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig
+      /*ifu1Config |+| ifu2Config |+| */ userTargetsConfig |+| channelConfig
 
 }
 
