@@ -74,6 +74,8 @@ sealed trait GhostConfig {
 
   def ifu2Configuration: Configuration
 
+  def adcConfiguration: Configuration
+
   final def ifu2Config: Configuration =
     if (isScience)
       ifu2Configuration
@@ -118,7 +120,7 @@ sealed trait GhostConfig {
       GhostConfig.fiberConfig1(FiberAgitator.None) |+|
         GhostConfig.fiberConfig2(FiberAgitator.None)
     } |+|
-      ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig
+      ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration
 
 }
 
@@ -333,6 +335,8 @@ case class GhostCalibration(
 
   override val userTargets: List[GemTarget] = Nil
 
+  def adcConfiguration: Configuration = Configuration.Zero
+
 }
 
 sealed trait StandardResolutionMode extends GhostConfig {
@@ -368,6 +372,10 @@ sealed trait StandardResolutionMode extends GhostConfig {
       case _: DualTarget | _: SkyPlusTarget => Some(BundleConfig.Standard)
       case _: TargetPlusSky                 => Some(BundleConfig.Sky)
     }
+
+  def adcConfiguration: Configuration =
+    giapiConfig(GhostAdc1, "ADC_DEMAND_TRACK") |+|
+      giapiConfig(GhostAdc2, "ADC_DEMAND_TRACK")
 }
 
 object StandardResolutionMode {
@@ -521,6 +529,10 @@ sealed trait HighResolutionMode extends GhostConfig {
       case _: SingleTarget  => None
       case _: TargetPlusSky => Some(BundleConfig.Sky)
     }
+
+  def adcConfiguration: Configuration =
+    giapiConfig(GhostAdc1, "ADC_DEMAND_TRACK") |+|
+      giapiConfig(GhostAdc2, "ADC_DEMAND_TRACK")
 }
 
 object HighResolutionMode {
