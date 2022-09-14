@@ -113,7 +113,7 @@ sealed trait GhostConfig {
       giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_SET")
 
   def configuration: Configuration =
-    if (isScience) {
+    if (!isScience) {
       GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
     } else {
