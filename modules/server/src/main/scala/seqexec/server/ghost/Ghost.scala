@@ -33,7 +33,6 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import squants.time.Seconds
 import squants.time.Time
 import scala.reflect.ClassTag
 import lucuma.core.math._
@@ -42,6 +41,7 @@ import java.lang.{ Double => JDouble, Integer => JInt }
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
+import squants.time.Milliseconds
 
 final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]
@@ -80,7 +80,10 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def calcObserveTime(config: CleanConfig): F[Time] = Seconds(360).pure[F]
+  override def calcObserveTime(config: CleanConfig): F[Time] = {
+    val ghostConfig = Ghost.fromSequenceConfig[F](config)
+    ghostConfig.map(c => Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis))
+  }
 
   override def observeProgress(
     total:   Time,

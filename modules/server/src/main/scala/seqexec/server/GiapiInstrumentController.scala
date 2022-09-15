@@ -61,7 +61,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
       L.debug(s"Completed $name configuration")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] = (
-    L.debug(s"Send observe to $name, file id $fileId") *>
+    L.debug(s"Send observe to $name, file id $fileId and $expTime") *>
       client.observe(fileId: String, expTime.toMilliseconds.milliseconds) *>
       L.debug(s"Completed $name observe")
   )
