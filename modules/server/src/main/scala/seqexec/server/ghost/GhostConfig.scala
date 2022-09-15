@@ -41,7 +41,7 @@ sealed trait GhostConfig {
         GhostConfig.UserTargetsApply
           .get(i + 1)
           .map { case (name, ra, dec) =>
-            GhostConfig.giapiConfig(name, t.name.value) |+|
+            GhostConfig.giapiConfig(name, s""""${t.name.value}"""") |+|
               GhostConfig.giapiConfig(ra, c.ra.toAngle.toDoubleDegrees) |+|
               GhostConfig.giapiConfig(dec, c.dec.toAngle.toSignedDoubleDegrees)
           }
