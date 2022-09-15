@@ -42,10 +42,14 @@ import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import squants.time.Milliseconds
+import squants.time.Seconds
 
 final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
+
+  // Needs to be estimated experimentally
+  val readoutOverhead: Time = Seconds(30)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
@@ -82,7 +86,9 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = Ghost.fromSequenceConfig[F](config)
-    ghostConfig.map(c => Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis))
+    ghostConfig.map(c =>
+      readoutOverhead + Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis)
+    )
   }
 
   override def observeProgress(
