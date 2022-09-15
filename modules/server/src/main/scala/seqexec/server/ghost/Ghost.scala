@@ -43,6 +43,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
+import squants.time.Minutes
 
 final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
     extends GdsInstrument[F]
@@ -87,7 +88,8 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = Ghost.fromSequenceConfig[F](config)
     ghostConfig.map(c =>
-      readoutOverhead + Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis)
+      if (!c.isScience) Minutes(6) // we can't yet calculate how long a bias takes
+      else readoutOverhead + Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis)
     )
   }
 
