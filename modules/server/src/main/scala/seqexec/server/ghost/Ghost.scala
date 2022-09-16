@@ -101,7 +101,8 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
   override def observeProgress(
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
-  ): Stream[F, Progress] = Stream.empty
+  ): Stream[F, Progress] =
+    ProgressUtil.obsCountdown[F](total, elapsed.self)
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]

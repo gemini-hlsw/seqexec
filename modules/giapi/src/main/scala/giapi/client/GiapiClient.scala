@@ -104,5 +104,5 @@ trait GiapiClient[F[_]] {
 }
 
 object GiapiClient {
-  val DefaultCommandTimeout: FiniteDuration = 60.seconds
+  val DefaultCommandTimeout: FiniteDuration = 90.seconds
 }
