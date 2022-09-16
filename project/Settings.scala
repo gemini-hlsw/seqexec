@@ -45,7 +45,7 @@ object Settings {
     val janino         = "3.1.8"
     val pureConfig     = "0.14.1"
     val monocleVersion = "2.1.0"
-    val circeVersion   = "0.14.1"
+    val circeVersion   = "0.14.3"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
 
