@@ -89,7 +89,12 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
     val ghostConfig = Ghost.fromSequenceConfig[F](config)
     ghostConfig.map(c =>
       if (!c.isScience) Minutes(6) // we can't yet calculate how long a bias takes
-      else readoutOverhead + Milliseconds(c.blueConfig.exposure.max(c.redConfig.exposure).toMillis)
+      else
+        readoutOverhead + Milliseconds(
+          (c.blueConfig.exposure * c.blueConfig.count.toLong)
+            .max(c.redConfig.exposure * c.redConfig.count.toLong)
+            .toMillis
+        )
     )
   }
 
