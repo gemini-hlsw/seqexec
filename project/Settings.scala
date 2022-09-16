@@ -26,7 +26,7 @@ object Settings {
     val catsEffectVersion   = "2.5.5"
     val catsVersion         = "2.7.0"
     val mouseVersion        = "1.0.7"
-    val fs2Version          = "2.5.11"
+    val fs2Version          = "3.3.0"
     val shapelessVersion    = "2.3.10"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
