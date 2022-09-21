@@ -31,6 +31,8 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
+import org.http4s.client.middleware.RequestLogger
+import org.http4s.client.middleware.ResponseLogger
 import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.Router
@@ -290,7 +292,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
         _      <- Resource.eval(configLog[IO]) // Initialize log before the engine is setup
         conf   <- Resource.eval(config[IO].flatMap(loadConfiguration[IO](_, b)))
         _      <- Resource.eval(printBanner(conf))
-        cli    <- AsyncHttpClient.resource[IO](clientConfig(conf.seqexecEngine.dhsTimeout))
+        cli    <- AsyncHttpClient
+                    .resource[IO](clientConfig(conf.seqexecEngine.dhsTimeout))
+                    .map(RequestLogger(true, true))
+                    .map(ResponseLogger(true, true))
         inq    <- Resource.eval(InspectableQueue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.eval(Topic[IO, SeqexecEvent](NullEvent))
         _      <- Resource.eval(logToClients(out))
