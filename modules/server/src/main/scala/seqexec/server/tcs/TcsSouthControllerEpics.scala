@@ -36,7 +36,7 @@ final case class TcsSouthControllerEpics[F[_]: Async: Logger: Timer](
                   .map(_.pure[F])
                   .getOrElse(
                     SeqexecFailure
-                      .Execution("Attemp to run GeMS step before the operator configured GeMS")
+                      .Execution("Attempt to run GeMS step before the operator configured GeMS")
                       .raiseError[F, GemsConfig]
                   )
           ob <- gaos
