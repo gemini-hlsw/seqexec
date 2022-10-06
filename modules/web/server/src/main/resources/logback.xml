@@ -19,8 +19,8 @@
             <file>/gemsoft/var/log/seqexec-ng/seqexec-ng.log</file>
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                 <fileNamePattern>/gemsoft/var/log/seqexec-ng/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
-                <maxHistory>90</maxHistory>
-                <totalSizeCap>3GB</totalSizeCap>
+                <maxHistory>366</maxHistory>
+                <totalSizeCap>8GB</totalSizeCap>
             </rollingPolicy>
             <encoder>
               <pattern>%d [%thread] %-5level %logger{35} - %msg %n</pattern>
