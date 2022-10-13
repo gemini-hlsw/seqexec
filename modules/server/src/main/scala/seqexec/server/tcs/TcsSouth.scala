@@ -14,10 +14,8 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
-import seqexec.model.enum.M1Source
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
-import seqexec.model.enum.TipTiltSource
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigResult
@@ -64,7 +62,7 @@ case class TcsSouth[F[_]: Sync: Logger] private (
   guideDb:       GuideConfigDb[F]
 )(config:        TcsSouth.TcsSeqConfig[F])
     extends Tcs[F] {
-  import Tcs.{ GuideWithOps, calcGuiderInUse }
+  import Tcs.GuideWithOps
 
   val Log: Logger[F] = Logger[F]
 
@@ -93,11 +91,10 @@ case class TcsSouth[F[_]: Sync: Logger] private (
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(
-    inUse:     Boolean,
     guideWith: Option[StandardGuideOptions.Value]
   ): GuiderConfig =
     guideWith
-      .flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+      .map(v => GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))
       .getOrElse(defaultGuiderConf)
 
   /*
@@ -111,19 +108,13 @@ case class TcsSouth[F[_]: Sync: Logger] private (
       TelescopeConfig(config.offsetA, config.wavelA),
       BasicGuidersConfig(
         tag[P1Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1),
-                           config.guideWithP1
-          )
+          calcGuiderConfig(config.guideWithP1)
         ),
         tag[P2Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-                           config.guideWithP2
-          )
+          calcGuiderConfig(config.guideWithP2)
         ),
         tag[OIConfig](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS),
-                           config.guideWithOI
-          )
+          calcGuiderConfig(config.guideWithOI)
         )
       ),
       AGConfig(config.lightPath, HrwfsConfig.Auto.some),
@@ -157,53 +148,33 @@ case class TcsSouth[F[_]: Sync: Logger] private (
           TelescopeConfig(config.offsetA, config.wavelA),
           AoGuidersConfig[GemsGuiders](
             tag[P1Config](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aog.isP1Used,
-                config.guideWithP1
-              )
+              calcGuiderConfig(config.guideWithP1)
             ),
             GemsGuiders(
               tag[CWFS1Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS1
-                )
+                calcGuiderConfig(config.guideWithCWFS1)
               ),
               tag[CWFS2Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS2
-                )
+                calcGuiderConfig(config.guideWithCWFS2)
               ),
               tag[CWFS3Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS3
-                )
+                calcGuiderConfig(config.guideWithCWFS3)
               ),
               tag[ODGW1Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW1
-                )
+                calcGuiderConfig(config.guideWithODGW1)
               ),
               tag[ODGW2Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW2
-                )
+                calcGuiderConfig(config.guideWithODGW2)
               ),
               tag[ODGW3Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW3
-                )
+                calcGuiderConfig(config.guideWithODGW3)
               ),
               tag[ODGW4Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW4
-                )
+                calcGuiderConfig(config.guideWithODGW4)
               )
             ),
             tag[OIConfig](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aog.isOIUsed,
-                config.guideWithOI
-              )
+              calcGuiderConfig(config.guideWithOI)
             )
           ),
           AGConfig(config.lightPath, HrwfsConfig.Auto.some),
