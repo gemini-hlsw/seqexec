@@ -12,10 +12,8 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
-import seqexec.model.enum.M1Source
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
-import seqexec.model.enum.TipTiltSource
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigResult
@@ -39,7 +37,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
   guideDb:       GuideConfigDb[F]
 )(config:        TcsNorth.TcsSeqConfig[F])
     extends Tcs[F] {
-  import Tcs.{ GuideWithOps, calcGuiderInUse }
+  import Tcs.GuideWithOps
 
   val Log: Logger[F] = Logger[F]
 
@@ -76,11 +74,10 @@ class TcsNorth[F[_]: Sync: Logger] private (
 
   val defaultGuiderConf: GuiderConfig = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(
-    inUse:     Boolean,
     guideWith: Option[StandardGuideOptions.Value]
   ): GuiderConfig =
     guideWith
-      .flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+      .map(v => GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))
       .getOrElse(defaultGuiderConf)
 
   /*
@@ -94,19 +91,13 @@ class TcsNorth[F[_]: Sync: Logger] private (
       TelescopeConfig(config.offsetA, config.wavelA),
       BasicGuidersConfig(
         tag[P1Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1),
-                           config.guideWithP1
-          )
+          calcGuiderConfig(config.guideWithP1)
         ),
         tag[P2Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-                           config.guideWithP2
-          )
+          calcGuiderConfig(config.guideWithP2)
         ),
         tag[OIConfig](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS),
-                           config.guideWithOI
-          )
+          calcGuiderConfig(config.guideWithOI)
         )
       ),
       AGConfig(config.lightPath, HrwfsConfig.Auto.some),
@@ -119,9 +110,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
         val aoGuiderConfig = ao
           .hasTarget(aog)
           .fold(
-            calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                             config.guideWithAO
-            ),
+            calcGuiderConfig(config.guideWithAO),
             GuiderConfig(ProbeTrackingConfig.Off,
                          config.guideWithAO.map(_.toGuideSensorOption).getOrElse(GuiderSensorOff)
             )
@@ -132,17 +121,11 @@ class TcsNorth[F[_]: Sync: Logger] private (
           TelescopeConfig(config.offsetA, config.wavelA),
           AoGuidersConfig[GuiderConfig @@ AoGuide](
             tag[P1Config](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | ao.usesP1(aog),
-                config.guideWithP1
-              )
+              calcGuiderConfig(config.guideWithP1)
             ),
             tag[AoGuide](aoGuiderConfig),
             tag[OIConfig](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | ao.usesOI(aog),
-                config.guideWithOI
-              )
+              calcGuiderConfig(config.guideWithOI)
             )
           ),
           AGConfig(config.lightPath, HrwfsConfig.Auto.some),
