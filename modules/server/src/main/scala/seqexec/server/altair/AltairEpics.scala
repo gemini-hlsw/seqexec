@@ -93,7 +93,7 @@ class AltairEpicsImpl[F[_]: Async](service: CaService, tops: Map[String, String]
 
     val gate: Option[CaParameter[Integer]] =
       cs.map(_.addInteger("gate", s"${AltairTop}wfcs:strapGtCtl.A", "Gate control", false))
-    def setGate(v: Int): F[Unit]           = setParameter(gate, Integer.valueOf(v))
+    def setGate(v: Int): F[Unit] = setParameter(gate, Integer.valueOf(v))
   }
 
   override val strapControl: StrapControlCommand[F] = new EpicsCommandBase[F](sysName)
@@ -108,7 +108,7 @@ class AltairEpicsImpl[F[_]: Async](service: CaService, tops: Map[String, String]
     val active: Option[CaParameter[Integer]] = cs.map(
       _.addInteger("onoff", s"${AltairTop}wfcs:strapCorrCtl.A", "Strap onoff loop control", false)
     )
-    def setActive(v: Int): F[Unit]           = setParameter(active, Integer.valueOf(v))
+    def setActive(v: Int): F[Unit] = setParameter(active, Integer.valueOf(v))
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
@@ -124,7 +124,7 @@ class AltairEpicsImpl[F[_]: Async](service: CaService, tops: Map[String, String]
                                false
       )
     )
-    def setActive(v: LgsSfoControl): F[Unit]               = setParameter(active, v)
+    def setActive(v: LgsSfoControl): F[Unit] = setParameter(active, v)
 
     override def post(timeout: FiniteDuration): F[ApplyCommandResult] =
       ApplyCommandResult.Completed.pure[F].widen
@@ -138,7 +138,7 @@ class AltairEpicsImpl[F[_]: Async](service: CaService, tops: Map[String, String]
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 
     val active: Option[CaParameter[String]] = cs.map(_.getString("loop"))
-    def setActive(v: String): F[Unit]       = setParameter(active, v)
+    def setActive(v: String): F[Unit] = setParameter(active, v)
   }
 
   val status: CaStatusAcceptor = service.getStatusAcceptor("aostate")

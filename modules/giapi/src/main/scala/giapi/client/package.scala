@@ -251,9 +251,9 @@ package client {
      */
     def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
-        override def get[A: ItemGetter](statusItem: String): Id[A]                         =
+        override def get[A: ItemGetter](statusItem: String): Id[A] =
           sys.error(s"Cannot read $statusItem")
-        override def getO[A: ItemGetter](statusItem: String): Id[Option[A]]                = None
+        override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
         override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]]          =
           sys.error(s"Cannot read $statusItem")
         override def command(command: Command, timeout: FiniteDuration): Id[CommandResult] =
@@ -270,9 +270,9 @@ package client {
       F: ApplicativeError[F, Throwable]
     ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {
-        override def get[A: ItemGetter](statusItem: String): F[A]                         =
+        override def get[A: ItemGetter](statusItem: String): F[A] =
           F.raiseError(new RuntimeException(s"Cannot read $statusItem"))
-        override def getO[A: ItemGetter](statusItem: String): F[Option[A]]                = F.pure(None)
+        override def getO[A: ItemGetter](statusItem: String): F[Option[A]] = F.pure(None)
         override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]]           =
           F.pure(Stream.empty.covary[F])
         override def command(command: Command, timeout: FiniteDuration): F[CommandResult] =

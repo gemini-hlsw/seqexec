@@ -41,7 +41,7 @@ object DailyProgramType {
   /** @group Typeclass Instances */
   implicit val ProgramTypeEnumerated: Enumerated[DailyProgramType] =
     new Enumerated[DailyProgramType] {
-      def all                      = DailyProgramType.all
+      def all = DailyProgramType.all
       def tag(a: DailyProgramType) = a.tag
     }
 

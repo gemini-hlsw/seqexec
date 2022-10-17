@@ -32,7 +32,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gcal::shutter")
     )
 
-    private val position                = cs.map(_.getString("position"))
+    private val position = cs.map(_.getString("position"))
     def setPosition(v: String): F[Unit] = setParameter(position, v)
   }
 
@@ -41,7 +41,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gcal::filtSel")
     )
 
-    private val name                = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
@@ -50,7 +50,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gcal::diffuseSel")
     )
 
-    private val name                = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
@@ -61,46 +61,46 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gcal::lampSel")
     )
 
-    private val nameAr                    = cs.map(_.getString("nameAr"))
+    private val nameAr = cs.map(_.getString("nameAr"))
     def setArLampName(v: String): F[Unit] = setParameter(nameAr, v)
 
-    private val stateAr                      = cs.map(_.getString("stateAr"))
+    private val stateAr = cs.map(_.getString("stateAr"))
     def setArLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateAr, v, toLampState)
 
-    private val nameCuAr                    = cs.map(_.getString("nameCuAr"))
+    private val nameCuAr = cs.map(_.getString("nameCuAr"))
     def setCuArLampName(v: String): F[Unit] = setParameter(nameCuAr, v)
 
-    private val stateCuAr                      = cs.map(_.getString("stateCuAr"))
+    private val stateCuAr = cs.map(_.getString("stateCuAr"))
     def setCuArLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateCuAr, v, toLampState)
 
-    private val nameIR                    = cs.map(_.getString("nameIR"))
+    private val nameIR = cs.map(_.getString("nameIR"))
     def setIRLampName(v: String): F[Unit] = setParameter(nameIR, v)
 
-    private val stateIR                      = cs.map(_.getString("stateIR"))
+    private val stateIR = cs.map(_.getString("stateIR"))
     def setIRLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateIR, v, toLampState)
 
-    private val nameQH5W                    = cs.map(_.getString("nameQH5W"))
+    private val nameQH5W = cs.map(_.getString("nameQH5W"))
     def setQH5WLampName(v: String): F[Unit] = setParameter(nameQH5W, v)
 
-    private val stateQH5W                      = cs.map(_.getString("stateQH5W"))
+    private val stateQH5W = cs.map(_.getString("stateQH5W"))
     def setQH5WLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateQH5W, v, toLampState)
 
-    private val nameQH100W                    = cs.map(_.getString("nameQH100W"))
+    private val nameQH100W = cs.map(_.getString("nameQH100W"))
     def setQH100WLampName(v: String): F[Unit] = setParameter(nameQH100W, v)
 
-    private val stateQH100W                      = cs.map(_.getString("stateQH100W"))
+    private val stateQH100W = cs.map(_.getString("stateQH100W"))
     def setQH100WLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateQH100W, v, toLampState)
 
-    private val nameXe                    = cs.map(_.getString("nameXe"))
+    private val nameXe = cs.map(_.getString("nameXe"))
     def setXeLampName(v: String): F[Unit] = setParameter(nameXe, v)
 
-    private val stateXe                      = cs.map(_.getString("stateXe"))
+    private val stateXe = cs.map(_.getString("stateXe"))
     def setXeLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateXe, v, toLampState)
 
-    private val nameThAr                    = cs.map(_.getString("nameThAr"))
+    private val nameThAr = cs.map(_.getString("nameThAr"))
     def setThArLampName(v: String): F[Unit] = setParameter(nameThAr, v)
 
-    private val stateThAr                      = cs.map(_.getString("stateThAr"))
+    private val stateThAr = cs.map(_.getString("stateThAr"))
     def setThArLampOn(v: BinaryOnOff): F[Unit] = setParameter(stateThAr, v, toLampState)
   }
 
