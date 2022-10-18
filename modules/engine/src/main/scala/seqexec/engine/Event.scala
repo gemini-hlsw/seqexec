@@ -104,17 +104,17 @@ object Event {
     EventSystem[F](BreakpointReached(id))
   def busy[F[_]](id: Observation.Id, clientId: ClientId): Event[F, Nothing, Nothing]            =
     EventSystem[F](Busy(id, clientId))
-  def executed[F[_]](id: Observation.Id): Event[F, Nothing, Nothing]                            = EventSystem[F](Executed(id))
-  def executing[F[_]](id: Observation.Id): Event[F, Nothing, Nothing]                           =
+  def executed[F[_]](id: Observation.Id): Event[F, Nothing, Nothing] = EventSystem[F](Executed(id))
+  def executing[F[_]](id: Observation.Id): Event[F, Nothing, Nothing] =
     EventSystem[F](Executing(id))
-  def finished[F[_]](id: Observation.Id): Event[F, Nothing, Nothing]                            = EventSystem[F](Finished(id))
-  def nullEvent[F[_]]: Event[F, Nothing, Nothing]                                               = EventSystem[F](Null)
+  def finished[F[_]](id: Observation.Id): Event[F, Nothing, Nothing] = EventSystem[F](Finished(id))
+  def nullEvent[F[_]]: Event[F, Nothing, Nothing]                                         = EventSystem[F](Null)
   def singleRunCompleted[F[_], R <: Result.RetVal](
     c: ActionCoords,
     r: Result.OK[R]
   ): Event[F, Nothing, Nothing] =
     EventSystem[F](SingleRunCompleted(c, r))
-  def singleRunFailed[F[_]](c: ActionCoords, e: Result.Error): Event[F, Nothing, Nothing]       =
+  def singleRunFailed[F[_]](c: ActionCoords, e: Result.Error): Event[F, Nothing, Nothing] =
     EventSystem[F](SingleRunFailed(c, e))
 
 }

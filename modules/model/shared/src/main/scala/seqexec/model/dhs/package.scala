@@ -36,6 +36,6 @@ package object dhs {
   }
 
   def toImageFileId(i: String): ImageFileId = tag[ImageFileIdT][String](i)
-  def toDataId(i: String): DataId           = tag[DataIdT][String](i)
+  def toDataId(i:      String): DataId      = tag[DataIdT][String](i)
 
 }

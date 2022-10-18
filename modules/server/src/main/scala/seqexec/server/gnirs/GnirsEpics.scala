@@ -26,28 +26,28 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
 
     private val cover: Option[CaParameter[String]] = cs.map(_.getString("cover"))
-    def setCover(v: String): F[Unit]               = setParameter(cover, v)
+    def setCover(v: String): F[Unit] = setParameter(cover, v)
 
     private val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
-    def setFilter1(v: String): F[Unit]               = setParameter(filter1, v)
+    def setFilter1(v: String): F[Unit] = setParameter(filter1, v)
 
     private val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
-    def setFilter2(v: String): F[Unit]               = setParameter(filter2, v)
+    def setFilter2(v: String): F[Unit] = setParameter(filter2, v)
 
     private val focus: Option[CaParameter[Integer]] = cs.map(_.getInteger("focus"))
-    def setFocus(v: Int): F[Unit]                   = setParameter(focus, Integer.valueOf(v))
+    def setFocus(v: Int): F[Unit] = setParameter(focus, Integer.valueOf(v))
 
     private val tilt: Option[CaParameter[String]] = cs.map(_.getString("tilt"))
-    def setTilt(v: String): F[Unit]               = setParameter(tilt, v)
+    def setTilt(v: String): F[Unit] = setParameter(tilt, v)
 
     private val prism: Option[CaParameter[String]] = cs.map(_.getString("prism"))
-    def setPrism(v: String): F[Unit]               = setParameter(prism, v)
+    def setPrism(v: String): F[Unit] = setParameter(prism, v)
 
     private val acqMirror: Option[CaParameter[String]] = cs.map(_.getString("acqMirror"))
-    def setAcqMirror(v: String): F[Unit]               = setParameter(acqMirror, v)
+    def setAcqMirror(v: String): F[Unit] = setParameter(acqMirror, v)
 
     private val focusbest: Option[CaParameter[String]] = cs.map(_.getString("focusbest"))
-    def setFocusBest(v: String): F[Unit]               = setParameter(focusbest, v)
+    def setFocusBest(v: String): F[Unit] = setParameter(focusbest, v)
 
     private val centralWavelength: Option[CaParameter[JDouble]] =
       cs.map(_.getDouble("centralWavelength"))
@@ -55,22 +55,22 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
       setParameter(centralWavelength, JDouble.valueOf(v))
 
     private val camera: Option[CaParameter[String]] = cs.map(_.getString("camera"))
-    def setCamera(v: String): F[Unit]               = setParameter(camera, v)
+    def setCamera(v: String): F[Unit] = setParameter(camera, v)
 
     private val gratingMode: Option[CaParameter[String]] = cs.map(_.getString("gratingMode"))
-    def setGratingMode(v: String): F[Unit]               = setParameter(gratingMode, v)
+    def setGratingMode(v: String): F[Unit] = setParameter(gratingMode, v)
 
     private val gratingOrder: Option[CaParameter[Integer]] = cs.map(_.getInteger("order"))
-    def setOrder(v: Int): F[Unit]                          = setParameter(gratingOrder, Integer.valueOf(v))
+    def setOrder(v: Int): F[Unit] = setParameter(gratingOrder, Integer.valueOf(v))
 
     private val grating: Option[CaParameter[String]] = cs.map(_.getString("grating"))
-    def setGrating(v: String): F[Unit]               = setParameter(grating, v)
+    def setGrating(v: String): F[Unit] = setParameter(grating, v)
 
     private val slitWidth: Option[CaParameter[String]] = cs.map(_.getString("slitWidth"))
-    def setSlitWidth(v: String): F[Unit]               = setParameter(slitWidth, v)
+    def setSlitWidth(v: String): F[Unit] = setParameter(slitWidth, v)
 
     private val decker: Option[CaParameter[String]] = cs.map(_.getString("decker"))
-    def setDecker(v: String): F[Unit]               = setParameter(decker, v)
+    def setDecker(v: String): F[Unit] = setParameter(decker, v)
 
   }
 
@@ -80,22 +80,22 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     )
 
     private val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
-    def setLowNoise(v: Int): F[Unit]                   = setParameter(lowNoise, Integer.valueOf(v))
+    def setLowNoise(v: Int): F[Unit] = setParameter(lowNoise, Integer.valueOf(v))
 
     private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): F[Unit]                = setParameter(exposureTime, JDouble.valueOf(v))
+    def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     private val wcs: Option[CaParameter[String]] = cs.map(_.getString("wcs"))
-    def setWcs(v: String): F[Unit]               = setParameter(wcs, v)
+    def setWcs(v: String): F[Unit] = setParameter(wcs, v)
 
     private val digitalAvgs: Option[CaParameter[Integer]] = cs.map(_.getInteger("digitalAvgs"))
-    def setDigitalAvgs(v: Int): F[Unit]                   = setParameter(digitalAvgs, Integer.valueOf(v))
+    def setDigitalAvgs(v: Int): F[Unit] = setParameter(digitalAvgs, Integer.valueOf(v))
 
     private val detBias: Option[CaParameter[JDouble]] = cs.map(_.getDouble("detBias"))
-    def setDetBias(v: Double): F[Unit]                = setParameter(detBias, JDouble.valueOf(v))
+    def setDetBias(v: Double): F[Unit] = setParameter(detBias, JDouble.valueOf(v))
 
     private val coadds: Option[CaParameter[JDouble]] = cs.map(_.getDouble("coadds"))
-    def setCoadds(v: Int): F[Unit]                   = setParameter(coadds, JDouble.valueOf(v.toDouble))
+    def setCoadds(v: Int): F[Unit] = setParameter(coadds, JDouble.valueOf(v.toDouble))
 
   }
 
@@ -147,7 +147,7 @@ class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     override protected val os: Option[CaApplySender]   = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): F[Unit]       = setParameter(label, v)
+    def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
   private val state: CaStatusAcceptor   = epicsService.getStatusAcceptor("nirs::status")

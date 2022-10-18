@@ -40,7 +40,7 @@ object ColumnWidth {
 
 object FixedColumnWidth {
   implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
-  private[table] def apply(p: Double)      = new FixedColumnWidth(p) {}
+  private[table] def apply(p: Double) = new FixedColumnWidth(p) {}
 
   def fromDouble(width: Double): Option[FixedColumnWidth] =
     (width >= 0).option(FixedColumnWidth(width))

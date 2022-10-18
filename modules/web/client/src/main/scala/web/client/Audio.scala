@@ -11,8 +11,8 @@ import scala.scalajs.js.annotation.JSGlobal
 @js.native
 @JSGlobal
 class Audio(val src: String) extends js.Object {
-  def play(): js.Any                  = js.native
-  def pause(): js.Any                 = js.native
+  def play(): js.Any  = js.native
+  def pause(): js.Any = js.native
   def canPlayType(tp: String): String = js.native
 }
 
