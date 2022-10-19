@@ -27,7 +27,7 @@ Global / resolvers += Resolver.sonatypeRepo("public")
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
-ThisBuild / ocsJreDir := Path.userHome / ".jres8_ocs3"
+ThisBuild / ocsJreDir := Path.userHome / ".jres17"
 
 Global / cancelable := true
 

@@ -61,7 +61,7 @@ object AppsCommon {
     Universal / mappings ++= {
       val jresDir    = (ThisBuild / ocsJreDir).value
       // Map the location of jre files
-      val jreLink    = "JRE64_1.8"
+      val jreLink    = "JRE64_17"
       val linux64Jre = jresDir.toPath.resolve(target.subdir).resolve(jreLink)
       directory(linux64Jre.toFile).map { j =>
         j._1 -> j._2.replace(jreLink, "jre")
