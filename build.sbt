@@ -27,7 +27,7 @@ Global / resolvers += Resolver.sonatypeRepo("public")
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
-ThisBuild / ocsJreDir := Path.userHome / ".jres8_ocs3"
+ThisBuild / ocsJreDir := Path.userHome / ".jres17"
 
 Global / cancelable := true
 
@@ -228,8 +228,7 @@ lazy val seqexec_web_client = project
       "terser-webpack-plugin"         -> "3.0.6",
       "html-webpack-plugin"           -> "4.3.0",
       "css-minimizer-webpack-plugin"  -> "1.1.5",
-      "favicons-webpack-plugin"       -> "4.2.0",
-      "@packtracker/webpack-plugin"   -> "2.3.0"
+      "favicons-webpack-plugin"       -> "4.2.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,
