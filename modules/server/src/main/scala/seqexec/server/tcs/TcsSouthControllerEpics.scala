@@ -10,7 +10,7 @@ import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
-import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.gems.GemsController.GemsOff
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsSouthController._
 
@@ -31,14 +31,9 @@ final case class TcsSouthControllerEpics[F[_]: Async: Logger: Timer](
       case d: TcsSouthAoConfig =>
         for {
           oc <- guideConfigDb.value
-          gc <- oc.gaosGuide
+          aog = oc.gaosGuide
                   .flatMap(_.toOption)
-                  .map(_.pure[F])
-                  .getOrElse(
-                    SeqexecFailure
-                      .Execution("Attempt to run GeMS step before the operator configured GeMS")
-                      .raiseError[F, GemsConfig]
-                  )
+                  .getOrElse(GemsOff)
           ob <- gaos
                   .map(_.pure[F])
                   .getOrElse(
@@ -46,7 +41,7 @@ final case class TcsSouthControllerEpics[F[_]: Async: Logger: Timer](
                       .Execution("No GeMS object defined for GeMS step")
                       .raiseError[F, Gems[F]]
                   )
-          r  <- aoController.applyAoConfig(subsystems, ob, gc, d)
+          r  <- aoController.applyAoConfig(subsystems, ob, aog, d)
         } yield r
     }
 

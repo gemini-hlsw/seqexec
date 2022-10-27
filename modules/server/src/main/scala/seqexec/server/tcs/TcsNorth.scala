@@ -19,9 +19,8 @@ import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentGuide
-import seqexec.server.SeqexecFailure
 import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.AltairConfig
+import seqexec.server.altair.AltairController.{ AltairConfig, AltairOff }
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
@@ -85,8 +84,8 @@ class TcsNorth[F[_]: Sync: Logger] private (
    * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
    * it will not be used for the step, regardless of the sequence values.
    */
-  private def buildBasicTcsConfig(gc: GuideConfig): F[TcsNorthConfig] =
-    (BasicTcsConfig(
+  private def buildBasicTcsConfig(gc: GuideConfig): TcsNorthConfig =
+    BasicTcsConfig(
       gc.tcsGuide,
       TelescopeConfig(config.offsetA, config.wavelA),
       BasicGuidersConfig(
@@ -102,46 +101,40 @@ class TcsNorth[F[_]: Sync: Logger] private (
       ),
       AGConfig(config.lightPath, HrwfsConfig.Auto.some),
       config.instrument
-    ): TcsNorthConfig).pure[F]
+    )
 
-  private def buildTcsAoConfig(gc: GuideConfig, ao: Altair[F]): F[TcsNorthConfig] =
-    gc.gaosGuide
-      .flatMap(_.swap.toOption.map { aog =>
-        val aoGuiderConfig = ao
-          .hasTarget(aog)
-          .fold(
-            calcGuiderConfig(config.guideWithAO),
-            GuiderConfig(ProbeTrackingConfig.Off,
-                         config.guideWithAO.map(_.toGuideSensorOption).getOrElse(GuiderSensorOff)
-            )
-          )
+  private def buildTcsAoConfig(gc: GuideConfig, ao: Altair[F]): TcsNorthConfig = {
+    val aog = gc.gaosGuide.flatMap(_.swap.toOption).getOrElse(AltairOff)
 
-        AoTcsConfig[GuiderConfig @@ AoGuide, AltairConfig](
-          gc.tcsGuide,
-          TelescopeConfig(config.offsetA, config.wavelA),
-          AoGuidersConfig[GuiderConfig @@ AoGuide](
-            tag[P1Config](
-              calcGuiderConfig(config.guideWithP1)
-            ),
-            tag[AoGuide](aoGuiderConfig),
-            tag[OIConfig](
-              calcGuiderConfig(config.guideWithOI)
-            )
-          ),
-          AGConfig(config.lightPath, HrwfsConfig.Auto.some),
-          aog,
-          config.instrument
-        ): TcsNorthConfig
-      })
-      .map(_.pure[F])
-      .getOrElse(
-        SeqexecFailure
-          .Execution("Attempting to run Altair sequence before Altair has being configured.")
-          .raiseError[F, TcsNorthConfig]
+    val aoGuiderConfig = ao
+      .hasTarget(aog)
+      .fold(
+        calcGuiderConfig(config.guideWithAO),
+        GuiderConfig(ProbeTrackingConfig.Off,
+                     config.guideWithAO.map(_.toGuideSensorOption).getOrElse(GuiderSensorOff)
+        )
       )
 
+    AoTcsConfig[GuiderConfig @@ AoGuide, AltairConfig](
+      gc.tcsGuide,
+      TelescopeConfig(config.offsetA, config.wavelA),
+      AoGuidersConfig[GuiderConfig @@ AoGuide](
+        tag[P1Config](
+          calcGuiderConfig(config.guideWithP1)
+        ),
+        tag[AoGuide](aoGuiderConfig),
+        tag[OIConfig](
+          calcGuiderConfig(config.guideWithOI)
+        )
+      ),
+      AGConfig(config.lightPath, HrwfsConfig.Auto.some),
+      aog,
+      config.instrument
+    )
+  }
+
   def buildTcsConfig: F[TcsNorthConfig] =
-    guideDb.value.flatMap { c =>
+    guideDb.value.map { c =>
       gaos
         .map(buildTcsAoConfig(c, _))
         .getOrElse(buildBasicTcsConfig(c))
