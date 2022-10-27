@@ -23,7 +23,7 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-Global / resolvers += Resolver.sonatypeRepo("public")
+Global / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
@@ -83,8 +83,7 @@ addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 
-ThisBuild / resolvers +=
-  Resolver.sonatypeRepo("snapshots")
+ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / updateOptions := updateOptions.value.withLatestSnapshots(false)
 
