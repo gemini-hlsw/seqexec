@@ -1,14 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
 
-import cats.effect.{ ContextShift, IO }
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
+import cats.effect.IO
 import cats.data.NonEmptyList
-import cats.tests.CatsSuite
-import fs2.concurrent.Queue
+import cats.implicits._
+import munit.CatsEffectSuite
+import cats.effect.std.Queue
 import fs2.Stream
 import seqexec.model.Observation
 import org.typelevel.log4cats.Logger
@@ -23,15 +22,10 @@ import seqexec.model.{ ClientId, SequenceState, StepState }
 import seqexec.model.enum.Resource
 import seqexec.model.{ ActionType, UserDetails }
 import scala.Function.const
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import cats.effect.Ref
 
-class StepSpec extends CatsSuite {
-
-  implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
-  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+class StepSpec extends CatsEffectSuite {
 
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
 
@@ -162,7 +156,7 @@ class StepSpec extends CatsSuite {
   def triggerPause(q: Queue[IO, executionEngine.EventType]): Action[IO] = fromF[IO](
     ActionType.Undefined,
     for {
-      _ <- q.enqueue1(Event.pause(seqId, user))
+      _ <- q.offer(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
@@ -172,7 +166,7 @@ class StepSpec extends CatsSuite {
   def triggerStart(q: IO[Queue[IO, executionEngine.EventType]]): Action[IO] = fromF[IO](
     ActionType.Undefined,
     for {
-      _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId)))
+      _ <- q.map(_.offer(Event.start(seqId, user, clientId)))
       // Same case that the pause action
     } yield Result.OK(DummyResult)
   )
@@ -185,30 +179,19 @@ class StepSpec extends CatsSuite {
     case _                       => false
   }
 
-  def runToCompletion(s0: TestState): Option[TestState] =
+  private def runToCompletioIO(s0: TestState) =
     executionEngine
       .process(PartialFunction.empty)(
         Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId)))
       )(s0)
       .drop(1)
       .takeThrough(a => !isFinished(a._2.sequences(seqId).status))
-      .compile
-      .last
-      .unsafeRunSync()
       .map(_._2)
+      .compile
 
-  def runToCompletionL(s0: TestState): List[TestState] =
-    executionEngine
-      .process(PartialFunction.empty)(
-        Stream.eval(IO.pure(Event.start[IO, TestState, Unit](seqId, user, clientId)))
-      )(s0)
-      .drop(1)
-      .takeThrough(a => !isFinished(a._2.sequences(seqId).status))
-      .compile
-      .toVector
-      .unsafeRunSync()
-      .map(_._2)
-      .toList
+  def runToCompletionLastIO(s0: TestState): IO[Option[TestState]] = runToCompletioIO(s0).last
+
+  def runToCompletionAllIO(s0: TestState): IO[List[TestState]] = runToCompletioIO(s0).toList
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
   // The test will just run step and compare the output with the predefined sequence of updates.
@@ -245,21 +228,23 @@ class StepSpec extends CatsSuite {
     val m = for {
       k <- q
       o <- Stream.apply(qs0(k))
-      _ <- Stream.eval(k.enqueue1(startEvent))
+      _ <- Stream.eval(k.offer(startEvent))
       u <- executionEngine
-             .process(PartialFunction.empty)(k.dequeue)(o)
+             .process(PartialFunction.empty)(Stream.fromQueueUnterminated(k))(o)
              .drop(1)
              .takeThrough(notFinished)
              .map(_._2)
     } yield u.sequences(seqId)
 
-    inside(m.compile.last.unsafeRunSync()) { case Some(Sequence.State.Zipper(zipper, status, _)) =>
-      inside(zipper.focus.toStep) { case Step(_, _, _, _, List(ex1, ex2)) =>
-        assert(
-          Execution(ex1.toList).results.length == 3 && Execution(ex2.toList).actions.length == 1
-        )
+    m.compile.last.map {
+      inside(_) { case Some(Sequence.State.Zipper(zipper, status, _)) =>
+        inside(zipper.focus.toStep) { case Step(_, _, _, _, List(ex1, ex2)) =>
+          assert(
+            Execution(ex1.toList).results.length == 3 && Execution(ex2.toList).actions.length == 1
+          )
+        }
+        assertEquals(status, SequenceState.Idle)
       }
-      status should be(SequenceState.Idle)
     }
 
   }
@@ -302,14 +287,15 @@ class StepSpec extends CatsSuite {
                .take(1)
       } yield u._2.sequences.get(seqId)
 
-    inside(qs1.compile.last.unsafeRunSync()) {
-      case Some(Some(Sequence.State.Zipper(zipper, status, _))) =>
+    qs1.compile.last.map {
+      inside(_) { case Some(Some(Sequence.State.Zipper(zipper, status, _))) =>
         inside(zipper.focus.toStep) { case Step(_, _, _, _, List(ex1, ex2)) =>
           assert(
             Execution(ex1.toList).actions.length == 2 && Execution(ex2.toList).actions.length == 1
           )
         }
         assert(status.isRunning)
+      }
     }
 
   }
@@ -349,12 +335,13 @@ class StepSpec extends CatsSuite {
       .take(1)
       .compile
       .last
-      .unsafeRunSync()
-      .map(_._2)
+      .map(_.map(_._2))
 
-    inside(qs1.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
-      assert(status.isRunning)
-    }
+    qs1.map(x =>
+      inside(x.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
+        assert(status.isRunning)
+      }
+    )
 
   }
 
@@ -387,17 +374,18 @@ class StepSpec extends CatsSuite {
       .take(1)
       .compile
       .last
-      .unsafeRunSync()
-      .map(_._2)
+      .map(_.map(_._2))
 
-    inside(qss.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status, _)) =>
-        inside(zipper.focus.toStep) { case Step(_, _, _, _, List(ex1, ex2)) =>
-          assert(
-            Execution(ex1.toList).actions.length == 2 && Execution(ex2.toList).actions.length == 1
-          )
-        }
-        status should be(SequenceState.Idle)
+    qss.map { x =>
+      inside(x.flatMap(_.sequences.get(seqId))) {
+        case Some(Sequence.State.Zipper(zipper, status, _)) =>
+          inside(zipper.focus.toStep) { case Step(_, _, _, _, List(ex1, ex2)) =>
+            assert(
+              Execution(ex1.toList).actions.length == 2 && Execution(ex2.toList).actions.length == 1
+            )
+          }
+          assertEquals(status, SequenceState.Idle)
+      }
     }
   }
 
@@ -429,30 +417,31 @@ class StepSpec extends CatsSuite {
 
     val qss = q
       .flatMap { k =>
-        k.enqueue1(Event.start(seqId, user, clientId))
+        k.offer(Event.start(seqId, user, clientId))
           .flatMap(_ =>
             executionEngine
-              .process(PartialFunction.empty)(k.dequeue)(qs0)
+              .process(PartialFunction.empty)(Stream.fromQueueUnterminated(k))(qs0)
               .drop(1)
               .takeThrough(a => !isFinished(a._2.sequences(seqId).status))
               .compile
               .toVector
           )
       }
-      .unsafeRunSync()
 
-    val actionsCompleted = qss.map(_._1).collect { case SystemUpdate(x: Completed[_], _) => x }
-    assert(actionsCompleted.length == 4)
+    qss.map { x =>
+      val actionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Completed[_], _) => x }
+      assertEquals(actionsCompleted.length, 4)
 
-    val executionsCompleted = qss.map(_._1).collect { case SystemUpdate(x: Executed, _) => x }
-    assert(executionsCompleted.length == 3)
+      val executionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Executed, _) => x }
+      assertEquals(executionsCompleted.length, 3)
 
-    val sequencesCompleted = qss.map(_._1).collect { case SystemUpdate(x: Finished, _) => x }
-    assert(sequencesCompleted.length == 1)
+      val sequencesCompleted = x.map(_._1).collect { case SystemUpdate(x: Finished, _) => x }
+      assertEquals(sequencesCompleted.length, 1)
 
-    inside(qss.lastOption.flatMap(_._2.sequences.get(seqId))) {
-      case Some(Sequence.State.Final(_, status)) =>
-        status should be(SequenceState.Completed)
+      inside(x.lastOption.flatMap(_._2.sequences.get(seqId))) {
+        case Some(Sequence.State.Final(_, status)) =>
+          assertEquals(status, SequenceState.Completed)
+      }
     }
   }
 
@@ -482,21 +471,23 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qs1 = runToCompletion(qs0)
+    val qs1 = runToCompletionLastIO(qs0)
 
-    inside(qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status, _)) =>
-        inside(zipper.focus.toStep) {
-          // Check that the sequence stopped midway
-          case Step(_, _, _, _, List(ex1, ex2, ex3)) =>
-            assert(
-              Execution(ex1.toList).results.length == 2 && Execution(
-                ex2.toList
-              ).results.length == 1 && Execution(ex3.toList).actions.length == 1
-            )
-        }
-        // And that it ended in error
-        status should be(SequenceState.Failed(errMsg))
+    qs1.map { x =>
+      inside(x.flatMap(_.sequences.get(seqId))) {
+        case Some(Sequence.State.Zipper(zipper, status, _)) =>
+          inside(zipper.focus.toStep) {
+            // Check that the sequence stopped midway
+            case Step(_, _, _, _, List(ex1, ex2, ex3)) =>
+              assert(
+                Execution(ex1.toList).results.length == 2 && Execution(
+                  ex2.toList
+                ).results.length == 1 && Execution(ex3.toList).actions.length == 1
+              )
+          }
+          // And that it ended in error
+          assertEquals(status, SequenceState.Failed(errMsg))
+      }
     }
   }
 
@@ -526,14 +517,15 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qs1 = runToCompletion(qs0)
+    val qs1 = runToCompletionLastIO(qs0)
 
-    inside(qs1.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Final(_, status)) =>
-      // Without the error we should have a value 2
-      ref.get.unsafeRunSync() shouldBe 1
-      // And that it ended in error
-      status                  shouldBe SequenceState.Completed
-    }
+    qs1.map { x =>
+      inside(x.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Final(_, status)) =>
+        assertEquals(status, SequenceState.Completed)
+      }
+    } *>
+      ref.get.map(assertEquals(_, 1))
+
   }
 
   test("engine should mark a step as aborted if the action ends as aborted") {
@@ -558,11 +550,13 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qs1 = runToCompletion(qs0)
+    val qs1 = runToCompletionLastIO(qs0)
 
-    inside(qs1.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
-      // And that it ended in aborted
-      status shouldBe SequenceState.Aborted
+    qs1.map { x =>
+      inside(x.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
+        // And that it ended in aborted
+        assertEquals(status, SequenceState.Aborted)
+      }
     }
   }
 
@@ -589,12 +583,14 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qs1 = runToCompletion(qs0)
+    val qs1 = runToCompletionLastIO(qs0)
 
-    inside(qs1.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
-      // Without the error we should have a value 2
-      // And that it ended in error
-      status should be(SequenceState.Failed(errMsg))
+    qs1.map { x =>
+      inside(x.flatMap(_.sequences.get(seqId))) { case Some(Sequence.State.Zipper(_, status, _)) =>
+        // Without the error we should have a value 2
+        // And that it ended in error
+        assertEquals(status, SequenceState.Failed(errMsg))
+      }
     }
   }
 
@@ -621,7 +617,7 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    a[RuntimeException] should be thrownBy runToCompletion(qs0)
+    interceptIO[RuntimeException](runToCompletionLastIO(qs0))
 
   }
 
@@ -665,22 +661,27 @@ class StepSpec extends CatsSuite {
         )
       )
 
-    val qss = runToCompletionL(qs0)
+    val qss = runToCompletionAllIO(qs0)
 
-    inside(qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status, _)) =>
-        inside(zipper.focus.focus.execution.headOption) {
-          case Some(Action(_, _, Action.State(Action.ActionState.Started, v :: _))) =>
-            v shouldEqual PartialValDouble(0.5)
-        }
-        assert(status.isRunning)
-    }
-    inside(qss.lastOption.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Final(seq, status)) =>
-        seq.steps.headOption
-          .flatMap(_.executions.headOption.map(_.head))
-          .map(_.state.runState) shouldEqual Some(Action.ActionState.Completed(RetValDouble(1.0)))
-        status shouldBe SequenceState.Completed
+    qss.map { x =>
+      inside(x.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
+        case Some(Sequence.State.Zipper(zipper, status, _)) =>
+          inside(zipper.focus.focus.execution.headOption) {
+            case Some(Action(_, _, Action.State(Action.ActionState.Started, v :: _))) =>
+              assertEquals(v, PartialValDouble(0.5))
+          }
+          assert(status.isRunning)
+      }
+      inside(x.lastOption.flatMap(_.sequences.get(seqId))) {
+        case Some(Sequence.State.Final(seq, status)) =>
+          assertEquals(
+            seq.steps.headOption
+              .flatMap(_.executions.headOption.map(_.head))
+              .map(_.state.runState),
+            Some(Action.ActionState.Completed(RetValDouble(1.0)))
+          )
+          assertEquals(status, SequenceState.Completed)
+      }
     }
 
   }
@@ -720,7 +721,7 @@ class StepSpec extends CatsSuite {
   }
 
   test("status should be completed when it doesn't have any executions") {
-    assert(stepz0.toStep.status === StepState.Completed)
+    assertEquals(stepz0.toStep.status, StepState.Completed)
   }
 
   test("status should be Error when at least one Action failed") {

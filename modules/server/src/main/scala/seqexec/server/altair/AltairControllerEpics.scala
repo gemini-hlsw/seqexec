@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -315,8 +315,8 @@ object AltairControllerEpics {
         (startStrapGate(currCfg) *> startStrapLoop(currCfg)).whenA(strap) *>
         startSfoLoop(currCfg).whenA(sfo)
 
-    private val ttgsOffEndo: Endo[EpicsAltairConfig] = EpicsAltairConfig.strapGate.set(0) >>>
-      EpicsAltairConfig.strapLoop.set(false) >>>
+    private val ttgsOffEndo: Endo[EpicsAltairConfig] = EpicsAltairConfig.strapGate.replace(0) >>>
+      EpicsAltairConfig.strapLoop.replace(false) >>>
       EpicsAltairConfig.sfoLoop.modify { v =>
         (v === LgsSfoControl.Disable).fold(LgsSfoControl.Disable, LgsSfoControl.Pause)
       }

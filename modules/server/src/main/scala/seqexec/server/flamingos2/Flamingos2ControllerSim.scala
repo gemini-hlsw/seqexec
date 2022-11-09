@@ -1,12 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
 
 import cats.MonadError
-import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
+import cats.effect.{ Async, Ref }
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -36,7 +34,7 @@ final case class Flamingos2ControllerSim[F[_]] private (sim: InstrumentControlle
 }
 
 object Flamingos2ControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[Flamingos2Controller[F]] =
+  def apply[F[_]: Async: Logger]: F[Flamingos2Controller[F]] =
     InstrumentControllerSim("FLAMINGOS-2").map(Flamingos2ControllerSim(_))
 
 }
@@ -72,7 +70,7 @@ final case class Flamingos2ControllerSimBad[F[_]: MonadError[*[_], Throwable]: L
 }
 
 object Flamingos2ControllerSimBad {
-  def apply[F[_]: Sync: Logger: Timer](failAt: Int): F[Flamingos2Controller[F]] =
+  def apply[F[_]: Async: Logger](failAt: Int): F[Flamingos2Controller[F]] =
     (Ref.of[F, Int](0), InstrumentControllerSim("FLAMINGOS-2 (bad)")).mapN { (counter, sim) =>
       Flamingos2ControllerSimBad(
         failAt,
