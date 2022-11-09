@@ -1,10 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Resource, Timer }
-import cats.tests.CatsSuite
+import cats.effect.{ IO, Resource }
+import munit.CatsEffectSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import edu.gemini.aspen.giapi.commands.{
@@ -19,7 +19,6 @@ import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesBridgeImpl
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesConsumer
 import edu.gemini.aspen.giapi.commands.CommandSender
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 import org.scalatest.EitherValues
 
 final case class GmpCommands(amq: ActiveMQJmsProvider, cmc: CommandMessagesConsumer)
@@ -75,13 +74,7 @@ object GmpCommands {
 /**
  * Tests of the giapi api
  */
-final class GiapiCommandSpec extends CatsSuite with EitherValues {
-
-  implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
-  implicit val ioTimer: Timer[IO] =
-    IO.timer(ExecutionContext.global)
+final class GiapiCommandSpec extends CatsEffectSuite with EitherValues {
 
   def client(amqUrl: String, handleCommands: Boolean): Resource[IO, Giapi[IO]] =
     for {
@@ -91,15 +84,13 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       c <- Resource.make(Giapi.giapiConnection[IO](amqUrl).connect)(_.close)
     } yield c
 
-  ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly
+  test("Test sending a command with no handlers".ignore) { // This test passes but the backend doesn't clean up properly
     client(GmpCommands.amqUrl("test1"), false)
       .use { c =>
         c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second)
           .attempt
       }
-      .unsafeRunSync() shouldBe Left(
-      CommandResultException(Response.ERROR, "Message cannot be null")
-    )
+      .map(assertEquals(_, Left(CommandResultException(Response.ERROR, "Message cannot be null"))))
   }
 
   test("Test sending a command with no answer") {
@@ -108,9 +99,12 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
         c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second)
           .attempt
       }
-      .unsafeRunSync() shouldBe Left(
-      CommandResultException(Response.NOANSWER, "No answer from the instrument")
-    )
+      .map(
+        assertEquals(
+          _,
+          Left(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
+        )
+      )
   }
 
   test("Test sending a command with immediate answer") {
@@ -119,7 +113,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
         c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second)
           .attempt
       }
-      .unsafeRunSync() shouldBe Right(CommandResult(Response.COMPLETED))
+      .map(assertEquals(_, Right(CommandResult(Response.COMPLETED))))
   }
 
   test("Test sending a command with accepted but never completed answer") {
@@ -129,7 +123,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
         c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout)
           .attempt
       }
-      .unsafeRunSync() shouldBe Left(CommandResultException.timedOut(timeout))
+      .map(assertEquals(_, Left(CommandResultException.timedOut(timeout))))
   }
 
 }

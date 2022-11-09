@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
@@ -13,14 +13,15 @@ import scala.scalajs.js
 
 import cats._
 import cats.data.NonEmptyList
-import cats.implicits._
-import japgolly.scalajs.react.MonocleReact._
+import cats.syntax.all._
+import cats.Order._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import monocle.Lens
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
@@ -157,7 +158,7 @@ object LogArea {
   object State {
 
     def levelLens(l: ServerLogLevel): Lens[State, Option[Boolean]] =
-      State.selectedLevels ^|-> at(l)
+      State.selectedLevels.andThen(at(l))
 
     private val DefaultTableState: TableState[TableColumn] =
       TableState[TableColumn](

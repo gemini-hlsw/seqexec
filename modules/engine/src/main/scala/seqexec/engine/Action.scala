@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -23,7 +23,7 @@ final case class Action[F[_]](
 object Action {
 
   def runStateL[F[_]]: Lens[Action[F], ActionState[F]] =
-    Action.state ^|-> State.runState
+    Action.state.andThen(State.runState)
 
   @Lenses
   final case class State[F[_]](

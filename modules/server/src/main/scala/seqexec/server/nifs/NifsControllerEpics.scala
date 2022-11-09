@@ -1,18 +1,15 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.nifs
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
 import scala.math.abs
-
 import cats._
 import cats.data.OptionT
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
@@ -117,7 +114,7 @@ object NifsControllerEpics extends NifsEncoders {
     }.map(tag[NumberOfFowSamplesI][Int])
       .toOption
 
-  def apply[F[_]: Timer: Async](
+  def apply[F[_]: Async](
     epicsSys:   => NifsEpics[F]
   )(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
 

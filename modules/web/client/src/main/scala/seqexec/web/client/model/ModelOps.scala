@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats.Show
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.Step

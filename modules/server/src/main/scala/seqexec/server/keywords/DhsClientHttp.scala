@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -10,10 +10,7 @@ import scala.concurrent.duration._
 
 import cats.FlatMap
 import cats.data.EitherT
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import io.circe.Decoder
@@ -21,7 +18,7 @@ import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.syntax._
-import lucuma.core.enum.DhsKeywordName
+import lucuma.core.enums.DhsKeywordName
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -33,11 +30,12 @@ import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import seqexec.server.keywords.DhsClient.ImageParameters
+import cats.effect.{ Ref, Temporal }
 
 /**
  * Implementation of DhsClient that interfaces with the real DHS over the http interface
  */
-class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F])
+class DhsClientHttp[F[_]](base: Client[F], baseURI: Uri)(implicit timer: Temporal[F])
     extends DhsClient[F]
     with Http4sClientDsl[F] {
   import DhsClientHttp._
@@ -173,7 +171,9 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] =
+  def apply[F[_]](client: Client[F], uri: Uri)(implicit
+    timer:                Temporal[F]
+  ): DhsClient[F] =
     new DhsClientHttp[F](client, uri)
 }
 

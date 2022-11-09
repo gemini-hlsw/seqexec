@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -6,9 +6,9 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.Monoid
 import cats.syntax.all._
-import lucuma.core.enum.GpiDisperser
-import lucuma.core.enum.GpiFilter
-import lucuma.core.enum.GpiObservingMode
+import lucuma.core.enums.GpiDisperser
+import lucuma.core.enums.GpiFilter
+import lucuma.core.enums.GpiObservingMode
 import lucuma.core.math.Offset
 import seqexec.model.NodAndShuffleStatus
 import seqexec.model.NodAndShuffleStep

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.client.table
@@ -11,13 +11,14 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.facade.JsNumber
 import monocle.Lens
 import monocle.Optional
 import monocle.function.Each._
 import monocle.function.Index._
 import react.common._
 import react.virtualized._
+import web.client.JsNumberOps._
 
 /**
  * State of a table
@@ -32,9 +33,12 @@ final case class TableState[A: Eq](
 
   // Reset visibility given the filters
   private def withVisibleCols(visibleFilter: A => Boolean): TableState[A] =
-    (TableState.columns[A] ^|->> each).modify { c =>
-      ColumnMeta.visible.set(visibleFilter(c.column))(c)
-    }(this)
+    TableState
+      .columns[A]
+      .andThen(nelEach[ColumnMeta[A]].each)
+      .modify { c =>
+        ColumnMeta.visible.replace(visibleFilter(c.column))(c)
+      }(this)
 
   // width set aside for fixed width columns
   private def fixedWidth(calculatedWidth: A => Option[Double]): Double =
@@ -55,9 +59,9 @@ final case class TableState[A: Eq](
     val indexNx = cl.indexWhere((c: ColumnMeta[A]) => c.visible && c.isVariable, indexOf + 1)
     val ω       = s.width.toDouble - fixedWidth(calculatedWidth)
     val refCol  = cl.lift(indexOf)
-    val refO    = TableState.column[A](indexOf) ^|-> ColumnMeta.width
+    val refO    = TableState.column[A](indexOf).andThen(ColumnMeta.width[A])
     val nextCol = cl.lift(indexNx)
-    val nextO   = TableState.column[A](indexNx) ^|-> ColumnMeta.width
+    val nextO   = TableState.column[A](indexNx).andThen(ColumnMeta.width[A])
     val id      = identity[TableState[A]] _
 
     if (Δ === 0.0) {
@@ -71,10 +75,10 @@ final case class TableState[A: Eq](
             val ωʹ  = ω * pʹ         // new width
             val pʹʹ = max(m, ωʹ) / ω // new percentage with limit
             val Δʹ  = pʹʹ - p        // new width with limit
-            val rcL = refO.set(VariableColumnWidth(pʹʹ, m))
+            val rcL = refO.replace(VariableColumnWidth(pʹʹ, m))
             val ncL = nextCol match {
               case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                nextO.set(VariableColumnWidth(p - Δʹ, m))
+                nextO.replace(VariableColumnWidth(p - Δʹ, m))
               case _                                                             => id
             }
             (rcL, ncL)
@@ -88,10 +92,10 @@ final case class TableState[A: Eq](
             val ωʹ  = ω * pʹ         // new width
             val pʹʹ = max(m, ωʹ) / ω // new percentage with limit
             val Δʹ  = pʹʹ - p        // new width with limit
-            val ncL = nextO.set(VariableColumnWidth(pʹʹ, m))
+            val ncL = nextO.replace(VariableColumnWidth(pʹʹ, m))
             val rcL = refCol match {
               case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                refO.set(VariableColumnWidth(p - Δʹ, m))
+                refO.replace(VariableColumnWidth(p - Δʹ, m))
               case _                                                             => id
             }
             (rcL, ncL)
@@ -99,7 +103,7 @@ final case class TableState[A: Eq](
           case _ => (id, id)
         }
       }
-      (TableState.userModified[A].set(IsModified) >>> rc >>> nc)(this)
+      (TableState.userModified[A].replace(IsModified) >>> rc >>> nc)(this)
     }
   }
 
@@ -130,7 +134,7 @@ final case class TableState[A: Eq](
         case None    => cols
         case Some(x) =>
           val updatedCols = cols.map {
-            case c if x.column === c.column => ColumnMeta.visible.set(false)(c)
+            case c if x.column === c.column => ColumnMeta.visible.replace(false)(c)
             case c                          => c
           }
           discardUntilUnder(calculatedWidth, updatedCols, allowedWidth)
@@ -172,7 +176,7 @@ final case class TableState[A: Eq](
             case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _)        =>
               ColumnMeta
                 .width[A]
-                .set(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
+                .replace(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
             case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(w, mw), g, _) =>
               val vc =
                 VariableColumnWidth(calculatedWidth(c)
@@ -180,7 +184,7 @@ final case class TableState[A: Eq](
                                       .getOrElse(w),
                                     mw
                 )
-              ColumnMeta.width[A].set(vc)(m)
+              ColumnMeta.width[A].replace(vc)(m)
             case x                                                               => x
           }
         } else {
@@ -197,14 +201,14 @@ final case class TableState[A: Eq](
             case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _)        =>
               ColumnMeta
                 .width[A]
-                .set(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
+                .replace(FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
             case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(w, mw), _, _) =>
               val vc = VariableColumnWidth(calculatedWidth(c)
                                              .map(w => min(1.0, max(w, mw) / totalVariableWidth))
                                              .getOrElse(w),
                                            mw
               )
-              ColumnMeta.width[A].set(vc)(m)
+              ColumnMeta.width[A].replace(vc)(m)
             case x                                                               => x
           }
         }
@@ -228,7 +232,7 @@ final case class TableState[A: Eq](
     cl.zipWithIndex
       .map {
         case (m @ ColumnMeta(_, _, _, _, FixedColumnWidth(w), _, _), i) =>
-          cb(ColumnRenderArgs(m, i, w, false)).some
+          cb(ColumnRenderArgs(m, i, w, resizable = false)).some
 
         case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _), i) =>
           val beforeLast = i < (lf - 1)
@@ -243,7 +247,11 @@ final case class TableState[A: Eq](
 
   // Reset all the columns to be visible
   private def resetVisibleColumns: TableState[A] =
-    (TableState.columns[A] ^|->> each ^|-> ColumnMeta.visible).set(true)(this)
+    TableState
+      .columns[A]
+      .andThen(nelEach[ColumnMeta[A]].each)
+      .andThen(ColumnMeta.visible[A])
+      .replace(true)(this)
 
   // Table can call this to build the columns
   def recalculateWidths(
@@ -264,12 +272,15 @@ final case class TableState[A: Eq](
       val percentagesSum = columns.collect {
         case ColumnMeta(_, _, _, true, VariableColumnWidth(p, _), _, _) => p
       }.sum
-      (TableState.columns[A] ^|->> each).modify {
-        case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min), _, _) =>
-          c.copy(width = VariableColumnWidth(p / percentagesSum, min))
-        case c                                                                =>
-          c
-      }(this)
+      TableState
+        .columns[A]
+        .andThen(nelEach[ColumnMeta[A]].each)
+        .modify {
+          case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min), _, _) =>
+            c.copy(width = VariableColumnWidth(p / percentagesSum, min))
+          case c                                                                =>
+            c
+        }(this)
     } else {
       this
     }
@@ -309,7 +320,7 @@ object TableState {
     Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
 
   def column[A: Eq](c: Int): Optional[TableState[A], ColumnMeta[A]] =
-    columns[A] ^|-? index(c)
+    columns[A].andThen(nelIndex[ColumnMeta[A]].index(c))
 
   def scrollPosition[A: Eq]: Lens[TableState[A], JsNumber] =
     Lens[TableState[A], JsNumber](_.scrollPosition)(n => a => a.copy(scrollPosition = n))

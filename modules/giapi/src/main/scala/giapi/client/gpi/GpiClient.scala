@@ -1,14 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package giapi.client.gpi
 
 import scala.concurrent.duration._
-
-import cats.ApplicativeError
-import cats.effect.ConcurrentEffect
 import cats.effect.Resource
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.Activity
 import edu.gemini.aspen.giapi.commands.SequenceCommand
@@ -20,6 +16,8 @@ import giapi.client.commands.Command
 import giapi.client.commands.CommandResult
 import giapi.client.commands.Configuration
 import mouse.boolean._
+import cats.effect.Temporal
+import cats.effect.kernel.Async
 
 sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 
@@ -149,8 +147,7 @@ object GpiClient {
   }
 
   // Used for simulations
-  def simulatedGpiClient[F[_]: Timer: ApplicativeError[*[_], Throwable]]
-    : Resource[F, GpiClient[F]] =
+  def simulatedGpiClient[F[_]: Temporal]: Resource[F, GpiClient[F]] =
     Resource.eval(
       Giapi
         .simulatedGiapiConnection[F]
@@ -158,7 +155,7 @@ object GpiClient {
         .map(new GpiClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
-  def gpiClient[F[_]: Timer: ConcurrentEffect](
+  def gpiClient[F[_]: Async](
     url:               String,
     statusesToMonitor: List[String]
   ): Resource[F, GpiClient[F]] = {

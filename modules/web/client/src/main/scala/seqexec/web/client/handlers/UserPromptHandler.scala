@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -28,7 +28,7 @@ class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
       val modelUpdateE = not match {
         case UserPrompt.ChecksOverride(id, _, _) => Effect(Future(RunStartFailed(id)))
       }
-      updatedLE(lens.set(not.some), modelUpdateE)
+      updatedLE(lens.replace(not.some), modelUpdateE)
   }
 
   def handleClosePrompt: PartialFunction[Any, ActionResult[M]] = { case CloseUserPromptBox(x) =>
@@ -37,7 +37,7 @@ class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
         Effect(Future(RequestRunFrom(id, stp, RunOptions.ChecksOverride)))
       case _                                                                            => VoidEffect
     }
-    updatedLE(lens.set(none), overrideEffect)
+    updatedLE(lens.replace(none), overrideEffect)
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] =

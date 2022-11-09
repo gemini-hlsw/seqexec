@@ -1,17 +1,14 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package giapi.client
 
 import scala.jdk.CollectionConverters._
-
 import cats.Applicative
 import cats.ApplicativeError
-import cats.effect.ConcurrentEffect
-import cats.effect.Effect
-import cats.effect.Resource
-import cats.effect.Sync
+import cats.effect.{ Async, Resource, Sync }
 import cats.effect.implicits._
+import cats.effect.std.{ Dispatcher, Queue }
 import cats.syntax.all._
 import edu.gemini.aspen.giapi.status.StatusHandler
 import edu.gemini.aspen.giapi.status.StatusItem
@@ -19,7 +16,6 @@ import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.Stream
-import fs2.concurrent.Queue
 
 /////////////////////////////////////////////////////////////////
 // Links status streaming with the giapi db
@@ -56,39 +52,42 @@ object GiapiStatusDb {
         Applicative[F].unit
     }
 
-  private def streamItemsToDb[F[_]: ConcurrentEffect](
+  private def streamItemsToDb[F[_]: Async](
     agg:   StatusHandlerAggregate,
     db:    GiapiDb[F],
     items: List[String]
   ): F[Unit] = {
-    def statusHandler(q: Queue[F, (String, Any)]) = new StatusHandler {
+    def statusHandler(q: Queue[F, (String, Any)])(dispatcher: Dispatcher[F]): StatusHandler =
+      new StatusHandler {
 
-      override def update[B](item: StatusItem[B]): Unit =
-        // Check the item name and enqueue it
-        if (items.contains(item.getName)) {
-          Option(item.getValue).foreach { a =>
-            q.enqueue1((item.getName, a)).toIO.unsafeRunAsync(_ => ())
+        override def update[B](item: StatusItem[B]): Unit =
+          // Check the item name and enqueue it
+          if (items.contains(item.getName)) {
+            Option(item.getValue).foreach { a =>
+              dispatcher.unsafeRunAndForget(q.offer((item.getName, a)))
+            }
           }
-        }
 
-      override def getName: String = "Giapi staus db"
-    }
+        override def getName: String = "Giapi status db"
+      }
 
     // A trivial resource that binds and unbinds a status handler.
     def bind(q: Queue[F, (String, Any)]): Resource[F, StatusHandler] =
-      Resource.make(
-        Effect[F].delay {
-          val sh = statusHandler(q)
-          agg.bindStatusHandler(sh)
-          sh
-        }
-      )(sh => Effect[F].delay(agg.unbindStatusHandler(sh)))
+      Dispatcher[F].flatMap { dispatcher =>
+        Resource.make(
+          Async[F].delay {
+            val sh = statusHandler(q)(dispatcher)
+            agg.bindStatusHandler(sh)
+            sh
+          }
+        )(sh => Async[F].delay(agg.unbindStatusHandler(sh)))
+      }
 
     // Create a queue and put updates to forward them to the db
     val s = for {
       q <- Stream.eval(Queue.unbounded[F, (String, Any)])
       _ <- Stream.resource(bind(q))
-      _ <- q.dequeue.evalMap { case (n, v) => dbUpdate(db, n, v) }
+      _ <- Stream.fromQueueUnterminated(q).evalMap { case (n, v) => dbUpdate(db, n, v) }
     } yield ()
     s.compile.drain
   }
@@ -143,7 +142,7 @@ object GiapiStatusDb {
    * @param items
    *   List of items to monitor
    */
-  def newStatusDb[F[_]: ConcurrentEffect](
+  def newStatusDb[F[_]: Async](
     url:   String,
     items: List[String]
   ): F[GiapiStatusDb[F]] =

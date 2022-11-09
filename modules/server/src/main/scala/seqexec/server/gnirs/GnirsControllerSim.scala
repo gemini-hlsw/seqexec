@@ -1,10 +1,9 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
 
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -18,7 +17,7 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GnirsControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[GnirsController[F]] =
+  def apply[F[_]: Logger: Async]: F[GnirsController[F]] =
     InstrumentControllerSim[F]("GNIRS").map { sim =>
       new GnirsController[F] {
 
