@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -208,28 +208,22 @@ object SequenceTab {
     Lens[SequenceTab, Option[StepId]] {
       case t: InstrumentSequenceTab => t.stepConfig
       case t: PreviewSequenceTab    => t.stepConfig
-    }(n =>
-      a =>
-        a match {
-          case t: InstrumentSequenceTab => t.copy(stepConfig = n)
-          case t: PreviewSequenceTab    => t.copy(stepConfig = n)
-        }
-    )
+    }(n => {
+      case t: InstrumentSequenceTab => t.copy(stepConfig = n)
+      case t: PreviewSequenceTab    => t.copy(stepConfig = n)
+    })
 
   val tabOperationsL: Lens[SequenceTab, TabOperations] =
     Lens[SequenceTab, TabOperations] {
       case t: InstrumentSequenceTab => t.tabOperations
       case t: PreviewSequenceTab    => t.tabOperations
-    }(n =>
-      a =>
-        a match {
-          case t: InstrumentSequenceTab => t.copy(tabOperations = n)
-          case t: PreviewSequenceTab    => t.copy(tabOperations = n)
-        }
-    )
+    }(n => {
+      case t: InstrumentSequenceTab => t.copy(tabOperations = n)
+      case t: PreviewSequenceTab    => t.copy(tabOperations = n)
+    })
 
   val resourcesRunOperationsL: Lens[SequenceTab, SortedMap[Resource, ResourceRunOperation]] =
-    SequenceTab.tabOperationsL ^|-> TabOperations.resourceRunRequested
+    SequenceTab.tabOperationsL.andThen(TabOperations.resourceRunRequested)
 }
 
 @Lenses
@@ -275,10 +269,16 @@ object InstrumentSequenceTab {
     )
 
   implicit val completedSequence: Optional[InstrumentSequenceTab, CompletedSequenceView] =
-    InstrumentSequenceTab.curSequence ^<-? stdLeft
+    InstrumentSequenceTab.curSequence.andThen(
+      stdLeft[InstrumentSequenceTab.CompletedSequenceView, InstrumentSequenceTab.LoadedSequenceView]
+    )
 
   implicit val loadedSequence: Optional[InstrumentSequenceTab, LoadedSequenceView] =
-    InstrumentSequenceTab.curSequence ^<-? stdRight
+    InstrumentSequenceTab.curSequence.andThen(
+      stdRight[InstrumentSequenceTab.CompletedSequenceView,
+               InstrumentSequenceTab.LoadedSequenceView
+      ]
+    )
 }
 
 @Lenses

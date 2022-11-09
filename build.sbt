@@ -5,7 +5,6 @@ import Common._
 import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
-import sbtcrossproject.crossProject
 import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
@@ -23,19 +22,21 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-Global / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
-// This key is used to find the JRE dir. It could/should be overriden on a user basis
+// This key is used to find the JRE dir. It could/should be overridden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
 ThisBuild / ocsJreDir := Path.userHome / ".jres17"
+
+ThisBuild / evictionErrorLevel := Level.Info
 
 Global / cancelable := true
 
 // Should make CI builds more robust
-concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
+Global / concurrentRestrictions += Tags.limit(ScalaJSTags.Link, 2)
 
 // Uncomment for local gmp testing
-// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+// ThisBuild / resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -114,7 +115,7 @@ lazy val giapi = project
                                 GmpStatusDatabase % "test",
                                 GmpCmdJmsBridge   % "test",
                                 NopSlf4j          % "test"
-    )
+    ) ++ MUnit.value
   )
 
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
@@ -139,6 +140,7 @@ lazy val seqexec_web_server = project
     libraryDependencies ++= Seq(UnboundId,
                                 JwtCore,
                                 JwtCirce,
+                                Http4sServer,
                                 Http4sPrometheus,
                                 CommonsHttp,
                                 ScalaMock,
@@ -167,7 +169,7 @@ lazy val seqexec_web_client = project
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .settings(lucumaScalaJsSettings: _*)
+//  .settings(lucumaScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
@@ -227,7 +229,8 @@ lazy val seqexec_web_client = project
       "terser-webpack-plugin"         -> "3.0.6",
       "html-webpack-plugin"           -> "4.3.0",
       "css-minimizer-webpack-plugin"  -> "1.1.5",
-      "favicons-webpack-plugin"       -> "4.2.0"
+      "favicons-webpack-plugin"       -> "4.2.0",
+      "@packtracker/webpack-plugin"   -> "2.3.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,
@@ -308,13 +311,13 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       Mouse.value,
       BooPickle.value,
       CatsTime.value
-    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value
+    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value ++ Sttp.value ++ Circe.value
   )
   .jvmSettings(
     commonSettings,
     libraryDependencies += Http4sCore
   )
-  .jsSettings(lucumaScalaJsSettings)
+//  .jsSettings(lucumaScalaJsSettings)
   .jsSettings(
     // And add a custom one
     libraryDependencies += JavaTimeJS.value,

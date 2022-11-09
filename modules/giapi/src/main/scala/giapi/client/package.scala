@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package giapi
@@ -7,6 +7,7 @@ import scala.concurrent.duration._
 
 import cats._
 import cats.effect._
+import cats.effect.std.Queue
 import cats.effect.implicits._
 import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
@@ -19,12 +20,11 @@ import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.Stream
-import fs2.concurrent
-import fs2.concurrent.Queue
 import giapi.client.commands.Command
 import giapi.client.commands.CommandResultException
 import giapi.client.commands._
 import shapeless.Typeable._
+import cats.effect.Temporal
 
 package object client {
 
@@ -42,6 +42,7 @@ package object client {
 
 package client {
 
+  import cats.effect.std.Dispatcher
   import giapi.client.commands.CommandResult
 
   final case class GiapiException(str: String) extends RuntimeException(str)
@@ -142,40 +143,43 @@ package client {
         StatusStreamer(aggregate, statusService)
       }
 
-    private def streamItem[F[_]: ConcurrentEffect, A: ItemGetter](
+    private def streamItem[F[_]: Async, A: ItemGetter](
       agg:        StatusHandlerAggregate,
       statusItem: String
     ): F[Stream[F, A]] =
       Sync[F].delay {
 
-        def statusHandler(q: concurrent.Queue[F, A]) = new StatusHandler {
+        def statusHandler(q: Queue[F, A])(dispatcher: Dispatcher[F]): StatusHandler =
+          new StatusHandler {
 
-          override def update[B](item: StatusItem[B]): Unit =
-            // Check the item name and attempt convert it to A
-            if (item.getName === statusItem) {
-              ItemGetter[A].value(item.getValue).foreach { a =>
-                q.enqueue1(a).toIO.unsafeRunAsync(_ => ())
+            override def update[B](item: StatusItem[B]): Unit =
+              // Check the item name and attempt convert it to A
+              if (item.getName === statusItem) {
+                ItemGetter[A].value(item.getValue).foreach { a =>
+                  dispatcher.unsafeRunAndForget(q.offer(a))
+                }
               }
-            }
 
-          override def getName: String = "StatusHandler"
-        }
+            override def getName: String = "StatusHandler"
+          }
 
         // A trivial resource that binds and unbinds a status handler.
         def bind(q: Queue[F, A]): Resource[F, StatusHandler] =
-          Resource.make(
-            Effect[F].delay {
-              val sh = statusHandler(q)
-              agg.bindStatusHandler(sh)
-              sh
-            }
-          )(sh => Effect[F].delay(agg.unbindStatusHandler(sh)))
+          Dispatcher[F].flatMap { dispatcher =>
+            Resource.make(
+              Async[F].delay {
+                val sh = statusHandler(q)(dispatcher)
+                agg.bindStatusHandler(sh)
+                sh
+              }
+            )(sh => Async[F].delay(agg.unbindStatusHandler(sh)))
+          }
 
         // Put the items in a queue as they arrive to the stream
         for {
           q <- Stream.eval(Queue.unbounded[F, A])
           _ <- Stream.resource(bind(q))
-          i <- q.dequeue
+          i <- Stream.fromQueueUnterminated(q)
         } yield i
       }
 
@@ -187,7 +191,7 @@ package client {
      * @tparam F
      *   Effect type
      */
-    def giapiConnection[F[_]: Timer: ConcurrentEffect](
+    def giapiConnection[F[_]: Async](
       url: String
     ): GiapiConnection[F] =
       new GiapiConnection[F] {
@@ -204,7 +208,7 @@ package client {
               getO[A](statusItem).flatMap {
                 case Some(a) => a.pure[F]
                 case None    =>
-                  Sync[F].raiseError(new GiapiException(s"Status item $statusItem not found"))
+                  Sync[F].raiseError(GiapiException(s"Status item $statusItem not found"))
               }
 
             def getO[A: ItemGetter](statusItem: String): F[Option[A]] =
@@ -266,7 +270,7 @@ package client {
      * Simulator interpreter on IO, Reading items will fail and all commands will succeed
      */
     def simulatedGiapiConnection[F[_]](implicit
-      T: Timer[F],
+      T: Temporal[F],
       F: ApplicativeError[F, Throwable]
     ): GiapiConnection[F] = new GiapiConnection[F] {
       override def connect: F[Giapi[F]] = F.pure(new Giapi[F] {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -31,9 +31,9 @@ object SequencesQueue {
     Eq.by(x => (x.loaded, x.conditions, x.operator, x.queues, x.sessionQueue))
 
   def sessionQueueT[T]: Traversal[SequencesQueue[T], T] =
-    SequencesQueue.sessionQueue[T] ^|->> each
+    SequencesQueue.sessionQueue[T].andThen(each[List[T], T])
 
   def queueItemG[T](pred: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
     SequencesQueue.sessionQueue
-      .composeGetter(Getter[List[T], Option[T]](_.find(pred)))
+      .andThen(Getter[List[T], Option[T]](_.find(pred)))
 }

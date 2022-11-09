@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gpi
@@ -12,8 +12,6 @@ import scala.concurrent.duration._
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ReadoutArea => _, _ }
 import edu.gemini.spModel.obsclass.ObsClass
@@ -21,8 +19,8 @@ import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.GpiReadMode
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.GpiReadMode
+import lucuma.core.enums.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -35,8 +33,9 @@ import seqexec.server.keywords.KeywordsClient
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
+import cats.effect.Temporal
 
-final case class Gpi[F[_]: Timer: Logger: Concurrent](controller: GpiController[F])
+final case class Gpi[F[_]: Temporal: Logger](controller: GpiController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 

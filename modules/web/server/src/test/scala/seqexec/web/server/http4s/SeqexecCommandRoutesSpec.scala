@@ -1,20 +1,21 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.tests.CatsSuite
-import seqexec.model.Observation
+import seqexec.model.{ ClientId, Observation }
 import lucuma.core.util.arb.ArbEnumerated._
 import java.net.URLEncoder
 import org.http4s._
+import org.http4s.implicits._
+import org.http4s.server.websocket.WebSocketBuilder2
 import org.scalamock.scalatest.MockFactory
-import org.http4s.Uri.uri
 import scala.math.abs
 import seqexec.server._
 import seqexec.web.server.http4s.encoder._
-import seqexec.model.ClientId
 import seqexec.model.enum._
 import seqexec.model.arb.ArbClientId._
 import seqexec.model.arb.ArbObservationId._
@@ -36,13 +37,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (wv: WaterVapor) =>
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri("/wv"))
-                 .addCookie("token", t)
-                 .withEntity(wv)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri"/wv")
+                   .addCookie("token", t)
+                   .withEntity(wv)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Set water vapor to $wv"))
@@ -61,13 +63,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (iq: ImageQuality) =>
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri("/iq"))
-                 .addCookie("token", t)
-                 .withEntity(iq)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri"/iq")
+                   .addCookie("token", t)
+                   .withEntity(iq)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Set image quality to $iq"))
@@ -86,13 +89,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (sb: SkyBackground) =>
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri("/sb"))
-                 .addCookie("token", t)
-                 .withEntity(sb)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri"/sb")
+                   .addCookie("token", t)
+                   .withEntity(sb)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Set sky background to $sb"))
@@ -111,13 +115,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (cc: CloudCover) =>
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri("/cc"))
-                 .addCookie("token", t)
-                 .withEntity(cc)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri"/cc")
+                   .addCookie("token", t)
+                   .withEntity(cc)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Set cloud cover to $cc"))
@@ -134,16 +139,17 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, clientId: ClientId) =>
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST,
-                           uri = Uri.unsafeFromString(
-                             s"/${obsId.format}/start/obs/${clientId.self}"
-                           )
-               )
-                 .addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST,
+                             uri = Uri.unsafeFromString(
+                               s"/${obsId.format}/start/observer/${clientId.self}"
+                             )
+                 )
+                   .addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Started sequence ${obsId.format}"))
@@ -164,11 +170,12 @@ class SeqexecCommandRoutesSpec
         s"/${obsId.format}/$startFrom/startFrom/obs/${clientId.self}"
       )
       val (s, b)    = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -190,11 +197,12 @@ class SeqexecCommandRoutesSpec
     forAll { (obsId: Observation.Id) =>
       val uri    = Uri.unsafeFromString(s"/${obsId.format}/pause/obs")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Pause sequence ${obsId.format}"))
@@ -212,11 +220,12 @@ class SeqexecCommandRoutesSpec
     forAll { (obsId: Observation.Id) =>
       val uri    = Uri.unsafeFromString(s"/${obsId.format}/cancelpause/obs")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(b.unsafeRunSync() === Some(s"Cancel Pause sequence ${obsId.format}"))
@@ -233,13 +242,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
       val toSet  = abs(step / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/breakpoint/obs/$set")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/breakpoint/observer/$set")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -260,13 +270,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, step: Int, set: Boolean) =>
       val toSet  = abs(step / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/skip/obs/$set")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$toSet/skip/observer/$set")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -287,13 +298,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stop/obs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stop/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -314,13 +326,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stopGracefully/obs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/stopGracefully/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -341,13 +354,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/abort/obs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/abort/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -368,13 +382,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObs/obs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObs/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -396,13 +411,14 @@ class SeqexecCommandRoutesSpec
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
       val uri    =
-        Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObsGracefully/obs")
+        Uri.unsafeFromString(s"/${obsId.format}/$step/pauseObsGracefully/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -423,13 +439,14 @@ class SeqexecCommandRoutesSpec
     }
     forAll { (obsId: Observation.Id, st: Int) =>
       val step   = abs(st / 2) + 1
-      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/resumeObs/obs")
+      val uri    = Uri.unsafeFromString(s"/${obsId.format}/$step/resumeObs/observer")
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
@@ -453,11 +470,12 @@ class SeqexecCommandRoutesSpec
         s"/${obsId.format}/observer/${URLEncoder.encode(obs, "UTF-8")}"
       )
       val (s, b) = (for {
-        s <- commandRoutes(engine)
-        t <- newLoginToken
-        l <- s(
-               Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
-             ).value
+        s   <- commandRoutes(engine)
+        wsb <- WebSocketBuilder2[IO]
+        t   <- newLoginToken(wsb)
+        l   <- s(
+                 Request[IO](method = Method.POST, uri = uri).addCookie("token", t)
+               ).value
       } yield (l.map(_.status), l.map(_.as[String]).sequence)).unsafeRunSync()
       assert(s === Some(Status.Ok))
       assert(
