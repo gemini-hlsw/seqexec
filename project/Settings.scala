@@ -30,7 +30,7 @@ object Settings {
     val shapelessVersion    = "2.3.10"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVerson      = "1.2.0"
-    val catsTime            = "0.5.1"
+    val catsTime            = "0.4.0"
 
     val http4sVersion  = "0.21.33"
     val squants        = "1.8.3"
@@ -121,7 +121,7 @@ object Settings {
     val JuliSlf4j        = "org.slf4j"      % "jul-to-slf4j" % LibraryVersions.slf4j
     val NopSlf4j         = "org.slf4j"      % "slf4j-nop"    % LibraryVersions.slf4j
     val CatsTime         = Def.setting(
-      "org.typelevel" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
+      "io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
     )
     val Log4Cats         = Def.setting("org.typelevel" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Log4CatsNoop     =
