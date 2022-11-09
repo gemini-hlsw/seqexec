@@ -1,9 +1,9 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
 
-import cats.effect.Sync
+import cats.effect.Async
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.dsl._
@@ -22,7 +22,7 @@ import seqexec.web.server.security.TokenRefresher
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecCommandRoutes[F[_]: Sync](
+class SeqexecCommandRoutes[F[_]: Async](
   auth:       AuthenticationService[F],
   inputQueue: server.EventQueue[F],
   se:         SeqexecEngine[F]

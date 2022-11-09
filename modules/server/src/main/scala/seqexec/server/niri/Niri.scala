@@ -1,16 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.niri
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.ReadMode
 import edu.gemini.spModel.gemini.niri.InstNIRI._
@@ -21,7 +18,7 @@ import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -48,8 +45,9 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import cats.effect.Async
 
-final case class Niri[F[_]: Timer: Logger: Concurrent](
+final case class Niri[F[_]: Async: Logger](
   controller: NiriController[F],
   dhsClient:  DhsClient[F]
 ) extends DhsInstrument[F]

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -34,8 +34,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(id, _) =>
       updatedL(
-        SequencesOnDisplay.markOperations(id,
-                                          TabOperations.runRequested.set(RunOperation.RunInFlight)
+        SequencesOnDisplay.markOperations(
+          id,
+          TabOperations.runRequested.replace(RunOperation.RunInFlight)
         )
       )
 
@@ -43,7 +44,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.stopRequested.set(StopOperation.StopInFlight)
+          TabOperations.stopRequested.replace(StopOperation.StopInFlight)
         )
       )
 
@@ -51,7 +52,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.abortRequested.set(AbortOperation.AbortInFlight)
+          TabOperations.abortRequested.replace(AbortOperation.AbortInFlight)
         )
       )
 
@@ -59,7 +60,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.syncRequested.set(SyncOperation.SyncInFlight)
+          TabOperations.syncRequested.replace(SyncOperation.SyncInFlight)
         )
       )
 
@@ -67,7 +68,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)
+          TabOperations.pauseRequested.replace(PauseOperation.PauseInFlight)
         )
       )
 
@@ -75,7 +76,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.cancelPauseRequested.set(CancelPauseOperation.CancelPauseInFlight)
+          TabOperations.cancelPauseRequested.replace(CancelPauseOperation.CancelPauseInFlight)
         )
       )
 
@@ -83,7 +84,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(id,
                                           TabOperations.startFromRequested
-                                            .set(StartFromOperation.StartFromIdle)
+                                            .replace(StartFromOperation.StartFromIdle)
         )
       )
 
@@ -93,7 +94,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           id,
           TabOperations
             .resourceRun(r)
-            .set(ResourceRunOperation.ResourceRunCompleted(s).some)
+            .replace(ResourceRunOperation.ResourceRunCompleted(s).some)
         )
       )
   }
@@ -110,7 +111,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           id,
           TabOperations
             .resourceRun(r)
-            .set(ResourceRunOperation.ResourceRunInFlight(s).some)
+            .replace(ResourceRunOperation.ResourceRunInFlight(s).some)
         )
       )
   }
@@ -123,8 +124,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case RunSync(id) =>
       updatedL(
-        SequencesOnDisplay.markOperations(id,
-                                          TabOperations.syncRequested.set(SyncOperation.SyncIdle)
+        SequencesOnDisplay.markOperations(
+          id,
+          TabOperations.syncRequested.replace(SyncOperation.SyncIdle)
         )
       )
 
@@ -137,10 +139,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           identity
       updatedLE(
         resetOthers >>>
-          SequencesOnDisplay.markOperations(id,
-                                            TabOperations
-                                              .resourceRun(r)
-                                              .set(ResourceRunOperation.ResourceRunInFlight(s).some)
+          SequencesOnDisplay.markOperations(
+            id,
+            TabOperations
+              .resourceRun(r)
+              .replace(ResourceRunOperation.ResourceRunInFlight(s).some)
           ),
         Effect.action(UpdateSelectedStepForce(id, s))
       )
@@ -151,7 +154,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedL(
         SequencesOnDisplay.markOperations(id,
                                           TabOperations.runRequested
-                                            .set(RunOperation.RunIdle)
+                                            .replace(RunOperation.RunIdle)
         )
       )
 
@@ -162,7 +165,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       )
       updatedLE(SequencesOnDisplay.markOperations(
                   id,
-                  TabOperations.syncRequested.set(SyncOperation.SyncIdle)
+                  TabOperations.syncRequested.replace(SyncOperation.SyncIdle)
                 ),
                 notification
       )
@@ -181,7 +184,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       )
       updatedLE(SequencesOnDisplay.markOperations(
                   id,
-                  TabOperations.stopRequested.set(StopOperation.StopIdle)
+                  TabOperations.stopRequested.replace(StopOperation.StopIdle)
                 ),
                 notification
       )
@@ -193,7 +196,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       )
       updatedLE(SequencesOnDisplay.markOperations(
                   id,
-                  TabOperations.pauseRequested.set(PauseOperation.PauseIdle)
+                  TabOperations.pauseRequested.replace(PauseOperation.PauseIdle)
                 ),
                 notification
       )
@@ -206,7 +209,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updatedLE(
         SequencesOnDisplay.markOperations(
           id,
-          TabOperations.startFromRequested.set(StartFromOperation.StartFromIdle)
+          TabOperations.startFromRequested.replace(StartFromOperation.StartFromIdle)
         ),
         notification
       )
@@ -221,7 +224,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                     id,
                     TabOperations
                       .resourceRun(r)
-                      .set(ResourceRunOperation.ResourceRunFailed(s).some)
+                      .replace(ResourceRunOperation.ResourceRunFailed(s).some)
                   ),
                 notification
       )

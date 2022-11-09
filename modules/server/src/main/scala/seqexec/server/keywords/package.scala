@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -6,7 +6,7 @@ package seqexec.server
 import cats._
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.KeywordName
+import lucuma.core.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 
@@ -252,7 +252,7 @@ package object keywords {
   def boolDefault[F[_]: Applicative]: F[Boolean]    = BooleanDefault.pure[F]
   def listDefault[F[_]: Applicative, A]: F[List[A]] = List.empty[A].pure[F]
 
-  def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
+  def internalKeywordConvert(k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, k.stringValue)
 
   implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A]) {

@@ -1,10 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
 
-import cats.effect.{ ContextShift, IO }
+import cats.effect.IO
 import cats.data.NonEmptyList
+import cats.effect.unsafe.implicits.global
 import fs2.Stream
 import seqexec.model.Observation
 import java.util.UUID
@@ -14,14 +15,11 @@ import org.scalatest.Inside.inside
 import org.scalatest.matchers.should.Matchers._
 import seqexec.model.{ ActionType, ClientId, SequenceState, UserDetails }
 import seqexec.engine.TestUtil.TestState
-import scala.concurrent.ExecutionContext
+
 import scala.Function.const
 import org.scalatest.flatspec.AnyFlatSpec
 
 class SequenceSpec extends AnyFlatSpec {
-
-  implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
 
   private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
 

@@ -1,10 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package ocs2.config
 
 import cats.Eq
-import lucuma.core.enum.F2Fpu
+import lucuma.core.enums.F2Fpu
 
 /**
  * Additional type hierarchy over the low-level F2 enums.

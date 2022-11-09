@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -9,9 +9,8 @@ import scala.concurrent.duration._
 import scala.math._
 
 import cats.data.NonEmptyList
-import cats.effect.Concurrent
+import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import fs2.Pipe
 import fs2.Stream
@@ -19,14 +18,14 @@ import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.GiapiStatus
-import lucuma.core.enum.Site
+import lucuma.core.enums.GiapiStatus
+import lucuma.core.enums.Site
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.headers.`User-Agent`
 import org.http4s.headers.`WWW-Authenticate`
 import org.http4s.server.middleware.GZip
-import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.server.websocket.WebSocketBuilder2
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.Binary
 import org.http4s.websocket.WebSocketFrame.Close
@@ -50,16 +49,17 @@ import seqexec.web.server.security.TokenRefresher
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
-  site:         Site,
-  mode:         Mode,
-  auth:         AuthenticationService[F],
-  guideConfigS: GuideConfigDb[F],
-  giapiDB:      GiapiStatusDb[F],
-  clientsDb:    ClientsSetDb[F],
-  engineOutput: Topic[F, SeqexecEvent]
+class SeqexecUIApiRoutes[F[_]: Async](
+  site:             Site,
+  mode:             Mode,
+  auth:             AuthenticationService[F],
+  guideConfigS:     GuideConfigDb[F],
+  giapiDB:          GiapiStatusDb[F],
+  clientsDb:        ClientsSetDb[F],
+  engineOutput:     Topic[F, SeqexecEvent],
+  webSocketBuilder: WebSocketBuilder2[F]
 )(implicit
-  L:            Logger[F]
+  L:                Logger[F]
 ) extends BooEncoders
     with ModelLenses
     with Http4sDsl[F] {
@@ -71,7 +71,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
   private val httpAuthentication = new Http4sAuthentication(auth)
 
   // Stream of updates to the guide config db
-  val guideConfigEvents =
+  val guideConfigEvents: Stream[F, Binary] =
     guideConfigS.discrete
       .map(g => GuideConfigUpdate(g.tcsGuide))
       .map(toFrame)
@@ -81,7 +81,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
   // generalized mechanism.
   // Also we may want to send this through another websocket but it would
   // complicate the client
-  val giapiDBEvents =
+  val giapiDBEvents: Stream[F, Binary] =
     giapiDB.discrete
       .map(_.get(GiapiStatus.GpiAlignAndCalibState.statusItem).flatMap(StatusValue.intValue))
       .collect { case Some(x) =>
@@ -89,7 +89,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
       }
       .map(toFrame)
 
-  val pingInterval = 10.second
+  val pingInterval: FiniteDuration = 10.second
 
   /**
    * Creates a process that sends a ping every second to keep the connection alive
@@ -107,9 +107,9 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
             case Right(user) =>
               // Log who logged in
               // Note that the call to read a remoteAddr may do a DNS lookup
-              L.info(
-                s"${user.displayName} logged in from ${req.remoteHost.getOrElse("Unknown")}"
-              ) *>
+              req.remoteHost.flatMap { x =>
+                L.info(s"${user.displayName} logged in from ${x.getOrElse("Unknown")}")
+              } *>
                 // if successful set a cookie
                 httpAuthentication.loginCookie(user) >>= { cookie =>
                 Ok(user).map(_.addCookie(cookie))
@@ -144,7 +144,9 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
       case auth @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Login start
-        L.info(s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}") *>
+        auth.req.remoteHost.flatMap { x =>
+          L.info(s"$userName connected from ${x.getOrElse("Unknown")}")
+        } *>
           Ok(s"$site")
 
       case ws @ GET -> Root / "seqexec" / "events" as user =>
@@ -162,7 +164,7 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
             .filter(filterOutOnClientId(clientId))
             .map(toFrame)
         val clientSocket                                                = (ws.req.remoteAddr, ws.req.remotePort).mapN((a, p) => s"$a:$p").orEmpty
-        val userAgent                                                   = ws.req.headers.get(`User-Agent`)
+        val userAgent                                                   = ws.req.headers.get[`User-Agent`]
 
         // We don't care about messages sent over ws by clients but we want to monitor
         // control frames and track that pings arrive from clients
@@ -194,10 +196,9 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
                              engineEvents(clientId)
                       ).parJoinUnbounded
                         .onFinalize[F](clientsDb.removeClient(clientId))
-          ws       <- WebSocketBuilder[F].build(initial ++ streams,
-                                                clientEventsSink(clientId),
-                                                filterPingPongs = false
-                      )
+          ws       <- webSocketBuilder
+                        .withFilterPingPongs(false)
+                        .build(initial ++ streams, clientEventsSink(clientId))
         } yield ws
 
     }
@@ -215,9 +216,9 @@ class SeqexecUIApiRoutes[F[_]: Concurrent: Timer](
   private def anonymize(e: SeqexecEvent) =
     // Hide the name and target name for anonymous users
     telescopeTargetNameT
-      .set("*****")
-      .andThen(observeTargetNameT.set("*****"))
-      .andThen(sequenceNameT.set(""))(e)
+      .replace("*****")
+      .andThen(observeTargetNameT.replace("*****"))
+      .andThen(sequenceNameT.replace(""))(e)
 
   // Filter out NullEvents from the engine
   private def filterOutNull =

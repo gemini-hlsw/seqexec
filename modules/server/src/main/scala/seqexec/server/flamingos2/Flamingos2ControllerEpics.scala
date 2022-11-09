@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
@@ -10,7 +10,6 @@ import scala.concurrent.duration.FiniteDuration
 
 import cats.data.StateT
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -113,8 +112,8 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](
-    sys:          => Flamingos2Epics[F]
-  )(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+    sys:        => Flamingos2Epics[F]
+  )(implicit L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)

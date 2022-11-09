@@ -1,14 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import scala.concurrent.duration._
 import scala.xml.Elem
-
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.client.Client
@@ -39,8 +36,8 @@ trait GdsClient[F[_]] extends Http4sClientDsl[F] {
 
 object GdsClient {
 
-  def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit
-    timer:                          Timer[F]
+  def apply[F[_]](base: Client[F], gdsUri: Uri)(implicit
+    timer:              Async[F]
   ): GdsClient[F] = new GdsClient[F] {
 
     private val client = {
@@ -80,7 +77,7 @@ object GdsClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -116,7 +113,7 @@ object GdsClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -142,7 +139,7 @@ object GdsClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -181,7 +178,7 @@ object GdsClient {
   /**
    * Client for testing always returns ok
    */
-  def alwaysOkClient[F[_]: Sync]: Client[F] = {
+  def alwaysOkClient[F[_]: Async]: Client[F] = {
     val service = HttpRoutes.of[F] { case _ =>
       val response =
         <methodResponse>

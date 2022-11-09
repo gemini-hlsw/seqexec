@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gpi
@@ -13,7 +13,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
-import lucuma.core.enum.GpiReadMode
+import lucuma.core.enums.GpiReadMode
 import lucuma.core.util.arb.ArbEnumerated._
 import lucuma.core.arb.ArbTime
 import org.scalacheck.Arbitrary._
