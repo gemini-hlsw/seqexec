@@ -229,8 +229,7 @@ lazy val seqexec_web_client = project
       "terser-webpack-plugin"         -> "3.0.6",
       "html-webpack-plugin"           -> "4.3.0",
       "css-minimizer-webpack-plugin"  -> "1.1.5",
-      "favicons-webpack-plugin"       -> "4.2.0",
-      "@packtracker/webpack-plugin"   -> "2.3.0"
+      "favicons-webpack-plugin"       -> "4.2.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,
@@ -311,7 +310,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       Mouse.value,
       BooPickle.value,
       CatsTime.value
-    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value ++ Sttp.value ++ Circe.value
+    ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value
   )
   .jvmSettings(
     commonSettings,
