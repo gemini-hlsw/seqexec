@@ -29,7 +29,7 @@ object Settings {
     val fs2Version          = "3.2.12"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
-    val scalaXmlVersion      = "1.2.0"
+    val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.4.0"
 
     val http4sVersion                  = "0.23.14-27-fd0137d-SNAPSHOT"
@@ -42,7 +42,7 @@ object Settings {
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "5.0.0"
+    val jwt            = "9.1.2"
     val slf4j          = "1.7.36"
     val log4s          = "1.10.0"
     val log4cats       = "2.4.0"
@@ -105,9 +105,9 @@ object Settings {
     )
     val MUnit          = Def.setting(
       Seq(
-        "org.scalameta" %%% "munit"             % LibraryVersions.munitVersion           % Test,
+        "org.scalameta" %%% "munit"               % LibraryVersions.munitVersion           % Test,
         "org.typelevel" %%% "munit-cats-effect-3" % LibraryVersions.munitCatsEffectVersion % Test,
-        "org.typelevel" %%% "discipline-munit"  % LibraryVersions.munitDisciplineVersion % Test
+        "org.typelevel" %%% "discipline-munit"    % LibraryVersions.munitDisciplineVersion % Test
       )
     )
     val XmlUnit        = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
@@ -150,29 +150,30 @@ object Settings {
     )
     val PrometheusClient =
       "io.prometheus" % "simpleclient_common" % LibraryVersions.prometheusClient
-    val Logging          = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
-    val PureConfig       = Seq(
+    val Logging         = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
+    val PureConfig      = Seq(
       "com.github.pureconfig" %% "pureconfig"             % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats"        % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats-effect" % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-http4s"      % LibraryVersions.pureConfig
     )
-    val OpenCSV          = "net.sf.opencsv" % "opencsv"          % LibraryVersions.opencsv
-    val Squants          = Def.setting("org.typelevel" %%% "squants" % LibraryVersions.squants)
-    val ScalaXml         =
+    val OpenCSV         = "net.sf.opencsv" % "opencsv" % LibraryVersions.opencsv
+    val Squants         = Def.setting("org.typelevel" %%% "squants" % LibraryVersions.squants)
+    val ScalaXml        =
       Def.setting("org.scala-lang.modules" %%% "scala-xml" % LibraryVersions.scalaXmlVersion)
-    val Http4s           = Seq("org.http4s" %% "http4s-dsl" % LibraryVersions.http4sVersion,
+    val Http4s          = Seq("org.http4s" %% "http4s-dsl" % LibraryVersions.http4sVersion,
                      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4sBlazeVersion
     )
-    val Http4sClient     = Seq(
-      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
+    val Http4sClient    = Seq(
+      "org.http4s" %% "http4s-dsl"             % LibraryVersions.http4sVersion,
       "org.http4s" %% "http4s-jdk-http-client" % LibraryVersions.http4sJdkHttpClientVersion
     )
-    val Http4sBoopickle  = "org.http4s"    %% "http4s-boopickle" % LibraryVersions.http4sBoopickleVersion
-    val Http4sCore       = "org.http4s"    %% "http4s-core"      % LibraryVersions.http4sVersion
+    val Http4sBoopickle =
+      "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4sBoopickleVersion
+    val Http4sCore       = "org.http4s" %% "http4s-core"      % LibraryVersions.http4sVersion
     val Http4sServer     = "org.http4s" %% "http4s-server"    % LibraryVersions.http4sVersion
-    val Http4sCirce      = "org.http4s"    %% "http4s-circe"     % LibraryVersions.http4sVersion
-    val Http4sXml        = "org.http4s"    %% "http4s-scala-xml" % LibraryVersions.http4sScalaXmlVersion
+    val Http4sCirce      = "org.http4s" %% "http4s-circe"     % LibraryVersions.http4sVersion
+    val Http4sXml        = "org.http4s" %% "http4s-scala-xml" % LibraryVersions.http4sScalaXmlVersion
     val Http4sPrometheus =
       "org.http4s" %% "http4s-prometheus-metrics" % LibraryVersions.http4sPrometheusMetricsVersion
     val Monocle = Def.setting(
@@ -195,8 +196,8 @@ object Settings {
     // Client Side JS libraries
     val ReactScalaJS            = Def.setting(
       Seq(
-        "com.github.japgolly.scalajs-react" %%% "core"             % LibraryVersions.scalajsReact,
-        "com.github.japgolly.scalajs-react" %%% "extra"            % LibraryVersions.scalajsReact,
+        "com.github.japgolly.scalajs-react" %%% "core"               % LibraryVersions.scalajsReact,
+        "com.github.japgolly.scalajs-react" %%% "extra"              % LibraryVersions.scalajsReact,
         "com.github.japgolly.scalajs-react" %%% "extra-ext-monocle3" % LibraryVersions.scalajsReact,
         "com.github.japgolly.scalajs-react" %%% "core-ext-cats"      % LibraryVersions.scalajsReact
       )
@@ -255,7 +256,8 @@ object Settings {
       "org.apache.xmlrpc" % "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
     )
 
-    val JAXB = Seq("javax.xml.bind" % "jaxb-api" % LibraryVersions.jaxb,
+    val JAXB = Seq(
+      "javax.xml.bind"     % "jaxb-api"     % LibraryVersions.jaxb,
       "org.glassfish.jaxb" % "jaxb-runtime" % LibraryVersions.jaxb,
       "org.glassfish.jaxb" % "jaxb-xjc"     % LibraryVersions.jaxb
     )
