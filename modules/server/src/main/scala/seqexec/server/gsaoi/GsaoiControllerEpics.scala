@@ -1,15 +1,12 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gsaoi
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
@@ -107,7 +104,7 @@ object GsaoiControllerEpics {
     guiding:       Boolean
   )
 
-  def apply[F[_]: Async: Timer: Logger](epicsSys: => GsaoiEpics[F]): GsaoiFullHandler[F] =
+  def apply[F[_]: Async: Logger](epicsSys: => GsaoiEpics[F]): GsaoiFullHandler[F] =
     new GsaoiFullHandler[F] {
       private val L: Logger[F] = Logger[F]
 

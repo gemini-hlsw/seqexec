@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -8,15 +8,20 @@ import cats.syntax.all._
 import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
-import monocle.function.At.at
+import monocle.function.At.atSortedMap
 import monocle.macros.Lenses
 import monocle.std
-import seqexec.model.BatchCommandState
-import seqexec.model.ExecutionQueueView
-import seqexec.model.QueueId
-import seqexec.model.SequencesQueue
+import seqexec.model.{
+  BatchCommandState,
+  ExecutionQueueView,
+  QueueId,
+  SequenceView,
+  SequencesQueue
+}
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
+
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueControlFocus(
@@ -33,27 +38,25 @@ object CalQueueControlFocus {
     Eq.by(x => (x.canOperate, x.state, x.execState, x.ops, x.queueSize, x.selectedSeq))
 
   val allQueues: Getter[SeqexecAppRootModel, Int] =
-    (SeqexecAppRootModel.sequences ^|-> SequencesQueue.queues).asGetter >>> {
-      _.foldMap(_.queue.size)
-    }
+    SeqexecAppRootModel.sequences
+      .andThen(SequencesQueue.queues[SequenceView])
+      .andThen(Getter[SortedMap[QueueId, ExecutionQueueView], Int](_.foldMap(_.queue.size)))
 
   def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
-    SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.queues ^|->
-      CalibrationQueues.queues ^|->
-      at(id) ^<-?
-      std.option.some ^|->
-      CalQueueState.ops
+    SeqexecAppRootModel.uiModel
+      .andThen(SeqexecUIModel.queues)
+      .andThen(CalibrationQueues.queues)
+      .andThen(atSortedMap[QueueId, CalQueueState].at(id))
+      .andThen(std.option.some[CalQueueState])
+      .andThen(CalQueueState.ops)
 
   def cmdStateT(
     id: QueueId
   ): Traversal[SeqexecAppRootModel, BatchCommandState] =
-    SeqexecAppRootModel.executionQueuesT(id) ^|->
-      ExecutionQueueView.cmdState
+    SeqexecAppRootModel.executionQueuesT(id).andThen(ExecutionQueueView.cmdState)
 
   def execStateT(id: QueueId): Traversal[SeqexecAppRootModel, BatchExecState] =
-    SeqexecAppRootModel.executionQueuesT(id) ^|->
-      ExecutionQueueView.execState
+    SeqexecAppRootModel.executionQueuesT(id).andThen(ExecutionQueueView.execState)
 
   def queueControlG(
     id: QueueId
@@ -71,6 +74,6 @@ object CalQueueControlFocus {
       case (status, (Some(c), (Some(s), (Some(e), (qs, f))))) =>
         CalQueueControlFocus(status, s, e, c, qs, f.length).some
       case _                                                  =>
-        none
+        none[CalQueueControlFocus]
     }
 }

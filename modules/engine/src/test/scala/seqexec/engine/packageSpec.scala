@@ -1,18 +1,19 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
 
-import cats.effect.concurrent.Semaphore
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.syntax.all._
-import cats.effect._
+import cats.effect.unsafe.implicits.global
 import fs2.Stream
 import seqexec.model.Observation
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.log4cats.Logger
+
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import seqexec.engine.Sequence.State.Final
@@ -21,16 +22,14 @@ import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ ActionType, UserDetails }
 import seqexec.engine.TestUtil.TestState
+
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
+import cats.effect.std.Semaphore
 
 class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
-  implicit val ioContextShift: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
-  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec-engine")
+  private implicit def logger: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("observe-engine")
 
   object DummyResult extends Result.RetVal
 
@@ -215,7 +214,7 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 
   "engine" should "keep processing input messages regardless of how long ParallelActions take" in {
     val result = (for {
-      q           <- Stream.eval(fs2.concurrent.Queue.bounded[IO, executionEngine.EventType](1))
+      q           <- Stream.eval(cats.effect.std.Queue.bounded[IO, executionEngine.EventType](1))
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
       finishFlag  <- Stream.eval(Semaphore.apply[IO](0))
       r           <- {
@@ -245,15 +244,15 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
         Stream.eval(
           List(
             List[IO[Unit]](
-              q.enqueue1(Event.start[IO, TestState, Unit](seqId, user, clientId)),
+              q.offer(Event.start[IO, TestState, Unit](seqId, user, clientId)),
               startedFlag.acquire,
-              q.enqueue1(Event.nullEvent),
-              q.enqueue1(Event.getState[IO, TestState, Unit] { _ =>
+              q.offer(Event.nullEvent),
+              q.offer(Event.getState[IO, TestState, Unit] { _ =>
                 Stream.eval(finishFlag.release).as(Event.nullEvent[IO]).some
               })
             ).sequence,
             executionEngine
-              .process(PartialFunction.empty)(q.dequeue)(qs)
+              .process(PartialFunction.empty)(Stream.fromQueueUnterminated(q))(qs)
               .drop(1)
               .takeThrough(a => !isFinished(a._2.sequences(seqId).status))
               .compile

@@ -5,7 +5,6 @@ import Common._
 import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
-import sbtcrossproject.crossProject
 import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
@@ -23,19 +22,21 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-Global / resolvers += Resolver.sonatypeRepo("public")
+Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
-// This key is used to find the JRE dir. It could/should be overriden on a user basis
+// This key is used to find the JRE dir. It could/should be overridden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
 ThisBuild / ocsJreDir := Path.userHome / ".jres17"
+
+ThisBuild / evictionErrorLevel := Level.Info
 
 Global / cancelable := true
 
 // Should make CI builds more robust
-concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
+Global / concurrentRestrictions += Tags.limit(ScalaJSTags.Link, 2)
 
 // Uncomment for local gmp testing
-// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+// ThisBuild / resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -83,8 +84,7 @@ addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 
-ThisBuild / resolvers +=
-  Resolver.sonatypeRepo("snapshots")
+ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / updateOptions := updateOptions.value.withLatestSnapshots(false)
 
@@ -115,7 +115,7 @@ lazy val giapi = project
                                 GmpStatusDatabase % "test",
                                 GmpCmdJmsBridge   % "test",
                                 NopSlf4j          % "test"
-    )
+    ) ++ MUnit.value
   )
 
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
@@ -140,6 +140,7 @@ lazy val seqexec_web_server = project
     libraryDependencies ++= Seq(UnboundId,
                                 JwtCore,
                                 JwtCirce,
+                                Http4sServer,
                                 Http4sPrometheus,
                                 CommonsHttp,
                                 ScalaMock,
@@ -168,7 +169,7 @@ lazy val seqexec_web_client = project
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .settings(lucumaScalaJsSettings: _*)
+//  .settings(lucumaScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
@@ -315,7 +316,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     commonSettings,
     libraryDependencies += Http4sCore
   )
-  .jsSettings(lucumaScalaJsSettings)
+//  .jsSettings(lucumaScalaJsSettings)
   .jsSettings(
     // And add a custom one
     libraryDependencies += JavaTimeJS.value,

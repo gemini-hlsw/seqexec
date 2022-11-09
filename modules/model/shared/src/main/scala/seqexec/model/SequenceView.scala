@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -37,5 +37,5 @@ object SequenceView {
     Eq.by(x => (x.id, x.metadata, x.status, x.steps, x.willStopIn))
 
   val stepT: Traversal[SequenceView, Step] =
-    SequenceView.steps ^|->> each
+    SequenceView.steps.andThen(each[List[Step], Step])
 }

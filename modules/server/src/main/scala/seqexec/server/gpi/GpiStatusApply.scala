@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gpi
@@ -9,11 +9,11 @@ import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.commands.Configuration
 import giapi.client.syntax.status._
-import lucuma.core.enum.GiapiStatus
-import lucuma.core.enum.GiapiStatusApply
-import lucuma.core.enum.GiapiStatusApply._
-import lucuma.core.enum.GiapiType
-import lucuma.core.enum.Instrument
+import lucuma.core.enums.GiapiStatus
+import lucuma.core.enums.GiapiStatusApply
+import lucuma.core.enums.GiapiStatusApply._
+import lucuma.core.enums.GiapiType
+import lucuma.core.enums.Instrument
 import lucuma.core.math.Angle
 import lucuma.core.syntax.all._
 import ocs2.Parsers

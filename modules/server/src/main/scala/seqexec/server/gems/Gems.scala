@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -6,7 +6,7 @@ package seqexec.server.gems
 import cats.Applicative
 import cats.Eq
 import cats.MonadError
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -84,14 +84,14 @@ object Gems {
                   x.pause.map(
                     _.flatMap(_ =>
                       guideConfigDb
-                        .update(GuideConfig.gemsSkyPaused.set(true))
+                        .update(GuideConfig.gemsSkyPaused.replace(true))
                         .whenA(filteredPauseReasons.contains(PauseCondition.GaosGuideOff))
                     )
                   ),
                   x.resume.map(
                     _.flatMap(_ =>
                       guideConfigDb
-                        .update(GuideConfig.gemsSkyPaused.set(false))
+                        .update(GuideConfig.gemsSkyPaused.replace(false))
                         .whenA(filteredResumeReasons.contains(ResumeCondition.GaosGuideOn))
                     )
                   )

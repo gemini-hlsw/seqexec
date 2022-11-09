@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -10,14 +10,12 @@ import lucuma.core.math.Offset
 import lucuma.core.optics.Format
 import lucuma.core.syntax.all._
 import monocle._
-import monocle.function.At.at
 import monocle.function.At.atMap
-import monocle.function.FilterIndex.filterIndex
+import monocle.function.FilterIndex
 import monocle.macros.GenLens
 import monocle.macros.GenPrism
 import monocle.std.option.some
 import monocle.std.string._
-import monocle.unsafe.MapTraversal._
 import seqexec.model.enum._
 import seqexec.model.events._
 
@@ -42,33 +40,44 @@ trait ModelLenses {
     Iso.id[Map[ParamName, ParamValue]]
 
   val sequenceStepT: Traversal[SequenceView, Step] =
-    obsStepsL ^|->> // sequence steps
-      eachStepT     // each step
+    obsStepsL.andThen( // sequence steps
+      eachStepT
+    )                  // each step
 
   // Focus on a param value
   def paramValueL(param: ParamName): Lens[Parameters, Option[String]] =
-    parametersRoot ^|-> // map of parameters
-      at(param)         // parameter containing the name
+    parametersRoot.andThen( // map of parameters
+      atMap[ParamName, ParamValue].at(param)
+    )                       // parameter containing the name
 
   // Focus on params with a prefix
   def paramValuesWithPrefixT(param: ParamName): Traversal[Parameters, String] =
-    parametersRoot ^|->> // map of parameters
-      filterIndex { n: ParamName => n.startsWith(param) } // parameter containing the name
+    // parametersRoot andThen // map of parameters
+    FilterIndex.mapFilterIndex[ParamName, ParamValue].filterIndex { n: ParamName =>
+      n.startsWith(param)
+    } // parameter containing the name
 
   // Possible set of observe parameters
   def systemConfigL(system: SystemName): Lens[StepConfig, Option[Parameters]] =
-    stepConfigRoot ^|-> // map of systems
-      at(system)        // subsystem name
+    stepConfigRoot.andThen( // map of systems
+      atMap[SystemName, Parameters].at(system)
+    )                       // subsystem name
 
   // Param name of a StepConfig
   def configParamValueO(
     system: SystemName,
     param:  String
   ): Optional[StepConfig, String] =
-    systemConfigL(system) ^<-?                  // observe parameters
-      some ^|->                                 // focus on the option
-      paramValueL(system.withParam(param)) ^<-? // find the target name
-      some // focus on the option
+    systemConfigL(system)
+      .andThen(      // observe parameters
+        some[Parameters]
+      )
+      .andThen(      // focus on the option
+        paramValueL(system.withParam(param))
+      )
+      .andThen(      // find the target name
+        some[String] // focus on the option
+      )
 
   // Focus on the sequence view
   val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] =
@@ -99,31 +108,55 @@ trait ModelLenses {
     })
 
   val sequenceViewT: Traversal[SeqexecModelUpdate, SequenceView] =
-    sequenceQueueViewL ^|-> // Find the sequence view
-      sessionQueueL ^|->>   // Find the queue
-      eachViewT             // each sequence on the queue
+    sequenceQueueViewL
+      .andThen( // Find the sequence view
+        sessionQueueL
+      )
+      .andThen( // Find the queue
+        eachViewT
+      )         // each sequence on the queue
 
   // Composite lens to change the sequence name of an event
   val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
-    sequenceEventsP ^|->      // Events with model updates
-      sequenceQueueViewL ^|-> // Find the sequence view
-      sessionQueueL ^|->>     // Find the queue
-      eachViewT ^|->          // each sequence on the queue
-      obsNameL                // sequence's observation name
+    sequenceEventsP
+      .andThen( // Events with model updates
+        sequenceQueueViewL
+      )
+      .andThen( // Find the sequence view
+        sessionQueueL
+      )
+      .andThen( // Find the queue
+        eachViewT
+      )
+      .andThen( // each sequence on the queue
+        obsNameL
+      )         // sequence's observation name
 
   // Composite lens to find the step config
   val sequenceConfigT: Traversal[SeqexecEvent, StepConfig] =
-    sequenceEventsP ^|->      // Events with model updates
-      sequenceQueueViewL ^|-> // Find the sequence view
-      sessionQueueL ^|->>     // Find the queue
-      eachViewT ^|->          // each sequence on the queue
-      obsStepsL ^|->>         // sequence steps
-      eachStepT ^|->          // each step
-      Step.config             // configuration of the step
+    sequenceEventsP
+      .andThen( // Events with model updates
+        sequenceQueueViewL
+      )
+      .andThen( // Find the sequence view
+        sessionQueueL
+      )
+      .andThen( // Find the queue
+        eachViewT
+      )
+      .andThen( // each sequence on the queue
+        obsStepsL
+      )
+      .andThen( // sequence steps
+        eachStepT
+      )
+      .andThen( // each step
+        Step.config
+      )         // configuration of the step
 
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
-    new Traversal[Map[K, V], V] {
-      def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
+    new PTraversal[Map[K, V], Map[K, V], V, V] {
+      override def modifyA[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
         s.toList
           .traverse { case (k, v) =>
             (if (predicate(k, v)) f(v) else v.pure[F]).tupleLeft(k)
@@ -140,14 +173,15 @@ trait ModelLenses {
     }
 
   val scienceTargetNameO: Optional[Parameters, TargetName] =
-    paramValueL(SystemName.Observe.withParam("object")) ^<-? // find the target name
-      some                                                   // focus on the option
+    paramValueL(SystemName.Observe.withParam("object")).andThen( // find the target name
+      some[String]
+    )                                                            // focus on the option
 
   val signedArcsecFormat: Format[String, Angle]                     =
     Format[String, BigDecimal](_.parseBigDecimalOption, _.toString)
-      .composeFormat(Angle.signedDecimalArcseconds.reverse.asFormat)
+      .andThen(Angle.signedDecimalArcseconds.reverse.asFormat)
   def signedComponentFormat[A]: Format[String, Offset.Component[A]] =
-    signedArcsecFormat.composeIso(Offset.Component.angle[A].reverse)
+    signedArcsecFormat.andThen(Offset.Component.angle[A].reverse)
 
   val stringToDoubleP: Prism[String, Double] =
     Prism((x: String) => x.parseDoubleOption)(_.show)
@@ -157,9 +191,11 @@ trait ModelLenses {
     param:      String,
     prism:      Prism[String, A]
   ): Optional[Step, A] =
-    Step.config ^|-? // configuration of the step
-      configParamValueO(systemName, param) ^<-?
-      prism // step type
+    Step.config
+      .andThen( // configuration of the step
+        configParamValueO(systemName, param)
+      )
+      .andThen(prism) // step type
 
   val stringToString = Iso.id[String].asPrism
 
@@ -237,62 +273,88 @@ trait ModelLenses {
 
   // Lens to find offsets
   def offsetO[T, A](implicit resolver: OffsetConfigResolver[T, A]): Optional[Step, String] =
-    stepObserveOptional(resolver.systemName, resolver.configItem, Prism.id[String])
+    stepObserveOptional(resolver.systemName, resolver.configItem, Iso.id[String])
 
   def offsetF[T, A](implicit
     resolver: OffsetConfigResolver[T, A]
   ): Fold[Step, Option[Offset.Component[A]]] =
-    offsetO[T, A].composeGetter(Getter(signedComponentFormat[A].getOption))
+    offsetO[T, A].andThen(Getter(signedComponentFormat[A].getOption))
 
   val stringToGuidingP: Prism[String, Guiding] =
     Prism(Guiding.fromString)(_.configValue)
 
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =
-    Step.config ^|->                           // configuration of the step
-      systemConfigL(SystemName.Telescope) ^<-? // Observe config
-      some ^|->>                               // some
-      paramValuesWithPrefixT(
-        SystemName.Telescope.withParam("guideWith")
-      ) ^<-?                                   // find the guiding with params
-      stringToGuidingP                         // to guiding
+    Step.config
+      .andThen(          // configuration of the step
+        systemConfigL(SystemName.Telescope)
+      )
+      .andThen(          // Observe config
+        some[Parameters]
+      )
+      .andThen(          // some
+        paramValuesWithPrefixT(
+          SystemName.Telescope.withParam("guideWith")
+        )
+      )
+      .andThen(          // find the guiding with params
+        stringToGuidingP // to guiding
+      )
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT ^|->> // sequence configuration
-      scienceStepT ^|-?   // science steps
-      scienceTargetNameO  // science target name
+    sequenceConfigT
+      .andThen( // sequence configuration
+        scienceStepT
+      )
+      .andThen( // science steps
+        scienceTargetNameO
+      )         // science target name
 
   // Composite lens to find the sequence obs class
   val obsClassT: Traversal[SequenceView, String] =
-    obsStepsL ^|->>    // observation steps
-      eachStepT ^|->   // each step
-      Step.config ^|-? // get step config
-      configParamValueO(SystemName.Observe, "class")
+    obsStepsL
+      .andThen( // observation steps
+        eachStepT
+      )
+      .andThen( // each step
+        Step.config
+      )
+      .andThen( // get step config
+        configParamValueO(SystemName.Observe, "class")
+      )
 
   // Composite lens to find the sequence obs class
   val stepClassO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Observe, "class", Prism.id)
+    stepObserveOptional(SystemName.Observe, "class", Iso.id)
 
   // Composite lens to find the target name on observation
   val observeTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT ^|-?                              // configuration of the step
-      configParamValueO(SystemName.Observe, "object") // on the configuration find the target name
+    sequenceConfigT.andThen( // configuration of the step
+      configParamValueO(SystemName.Observe, "object")
+    )                        // on the configuration find the target name
 
   // Composite lens to find the target name on telescope
   val telescopeTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT ^|-? // configuration of the step
-      configParamValueO(SystemName.Telescope,
-                        "Base:name"
-      )                  // on the configuration find the target name
+    sequenceConfigT.andThen( // configuration of the step
+      configParamValueO(SystemName.Telescope, "Base:name")
+    )                        // on the configuration find the target name
 
   // Composite lens to find the first science step and from there the target name
   val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =
-    obsStepsL ^|->>      // observation steps
-      eachStepT ^|->     // each step
-      Step.config ^|->>  // only standard steps
-      scienceStepT ^|-?  // science steps
-      scienceTargetNameO // science target name
+    obsStepsL
+      .andThen( // observation steps
+        eachStepT
+      )
+      .andThen( // each step
+        Step.config
+      )
+      .andThen( // only standard steps
+        scienceStepT
+      )
+      .andThen( // science steps
+        scienceTargetNameO
+      )         // science target name
 
 }
 
