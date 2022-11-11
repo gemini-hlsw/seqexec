@@ -36,9 +36,7 @@ import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import seqexec.server.niri.NiriController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
@@ -48,8 +46,8 @@ import squants.time.TimeConversions._
 import cats.effect.Async
 
 final case class Niri[F[_]: Async: Logger](
-  controller: NiriController[F],
-  dhsClient:  DhsClient[F]
+  controller:        NiriController[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -81,6 +79,8 @@ final case class Niri[F[_]: Async: Logger](
   ): fs2.Stream[F, Progress] = controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "NIRI"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val keywordsClient: KeywordsClient[F] = this
 

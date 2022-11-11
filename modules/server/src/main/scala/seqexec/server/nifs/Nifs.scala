@@ -33,9 +33,7 @@ import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import seqexec.server.nifs.NifsController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import shapeless.tag
@@ -45,8 +43,8 @@ import squants.space.Arcseconds
 import squants.time.TimeConversions._
 
 final case class Nifs[F[_]: Logger: Async](
-  controller: NifsController[F],
-  dhsClient:  DhsClient[F]
+  controller:        NifsController[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -84,6 +82,8 @@ final case class Nifs[F[_]: Logger: Async](
     controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "NIFS"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val resource: Instrument = Instrument.Nifs
 

@@ -22,16 +22,16 @@ import seqexec.server.StepType
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.NorthTypes
 import seqexec.server.gmos.GmosController.northConfigTypes
-import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
 import cats.effect.{ Ref, Temporal }
 
 final case class GmosNorth[F[_]: Temporal: Logger] private (
-  c:         GmosNorthController[F],
-  dhsClient: DhsClient[F],
-  nsCmdR:    Ref[F, Option[NSObserveCommand]]
+  c:                 GmosNorthController[F],
+  dhsClientProvider: DhsClientProvider[F],
+  nsCmdR:            Ref[F, Option[NSObserveCommand]]
 ) extends Gmos[F, NorthTypes](
       c,
       new SiteSpecifics[NorthTypes] {
@@ -70,6 +70,7 @@ final case class GmosNorth[F[_]: Temporal: Logger] private (
     ) {
   override val resource: Instrument      = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
+  override val dhsClient: DhsClient[F]   = dhsClientProvider.dhsClient(dhsInstrumentName)
 
 }
 
@@ -77,10 +78,10 @@ object GmosNorth {
   val name: String = INSTRUMENT_NAME_PROP
 
   def apply[F[_]: Temporal: Logger](
-    c:         GmosController[F, NorthTypes],
-    dhsClient: DhsClient[F],
-    nsCmdR:    Ref[F, Option[NSObserveCommand]]
-  ): GmosNorth[F] = new GmosNorth[F](c, dhsClient, nsCmdR)
+    c:                 GmosController[F, NorthTypes],
+    dhsClientProvider: DhsClientProvider[F],
+    nsCmdR:            Ref[F, Option[NSObserveCommand]]
+  ): GmosNorth[F] = new GmosNorth[F](c, dhsClientProvider, nsCmdR)
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.GmosN
