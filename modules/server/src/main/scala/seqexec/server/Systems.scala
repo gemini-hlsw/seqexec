@@ -36,7 +36,7 @@ import cats.effect.Temporal
 
 final case class Systems[F[_]](
   odb:                 OdbProxy[F],
-  dhs:                 DhsClient[F],
+  dhs:                 DhsClientProvider[F],
   tcsSouth:            TcsSouthController[F],
   tcsNorth:            TcsNorthController[F],
   gcal:                GcalController[F],
@@ -78,11 +78,18 @@ object Systems {
       else new OdbProxy.DummyOdbCommands[F]
     )
 
-    def dhs[F[_]: Async: Logger](httpClient: Client[F]): F[DhsClient[F]] =
+    def dhs[F[_]: Async: Logger](httpClient: Client[F]): F[DhsClientProvider[F]] =
       if (settings.systemControl.dhs.command)
-        DhsClientHttp[F](httpClient, settings.dhsServer).pure[F]
+        new DhsClientProvider[F] {
+          override def dhsClient(instrumentName: String): DhsClient[F] = new DhsClientHttp[F](
+            httpClient,
+            settings.dhsServer,
+            settings.dhsMaxSize,
+            instrumentName
+          )
+        }.pure[F]
       else
-        DhsClientSim.apply[F]
+        DhsClientSim.apply[F].map(x => (_: String) => x)
 
     // TODO make instruments controllers generalized on F
     def gcal: IO[(GcalController[IO], GcalKeywordReader[IO])] =

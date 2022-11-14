@@ -13,7 +13,7 @@ import seqexec.server.tcs.Tcs
  */
 final case class ObserveEnvironment[F[_]](
   odb:      OdbProxy[F],
-  dhs:      DhsClient[F],
+  dhs:      DhsClientProvider[F],
   config:   CleanConfig,
   stepType: StepType,
   obsId:    Observation.Id,
