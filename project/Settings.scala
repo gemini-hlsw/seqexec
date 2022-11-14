@@ -24,7 +24,7 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion   = "3.3.14"
-    val catsVersion         = "2.8.0"
+    val catsVersion         = "2.9.0"
     val mouseVersion        = "1.2.1"
     val fs2Version          = "3.2.12"
     val shapelessVersion    = "2.3.9"
@@ -45,12 +45,12 @@ object Settings {
     val jwt            = "5.0.0"
     val slf4j          = "1.7.36"
     val log4s          = "1.10.0"
-    val log4cats       = "2.4.0"
+    val log4cats       = "2.5.0"
     val log4catsLevel  = "0.3.1"
     val logback        = "1.2.11"
     val janino         = "3.1.7"
     val logstash       = "7.0"
-    val pureConfig     = "0.17.1"
+    val pureConfig     = "0.17.2"
     val monocleVersion = "3.1.0"
     val circeVersion   = "0.14.2"
     val doobieVersion  = "0.6.0"

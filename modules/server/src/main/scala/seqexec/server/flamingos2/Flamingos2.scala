@@ -4,11 +4,9 @@
 package seqexec.server.flamingos2
 
 import java.lang.{ Double => JDouble }
-
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.SECONDS
 import scala.reflect.ClassTag
-
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
@@ -27,9 +25,7 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.flamingos2.Flamingos2Controller._
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
@@ -38,8 +34,8 @@ import squants.time.Time
 import cats.effect.Async
 
 final case class Flamingos2[F[_]: Async: Logger](
-  f2Controller: Flamingos2Controller[F],
-  dhsClient:    DhsClient[F]
+  f2Controller:      Flamingos2Controller[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -50,6 +46,8 @@ final case class Flamingos2[F[_]: Async: Logger](
   override val contributorName: String = "flamingos2"
 
   override val dhsInstrumentName: String = "F2"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val keywordsClient: KeywordsClient[F] = this
 
