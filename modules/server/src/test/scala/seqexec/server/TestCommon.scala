@@ -14,7 +14,6 @@ import org.typelevel.log4cats.noop.NoOpLogger
 import org.typelevel.log4cats.Logger
 
 import java.util.UUID
-
 import edu.gemini.spModel.core.Peer
 import seqexec.model.Observation
 import lucuma.core.enums.Site
@@ -41,7 +40,7 @@ import seqexec.server.gnirs.{ GnirsControllerSim, GnirsKeywordReaderDummy }
 import seqexec.server.gpi.GpiController
 import seqexec.server.gsaoi.{ GsaoiControllerSim, GsaoiKeywordReaderDummy }
 import seqexec.server.gws.DummyGwsKeywordsReader
-import seqexec.server.keywords.{ DhsClientSim, GdsClient }
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsClientSim, GdsClient }
 import seqexec.server.nifs.{ NifsControllerSim, NifsKeywordReaderDummy }
 import seqexec.server.niri.{ NiriControllerSim, NiriKeywordReaderDummy }
 import seqexec.server.tcs.{
@@ -58,47 +57,52 @@ import scala.concurrent.duration._
 class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
   import TestCommon._
 
-  val defaultSystems: Systems[IO] = (DhsClientSim[IO],
-                                     Flamingos2ControllerSim[IO],
-                                     GmosControllerSim.south[IO],
-                                     GmosControllerSim.north[IO],
-                                     GnirsControllerSim[IO],
-                                     GsaoiControllerSim[IO],
-                                     gpiSim,
-                                     ghostSim,
-                                     NiriControllerSim[IO],
-                                     NifsControllerSim[IO]
-  ).mapN { (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
-    Systems[IO](
-      OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
-      dhs,
-      TcsSouthControllerSim[IO],
-      TcsNorthControllerSim[IO],
-      GcalControllerSim[IO],
-      f2,
-      gmosS,
-      gmosN,
-      gnirs,
-      gsaoi,
-      gpi,
-      ghost,
-      niri,
-      nifs,
-      AltairControllerSim[IO],
-      GemsControllerSim[IO],
-      GuideConfigDb.constant[IO],
-      DummyTcsKeywordsReader[IO],
-      DummyGcalKeywordsReader[IO],
-      GmosKeywordReaderDummy[IO],
-      GnirsKeywordReaderDummy[IO],
-      NiriKeywordReaderDummy[IO],
-      NifsKeywordReaderDummy[IO],
-      GsaoiKeywordReaderDummy[IO],
-      AltairKeywordReaderDummy[IO],
-      GemsKeywordReaderDummy[IO],
-      DummyGwsKeywordsReader[IO]
-    )
-  }.unsafeRunSync()
+  val defaultSystems: Systems[IO] =
+    (DhsClientSim[IO].map(x =>
+       new DhsClientProvider[IO] {
+         override def dhsClient(instrumentName: String): DhsClient[IO] = x
+       }
+     ),
+     Flamingos2ControllerSim[IO],
+     GmosControllerSim.south[IO],
+     GmosControllerSim.north[IO],
+     GnirsControllerSim[IO],
+     GsaoiControllerSim[IO],
+     gpiSim,
+     ghostSim,
+     NiriControllerSim[IO],
+     NifsControllerSim[IO]
+    ).mapN { (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+      Systems[IO](
+        OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
+        dhs,
+        TcsSouthControllerSim[IO],
+        TcsNorthControllerSim[IO],
+        GcalControllerSim[IO],
+        f2,
+        gmosS,
+        gmosN,
+        gnirs,
+        gsaoi,
+        gpi,
+        ghost,
+        niri,
+        nifs,
+        AltairControllerSim[IO],
+        GemsControllerSim[IO],
+        GuideConfigDb.constant[IO],
+        DummyTcsKeywordsReader[IO],
+        DummyGcalKeywordsReader[IO],
+        GmosKeywordReaderDummy[IO],
+        GnirsKeywordReaderDummy[IO],
+        NiriKeywordReaderDummy[IO],
+        NifsKeywordReaderDummy[IO],
+        GsaoiKeywordReaderDummy[IO],
+        AltairKeywordReaderDummy[IO],
+        GemsKeywordReaderDummy[IO],
+        DummyGwsKeywordsReader[IO]
+      )
+    }.unsafeRunSync()
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
 
@@ -160,7 +164,8 @@ object TestCommon {
     Some("127.0.0.1"),
     0,
     3.seconds,
-    10.seconds
+    10.seconds,
+    32
   )
 
   def configure[F[_]: Applicative](resource: Resource): F[Result[F]] =

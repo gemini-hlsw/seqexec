@@ -46,6 +46,8 @@ trait GhostSettings
  *   Timeout to listen for EPICS events
  * @param dhsTimeout
  *   Timeout for DHS operations
+ * @param dhsMaxSize
+ *   Limit of keywords to send in one DHS message
  */
 final case class SeqexecEngineConfiguration(
   odb:                     Uri,
@@ -63,7 +65,8 @@ final case class SeqexecEngineConfiguration(
   epicsCaAddrList:         Option[String],
   readRetries:             Int,
   ioTimeout:               FiniteDuration,
-  dhsTimeout:              FiniteDuration
+  dhsTimeout:              FiniteDuration,
+  dhsMaxSize:              Int
 )
 
 object SeqexecEngineConfiguration {
@@ -86,7 +89,8 @@ object SeqexecEngineConfiguration {
        x.epicsCaAddrList,
        x.readRetries,
        x.ioTimeout,
-       x.dhsTimeout
+       x.dhsTimeout,
+       x.dhsMaxSize
       )
     )
 
