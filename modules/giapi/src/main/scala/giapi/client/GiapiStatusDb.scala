@@ -73,7 +73,8 @@ object GiapiStatusDb {
 
     // A trivial resource that binds and unbinds a status handler.
     def bind(q: Queue[F, (String, Any)]): Resource[F, StatusHandler] =
-      Dispatcher[F].flatMap { dispatcher =>
+      // The dispatcher is used only to "offer" items to a Queue, therefore sequential should be OK.
+      Dispatcher.sequential[F](true).flatMap { dispatcher =>
         Resource.make(
           Async[F].delay {
             val sh = statusHandler(q)(dispatcher)
