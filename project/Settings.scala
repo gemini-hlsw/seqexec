@@ -170,10 +170,10 @@ object Settings {
     )
     val Http4sBoopickle =
       "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4sBoopickleVersion
-    val Http4sCore       = "org.http4s" %% "http4s-core"      % LibraryVersions.http4sVersion
-    val Http4sServer     = "org.http4s" %% "http4s-server"    % LibraryVersions.http4sVersion
-    val Http4sCirce      = "org.http4s" %% "http4s-circe"     % LibraryVersions.http4sVersion
-    val Http4sXml        = "org.http4s" %% "http4s-scala-xml" % LibraryVersions.http4sScalaXmlVersion
+    val Http4sCore       = "org.http4s" %% "http4s-core"        % LibraryVersions.http4sVersion
+    val Http4sServer     = "org.http4s" %% "http4s-server"      % LibraryVersions.http4sVersion
+    val Http4sCirce      = "org.http4s" %% "http4s-circe"       % LibraryVersions.http4sVersion
+    val Http4sXml        = "org.http4s" %% "http4s-scala-xml-1" % LibraryVersions.http4sScalaXmlVersion
     val Http4sPrometheus =
       "org.http4s" %% "http4s-prometheus-metrics" % LibraryVersions.http4sPrometheusMetricsVersion
     val Monocle = Def.setting(
