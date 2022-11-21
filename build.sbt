@@ -187,6 +187,7 @@ lazy val seqexec_web_client = project
     webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort            := 9090,
     webpack / version               := "4.46.0",
+    npmExtraArgs                    := Seq("--legacy-peer-deps"),
     startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     fullOptJS / webpackConfigFile   := Some(
@@ -206,9 +207,10 @@ lazy val seqexec_web_client = project
     // useYarn                         := true,
     // JS dependencies via npm
     Compile / npmDependencies ++= Seq(
-      "fomantic-ui-less" -> LibraryVersions.fomanticUI,
-      "prop-types"       -> "15.7.2",
-      "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
+      "fomantic-ui-less"  -> LibraryVersions.fomanticUI,
+      "prop-types"        -> "15.7.2",
+      "react-virtualized" -> "9.21.1",
+      "core-js"           -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
     ),
     Compile / fastOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },

@@ -32,8 +32,6 @@ import seqexec.web.client.model._
 import seqexec.web.client.reusability._
 import seqexec.web.client.services.SeqexecWebClient
 
-import scala.annotation.nowarn
-
 /**
  * UI for the login box
  */
@@ -82,7 +80,6 @@ object LoginBox {
     def closeBox: Callback                      =
       b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
-    @nowarn("cat=other")
     val attemptLogin = (e: ReactEvent, _: Form.FormProps) =>
       e.preventDefaultCB *>
         b.state >>= { s =>

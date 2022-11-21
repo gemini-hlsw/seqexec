@@ -19,15 +19,12 @@ import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.SeqexecWebClient
 import typings.loglevel.mod.{ ^ => logger }
 
-import scala.annotation.nowarn
-
 /**
  * Seqexec WebApp entry point
  */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
   // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
 
-  @nowarn("cat=other")
   def serverSite: F[Site] =
     L.liftIO(IO.fromFuture {
       IO {

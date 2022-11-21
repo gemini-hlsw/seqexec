@@ -14,8 +14,6 @@ import diode.ActionResult
 import diode.Effect
 import diode.NoAction
 
-import scala.annotation.nowarn
-
 package handlers {
   trait Handlers[M, T] { this: ActionHandler[M, T] =>
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] =
@@ -37,7 +35,6 @@ package handlers {
     def updatedLE(lens: T => T, effect: Effect): ActionResult[M] =
       updated(lens(value), effect)
 
-    @nowarn("cat=other")
     def requestEffect[A, B <: Action, C <: Action](
       a: A,
       f: A => Future[Unit],
@@ -52,7 +49,6 @@ package handlers {
           }
       )
 
-    @nowarn("cat=other")
     def requestEffect2[A, B, C <: Action, D <: Action](
       a: (A, B),
       f: (A, B) => Future[Unit],
@@ -71,6 +67,5 @@ package handlers {
 }
 
 package object handlers {
-  @nowarn("cat=other")
   val VoidEffect: Effect = Effect(Future(NoAction: Action))
 }
