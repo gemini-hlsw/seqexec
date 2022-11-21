@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -11,9 +11,10 @@ import giapi.client.syntax.all._
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import lucuma.core.model.{ Target => GemTarget }
+import lucuma.core.model.SiderealTracking
 import lucuma.core.math.Coordinates
-import lucuma.core.enum.GiapiStatusApply
-import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enums.GiapiStatusApply
+import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
@@ -35,19 +36,19 @@ sealed trait GhostConfig {
 
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
-    t.track
-      .map(_.baseCoordinates)
-      .map { c =>
+    t match {
+      case GemTarget.Sidereal(_, SiderealTracking(baseCoordinates, _, _, _, _), _, _) =>
         GhostConfig.UserTargetsApply
           .get(i + 1)
           .map { case (name, ra, dec) =>
             GhostConfig.giapiConfig(name, s""""${t.name.value}"""") |+|
-              GhostConfig.giapiConfig(ra, c.ra.toAngle.toDoubleDegrees) |+|
-              GhostConfig.giapiConfig(dec, c.dec.toAngle.toSignedDoubleDegrees)
+              GhostConfig.giapiConfig(ra, baseCoordinates.ra.toAngle.toDoubleDegrees) |+|
+              GhostConfig.giapiConfig(dec, baseCoordinates.dec.toAngle.toSignedDoubleDegrees)
           }
           .combineAll
-      }
-      .getOrElse(Configuration.Zero)
+      case _                                                                          =>
+        Configuration.Zero
+    }
 
   def userTargetsConfig: Configuration =
     userTargets.zipWithIndex.map(Function.tupled(targetConfig)).combineAll |+|
@@ -116,11 +117,12 @@ sealed trait GhostConfig {
     if (!isScience) {
       GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
-    } else {
-      GhostConfig.fiberConfig1(FiberAgitator.None) |+|
-        GhostConfig.fiberConfig2(FiberAgitator.None)
-    } |+|
-      ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration
+    } else
+      {
+        GhostConfig.fiberConfig1(FiberAgitator.None) |+|
+          GhostConfig.fiberConfig2(FiberAgitator.None)
+      } |+|
+        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration
 
 }
 

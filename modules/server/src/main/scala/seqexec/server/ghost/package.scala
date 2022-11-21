@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -8,8 +8,8 @@ import cats.implicits._
 import lucuma.core.util.Enumerated
 import giapi.client.GiapiConfig
 import edu.gemini.spModel.gemini.ghost.GhostBinning
-import lucuma.core.enum.GiapiStatusApply
-import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enums.GiapiStatusApply
+import lucuma.core.enums.GiapiStatusApply._
 import scala.concurrent.duration.FiniteDuration
 
 sealed trait FiberAgitator extends Product with Serializable

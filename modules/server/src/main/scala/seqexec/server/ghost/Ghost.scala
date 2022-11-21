@@ -6,6 +6,7 @@ package seqexec.server.ghost
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
+import cats.effect.Async
 import cats.syntax.all._
 import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
@@ -20,6 +21,7 @@ import lucuma.core.enums.LightSinkName
 import lucuma.core.math.Coordinates
 import lucuma.core.math.Declination
 import lucuma.core.math.RightAscension
+import lucuma.core.model.UnnormalizedSED
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -41,7 +43,7 @@ import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Minutes
-import cats.effect.Async
+import lucuma.core.enums.StellarLibrarySpectrum
 
 final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
     extends GdsInstrument[F]
@@ -154,9 +156,16 @@ object Ghost {
         n   <- config.extractInstAs[String](a).flatMap(refineV[NonEmpty](_))
         // Note the coordinates are PM corrected on the OT side
       } yield c.map(coord =>
-        Target(n,
-               SiderealTracking(none, coord, Epoch.J2000, none, none, none).asRight,
-               SortedMap.empty[MagnitudeBand, Magnitude]
+        Target.Sidereal(
+          n,
+          SiderealTracking(coord, Epoch.J2000, none, none, none),
+          SourceProfile.Point(
+            SpectralDefinition.BandNormalized(
+              UnnormalizedSED.StellarLibrary(StellarLibrarySpectrum.A0V),
+              SortedMap.empty
+            )
+          ),
+          None
         )
       )).toOption.flatten
     }).toList
