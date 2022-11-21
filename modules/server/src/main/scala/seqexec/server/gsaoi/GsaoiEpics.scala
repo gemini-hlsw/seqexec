@@ -38,8 +38,8 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
     def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
 
-    val readMode: Option[CaParameter[String]] = cs.map(_.getString("readMode"))
-    def setReadMode(v: String): F[Unit] = setParameter(readMode, v)
+    val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
+    def setReadMode(v: Int): F[Unit] = setParameter(readMode, Integer.valueOf(v))
 
     val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))

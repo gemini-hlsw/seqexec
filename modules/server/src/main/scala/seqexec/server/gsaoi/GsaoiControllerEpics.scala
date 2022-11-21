@@ -89,10 +89,10 @@ object GsaoiControllerEpics {
   }
 
   // This looks a bit silly, but I prefer to keep it in case the definition is changed in the future.
-  private def readModeFromMode(rm: ReadMode): String = rm match {
-    case ReadMode.BRIGHT     => "FOWLER"
-    case ReadMode.FAINT      => "FOWLER"
-    case ReadMode.VERY_FAINT => "FOWLER"
+  private def readModeFromMode(rm: ReadMode): ReadMethod = rm match {
+    case ReadMode.BRIGHT     => ReadMethod.Fowler
+    case ReadMode.FAINT      => ReadMethod.Fowler
+    case ReadMode.VERY_FAINT => ReadMethod.Fowler
   }
 
   final case class EpicsGsaoiConfig(
@@ -124,7 +124,8 @@ object GsaoiControllerEpics {
           )
         ).flattenOption
 
-        val dcParams = List(
+        val readMethod: ReadMethod = readModeFromMode(config.dc.readMode)
+        val dcParams               = List(
           applyParam(current.coadds, config.dc.coadds, epicsSys.dcConfigCmd.setNumberOfCoadds),
           applyParam(current.exposureTime,
                      encode(config.dc.exposureTime),
@@ -134,9 +135,8 @@ object GsaoiControllerEpics {
                      fowlerSamplesFromMode(config.dc.readMode),
                      epicsSys.dcConfigCmd.setFowlerSamples
           ),
-          applyParam(current.readMode,
-                     readModeFromMode(config.dc.readMode),
-                     epicsSys.dcConfigCmd.setReadMode
+          (current.readMode =!= readMethod.name).option(
+            epicsSys.dcConfigCmd.setReadMode(readMethod.index)
           ),
           applyParam(current.roi, encode(config.dc.roi), epicsSys.dcConfigCmd.setRoi)
         ).flattenOption
