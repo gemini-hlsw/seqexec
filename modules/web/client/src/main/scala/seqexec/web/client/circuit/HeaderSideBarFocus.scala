@@ -1,14 +1,14 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
 
 import cats.Eq
 import monocle.Getter
+import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.web.client.model._
-import monocle.Lens
 
 @Lenses
 final case class HeaderSideBarFocus(
@@ -47,5 +47,5 @@ object SequencesQueueFocus {
     Eq.by(u => (u.sequences, u.displayName))
 
   val sessionQueue: Lens[SequencesQueueFocus, List[SequenceView]] =
-    sequences ^|-> SequencesQueue.sessionQueue
+    sequences.andThen(SequencesQueue.sessionQueue)
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Camera, Decker, Disperser, ReadMode }
@@ -120,7 +119,7 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
   }
 
-  def apply[F[_]: Async: Timer](
+  def apply[F[_]: Async](
     epicsSys:   => GnirsEpics[F]
   )(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {

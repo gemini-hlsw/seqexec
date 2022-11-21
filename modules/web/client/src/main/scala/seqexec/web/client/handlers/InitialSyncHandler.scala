@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -34,7 +34,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
   private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
     PageActionP
       .getOption(action)
-      .map(p => InitialSyncFocus.location.set(p))
+      .map(p => InitialSyncFocus.location.replace(p))
       .getOrElse(identity)
 
   private val noUpdate: InitialSyncFocus => InitialSyncFocus = identity
@@ -102,7 +102,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
           // No matches
           (noUpdate, VoidEffect)
       }
-      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> InitialSyncFocus.displayNames.set(
+      updatedLE(InitialSyncFocus.firstLoad.replace(false) >>> InitialSyncFocus.displayNames.replace(
                   storedDisplayNames
                 ) >>> update,
                 Effect(Future(CleanSequences)) >> effect

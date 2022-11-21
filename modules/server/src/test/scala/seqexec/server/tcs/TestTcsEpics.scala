@@ -1,11 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
 import cats.{ Applicative, Eq }
-import cats.effect.{ Sync, Timer }
-import cats.effect.concurrent.Ref
+import cats.effect.Async
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import monocle.{ Getter, Lens }
@@ -21,8 +20,9 @@ import squants.space.AngleConversions._
 import java.util.concurrent.TimeUnit.SECONDS
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
+import cats.effect.{ Ref, Temporal }
 
-case class TestTcsEpics[F[_]: Sync](
+case class TestTcsEpics[F[_]: Async](
   state: Ref[F, TestTcsEpics.State],
   out:   Ref[F, List[TestTcsEpics.TestTcsEvent]]
 ) extends TcsEpics[F] {
@@ -442,11 +442,11 @@ case class TestTcsEpics[F[_]: Sync](
     probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
 
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Timer[F]
+    T:                                           Temporal[F]
   ): F[Unit] =
     Applicative[F].unit
 
-  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit] =
     Applicative[F].unit
 
   override def hourAngle: F[String] = state.get.map(_.hourAngle)
@@ -716,7 +716,7 @@ case class TestTcsEpics[F[_]: Sync](
         cmdL.get(st).param4
       )
 
-      override protected def cmd(st: State): State = statusL.set(
+      override protected def cmd(st: State): State = statusL.replace(
         ProbeGuideConfigVals(
           if (cmdL.get(st).param1 == "On") 1 else 0,
           if (cmdL.get(st).param2 == "On") 1 else 0,
@@ -738,7 +738,7 @@ case class TestTcsEpics[F[_]: Sync](
       override protected def event(st: State): TestTcsEvent = evBuilder(cmdL.get(st).param1)
 
       override protected def cmd(st: State): State =
-        (statusL.set(cmdL.get(st).param1) >>> parkL.modify { v =>
+        (statusL.replace(cmdL.get(st).param1) >>> parkL.modify { v =>
           if (cmdL.get(st).param1 === "On") false else v
         })(st)
     }
@@ -751,7 +751,7 @@ case class TestTcsEpics[F[_]: Sync](
     new TestEpicsCommand1[F, State, TestTcsEvent, Int](cmdL, state, out) with WfsObserveCmd[F] {
       override protected def event(st: State): TestTcsEvent = ev
 
-      override protected def cmd(st: State): State = statusL.set(BinaryYesNo.Yes)(st)
+      override protected def cmd(st: State): State = statusL.replace(BinaryYesNo.Yes)(st)
 
       override def setNoexp(v: Integer): F[Unit] = setParameter1(v.toInt)
 
@@ -969,26 +969,27 @@ object TestTcsEpics {
     g:  Getter[State, ProbeGuideConfigVals]
   ): ProbeGuideConfig[F] =
     new ProbeGuideConfig[F] {
-      override def nodachopa: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodachopa).get)
-      override def nodachopb: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodachopb).get)
-      override def nodbchopa: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodbchopa).get)
-      override def nodbchopb: F[Int] = st.get.map((g ^|-> ProbeGuideConfigVals.nodbchopb).get)
+      override def nodachopa: F[Int] = st.get.map(g.andThen(ProbeGuideConfigVals.nodachopa).get)
+      override def nodachopb: F[Int] = st.get.map(g.andThen(ProbeGuideConfigVals.nodachopb).get)
+      override def nodbchopa: F[Int] = st.get.map(g.andThen(ProbeGuideConfigVals.nodbchopa).get)
+      override def nodbchopb: F[Int] = st.get.map(g.andThen(ProbeGuideConfigVals.nodbchopb).get)
     }
 
   def targetGetters[F[_]: Applicative](st: Ref[F, State], g: Getter[State, TargetVals]): Target[F] =
     new Target[F] {
-      override def objectName: F[String]        = st.get.map((g ^|-> TargetVals.objectName).get)
-      override def ra: F[Double]                = st.get.map((g ^|-> TargetVals.ra).get)
-      override def dec: F[Double]               = st.get.map((g ^|-> TargetVals.dec).get)
-      override def frame: F[String]             = st.get.map((g ^|-> TargetVals.frame).get)
-      override def equinox: F[String]           = st.get.map((g ^|-> TargetVals.equinox).get)
-      override def epoch: F[String]             = st.get.map((g ^|-> TargetVals.epoch).get)
-      override def properMotionRA: F[Double]    = st.get.map((g ^|-> TargetVals.properMotionRA).get)
-      override def properMotionDec: F[Double]   = st.get.map((g ^|-> TargetVals.properMotionDec).get)
+      override def objectName: F[String]        = st.get.map(g.andThen(TargetVals.objectName).get)
+      override def ra: F[Double]                = st.get.map(g.andThen(TargetVals.ra).get)
+      override def dec: F[Double]               = st.get.map(g.andThen(TargetVals.dec).get)
+      override def frame: F[String]             = st.get.map(g.andThen(TargetVals.frame).get)
+      override def equinox: F[String]           = st.get.map(g.andThen(TargetVals.equinox).get)
+      override def epoch: F[String]             = st.get.map(g.andThen(TargetVals.epoch).get)
+      override def properMotionRA: F[Double]    = st.get.map(g.andThen(TargetVals.properMotionRA).get)
+      override def properMotionDec: F[Double]   =
+        st.get.map(g.andThen(TargetVals.properMotionDec).get)
       override def centralWavelenght: F[Double] =
-        st.get.map((g ^|-> TargetVals.centralWavelenght).get)
-      override def parallax: F[Double]          = st.get.map((g ^|-> TargetVals.parallax).get)
-      override def radialVelocity: F[Double]    = st.get.map((g ^|-> TargetVals.radialVelocity).get)
+        st.get.map(g.andThen(TargetVals.centralWavelenght).get)
+      override def parallax: F[Double]          = st.get.map(g.andThen(TargetVals.parallax).get)
+      override def radialVelocity: F[Double]    = st.get.map(g.andThen(TargetVals.radialVelocity).get)
     }
 
   sealed trait TestTcsEvent extends Product with Serializable
@@ -1216,7 +1217,7 @@ object TestTcsEpics {
     aoPrepareControlMatrixCmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0)
   )
 
-  def build[F[_]: Sync](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =
+  def build[F[_]: Async](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =
     for {
       stR  <- Ref.of[F, TestTcsEpics.State](baseState)
       outR <- Ref.of[F, List[TestTcsEpics.TestTcsEvent]](List.empty)

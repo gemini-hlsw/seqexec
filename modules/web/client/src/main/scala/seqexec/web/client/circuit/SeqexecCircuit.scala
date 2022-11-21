@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -70,10 +70,10 @@ object SeqexecCircuit
     this.zoomRWL(WebSocketsFocus.webSocketFocusL)
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
+    this.zoomRWL(SeqexecAppRootModel.uiModel.andThen(InitialSyncFocus.initialSyncFocusL))
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates)
+    this.zoomRWL(SeqexecAppRootModel.uiModel.andThen(SeqexecUIModel.appTableStates))
 
   // Reader to indicate the allowed interactions
   val statusReader: ModelRW[SeqexecAppRootModel, ClientStatus] =
@@ -85,7 +85,7 @@ object SeqexecCircuit
 
   // Reader for the queue operations
   val queueOperationsRW: ModelRW[SeqexecAppRootModel, CalibrationQueues] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queues)
+    this.zoomRWL(SeqexecAppRootModel.uiModel.andThen(SeqexecUIModel.queues))
 
   // Reader to update the sequences in both parts of the model being used
   val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] =
@@ -134,7 +134,7 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
     this.zoomG(
       SeqexecAppRootModel.sequencesOnDisplayL
-        .composeGetter(SequencesOnDisplay.tabG(id))
+        .andThen(SequencesOnDisplay.tabG(id))
     )
 
   def sequenceObserverReader(

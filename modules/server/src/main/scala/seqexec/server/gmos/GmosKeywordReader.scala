@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -63,13 +63,13 @@ final case class GmosObsKeywordsReader[F[_]: MonadError[*[_], Throwable]](config
           )
       )
 
-  def nodAxOff: F[Double] = extractOffset(StageA, Offset.p.asGetter ^<-> Offset.P.angle)
+  def nodAxOff: F[Double] = extractOffset(StageA, Offset.p.asGetter.andThen(Offset.P.angle))
 
-  def nodAyOff: F[Double] = extractOffset(StageA, Offset.q.asGetter ^<-> Offset.Q.angle)
+  def nodAyOff: F[Double] = extractOffset(StageA, Offset.q.asGetter.andThen(Offset.Q.angle))
 
-  def nodBxOff: F[Double] = extractOffset(StageB, Offset.p.asGetter ^<-> Offset.P.angle)
+  def nodBxOff: F[Double] = extractOffset(StageB, Offset.p.asGetter.andThen(Offset.P.angle))
 
-  def nodByOff: F[Double] = extractOffset(StageB, Offset.q.asGetter ^<-> Offset.Q.angle)
+  def nodByOff: F[Double] = extractOffset(StageB, Offset.q.asGetter.andThen(Offset.Q.angle))
 
   def isNS: F[Boolean] =
     config.extractInstAs[java.lang.Boolean](USE_NS_PROP).map(_.booleanValue).explainExtractError[F]

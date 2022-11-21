@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -126,7 +126,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
 }
 
 object GmosNorthControllerEpics {
-  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
+  def apply[F[_]: Async: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
     implicit val encoders = GmosNorthEncoders
     GmosControllerEpics[F, NorthTypes](sys, northConfigTypes)
   }

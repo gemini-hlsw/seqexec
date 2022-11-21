@@ -1,13 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
 
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
@@ -18,8 +16,7 @@ import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
-import lucuma.core.enum.MagnitudeBand
+import lucuma.core.enums.LightSinkName
 import lucuma.core.math.Coordinates
 import lucuma.core.math.Declination
 import lucuma.core.math.RightAscension
@@ -44,8 +41,9 @@ import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Minutes
+import cats.effect.Async
 
-final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
+final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
 

@@ -1,12 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.ApplicativeError
 import cats.Endo
-import cats.effect.Concurrent
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import edu.gemini.spModel.core.SPProgramID
 import edu.gemini.spModel.obscomp.InstConstants
@@ -15,12 +14,12 @@ import seqexec.engine.Event
 import seqexec.engine.Sequence
 import seqexec.model.Observation
 import seqexec.model.SystemOverrides
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.SeqEvent._
-import seqexec.server.SeqexecFailure.SeqexecException
-import seqexec.server.SeqexecFailure.UnrecognizedInstrument
+import ConfigUtilOps._
+import SeqEvent._
+import SeqexecFailure.SeqexecException
+import SeqexecFailure.UnrecognizedInstrument
 
-final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
+final class ODBSequencesLoader[F[_]: Async](
   odbProxy:            OdbProxy[F],
   translator:          SeqTranslate[F]
 )(implicit execEngine: ExecEngineType[F]) {
@@ -40,10 +39,7 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
       }.withEvent(UnloadSequence(seqId)).toHandle
     )
 
-  def loadEvents(seqId: Observation.Id)(implicit
-    cio:                Concurrent[F],
-    tio:                Timer[F]
-  ): F[List[EventType[F]]] = {
+  def loadEvents(seqId: Observation.Id): F[List[EventType[F]]] = {
     // Three ways of handling errors are mixed here: java exceptions, Either and MonadError
     val t: F[(List[Throwable], Option[SequenceGen[F]])] =
       odbProxy.read(seqId).flatMap { odbSeq =>
@@ -90,9 +86,9 @@ final class ODBSequencesLoader[F[_]: ApplicativeError[*[_], Throwable]](
       case _                 => SeqexecFailure.explain(SeqexecException(err))
     }
 
-  def refreshSequenceList(odbList: List[Observation.Id], st: EngineState[F])(implicit
-    cio:                           Concurrent[F],
-    tio:                           Timer[F]
+  def refreshSequenceList(
+    odbList: List[Observation.Id],
+    st:      EngineState[F]
   ): F[List[EventType[F]]] = {
     val seqexecList = st.sequences.keys.toList
 

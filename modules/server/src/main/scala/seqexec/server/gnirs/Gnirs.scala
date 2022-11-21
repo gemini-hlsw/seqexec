@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
@@ -8,9 +8,7 @@ import java.lang.{ Integer => JInt }
 
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.{ Async, Sync }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
@@ -20,7 +18,7 @@ import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import lucuma.core.syntax.string._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -36,7 +34,7 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs[F[_]: Logger: Concurrent: Timer](
+final case class Gnirs[F[_]: Logger: Async](
   controller: GnirsController[F],
   dhsClient:  DhsClient[F]
 ) extends DhsInstrument[F]

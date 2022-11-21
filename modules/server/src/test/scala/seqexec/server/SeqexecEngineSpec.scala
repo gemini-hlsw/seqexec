@@ -1,10 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.Monoid
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import edu.gemini.spModel.config2.DefaultConfig
 import edu.gemini.spModel.obsclass.ObsClass
@@ -20,8 +21,9 @@ import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.CLOUD_COVER_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.IMAGE_QUALITY_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.SKY_BACKGROUND_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.WATER_VAPOR_PROP
-import fs2.concurrent.Queue
-import lucuma.core.enum.Site
+import cats.effect.std.Queue
+import fs2.Stream
+import lucuma.core.enums.Site
 import io.prometheus.client.CollectorRegistry
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
@@ -30,6 +32,7 @@ import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.{
   Conditions,
+  Observation,
   Observer,
   Operator,
   SequenceState,
@@ -41,8 +44,7 @@ import seqexec.model.{
 }
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
-import monocle.Monocle._
-import org.scalatest.flatspec.AnyFlatSpec
+import monocle.function.Index.mapIndex
 import seqexec.engine.EventResult.{ Outcome, UserCommandResponse }
 import seqexec.model.dhs.DataId
 import seqexec.server.tcs.{
@@ -53,7 +55,7 @@ import seqexec.server.tcs.{
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent.RequestConfirmation
 
-class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
+class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAssertions {
 
   "SeqexecEngine setOperator" should "set operator's name" in {
     val operator = Operator("Joe")
@@ -73,7 +75,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.iq).get)) { case Some(op) =>
       op shouldBe iq
     }).unsafeRunSync()
 
@@ -85,7 +87,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.wv).get(_))) { case Some(op) =>
       op shouldBe wv
     }).unsafeRunSync()
   }
@@ -96,7 +98,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.cc).get(_))) { case Some(op) =>
       op shouldBe cc
     }).unsafeRunSync()
   }
@@ -107,7 +109,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.sb).get(_))) { case Some(op) =>
       op shouldBe sb
     }).unsafeRunSync()
   }
@@ -122,7 +124,12 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sf <-
         advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield inside(
-      sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      ).flatMap(_.observer)
     ) { case Some(op) =>
       op shouldBe observer
     }).unsafeRunSync()
@@ -139,8 +146,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -174,8 +183,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         sequenceWithResources(seqObsId2, Instrument.GmosS, Set(Instrument.GmosS)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -221,11 +232,17 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                               clientId
                    )
         )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -235,8 +252,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
     ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -252,11 +271,17 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                               clientId
                    )
         )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -271,8 +296,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -288,11 +315,17 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                          clientId
               )
             )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId2))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -307,8 +340,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -324,7 +359,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                          clientId
               )
             )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
+    } yield inside(sf.flatMap(EngineState.sequences[IO].index(seqObsId2).getOption)) {
       case Some(s) =>
         assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
@@ -348,7 +383,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                     RunOverride.Default
             )
       sf <- seqexecEngine
-              .stream(q.dequeue)(s0)
+              .stream(Stream.fromQueueUnterminated(q))(s0)
               .map(_._2)
               .takeThrough(_.sequences.values.exists(_.seq.status.isRunning))
               .compile
@@ -373,8 +408,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init)).apply(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init)).apply(EngineState.default[IO])
 
     val runStepId = 2
 
@@ -388,7 +425,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                                     RunOverride.Default
             )
       sf <- seqexecEngine
-              .stream(q.dequeue)(s0)
+              .stream(Stream.fromQueueUnterminated(q))(s0)
               .map(_._2)
               .takeThrough(_.sequences.get(seqObsId2).exists(_.seq.status.isRunning))
               .compile
@@ -714,7 +751,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
         seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default) *>
-          seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
+          seqexecEngine.stream(Stream.fromQueueUnterminated(q))(s0).take(1).compile.last
     } yield inside(result) { case Some((out, sf)) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
         case Some(status) => assert(status.isIdle)
@@ -840,10 +877,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     val seq = testConditionsSequence
 
     val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, seq, executeEngine) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.iq).set(ImageQuality.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.wv).set(WaterVapor.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.sb).set(SkyBackground.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.cc).set(CloudCover.Percent50))
+      EngineState.conditions[IO].andThen(Conditions.iq).replace(ImageQuality.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.wv).replace(WaterVapor.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.sb).replace(SkyBackground.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.cc).replace(CloudCover.Percent50))
       .apply(EngineState.default[IO])
 
     (for {
@@ -874,10 +911,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     val seq = testConditionsSequence
 
     val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, seq, executeEngine) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.iq).set(ImageQuality.Percent70) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.wv).set(WaterVapor.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.sb).set(SkyBackground.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.cc).set(CloudCover.Percent50))
+      EngineState.conditions[IO].andThen(Conditions.iq).replace(ImageQuality.Percent70) >>>
+      EngineState.conditions[IO].andThen(Conditions.wv).replace(WaterVapor.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.sb).replace(SkyBackground.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.cc).replace(CloudCover.Percent50))
       .apply(EngineState.default[IO])
 
     (for {
@@ -892,7 +929,7 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
                             clientId,
                             RunOverride.Default
         ) *>
-          seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last
+          seqexecEngine.stream(Stream.fromQueueUnterminated(q))(s0).take(1).compile.last
     } yield inside(result) { case Some((out, sf)) =>
       inside(EngineState.sequenceStateIndex[IO](seqObsId1).getOption(sf).map(_.status)) {
         case Some(status) => assert(status.isIdle)
@@ -917,10 +954,10 @@ class SeqexecEngineSpec extends AnyFlatSpec with Matchers with NonImplicitAssert
     val seq = testConditionsSequence
 
     val s0 = (ODBSequencesLoader.loadSequenceEndo[IO](seqObsId1, seq, executeEngine) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.iq).set(ImageQuality.Percent70) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.wv).set(WaterVapor.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.sb).set(SkyBackground.Percent20) >>>
-      (EngineState.conditions[IO] ^|-> Conditions.cc).set(CloudCover.Percent50))
+      EngineState.conditions[IO].andThen(Conditions.iq).replace(ImageQuality.Percent70) >>>
+      EngineState.conditions[IO].andThen(Conditions.wv).replace(WaterVapor.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.sb).replace(SkyBackground.Percent20) >>>
+      EngineState.conditions[IO].andThen(Conditions.cc).replace(CloudCover.Percent50))
       .apply(EngineState.default[IO])
 
     (for {

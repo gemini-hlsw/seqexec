@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -14,7 +14,7 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import seqexec.model.UserDetails
-import seqexec.web.server.security.AuthenticationService.AuthResult
+import AuthenticationService.AuthResult
 
 /**
  * Bridge between http4s authentication and the actual internal authenticator
@@ -28,7 +28,7 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
 
   private def authRequest(request: Request[F]) = {
     val authResult = for {
-      header <- headers.Cookie.from(request.headers).toRight(MissingCookie)
+      header <- request.headers.get[headers.Cookie].toRight(MissingCookie)
       cookie <- header.values.toList.find(_.name === auth.config.cookieName).toRight(MissingCookie)
       user   <- auth.decodeToken(cookie.content)
     } yield user
