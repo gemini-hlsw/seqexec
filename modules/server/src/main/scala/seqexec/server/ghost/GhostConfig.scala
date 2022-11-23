@@ -8,6 +8,7 @@ import cats.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
 import giapi.client.syntax.all._
+import seqexec.model.Conditions
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import lucuma.core.model.{ Target => GemTarget }
@@ -18,7 +19,7 @@ import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
-sealed trait GhostConfig {
+sealed trait GhostConfig extends GhostLUT {
   def obsType: String
   def blueConfig: ChannelConfig
   def redConfig: ChannelConfig
@@ -73,6 +74,8 @@ sealed trait GhostConfig {
 
   def isScience: Boolean = obsType.equalsIgnoreCase("object")
 
+  def isPRV: Boolean = obsType.equalsIgnoreCase("object")
+
   def ifu2Configuration: Configuration
 
   def adcConfiguration: Configuration
@@ -113,6 +116,43 @@ sealed trait GhostConfig {
       giapiConfig(GhostRedReadMode, redConfig.readMode.value) |+|
       giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_SET")
 
+  def baseSVConfig: Configuration =
+    giapiConfig(GhostSVCcdRequestType, "CCD_CAMERA_SET") |+|
+      giapiConfig(GhostSVRequestType, "HARDWARE") |+|
+      giapiConfig(GhostSVRepeat, 1) |+|
+      giapiConfig(GhostSVRunNumber, 0) |+|
+      giapiConfig(GhostSVDoSave, 0) |+|
+      giapiConfig(GhostSVDoDisplay, 1) |+|
+      giapiConfig(GhostSVNRegions, 1) |+|
+      giapiConfig(GhostSVRcf, 1) |+|
+      giapiConfig(GhostSVCcf, 1) |+|
+      giapiConfig(GhostSVImageType, "OBJECT") |+|
+      giapiConfig(GhostSVXO, 0) |+|
+      giapiConfig(GhostSVYO, 0) |+|
+      giapiConfig(GhostSVWidth, 1928) |+|
+      giapiConfig(GhostSVHeigth, 1452) |+|
+      giapiConfig(GhostSVIFU1BlueThreshold, 0) |+|
+      giapiConfig(GhostSVIFU1BlueThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVIFU1RedThreshold, 0) |+|
+      giapiConfig(GhostSVIFU1RedThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVIFU2BlueThreshold, 0) |+|
+      giapiConfig(GhostSVIFU2BlueThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVIFU2RedThreshold, 0) |+|
+      giapiConfig(GhostSVIFU2RedThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVHIBlueThreshold, 0) |+|
+      giapiConfig(GhostSVHIBlueThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVHIRedThreshold, 0) |+|
+      giapiConfig(GhostSVHIRedThresholdEnabled, 0) |+|
+      giapiConfig(GhostSVZeroAccumulatedFlux, 1) |+|
+      giapiConfig(GhostSVDoContinuous, 1)
+
+
+  def svConfiguration(mag: Double): Configuration =
+    baseSVConfig |+|
+      giapiConfig(GhostSVDuration, SVCameraTimesLUT.find(_.gMag > mag).getOrElse(SVMinimumTime).poorWeather) |+|
+      giapiConfig(GhostSVUnit, 0.1)
+
+
   def configuration: Configuration =
     if (!isScience) {
       GhostConfig.fiberConfig1(fiberAgitator1) |+|
@@ -122,7 +162,7 @@ sealed trait GhostConfig {
         GhostConfig.fiberConfig1(FiberAgitator.None) |+|
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
-        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration
+        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(3.1)
 
 }
 
@@ -191,9 +231,11 @@ object GhostConfig {
     hrifu1Coords:   Option[Coordinates],
     hrifu2Name:     Option[String],
     hrifu2Coords:   Option[Coordinates],
-    userTargets:    List[GemTarget]
+    userTargets:    List[GemTarget],
+    conditions: Conditions
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
+    println(conditions)
 
     val sifu1 = determineType(srifu1Name)
     val sifu2 = determineType(srifu2Name)

@@ -23,7 +23,10 @@ object GhostController {
 
       override val name = "GHOST"
 
-      override def configuration(config: GhostConfig): F[Configuration] =
-        config.configuration.pure[F]
+      override def configuration(config: GhostConfig): F[Configuration] = {
+        val c = config.configuration
+        pprint.pprintln(c)
+        c.pure[F]
+      }
     }
 }

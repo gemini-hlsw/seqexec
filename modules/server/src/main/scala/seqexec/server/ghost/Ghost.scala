@@ -26,6 +26,7 @@ import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.Conditions
 import seqexec.server._
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
@@ -209,6 +210,9 @@ object Ghost {
           redReadMode  <-
             config
               .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
+          // rm           <-
+          //   config
+          //     .extractInstAs[String]("resolutionMode")
 
           config <- {
             if (science) {
@@ -232,7 +236,8 @@ object Ghost {
                 hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
                 hrifu2Name = hrifu2RAHMS.as("Sky"),
                 hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
-                userTargets = userTargets.flatten
+                userTargets = userTargets.flatten,
+                Conditions.Best
               )
             } else
               GhostCalibration(
@@ -250,7 +255,7 @@ object Ghost {
               ).asRight
           }
         } yield config).leftMap { e =>
-          System.out.println(e); SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
+          SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
         }
       }
     }.widenRethrowT
