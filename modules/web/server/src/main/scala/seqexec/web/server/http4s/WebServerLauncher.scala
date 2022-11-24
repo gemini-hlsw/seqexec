@@ -242,7 +242,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   def seqexec: IO[ExitCode] = {
 
     // Override the default client config
-    def mkClient(timeout: FiniteDuration): Resource[IO, Client[IO]] =
+    def mkClient(timeout: FiniteDuration): IO[Client[IO]] =
       JdkHttpClient.simple[IO].map(c => Client(r => c.run(r).timeout(timeout)))
 
     def engineIO(
@@ -280,7 +280,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
         _      <- Resource.eval(configLog[IO]) // Initialize log before the engine is setup
         conf   <- Resource.eval(config[IO].flatMap(loadConfiguration[IO]))
         _      <- Resource.eval(printBanner(conf))
-        cli    <- mkClient(conf.seqexecEngine.dhsTimeout)
+        cli    <- Resource
+                    .eval(mkClient(conf.seqexecEngine.dhsTimeout))
                     .map(RequestLogger(true, true))
                     .map(ResponseLogger(true, true))
         inq    <- Resource.eval(Queue.bounded[IO, executeEngine.EventType](10))
