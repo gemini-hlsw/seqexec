@@ -146,14 +146,46 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVZeroAccumulatedFlux, 1) |+|
       giapiConfig(GhostSVDoContinuous, 1)
 
+  def baseAGConfig: Configuration =
+    giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_EXPOSE") |+|
+      giapiConfig(GhostAGRequestType, "HARDWARE") |+|
+      giapiConfig(GhostAGRepeat, 1) |+|
+      giapiConfig(GhostAGDoSave, 0) |+|
+      giapiConfig(GhostAGDoDisplay, 1) |+|
+      giapiConfig(GhostAGRcf, 1) |+|
+      giapiConfig(GhostAGCcf, 1) |+|
+      giapiConfig(GhostAGXO, 0) |+|
+      giapiConfig(GhostAGYO, 0) |+|
+      giapiConfig(GhostAGWidth, 1928) |+|
+      giapiConfig(GhostAGHeigth, 1452) |+|
+      giapiConfig(GhostAGEnableGuide, 1) |+|
+      giapiConfig(GhostAGBackground, 0) |+|
+      giapiConfig(GhostAGSimulateFlux, 0) |+|
+      giapiConfig(GhostAGDoContinuous, 0)
 
   val SVDurationFactor = 10
 
   def svConfiguration(mag: Double): Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, (SVCameraTimesLUT.find(_.gMag > mag).getOrElse(SVMinimumTime).poorWeather * SVDurationFactor).toInt) |+|
+      giapiConfig(GhostSVDuration,
+                  (SVCameraTimesLUT
+                    .find(_.gMag > mag)
+                    .getOrElse(SVMinimumTime)
+                    .poorWeather * SVDurationFactor).toInt
+      ) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
+  val AGDurationFactor = 10
+
+  def agConfiguration(mag: Double): Configuration =
+    baseAGConfig |+|
+      giapiConfig(GhostAGDuration,
+                  (GuideCameraTimesLUT
+                    .find(_.gMag > mag)
+                    .map(_.goodWeather)
+                    .getOrElse(AGMinimumTime) * AGDurationFactor).toInt
+      ) |+|
+      giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
   def configuration: Configuration =
     if (!isScience) {
@@ -164,7 +196,9 @@ sealed trait GhostConfig extends GhostLUT {
         GhostConfig.fiberConfig1(FiberAgitator.None) |+|
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
-        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(3.1)
+        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(
+          3.1
+        ) |+| agConfiguration(3.1)
 
 }
 
@@ -234,7 +268,7 @@ object GhostConfig {
     hrifu2Name:     Option[String],
     hrifu2Coords:   Option[Coordinates],
     userTargets:    List[GemTarget],
-    conditions: Conditions
+    conditions:     Conditions
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
     println(conditions)

@@ -47,6 +47,9 @@ trait GhostLUT {
       GuideCameraTimes(20.0, 50.0, 17.0)
     ).sortBy(_.gMag)
 
+  // the List is never empty
+  val AGMinimumTime: Double = SVCameraTimesLUT.find(_.gMag == 17.0).map(_.goodWeather).get
+
   val SVCameraTimesLUT =
     List(
       SVCameraTimes(3.0, 0.2, 0.2),
@@ -87,7 +90,7 @@ trait GhostLUT {
     ).sortBy(_.gMag)
 
   // the List is never empty
-  val SVMinimumTime = SVCameraTimesLUT.minBy(_.poorWeather)
+  val SVMinimumTime = SVCameraTimesLUT.minBy(_.goodWeather)
 
 }
 
