@@ -380,41 +380,44 @@ object SeqTranslate {
     ): EngineState[F] => Option[Stream[F, EventType[F]]] =
       endPaused(seqId, _.abortPaused)
 
-    def toInstrumentSys(inst: Instrument): SystemOverrides => InstrumentSystem[F] = inst match {
-      case Instrument.F2    =>
-        ov: SystemOverrides =>
-          Flamingos2(overriddenSystems.flamingos2(ov), overriddenSystems.dhs(ov)): InstrumentSystem[
-            F
-          ]
-      case Instrument.GmosS =>
-        ov: SystemOverrides =>
-          GmosSouth(overriddenSystems.gmosSouth(ov),
-                    overriddenSystems.dhs(ov),
-                    gmosNsCmd
-          ): InstrumentSystem[F]
-      case Instrument.GmosN =>
-        ov: SystemOverrides =>
-          GmosNorth(overriddenSystems.gmosNorth(ov),
-                    overriddenSystems.dhs(ov),
-                    gmosNsCmd
-          ): InstrumentSystem[F]
-      case Instrument.Gnirs =>
-        ov: SystemOverrides =>
-          Gnirs(overriddenSystems.gnirs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Gpi   =>
-        ov: SystemOverrides => Gpi(overriddenSystems.gpi(ov)): InstrumentSystem[F]
-      case Instrument.Ghost =>
-        ov: SystemOverrides => Ghost(overriddenSystems.ghost(ov)): InstrumentSystem[F]
-      case Instrument.Niri  =>
-        ov: SystemOverrides =>
-          Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Nifs  =>
-        ov: SystemOverrides =>
-          Nifs(overriddenSystems.nifs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Gsaoi =>
-        ov: SystemOverrides =>
-          Gsaoi(overriddenSystems.gsaoi(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-    }
+    private def toInstrumentSys(inst: Instrument): SystemOverrides => InstrumentSystem[F] =
+      inst match {
+        case Instrument.F2    =>
+          ov: SystemOverrides =>
+            Flamingos2(overriddenSystems.flamingos2(ov),
+                       overriddenSystems.dhs(ov)
+            ): InstrumentSystem[
+              F
+            ]
+        case Instrument.GmosS =>
+          ov: SystemOverrides =>
+            GmosSouth(overriddenSystems.gmosSouth(ov),
+                      overriddenSystems.dhs(ov),
+                      gmosNsCmd
+            ): InstrumentSystem[F]
+        case Instrument.GmosN =>
+          ov: SystemOverrides =>
+            GmosNorth(overriddenSystems.gmosNorth(ov),
+                      overriddenSystems.dhs(ov),
+                      gmosNsCmd
+            ): InstrumentSystem[F]
+        case Instrument.Gnirs =>
+          ov: SystemOverrides =>
+            Gnirs(overriddenSystems.gnirs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
+        case Instrument.Gpi   =>
+          ov: SystemOverrides => Gpi(overriddenSystems.gpi(ov)): InstrumentSystem[F]
+        case Instrument.Ghost =>
+          ov: SystemOverrides => Ghost(overriddenSystems.ghost(ov)): InstrumentSystem[F]
+        case Instrument.Niri  =>
+          ov: SystemOverrides =>
+            Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
+        case Instrument.Nifs  =>
+          ov: SystemOverrides =>
+            Nifs(overriddenSystems.nifs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
+        case Instrument.Gsaoi =>
+          ov: SystemOverrides =>
+            Gsaoi(overriddenSystems.gsaoi(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
+      }
 
     def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
       case Instrument.F2    => Flamingos2.specifics
