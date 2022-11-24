@@ -18,7 +18,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.11")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.1.1")
 
 // Use NPM modules rather than webjars
-addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.21.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.20.0")
 
 // Used to find dependencies
 addDependencyTreePlugin
