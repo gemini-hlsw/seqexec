@@ -787,7 +787,7 @@ object SeqTranslate {
     private val tcsNorthDisabled: TcsNorthController[F]     = new TcsNorthControllerDisabled[F]
     private val gemsDisabled: GemsController[F]             = new GemsControllerDisabled[F]
     private val altairDisabled: AltairController[F]         = new AltairControllerDisabled[F]
-    private val dhsDisabled: DhsClient[F]                   = new DhsClientDisabled[F]
+    private val dhsDisabled: DhsClientProvider[F]           = (_: String) => new DhsClientDisabled[F]
     private val gcalDisabled: GcalController[F]             = new GcalControllerDisabled[F]
     private val flamingos2Disabled: Flamingos2Controller[F] = new Flamingos2ControllerDisabled[F]
     private val gmosSouthDisabled: GmosSouthController[F]   =
@@ -817,7 +817,7 @@ object SeqTranslate {
       if (overrides.isTcsEnabled) systems.altair
       else altairDisabled
 
-    def dhs(overrides: SystemOverrides): DhsClient[F] =
+    def dhs(overrides: SystemOverrides): DhsClientProvider[F] =
       if (overrides.isDhsEnabled) systems.dhs
       else dhsDisabled
 

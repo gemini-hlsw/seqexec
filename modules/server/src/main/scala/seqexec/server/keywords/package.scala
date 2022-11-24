@@ -39,22 +39,19 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
 
     def closeImage(id: ImageFileId): F[Unit] =
-      dhsClient.setKeywords(id,
-                            KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
-                            finalFlag = true
-      )
+      dhsClient.setKeywords(id, KeywordBag.empty, finalFlag = true)
 
-    def keywordsBundler: KeywordsBundler[F] = DhsInstrument.kb[F](dhsInstrumentName)
+    def keywordsBundler: KeywordsBundler[F] = DhsInstrument.kb[F]
 
   }
 
   object DhsInstrument {
-    def kb[F[_]: Monad](dhsInstrumentName: String): KeywordsBundler[F] = new KeywordsBundler[F] {
+    def kb[F[_]: Monad]: KeywordsBundler[F] = new KeywordsBundler[F] {
       def bundleKeywords(
         ks: List[KeywordBag => F[KeywordBag]]
       ): F[KeywordBag] = {
         val z =
-          Applicative[F].pure(KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)))
+          Applicative[F].pure(KeywordBag.empty)
         ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
       }
     }

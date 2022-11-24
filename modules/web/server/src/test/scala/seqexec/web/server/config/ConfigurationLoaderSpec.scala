@@ -58,7 +58,8 @@ class ConfigurationLoaderSpec extends CatsEffectSuite {
     Some("127.0.0.1"),
     0,
     5.seconds,
-    10.seconds
+    10.seconds,
+    32
   )
   val ref    = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
 
@@ -149,6 +150,7 @@ seqexec-engine {
     readRetries = 0
     ioTimeout = 5 seconds
     dhsTimeout = 10 seconds
+    dhsMaxSize = 32
     gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"
     gpiGDS = "http://localhost:8888/xmlrpc"
     ghostUrl = "vm://ghost?marshal=false&broker.persistent=false"

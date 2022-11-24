@@ -285,7 +285,9 @@ object WebServerLauncher extends IOApp with LogInitialization {
                     .map(ResponseLogger(true, true))
         inq    <- Resource.eval(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.eval(Topic[IO, SeqexecEvent])
-        dsp    <- Dispatcher[IO]
+        // The dispatcher is used to send log messages to clients. I used sequential to preserve
+        // the order of the log messages.
+        dsp    <- Dispatcher.sequential[IO](true)
         _      <- Resource.eval(logToClients(out, dsp))
         cr     <- Resource.eval(IO(new CollectorRegistry))
         cs     <- Resource.eval(

@@ -23,9 +23,9 @@ object Settings {
     val scalaJSReactSortable    = "0.5.2"
 
     // Scala libraries
-    val catsEffectVersion   = "3.3.14"
-    val catsVersion         = "2.8.0"
-    val mouseVersion        = "1.1.0"
+    val catsEffectVersion   = "3.4.1"
+    val catsVersion         = "2.9.0"
+    val mouseVersion        = "1.2.1"
     val fs2Version          = "3.2.12"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
@@ -43,14 +43,14 @@ object Settings {
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "5.0.0"
-    val slf4j          = "1.7.36"
+    val slf4j          = "2.0.4"
     val log4s          = "1.10.0"
-    val log4cats       = "2.4.0"
+    val log4cats       = "2.5.0"
     val log4catsLevel  = "0.3.1"
     val logback        = "1.2.11"
-    val janino         = "3.1.7"
+    val janino         = "3.1.9"
     val logstash       = "7.0"
-    val pureConfig     = "0.17.1"
+    val pureConfig     = "0.17.2"
     val monocleVersion = "3.1.0"
     val circeVersion   = "0.14.2"
     val doobieVersion  = "0.6.0"
@@ -170,10 +170,10 @@ object Settings {
     )
     val Http4sBoopickle =
       "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4sBoopickleVersion
-    val Http4sCore       = "org.http4s" %% "http4s-core"      % LibraryVersions.http4sVersion
-    val Http4sServer     = "org.http4s" %% "http4s-server"    % LibraryVersions.http4sVersion
-    val Http4sCirce      = "org.http4s" %% "http4s-circe"     % LibraryVersions.http4sVersion
-    val Http4sXml        = "org.http4s" %% "http4s-scala-xml" % LibraryVersions.http4sScalaXmlVersion
+    val Http4sCore       = "org.http4s" %% "http4s-core"        % LibraryVersions.http4sVersion
+    val Http4sServer     = "org.http4s" %% "http4s-server"      % LibraryVersions.http4sVersion
+    val Http4sCirce      = "org.http4s" %% "http4s-circe"       % LibraryVersions.http4sVersion
+    val Http4sXml        = "org.http4s" %% "http4s-scala-xml-1" % LibraryVersions.http4sScalaXmlVersion
     val Http4sPrometheus =
       "org.http4s" %% "http4s-prometheus-metrics" % LibraryVersions.http4sPrometheusMetricsVersion
     val Monocle = Def.setting(

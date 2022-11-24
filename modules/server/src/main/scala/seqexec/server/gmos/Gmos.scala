@@ -5,7 +5,6 @@ package seqexec.server.gmos
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import scala.concurrent.duration._
 import cats._
 import cats.data.EitherT
@@ -40,8 +39,7 @@ import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsInstrument, KeywordsClient }
 import shapeless.tag
 import cats.effect.{ Ref, Temporal }
 import squants.Seconds
