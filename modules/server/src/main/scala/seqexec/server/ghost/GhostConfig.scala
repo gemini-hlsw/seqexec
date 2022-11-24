@@ -147,10 +147,12 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVDoContinuous, 1)
 
 
+  val SVDurationFactor = 10
+
   def svConfiguration(mag: Double): Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, SVCameraTimesLUT.find(_.gMag > mag).getOrElse(SVMinimumTime).poorWeather) |+|
-      giapiConfig(GhostSVUnit, 0.1)
+      giapiConfig(GhostSVDuration, (SVCameraTimesLUT.find(_.gMag > mag).getOrElse(SVMinimumTime).poorWeather * SVDurationFactor).toInt) |+|
+      giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
 
   def configuration: Configuration =
