@@ -64,6 +64,8 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostIFU2Target, IFUTargetType.NoTarget: IFUTargetType) |+|
       giapiConfig(GhostIFU1Type, DemandType.DemandXY: DemandType) |+|
       giapiConfig(GhostIFU2Type, DemandType.DemandXY: DemandType) |+|
+      giapiConfig(GhostIFU1MoveMode, "IFU_ABSOLUTE") |+|
+      giapiConfig(GhostIFU2MoveMode, "IFU_ABSOLUTE") |+|
       giapiConfig(GhostIFU1X, -68.5) |+|
       giapiConfig(GhostIFU1Y, 0.0) |+|
       giapiConfig(GhostIFU2X, 68.5) |+|
