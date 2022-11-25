@@ -72,15 +72,14 @@ object ControlMenu {
               ),
               MenuHeader(clazz =
                 SeqexecStyles.onlyMobile |+| SeqexecStyles.ui |+| SeqexecStyles.item
-              )(
-                // Ideally we'd do this with css text-overflow but it is not
-                // working properly inside a header item, let's abbreviate in code
-                u.displayName
-                  .split("\\s")
-                  .headOption
-                  .map(_.substring(0, 10) + "...")
-                  .getOrElse[String]("")
               ),
+              // Ideally we'd do this with css text-overflow but it is not
+              // working properly inside a header item, let's abbreviate in code
+              u.displayName
+                .split("\\s")
+                .headOption
+                .map(r => r.substring(0, 10.min(r.length)) + "...")
+                .getOrElse[String](""),
               MenuItem(clazz = SeqexecStyles.notInMobile)(
                 helpButton,
                 soundConnect(x => SoundControl(x())),
