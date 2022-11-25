@@ -59,11 +59,18 @@ sealed trait GhostConfig extends GhostLUT {
     giapiConfig(ifuNum.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
       giapiConfig(ifuNum.demandItem, DemandType.DemandNone: DemandType)
 
+  def ifuCalibration: Configuration =
+    giapiConfig(GhostIFU1Target, IFUTargetType.NoTarget: IFUTargetType) |+|
+      giapiConfig(GhostIFU2Target, IFUTargetType.NoTarget: IFUTargetType) |+|
+      giapiConfig(GhostIFU1Type, DemandType.DemandXY: DemandType) |+|
+      giapiConfig(GhostIFU2Type, DemandType.DemandXY: DemandType) |+|
+      giapiConfig(GhostIFU1X, -68.5) |+|
+      giapiConfig(GhostIFU1Y, 0.0) |+|
+      giapiConfig(GhostIFU2X, 68.5) |+|
+      giapiConfig(GhostIFU2Y, 0.0)
+
   def ifu1Config: Configuration =
-    if (isScience)
-      GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
-    else
-      ifuNone(IFUNum.IFU1)
+    GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
 
   def imageTypeConf = obsType.toLowerCase match {
     case "bias" => "BIAS"
@@ -81,10 +88,7 @@ sealed trait GhostConfig extends GhostLUT {
   def adcConfiguration: Configuration
 
   final def ifu2Config: Configuration =
-    if (isScience)
-      ifu2Configuration
-    else
-      ifuNone(IFUNum.IFU2)
+    ifu2Configuration
 
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
@@ -189,14 +193,16 @@ sealed trait GhostConfig extends GhostLUT {
 
   def configuration: Configuration =
     if (!isScience) {
-      GhostConfig.fiberConfig1(fiberAgitator1) |+|
+      ifuCalibration |+|
+        GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
     } else
       {
-        GhostConfig.fiberConfig1(FiberAgitator.None) |+|
+        ifu1Config |+| ifu2Config |+|
+          GhostConfig.fiberConfig1(FiberAgitator.None) |+|
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
-        ifu1Config |+| ifu2Config |+| userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(
+        userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(
           3.1
         ) |+| agConfiguration(3.1)
 
