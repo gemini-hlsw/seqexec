@@ -9,6 +9,7 @@ import scala.reflect.ClassTag
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
+import cats.effect.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -20,6 +21,7 @@ import lucuma.core.math.Declination
 import lucuma.core.math.RightAscension
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.Conditions
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
@@ -32,8 +34,10 @@ import squants.time.Seconds
 import squants.time.Time
 import cats.effect.Async
 
-final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
-    extends GdsInstrument[F]
+final case class Ghost[F[_]: Logger: Async](
+  controller: GhostController[F],
+  conditions: Ref[F, Conditions]
+) extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
@@ -59,10 +63,11 @@ final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
     }
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    Ghost
-      .fromSequenceConfig[F](config)
-      .flatMap(controller.applyConfig)
-      .as(ConfigResult[F](this))
+    conditions.get.flatMap(a => Logger[F].info(a.toString)) *>
+      Ghost
+        .fromSequenceConfig[F](config)
+        .flatMap(controller.applyConfig)
+        .as(ConfigResult[F](this))
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve

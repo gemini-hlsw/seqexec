@@ -102,9 +102,10 @@ trait SeqTranslate[F[_]] extends ObserveActions {
 
 object SeqTranslate {
   private class SeqTranslateImpl[F[_]: Async: Logger](
-    site:      Site,
-    systemss:  Systems[F],
-    gmosNsCmd: Ref[F, Option[NSObserveCommand]]
+    site:          Site,
+    systemss:      Systems[F],
+    gmosNsCmd:     Ref[F, Option[NSObserveCommand]],
+    conditionsRef: Ref[F, Conditions]
   ) extends SeqTranslate[F] {
 
     private val overriddenSystems = new OverriddenSystems[F](systemss)
@@ -404,7 +405,8 @@ object SeqTranslate {
       case Instrument.Gpi   =>
         ov: SystemOverrides => Gpi(overriddenSystems.gpi(ov)): InstrumentSystem[F]
       case Instrument.Ghost =>
-        ov: SystemOverrides => Ghost(overriddenSystems.ghost(ov)): InstrumentSystem[F]
+        ov: SystemOverrides =>
+          Ghost(overriddenSystems.ghost(ov), conditionsRef): InstrumentSystem[F]
       case Instrument.Niri  =>
         ov: SystemOverrides =>
           Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
@@ -765,8 +767,14 @@ object SeqTranslate {
 
   }
 
-  def apply[F[_]: Async: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
-    Ref.of[F, Option[NSObserveCommand]](none).map(new SeqTranslateImpl(site, systems, _))
+  def apply[F[_]: Async: Logger](
+    site:          Site,
+    systems:       Systems[F],
+    conditionsRef: Ref[F, Conditions]
+  ): F[SeqTranslate[F]] =
+    Ref
+      .of[F, Option[NSObserveCommand]](none)
+      .map(new SeqTranslateImpl(site, systems, _, conditionsRef))
 
   def dataIdFromConfig[F[_]: MonadError[*[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT
