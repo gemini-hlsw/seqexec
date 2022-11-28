@@ -12,6 +12,7 @@ import fs2.Stream
 import seqexec.model.Observation
 import lucuma.core.enums.Site
 import seqexec.engine.{ Action, Result, Sequence }
+import seqexec.model.Conditions
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.dhs._
 import seqexec.model.{ ActionType, SequenceState }
@@ -96,7 +97,10 @@ class SeqTranslateSpec extends TestCommon {
     .sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.OKAborted(Response.Aborted(toImageFileId(fileId)))))(baseState)
 
-  private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync()
+  private val translator = Ref
+    .of[IO, Conditions](Conditions.Default)
+    .flatMap(cs => SeqTranslate(Site.GS, defaultSystems, cs))
+    .unsafeRunSync()
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId, graceful = false).apply(s0).isDefined)
