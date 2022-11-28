@@ -14,7 +14,7 @@ object Settings {
     val scalajsReact            = "2.1.1"
     val booPickle               = "1.4.0"
     val diode                   = "1.2.0-RC4"
-    val javaTimeJS              = "2.4.0"
+    val javaTimeJS              = "2.5.0"
     val scalaJSReactCommon      = "0.17.0"
     val scalaJSSemanticUI       = "0.16.0"
     val scalaJSReactVirtualized = "0.13.1"
@@ -84,7 +84,7 @@ object Settings {
     val guava               = "31.0.1-jre"
     val prometheusClient    = "0.16.0"
     val geminiLocales       = "0.7.0"
-    val pprint              = "0.7.3"
+    val pprint              = "0.8.1"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
