@@ -260,7 +260,8 @@ object SeqexecEngine {
     override val systems: Systems[F],
     settings:             SeqexecEngineConfiguration,
     sm:                   SeqexecMetrics,
-    translator:           SeqTranslate[F]
+    translator:           SeqTranslate[F],
+    conditionsRef:        Ref[F, Conditions]
   )(implicit
     executeEngine:        seqexec.server.ExecEngineType[F]
   ) extends SeqexecEngine[F] {
@@ -731,6 +732,7 @@ object SeqexecEngine {
 
     override def resetConditions(q: EventQueue[F]): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Reset conditions") *>
+        conditionsRef.set(Conditions.Default) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].replace(Conditions.Default) >>> refreshSequences)
@@ -745,6 +747,7 @@ object SeqexecEngine {
       user:       UserDetails
     ): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Setting conditions") *>
+        conditionsRef.set(conditions) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].replace(conditions) >>> refreshSequences)
@@ -755,6 +758,7 @@ object SeqexecEngine {
 
     override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting image quality to $iq") *>
+        conditionsRef.update(Conditions.iq.replace(iq)) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].andThen(Conditions.iq).replace(iq) >>> refreshSequences)
@@ -765,6 +769,7 @@ object SeqexecEngine {
 
     override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting water vapor to $wv") *>
+        conditionsRef.update(Conditions.wv.replace(wv)) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].andThen(Conditions.wv).replace(wv) >>> refreshSequences)
@@ -775,6 +780,7 @@ object SeqexecEngine {
 
     override def setSkyBackground(q: EventQueue[F], sb: SkyBackground, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting sky background to $sb") *>
+        conditionsRef.update(Conditions.sb.replace(sb)) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].andThen(Conditions.sb).replace(sb) >>> refreshSequences)
@@ -785,6 +791,7 @@ object SeqexecEngine {
 
     override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting cloud cover to $cc") *>
+        conditionsRef.update(Conditions.cc.replace(cc)) *>
         q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             (EngineState.conditions[F].andThen(Conditions.cc).replace(cc) >>> refreshSequences)
@@ -1457,8 +1464,12 @@ object SeqexecEngine {
         )
   }
 
-  def createTranslator[F[_]: Async: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
-    SeqTranslate(site, systems)
+  def createTranslator[F[_]: Async: Logger](
+    site:          Site,
+    systems:       Systems[F],
+    conditionsRef: Ref[F, Conditions]
+  ): F[SeqTranslate[F]] =
+    SeqTranslate(site, systems, conditionsRef)
 
   private def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -1637,8 +1648,10 @@ object SeqexecEngine {
   )(implicit
     executeEngine: ExecEngineType[F]
   ): F[SeqexecEngine[F]] =
-    createTranslator(site, systems)
-      .map(new SeqexecEngineImpl[F](systems, conf, metrics, _))
+    Ref.of[F, Conditions](Conditions.Default).flatMap { rc =>
+      createTranslator(site, systems, rc)
+        .map(new SeqexecEngineImpl[F](systems, conf, metrics, _, rc))
+    }
 
   private def modifyStateEvent[F[_]](
     v:   SeqEvent,
