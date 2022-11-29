@@ -17,6 +17,7 @@ import lucuma.core.math.Coordinates
 import lucuma.core.enums.GiapiStatusApply
 import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
+import edu.gemini.spModel.target.env.ResolutionMode
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {
@@ -34,6 +35,7 @@ sealed trait GhostConfig extends GhostLUT {
   def ifu1BundleType: BundleConfig
   def ifu1Coordinates: Coordinates
   def ifu2BundleType: Option[BundleConfig]
+  def resolutionMode: ResolutionMode
 
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
@@ -193,6 +195,13 @@ sealed trait GhostConfig extends GhostLUT {
       ) |+|
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
+  def thXeLamp: Configuration =
+    if (isScience && resolutionMode == ResolutionMode.GhostPRV) {
+      giapiConfig(GhostThXeLamp, 1)
+    } else {
+      giapiConfig(GhostThXeLamp, 0)
+    }
+
   def configuration: Configuration =
     if (!isScience) {
       ifuCalibration |+|
@@ -206,7 +215,7 @@ sealed trait GhostConfig extends GhostLUT {
       } |+|
         userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(
           3.1
-        ) |+| agConfiguration(3.1)
+        ) |+| agConfiguration(3.1) |+| thXeLamp
 
 }
 
@@ -276,6 +285,7 @@ object GhostConfig {
     hrifu2Name:     Option[String],
     hrifu2Coords:   Option[Coordinates],
     userTargets:    List[GemTarget],
+    resolutionMode: ResolutionMode,
     conditions:     Conditions
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
@@ -298,7 +308,8 @@ object GhostConfig {
                           fiberAgitator2,
                           t,
                           _,
-                          userTargets
+                          userTargets,
+                          resolutionMode
             )
         )
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
@@ -314,7 +325,8 @@ object GhostConfig {
                         _,
                         t2,
                         _,
-                        userTargets
+                        userTargets,
+                        resolutionMode
             )
         )
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
@@ -329,7 +341,8 @@ object GhostConfig {
                            t,
                            _,
                            _,
-                           userTargets
+                           userTargets,
+                           resolutionMode
             )
         )
       case (SkyPosition, Target(t), NoTarget, NoTarget) =>
@@ -344,7 +357,8 @@ object GhostConfig {
                            _,
                            t,
                            _,
-                           userTargets
+                           userTargets,
+                           resolutionMode
             )
         )
       case (NoTarget, NoTarget, Target(t), NoTarget)    =>
@@ -357,7 +371,8 @@ object GhostConfig {
                                           fiberAgitator2,
                                           t,
                                           _,
-                                          userTargets
+                                          userTargets,
+                                          resolutionMode
           )
         )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
@@ -372,7 +387,8 @@ object GhostConfig {
                            t,
                            _,
                            _,
-                           userTargets
+                           userTargets,
+                           resolutionMode
             )
         )
       case _                                            =>
@@ -402,7 +418,8 @@ case class GhostCalibration(
   override val redConfig:      ChannelConfig,
   override val baseCoords:     Option[Coordinates],
   override val fiberAgitator1: FiberAgitator,
-  override val fiberAgitator2: FiberAgitator
+  override val fiberAgitator2: FiberAgitator,
+  override val resolutionMode: ResolutionMode
 ) extends GhostConfig {
 
   override def ifu1TargetType: IFUTargetType =
@@ -476,7 +493,8 @@ object StandardResolutionMode {
     override val fiberAgitator2:  FiberAgitator,
     ifu1TargetName:               String,
     override val ifu1Coordinates: Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
@@ -505,7 +523,8 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     ifu2TargetName:               String,
     ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -539,7 +558,8 @@ object StandardResolutionMode {
     ifu1TargetName:               String,
     override val ifu1Coordinates: Coordinates,
     ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -572,7 +592,8 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Coordinates,
     ifu2TargetName:               String,
     ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -633,7 +654,8 @@ object HighResolutionMode {
     override val fiberAgitator2:  FiberAgitator,
     override val ifu1TargetName:  String,
     override val ifu1Coordinates: Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends HighResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
@@ -661,7 +683,8 @@ object HighResolutionMode {
     override val ifu1TargetName:  String,
     override val ifu1Coordinates: Coordinates,
     ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget]
+    override val userTargets:     List[GemTarget],
+    override val resolutionMode:  ResolutionMode
   ) extends HighResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,

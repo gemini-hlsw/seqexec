@@ -121,7 +121,7 @@ object ReadNoiseGain {
   case object Medium extends ReadNoiseGain(value = "CHIP_READOUT_MEDIUM")
   case object Fast   extends ReadNoiseGain(value = "CHIP_READOUT_FAST")
 
-  // implicit val ifuTargetTypeConfiguration: GiapiConfig[ReadNoiseGain] = _.targetType
+  implicit val ifuTargetTypeConfiguration: GiapiConfig[ReadNoiseGain] = _.value
 }
 
 final case class ChannelConfig(

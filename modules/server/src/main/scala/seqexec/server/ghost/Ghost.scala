@@ -45,6 +45,7 @@ import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Minutes
 import lucuma.core.enums.StellarLibrarySpectrum
+import edu.gemini.spModel.target.env.ResolutionMode
 
 final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
     extends GdsInstrument[F]
@@ -210,12 +211,13 @@ object Ghost {
           redCount     <- config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
           redReadMode  <-
             config
-              .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
-          // rm           <-
-          //   config
-          //     .extractInstAs[String]("resolutionMode")
+              .extractInstAs[GhostReadNoiseGain](SPGhost.RED_READ_NOISE_GAIN_PROP)
+          rm           <-
+            config
+              .extractInstAs[ResolutionMode](SPGhost.RESOLUTION_MODE)
 
           config <- {
+            println(rm)
             if (science) {
               GhostConfig.apply(
                 obsType = obsType,
@@ -238,6 +240,7 @@ object Ghost {
                 hrifu2Name = hrifu2RAHMS.as("Sky"),
                 hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
                 userTargets = userTargets.flatten,
+                rm,
                 Conditions.Best
               )
             } else
@@ -252,7 +255,8 @@ object Ghost {
                   ChannelConfig(redBinning, redExposure.second, redCount, gainFromODB(redReadMode)),
                 baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                 fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
-                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false))
+                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
+                rm
               ).asRight
           }
         } yield config).leftMap { e =>
