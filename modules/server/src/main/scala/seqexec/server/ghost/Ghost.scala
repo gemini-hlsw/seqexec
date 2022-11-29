@@ -141,9 +141,10 @@ object Ghost {
     val MaxTargets = 8
 
     def gainFromODB(n: GhostReadNoiseGain): ReadNoiseGain = n match {
-      case GhostReadNoiseGain.SLOW_LOW  => ReadNoiseGain.SlowLow
-      case GhostReadNoiseGain.FAST_LOW  => ReadNoiseGain.FastLow
-      case GhostReadNoiseGain.FAST_HIGH => ReadNoiseGain.FastHigh
+      case GhostReadNoiseGain.SLOW_LOW   => ReadNoiseGain.Slow
+      case GhostReadNoiseGain.MEDIUM_LOW => ReadNoiseGain.Medium
+      case GhostReadNoiseGain.FAST_LOW   => ReadNoiseGain.Fast
+      case GhostReadNoiseGain.FAST_HIGH  => ReadNoiseGain.Fast
     }
 
     def userTargets: List[Option[Target]] = (for {

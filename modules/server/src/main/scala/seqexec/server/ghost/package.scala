@@ -117,9 +117,9 @@ object IFUTargetType {
 sealed abstract class ReadNoiseGain(val value: String) extends Product with Serializable
 object ReadNoiseGain {
 
-  case object SlowLow  extends ReadNoiseGain(value = "CHIP_READOUT_SLOW")
-  case object FastLow  extends ReadNoiseGain(value = "CHIP_READOUT_MEDIUM")
-  case object FastHigh extends ReadNoiseGain(value = "CHIP_READOUT_FAST")
+  case object Slow   extends ReadNoiseGain(value = "CHIP_READOUT_SLOW")
+  case object Medium extends ReadNoiseGain(value = "CHIP_READOUT_MEDIUM")
+  case object Fast   extends ReadNoiseGain(value = "CHIP_READOUT_FAST")
 
   // implicit val ifuTargetTypeConfiguration: GiapiConfig[ReadNoiseGain] = _.targetType
 }
