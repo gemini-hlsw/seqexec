@@ -18,6 +18,9 @@ import lucuma.core.enums.GiapiStatusApply
 import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 import edu.gemini.spModel.target.env.ResolutionMode
+import seqexec.model.enum.ImageQuality
+import seqexec.model.enum.CloudCover
+import seqexec.model.enum.SkyBackground
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {
@@ -36,6 +39,8 @@ sealed trait GhostConfig extends GhostLUT {
   def ifu1Coordinates: Coordinates
   def ifu2BundleType: Option[BundleConfig]
   def resolutionMode: ResolutionMode
+  def conditions: Conditions
+  def scienceMagnitude: Option[Double]
 
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
@@ -173,26 +178,39 @@ sealed trait GhostConfig extends GhostLUT {
 
   val SVDurationFactor = 10
 
-  def svConfiguration(mag: Double): Configuration =
+  val isPoorWeather =
+    conditions.sb >= SkyBackground.Percent80 || conditions.cc >= CloudCover.Percent80 || conditions.iq === ImageQuality.Any || conditions.sb === SkyBackground.Unknown || conditions.cc === CloudCover.Unknown || conditions.iq === ImageQuality.Unknown
+
+  def svCameraTime(mag: Option[Double]): Double = {
+    val times = mag
+      .flatMap(mag =>
+        SVCameraTimesLUT
+          .find(_.gMag > mag)
+      )
+      .getOrElse(SVMinimumTime)
+    if (isPoorWeather) times.poorWeather else times.goodWeather
+  }
+
+  def agCameraTime(mag: Option[Double]): Double = {
+    val times = mag
+      .flatMap(mag =>
+        GuideCameraTimesLUT
+          .find(_.gMag > mag)
+      )
+    (if (isPoorWeather) times.map(_.poorWeather) else times.map(_.goodWeather))
+      .getOrElse(AGMinimumTime)
+  }
+
+  def svConfiguration(mag: Option[Double]): Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration,
-                  (SVCameraTimesLUT
-                    .find(_.gMag > mag)
-                    .getOrElse(SVMinimumTime)
-                    .poorWeather * SVDurationFactor).toInt
-      ) |+|
+      giapiConfig(GhostSVDuration, (svCameraTime(mag) * SVDurationFactor).toInt) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   val AGDurationFactor = 10
 
-  def agConfiguration(mag: Double): Configuration =
+  def agConfiguration(mag: Option[Double]): Configuration =
     baseAGConfig |+|
-      giapiConfig(GhostAGDuration,
-                  (GuideCameraTimesLUT
-                    .find(_.gMag > mag)
-                    .map(_.goodWeather)
-                    .getOrElse(AGMinimumTime) * AGDurationFactor).toInt
-      ) |+|
+      giapiConfig(GhostAGDuration, (agCameraTime(mag) * AGDurationFactor).toInt) |+|
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
   def thXeLamp: Configuration =
@@ -213,9 +231,8 @@ sealed trait GhostConfig extends GhostLUT {
           GhostConfig.fiberConfig1(FiberAgitator.None) |+|
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
-        userTargetsConfig |+| channelConfig |+| adcConfiguration |+| svConfiguration(
-          3.1
-        ) |+| agConfiguration(3.1) |+| thXeLamp
+        userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
+        svConfiguration(scienceMagnitude) |+| agConfiguration(scienceMagnitude) |+| thXeLamp
 
 }
 
@@ -270,26 +287,26 @@ object GhostConfig {
     giapiConfig(GhostFiberAgitator2, fa)
 
   def apply(
-    obsType:        String,
-    blueConfig:     ChannelConfig,
-    redConfig:      ChannelConfig,
-    baseCoords:     Option[Coordinates],
-    fiberAgitator1: FiberAgitator,
-    fiberAgitator2: FiberAgitator,
-    srifu1Name:     Option[String],
-    srifu1Coords:   Option[Coordinates],
-    srifu2Name:     Option[String],
-    srifu2Coords:   Option[Coordinates],
-    hrifu1Name:     Option[String],
-    hrifu1Coords:   Option[Coordinates],
-    hrifu2Name:     Option[String],
-    hrifu2Coords:   Option[Coordinates],
-    userTargets:    List[GemTarget],
-    resolutionMode: ResolutionMode,
-    conditions:     Conditions
+    obsType:          String,
+    blueConfig:       ChannelConfig,
+    redConfig:        ChannelConfig,
+    baseCoords:       Option[Coordinates],
+    fiberAgitator1:   FiberAgitator,
+    fiberAgitator2:   FiberAgitator,
+    srifu1Name:       Option[String],
+    srifu1Coords:     Option[Coordinates],
+    srifu2Name:       Option[String],
+    srifu2Coords:     Option[Coordinates],
+    hrifu1Name:       Option[String],
+    hrifu1Coords:     Option[Coordinates],
+    hrifu2Name:       Option[String],
+    hrifu2Coords:     Option[Coordinates],
+    userTargets:      List[GemTarget],
+    resolutionMode:   ResolutionMode,
+    conditions:       Conditions,
+    scienceMagnitude: Option[Double]
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
-    println(conditions)
 
     val sifu1 = determineType(srifu1Name)
     val sifu2 = determineType(srifu2Name)
@@ -309,7 +326,9 @@ object GhostConfig {
                           t,
                           _,
                           userTargets,
-                          resolutionMode
+                          resolutionMode,
+                          conditions,
+                          scienceMagnitude
             )
         )
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
@@ -326,7 +345,9 @@ object GhostConfig {
                         t2,
                         _,
                         userTargets,
-                        resolutionMode
+                        resolutionMode,
+                        conditions,
+                        scienceMagnitude
             )
         )
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
@@ -342,7 +363,9 @@ object GhostConfig {
                            _,
                            _,
                            userTargets,
-                           resolutionMode
+                           resolutionMode,
+                           conditions,
+                           scienceMagnitude
             )
         )
       case (SkyPosition, Target(t), NoTarget, NoTarget) =>
@@ -358,7 +381,9 @@ object GhostConfig {
                            t,
                            _,
                            userTargets,
-                           resolutionMode
+                           resolutionMode,
+                           conditions,
+                           scienceMagnitude
             )
         )
       case (NoTarget, NoTarget, Target(t), NoTarget)    =>
@@ -372,7 +397,9 @@ object GhostConfig {
                                           t,
                                           _,
                                           userTargets,
-                                          resolutionMode
+                                          resolutionMode,
+                                          conditions,
+                                          scienceMagnitude
           )
         )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
@@ -388,7 +415,9 @@ object GhostConfig {
                            _,
                            _,
                            userTargets,
-                           resolutionMode
+                           resolutionMode,
+                           conditions,
+                           scienceMagnitude
             )
         )
       case _                                            =>
@@ -419,7 +448,8 @@ case class GhostCalibration(
   override val baseCoords:     Option[Coordinates],
   override val fiberAgitator1: FiberAgitator,
   override val fiberAgitator2: FiberAgitator,
-  override val resolutionMode: ResolutionMode
+  override val resolutionMode: ResolutionMode,
+  override val conditions:     Conditions
 ) extends GhostConfig {
 
   override def ifu1TargetType: IFUTargetType =
@@ -439,6 +469,8 @@ case class GhostCalibration(
   override val ifu1Coordinates: Coordinates = Coordinates.Zero
 
   override val userTargets: List[GemTarget] = Nil
+
+  override val scienceMagnitude: Option[Double] = None
 
   def adcConfiguration: Configuration = Configuration.Zero
 
@@ -485,16 +517,18 @@ sealed trait StandardResolutionMode extends GhostConfig {
 
 object StandardResolutionMode {
   final case class SingleTarget(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    ifu1TargetName:               String,
-    override val ifu1Coordinates: Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    ifu1TargetName:                String,
+    override val ifu1Coordinates:  Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
@@ -513,18 +547,20 @@ object StandardResolutionMode {
   )
 
   final case class DualTarget(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    ifu1TargetName:               String,
-    override val ifu1Coordinates: Coordinates,
-    ifu2TargetName:               String,
-    ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    ifu1TargetName:                String,
+    override val ifu1Coordinates:  Coordinates,
+    ifu2TargetName:                String,
+    ifu2Coordinates:               Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -549,17 +585,19 @@ object StandardResolutionMode {
   )
 
   final case class TargetPlusSky(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    ifu1TargetName:               String,
-    override val ifu1Coordinates: Coordinates,
-    ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    ifu1TargetName:                String,
+    override val ifu1Coordinates:  Coordinates,
+    ifu2Coordinates:               Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -583,17 +621,19 @@ object StandardResolutionMode {
   )
 
   final case class SkyPlusTarget(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    override val ifu1Coordinates: Coordinates,
-    ifu2TargetName:               String,
-    ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    override val ifu1Coordinates:  Coordinates,
+    ifu2TargetName:                String,
+    ifu2Coordinates:               Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,
@@ -646,16 +686,18 @@ sealed trait HighResolutionMode extends GhostConfig {
 
 object HighResolutionMode {
   final case class SingleTarget(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    override val ifu1TargetName:  String,
-    override val ifu1Coordinates: Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    override val ifu1TargetName:   String,
+    override val ifu1Coordinates:  Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends HighResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuPark(IFUNum.IFU2)
@@ -674,17 +716,19 @@ object HighResolutionMode {
   )
 
   final case class TargetPlusSky(
-    override val obsType:         String,
-    override val blueConfig:      ChannelConfig,
-    override val redConfig:       ChannelConfig,
-    override val baseCoords:      Option[Coordinates],
-    override val fiberAgitator1:  FiberAgitator,
-    override val fiberAgitator2:  FiberAgitator,
-    override val ifu1TargetName:  String,
-    override val ifu1Coordinates: Coordinates,
-    ifu2Coordinates:              Coordinates,
-    override val userTargets:     List[GemTarget],
-    override val resolutionMode:  ResolutionMode
+    override val obsType:          String,
+    override val blueConfig:       ChannelConfig,
+    override val redConfig:        ChannelConfig,
+    override val baseCoords:       Option[Coordinates],
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    override val ifu1TargetName:   String,
+    override val ifu1Coordinates:  Coordinates,
+    ifu2Coordinates:               Coordinates,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   ResolutionMode,
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
   ) extends HighResolutionMode {
     override def ifu2Configuration: Configuration =
       GhostConfig.ifuConfig(IFUNum.IFU2,

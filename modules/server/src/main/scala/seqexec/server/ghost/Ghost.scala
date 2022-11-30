@@ -25,7 +25,6 @@ import lucuma.core.math.RightAscension
 import lucuma.core.model.UnnormalizedSED
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.Conditions
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.Conditions
@@ -81,11 +80,11 @@ final case class Ghost[F[_]: Logger: Async](
     }
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    conditions.get.flatMap(a => Logger[F].info(a.toString)) *>
-      Ghost
-        .fromSequenceConfig[F](config)
-        .flatMap(controller.applyConfig)
-        .as(ConfigResult[F](this))
+    for {
+      cond <- conditions.get
+      cfg  <- Ghost.fromSequenceConfig[F](config, cond)
+      _    <- controller.applyConfig(cfg)
+    } yield ConfigResult[F](this)
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve
@@ -93,7 +92,7 @@ final case class Ghost[F[_]: Logger: Async](
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
-    val ghostConfig = Ghost.fromSequenceConfig[F](config)
+    val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
     ghostConfig.map(c =>
       if (!c.isScience) Minutes(6) // we can't yet calculate how long a bias takes
       else
@@ -122,7 +121,10 @@ object Ghost {
 
   val sfName: String = "GHOST"
 
-  def fromSequenceConfig[F[_]: Sync](config: CleanConfig): F[GhostConfig] = {
+  def fromSequenceConfig[F[_]: Sync](
+    config:     CleanConfig,
+    conditions: Conditions
+  ): F[GhostConfig] = {
     def extractor[A: ClassTag](propName: String): Option[A] =
       config.extractInstAs[A](propName).toOption
 
@@ -220,9 +222,18 @@ object Ghost {
           rm           <-
             config
               .extractInstAs[ResolutionMode](SPGhost.RESOLUTION_MODE)
+          vMag         <-
+            config
+              .extractInstAs[JDouble](SPGhost.MAG_V_PROP)
+              .map(_.doubleValue().some)
+              .recoverWith(_ => none.asRight)
 
+          gMag   <-
+            config
+              .extractInstAs[JDouble](SPGhost.MAG_G_PROP)
+              .map(_.doubleValue().some)
+              .recoverWith(_ => none.asRight)
           config <- {
-            println(rm)
             if (science) {
               GhostConfig.apply(
                 obsType = obsType,
@@ -246,7 +257,8 @@ object Ghost {
                 hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
                 userTargets = userTargets.flatten,
                 rm,
-                Conditions.Best
+                conditions,
+                gMag.orElse(vMag)
               )
             } else
               GhostCalibration(
@@ -261,7 +273,8 @@ object Ghost {
                 baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                 fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
                 fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                rm
+                rm,
+                conditions
               ).asRight
           }
         } yield config).leftMap { e =>
