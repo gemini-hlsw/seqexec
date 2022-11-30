@@ -7,6 +7,7 @@ import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
 import cats.effect.Async
+import cats.effect.Ref
 import cats.syntax.all._
 import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
@@ -24,6 +25,7 @@ import lucuma.core.math.RightAscension
 import lucuma.core.model.UnnormalizedSED
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.Conditions
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.Conditions
@@ -47,8 +49,10 @@ import squants.time.Minutes
 import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
 
-final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
-    extends GdsInstrument[F]
+final case class Ghost[F[_]: Logger: Async](
+  controller: GhostController[F],
+  conditions: Ref[F, Conditions]
+) extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
   // Needs to be estimated experimentally
@@ -77,10 +81,11 @@ final case class Ghost[F[_]: Logger: Async](controller: GhostController[F])
     }
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    Ghost
-      .fromSequenceConfig[F](config)
-      .flatMap(controller.applyConfig)
-      .as(ConfigResult[F](this))
+    conditions.get.flatMap(a => Logger[F].info(a.toString)) *>
+      Ghost
+        .fromSequenceConfig[F](config)
+        .flatMap(controller.applyConfig)
+        .as(ConfigResult[F](this))
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve

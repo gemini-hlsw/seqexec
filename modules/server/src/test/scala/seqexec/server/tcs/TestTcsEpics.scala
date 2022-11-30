@@ -547,45 +547,29 @@ case class TestTcsEpics[F[_]: Async](
 
   override def aoPreparedCMY: F[Double] = state.get.map(_.aoPreparedCMY)
 
-  override val g1ProbeGuideCmd: ProbeGuideCmd[F] = new DummyCmd[F] with ProbeGuideCmd[F] {
-    override def setNodachopa(v: String): F[Unit] = Applicative[F].unit
+  override val g1ProbeGuideCmd: ProbeGuideCmd[F] = probeGuideConfigCmd(
+    State.g1ProbeGuideConfigCmd,
+    State.g1GuideConfig,
+    TestTcsEvent.G1ProbeGuideConfig.apply
+  )
 
-    override def setNodachopb(v: String): F[Unit] = Applicative[F].unit
+  override val g2ProbeGuideCmd: ProbeGuideCmd[F] = probeGuideConfigCmd(
+    State.g2ProbeGuideConfigCmd,
+    State.g2GuideConfig,
+    TestTcsEvent.G2ProbeGuideConfig.apply
+  )
 
-    override def setNodbchopa(v: String): F[Unit] = Applicative[F].unit
+  override val g3ProbeGuideCmd: ProbeGuideCmd[F] = probeGuideConfigCmd(
+    State.g3ProbeGuideConfigCmd,
+    State.g3GuideConfig,
+    TestTcsEvent.G3ProbeGuideConfig.apply
+  )
 
-    override def setNodbchopb(v: String): F[Unit] = Applicative[F].unit
-  }
-
-  override val g2ProbeGuideCmd: ProbeGuideCmd[F] = new DummyCmd[F] with ProbeGuideCmd[F] {
-    override def setNodachopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodachopb(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopb(v: String): F[Unit] = Applicative[F].unit
-  }
-
-  override val g3ProbeGuideCmd: ProbeGuideCmd[F] = new DummyCmd[F] with ProbeGuideCmd[F] {
-    override def setNodachopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodachopb(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopb(v: String): F[Unit] = Applicative[F].unit
-  }
-
-  override val g4ProbeGuideCmd: ProbeGuideCmd[F] = new DummyCmd[F] with ProbeGuideCmd[F] {
-    override def setNodachopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodachopb(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopa(v: String): F[Unit] = Applicative[F].unit
-
-    override def setNodbchopb(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val g4ProbeGuideCmd: ProbeGuideCmd[F] = probeGuideConfigCmd(
+    State.g4ProbeGuideConfigCmd,
+    State.g4GuideConfig,
+    TestTcsEvent.G4ProbeGuideConfig.apply
+  )
 
   override val wavelG1: TargetWavelengthCmd[F] = new DummyCmd[F] with TargetWavelengthCmd[F] {
     override def setWavel(v: Double): F[Unit] = Applicative[F].unit
@@ -918,7 +902,11 @@ object TestTcsEpics {
     oiwfsStopObserveCmd:       TestEpicsCommand0.State,
     aoProbeFollowCmd:          TestEpicsCommand1.State[String],
     aoCorrectCmd:              TestEpicsCommand2.State[String, Int],
-    aoPrepareControlMatrixCmd: TestEpicsCommand2.State[Double, Double]
+    aoPrepareControlMatrixCmd: TestEpicsCommand2.State[Double, Double],
+    g1ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
+    g2ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
+    g3ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
+    g4ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String]
   )
 
   @Lenses
@@ -1018,6 +1006,30 @@ object TestTcsEpics {
       nodbchopa: String,
       nodbchopb: String
     ) extends TestTcsEvent
+    final case class G1ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    ) extends TestTcsEvent
+    final case class G2ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    ) extends TestTcsEvent
+    final case class G3ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    ) extends TestTcsEvent
+    final case class G4ProbeGuideConfig(
+      nodachopa: String,
+      nodchopb:  String,
+      nodbchopa: String,
+      nodbchopb: String
+    ) extends TestTcsEvent
     final case class OffsetACmd(p: Double, q: Double)              extends TestTcsEvent
     final case class WavelSourceACmd(w: Double)                    extends TestTcsEvent
     final case class Pwfs1ProbeFollowCmd(state: String)            extends TestTcsEvent
@@ -1060,6 +1072,14 @@ object TestTcsEpics {
       case (Pwfs2ProbeGuideConfig(a, b, c, d), Pwfs2ProbeGuideConfig(x, y, z, w)) =>
         a === x && b === y && c === z && d === w
       case (OiwfsProbeGuideConfig(a, b, c, d), OiwfsProbeGuideConfig(x, y, z, w)) =>
+        a === x && b === y && c === z && d === w
+      case (G1ProbeGuideConfig(a, b, c, d), G1ProbeGuideConfig(x, y, z, w))       =>
+        a === x && b === y && c === z && d === w
+      case (G2ProbeGuideConfig(a, b, c, d), G2ProbeGuideConfig(x, y, z, w))       =>
+        a === x && b === y && c === z && d === w
+      case (G3ProbeGuideConfig(a, b, c, d), G3ProbeGuideConfig(x, y, z, w))       =>
+        a === x && b === y && c === z && d === w
+      case (G4ProbeGuideConfig(a, b, c, d), G4ProbeGuideConfig(x, y, z, w))       =>
         a === x && b === y && c === z && d === w
       case _                                                                      => false
     }
@@ -1214,7 +1234,15 @@ object TestTcsEpics {
     oiwfsStopObserveCmd = false,
     aoProbeFollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
     aoCorrectCmd = TestEpicsCommand2.State[String, Int](mark = false, "OFF", 0),
-    aoPrepareControlMatrixCmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0)
+    aoPrepareControlMatrixCmd = TestEpicsCommand2.State[Double, Double](mark = false, 0.0, 0.0),
+    g1ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
+    g2ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
+    g3ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
+    g4ProbeGuideConfigCmd =
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", "")
   )
 
   def build[F[_]: Async](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =

@@ -274,22 +274,25 @@ object TcsSouthControllerEpicsAo {
     ): Boolean =
       !isCurrentlyGuiding(current, baseAoCfg) && isAoGuidedStep(baseAoCfg, demand)
 
+    private def isAnyGemsSourceUsed(
+      current: EpicsTcsAoConfig,
+      demand:  TcsSouthAoConfig
+    ): Boolean = (demand.gaos.isCwfs1Used && current.cwfs1.isActive) ||
+      (demand.gaos.isCwfs2Used && current.cwfs2.isActive) ||
+      (demand.gaos.isCwfs3Used && current.cwfs3.isActive) ||
+      (demand.gaos.isOdgw1Used && current.odgw1.isActive) ||
+      (demand.gaos.isOdgw2Used && current.odgw2.isActive) ||
+      (demand.gaos.isOdgw3Used && current.odgw3.isActive) ||
+      (demand.gaos.isOdgw4Used && current.odgw4.isActive)
+
     private def mustPauseAoWhileOffseting(
       current: EpicsTcsAoConfig,
       demand:  TcsSouthAoConfig
     ): Boolean = {
       val distanceSquared = calcMoveDistanceSquared(current.base, demand.tc)
 
-      val isAnyGemsSourceUsed = (demand.gaos.isCwfs1Used && current.cwfs1.isActive) ||
-        (demand.gaos.isCwfs2Used && !current.cwfs2.isActive) ||
-        (demand.gaos.isCwfs3Used && !current.cwfs3.isActive) ||
-        (demand.gaos.isOdgw1Used && !current.odgw1.isActive) ||
-        (demand.gaos.isOdgw2Used && !current.odgw2.isActive) ||
-        (demand.gaos.isOdgw3Used && !current.odgw3.isActive) ||
-        (demand.gaos.isOdgw4Used && !current.odgw4.isActive)
-
       distanceSquared.exists(dd =>
-        (isAnyGemsSourceUsed && dd > AoOffsetThreshold * AoOffsetThreshold) ||
+        (isAnyGemsSourceUsed(current, demand) && dd > AoOffsetThreshold * AoOffsetThreshold) ||
           (demand.gaos.isP1Used && dd > pwfs1OffsetThreshold * pwfs1OffsetThreshold) ||
           (demand.gaos.isOIUsed && demand.inst.oiOffsetGuideThreshold.exists(t => dd > t * t))
       )
@@ -568,7 +571,7 @@ object TcsSouthControllerEpicsAo {
         _  <- pr.pause.getOrElse(Applicative[F].unit)
         s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
         s2 <- sysConfig(s1)
-        _  <- guideOn(subsystems, s2, tcs, pr.resume.isDefined)
+        _  <- guideOn(subsystems, s2, tcs, isAnyGemsSourceUsed(s2, tcs))
         _  <- pr.resume.getOrElse(Applicative[F].unit)
       } yield ()
     }
