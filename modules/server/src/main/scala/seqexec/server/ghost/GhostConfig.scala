@@ -68,6 +68,11 @@ sealed trait GhostConfig extends GhostLUT {
     giapiConfig(ifuNum.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
       giapiConfig(ifuNum.demandItem, DemandType.DemandNone: DemandType)
 
+  def isDayCal: Boolean = obsClass.toLowerCase match {
+    case "daycal" => true
+    case _        => false
+  }
+
   def ifuCalibration: Configuration =
     if (isDayCal) {
       giapiConfig(GhostIFU1Target, IFUTargetType.Target("XY"): IFUTargetType) |+|
@@ -90,11 +95,6 @@ sealed trait GhostConfig extends GhostLUT {
     case "flat" => "FLAT"
     case "dark" => "DARK"
     case _      => "OBJECT"
-  }
-
-  def isDayCal: Boolean = obsClass.toLowerCase match {
-    case "daycal" => true
-    case _        => false
   }
 
   def isScience: Boolean = obsType.equalsIgnoreCase("object")
@@ -187,7 +187,7 @@ sealed trait GhostConfig extends GhostLUT {
 
   val SVDurationFactor = 10
 
-  val isPoorWeather =
+  def isPoorWeather =
     conditions.sb >= SkyBackground.Percent80 || conditions.cc >= CloudCover.Percent80 || conditions.iq === ImageQuality.Any || conditions.sb === SkyBackground.Unknown || conditions.cc === CloudCover.Unknown || conditions.iq === ImageQuality.Unknown
 
   def svCameraTime(mag: Option[Double]): Double = {
