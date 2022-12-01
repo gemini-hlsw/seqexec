@@ -11,6 +11,7 @@ import edu.gemini.spModel.gemini.ghost.GhostBinning
 import lucuma.core.enums.GiapiStatusApply
 import lucuma.core.enums.GiapiStatusApply._
 import scala.concurrent.duration.FiniteDuration
+import edu.gemini.spModel.target.env.ResolutionMode
 
 sealed trait FiberAgitator extends Product with Serializable
 
@@ -141,3 +142,6 @@ object ChannelConfig {
 }
 
 // final case class TargetConfig(name: String, coords: Coordinates, guideFiber: Option[GuideFiberState])
+object implicits {
+  implicit val eqResolutionMode: Eq[ResolutionMode] = Eq.fromUniversalEquals
+}

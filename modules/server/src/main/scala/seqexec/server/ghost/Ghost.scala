@@ -13,6 +13,7 @@ import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
@@ -202,6 +203,7 @@ object Ghost {
 
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
+          obsClass      <- config.extractObsAs[String](OBS_CLASS_PROP)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
           science        = obsType === SCIENCE_OBSERVE_TYPE
 
@@ -234,9 +236,11 @@ object Ghost {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
           config <- {
+            println(obsClass)
             if (science) {
               GhostConfig.apply(
                 obsType = obsType,
+                obsClass = obsClass,
                 blueConfig = ChannelConfig(blueBinning,
                                            blueExposure.second,
                                            blueCount,
@@ -258,11 +262,12 @@ object Ghost {
                 userTargets = userTargets.flatten,
                 rm,
                 conditions,
-                gMag.orElse(vMag)
+                vMag.orElse(gMag)
               )
             } else
               GhostCalibration(
                 obsType = obsType,
+                obsClass = obsClass,
                 blueConfig = ChannelConfig(blueBinning,
                                            blueExposure.second,
                                            blueCount,

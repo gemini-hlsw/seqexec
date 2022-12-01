@@ -48,6 +48,7 @@ trait GhostLUT {
     ).sortBy(_.gMag)
 
   // the List is never empty
+  // Value for mag 17 good weather, i.e. 6 secs
   val AGMinimumTime: Double = GuideCameraTimesLUT.find(_.gMag == 17.0).map(_.goodWeather).get
 
   val SVCameraTimesLUT =
