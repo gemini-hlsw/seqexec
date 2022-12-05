@@ -52,14 +52,15 @@ object GhostKeywordsReader extends GhostConfigUtil {
       fiberAgitator2 =
         config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_2).map(_.booleanValue())
     } yield new GhostKeywordsReader[F] {
-      println(srifu1Guiding)
-      println(srifu2Guiding)
-      println(hrifu1Guiding)
+      println(srifu1Name)
+      println(srifu2Name)
+      println(hrifu1Name)
+      println(hrifu2Name)
       def basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
-      def srifu1: F[String]                 = srifu1Name.orEmpty.pure[F]
-      def srifu2: F[String]                 = srifu2Name.orEmpty.pure[F]
-      def hrifu1: F[String]                 = hrifu1Name.orEmpty.pure[F]
-      def hrifu2: F[String]                 = hrifu2Name.orEmpty.pure[F]
+      def srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
+      def srifu2: F[String]                 = srifu2Name.getOrElse("    ").pure[F]
+      def hrifu1: F[String]                 = hrifu1Name.getOrElse("    ").pure[F]
+      def hrifu2: F[String]                 = hrifu2Name.getOrElse("    ").pure[F]
       val fiberAgitator1Enabled: F[Boolean] = fiberAgitator1.getOrElse(false).pure[F]
       val fiberAgitator2Enabled: F[Boolean] = fiberAgitator2.getOrElse(false).pure[F]
     }).getOrElse(defaultKeywords)
