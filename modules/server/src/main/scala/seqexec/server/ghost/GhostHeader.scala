@@ -32,7 +32,15 @@ object GhostHeader {
             buildString(ghostKeywordsReader.srifu1, KeywordName.SRIFU1),
             buildString(ghostKeywordsReader.srifu2, KeywordName.SRIFU2),
             buildString(ghostKeywordsReader.hrifu1, KeywordName.HRIFU1),
-            buildString(ghostKeywordsReader.hrifu2, KeywordName.HRIFU2)
+            buildString(ghostKeywordsReader.hrifu2, KeywordName.HRIFU2),
+            buildBoolean(ghostKeywordsReader.fiberAgitator1Enabled,
+                         KeywordName.FAGITAT1,
+                         DefaultHeaderValue.FalseDefaultValue
+            ),
+            buildBoolean(ghostKeywordsReader.fiberAgitator2Enabled,
+                         KeywordName.FAGITAT2,
+                         DefaultHeaderValue.FalseDefaultValue
+            )
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

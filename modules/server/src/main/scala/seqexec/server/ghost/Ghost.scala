@@ -39,7 +39,7 @@ import squants.time.Time
 import scala.reflect.ClassTag
 import lucuma.core.math._
 import lucuma.core.model._
-import java.lang.{ Double => JDouble, Integer => JInt }
+import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
@@ -198,8 +198,10 @@ object Ghost extends GhostConfigUtil {
           baseRAHMS  <- raExtractor(SPGhost.BASE_RA_HMS)
           baseDecDMS <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          fiberAgitator1 = extractor[Boolean](config, SPGhost.FIBER_AGITATOR_1)
-          fiberAgitator2 = extractor[Boolean](config, SPGhost.FIBER_AGITATOR_2)
+          fiberAgitator1 =
+            config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_1).map(_.booleanValue())
+          fiberAgitator2 =
+            config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_2).map(_.booleanValue())
           srifu1Name     = extractor[String](config, SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
