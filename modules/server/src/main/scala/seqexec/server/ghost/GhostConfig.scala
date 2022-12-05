@@ -471,9 +471,11 @@ case class GhostCalibration(
   override val resolutionMode: ResolutionMode,
   override val conditions:     Conditions
 ) extends GhostConfig {
+    
   override val baseConfiguration: Configuration =
-    giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
-      giapiConfig(GhostAGEnableGuide, 0)
+    Configuration.Zero
+    // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
+    //   giapiConfig(GhostAGEnableGuide, 0)
 
   override def ifu1TargetType: IFUTargetType =
     IFUTargetType.NoTarget
