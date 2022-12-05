@@ -22,13 +22,19 @@ trait GhostArbitraries extends ArbTime {
   import ArbCoordinates._
   import ArbTarget._
 
+  implicit val readNoiseArb: Arbitrary[ReadNoiseGain] =
+    Arbitrary(Gen.oneOf(ReadNoiseGain.Slow, ReadNoiseGain.Medium, ReadNoiseGain.Fast))
+
+  implicit val readNoiseCogen: Cogen[ReadNoiseGain] = Cogen[String].contramap(_.value)
+
   implicit val channelConfigArb: Arbitrary[ChannelConfig] =
     Arbitrary {
       for {
-        bin <- arbitrary[GhostBinning]
-        exp <- arbitrary[FiniteDuration]
-        cnt <- arbitrary[Int]
-      } yield ChannelConfig(bin, exp, cnt)
+        bin      <- arbitrary[GhostBinning]
+        exp      <- arbitrary[FiniteDuration]
+        cnt      <- arbitrary[Int]
+        readMode <- arbitrary[ReadNoiseGain]
+      } yield ChannelConfig(bin, exp, cnt, readMode)
     }
 
   val ghostSRSingleTargetConfigGen: Gen[StandardResolutionMode.SingleTarget] =
@@ -275,8 +281,12 @@ trait GhostArbitraries extends ArbTime {
     import GhostHelpers._
     Cogen[
       (
+        String,
+        String,
+        ChannelConfig,
+        ChannelConfig,
         Option[Coordinates],
-        Duration,
+        // List[GemTarget],
         Option[String],
         Option[Coordinates],
         Option[String],
@@ -287,8 +297,12 @@ trait GhostArbitraries extends ArbTime {
         Option[Coordinates]
       )
     ].contramap(x =>
-      (x.baseCoords,
-       x.expTime,
+      (x.obsType,
+       x.obsClass,
+       x.blueConfig,
+       x.redConfig,
+       x.baseCoords,
+       // x.userTargets,
        extractSRIFU1Name(x),
        extractSRIFU1Coordinates(x),
        extractSRIFU2Name(x),

@@ -4,13 +4,14 @@
 package seqexec.server.ghost
 
 import cats.syntax.all._
-import cats.kernel.laws.discipline._
-import lucuma.core.enum.GiapiStatusApply._
+import lucuma.core.enums.GiapiStatusApply._
 import lucuma.core.math.Coordinates
 import lucuma.core.math.RightAscension
 import lucuma.core.math.Declination
+import seqexec.model.Conditions
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.concurrent.duration._
+import edu.gemini.spModel.target.env.ResolutionMode
 
 /**
  * Tests GHOST Config typeclasses
@@ -27,10 +28,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
 
   test("binning") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.TWO_BY_TWO, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.On,
       FiberAgitator.Off,
       "target".some,
@@ -41,7 +43,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       none,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostRedBinningRcf.applyItem)),
                  "2".some
@@ -58,10 +63,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   }
   test("fiber agitator on/off") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.On,
       FiberAgitator.Off,
       "target".some,
@@ -72,7 +78,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       none,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator1.applyItem)),
                  "FA_DEMAND_ON".some
@@ -83,10 +92,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   }
   test("sru ifu1 ra/dec") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.Off,
       FiberAgitator.Off,
       "target".some,
@@ -97,7 +107,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       none,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
                  "IFU_DEMAND_RADEC".some
@@ -125,10 +138,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   }
   test("sru ifu1/2 ra/dec") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.Off,
       FiberAgitator.Off,
       "target".some,
@@ -139,7 +153,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       none,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
                  "IFU_DEMAND_RADEC".some
@@ -175,10 +192,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   }
   test("hru ifu1 ra/dec") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.Off,
       FiberAgitator.Off,
       none,
@@ -189,7 +207,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       coord1.some,
       none,
       none,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
                  "IFU_DEMAND_RADEC".some
@@ -217,10 +238,11 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
   }
   test("hru ifu1/ifu2 ra/dec") {
     val cfg = GhostConfig(
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1),
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
       none,
-      1.seconds,
       FiberAgitator.Off,
       FiberAgitator.Off,
       none,
@@ -231,7 +253,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       coord1.some,
       "target2".some,
       coord2.some,
-      Nil
+      Nil,
+      ResolutionMode.GhostStandard,
+      Conditions.Best,
+      None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
                  "IFU_DEMAND_RADEC".some

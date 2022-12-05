@@ -12,6 +12,10 @@ import seqexec.server.keywords._
 import lucuma.core.enums.KeywordName
 
 object GhostHeader {
+  val StrDefaultValue: DefaultHeaderValue[String] =
+    new DefaultHeaderValue[String] {
+      val default: String = ""
+    }
 
   def header[F[_]: MonadThrow](
     gdsClient:           GdsClient[F],
@@ -24,7 +28,11 @@ object GhostHeader {
             buildBoolean(ghostKeywordsReader.basePos,
                          KeywordName.BASEPO,
                          DefaultHeaderValue.TrueDefaultValue
-            )
+            ),
+            buildString(ghostKeywordsReader.srifu1, KeywordName.SRIFU1),
+            buildString(ghostKeywordsReader.srifu2, KeywordName.SRIFU2),
+            buildString(ghostKeywordsReader.hrifu1, KeywordName.HRIFU1),
+            buildString(ghostKeywordsReader.hrifu2, KeywordName.HRIFU2)
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

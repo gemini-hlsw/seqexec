@@ -84,7 +84,8 @@ object GdsClient {
     }
 
     // Build an xml rpc request to open an observation
-    private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem =
+    private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem = {
+      println(keywordsParam(ks))
       <methodCall>
         <methodName>HeaderReceiver.openObservation</methodName>
         <params>
@@ -101,6 +102,7 @@ object GdsClient {
           {keywordsParam(ks)}
         </params>
       </methodCall>
+    }
 
     override def openObservation(
       obsId: Observation.Id,
