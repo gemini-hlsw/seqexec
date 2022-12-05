@@ -142,6 +142,7 @@ trait GhostConfigUtil {
 
   def raExtractorBase(config: CleanConfig)  =
     formatExtractor[RightAscension](config, RightAscension.fromStringHMS)
+
   def decExtractorBase(config: CleanConfig) =
     formatExtractor[Declination](config, Declination.fromStringSignedDMS)
 

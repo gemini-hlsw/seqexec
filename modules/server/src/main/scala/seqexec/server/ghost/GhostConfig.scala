@@ -44,6 +44,8 @@ sealed trait GhostConfig extends GhostLUT {
   def conditions: Conditions
   def scienceMagnitude: Option[Double]
 
+  def baseConfiguration: Configuration = Configuration.Zero
+
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
     t match {
@@ -229,7 +231,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
-  def configuration: Configuration =
+  def configuration: Configuration = baseConfiguration |+| (
     if (!isScience) {
       ifuCalibration |+|
         GhostConfig.fiberConfig1(fiberAgitator1) |+|
@@ -242,6 +244,7 @@ sealed trait GhostConfig extends GhostLUT {
       } |+|
         userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
         svConfiguration(scienceMagnitude) |+| agConfiguration(scienceMagnitude) |+| thXeLamp
+  )
 
 }
 
@@ -468,6 +471,8 @@ case class GhostCalibration(
   override val resolutionMode: ResolutionMode,
   override val conditions:     Conditions
 ) extends GhostConfig {
+  override val baseConfiguration: Configuration =
+    giapiConfig(GhostAGEnableGuide, 0)
 
   override def ifu1TargetType: IFUTargetType =
     IFUTargetType.NoTarget
