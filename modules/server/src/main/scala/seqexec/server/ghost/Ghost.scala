@@ -116,9 +116,38 @@ final case class Ghost[F[_]: Logger: Async](
 
 }
 
-object Ghost {
+trait GhostConfigUtil {
   val INSTRUMENT_NAME_PROP: String = "GHOST"
   val name: String                 = INSTRUMENT_NAME_PROP
+
+  def extractor[A: ClassTag](config: CleanConfig, propName: String): Option[A] =
+    config.extractInstAs[A](propName).toOption
+
+  def formatExtractor[A](
+    config: CleanConfig,
+    fmt:    Format[String, A]
+  ): String => Either[ExtractFailure, Option[A]] = { propName =>
+    // 1. If content is None, trivial success, so Right(None).
+    // 2. If processed content is Some(a), success, so Right(Some(content)).
+    // 3. If processed content is None, failure, so Left(error).
+    extractor[String](config, propName)
+      .map(fmt.getOption)
+      .map {
+        case None  =>
+          Left(ConversionError(INSTRUMENT_KEY / propName, s"Could not parse $propName"))
+        case other => Right(other)
+      }
+      .getOrElse(Right(None))
+  }
+
+  def raExtractorBase(config: CleanConfig)  =
+    formatExtractor[RightAscension](config, RightAscension.fromStringHMS)
+  def decExtractorBase(config: CleanConfig) =
+    formatExtractor[Declination](config, Declination.fromStringSignedDMS)
+
+}
+
+object Ghost extends GhostConfigUtil {
 
   val sfName: String = "GHOST"
 
@@ -126,26 +155,8 @@ object Ghost {
     config:     CleanConfig,
     conditions: Conditions
   ): F[GhostConfig] = {
-    def extractor[A: ClassTag](propName: String): Option[A] =
-      config.extractInstAs[A](propName).toOption
-
-    def formatExtractor[A](fmt: Format[String, A]): String => Either[ExtractFailure, Option[A]] = {
-      propName =>
-        // 1. If content is None, trivial success, so Right(None).
-        // 2. If processed content is Some(a), success, so Right(Some(content)).
-        // 3. If processed content is None, failure, so Left(error).
-        extractor[String](propName)
-          .map(fmt.getOption)
-          .map {
-            case None  =>
-              Left(ConversionError(INSTRUMENT_KEY / propName, s"Could not parse $propName"))
-            case other => Right(other)
-          }
-          .getOrElse(Right(None))
-    }
-
-    val raExtractor  = formatExtractor[RightAscension](RightAscension.fromStringHMS)
-    val decExtractor = formatExtractor[Declination](Declination.fromStringSignedDMS)
+    val raExtractor  = raExtractorBase(config)
+    val decExtractor = decExtractorBase(config)
 
     val MaxTargets = 8
 
@@ -187,17 +198,17 @@ object Ghost {
           baseRAHMS  <- raExtractor(SPGhost.BASE_RA_HMS)
           baseDecDMS <- decExtractor(SPGhost.BASE_DEC_DMS)
 
-          fiberAgitator1 = extractor[Boolean](SPGhost.FIBER_AGITATOR_1)
-          fiberAgitator2 = extractor[Boolean](SPGhost.FIBER_AGITATOR_2)
-          srifu1Name     = extractor[String](SPGhost.SRIFU1_NAME)
+          fiberAgitator1 = extractor[Boolean](config, SPGhost.FIBER_AGITATOR_1)
+          fiberAgitator2 = extractor[Boolean](config, SPGhost.FIBER_AGITATOR_2)
+          srifu1Name     = extractor[String](config, SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
 
-          srifu2Name     = extractor[String](SPGhost.SRIFU2_NAME)
+          srifu2Name     = extractor[String](config, SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
           srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2_DEC_DMS)
 
-          hrifu1Name     = extractor[String](SPGhost.HRIFU1_NAME)
+          hrifu1Name     = extractor[String](config, SPGhost.HRIFU1_NAME)
           hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
           hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
 
@@ -236,7 +247,6 @@ object Ghost {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
           config <- {
-            println(obsClass)
             if (science) {
               GhostConfig.apply(
                 obsType = obsType,

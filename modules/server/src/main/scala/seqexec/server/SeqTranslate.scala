@@ -51,6 +51,7 @@ import seqexec.server.ghost.Ghost
 import seqexec.server.ghost.GhostController
 import seqexec.server.ghost.GhostControllerDisabled
 import seqexec.server.ghost.GhostHeader
+import seqexec.server.ghost.GhostKeywordsReader
 import seqexec.server.gmos.GmosController
 import seqexec.server.gmos.GmosControllerDisabled
 import seqexec.server.gmos.GmosHeader
@@ -640,7 +641,7 @@ object SeqTranslate {
                               ObsKeywordReader[F](config, site)
           )
         case Instrument.Ghost                    =>
-          GhostHeader.header[F]
+          GhostHeader.header[F](systemss.ghost.gdsClient, GhostKeywordsReader[F](config))
         case Instrument.Niri                     =>
           NiriHeader.header[F](kwClient, systemss.niriKeywordReader, systemss.tcsKeywordReader)
         case Instrument.Nifs                     =>
