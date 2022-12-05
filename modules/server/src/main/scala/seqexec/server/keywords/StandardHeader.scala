@@ -267,10 +267,10 @@ class StandardHeader[F[_]: Sync: Logger](
       buildDouble(tcsReader.airMass, KeywordName.AIRMASS),
       buildDouble(tcsReader.startAirMass, KeywordName.AMSTART),
       buildDouble(tcsReader.endAirMass, KeywordName.AMEND),
-      buildBoolean(obsReader.headerPrivacy,
-                   KeywordName.PROP_MD,
-                   DefaultHeaderValue.FalseDefaultValue
-      ),
+      // buildBoolean(obsReader.headerPrivacy,
+      //              KeywordName.PROP_MD,
+      //              DefaultHeaderValue.FalseDefaultValue
+      // ),
       buildString(obsReader.releaseDate, KeywordName.RELEASE)
     )
   )
