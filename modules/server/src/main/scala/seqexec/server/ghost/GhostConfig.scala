@@ -91,10 +91,12 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostBlueDuration, blueConfig.exposure.toMillis.toInt) |+|
         giapiConfig(GhostBlueUnit, 0.001) |+|
         giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
+        giapiConfig(GhostBlueCcdRequestType, "CCD_CAMERA_SET") |+|
         giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
         giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
         giapiConfig(GhostRedUnit, 0.001) |+|
         giapiConfig(GhostRedRequestType, "HARDWARE") |+|
+        giapiConfig(GhostRedCcdRequestType, "CCD_CAMERA_SET") |+|
         giapiConfig(GhostRedExposureCount, redConfig.count)
     )
 
