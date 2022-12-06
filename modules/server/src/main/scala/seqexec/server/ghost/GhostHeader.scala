@@ -43,7 +43,9 @@ object GhostHeader {
             buildInt32(ghostKeywordsReader.redCount.orDefault, KeywordName.NREDEXP),
             buildDouble(ghostKeywordsReader.redDuration.orDefault, KeywordName.REDEXPT),
             buildString(ghostKeywordsReader.redCcds.orDefault, KeywordName.REDCCDS),
-            buildString(ghostKeywordsReader.blueCcds.orDefault, KeywordName.BLUECCDS)
+            buildString(ghostKeywordsReader.blueCcds.orDefault, KeywordName.BLUECCDS),
+            buildString(ghostKeywordsReader.redReadMode.orDefault, KeywordName.READRED),
+            buildString(ghostKeywordsReader.blueReadMode.orDefault, KeywordName.READBLUE)
             // buildInt32(ghostKeywordsReader.slitCount.orDefault, KeywordName.NSLITEXP),
             // buildDouble(ghostKeywordsReader.slitDuration.orDefault, KeywordName.SLITEXPT),
           )
