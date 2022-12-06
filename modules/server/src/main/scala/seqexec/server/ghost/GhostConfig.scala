@@ -40,7 +40,7 @@ sealed trait GhostConfig extends GhostLUT {
   def ifu1BundleType: BundleConfig
   def ifu1Coordinates: Coordinates
   def ifu2BundleType: Option[BundleConfig]
-  def resolutionMode: ResolutionMode
+  def resolutionMode: Option[ResolutionMode]
   def conditions: Conditions
   def scienceMagnitude: Option[Double]
 
@@ -225,7 +225,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
   def thXeLamp: Configuration =
-    if (isScience && resolutionMode == ResolutionMode.GhostPRV) {
+    if (isScience && resolutionMode === Some(ResolutionMode.GhostPRV)) {
       giapiConfig(GhostThXeLamp, 1)
     } else {
       giapiConfig(GhostThXeLamp, 0)
@@ -315,7 +315,7 @@ object GhostConfig {
     hrifu2Name:       Option[String],
     hrifu2Coords:     Option[Coordinates],
     userTargets:      List[GemTarget],
-    resolutionMode:   ResolutionMode,
+    resolutionMode:   Option[ResolutionMode],
     conditions:       Conditions,
     scienceMagnitude: Option[Double]
   ): Either[ExtractFailure, GhostConfig] = {
@@ -468,14 +468,14 @@ case class GhostCalibration(
   override val baseCoords:     Option[Coordinates],
   override val fiberAgitator1: FiberAgitator,
   override val fiberAgitator2: FiberAgitator,
-  override val resolutionMode: ResolutionMode,
+  override val resolutionMode: Option[ResolutionMode],
   override val conditions:     Conditions
 ) extends GhostConfig {
-    
+
   override val baseConfiguration: Configuration =
     Configuration.Zero
-    // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
-    //   giapiConfig(GhostAGEnableGuide, 0)
+  // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
+  //   giapiConfig(GhostAGEnableGuide, 0)
 
   override def ifu1TargetType: IFUTargetType =
     IFUTargetType.NoTarget
@@ -552,7 +552,7 @@ object StandardResolutionMode {
     ifu1TargetName:                String,
     override val ifu1Coordinates:  Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
@@ -589,7 +589,7 @@ object StandardResolutionMode {
     ifu2TargetName:                String,
     ifu2Coordinates:               Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
@@ -631,7 +631,7 @@ object StandardResolutionMode {
     override val ifu1Coordinates:  Coordinates,
     ifu2Coordinates:               Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
@@ -672,7 +672,7 @@ object StandardResolutionMode {
     ifu2TargetName:                String,
     ifu2Coordinates:               Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
@@ -741,7 +741,7 @@ object HighResolutionMode {
     override val ifu1TargetName:   String,
     override val ifu1Coordinates:  Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends HighResolutionMode {
@@ -777,7 +777,7 @@ object HighResolutionMode {
     override val ifu1Coordinates:  Coordinates,
     ifu2Coordinates:               Coordinates,
     override val userTargets:      List[GemTarget],
-    override val resolutionMode:   ResolutionMode,
+    override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends HighResolutionMode {

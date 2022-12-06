@@ -140,7 +140,7 @@ trait GhostConfigUtil {
       .getOrElse(Right(None))
   }
 
-  def raExtractorBase(config: CleanConfig)  =
+  def raExtractorBase(config: CleanConfig) =
     formatExtractor[RightAscension](config, RightAscension.fromStringHMS)
 
   def decExtractorBase(config: CleanConfig) =
@@ -235,7 +235,7 @@ object Ghost extends GhostConfigUtil {
           redReadMode  <-
             config
               .extractInstAs[GhostReadNoiseGain](SPGhost.RED_READ_NOISE_GAIN_PROP)
-          rm           <-
+          rm            =
             config
               .extractInstAs[ResolutionMode](SPGhost.RESOLUTION_MODE)
           vMag         <-
@@ -250,6 +250,7 @@ object Ghost extends GhostConfigUtil {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
           config <- {
+            println(s"is Science $science")
             if (science) {
               GhostConfig.apply(
                 obsType = obsType,
@@ -273,7 +274,7 @@ object Ghost extends GhostConfigUtil {
                 hrifu2Name = hrifu2RAHMS.as("Sky"),
                 hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
                 userTargets = userTargets.flatten,
-                rm,
+                rm.toOption,
                 conditions,
                 vMag.orElse(gMag)
               )
@@ -291,7 +292,7 @@ object Ghost extends GhostConfigUtil {
                 baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                 fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
                 fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                rm,
+                rm.toOption,
                 conditions
               ).asRight
           }
