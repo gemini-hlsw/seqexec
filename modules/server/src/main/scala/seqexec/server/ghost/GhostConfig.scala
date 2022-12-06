@@ -236,8 +236,8 @@ sealed trait GhostConfig extends GhostLUT {
       println("!isScience")
       println(blueConfig)
       println(redConfig)
-      ifuCalibration |+| channelConfig
-      GhostConfig.fiberConfig1(fiberAgitator1) |+|
+      ifuCalibration |+| channelConfig |+|
+        GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
     } else
       {

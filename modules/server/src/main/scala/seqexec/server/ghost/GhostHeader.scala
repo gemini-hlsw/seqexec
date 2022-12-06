@@ -12,10 +12,7 @@ import seqexec.server.keywords._
 import lucuma.core.enums.KeywordName
 
 object GhostHeader {
-  val StrDefaultValue: DefaultHeaderValue[String] =
-    new DefaultHeaderValue[String] {
-      val default: String = ""
-    }
+  val bool2String: Boolean => String = (v: Boolean) => if (v) "T" else "F"
 
   def header[F[_]: MonadThrow](
     gdsClient:           GdsClient[F],
@@ -25,19 +22,19 @@ object GhostHeader {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords[F](
           List(
-            buildString(ghostKeywordsReader.basePos.map(v => if (v) "T" else "F"),
-                        KeywordName.BASEPO
-            ),
+            buildString(ghostKeywordsReader.basePos.map(bool2String), KeywordName.BASEPO),
             buildString(ghostKeywordsReader.srifu1, KeywordName.SRIFU1),
             buildString(ghostKeywordsReader.srifu2, KeywordName.SRIFU2),
             buildString(ghostKeywordsReader.hrifu1, KeywordName.HRIFU1),
             buildString(ghostKeywordsReader.hrifu2, KeywordName.HRIFU2),
-            buildString(ghostKeywordsReader.fiberAgitator1Enabled.map(v => if (v) "T" else "F"),
+            buildString(ghostKeywordsReader.fiberAgitator1Enabled.map(bool2String),
                         KeywordName.FAGITAT1
             ),
-            buildString(ghostKeywordsReader.fiberAgitator2Enabled.map(v => if (v) "T" else "F"),
+            buildString(ghostKeywordsReader.fiberAgitator2Enabled.map(bool2String),
                         KeywordName.FAGITAT2
-            )
+            ),
+            buildString(ghostKeywordsReader.ifu1Guiding.map(bool2String), KeywordName.IFU1GUID),
+            buildString(ghostKeywordsReader.ifu2Guiding.map(bool2String), KeywordName.IFU2GUID)
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

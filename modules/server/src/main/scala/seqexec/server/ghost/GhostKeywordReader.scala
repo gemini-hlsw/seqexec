@@ -19,16 +19,20 @@ sealed trait GhostKeywordsReader[F[_]] {
   def hrifu2: F[String]
   def fiberAgitator1Enabled: F[Boolean]
   def fiberAgitator2Enabled: F[Boolean]
+  def ifu1Guiding: F[Boolean]
+  def ifu2Guiding: F[Boolean]
 }
 
 final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
   val basePos: F[Boolean]               = true.pure[F]
-  def srifu1: F[String]                 = "".pure[F]
-  def srifu2: F[String]                 = "".pure[F]
-  def hrifu1: F[String]                 = "".pure[F]
-  def hrifu2: F[String]                 = "".pure[F]
+  val srifu1: F[String]                 = "".pure[F]
+  val srifu2: F[String]                 = "".pure[F]
+  val hrifu1: F[String]                 = "".pure[F]
+  val hrifu2: F[String]                 = "".pure[F]
   val fiberAgitator1Enabled: F[Boolean] = false.pure[F]
   val fiberAgitator2Enabled: F[Boolean] = false.pure[F]
+  val ifu1Guiding: F[Boolean]           = false.pure[F]
+  val ifu2Guiding: F[Boolean]           = false.pure[F]
 }
 
 object GhostKeywordsReader extends GhostConfigUtil {
@@ -38,15 +42,19 @@ object GhostKeywordsReader extends GhostConfigUtil {
     val defaultKeywords = new DefaultGhostKeywordsReader()
 
     (for {
-      baseRAHMS     <- raExtractor(SPGhost.BASE_RA_HMS)
-      baseDecDMS    <- decExtractor(SPGhost.BASE_DEC_DMS)
-      srifu1Name     = extractor[String](config, SPGhost.SRIFU1_NAME)
-      srifu2Name     = extractor[String](config, SPGhost.SRIFU2_NAME)
-      hrifu1Name     = extractor[String](config, SPGhost.HRIFU1_NAME)
-      hrifu2Name     = extractor[String](config, SPGhost.HRIFU2_NAME)
-      srifu1Guiding  = extractor[String](config, SPGhost.SRIFU1_GUIDING)
-      srifu2Guiding  = extractor[String](config, SPGhost.SRIFU2_GUIDING)
-      hrifu1Guiding  = extractor[String](config, SPGhost.HRIFU1_GUIDING)
+      baseRAHMS    <- raExtractor(SPGhost.BASE_RA_HMS)
+      baseDecDMS   <- decExtractor(SPGhost.BASE_DEC_DMS)
+      srifu1Name    = extractor[String](config, SPGhost.SRIFU1_NAME)
+      srifu2Name    = extractor[String](config, SPGhost.SRIFU2_NAME)
+      hrifu1Name    = extractor[String](config, SPGhost.HRIFU1_NAME)
+      hrifu2Name    = extractor[String](config, SPGhost.HRIFU2_NAME)
+      srifu1Guiding = extractor[JBoolean](config, SPGhost.SRIFU1_GUIDING)
+                        .orElse(
+                          extractor[JBoolean](config, SPGhost.HRIFU1_GUIDING)
+                        )
+                        .map(_.booleanValue())
+      srifu2Guiding = extractor[JBoolean](config, SPGhost.SRIFU2_GUIDING).map(_.booleanValue())
+
       fiberAgitator1 =
         config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_1).map(_.booleanValue())
       fiberAgitator2 =
@@ -56,13 +64,16 @@ object GhostKeywordsReader extends GhostConfigUtil {
       println(srifu2Name)
       println(hrifu1Name)
       println(hrifu2Name)
-      def basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
-      def srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
-      def srifu2: F[String]                 = srifu2Name.getOrElse("    ").pure[F]
-      def hrifu1: F[String]                 = hrifu1Name.getOrElse("    ").pure[F]
-      def hrifu2: F[String]                 = hrifu2Name.getOrElse("    ").pure[F]
+      val m: Option[Boolean]                = srifu1Guiding
+      val basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
+      val srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
+      val srifu2: F[String]                 = srifu2Name.getOrElse("    ").pure[F]
+      val hrifu1: F[String]                 = hrifu1Name.getOrElse("    ").pure[F]
+      val hrifu2: F[String]                 = hrifu2Name.getOrElse("    ").pure[F]
       val fiberAgitator1Enabled: F[Boolean] = fiberAgitator1.getOrElse(false).pure[F]
       val fiberAgitator2Enabled: F[Boolean] = fiberAgitator2.getOrElse(false).pure[F]
+      val ifu1Guiding: F[Boolean]           = srifu1Guiding.getOrElse(false).pure[F]
+      val ifu2Guiding: F[Boolean]           = srifu2Guiding.getOrElse(false).pure[F]
     }).getOrElse(defaultKeywords)
   }
 }
