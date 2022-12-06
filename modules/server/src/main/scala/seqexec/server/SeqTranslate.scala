@@ -641,7 +641,10 @@ object SeqTranslate {
                               ObsKeywordReader[F](config, site)
           )
         case Instrument.Ghost                    =>
-          GhostHeader.header[F](systemss.ghost.gdsClient, GhostKeywordsReader[F](config))
+          GhostHeader.header[F](systemss.ghost.gdsClient,
+                                systemss.tcsKeywordReader,
+                                GhostKeywordsReader[F](config)
+          )
         case Instrument.Niri                     =>
           NiriHeader.header[F](kwClient, systemss.niriKeywordReader, systemss.tcsKeywordReader)
         case Instrument.Nifs                     =>

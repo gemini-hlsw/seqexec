@@ -10,12 +10,14 @@ import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import lucuma.core.enums.KeywordName
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GhostHeader {
   val bool2String: Boolean => String = (v: Boolean) => if (v) "T" else "F"
 
   def header[F[_]: MonadThrow](
     gdsClient:           GdsClient[F],
+    tcsKeywordsReader:   TcsKeywordsReader[F],
     ghostKeywordsReader: GhostKeywordsReader[F]
   ): Header[F] =
     new Header[F] {
@@ -23,6 +25,7 @@ object GhostHeader {
         val ks = GdsInstrument.bundleKeywords[F](
           List(
             buildString(ghostKeywordsReader.basePos.map(bool2String), KeywordName.BASEPO),
+            buildInt32(tcsKeywordsReader.ghostInstPort, KeywordName.INPORT),
             buildString(ghostKeywordsReader.srifu1, KeywordName.SRIFU1),
             buildString(ghostKeywordsReader.srifu2, KeywordName.SRIFU2),
             buildString(ghostKeywordsReader.hrifu1, KeywordName.HRIFU1),
@@ -38,7 +41,9 @@ object GhostHeader {
             buildInt32(ghostKeywordsReader.blueCount.orDefault, KeywordName.NBLUEEXP),
             buildDouble(ghostKeywordsReader.blueDuration.orDefault, KeywordName.BLUEEXPT),
             buildInt32(ghostKeywordsReader.redCount.orDefault, KeywordName.NREDEXP),
-            buildDouble(ghostKeywordsReader.redDuration.orDefault, KeywordName.REDEXPT),
+            buildDouble(ghostKeywordsReader.redDuration.orDefault, KeywordName.REDEXPT)
+            // buildInt32(ghostKeywordsReader.slitCount.orDefault, KeywordName.NSLITEXP),
+            // buildDouble(ghostKeywordsReader.slitDuration.orDefault, KeywordName.SLITEXPT),
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
