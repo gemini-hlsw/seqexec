@@ -9,7 +9,8 @@ import cats.syntax.all._
 import seqexec.server.CleanConfig
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import seqexec.server.ConfigUtilOps._
-import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
+import seqexec.server.keywords._
 
 sealed trait GhostKeywordsReader[F[_]] {
   def basePos: F[Boolean]
@@ -21,6 +22,12 @@ sealed trait GhostKeywordsReader[F[_]] {
   def fiberAgitator2Enabled: F[Boolean]
   def ifu1Guiding: F[Boolean]
   def ifu2Guiding: F[Boolean]
+  def redCount: F[Option[Int]]
+  def redDuration: F[Option[Double]]
+  def blueCount: F[Option[Int]]
+  def blueDuration: F[Option[Double]]
+  // def slitCount: F[Int]
+  // def slitDuration: F[Double]
 }
 
 final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
@@ -33,6 +40,12 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val fiberAgitator2Enabled: F[Boolean] = false.pure[F]
   val ifu1Guiding: F[Boolean]           = false.pure[F]
   val ifu2Guiding: F[Boolean]           = false.pure[F]
+  val redCount: F[Option[Int]]          = intDefault[F].map(_.some)
+  val redDuration: F[Option[Double]]    = doubleDefault[F].map(_.some)
+  val blueCount: F[Option[Int]]         = intDefault[F].map(_.some)
+  val blueDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
+  // val slitCount: F[Int]                 = intDefault[F]
+  // val slitDuration: F[Double]           = doubleDefault[F]
 }
 
 object GhostKeywordsReader extends GhostConfigUtil {
@@ -59,6 +72,12 @@ object GhostKeywordsReader extends GhostConfigUtil {
         config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_1).map(_.booleanValue())
       fiberAgitator2 =
         config.extractInstAs[JBoolean](SPGhost.FIBER_AGITATOR_2).map(_.booleanValue())
+      blueExposure   =
+        config.extractObsAs[JDouble](SPGhost.BLUE_EXPOSURE_TIME_PROP).map(_.doubleValue())
+      redExposure    =
+        config.extractObsAs[JDouble](SPGhost.RED_EXPOSURE_TIME_PROP).map(_.doubleValue())
+      blueExpCount   = config.extractObsAs[JInt](SPGhost.BLUE_EXPOSURE_COUNT_PROP).map(_.intValue())
+      redExpCount    = config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
     } yield new GhostKeywordsReader[F] {
       println(srifu1Name)
       println(srifu2Name)
@@ -74,6 +93,12 @@ object GhostKeywordsReader extends GhostConfigUtil {
       val fiberAgitator2Enabled: F[Boolean] = fiberAgitator2.getOrElse(false).pure[F]
       val ifu1Guiding: F[Boolean]           = srifu1Guiding.getOrElse(false).pure[F]
       val ifu2Guiding: F[Boolean]           = srifu2Guiding.getOrElse(false).pure[F]
+      val redCount: F[Option[Int]]          = redExpCount.toOption.pure[F]
+      val redDuration: F[Option[Double]]    = redExposure.toOption.pure[F]
+      val blueCount: F[Option[Int]]         = blueExpCount.toOption.pure[F]
+      val blueDuration: F[Option[Double]]   = blueExposure.toOption.pure[F]
+      // val slitCount: F[Int]
+      // val slitDuration: F[Double]
     }).getOrElse(defaultKeywords)
   }
 }
