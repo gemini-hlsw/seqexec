@@ -477,6 +477,7 @@ case class GhostCalibration(
 
   override val baseConfiguration: Configuration =
     giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
+      giapiConfig(GhostAGRequestType, "HARDWARE") |+|
       giapiConfig(GhostAGEnableGuide, 0)
 
   override def ifu1TargetType: IFUTargetType =
