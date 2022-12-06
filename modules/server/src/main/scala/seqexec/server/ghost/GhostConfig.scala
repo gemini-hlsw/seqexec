@@ -76,18 +76,27 @@ sealed trait GhostConfig extends GhostLUT {
   }
 
   def ifuCalibration: Configuration =
-    if (isDayCal) {
-      giapiConfig(GhostIFU1Target, IFUTargetType.Target("XY"): IFUTargetType) |+|
-        giapiConfig(GhostIFU2Target, IFUTargetType.Target("XY"): IFUTargetType) |+|
-        giapiConfig(GhostIFU1Type, DemandType.DemandXY: DemandType) |+|
-        giapiConfig(GhostIFU2Type, DemandType.DemandXY: DemandType) |+|
-        giapiConfig(GhostIFU1MoveMode, "IFU_ABSOLUTE") |+|
-        giapiConfig(GhostIFU2MoveMode, "IFU_ABSOLUTE") |+|
-        giapiConfig(GhostIFU1X, 68.5) |+|
-        giapiConfig(GhostIFU1Y, 0.0) |+|
-        giapiConfig(GhostIFU2X, -68.5) |+|
-        giapiConfig(GhostIFU2Y, 0.0)
-    } else Configuration.Zero
+    (if (isDayCal) {
+       giapiConfig(GhostIFU1Target, IFUTargetType.Target("XY"): IFUTargetType) |+|
+         giapiConfig(GhostIFU2Target, IFUTargetType.Target("XY"): IFUTargetType) |+|
+         giapiConfig(GhostIFU1Type, DemandType.DemandXY: DemandType) |+|
+         giapiConfig(GhostIFU2Type, DemandType.DemandXY: DemandType) |+|
+         giapiConfig(GhostIFU1MoveMode, "IFU_ABSOLUTE") |+|
+         giapiConfig(GhostIFU2MoveMode, "IFU_ABSOLUTE") |+|
+         giapiConfig(GhostIFU1X, 68.5) |+|
+         giapiConfig(GhostIFU1Y, 0.0) |+|
+         giapiConfig(GhostIFU2X, -68.5) |+|
+         giapiConfig(GhostIFU2Y, 0.0)
+     } else Configuration.Zero) |+| (
+      giapiConfig(GhostBlueDuration, blueConfig.exposure.toMillis.toInt) |+|
+        giapiConfig(GhostBlueUnit, 0.001) |+|
+        giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
+        giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
+        giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
+        giapiConfig(GhostRedUnit, 0.001) |+|
+        giapiConfig(GhostRedRequestType, "HARDWARE") |+|
+        giapiConfig(GhostRedExposureCount, redConfig.count)
+    )
 
   def ifu1Config: Configuration =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
