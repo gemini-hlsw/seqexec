@@ -9,6 +9,7 @@ import cats.syntax.all._
 import seqexec.server.CleanConfig
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import seqexec.server.ConfigUtilOps._
+import edu.gemini.spModel.gemini.ghost.GhostBinning
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import seqexec.server.keywords._
 
@@ -24,8 +25,10 @@ sealed trait GhostKeywordsReader[F[_]] {
   def ifu2Guiding: F[Boolean]
   def redCount: F[Option[Int]]
   def redDuration: F[Option[Double]]
+  def redCcds: F[Option[String]]
   def blueCount: F[Option[Int]]
   def blueDuration: F[Option[Double]]
+  def blueCcds: F[Option[String]]
   // def slitCount: F[Int]
   // def slitDuration: F[Double]
 }
@@ -42,8 +45,10 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val ifu2Guiding: F[Boolean]           = false.pure[F]
   val redCount: F[Option[Int]]          = intDefault[F].map(_.some)
   val redDuration: F[Option[Double]]    = doubleDefault[F].map(_.some)
+  val redCcds: F[Option[String]]        = strDefault[F].map(_.some)
   val blueCount: F[Option[Int]]         = intDefault[F].map(_.some)
   val blueDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
+  val blueCcds: F[Option[String]]       = strDefault[F].map(_.some)
   // val slitCount: F[Int]                 = intDefault[F]
   // val slitDuration: F[Double]           = doubleDefault[F]
 }
@@ -78,12 +83,9 @@ object GhostKeywordsReader extends GhostConfigUtil {
         config.extractObsAs[JDouble](SPGhost.RED_EXPOSURE_TIME_PROP).map(_.doubleValue())
       blueExpCount   = config.extractObsAs[JInt](SPGhost.BLUE_EXPOSURE_COUNT_PROP).map(_.intValue())
       redExpCount    = config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
+      blueBinning    = config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
+      redBinning     = config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
     } yield new GhostKeywordsReader[F] {
-      println(srifu1Name)
-      println(srifu2Name)
-      println(hrifu1Name)
-      println(hrifu2Name)
-      val m: Option[Boolean]                = srifu1Guiding
       val basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
       val srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
       val srifu2: F[String]                 = srifu2Name.getOrElse("    ").pure[F]
@@ -97,6 +99,8 @@ object GhostKeywordsReader extends GhostConfigUtil {
       val redDuration: F[Option[Double]]    = redExposure.toOption.pure[F]
       val blueCount: F[Option[Int]]         = blueExpCount.toOption.pure[F]
       val blueDuration: F[Option[Double]]   = blueExposure.toOption.pure[F]
+      val redCcds: F[Option[String]]        = redBinning.toOption.map(_.displayValue()).pure[F]
+      val blueCcds: F[Option[String]]       = blueBinning.toOption.map(_.displayValue()).pure[F]
       // val slitCount: F[Int]
       // val slitDuration: F[Double]
     }).getOrElse(defaultKeywords)
