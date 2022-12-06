@@ -219,7 +219,7 @@ object Ghost extends GhostConfigUtil {
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
           obsClass      <- config.extractObsAs[String](OBS_CLASS_PROP)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
-          science        = obsType === SCIENCE_OBSERVE_TYPE
+          isScience      = obsType === SCIENCE_OBSERVE_TYPE
 
           blueBinning  <- config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
           redBinning   <- config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
@@ -250,51 +250,63 @@ object Ghost extends GhostConfigUtil {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
           config <- {
-            println(s"is Science $science")
-            if (science) {
-              GhostConfig.apply(
-                obsType = obsType,
-                obsClass = obsClass,
-                blueConfig = ChannelConfig(blueBinning,
-                                           blueExposure.second,
-                                           blueCount,
-                                           gainFromODB(blueReadMode)
-                ),
-                redConfig =
-                  ChannelConfig(redBinning, redExposure.second, redCount, gainFromODB(redReadMode)),
-                baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
-                fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
-                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                srifu1Name = srifu1Name,
-                srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
-                srifu2Name = srifu2Name,
-                srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
-                hrifu1Name = hrifu1Name,
-                hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-                hrifu2Name = hrifu2RAHMS.as("Sky"),
-                hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
-                userTargets = userTargets.flatten,
-                rm.toOption,
-                conditions,
-                vMag.orElse(gMag)
-              )
-            } else
-              GhostCalibration(
-                obsType = obsType,
-                obsClass = obsClass,
-                blueConfig = ChannelConfig(blueBinning,
-                                           blueExposure.second,
-                                           blueCount,
-                                           gainFromODB(blueReadMode)
-                ),
-                redConfig =
-                  ChannelConfig(redBinning, redExposure.second, redCount, gainFromODB(redReadMode)),
-                baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
-                fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
-                fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                rm.toOption,
-                conditions
-              ).asRight
+            if (isScience && rm.toOption.isEmpty) {
+              Left(ContentError("Science steps need a resolution mode defined"))
+            } else {
+              println(s"is Science $isScience")
+              println(obsType)
+              println(s"resoultion mode $rm")
+              if (isScience) {
+                GhostConfig.apply(
+                  obsType = obsType,
+                  obsClass = obsClass,
+                  blueConfig = ChannelConfig(blueBinning,
+                                             blueExposure.second,
+                                             blueCount,
+                                             gainFromODB(blueReadMode)
+                  ),
+                  redConfig = ChannelConfig(redBinning,
+                                            redExposure.second,
+                                            redCount,
+                                            gainFromODB(redReadMode)
+                  ),
+                  baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+                  fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
+                  fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
+                  srifu1Name = srifu1Name,
+                  srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
+                  srifu2Name = srifu2Name,
+                  srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
+                  hrifu1Name = hrifu1Name,
+                  hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
+                  hrifu2Name = hrifu2RAHMS.as("Sky"),
+                  hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
+                  userTargets = userTargets.flatten,
+                  rm.toOption,
+                  conditions,
+                  vMag.orElse(gMag)
+                )
+              } else
+                GhostCalibration(
+                  obsType = obsType,
+                  obsClass = obsClass,
+                  blueConfig = ChannelConfig(blueBinning,
+                                             blueExposure.second,
+                                             blueCount,
+                                             gainFromODB(blueReadMode)
+                  ),
+                  redConfig = ChannelConfig(redBinning,
+                                            redExposure.second,
+                                            redCount,
+                                            gainFromODB(redReadMode)
+                  ),
+                  baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+                  fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
+                  fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
+                  rm.toOption,
+                  conditions
+                ).asRight
+            }
           }
         } yield config).leftMap { e =>
           SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
