@@ -182,7 +182,6 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGYO, 300) |+|
       giapiConfig(GhostAGWidth, 128) |+|
       giapiConfig(GhostAGHeigth, 162) |+|
-      giapiConfig(GhostAGEnableGuide, 1) |+|
       giapiConfig(GhostAGBackground, 0) |+|
       giapiConfig(GhostAGSimulateFlux, 0) |+|
       giapiConfig(GhostAGDoContinuous, 0)
