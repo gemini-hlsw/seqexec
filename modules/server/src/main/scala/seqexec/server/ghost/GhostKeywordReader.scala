@@ -13,6 +13,7 @@ import edu.gemini.spModel.gemini.ghost.GhostBinning
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import seqexec.server.keywords._
+import edu.gemini.spModel.target.env.ResolutionMode
 
 sealed trait GhostKeywordsReader[F[_]] {
   def basePos: F[Boolean]
@@ -32,6 +33,8 @@ sealed trait GhostKeywordsReader[F[_]] {
   def blueDuration: F[Option[Double]]
   def blueCcds: F[Option[String]]
   def blueReadMode: F[Option[String]]
+  def resolutionMode: F[Option[String]]
+  def targetMode: F[Option[String]]
   // def slitCount: F[Int]
   // def slitDuration: F[Double]
 }
@@ -54,6 +57,8 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val blueDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
   val blueCcds: F[Option[String]]       = strDefault[F].map(_.some)
   val blueReadMode: F[Option[String]]   = strDefault[F].map(_.some)
+  val resolutionMode: F[Option[String]] = strDefault[F].map(_.some)
+  val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
   // val slitCount: F[Int]                 = intDefault[F]
   // val slitDuration: F[Double]           = doubleDefault[F]
 }
@@ -64,6 +69,13 @@ object GhostKeywordsReader extends GhostConfigUtil {
     case GhostReadNoiseGain.MEDIUM_LOW => "Medium"
     case GhostReadNoiseGain.FAST_LOW   => "Rapid"
     case GhostReadNoiseGain.FAST_HIGH  => "Bright"
+  }
+
+  val resolutionMode2String: ResolutionMode => String = {
+    case ResolutionMode.Standard      => "Standard"
+    case ResolutionMode.GhostStandard => "Standard"
+    case ResolutionMode.GhostHigh     => "High"
+    case ResolutionMode.GhostPRV      => "PRV"
   }
 
   def apply[F[_]: Sync](config: CleanConfig): GhostKeywordsReader[F] = {
@@ -103,6 +115,9 @@ object GhostKeywordsReader extends GhostConfigUtil {
       redExpReadMode  =
         config
           .extractInstAs[GhostReadNoiseGain](SPGhost.RED_READ_NOISE_GAIN_PROP)
+      rm              =
+        config
+          .extractInstAs[ResolutionMode](SPGhost.RESOLUTION_MODE)
     } yield new GhostKeywordsReader[F] {
       val basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
       val srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
@@ -121,6 +136,8 @@ object GhostKeywordsReader extends GhostConfigUtil {
       val blueDuration: F[Option[Double]]   = blueExposure.toOption.pure[F]
       val blueCcds: F[Option[String]]       = blueBinning.toOption.map(_.displayValue()).pure[F]
       val blueReadMode: F[Option[String]]   = blueExpReadMode.toOption.map(readMode2String).pure[F]
+      val resolutionMode: F[Option[String]] = rm.toOption.map(resolutionMode2String).pure[F]
+      val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
       // val slitCount: F[Int]
       // val slitDuration: F[Double]
     }).getOrElse(defaultKeywords)

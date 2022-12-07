@@ -232,9 +232,6 @@ sealed trait GhostConfig extends GhostLUT {
 
   def configuration: Configuration = baseConfiguration |+| (
     if (!isScience) {
-      println("!isScience")
-      println(blueConfig)
-      println(redConfig)
       ifuCalibration |+| channelConfig |+|
         GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
