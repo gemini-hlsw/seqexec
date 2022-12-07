@@ -10,12 +10,14 @@ import lucuma.core.arb.ArbTime
 import lucuma.core.util.arb.ArbEnumerated._
 import lucuma.core.model.{ Target => GemTarget }
 import org.scalacheck.Arbitrary._
+import edu.gemini.spModel.target.env.ResolutionMode
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import scala.concurrent.duration.Duration
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.concurrent.duration.FiniteDuration
+import seqexec.model.Conditions
+import seqexec.model.SeqexecModelArbitraries._
 
 trait GhostArbitraries extends ArbTime {
 
@@ -25,7 +27,18 @@ trait GhostArbitraries extends ArbTime {
   implicit val readNoiseArb: Arbitrary[ReadNoiseGain] =
     Arbitrary(Gen.oneOf(ReadNoiseGain.Slow, ReadNoiseGain.Medium, ReadNoiseGain.Fast))
 
+  implicit val resoultionModeArb: Arbitrary[ResolutionMode] =
+    Arbitrary(
+      Gen.oneOf(ResolutionMode.Standard,
+                ResolutionMode.GhostStandard,
+                ResolutionMode.GhostHigh,
+                ResolutionMode.GhostPRV
+      )
+    )
+
   implicit val readNoiseCogen: Cogen[ReadNoiseGain] = Cogen[String].contramap(_.value)
+
+  implicit val rmCogen: Cogen[ResolutionMode] = Cogen[String].contramap(_.tag)
 
   implicit val channelConfigArb: Arbitrary[ChannelConfig] =
     Arbitrary {
@@ -39,36 +52,45 @@ trait GhostArbitraries extends ArbTime {
 
   val ghostSRSingleTargetConfigGen: Gen[StandardResolutionMode.SingleTarget] =
     for {
+      obsType         <- arbitrary[String]
+      obsClass        <- arbitrary[String]
       blueConfig      <- arbitrary[ChannelConfig]
       redConfig       <- arbitrary[ChannelConfig]
       basePos         <- arbitrary[Option[Coordinates]]
-      expTime         <- arbitrary[Duration]
       fa1             <- arbitrary[FiberAgitator]
       fa2             <- arbitrary[FiberAgitator]
       ifu1TargetName  <- arbitrary[String]
       ifu1Coordinates <- arbitrary[Coordinates]
       targets         <- arbitrary[List[GemTarget]]
-    } yield StandardResolutionMode.SingleTarget(blueConfig,
+      rm              <- arbitrary[Option[ResolutionMode]]
+      conditions      <- arbitrary[Conditions]
+      mag             <- arbitrary[Option[Double]]
+    } yield StandardResolutionMode.SingleTarget(obsType,
+                                                obsClass,
+                                                blueConfig,
                                                 redConfig,
                                                 basePos,
-                                                expTime,
                                                 fa1,
                                                 fa2,
                                                 ifu1TargetName,
                                                 ifu1Coordinates,
-                                                targets
+                                                targets,
+                                                rm,
+                                                conditions,
+                                                mag
     )
 
   implicit val ghostSRSingleTargetConfigCogen: Cogen[StandardResolutionMode.SingleTarget] =
-    Cogen[(Option[Coordinates], Duration, String, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
+    Cogen[(Option[Coordinates], String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates))
 
   val ghostSRDualTargetConfigGen: Gen[StandardResolutionMode.DualTarget] =
     for {
+      obsType         <- arbitrary[String]
+      obsClass        <- arbitrary[String]
       blueConfig      <- arbitrary[ChannelConfig]
       redConfig       <- arbitrary[ChannelConfig]
       basePos         <- arbitrary[Option[Coordinates]]
-      expTime         <- arbitrary[Duration]
       fa1             <- arbitrary[FiberAgitator]
       fa2             <- arbitrary[FiberAgitator]
       ifu1TargetName  <- arbitrary[String]
@@ -76,146 +98,173 @@ trait GhostArbitraries extends ArbTime {
       ifu2TargetName  <- arbitrary[String]
       ifu2Coordinates <- arbitrary[Coordinates]
       targets         <- arbitrary[List[GemTarget]]
-    } yield StandardResolutionMode.DualTarget(blueConfig,
+      rm              <- arbitrary[Option[ResolutionMode]]
+      conditions      <- arbitrary[Conditions]
+      mag             <- arbitrary[Option[Double]]
+    } yield StandardResolutionMode.DualTarget(obsType,
+                                              obsClass,
+                                              blueConfig,
                                               redConfig,
                                               basePos,
-                                              expTime,
                                               fa1,
                                               fa2,
                                               ifu1TargetName,
                                               ifu1Coordinates,
                                               ifu2TargetName,
                                               ifu2Coordinates,
-                                              targets
+                                              targets,
+                                              rm,
+                                              conditions,
+                                              mag
     )
 
   implicit val ghostSRDualTargetConfigCogen: Cogen[StandardResolutionMode.DualTarget] =
-    Cogen[(Option[Coordinates], Duration, String, Coordinates, String, Coordinates)]
+    Cogen[(Option[Coordinates], String, Coordinates, String, Coordinates)]
       .contramap(x =>
-        (x.baseCoords,
-         x.expTime,
-         x.ifu1TargetName,
-         x.ifu1Coordinates,
-         x.ifu2TargetName,
-         x.ifu2Coordinates
-        )
+        (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates)
       )
 
   val ghostSRTargetSkyConfigGen: Gen[StandardResolutionMode.TargetPlusSky] =
     for {
+      obsType         <- arbitrary[String]
+      obsClass        <- arbitrary[String]
       blueConfig      <- arbitrary[ChannelConfig]
       redConfig       <- arbitrary[ChannelConfig]
       basePos         <- arbitrary[Option[Coordinates]]
-      exp             <- arbitrary[Duration]
       fa1             <- arbitrary[FiberAgitator]
       fa2             <- arbitrary[FiberAgitator]
       ifu1TargetName  <- arbitrary[String]
       ifu1Coordinates <- arbitrary[Coordinates]
       ifu2Coordinates <- arbitrary[Coordinates]
       targets         <- arbitrary[List[GemTarget]]
-    } yield StandardResolutionMode.TargetPlusSky(blueConfig,
+      rm              <- arbitrary[Option[ResolutionMode]]
+      conditions      <- arbitrary[Conditions]
+      mag             <- arbitrary[Option[Double]]
+    } yield StandardResolutionMode.TargetPlusSky(obsType,
+                                                 obsClass,
+                                                 blueConfig,
                                                  redConfig,
                                                  basePos,
-                                                 exp,
                                                  fa1,
                                                  fa2,
                                                  ifu1TargetName,
                                                  ifu1Coordinates,
                                                  ifu2Coordinates,
-                                                 targets
+                                                 targets,
+                                                 rm,
+                                                 conditions,
+                                                 mag
     )
 
   implicit val ghostSRTargetSkyConfigCogen: Cogen[StandardResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], Duration, String, Coordinates, Coordinates)]
-      .contramap(x =>
-        (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates)
-      )
+    Cogen[(Option[Coordinates], String, Coordinates, Coordinates)]
+      .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostSRSkyTargetConfigGen: Gen[StandardResolutionMode.SkyPlusTarget] =
     for {
+      obsType         <- arbitrary[String]
+      obsClass        <- arbitrary[String]
       blueConfig      <- arbitrary[ChannelConfig]
       redConfig       <- arbitrary[ChannelConfig]
       basePos         <- arbitrary[Option[Coordinates]]
-      exp             <- arbitrary[Duration]
       fa1             <- arbitrary[FiberAgitator]
       fa2             <- arbitrary[FiberAgitator]
       ifu1Coordinates <- arbitrary[Coordinates]
       ifu2TargetName  <- arbitrary[String]
       ifu2Coordinates <- arbitrary[Coordinates]
       targets         <- arbitrary[List[GemTarget]]
-    } yield StandardResolutionMode.SkyPlusTarget(blueConfig,
+      rm              <- arbitrary[Option[ResolutionMode]]
+      conditions      <- arbitrary[Conditions]
+      mag             <- arbitrary[Option[Double]]
+    } yield StandardResolutionMode.SkyPlusTarget(obsType,
+                                                 obsClass,
+                                                 blueConfig,
                                                  redConfig,
                                                  basePos,
-                                                 exp,
                                                  fa1,
                                                  fa2,
                                                  ifu1Coordinates,
                                                  ifu2TargetName,
                                                  ifu2Coordinates,
-                                                 targets
+                                                 targets,
+                                                 rm,
+                                                 conditions,
+                                                 mag
     )
 
   implicit val ghostSRSkyTargetConfigCogen: Cogen[StandardResolutionMode.SkyPlusTarget] =
-    Cogen[(Option[Coordinates], Duration, Coordinates, String, Coordinates)]
-      .contramap(x =>
-        (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates)
-      )
+    Cogen[(Option[Coordinates], Coordinates, String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates))
 
   implicit val ghostHRSingleTargetConfigGen: Gen[HighResolutionMode.SingleTarget] =
     for {
+      obsType    <- arbitrary[String]
+      obsClass   <- arbitrary[String]
       blueConfig <- arbitrary[ChannelConfig]
       redConfig  <- arbitrary[ChannelConfig]
       basePos    <- arbitrary[Option[Coordinates]]
-      exp        <- arbitrary[Duration]
       fa1        <- arbitrary[FiberAgitator]
       fa2        <- arbitrary[FiberAgitator]
       hrifu1Name <- arbitrary[String]
       hrifu1Pos  <- arbitrary[Coordinates]
       targets    <- arbitrary[List[GemTarget]]
-    } yield HighResolutionMode.SingleTarget(blueConfig,
+      rm         <- arbitrary[Option[ResolutionMode]]
+      conditions <- arbitrary[Conditions]
+      mag        <- arbitrary[Option[Double]]
+    } yield HighResolutionMode.SingleTarget(obsType,
+                                            obsClass,
+                                            blueConfig,
                                             redConfig,
                                             basePos,
-                                            exp,
                                             fa1,
                                             fa2,
                                             hrifu1Name,
                                             hrifu1Pos,
-                                            targets
+                                            targets,
+                                            rm,
+                                            conditions,
+                                            mag
     )
 
   implicit val ghostHRSingleTargetConfigCogen: Cogen[HighResolutionMode.SingleTarget] =
-    Cogen[(Option[Coordinates], Duration, String, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
+    Cogen[(Option[Coordinates], String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates))
 
   implicit val ghostHRTargetPlusSkyConfigGen: Gen[HighResolutionMode.TargetPlusSky] =
     for {
+      obsType    <- arbitrary[String]
+      obsClass   <- arbitrary[String]
       blueConfig <- arbitrary[ChannelConfig]
       redConfig  <- arbitrary[ChannelConfig]
       basePos    <- arbitrary[Option[Coordinates]]
-      exp        <- arbitrary[Duration]
       hrifu1Name <- arbitrary[String]
       fa1        <- arbitrary[FiberAgitator]
       fa2        <- arbitrary[FiberAgitator]
       hrifu1Pos  <- arbitrary[Coordinates]
       hrifu2Pos  <- arbitrary[Coordinates]
       targets    <- arbitrary[List[GemTarget]]
-    } yield HighResolutionMode.TargetPlusSky(blueConfig,
+      rm         <- arbitrary[Option[ResolutionMode]]
+      conditions <- arbitrary[Conditions]
+      mag        <- arbitrary[Option[Double]]
+    } yield HighResolutionMode.TargetPlusSky(obsType,
+                                             obsClass,
+                                             blueConfig,
                                              redConfig,
                                              basePos,
-                                             exp,
                                              fa1,
                                              fa2,
                                              hrifu1Name,
                                              hrifu1Pos,
                                              hrifu2Pos,
-                                             targets
+                                             targets,
+                                             rm,
+                                             conditions,
+                                             mag
     )
 
   implicit val ghostHRTargetSkyConfigCogen: Cogen[HighResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], Duration, String, Coordinates, Coordinates)]
-      .contramap(x =>
-        (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates)
-      )
+    Cogen[(Option[Coordinates], String, Coordinates, Coordinates)]
+      .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostConfigArb: Arbitrary[GhostConfig] = Arbitrary {
     Gen.oneOf(
@@ -230,11 +279,14 @@ trait GhostArbitraries extends ArbTime {
 
   object GhostHelpers {
     def extractSRIFU1Name(x: GhostConfig): Option[String] = x match {
-      case StandardResolutionMode.SingleTarget(_, _, _, _, _, _, name, _, _)     => Some(name)
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, name, _, _, _, _) => Some(name)
-      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, name, _, _, _) => Some(name)
-      case _: StandardResolutionMode.SkyPlusTarget                               => Some("Sky")
-      case _                                                                     => None
+      case StandardResolutionMode.SingleTarget(_, _, _, _, _, _, _, name, _, _, _, _, _)     =>
+        Some(name)
+      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, name, _, _, _, _, _, _, _) =>
+        Some(name)
+      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, _, name, _, _, _, _, _, _) =>
+        Some(name)
+      case _: StandardResolutionMode.SkyPlusTarget                                           => Some("Sky")
+      case _                                                                                 => None
     }
 
     def extractSRIFU1Coordinates(x: GhostConfig): Option[Coordinates] = x match {
@@ -243,17 +295,22 @@ trait GhostArbitraries extends ArbTime {
     }
 
     def extractSRIFU2Name(x: GhostConfig): Option[String] = x match {
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, name, _, _) => Some(name)
-      case _: StandardResolutionMode.TargetPlusSky                               => Some("Sky")
-      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, name, _, _) => Some(name)
-      case _                                                                     => None
+      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, _, name, _, _, _, _, _) =>
+        Some(name)
+      case _: StandardResolutionMode.TargetPlusSky                                           => Some("Sky")
+      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, _, name, _, _, _, _, _) =>
+        Some(name)
+      case _                                                                                 => None
     }
 
     def extractSRIFU2Coordinates(x: GhostConfig): Option[Coordinates] = x match {
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, _, coords, _) => Some(coords)
-      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, _, _, coords, _) => Some(coords)
-      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, _, coords, _) => Some(coords)
-      case _                                                                       => None
+      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+        Some(coords)
+      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+        Some(coords)
+      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+        Some(coords)
+      case _                                                                                   => None
     }
 
     def extractHRIFU1Name(x: GhostConfig): Option[String] = x match {
@@ -283,8 +340,8 @@ trait GhostArbitraries extends ArbTime {
       (
         String,
         String,
-        ChannelConfig,
-        ChannelConfig,
+        // ChannelConfig,
+        // ChannelConfig,
         Option[Coordinates],
         // List[GemTarget],
         Option[String],
@@ -299,8 +356,8 @@ trait GhostArbitraries extends ArbTime {
     ].contramap(x =>
       (x.obsType,
        x.obsClass,
-       x.blueConfig,
-       x.redConfig,
+       // x.blueConfig,
+       // x.redConfig,
        x.baseCoords,
        // x.userTargets,
        extractSRIFU1Name(x),

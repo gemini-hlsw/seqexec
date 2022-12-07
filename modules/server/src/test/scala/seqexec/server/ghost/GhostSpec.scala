@@ -44,7 +44,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
@@ -79,7 +79,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
@@ -108,7 +108,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
@@ -154,7 +154,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
@@ -208,7 +208,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
@@ -254,7 +254,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       "target2".some,
       coord2.some,
       Nil,
-      ResolutionMode.GhostStandard,
+      ResolutionMode.GhostStandard.some,
       Conditions.Best,
       None
     )
