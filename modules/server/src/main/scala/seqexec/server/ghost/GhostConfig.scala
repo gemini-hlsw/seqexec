@@ -148,13 +148,13 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVDoSave, 0) |+|
       giapiConfig(GhostSVDoDisplay, 1) |+|
       giapiConfig(GhostSVNRegions, 1) |+|
-      giapiConfig(GhostSVRcf, 1) |+|
-      giapiConfig(GhostSVCcf, 1) |+|
+      giapiConfig(GhostSVRcf, 2) |+|
+      giapiConfig(GhostSVCcf, 2) |+|
       giapiConfig(GhostSVImageType, "OBJECT") |+|
-      giapiConfig(GhostSVXO, 0) |+|
-      giapiConfig(GhostSVYO, 0) |+|
-      giapiConfig(GhostSVWidth, 1928) |+|
-      giapiConfig(GhostSVHeigth, 1452) |+|
+      giapiConfig(GhostSVXO, 375) |+|
+      giapiConfig(GhostSVYO, 325) |+|
+      giapiConfig(GhostSVWidth, 150) |+|
+      giapiConfig(GhostSVHeigth, 130) |+|
       giapiConfig(GhostSVIFU1BlueThreshold, 0) |+|
       giapiConfig(GhostSVIFU1BlueThresholdEnabled, 0) |+|
       giapiConfig(GhostSVIFU1RedThreshold, 0) |+|
@@ -176,12 +176,12 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGRepeat, 1) |+|
       giapiConfig(GhostAGDoSave, 0) |+|
       giapiConfig(GhostAGDoDisplay, 1) |+|
-      giapiConfig(GhostAGRcf, 1) |+|
-      giapiConfig(GhostAGCcf, 1) |+|
-      giapiConfig(GhostAGXO, 0) |+|
-      giapiConfig(GhostAGYO, 0) |+|
-      giapiConfig(GhostAGWidth, 1928) |+|
-      giapiConfig(GhostAGHeigth, 1452) |+|
+      giapiConfig(GhostAGRcf, 2) |+|
+      giapiConfig(GhostAGCcf, 2) |+|
+      giapiConfig(GhostAGXO, 400) |+|
+      giapiConfig(GhostAGYO, 300) |+|
+      giapiConfig(GhostAGWidth, 128) |+|
+      giapiConfig(GhostAGHeigth, 162) |+|
       giapiConfig(GhostAGEnableGuide, 1) |+|
       giapiConfig(GhostAGBackground, 0) |+|
       giapiConfig(GhostAGSimulateFlux, 0) |+|
