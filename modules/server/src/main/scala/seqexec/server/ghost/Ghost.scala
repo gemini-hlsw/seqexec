@@ -56,7 +56,7 @@ final case class Ghost[F[_]: Logger: Async](
     with InstrumentSystem[F] {
 
   // Needs to be estimated experimentally
-  val readoutOverhead: Time = Seconds(40)
+  val readoutOverhead: Time = Seconds(195)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
