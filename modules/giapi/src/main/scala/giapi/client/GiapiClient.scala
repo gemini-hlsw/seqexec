@@ -12,6 +12,7 @@ import edu.gemini.aspen.giapi.commands.SequenceCommand
 import giapi.client.commands.Command
 import giapi.client.commands.CommandResult
 import giapi.client.commands.Configuration
+import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 
 /////////////////////////////////////////////////////////////////
 // The GiapiClient comprises the common commands for such clients
@@ -116,7 +117,14 @@ trait GiapiClient[F[_]] {
                       DefaultCommandTimeout
         )
       }
-      .map(_.last)
+      .map { results =>
+        if (results.exists(_.response == Response.ERROR)) {
+          results.find(_.response == Response.ERROR).get
+        } else if (results.exists(_.response == Response.NOANSWER)) {
+          results.find(_.response == Response.NOANSWER).get
+        } else results.headOption.getOrElse(CommandResult(Response.NOANSWER))
+
+      }
 }
 
 object GiapiClient {
