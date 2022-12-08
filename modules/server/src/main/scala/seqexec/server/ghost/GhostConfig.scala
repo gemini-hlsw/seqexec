@@ -236,13 +236,13 @@ sealed trait GhostConfig extends GhostLUT {
         GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
     } else
-      ({
+      {
         ifu1Config |+| ifu2Config |+|
           GhostConfig.fiberConfig1(FiberAgitator.None) |+|
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
         userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-        /*svConfiguration(scienceMagnitude)*/ |+|).agConfiguration(scienceMagnitude |+| thXeLamp)
+        /*svConfiguration(scienceMagnitude) |+| */ agConfiguration(scienceMagnitude) |+| thXeLamp
   )
 
 }
