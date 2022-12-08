@@ -25,7 +25,7 @@ object GhostController {
 
       override def configuration(config: GhostConfig): F[Configuration] = {
         val c = config.configuration
-        pprint.pprintln(c)
+        pprint.pprintln(c.config.toList.sortBy(_._1))
         c.pure[F]
       }
     }

@@ -171,7 +171,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVDoContinuous, 1)
 
   def baseAGConfig: Configuration =
-    giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_EXPOSE") |+|
+    giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
       giapiConfig(GhostAGRequestType, "HARDWARE") |+|
       giapiConfig(GhostAGRepeat, 1) |+|
       giapiConfig(GhostAGDoSave, 0) |+|
@@ -184,7 +184,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGHeigth, 162) |+|
       giapiConfig(GhostAGBackground, 0) |+|
       giapiConfig(GhostAGSimulateFlux, 0) |+|
-      giapiConfig(GhostAGDoContinuous, 0)
+      giapiConfig(GhostAGDoContinuous, 1)
 
   val SVDurationFactor = 10
 
@@ -242,7 +242,7 @@ sealed trait GhostConfig extends GhostLUT {
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
         userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-        svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+|*/ thXeLamp
+        svConfiguration(scienceMagnitude) |+| /*agConfiguration(scienceMagnitude) |+|*/ thXeLamp
   )
 
 }

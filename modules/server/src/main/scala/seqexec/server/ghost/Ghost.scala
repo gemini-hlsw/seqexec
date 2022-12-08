@@ -253,9 +253,7 @@ object Ghost extends GhostConfigUtil {
             if (isScience && rm.toOption.isEmpty) {
               Left(ContentError("Science steps need a resolution mode defined"))
             } else {
-              println(s"is Science $isScience")
               println(obsType)
-              println(s"resoultion mode $rm")
               if (isScience) {
                 GhostConfig.apply(
                   obsType = obsType,
