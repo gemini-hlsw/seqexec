@@ -242,7 +242,7 @@ sealed trait GhostConfig extends GhostLUT {
           GhostConfig.fiberConfig2(FiberAgitator.None)
       } |+|
         userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-        /*svConfiguration(scienceMagnitude) |+| */ agConfiguration(scienceMagnitude) |+| thXeLamp
+        svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+|*/ thXeLamp
   )
 
 }
