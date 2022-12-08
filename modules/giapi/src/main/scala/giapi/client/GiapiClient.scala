@@ -3,6 +3,8 @@
 
 package giapi.client
 
+import cats.Applicative
+import cats.syntax.all._
 import scala.concurrent.duration._
 
 import edu.gemini.aspen.giapi.commands.Activity
@@ -93,14 +95,28 @@ trait GiapiClient[F[_]] {
                   DefaultCommandTimeout
     )
 
-  def genericApply(configuration: Configuration): F[CommandResult] =
-    giapi.command(Command(
-                    SequenceCommand.APPLY,
-                    Activity.PRESET_START,
-                    configuration
-                  ),
-                  DefaultCommandTimeout
-    )
+  def genericApply(configuration: Configuration)(implicit ev: Applicative[F]): F[CommandResult] =
+    // Logger[F].info(
+    List(
+      configuration.startsWith("ghost:cc:cu"),
+      configuration.startsWith("ghost:cc:slu"),
+      configuration.startsWith("ghost:cc:spe"),
+      configuration.startsWith("ghost:dc:ag"),
+      configuration.startsWith("ghost:dc:sv"),
+      configuration.startsWith("ghost:dc:red"),
+      configuration.startsWith("ghost:dc:blue")
+    ).filterNot(_.isEmpty)
+      .traverse { c =>
+        println(s"Apply $c")
+        giapi.command(Command(
+                        SequenceCommand.APPLY,
+                        Activity.PRESET_START,
+                        c
+                      ),
+                      DefaultCommandTimeout
+        )
+      }
+      .map(_.last)
 }
 
 object GiapiClient {

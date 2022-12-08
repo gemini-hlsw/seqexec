@@ -44,6 +44,9 @@ package commands {
     def remove(path: String): Configuration =
       Configuration(config - ConfigPath.configPath(path))
 
+    def startsWith(st: String): Configuration =
+      Configuration(config.filter { case (p, _) => p.getName().startsWith(st) })
+
     def toGiapi: GiapiConfiguration =
       new DefaultConfiguration(new java.util.TreeMap(config.asJava))
   }
