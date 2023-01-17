@@ -36,8 +36,6 @@ object GhostHeader {
             buildString(ghostKeywordsReader.fiberAgitator2Enabled.map(bool2String),
                         KeywordName.FAGITAT2
             ),
-            buildString(ghostKeywordsReader.ifu1Guiding.map(bool2String), KeywordName.IFU1GUID),
-            buildString(ghostKeywordsReader.ifu2Guiding.map(bool2String), KeywordName.IFU2GUID),
             buildInt32(ghostKeywordsReader.blueCount.orDefault, KeywordName.NBLUEEXP),
             buildDouble(ghostKeywordsReader.blueDuration.orDefault, KeywordName.BLUEEXPT),
             buildInt32(ghostKeywordsReader.redCount.orDefault, KeywordName.NREDEXP),
