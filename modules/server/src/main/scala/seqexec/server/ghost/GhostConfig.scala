@@ -419,6 +419,23 @@ object GhostConfig {
                                           scienceMagnitude
           )
         )
+      case (NoTarget, NoTarget, NoTarget, Target(t))    =>
+        hrifu2Coords.map(
+          HighResolutionMode.SingleTarget(obsType,
+                                          obsClass,
+                                          blueConfig,
+                                          redConfig,
+                                          baseCoords,
+                                          fiberAgitator1,
+                                          fiberAgitator2,
+                                          t,
+                                          _,
+                                          userTargets,
+                                          resolutionMode,
+                                          conditions,
+                                          scienceMagnitude
+          )
+        )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
@@ -473,9 +490,9 @@ case class GhostCalibration(
 
   override val baseConfiguration: Configuration =
     Configuration.Zero
-    // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
-    //   giapiConfig(GhostAGRequestType, "HARDWARE") |+|
-    //   giapiConfig(GhostAGEnableGuide, 0)
+  // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
+  //   giapiConfig(GhostAGRequestType, "HARDWARE") |+|
+  //   giapiConfig(GhostAGEnableGuide, 0)
 
   override def ifu1TargetType: IFUTargetType =
     IFUTargetType.NoTarget

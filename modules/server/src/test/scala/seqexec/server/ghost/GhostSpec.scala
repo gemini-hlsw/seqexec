@@ -49,16 +49,45 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostRedBinningRcf.applyItem)),
-                 "2".some
+                 "1".some
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostRedBinningCcf.applyItem)),
-                 "2".some
+                 "1".some
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostBlueBinningRcf.applyItem)),
                  "1".some
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostBlueBinningCcf.applyItem)),
                  "1".some
+    )
+  }
+  test("fiber agitator on/off for bias") {
+    val cfg = GhostConfig(
+      "BIAS",
+      "bias",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      none,
+      FiberAgitator.On,
+      FiberAgitator.Off,
+      "target".some,
+      Coordinates.Zero.some,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator1.applyItem)),
+                 "FA_DEMAND_ON".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator2.applyItem)),
+                 "FA_DEMAND_OFF".some
     )
   }
   test("fiber agitator on/off") {
@@ -84,10 +113,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator1.applyItem)),
-                 "FA_DEMAND_ON".some
+                 "FA_DEMAND_NONE".some
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator2.applyItem)),
-                 "FA_DEMAND_OFF".some
+                 "FA_DEMAND_NONE".some
     )
   }
   test("sru ifu1 ra/dec") {
@@ -190,6 +219,54 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  dec2.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
     )
   }
+  test("sru ifu1 park if only one used") {
+    val cfg = GhostConfig(
+      "OBJECT",
+      "science",
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
+      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      none,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      "target".some,
+      coord1.some,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
+                 "IFU_DEMAND_RADEC".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
+                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
+                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
+                 "IFU_STDRES".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
+                 "IFU_TARGET_OBJECT".some
+    )
+    // ifu2 not used
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
+                 "IFU_DEMAND_PARK".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")), None)
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
+                 "IFU_TARGET_NONE".some
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.ra")), None)
+    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.dec")), None)
+  }
   test("hru ifu1 ra/dec") {
     val cfg = GhostConfig(
       "OBJECT",
@@ -236,7 +313,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  "IFU_TARGET_NONE".some
     )
   }
-  test("hru ifu1/ifu2 ra/dec") {
+  test("hru ifu2 ra/dec") {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
@@ -249,8 +326,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       none,
       none,
-      "target".some,
-      coord1.some,
+      none,
+      none,
       "target2".some,
       coord2.some,
       Nil,
@@ -262,10 +339,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  "IFU_DEMAND_RADEC".some
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
-                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
+                 ra2.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
-                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
+                 dec2.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
                  "IFU_HIRES".some
@@ -275,7 +352,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     )
     // ifu2 not used
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
-                 "IFU_DEMAND_RADEC".some
+                 "IFU_DEMAND_PARK".some
     )
     assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
