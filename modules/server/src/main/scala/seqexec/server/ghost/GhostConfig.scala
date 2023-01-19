@@ -344,6 +344,24 @@ object GhostConfig {
                           scienceMagnitude
             )
         )
+      case (NoTarget, Target(t), NoTarget, NoTarget)    =>
+        srifu2Coords.map(
+          StandardResolutionMode
+            .SingleTarget(obsType,
+                          obsClass,
+                          blueConfig,
+                          redConfig,
+                          baseCoords,
+                          fiberAgitator1,
+                          fiberAgitator2,
+                          t,
+                          _,
+                          userTargets,
+                          resolutionMode,
+                          conditions,
+                          scienceMagnitude
+            )
+        )
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
