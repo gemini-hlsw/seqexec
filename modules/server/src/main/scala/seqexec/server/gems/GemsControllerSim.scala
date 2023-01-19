@@ -23,7 +23,7 @@ object GemsControllerSim {
   def apply[F[_]: Applicative](implicit L: Logger[F]): GemsController[F] =
     new GemsController[F] {
       override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
-        cfg:                                 GemsConfig
+        cfg: GemsConfig
       ): F[PauseResume[F]] =
         PauseResume(
           L.info(s"Simulate pausing GeMS loops because of $pauseReasons").some,

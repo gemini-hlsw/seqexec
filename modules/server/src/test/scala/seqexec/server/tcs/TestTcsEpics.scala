@@ -442,7 +442,7 @@ case class TestTcsEpics[F[_]: Async](
     probeGuideConfigGetters(state, State.oiwfsProbeGuideConfig.asGetter)
 
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Temporal[F]
+    T: Temporal[F]
   ): F[Unit] =
     Applicative[F].unit
 

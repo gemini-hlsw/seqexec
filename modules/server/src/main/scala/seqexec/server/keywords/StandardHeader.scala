@@ -55,7 +55,7 @@ class StandardHeader[F[_]: Sync: Logger](
     else obsObject
 
   private def optTcsKeyword[B](s: TcsController.Subsystem)(v: F[B])(implicit
-    d:                            DefaultHeaderValue[B]
+    d: DefaultHeaderValue[B]
   ): F[B] =
     if (tcsSubsystems.contains(s)) v else d.default.pure[F]
 

@@ -71,7 +71,7 @@ object TcsSouthControllerEpicsAo {
   )
 
   private final class TcsSouthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit
-    L:                                                                     Logger[F]
+    L: Logger[F]
   ) extends TcsSouthControllerEpicsAo[F]
       with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
@@ -80,12 +80,12 @@ object TcsSouthControllerEpicsAo {
       Option(System.getProperty("seqexec.server.tcs.trace")).flatMap(_.toBooleanOption).isDefined
 
     def setNgsGuide(followCmd: ProbeFollowCmd[F], l: Lens[EpicsTcsAoConfig, GuiderConfig])(
-      name:                    String
+      name:       String
     )(
-      g:                       VirtualGemsTelescope,
-      subsystems:              NonEmptySet[Subsystem],
-      current:                 ProbeTrackingConfig,
-      demand:                  ProbeTrackingConfig
+      g:          VirtualGemsTelescope,
+      subsystems: NonEmptySet[Subsystem],
+      current:    ProbeTrackingConfig,
+      demand:     ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       if (subsystems.contains(Subsystem.Gaos)) {
         val actionList = List(
@@ -144,9 +144,9 @@ object TcsSouthControllerEpicsAo {
       )
 
     def setOdgw1Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw1GuiderControl(g),
@@ -162,9 +162,9 @@ object TcsSouthControllerEpicsAo {
       )
 
     def setOdgw2Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw2GuiderControl(g),
@@ -180,9 +180,9 @@ object TcsSouthControllerEpicsAo {
       )
 
     def setOdgw3Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw3GuiderControl(g),
@@ -198,9 +198,9 @@ object TcsSouthControllerEpicsAo {
       )
 
     def setOdgw4Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw4GuiderControl(g),

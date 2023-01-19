@@ -923,7 +923,7 @@ object StepsTable extends Columns {
     p:          Props,
     index:      Int,
     onRowClick: Option[OnRowClick]
-  )(e:          ReactMouseEvent): Callback =
+  )(e: ReactMouseEvent): Callback =
     // If alt is pressed or middle button flip the breakpoint
     if (e.altKey || e.button === MiddleButton)
       e.stopPropagationCB *> e.preventDefaultCB >>
@@ -1091,7 +1091,7 @@ object StepsTable extends Columns {
     nextStep:     Option[RunningStep],
     curSeqState:  Option[SequenceState],
     nextSeqState: Option[SequenceState]
-  )(f:            Option[(StepId, Boolean)] => A): A =
+  )(f: Option[(StepId, Boolean)] => A): A =
     (curStep, nextStep) match {
       case (Some(RunningStep(i, _)), None)                               =>
         // This happens when a sequence stops, e.g. with a pasue

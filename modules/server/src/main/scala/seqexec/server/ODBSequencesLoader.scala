@@ -20,8 +20,8 @@ import SeqexecFailure.SeqexecException
 import SeqexecFailure.UnrecognizedInstrument
 
 final class ODBSequencesLoader[F[_]: Async](
-  odbProxy:            OdbProxy[F],
-  translator:          SeqTranslate[F]
+  odbProxy:   OdbProxy[F],
+  translator: SeqTranslate[F]
 )(implicit execEngine: ExecEngineType[F]) {
 
   private def unloadEvent(seqId: Observation.Id): EventType[F] =

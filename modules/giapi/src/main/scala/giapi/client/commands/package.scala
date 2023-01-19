@@ -48,7 +48,7 @@ package commands {
       new DefaultConfiguration(new java.util.TreeMap(config.asJava))
   }
 
-  object Configuration  {
+  object Configuration {
     val Zero: Configuration = Configuration(Map.empty)
 
     def single[A: GiapiConfig](key: String, value: A): Configuration =

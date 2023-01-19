@@ -428,7 +428,7 @@ object SessionQueueTable extends Columns {
     }
 
   private def linkedTextRenderer(p: Props)(
-    f:                              SessionQueueRow => String
+    f: SessionQueueRow => String
   ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
     (_, _, _, row: SessionQueueRow, _) =>
       linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, <.p(SeqexecStyles.queueText, f(row)))

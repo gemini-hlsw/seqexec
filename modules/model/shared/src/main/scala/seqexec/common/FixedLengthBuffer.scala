@@ -65,7 +65,7 @@ object FixedLengthBuffer {
    */
   implicit val instance: Traverse[FixedLengthBuffer] = new Traverse[FixedLengthBuffer] {
     override def traverse[G[_], A, B](fa: FixedLengthBuffer[A])(f: A => G[B])(implicit
-      G:                                  Applicative[G]
+      G: Applicative[G]
     ): G[FixedLengthBuffer[B]] =
       fa.toChain.traverse(f).map(FixedLengthBufferImpl(fa.maxLength, _))
 
@@ -73,7 +73,7 @@ object FixedLengthBuffer {
       fa.toChain.foldLeft(b)(f)
 
     override def foldRight[A, B](fa: FixedLengthBuffer[A], lb: Eval[B])(
-      f:                             (A, Eval[B]) => Eval[B]
+      f: (A, Eval[B]) => Eval[B]
     ): Eval[B] = {
       def loop(as: Chain[A]): Eval[B] =
         as match {

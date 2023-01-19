@@ -55,7 +55,7 @@ object Gems {
     controller:    GemsController[F],
     config:        GemsConfig,
     guideConfigDb: GuideConfigDb[F]
-  )(implicit L:    Logger[F])
+  )(implicit L: Logger[F])
       extends Gems[F] {
 
     override val cfg: GemsConfig = config
