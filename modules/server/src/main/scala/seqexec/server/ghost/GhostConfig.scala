@@ -101,8 +101,6 @@ sealed trait GhostConfig extends GhostLUT {
 
   def isScience: Boolean = obsType.equalsIgnoreCase("object")
 
-  def isPRV: Boolean = obsType.equalsIgnoreCase("object")
-
   def ifu2Configuration: Configuration
 
   def adcConfiguration: Configuration
@@ -145,7 +143,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVRequestType, "HARDWARE") |+|
       giapiConfig(GhostSVRepeat, 1) |+|
       giapiConfig(GhostSVRunNumber, 0) |+|
-      giapiConfig(GhostSVDoSave, 0) |+|
+      giapiConfig(GhostSVDoSave, 1) |+|
       giapiConfig(GhostSVDoDisplay, 1) |+|
       giapiConfig(GhostSVNRegions, 1) |+|
       giapiConfig(GhostSVRcf, 2) |+|
