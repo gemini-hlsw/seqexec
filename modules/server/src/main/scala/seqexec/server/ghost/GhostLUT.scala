@@ -3,8 +3,17 @@
 
 package seqexec.server.ghost
 
+import scala.concurrent.duration._
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
 final case class SVCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
+final case class ReadoutTimes(
+  mode:     ReadNoiseGain,
+  binning:  GhostBinning,
+  readRed:  Duration,
+  readBlue: Duration
+)
 
 // GHOST Lookup tables
 trait GhostLUT {
@@ -93,6 +102,32 @@ trait GhostLUT {
   // the List is never empty
   val SVMinimumTime = SVCameraTimesLUT.minBy(_.goodWeather)
 
+  val ReadoutTimesLUT = List(
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_ONE, 97.4.seconds, 45.6.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_TWO, 49.6.seconds, 24.8.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_FOUR, 25.7.seconds, 14.4.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_EIGHT, 13.8.seconds, 9.1.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_TWO, 27.5.seconds, 15.4.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_FOUR, 14.7.seconds, 9.8.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_EIGHT, 8.4.seconds, 7.0.seconds),
+    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.FOUR_BY_FOUR, 9.5.seconds, 7.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_ONE, 50.1.seconds, 24.6.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_TWO, 26.1.seconds, 14.3.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_FOUR, 13.9.seconds, 9.1.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_EIGHT, 7.9.seconds, 6.5.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_TWO, 15.7.seconds, 10.1.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_FOUR, 8.8.seconds, 7.2.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_EIGHT, 5.4.seconds, 5.6.seconds),
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.FOUR_BY_FOUR, 6.5.seconds, 6.5.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_ONE, 21.7.seconds, 12.0.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_TWO, 11.7.seconds, 7.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_FOUR, 6.8.seconds, 5.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_EIGHT, 4.3.seconds, 4.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_TWO, 8.6.seconds, 6.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_FOUR, 5.2.seconds, 5.6.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_EIGHT, 3.6.seconds, 4.9.seconds),
+    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.FOUR_BY_FOUR, 4.7.seconds, 5.8.seconds)
+  )
 }
 
 object GhostLUT extends GhostLUT

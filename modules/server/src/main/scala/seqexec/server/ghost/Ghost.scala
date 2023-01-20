@@ -44,7 +44,6 @@ import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import squants.time.Milliseconds
-import squants.time.Seconds
 import squants.time.Minutes
 import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
@@ -53,10 +52,12 @@ final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
   conditions: Ref[F, Conditions]
 ) extends GdsInstrument[F]
-    with InstrumentSystem[F] {
+    with InstrumentSystem[F]
+    with GhostLUT {
+  // Readout time to fallback
+  val fallbackReadouTimeRed: Duration = ReadoutTimesLUT.map(_.readRed).max
 
-  // Needs to be estimated experimentally
-  val readoutOverhead: Time = Seconds(195)
+  val fallbackReadouTimeBlue: Duration = ReadoutTimesLUT.map(_.readBlue).max
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
@@ -92,16 +93,31 @@ final case class Ghost[F[_]: Logger: Async](
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
+  // REL-4239
+  private def totalObserveTime(config: GhostConfig): Time = {
+    val blueKey   =
+      (config.blueConfig.readMode, config.blueConfig.binning)
+    val blue      = ReadoutTimesLUT
+      .find(x => (x.mode, x.binning) == blueKey)
+      .map(_.readBlue)
+      .getOrElse(fallbackReadouTimeBlue)
+    val redKey    =
+      (config.redConfig.readMode, config.redConfig.binning)
+    val red       = ReadoutTimesLUT
+      .find(x => (x.mode, x.binning) == redKey)
+      .map(_.readRed)
+      .getOrElse(fallbackReadouTimeRed)
+    val blueTotal = config.blueConfig.count.toLong * (config.blueConfig.exposure + blue)
+    val redTotal  = config.redConfig.count.toLong * (config.redConfig.exposure + red)
+
+    Milliseconds(blueTotal.max(redTotal).toMillis)
+  }
+
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
     ghostConfig.map(c =>
       if (!c.isScience) Minutes(6) // we can't yet calculate how long a bias takes
-      else
-        readoutOverhead + Milliseconds(
-          (c.blueConfig.exposure * c.blueConfig.count.toLong)
-            .max(c.redConfig.exposure * c.redConfig.count.toLong)
-            .toMillis
-        )
+      else totalObserveTime(c)
     )
   }
 
