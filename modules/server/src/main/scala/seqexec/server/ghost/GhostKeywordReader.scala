@@ -33,7 +33,7 @@ sealed trait GhostKeywordsReader[F[_]] {
   def blueReadMode: F[Option[String]]
   def resolutionMode: F[Option[String]]
   def targetMode: F[Option[String]]
-  // def slitCount: F[Int]
+  def slitCount: F[Int]
   // def slitDuration: F[Double]
 }
 
@@ -55,11 +55,11 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val blueReadMode: F[Option[String]]   = strDefault[F].map(_.some)
   val resolutionMode: F[Option[String]] = strDefault[F].map(_.some)
   val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
-  // val slitCount: F[Int]                 = intDefault[F]
+  val slitCount: F[Int]                 = intDefault[F]
   // val slitDuration: F[Double]           = doubleDefault[F]
 }
 
-object GhostKeywordsReader extends GhostConfigUtil {
+object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
   val readMode2String: GhostReadNoiseGain => String = {
     case GhostReadNoiseGain.SLOW_LOW   => "Slow"
     case GhostReadNoiseGain.MEDIUM_LOW => "Medium"
@@ -72,6 +72,21 @@ object GhostKeywordsReader extends GhostConfigUtil {
     case ResolutionMode.GhostStandard => "Standard"
     case ResolutionMode.GhostHigh     => "High"
     case ResolutionMode.GhostPRV      => "PRV"
+  }
+
+  def targetModeFromNames(
+    srifu1: Option[String],
+    srifu2: Option[String],
+    hrifu1: Option[String],
+    hrifu2: Option[String]
+  ): Option[String] = (srifu1, srifu2, hrifu1, hrifu2) match {
+    case (Some(_), Some("Sky"), None, None)       => "SRIFU1 Target, SRIFU2 Sky".some
+    case (Some("Sky"), Some(_), None, None)       => "SRIFU1 Sky, SRIFU2 Target".some
+    case (Some(_), Some(_), None, None)           => "Dual Target".some
+    case (Some(_), None, None, None)              => "Single Target".some
+    case (None, None, Some(_), Some("Sky"))       => "HRIFU Target, Sky".some
+    case (None, None, Some(_), Some("Sky (PRV)")) => "HRIFU Target, Sky (PRV)".some
+    case _                                        => None
   }
 
   def apply[F[_]: Sync](config: CleanConfig): GhostKeywordsReader[F] = {
@@ -125,8 +140,9 @@ object GhostKeywordsReader extends GhostConfigUtil {
       val blueCcds: F[Option[String]]       = blueBinning.toOption.map(_.displayValue()).pure[F]
       val blueReadMode: F[Option[String]]   = blueExpReadMode.toOption.map(readMode2String).pure[F]
       val resolutionMode: F[Option[String]] = rm.toOption.map(resolutionMode2String).pure[F]
-      val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
-      // val slitCount: F[Int]
+      val targetMode: F[Option[String]]     =
+        targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
+      val slitCount: F[Int]                 = 1.pure[F]
       // val slitDuration: F[Double]
     }).getOrElse(defaultKeywords)
   }
