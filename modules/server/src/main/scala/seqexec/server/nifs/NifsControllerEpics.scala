@@ -115,7 +115,7 @@ object NifsControllerEpics extends NifsEncoders {
       .toOption
 
   def apply[F[_]: Async](
-    epicsSys:   => NifsEpics[F]
+    epicsSys: => NifsEpics[F]
   )(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
 
     private val unit = Applicative[F].unit

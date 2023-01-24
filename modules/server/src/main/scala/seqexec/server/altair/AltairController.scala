@@ -19,7 +19,7 @@ trait AltairController[F[_]] {
     resumeReasons: ResumeConditionSet,
     currentOffset: FocalPlaneOffset,
     instrument:    Instrument
-  )(cfg:           AltairConfig): F[AltairPauseResume[F]]
+  )(cfg: AltairConfig): F[AltairPauseResume[F]]
 
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
 

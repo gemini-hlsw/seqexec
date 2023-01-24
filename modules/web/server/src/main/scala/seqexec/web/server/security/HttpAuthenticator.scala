@@ -55,7 +55,7 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
  */
 object TokenRefresher {
   private def replaceCookie[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F])(
-    result:                                       AuthResult
+    result: AuthResult
   ): Kleisli[OptionT[F, *], Request[F], Response[F]] = Kleisli { request =>
     result.fold(_ => service(request),
                 u =>

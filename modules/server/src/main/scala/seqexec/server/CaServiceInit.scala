@@ -13,7 +13,7 @@ object CaServiceInit {
   // Ensure there is a valid way to init CaService either from
   // the configuration file or from the environment
   def caInit[F[_]](
-    conf:       SeqexecEngineConfiguration
+    conf: SeqexecEngineConfiguration
   )(implicit F: Sync[F], L: Logger[F]): F[CaService] = {
     def setAddressList(a: String) =
       F.delay(CaService.setAddressList(a))

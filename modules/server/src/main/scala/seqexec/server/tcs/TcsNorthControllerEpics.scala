@@ -41,7 +41,7 @@ final case class TcsNorthControllerEpics[F[_]: Async: Logger](epicsSys: TcsEpics
   override def nod(
     subsystems: NonEmptySet[Subsystem],
     tcsConfig:  TcsNorthConfig
-  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
+  )(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
     tcsConfig match {
       case c: BasicTcsConfig   => commonController.nod(subsystems, offset, guided, c)
       case _: TcsNorthAoConfig =>

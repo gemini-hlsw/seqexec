@@ -56,45 +56,45 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
   ): F[Unit]
 
   def setMountGuide[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:           NonEmptySet[Subsystem],
-    c:                    MountGuideOption,
-    d:                    MountGuideOption
+    subsystems: NonEmptySet[Subsystem],
+    c:          MountGuideOption,
+    d:          MountGuideOption
   ): Option[WithDebug[C => F[C]]]
 
   def setM1Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:        NonEmptySet[Subsystem],
-    c:                 M1GuideConfig,
-    d:                 M1GuideConfig
+    subsystems: NonEmptySet[Subsystem],
+    c:          M1GuideConfig,
+    d:          M1GuideConfig
   ): Option[WithDebug[C => F[C]]]
 
   def setM2Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:        NonEmptySet[Subsystem],
-    c:                 M2GuideConfig,
-    d:                 M2GuideConfig
+    subsystems: NonEmptySet[Subsystem],
+    c:          M2GuideConfig,
+    d:          M2GuideConfig
   ): Option[WithDebug[C => F[C]]]
 
   def setPwfs1[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:      NonEmptySet[Subsystem],
-    c:               GuiderSensorOption,
-    d:               GuiderSensorOption
+    subsystems: NonEmptySet[Subsystem],
+    c:          GuiderSensorOption,
+    d:          GuiderSensorOption
   ): Option[WithDebug[C => F[C]]]
 
   def setOiwfs[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:      NonEmptySet[Subsystem],
-    c:               GuiderSensorOption,
-    d:               GuiderSensorOption
+    subsystems: NonEmptySet[Subsystem],
+    c:          GuiderSensorOption,
+    d:          GuiderSensorOption
   ): Option[WithDebug[C => F[C]]]
 
   def setScienceFold[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:            NonEmptySet[Subsystem],
-    c:                     C,
-    d:                     LightPath
+    subsystems: NonEmptySet[Subsystem],
+    c:          C,
+    d:          LightPath
   ): Option[WithDebug[C => F[C]]]
 
   def setHrPickup[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems:         NonEmptySet[Subsystem],
-    current:            C,
-    d:                  AGConfig
+    subsystems: NonEmptySet[Subsystem],
+    current:    C,
+    d:          AGConfig
   ): Option[WithDebug[C => F[C]]]
 
   def setTelescopeOffset(c: FocalPlaneOffset): F[Unit]
@@ -102,27 +102,27 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
   def setWavelength(w: Wavelength): F[Unit]
 
   def setPwfs1Probe[C](l: Lens[C, BaseEpicsTcsConfig])(
-    a:                    NonEmptySet[Subsystem],
-    b:                    ProbeTrackingConfig,
-    c:                    ProbeTrackingConfig
+    a: NonEmptySet[Subsystem],
+    b: ProbeTrackingConfig,
+    c: ProbeTrackingConfig
   ): Option[WithDebug[C => F[C]]]
 
   def setOiwfsProbe[C](l: Lens[C, BaseEpicsTcsConfig])(
-    a:                    NonEmptySet[Subsystem],
-    b:                    ProbeTrackingConfig,
-    c:                    ProbeTrackingConfig,
-    oiName:               String,
-    inst:                 Instrument
+    a:      NonEmptySet[Subsystem],
+    b:      ProbeTrackingConfig,
+    c:      ProbeTrackingConfig,
+    oiName: String,
+    inst:   Instrument
   ): Option[WithDebug[C => F[C]]]
 
   def setNodChopProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd[F])(
-    c:                                 NodChopTrackingConfig
+    c: NodChopTrackingConfig
   ): F[Unit]
 
   def setGuideProbe[C](guideControl: GuideControl[F], trkSet: ProbeTrackingConfig => C => C)(
-    subsystems:                      NonEmptySet[Subsystem],
-    c:                               ProbeTrackingConfig,
-    d:                               ProbeTrackingConfig
+    subsystems: NonEmptySet[Subsystem],
+    c:          ProbeTrackingConfig,
+    d:          ProbeTrackingConfig
   ): Option[WithDebug[C => F[C]]]
 
   def configMountPos[C](
@@ -259,7 +259,7 @@ object TcsControllerEpicsCommon {
     demand:  T,
     act:     T => F[Unit],
     lens:    Lens[C, T]
-  )(name:    String): Option[WithDebug[C => F[C]]] =
+  )(name: String): Option[WithDebug[C => F[C]]] =
     (used && current =!= demand)
       .option((c: C) => act(demand) *> lens.replace(demand)(c).pure[F])
       .map(_.withDebug(s"$name($current =!= $demand"))
@@ -271,13 +271,13 @@ object TcsControllerEpicsCommon {
     act:      T => F[Unit],
     lens:     Lens[C, T],
     equalish: (T, T) => Boolean
-  )(name:     String): Option[WithDebug[C => F[C]]] =
+  )(name: String): Option[WithDebug[C => F[C]]] =
     (used && !equalish(current, demand))
       .option((c: C) => act(demand) *> lens.replace(demand)(c).pure[F])
       .map(_.withDebug(s"$name($current =!= $demand"))
 
   private class TcsControllerEpicsCommonImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit
-    L:                                                              Logger[F]
+    L: Logger[F]
   ) extends TcsControllerEpicsCommon[F]
       with TcsControllerEncoders
       with ScienceFoldPositionCodex {
@@ -286,9 +286,9 @@ object TcsControllerEpicsCommon {
       Option(System.getProperty("seqexec.server.tcs.trace")).flatMap(_.toBooleanOption).isDefined
 
     override def setMountGuide[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:                    NonEmptySet[Subsystem],
-      c:                             MountGuideOption,
-      d:                             MountGuideOption
+      subsystems: NonEmptySet[Subsystem],
+      c:          MountGuideOption,
+      d:          MountGuideOption
     ): Option[WithDebug[C => F[C]]] = applyParam(
       subsystems.contains(Subsystem.Mount),
       c,
@@ -298,9 +298,9 @@ object TcsControllerEpicsCommon {
     )("MountGuide")
 
     override def setM1Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:                 NonEmptySet[Subsystem],
-      c:                          M1GuideConfig,
-      d:                          M1GuideConfig
+      subsystems: NonEmptySet[Subsystem],
+      c:          M1GuideConfig,
+      d:          M1GuideConfig
     ): Option[WithDebug[C => F[C]]] = applyParam(
       subsystems.contains(Subsystem.M1),
       c,
@@ -310,9 +310,9 @@ object TcsControllerEpicsCommon {
     )("M1Guide")
 
     override def setM2Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:                 NonEmptySet[Subsystem],
-      c:                          M2GuideConfig,
-      d:                          M2GuideConfig
+      subsystems: NonEmptySet[Subsystem],
+      c:          M2GuideConfig,
+      d:          M2GuideConfig
     ): Option[WithDebug[C => F[C]]] = if (subsystems.contains(Subsystem.M2)) {
       val actionList = List(
         (encodeM2Coma.encode(d) =!= encodeM2Coma.encode(c)).option(
@@ -352,7 +352,7 @@ object TcsControllerEpicsCommon {
     val NonStopExposures: Int = -1
 
     private def setGuiderWfs(on: TcsEpics.WfsObserveCmd[F], off: EpicsCommand[F])(
-      c:                         GuiderSensorOption
+      c: GuiderSensorOption
     ): F[Unit] =
       c match {
         case GuiderSensorOff => off.mark
@@ -361,9 +361,9 @@ object TcsControllerEpicsCommon {
       }
 
     override def setPwfs1[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:               NonEmptySet[Subsystem],
-      c:                        GuiderSensorOption,
-      d:                        GuiderSensorOption
+      subsystems: NonEmptySet[Subsystem],
+      c:          GuiderSensorOption,
+      d:          GuiderSensorOption
     ): Option[WithDebug[C => F[C]]] = applyParam(
       subsystems.contains(Subsystem.PWFS1),
       c,
@@ -373,9 +373,9 @@ object TcsControllerEpicsCommon {
     )("PWFS1")
 
     private def setPwfs2[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:              NonEmptySet[Subsystem],
-      c:                       GuiderSensorOption,
-      d:                       GuiderSensorOption
+      subsystems: NonEmptySet[Subsystem],
+      c:          GuiderSensorOption,
+      d:          GuiderSensorOption
     ): Option[WithDebug[C => F[C]]] = applyParam(
       subsystems.contains(Subsystem.PWFS2),
       c,
@@ -385,9 +385,9 @@ object TcsControllerEpicsCommon {
     )("PWFS2")
 
     override def setOiwfs[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:               NonEmptySet[Subsystem],
-      c:                        GuiderSensorOption,
-      d:                        GuiderSensorOption
+      subsystems: NonEmptySet[Subsystem],
+      c:          GuiderSensorOption,
+      d:          GuiderSensorOption
     ): Option[WithDebug[C => F[C]]] = applyParam(
       subsystems.contains(Subsystem.OIWFS),
       c,
@@ -428,7 +428,7 @@ object TcsControllerEpicsCommon {
     }
 
     override def setScienceFold[C](
-      l:          Lens[C, BaseEpicsTcsConfig]
+      l: Lens[C, BaseEpicsTcsConfig]
     )(subsystems: NonEmptySet[Subsystem], c: C, d: LightPath): Option[WithDebug[C => F[C]]] = {
       val base       = l.get(c)
       val currentStr = base.scienceFoldPosition.map(_.toString).getOrElse("None")
@@ -450,9 +450,9 @@ object TcsControllerEpicsCommon {
      * necessary to move the HR pickup mirror.
      */
     override def setHrPickup[C](l: Lens[C, BaseEpicsTcsConfig])(
-      subsystems:                  NonEmptySet[Subsystem],
-      current:                     C,
-      d:                           AGConfig
+      subsystems: NonEmptySet[Subsystem],
+      current:    C,
+      d:          AGConfig
     ): Option[WithDebug[C => F[C]]] = {
       val base = l.get(current)
       subsystems
@@ -494,7 +494,7 @@ object TcsControllerEpicsCommon {
     }
 
     override def setNodChopProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd[F])(
-      c:                                          NodChopTrackingConfig
+      c: NodChopTrackingConfig
     ): F[Unit] =
       s.setNodachopa(encode(c.get(NodChop(Beam.A, Beam.A)))) *>
         s.setNodachopb(encode(c.get(NodChop(Beam.A, Beam.B)))) *>
@@ -565,9 +565,9 @@ object TcsControllerEpicsCommon {
       )
 
     override def setPwfs1Probe[C](l: Lens[C, BaseEpicsTcsConfig])(
-      a:                             NonEmptySet[Subsystem],
-      b:                             ProbeTrackingConfig,
-      c:                             ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[C => F[C]]] =
       setGuideProbe(pwfs1GuiderControl,
                     l.andThen(BaseEpicsTcsConfig.pwfs1).andThen(GuiderConfig.tracking).replace
@@ -581,9 +581,9 @@ object TcsControllerEpicsCommon {
       )
 
     def setPwfs2Probe[C](l: Lens[C, BaseEpicsTcsConfig])(
-      a:                    NonEmptySet[Subsystem],
-      b:                    ProbeTrackingConfig,
-      c:                    ProbeTrackingConfig
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[C => F[C]]] =
       setGuideProbe(pwfs2GuiderControl,
                     l.andThen(BaseEpicsTcsConfig.pwfs2).andThen(GuiderConfig.tracking).replace
@@ -597,11 +597,11 @@ object TcsControllerEpicsCommon {
       )
 
     override def setOiwfsProbe[C](l: Lens[C, BaseEpicsTcsConfig])(
-      a:                             NonEmptySet[Subsystem],
-      b:                             ProbeTrackingConfig,
-      c:                             ProbeTrackingConfig,
-      oiName:                        String,
-      inst:                          Instrument
+      a:      NonEmptySet[Subsystem],
+      b:      ProbeTrackingConfig,
+      c:      ProbeTrackingConfig,
+      oiName: String,
+      inst:   Instrument
     ): Option[WithDebug[C => F[C]]] = oiSelectionName(inst).flatMap { x =>
       if (x === oiName)
         setGuideProbe(oiwfsGuiderControl,

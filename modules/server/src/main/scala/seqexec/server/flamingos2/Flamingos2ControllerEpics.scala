@@ -112,7 +112,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](
-    sys:        => Flamingos2Epics[F]
+    sys: => Flamingos2Epics[F]
   )(implicit L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {

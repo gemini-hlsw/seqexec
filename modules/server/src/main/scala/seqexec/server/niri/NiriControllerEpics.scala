@@ -140,7 +140,7 @@ object NiriControllerEpics extends NiriEncoders {
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
   def apply[F[_]: Async](
-    epicsSys:   => NiriEpics[F]
+    epicsSys: => NiriEpics[F]
   )(implicit L: Logger[F]): NiriController[F] =
     new NiriController[F] {
 

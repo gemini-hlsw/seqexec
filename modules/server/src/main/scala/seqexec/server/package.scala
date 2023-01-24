@@ -99,7 +99,7 @@ package server {
 
 }
 
-package object server    {
+package object server {
   implicit def geEq[D <: SequenceableSpType]: Eq[D] =
     Eq[String].contramap(_.sequenceValue())
 

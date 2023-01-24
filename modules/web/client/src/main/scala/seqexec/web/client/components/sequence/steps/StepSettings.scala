@@ -69,13 +69,13 @@ object ExposureTimeCell {
 
       // TODO Find a better way to output math-style text
       val seconds = List(
-        <.span(^.display       := "inline-block", ^.marginLeft := 5.px, "["),
-        <.span(^.display       := "inline-block",
+        <.span(^.display := "inline-block", ^.marginLeft := 5.px, "["),
+        <.span(^.display := "inline-block",
                ^.verticalAlign := "none",
                ^.fontStyle     := "italic",
                "s"
         ),
-        <.span(^.display       := "inline-block", "]")
+        <.span(^.display := "inline-block", "]")
       )
 
       val displayedText: TagMod = (coadds, exposureTime) match {

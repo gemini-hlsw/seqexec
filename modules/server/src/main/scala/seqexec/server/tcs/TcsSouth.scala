@@ -59,7 +59,7 @@ case class TcsSouth[F[_]: Sync: Logger] private (
   subsystems:    NonEmptySet[Subsystem],
   gaos:          Option[Gems[F]],
   guideDb:       GuideConfigDb[F]
-)(config:        TcsSouth.TcsSeqConfig[F])
+)(config: TcsSouth.TcsSeqConfig[F])
     extends Tcs[F] {
 
   import Tcs.GuideWithOps

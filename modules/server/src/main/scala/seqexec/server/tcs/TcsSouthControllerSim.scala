@@ -33,7 +33,7 @@ class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthC
   override def nod(
     subsystems: NonEmptySet[Subsystem],
     tcsConfig:  TcsSouthConfig
-  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
+  )(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
     sim.nod(stage, offset, guided)
 }
 

@@ -120,7 +120,7 @@ object GnirsControllerEpics extends GnirsEncoders {
   }
 
   def apply[F[_]: Async](
-    epicsSys:   => GnirsEpics[F]
+    epicsSys: => GnirsEpics[F]
   )(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {
 

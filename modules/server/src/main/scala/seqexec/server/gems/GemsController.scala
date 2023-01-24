@@ -15,7 +15,7 @@ trait GemsController[F[_]] {
   import GemsController._
 
   def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
-    cfg:                        GemsConfig
+    cfg: GemsConfig
   ): F[PauseResume[F]]
 
   val stateGetter: GemsWfsState[F]

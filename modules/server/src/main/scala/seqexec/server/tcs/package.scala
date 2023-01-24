@@ -55,7 +55,7 @@ package tcs {
 
 }
 
-package object tcs                                       {
+package object tcs {
   val BottomPort: Int  = 1
   val InvalidPort: Int = 0
 

@@ -20,7 +20,7 @@ class AltairControllerDisabled[F[_]: Logger: Applicative] extends AltairControll
     resumeReasons: Gaos.ResumeConditionSet,
     currentOffset: FocalPlaneOffset,
     instrument:    Instrument
-  )(cfg:           AltairController.AltairConfig): F[AltairPauseResume[F]] =
+  )(cfg: AltairController.AltairConfig): F[AltairPauseResume[F]] =
     AltairPauseResume(
       overrideLogMessage("Altair", "pause AO loops").some,
       GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
