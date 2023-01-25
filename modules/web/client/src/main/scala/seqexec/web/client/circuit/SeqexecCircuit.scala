@@ -143,8 +143,8 @@ object SeqexecCircuit
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
   def obsProgressReader[P <: Progress: Eq](
-    id:                     Observation.Id,
-    stepId:                 StepId
+    id:     Observation.Id,
+    stepId: StepId
   )(implicit progressPrism: Prism[Progress, P]): ModelR[SeqexecAppRootModel, Option[P]] =
     this.zoomO(AllObservationsProgressState.progressStateO[P](id, stepId))
 

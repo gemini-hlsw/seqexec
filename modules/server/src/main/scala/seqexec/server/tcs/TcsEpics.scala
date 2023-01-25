@@ -200,7 +200,7 @@ trait TcsEpics[F[_]] {
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                  Temporal[F]
+    T: Temporal[F]
   ): F[Unit]
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
@@ -912,7 +912,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Temporal[F]
+    T: Temporal[F]
   ): F[Unit] =
     T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *> (
       if (stabilizationTime.isZero) {

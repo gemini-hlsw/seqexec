@@ -232,7 +232,7 @@ object LogArea {
     (_, _, _, _, _, _) => IconCopyOutline.clazz(SeqexecStyles.logIconHeader)
 
   private def colBuilder(b: Backend, size: Size)(
-    r:                      ColumnRenderArgs[TableColumn]
+    r: ColumnRenderArgs[TableColumn]
   ): Table.ColumnArg =
     r match {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>

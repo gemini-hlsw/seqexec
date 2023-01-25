@@ -37,7 +37,7 @@ trait GdsClient[F[_]] extends Http4sClientDsl[F] {
 object GdsClient {
 
   def apply[F[_]](base: Client[F], gdsUri: Uri)(implicit
-    timer:              Async[F]
+    timer: Async[F]
   ): GdsClient[F] = new GdsClient[F] {
 
     private val client = {

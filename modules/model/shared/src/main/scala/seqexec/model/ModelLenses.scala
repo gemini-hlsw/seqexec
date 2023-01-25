@@ -42,7 +42,7 @@ trait ModelLenses {
   val sequenceStepT: Traversal[SequenceView, Step] =
     obsStepsL.andThen( // sequence steps
       eachStepT
-    )                  // each step
+    ) // each step
 
   // Focus on a param value
   def paramValueL(param: ParamName): Lens[Parameters, Option[String]] =
@@ -69,10 +69,10 @@ trait ModelLenses {
     param:  String
   ): Optional[StepConfig, String] =
     systemConfigL(system)
-      .andThen(      // observe parameters
+      .andThen( // observe parameters
         some[Parameters]
       )
-      .andThen(      // focus on the option
+      .andThen( // focus on the option
         paramValueL(system.withParam(param))
       )
       .andThen(      // find the target name
@@ -114,7 +114,7 @@ trait ModelLenses {
       )
       .andThen( // Find the queue
         eachViewT
-      )         // each sequence on the queue
+      ) // each sequence on the queue
 
   // Composite lens to change the sequence name of an event
   val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
@@ -130,7 +130,7 @@ trait ModelLenses {
       )
       .andThen( // each sequence on the queue
         obsNameL
-      )         // sequence's observation name
+      ) // sequence's observation name
 
   // Composite lens to find the step config
   val sequenceConfigT: Traversal[SeqexecEvent, StepConfig] =
@@ -152,7 +152,7 @@ trait ModelLenses {
       )
       .andThen( // each step
         Step.config
-      )         // configuration of the step
+      ) // configuration of the step
 
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
     new PTraversal[Map[K, V], Map[K, V], V, V] {
@@ -175,7 +175,7 @@ trait ModelLenses {
   val scienceTargetNameO: Optional[Parameters, TargetName] =
     paramValueL(SystemName.Observe.withParam("object")).andThen( // find the target name
       some[String]
-    )                                                            // focus on the option
+    ) // focus on the option
 
   val signedArcsecFormat: Format[String, Angle]                     =
     Format[String, BigDecimal](_.parseBigDecimalOption, _.toString)
@@ -286,13 +286,13 @@ trait ModelLenses {
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =
     Step.config
-      .andThen(          // configuration of the step
+      .andThen( // configuration of the step
         systemConfigL(SystemName.Telescope)
       )
-      .andThen(          // Observe config
+      .andThen( // Observe config
         some[Parameters]
       )
-      .andThen(          // some
+      .andThen( // some
         paramValuesWithPrefixT(
           SystemName.Telescope.withParam("guideWith")
         )
@@ -309,7 +309,7 @@ trait ModelLenses {
       )
       .andThen( // science steps
         scienceTargetNameO
-      )         // science target name
+      ) // science target name
 
   // Composite lens to find the sequence obs class
   val obsClassT: Traversal[SequenceView, String] =
@@ -354,7 +354,7 @@ trait ModelLenses {
       )
       .andThen( // science steps
         scienceTargetNameO
-      )         // science target name
+      ) // science target name
 
 }
 

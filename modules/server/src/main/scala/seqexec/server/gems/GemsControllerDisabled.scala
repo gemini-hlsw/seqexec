@@ -15,7 +15,7 @@ class GemsControllerDisabled[F[_]: Logger: Applicative] extends GemsController[F
   override def pauseResume(
     pauseReasons:  Gaos.PauseConditionSet,
     resumeReasons: Gaos.ResumeConditionSet
-  )(cfg:           GemsController.GemsConfig): F[Gaos.PauseResume[F]] =
+  )(cfg: GemsController.GemsConfig): F[Gaos.PauseResume[F]] =
     PauseResume(
       overrideLogMessage("GeMS", "pause AO loops").some,
       overrideLogMessage("GeMS", "resume AO loops").some

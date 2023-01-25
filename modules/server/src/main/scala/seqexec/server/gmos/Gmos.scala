@@ -51,7 +51,7 @@ abstract class Gmos[F[_]: Temporal: Logger, T <: GmosController.SiteDependentTyp
   val controller: GmosController[F, T],
   ss:             SiteSpecifics[T],
   nsCmdR:         Ref[F, Option[NSObserveCommand]]
-)(configTypes:    GmosController.Config[T])
+)(configTypes: GmosController.Config[T])
     extends DhsInstrument[F]
     with InstrumentSystem[F] {
   import Gmos._

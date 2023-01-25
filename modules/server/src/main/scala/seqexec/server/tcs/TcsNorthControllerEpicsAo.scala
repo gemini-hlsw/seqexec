@@ -44,7 +44,7 @@ trait TcsNorthControllerEpicsAo[F[_]] {
 object TcsNorthControllerEpicsAo {
 
   private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit
-    L:                                                                     Logger[F]
+    L: Logger[F]
   ) extends TcsNorthControllerEpicsAo[F]
       with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
@@ -234,12 +234,12 @@ object TcsNorthControllerEpicsAo {
     ).flattenOption
 
     private def calcGuideOffCapabilities(m2Name: TipTiltSource, m1Name: M1Source)(
-      tcsGuideCurrent:                           TelescopeGuideConfig,
-      guiderCurrent:                             GuiderConfig,
-      tcsGuideDemand:                            TelescopeGuideConfig,
-      guiderDemand:                              GuiderConfig,
-      distanceSquared:                           Option[Area],
-      threshold:                                 Option[Length]
+      tcsGuideCurrent: TelescopeGuideConfig,
+      guiderCurrent:   GuiderConfig,
+      tcsGuideDemand:  TelescopeGuideConfig,
+      guiderDemand:    GuiderConfig,
+      distanceSquared: Option[Area],
+      threshold:       Option[Length]
     ): GuideCapabilities = {
       val canGuideWhileOffseting = (distanceSquared, threshold) match {
         case (None, _)           => true

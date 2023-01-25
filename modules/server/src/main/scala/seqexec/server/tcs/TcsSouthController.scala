@@ -35,7 +35,7 @@ trait TcsSouthController[F[_]] {
   def nod(
     subsystems: NonEmptySet[Subsystem],
     tcsConfig:  TcsSouthConfig
-  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
+  )(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit]
 
 }
 

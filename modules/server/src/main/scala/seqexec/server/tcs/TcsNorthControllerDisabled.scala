@@ -25,6 +25,6 @@ class TcsNorthControllerDisabled[F[_]: Logger] extends TcsNorthController[F] {
   override def nod(
     subsystems: NonEmptySet[TcsController.Subsystem],
     tcsConfig:  TcsNorthConfig
-  )(stage:      NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean): F[Unit] =
+  )(stage: NodAndShuffleStage, offset: TcsController.InstrumentOffset, guided: Boolean): F[Unit] =
     overrideLogMessage("TCS", s"nod(${stage.symbol})")
 }

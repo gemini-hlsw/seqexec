@@ -21,7 +21,7 @@ object AltairControllerSim {
       resumeReasons: ResumeConditionSet,
       currentOffset: TcsController.FocalPlaneOffset,
       instrument:    Instrument
-    )(cfg:           AltairController.AltairConfig): F[AltairPauseResume[F]] =
+    )(cfg: AltairController.AltairConfig): F[AltairPauseResume[F]] =
       AltairPauseResume(
         L.info(s"Simulate pausing Altair loops because of $pauseReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
