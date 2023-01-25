@@ -44,7 +44,7 @@ import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import squants.time.Milliseconds
-import squants.time.Minutes
+import squants.time.Seconds
 import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
 
@@ -58,6 +58,8 @@ final case class Ghost[F[_]: Logger: Async](
   val fallbackReadouTimeRed: Duration = ReadoutTimesLUT.map(_.readRed).max
 
   val fallbackReadouTimeBlue: Duration = ReadoutTimesLUT.map(_.readBlue).max
+
+  val readOutTimeExtra: Time = Seconds(5)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
@@ -110,7 +112,7 @@ final case class Ghost[F[_]: Logger: Async](
     val blueTotal = config.blueConfig.count.toLong * (config.blueConfig.exposure + blue)
     val redTotal  = config.redConfig.count.toLong * (config.redConfig.exposure + red)
 
-    Milliseconds(blueTotal.max(redTotal).toMillis)
+    Milliseconds(blueTotal.max(redTotal).toMillis) + readOutTimeExtra
   }
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
