@@ -148,7 +148,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVNRegions, 1) |+|
       giapiConfig(GhostSVRcf, 2) |+|
       giapiConfig(GhostSVCcf, 2) |+|
-      giapiConfig(GhostSVImageType, "OBJECT") |+|
+      giapiConfig(GhostSVImageType, imageTypeConf) |+|
       giapiConfig(GhostSVXO, 375) |+|
       giapiConfig(GhostSVYO, 325) |+|
       giapiConfig(GhostSVWidth, 150) |+|
@@ -166,7 +166,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVHIRedThreshold, 0) |+|
       giapiConfig(GhostSVHIRedThresholdEnabled, 0) |+|
       giapiConfig(GhostSVZeroAccumulatedFlux, 1) |+|
-      giapiConfig(GhostSVDoContinuous, 1)
+      giapiConfig(GhostSVDoContinuous, 0)
 
   def baseAGConfig: Configuration =
     giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
@@ -209,6 +209,11 @@ sealed trait GhostConfig extends GhostLUT {
       .getOrElse(AGMinimumTime)
   }
 
+  def svCalib: Configuration =
+    baseSVConfig |+|
+      giapiConfig(GhostSVDuration, 6000) |+| // 6 sec for sv on calbirations
+      giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
+
   def svConfiguration(mag: Option[Double]): Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, (svCameraTime(mag) * SVDurationFactor).toInt) |+|
@@ -231,6 +236,7 @@ sealed trait GhostConfig extends GhostLUT {
   def configuration: Configuration = baseConfiguration |+| (
     if (!isScience) {
       ifuCalibration |+| channelConfig |+|
+        svCalib |+|
         GhostConfig.fiberConfig1(fiberAgitator1) |+|
         GhostConfig.fiberConfig2(fiberAgitator2)
     } else
