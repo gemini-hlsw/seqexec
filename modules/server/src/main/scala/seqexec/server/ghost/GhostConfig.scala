@@ -211,7 +211,7 @@ sealed trait GhostConfig extends GhostLUT {
 
   def svCalib: Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, 6000) |+| // 6 sec for sv on calbirations
+      giapiConfig(GhostSVDuration, 60) |+| // 6 sec for sv on calbirations
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =

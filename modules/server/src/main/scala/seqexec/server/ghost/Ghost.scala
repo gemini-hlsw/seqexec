@@ -116,8 +116,7 @@ final case class Ghost[F[_]: Logger: Async](
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
     ghostConfig.map(c =>
-      if (!c.isScience) Minutes(6) // we can't yet calculate how long a bias takes
-      else totalObserveTime(c)
+      totalObserveTime(c)
     )
   }
 
