@@ -59,7 +59,7 @@ final case class Ghost[F[_]: Logger: Async](
 
   val fallbackReadouTimeBlue: Duration = ReadoutTimesLUT.map(_.readBlue).max
 
-  val readOutTimeExtra: Time = Seconds(5)
+  val readOutTimeExtra: Time = Seconds(10)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
