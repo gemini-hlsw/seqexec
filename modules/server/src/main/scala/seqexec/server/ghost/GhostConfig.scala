@@ -46,6 +46,8 @@ sealed trait GhostConfig extends GhostLUT {
 
   def baseConfiguration: Configuration = Configuration.Zero
 
+  def slitMaskConfiguration: Configuration
+
   def targetConfig(t: GemTarget, i: Int): Configuration =
     // Note the base coordinates are already PM corrected in the OT
     t match {
@@ -233,7 +235,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
-  def configuration: Configuration = baseConfiguration |+| (
+  def configuration: Configuration = baseConfiguration |+| slitMaskConfiguration |+| (
     if (!isScience) {
       ifuCalibration |+| channelConfig |+|
         svCalib |+|
@@ -263,7 +265,6 @@ object GhostConfig {
     ifuTargetType: IFUTargetType,
     coordinates:   Coordinates,
     bundleConfig:  BundleConfig
-    // guideConfig:   Option[]
   ): Configuration = {
     def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
@@ -510,6 +511,9 @@ case class GhostCalibration(
   override val conditions:     Conditions
 ) extends GhostConfig {
 
+  override val slitMaskConfiguration: Configuration =
+    giapiConfig(GhostSlitMaskPositioner, "SMP_STD_ONLY")
+
   override val baseConfiguration: Configuration =
     Configuration.Zero
   // giapiConfig(GhostAGCcdRequestType, "CCD_CAMERA_SET") |+|
@@ -544,6 +548,9 @@ sealed trait StandardResolutionMode extends GhostConfig {
   import StandardResolutionMode._
 
   def ifu1Coordinates: Coordinates
+
+  override val slitMaskConfiguration: Configuration =
+    giapiConfig(GhostSlitMaskPositioner, "SMP_STD_ONLY")
 
   override def ifu1TargetType: IFUTargetType =
     this match {
@@ -744,6 +751,9 @@ object StandardResolutionMode {
 
 sealed trait HighResolutionMode extends GhostConfig {
   import HighResolutionMode._
+
+  override val slitMaskConfiguration: Configuration =
+    giapiConfig(GhostSlitMaskPositioner, "SMP_HI_ONLY")
 
   override def ifu1BundleType: BundleConfig = BundleConfig.HighRes
 
