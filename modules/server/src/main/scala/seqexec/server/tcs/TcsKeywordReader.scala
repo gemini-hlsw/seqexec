@@ -529,7 +529,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
 
     override def f2InstPort: F[Int] = sys.f2Port.safeValOrDefault
 
-    override def ghostInstPort: F[Int] = sys.f2Port.safeValOrDefault
+    override def ghostInstPort: F[Int] = sys.ghostPort.safeValOrDefault
 
     override def crFollow: F[Option[CRFollow]] =
       sys.crTrackingFrame

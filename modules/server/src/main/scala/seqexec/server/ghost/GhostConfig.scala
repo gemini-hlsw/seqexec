@@ -91,14 +91,10 @@ sealed trait GhostConfig extends GhostLUT {
   def ifu1Config: Configuration =
     GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
 
-  def imageTypeConf = obsType.toLowerCase match {
-    case "bias" => "BIAS"
-    case "flat" => "FLAT"
-    case "dark" => "DARK"
-    case _      => "OBJECT"
-  }
-
-  def isScience: Boolean = obsType.equalsIgnoreCase("object")
+  def isBias: Boolean = imageTypeConf(obsType).equalsIgnoreCase("BIAS")
+  def isFlat: Boolean = imageTypeConf(obsType).equalsIgnoreCase("FLAT")
+  def isArc: Boolean  = imageTypeConf(obsType).equalsIgnoreCase("ARC")
+  def isDark: Boolean = imageTypeConf(obsType).equalsIgnoreCase("DARK")
 
   def ifu2Configuration: Configuration
 
@@ -114,7 +110,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostBlueUnit, 0.001) |+|
       giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
       giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
-      giapiConfig(GhostBlueImageType, imageTypeConf) |+|
+      giapiConfig(GhostBlueImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostBlueDoDisplay, 1) |+|
       giapiConfig(GhostBlueDoFlush, 1) |+|
       giapiConfig(GhostBlueDoContinuous, 0) |+|
@@ -128,7 +124,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostRedUnit, 0.001) |+|
       giapiConfig(GhostRedRequestType, "HARDWARE") |+|
       giapiConfig(GhostRedExposureCount, redConfig.count) |+|
-      giapiConfig(GhostRedImageType, imageTypeConf) |+|
+      giapiConfig(GhostRedImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostRedDoDisplay, 1) |+|
       giapiConfig(GhostRedDoFlush, 1) |+|
       giapiConfig(GhostRedDoContinuous, 0) |+|
@@ -147,7 +143,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVNRegions, 1) |+|
       giapiConfig(GhostSVRcf, 2) |+|
       giapiConfig(GhostSVCcf, 2) |+|
-      giapiConfig(GhostSVImageType, imageTypeConf) |+|
+      giapiConfig(GhostSVImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostSVXO, 375) |+|
       giapiConfig(GhostSVYO, 325) |+|
       giapiConfig(GhostSVWidth, 150) |+|
@@ -183,11 +179,11 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGSimulateFlux, 0) |+|
       giapiConfig(GhostAGDoContinuous, 1)
 
-  val SVDurationFactor = 10
+  val SVDurationFactor = 1000
 
   def svCalib: Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, 60) |+| // 6 sec for sv on calbirations
+      giapiConfig(GhostSVDuration, svCalibExposureTime(obsType).toMillis.toInt) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =
@@ -203,7 +199,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
   def thXeLamp: Configuration =
-    if (isScience && resolutionMode === Some(ResolutionMode.GhostPRV)) {
+    if (isScience(obsType) && resolutionMode === Some(ResolutionMode.GhostPRV)) {
       giapiConfig(GhostThXeLamp, 1)
     } else {
       giapiConfig(GhostThXeLamp, 0)
@@ -213,7 +209,7 @@ sealed trait GhostConfig extends GhostLUT {
     println(this)
     println(slitMaskConfiguration)
     baseConfiguration |+| slitMaskConfiguration |+| (
-      if (!isScience) {
+      if (!isScience(obsType)) {
         ifuCalibration |+| channelConfig |+|
           svCalib |+|
           GhostConfig.fiberConfig1(fiberAgitator1) |+|

@@ -15,6 +15,7 @@ import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import seqexec.server.keywords._
 import edu.gemini.spModel.target.env.ResolutionMode
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import seqexec.model.Conditions
 
 sealed trait GhostKeywordsReader[F[_]] {
@@ -114,6 +115,7 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     (for {
       baseRAHMS  <- raExtractor(SPGhost.BASE_RA_HMS)
       baseDecDMS <- decExtractor(SPGhost.BASE_DEC_DMS)
+      obsType    <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
       srifu1Name  = extractor[String](config, SPGhost.SRIFU1_NAME)
       srifu2Name  = extractor[String](config, SPGhost.SRIFU2_NAME)
       hrifu1Name  = extractor[String](config, SPGhost.HRIFU1_NAME)
@@ -172,7 +174,12 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
       val slitCount: F[Option[Int]]           = 1.some.pure[F]
       val slitDuration: F[Option[Double]]     =
-        conditions.get.map(c => svCameraTime(c, vMag.orElse(gMag)).some)
+        if (isScience(obsType))
+          conditions.get.map { c =>
+            svCameraTime(c, vMag.orElse(gMag)).some
+          }
+        else
+          (svCalibExposureTime(obsType).toMillis / 1000.0).some.pure[F]
       val exposureDuration: F[Option[Double]] =
         exposureTime(redExposure.toOption,
                      redExpCount.toOption,

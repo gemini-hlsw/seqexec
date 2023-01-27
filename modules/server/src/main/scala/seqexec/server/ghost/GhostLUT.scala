@@ -157,6 +157,29 @@ trait GhostLUT {
       .getOrElse(AGMinimumTime)
   }
 
+  def imageTypeConf(obsType: String) = obsType.toLowerCase match {
+    case "bias" => "BIAS"
+    case "flat" => "FLAT"
+    case "dark" => "DARK"
+    case "arc"  => "ARC"
+    case _      => "OBJECT"
+  }
+
+  def isScience(obsType: String): Boolean = obsType.equalsIgnoreCase("object")
+
+  val BiasSVTime = 0.seconds
+  val FlatSVTime = 6.seconds
+  val ArcSVTime  = 300.seconds
+
+  def svCalibExposureTime(obsType: String) = {
+    val isBias: Boolean = imageTypeConf(obsType).equalsIgnoreCase("BIAS")
+    val isFlat: Boolean = imageTypeConf(obsType).equalsIgnoreCase("FLAT")
+    val isArc: Boolean  = imageTypeConf(obsType).equalsIgnoreCase("ARC")
+    // val isDark: Boolean = imageTypeConf(obsType).equalsIgnoreCase("DARK")
+
+    if (isBias) BiasSVTime else if (isFlat) FlatSVTime else if (isArc) ArcSVTime else 0.seconds
+  }
+
 }
 
 object GhostLUT extends GhostLUT
