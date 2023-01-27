@@ -19,9 +19,6 @@ import lucuma.core.enums.GiapiStatusApply
 import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 import edu.gemini.spModel.target.env.ResolutionMode
-import seqexec.model.enum.ImageQuality
-import seqexec.model.enum.CloudCover
-import seqexec.model.enum.SkyBackground
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {
@@ -188,29 +185,6 @@ sealed trait GhostConfig extends GhostLUT {
 
   val SVDurationFactor = 10
 
-  def isPoorWeather =
-    conditions.sb >= SkyBackground.Percent80 || conditions.cc >= CloudCover.Percent80 || conditions.iq === ImageQuality.Any || conditions.sb === SkyBackground.Unknown || conditions.cc === CloudCover.Unknown || conditions.iq === ImageQuality.Unknown
-
-  def svCameraTime(mag: Option[Double]): Double = {
-    val times = mag
-      .flatMap(mag =>
-        SVCameraTimesLUT
-          .find(_.gMag > mag)
-      )
-      .getOrElse(SVMinimumTime)
-    if (isPoorWeather) times.poorWeather else times.goodWeather
-  }
-
-  def agCameraTime(mag: Option[Double]): Double = {
-    val times = mag
-      .flatMap(mag =>
-        GuideCameraTimesLUT
-          .find(_.gMag > mag)
-      )
-    (if (isPoorWeather) times.map(_.poorWeather) else times.map(_.goodWeather))
-      .getOrElse(AGMinimumTime)
-  }
-
   def svCalib: Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, 60) |+| // 6 sec for sv on calbirations
@@ -218,14 +192,14 @@ sealed trait GhostConfig extends GhostLUT {
 
   def svConfiguration(mag: Option[Double]): Configuration =
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, (svCameraTime(mag) * SVDurationFactor).toInt) |+|
+      giapiConfig(GhostSVDuration, (svCameraTime(conditions, mag) * SVDurationFactor).toInt) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   val AGDurationFactor = 10
 
   def agConfiguration(mag: Option[Double]): Configuration =
     baseAGConfig |+|
-      giapiConfig(GhostAGDuration, (agCameraTime(mag) * AGDurationFactor).toInt) |+|
+      giapiConfig(GhostAGDuration, (agCameraTime(conditions, mag) * AGDurationFactor).toInt) |+|
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
   def thXeLamp: Configuration =

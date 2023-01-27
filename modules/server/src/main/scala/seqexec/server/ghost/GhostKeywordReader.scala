@@ -5,6 +5,7 @@ package seqexec.server.ghost
 
 import cats.Applicative
 import cats.effect.Sync
+import cats.effect.Ref
 import cats.syntax.all._
 import seqexec.server.CleanConfig
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
@@ -14,6 +15,7 @@ import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import seqexec.server.keywords._
 import edu.gemini.spModel.target.env.ResolutionMode
+import seqexec.model.Conditions
 
 sealed trait GhostKeywordsReader[F[_]] {
   def basePos: F[Boolean]
@@ -33,8 +35,8 @@ sealed trait GhostKeywordsReader[F[_]] {
   def blueReadMode: F[Option[String]]
   def resolutionMode: F[Option[String]]
   def targetMode: F[Option[String]]
-  def slitCount: F[Int]
-  // def slitDuration: F[Double]
+  def slitCount: F[Option[Int]]
+  def slitDuration: F[Option[Double]]
 }
 
 final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
@@ -55,8 +57,8 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val blueReadMode: F[Option[String]]   = strDefault[F].map(_.some)
   val resolutionMode: F[Option[String]] = strDefault[F].map(_.some)
   val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
-  val slitCount: F[Int]                 = intDefault[F]
-  // val slitDuration: F[Double]           = doubleDefault[F]
+  val slitCount: F[Option[Int]]         = intDefault[F].map(_.some)
+  val slitDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
 }
 
 object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
@@ -89,7 +91,10 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     case _                                        => None
   }
 
-  def apply[F[_]: Sync](config: CleanConfig): GhostKeywordsReader[F] = {
+  def apply[F[_]: Sync](
+    config:     CleanConfig,
+    conditions: Ref[F, Conditions]
+  ): GhostKeywordsReader[F] = {
     val raExtractor     = raExtractorBase(config)
     val decExtractor    = decExtractorBase(config)
     val defaultKeywords = new DefaultGhostKeywordsReader()
@@ -123,6 +128,17 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       rm              =
         config
           .extractInstAs[ResolutionMode](SPGhost.RESOLUTION_MODE)
+      vMag           <-
+        config
+          .extractInstAs[JDouble](SPGhost.MAG_V_PROP)
+          .map(_.doubleValue().some)
+          .recoverWith(_ => none.asRight)
+
+      gMag <-
+        config
+          .extractInstAs[JDouble](SPGhost.MAG_G_PROP)
+          .map(_.doubleValue().some)
+          .recoverWith(_ => none.asRight)
     } yield new GhostKeywordsReader[F] {
       val basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
       val srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
@@ -142,8 +158,9 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val resolutionMode: F[Option[String]] = rm.toOption.map(resolutionMode2String).pure[F]
       val targetMode: F[Option[String]]     =
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
-      val slitCount: F[Int]                 = 1.pure[F]
-      // val slitDuration: F[Double]
+      val slitCount: F[Option[Int]]         = 1.some.pure[F]
+      val slitDuration: F[Option[Double]]   =
+        conditions.get.map(c => svCameraTime(c, vMag.orElse(gMag)).some)
     }).getOrElse(defaultKeywords)
   }
 }

@@ -643,7 +643,7 @@ object SeqTranslate {
         case Instrument.Ghost                    =>
           GhostHeader.header[F](systemss.ghost.gdsClient,
                                 systemss.tcsKeywordReader,
-                                GhostKeywordsReader[F](config)
+                                GhostKeywordsReader[F](config, conditionsRef)
           )
         case Instrument.Niri                     =>
           NiriHeader.header[F](kwClient, systemss.niriKeywordReader, systemss.tcsKeywordReader)

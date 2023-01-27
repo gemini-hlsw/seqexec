@@ -4,7 +4,12 @@
 package seqexec.server.ghost
 
 import scala.concurrent.duration._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.ghost.GhostBinning
+import seqexec.model.Conditions
+import seqexec.model.enum.ImageQuality
+import seqexec.model.enum.CloudCover
+import seqexec.model.enum.SkyBackground
 
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
 final case class SVCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
@@ -128,6 +133,30 @@ trait GhostLUT {
     ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_EIGHT, 3.6.seconds, 4.9.seconds),
     ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.FOUR_BY_FOUR, 4.7.seconds, 5.8.seconds)
   )
+
+  def isPoorWeather(conditions: Conditions) =
+    conditions.sb >= SkyBackground.Percent80 || conditions.cc >= CloudCover.Percent80 || conditions.iq === ImageQuality.Any || conditions.sb === SkyBackground.Unknown || conditions.cc === CloudCover.Unknown || conditions.iq === ImageQuality.Unknown
+
+  def svCameraTime(conditions: Conditions, mag: Option[Double]): Double = {
+    val times = mag
+      .flatMap(mag =>
+        SVCameraTimesLUT
+          .find(_.gMag > mag)
+      )
+      .getOrElse(SVMinimumTime)
+    if (isPoorWeather(conditions)) times.poorWeather else times.goodWeather
+  }
+
+  def agCameraTime(conditions: Conditions, mag: Option[Double]): Double = {
+    val times = mag
+      .flatMap(mag =>
+        GuideCameraTimesLUT
+          .find(_.gMag > mag)
+      )
+    (if (isPoorWeather(conditions)) times.map(_.poorWeather) else times.map(_.goodWeather))
+      .getOrElse(AGMinimumTime)
+  }
+
 }
 
 object GhostLUT extends GhostLUT
