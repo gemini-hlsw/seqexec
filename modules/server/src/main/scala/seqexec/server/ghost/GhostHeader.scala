@@ -47,7 +47,8 @@ object GhostHeader {
             buildString(ghostKeywordsReader.targetMode.orDefault, KeywordName.TARGETM),
             buildString(ghostKeywordsReader.resolutionMode.orDefault, KeywordName.RESOLUT),
             buildInt32(ghostKeywordsReader.slitCount.orDefault, KeywordName.NSLITEXP),
-            buildDouble(ghostKeywordsReader.slitDuration.orDefault, KeywordName.SLITEXPT)
+            buildDouble(ghostKeywordsReader.slitDuration.orDefault, KeywordName.SLITEXPT),
+            buildDouble(ghostKeywordsReader.exposureDuration.orDefault, KeywordName.EXPTIME)
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

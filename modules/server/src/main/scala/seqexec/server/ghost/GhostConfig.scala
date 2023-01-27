@@ -209,21 +209,25 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
-  def configuration: Configuration = baseConfiguration |+| slitMaskConfiguration |+| (
-    if (!isScience) {
-      ifuCalibration |+| channelConfig |+|
-        svCalib |+|
-        GhostConfig.fiberConfig1(fiberAgitator1) |+|
-        GhostConfig.fiberConfig2(fiberAgitator2)
-    } else
-      {
-        ifu1Config |+| ifu2Config |+|
-          GhostConfig.fiberConfig1(FiberAgitator.None) |+|
-          GhostConfig.fiberConfig2(FiberAgitator.None)
-      } |+|
-        userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-        svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+| */ thXeLamp
-  )
+  def configuration: Configuration = {
+    println(this)
+    println(slitMaskConfiguration)
+    baseConfiguration |+| slitMaskConfiguration |+| (
+      if (!isScience) {
+        ifuCalibration |+| channelConfig |+|
+          svCalib |+|
+          GhostConfig.fiberConfig1(fiberAgitator1) |+|
+          GhostConfig.fiberConfig2(fiberAgitator2)
+      } else
+        {
+          ifu1Config |+| ifu2Config |+|
+            GhostConfig.fiberConfig1(FiberAgitator.None) |+|
+            GhostConfig.fiberConfig2(FiberAgitator.None)
+        } |+|
+          userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
+          svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+| */ thXeLamp
+    )
+  }
 
 }
 

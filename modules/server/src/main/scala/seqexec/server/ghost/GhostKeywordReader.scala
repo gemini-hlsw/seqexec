@@ -33,6 +33,7 @@ sealed trait GhostKeywordsReader[F[_]] {
   def blueDuration: F[Option[Double]]
   def blueCcds: F[Option[String]]
   def blueReadMode: F[Option[String]]
+  def exposureDuration: F[Option[Double]]
   def resolutionMode: F[Option[String]]
   def targetMode: F[Option[String]]
   def slitCount: F[Option[Int]]
@@ -40,25 +41,26 @@ sealed trait GhostKeywordsReader[F[_]] {
 }
 
 final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
-  val basePos: F[Boolean]               = true.pure[F]
-  val srifu1: F[String]                 = "".pure[F]
-  val srifu2: F[String]                 = "".pure[F]
-  val hrifu1: F[String]                 = "".pure[F]
-  val hrifu2: F[String]                 = "".pure[F]
-  val fiberAgitator1Enabled: F[Boolean] = false.pure[F]
-  val fiberAgitator2Enabled: F[Boolean] = false.pure[F]
-  val redCount: F[Option[Int]]          = intDefault[F].map(_.some)
-  val redDuration: F[Option[Double]]    = doubleDefault[F].map(_.some)
-  val redCcds: F[Option[String]]        = strDefault[F].map(_.some)
-  val redReadMode: F[Option[String]]    = strDefault[F].map(_.some)
-  val blueCount: F[Option[Int]]         = intDefault[F].map(_.some)
-  val blueDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
-  val blueCcds: F[Option[String]]       = strDefault[F].map(_.some)
-  val blueReadMode: F[Option[String]]   = strDefault[F].map(_.some)
-  val resolutionMode: F[Option[String]] = strDefault[F].map(_.some)
-  val targetMode: F[Option[String]]     = strDefault[F].map(_.some)
-  val slitCount: F[Option[Int]]         = intDefault[F].map(_.some)
-  val slitDuration: F[Option[Double]]   = doubleDefault[F].map(_.some)
+  val basePos: F[Boolean]                 = true.pure[F]
+  val srifu1: F[String]                   = "".pure[F]
+  val srifu2: F[String]                   = "".pure[F]
+  val hrifu1: F[String]                   = "".pure[F]
+  val hrifu2: F[String]                   = "".pure[F]
+  val fiberAgitator1Enabled: F[Boolean]   = false.pure[F]
+  val fiberAgitator2Enabled: F[Boolean]   = false.pure[F]
+  val redCount: F[Option[Int]]            = intDefault[F].map(_.some)
+  val redDuration: F[Option[Double]]      = doubleDefault[F].map(_.some)
+  val redCcds: F[Option[String]]          = strDefault[F].map(_.some)
+  val redReadMode: F[Option[String]]      = strDefault[F].map(_.some)
+  val blueCount: F[Option[Int]]           = intDefault[F].map(_.some)
+  val blueDuration: F[Option[Double]]     = doubleDefault[F].map(_.some)
+  val blueCcds: F[Option[String]]         = strDefault[F].map(_.some)
+  val blueReadMode: F[Option[String]]     = strDefault[F].map(_.some)
+  val resolutionMode: F[Option[String]]   = strDefault[F].map(_.some)
+  val targetMode: F[Option[String]]       = strDefault[F].map(_.some)
+  val slitCount: F[Option[Int]]           = intDefault[F].map(_.some)
+  val slitDuration: F[Option[Double]]     = doubleDefault[F].map(_.some)
+  val exposureDuration: F[Option[Double]] = doubleDefault[F].map(_.some)
 }
 
 object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
@@ -90,6 +92,16 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     case (None, None, Some(_), Some("Sky (PRV)")) => "HRIFU Target, Sky (PRV)".some
     case _                                        => None
   }
+
+  def exposureTime(
+    redDuration:  Option[Double],
+    redCount:     Option[Int],
+    blueDuration: Option[Double],
+    blueCount:    Option[Int]
+  ): Option[Double] = (redDuration, redCount, blueDuration, blueCount).mapN(
+    (redDuration, redCount, blueDuration, blueCount) =>
+      (redDuration * redCount).max(blueDuration * blueCount)
+  )
 
   def apply[F[_]: Sync](
     config:     CleanConfig,
@@ -140,27 +152,33 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
           .map(_.doubleValue().some)
           .recoverWith(_ => none.asRight)
     } yield new GhostKeywordsReader[F] {
-      val basePos: F[Boolean]               = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
-      val srifu1: F[String]                 = srifu1Name.getOrElse("    ").pure[F]
-      val srifu2: F[String]                 = srifu2Name.getOrElse("    ").pure[F]
-      val hrifu1: F[String]                 = hrifu1Name.getOrElse("    ").pure[F]
-      val hrifu2: F[String]                 = hrifu2Name.getOrElse("    ").pure[F]
-      val fiberAgitator1Enabled: F[Boolean] = fiberAgitator1.getOrElse(false).pure[F]
-      val fiberAgitator2Enabled: F[Boolean] = fiberAgitator2.getOrElse(false).pure[F]
-      val redCount: F[Option[Int]]          = redExpCount.toOption.pure[F]
-      val redDuration: F[Option[Double]]    = redExposure.toOption.pure[F]
-      val redCcds: F[Option[String]]        = redBinning.toOption.map(_.displayValue()).pure[F]
-      val redReadMode: F[Option[String]]    = redExpReadMode.toOption.map(readMode2String).pure[F]
-      val blueCount: F[Option[Int]]         = blueExpCount.toOption.pure[F]
-      val blueDuration: F[Option[Double]]   = blueExposure.toOption.pure[F]
-      val blueCcds: F[Option[String]]       = blueBinning.toOption.map(_.displayValue()).pure[F]
-      val blueReadMode: F[Option[String]]   = blueExpReadMode.toOption.map(readMode2String).pure[F]
-      val resolutionMode: F[Option[String]] = rm.toOption.map(resolutionMode2String).pure[F]
-      val targetMode: F[Option[String]]     =
+      val basePos: F[Boolean]                 = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
+      val srifu1: F[String]                   = srifu1Name.getOrElse("    ").pure[F]
+      val srifu2: F[String]                   = srifu2Name.getOrElse("    ").pure[F]
+      val hrifu1: F[String]                   = hrifu1Name.getOrElse("    ").pure[F]
+      val hrifu2: F[String]                   = hrifu2Name.getOrElse("    ").pure[F]
+      val fiberAgitator1Enabled: F[Boolean]   = fiberAgitator1.getOrElse(false).pure[F]
+      val fiberAgitator2Enabled: F[Boolean]   = fiberAgitator2.getOrElse(false).pure[F]
+      val redCount: F[Option[Int]]            = redExpCount.toOption.pure[F]
+      val redDuration: F[Option[Double]]      = redExposure.toOption.pure[F]
+      val redCcds: F[Option[String]]          = redBinning.toOption.map(_.displayValue()).pure[F]
+      val redReadMode: F[Option[String]]      = redExpReadMode.toOption.map(readMode2String).pure[F]
+      val blueCount: F[Option[Int]]           = blueExpCount.toOption.pure[F]
+      val blueDuration: F[Option[Double]]     = blueExposure.toOption.pure[F]
+      val blueCcds: F[Option[String]]         = blueBinning.toOption.map(_.displayValue()).pure[F]
+      val blueReadMode: F[Option[String]]     = blueExpReadMode.toOption.map(readMode2String).pure[F]
+      val resolutionMode: F[Option[String]]   = rm.toOption.map(resolutionMode2String).pure[F]
+      val targetMode: F[Option[String]]       =
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
-      val slitCount: F[Option[Int]]         = 1.some.pure[F]
-      val slitDuration: F[Option[Double]]   =
+      val slitCount: F[Option[Int]]           = 1.some.pure[F]
+      val slitDuration: F[Option[Double]]     =
         conditions.get.map(c => svCameraTime(c, vMag.orElse(gMag)).some)
+      val exposureDuration: F[Option[Double]] =
+        exposureTime(redExposure.toOption,
+                     redExpCount.toOption,
+                     blueExposure.toOption,
+                     blueExpCount.toOption
+        ).pure[F]
     }).getOrElse(defaultKeywords)
   }
 }
