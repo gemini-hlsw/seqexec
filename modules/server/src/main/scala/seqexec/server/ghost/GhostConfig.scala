@@ -508,11 +508,13 @@ case class GhostCalibration(
   override val fiberAgitator1: FiberAgitator,
   override val fiberAgitator2: FiberAgitator,
   override val resolutionMode: Option[ResolutionMode],
-  override val conditions:     Conditions
+  override val conditions:     Conditions,
+  val isHR:                    Boolean
 ) extends GhostConfig {
 
   override val slitMaskConfiguration: Configuration =
-    giapiConfig(GhostSlitMaskPositioner, "SMP_STD_ONLY")
+    if (isHR) giapiConfig(GhostSlitMaskPositioner, "SMP_HI_ONLY")
+    else giapiConfig(GhostSlitMaskPositioner, "SMP_STD_ONLY")
 
   override val baseConfiguration: Configuration =
     Configuration.Zero

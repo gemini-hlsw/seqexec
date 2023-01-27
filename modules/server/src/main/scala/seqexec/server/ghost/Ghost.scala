@@ -117,9 +117,7 @@ final case class Ghost[F[_]: Logger: Async](
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
-    ghostConfig.map(c =>
-      totalObserveTime(c)
-    )
+    ghostConfig.map(c => totalObserveTime(c))
   }
 
   override def observeProgress(
@@ -300,7 +298,8 @@ object Ghost extends GhostConfigUtil {
                   conditions,
                   vMag.orElse(gMag)
                 )
-              } else
+              } else {
+                val isHR = hrifu1RAHMS.isDefined || hrifu2RAHMS.isDefined
                 GhostCalibration(
                   obsType = obsType,
                   obsClass = obsClass,
@@ -318,8 +317,10 @@ object Ghost extends GhostConfigUtil {
                   fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
                   fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
                   rm.toOption,
-                  conditions
+                  conditions,
+                  isHR
                 ).asRight
+              }
             }
           }
         } yield config).leftMap { e =>
