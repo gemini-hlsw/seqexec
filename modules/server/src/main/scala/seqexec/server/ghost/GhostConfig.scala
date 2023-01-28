@@ -144,8 +144,8 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVRcf, 2) |+|
       giapiConfig(GhostSVCcf, 2) |+|
       giapiConfig(GhostSVImageType, imageTypeConf(obsType)) |+|
-      giapiConfig(GhostSVXO, 375) |+|
-      giapiConfig(GhostSVYO, 325) |+|
+      giapiConfig(GhostSVXO, 400) |+|
+      giapiConfig(GhostSVYO, 340) |+|
       giapiConfig(GhostSVWidth, 150) |+|
       giapiConfig(GhostSVHeigth, 130) |+|
       giapiConfig(GhostSVIFU1BlueThreshold, 0) |+|
