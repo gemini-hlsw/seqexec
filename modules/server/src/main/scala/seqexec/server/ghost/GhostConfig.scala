@@ -136,7 +136,7 @@ sealed trait GhostConfig extends GhostLUT {
   def baseSVConfig: Configuration =
     giapiConfig(GhostSVCcdRequestType, "CCD_CAMERA_SET") |+|
       giapiConfig(GhostSVRequestType, "HARDWARE") |+|
-      giapiConfig(GhostSVRepeat, 1) |+|
+      giapiConfig(GhostSVRepeat, 2) |+|
       giapiConfig(GhostSVRunNumber, 0) |+|
       giapiConfig(GhostSVDoSave, 1) |+|
       giapiConfig(GhostSVDoDisplay, 1) |+|
@@ -145,9 +145,9 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVCcf, 2) |+|
       giapiConfig(GhostSVImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostSVXO, 950) |+|
-      giapiConfig(GhostSVYO, 880) |+|
-      giapiConfig(GhostSVWidth, 140) |+|
-      giapiConfig(GhostSVHeigth, 80) |+|
+      giapiConfig(GhostSVYO, 810) |+|
+      giapiConfig(GhostSVWidth, 300) |+|
+      giapiConfig(GhostSVHeigth, 260) |+|
       giapiConfig(GhostSVIFU1BlueThreshold, 0) |+|
       giapiConfig(GhostSVIFU1BlueThresholdEnabled, 0) |+|
       giapiConfig(GhostSVIFU1RedThreshold, 0) |+|
