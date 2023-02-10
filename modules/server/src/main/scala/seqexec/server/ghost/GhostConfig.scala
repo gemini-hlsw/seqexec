@@ -222,7 +222,7 @@ sealed trait GhostConfig extends GhostLUT {
         } |+|
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
           svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+| */ thXeLamp
-    )
+    ) |+| giapiConfig(GhostSlitMaskPositionerType, "SMP_DEMAND_POSITION")
   }
 
 }
