@@ -168,7 +168,7 @@ trait GhostLUT {
   def isScience(obsType: String): Boolean = obsType.equalsIgnoreCase("object")
 
   val BiasSVTime = 0.seconds
-  val FlatSVTime = 0.3.seconds
+  val FlatSVTime = 0.1.seconds
   val ArcSVTime  = 300.seconds
 
   def svCalibExposureTime(obsType: String) = {
