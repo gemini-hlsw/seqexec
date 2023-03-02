@@ -412,7 +412,9 @@ object TcsSouthControllerEpicsAo {
                 (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff)
                   .fold(M2GuideConfig.M2GuideOff, current.base.telescopeGuideConfig.m2Guide)
               )
-          ) >>> normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(
+          ) >>> normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(
+          gaosEnabled
+        ) >>> normalizeMountGuiding)(
         demand
       )
 
@@ -476,8 +478,9 @@ object TcsSouthControllerEpicsAo {
       gaosEnabled: Boolean
     ): F[EpicsTcsAoConfig] = {
       // If the demand turned off any WFS, normalize will turn off the corresponding processing
-      val normalizedGuiding = (normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>>
-        normalizeMountGuiding)(demand)
+      val normalizedGuiding =
+        (normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>>
+          normalizeMountGuiding)(demand)
 
       val paramList = guideParams(subsystems, current, normalizedGuiding)
 
@@ -577,7 +580,7 @@ object TcsSouthControllerEpicsAo {
     }
 
     // Disable M1 guiding if source is off
-    def normalizeM1Guiding: Endo[TcsSouthAoConfig] = cfg =>
+    def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsSouthAoConfig] = cfg =>
       AoTcsConfig.gc
         .andThen(TelescopeGuideConfig.m1Guide)
         .modify {
@@ -585,6 +588,7 @@ object TcsSouthControllerEpicsAo {
             src match {
               case M1Source.PWFS1 => if (cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
               case M1Source.OIWFS => if (cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
+              case M1Source.GAOS  => if (gaosEnabled) g else M1GuideConfig.M1GuideOff
               case _              => g
             }
           case x                                => x
