@@ -367,7 +367,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       }
 
       assert(guideOffEvents.forall(head.contains))
-      assert(!guideOnEvents.forall(tail.contains))
+      assert(!guideOnEvents.exists(tail.contains))
     }
 
   }
