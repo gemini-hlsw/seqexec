@@ -274,12 +274,13 @@ object TcsSouthControllerEpicsAo {
     ): Boolean =
       !isCurrentlyGuiding(current, baseAoCfg) && isAoGuidedStep(baseAoCfg, demand)
 
+    // Don't check cwfsx detector status, they do not work nor can we control them
     private def isAnyGemsSourceUsed(
       current: EpicsTcsAoConfig,
       demand:  TcsSouthAoConfig
-    ): Boolean = (demand.gaos.isCwfs1Used && current.cwfs1.isActive) ||
-      (demand.gaos.isCwfs2Used && current.cwfs2.isActive) ||
-      (demand.gaos.isCwfs3Used && current.cwfs3.isActive) ||
+    ): Boolean = (demand.gaos.isCwfs1Used && current.cwfs1.tracking.isActive) ||
+      (demand.gaos.isCwfs2Used && current.cwfs2.tracking.isActive) ||
+      (demand.gaos.isCwfs3Used && current.cwfs3.tracking.isActive) ||
       (demand.gaos.isOdgw1Used && current.odgw1.isActive) ||
       (demand.gaos.isOdgw2Used && current.odgw2.isActive) ||
       (demand.gaos.isOdgw3Used && current.odgw3.isActive) ||
