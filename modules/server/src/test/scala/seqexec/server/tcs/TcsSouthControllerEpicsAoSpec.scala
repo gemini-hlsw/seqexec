@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats.effect.{ Async, IO, Ref }
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
-import lucuma.core.enums.LightSinkName.Gmos
+import lucuma.core.enums.LightSinkName
 import munit.CatsEffectSuite
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
@@ -17,7 +17,6 @@ import seqexec.server.altair.AltairController
 import seqexec.server.gems.Gems
 import seqexec.server.gems.Gems._
 import seqexec.server.gems.GemsController._
-import seqexec.server.tcs.TcsController.LightSource.Sky
 import seqexec.server.tcs.TcsController.{
   AGConfig,
   AoGuidersConfig,
@@ -27,6 +26,7 @@ import seqexec.server.tcs.TcsController.{
   GuiderSensorOn,
   InstrumentOffset,
   LightPath,
+  LightSource,
   NodChopTrackingConfig,
   OIConfig,
   OffsetP,
@@ -49,23 +49,19 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
 
   private implicit def unsafeLogger: Logger[IO] = NoOpLogger.impl[IO]
 
-  private val baseStateWithGeMSPlusP1Guiding = TestTcsEpics.defaultState.copy(
+  private val baseStateWithGeMS = TestTcsEpics.defaultState.copy(
     absorbTipTilt = 1,
     m1GuideSource = "GAOS",
     m1Guide = BinaryOnOff.On,
     m2GuideState = BinaryOnOff.On,
-    m2p1Guide = "ON",
-    p1FollowS = "On",
-    p1Parked = false,
-    pwfs1On = BinaryYesNo.Yes,
+    m2aoGuide = "ON",
     cwfs1Follow = true,
     cwfs2Follow = true,
     cwfs3Follow = true,
-    sfName = "gsaoi",
+    sfName = "ao2gsaoi1",
     g1MapName = GemsSource.Cwfs1.some,
     g2MapName = GemsSource.Cwfs2.some,
     g3MapName = GemsSource.Cwfs3.some,
-    pwfs1ProbeGuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
     g1GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
     g2GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
     g3GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
@@ -73,7 +69,15 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
     comaCorrect = "On",
     useAo = BinaryYesNo.Yes
   )
-  private val baseConfig: TcsSouthAoConfig   = AoTcsConfig[GemsGuiders, GemsConfig](
+
+  private val baseStateWithGeMSPlusP1Guiding = baseStateWithGeMS.copy(
+    p1FollowS = "On",
+    p1Parked = false,
+    pwfs1On = BinaryYesNo.Yes,
+    pwfs1ProbeGuideConfig = ProbeGuideConfigVals(1, 0, 0, 1)
+  )
+
+  private val baseConfig: TcsSouthAoConfig = AoTcsConfig[GemsGuiders, GemsConfig](
     TelescopeGuideConfig(MountGuideOption.MountGuideOff,
                          M1GuideConfig.M1GuideOff,
                          M2GuideConfig.M2GuideOff
@@ -100,7 +104,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       ),
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff))
     ),
-    AGConfig(LightPath(Sky, Gmos), None),
+    AGConfig(LightPath(LightSource.AO, LightSinkName.Gsaoi), None),
     GemsOn(
       Cwfs1Usage.Use,
       Cwfs2Usage.Use,
@@ -109,17 +113,47 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       Odgw2Usage.DontUse,
       Odgw3Usage.DontUse,
       Odgw4Usage.DontUse,
-      P1Usage.Use,
+      P1Usage.DontUse,
       OIUsage.DontUse
     ),
     DummyInstrument(Instrument.Gsaoi, 1.millimeters.some)
   )
+
+  private def buildGems(gemsConfig: GemsConfig, pr: Gaos.PauseResume[IO]): Gems[IO] = new Gems[IO] {
+    override val cfg: GemsConfig = gemsConfig
+
+    override def pauseResume(
+      pauseReasons:  Gaos.PauseConditionSet,
+      resumeReasons: Gaos.ResumeConditionSet
+    ): IO[Gaos.PauseResume[IO]] = pr.pure[IO]
+
+    override val stateGetter: GemsWfsState[IO] = Gems.GemsWfsState[IO](
+      Cwfs1DetectorState.Off.pure[IO],
+      Cwfs2DetectorState.Off.pure[IO],
+      Cwfs3DetectorState.Off.pure[IO],
+      Odgw1DetectorState.Off.pure[IO],
+      Odgw2DetectorState.Off.pure[IO],
+      Odgw3DetectorState.Off.pure[IO],
+      Odgw4DetectorState.Off.pure[IO]
+    )
+
+    override def observe(
+      config:  Either[AltairController.AltairConfig, GemsConfig],
+      expTime: Time
+    ): IO[Unit] = IO.unit
+
+    override def endObserve(config: Either[AltairController.AltairConfig, GemsConfig]): IO[Unit] =
+      IO.unit
+  }
 
   test("Don't touch guiding if configuration does not change") {
 
     val dumbEpics = buildTcsEpics[IO](baseStateWithGeMSPlusP1Guiding)
 
     val config: TcsSouthAoConfig = baseConfig.copy(
+      tc = baseConfig.tc.copy(offsetA =
+        InstrumentOffset(tag[OffsetP](0.arcseconds), tag[OffsetQ](0.arcseconds)).some
+      ),
       gc = TelescopeGuideConfig(
         MountGuideOption.MountGuideOn,
         M1GuideConfig.M1GuideOn(M1Source.GAOS),
@@ -144,33 +178,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       OIUsage.DontUse
     )
 
-    val gems = new Gems[IO] {
-      override val cfg: GemsConfig = gemsConfig
-
-      override def pauseResume(
-        pauseReasons:  Gaos.PauseConditionSet,
-        resumeReasons: Gaos.ResumeConditionSet
-      ): IO[Gaos.PauseResume[IO]] =
-        Gaos.PauseResume[IO](none, none).pure[IO]
-
-      override val stateGetter: GemsWfsState[IO] = Gems.GemsWfsState[IO](
-        Cwfs1DetectorState.On.pure[IO],
-        Cwfs2DetectorState.On.pure[IO],
-        Cwfs3DetectorState.On.pure[IO],
-        Odgw1DetectorState.Off.pure[IO],
-        Odgw2DetectorState.Off.pure[IO],
-        Odgw3DetectorState.Off.pure[IO],
-        Odgw4DetectorState.Off.pure[IO]
-      )
-
-      override def observe(
-        config:  Either[AltairController.AltairConfig, GemsConfig],
-        expTime: Time
-      ): IO[Unit] = IO.unit
-
-      override def endObserve(config: Either[AltairController.AltairConfig, GemsConfig]): IO[Unit] =
-        IO.unit
-    }
+    val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](none, none))
 
     for {
       d <- dumbEpics
@@ -230,33 +238,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       OIUsage.DontUse
     )
 
-    val gems = new Gems[IO] {
-      override val cfg: GemsConfig = gemsConfig
-
-      override def pauseResume(
-        pauseReasons:  Gaos.PauseConditionSet,
-        resumeReasons: Gaos.ResumeConditionSet
-      ): IO[Gaos.PauseResume[IO]] =
-        Gaos.PauseResume[IO](IO.unit.some, IO.unit.some).pure[IO]
-
-      override val stateGetter: GemsWfsState[IO] = Gems.GemsWfsState[IO](
-        Cwfs1DetectorState.On.pure[IO],
-        Cwfs2DetectorState.On.pure[IO],
-        Cwfs3DetectorState.On.pure[IO],
-        Odgw1DetectorState.Off.pure[IO],
-        Odgw2DetectorState.Off.pure[IO],
-        Odgw3DetectorState.Off.pure[IO],
-        Odgw4DetectorState.Off.pure[IO]
-      )
-
-      override def observe(
-        config:  Either[AltairController.AltairConfig, GemsConfig],
-        expTime: Time
-      ): IO[Unit] = IO.unit
-
-      override def endObserve(config: Either[AltairController.AltairConfig, GemsConfig]): IO[Unit] =
-        IO.unit
-    }
+    val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](IO.unit.some, IO.unit.some))
 
     for {
       d <- dumbEpics
@@ -323,33 +305,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       OIUsage.DontUse
     )
 
-    val gems = new Gems[IO] {
-      override val cfg: GemsConfig = gemsConfig
-
-      override def pauseResume(
-        pauseReasons:  Gaos.PauseConditionSet,
-        resumeReasons: Gaos.ResumeConditionSet
-      ): IO[Gaos.PauseResume[IO]] =
-        Gaos.PauseResume[IO](IO.unit.some, none).pure[IO]
-
-      override val stateGetter: GemsWfsState[IO] = Gems.GemsWfsState[IO](
-        Cwfs1DetectorState.On.pure[IO],
-        Cwfs2DetectorState.On.pure[IO],
-        Cwfs3DetectorState.On.pure[IO],
-        Odgw1DetectorState.Off.pure[IO],
-        Odgw2DetectorState.Off.pure[IO],
-        Odgw3DetectorState.Off.pure[IO],
-        Odgw4DetectorState.Off.pure[IO]
-      )
-
-      override def observe(
-        config:  Either[AltairController.AltairConfig, GemsConfig],
-        expTime: Time
-      ): IO[Unit] = IO.unit
-
-      override def endObserve(config: Either[AltairController.AltairConfig, GemsConfig]): IO[Unit] =
-        IO.unit
-    }
+    val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](IO.unit.some, none))
 
     for {
       d <- dumbEpics
@@ -412,33 +368,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       OIUsage.DontUse
     )
 
-    val gems = new Gems[IO] {
-      override val cfg: GemsConfig = gemsConfig
-
-      override def pauseResume(
-        pauseReasons:  Gaos.PauseConditionSet,
-        resumeReasons: Gaos.ResumeConditionSet
-      ): IO[Gaos.PauseResume[IO]] =
-        Gaos.PauseResume[IO](IO.unit.some, none).pure[IO]
-
-      override val stateGetter: GemsWfsState[IO] = Gems.GemsWfsState[IO](
-        Cwfs1DetectorState.On.pure[IO],
-        Cwfs2DetectorState.On.pure[IO],
-        Cwfs3DetectorState.On.pure[IO],
-        Odgw1DetectorState.Off.pure[IO],
-        Odgw2DetectorState.Off.pure[IO],
-        Odgw3DetectorState.Off.pure[IO],
-        Odgw4DetectorState.Off.pure[IO]
-      )
-
-      override def observe(
-        config:  Either[AltairController.AltairConfig, GemsConfig],
-        expTime: Time
-      ): IO[Unit] = IO.unit
-
-      override def endObserve(config: Either[AltairController.AltairConfig, GemsConfig]): IO[Unit] =
-        IO.unit
-    }
+    val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](IO.unit.some, none))
 
     for {
       d <- dumbEpics
@@ -477,4 +407,5 @@ object TcsSouthControllerEpicsAoSpec {
       stR  <- Ref.of[F, TestTcsEpics.State](baseState)
       outR <- Ref.of[F, List[TestTcsEpics.TestTcsEvent]](List.empty)
     } yield TestTcsEpics[F](stR, outR)
+
 }

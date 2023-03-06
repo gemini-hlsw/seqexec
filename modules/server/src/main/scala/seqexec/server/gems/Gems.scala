@@ -108,6 +108,7 @@ object Gems {
       }
 
     override val stateGetter: GemsWfsState[F] = controller.stateGetter
+
   }
 
   // Ignore GaosGuideOff if it was already sent in a previous step

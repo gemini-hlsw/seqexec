@@ -20,7 +20,6 @@ import seqexec.server.gems.GemsController.{
   Odgw4Usage,
   P1Usage
 }
-import seqexec.server.gems.GemsControllerEpicsSpec.DummyGsaoiGuider
 import seqexec.server.gems.TestGemsEpics.LoopEvent
 import seqexec.server.gsaoi.GsaoiGuider
 import seqexec.server.tcs.Gaos
@@ -30,15 +29,9 @@ import shapeless.tag
 import squants.space.LengthConversions._
 
 class GemsControllerEpicsSpec extends CatsEffectSuite {
+  import GemsControllerEpicsSpec._
 
   private implicit def unsafeLogger: Logger[IO] = NoOpLogger.impl[IO]
-
-  val guidingState = TestGemsEpics.defaultState.copy(
-    aniLoop = LoopState.CLOSED,
-    ttLoop = LoopState.CLOSED,
-    flexureLoop = LoopState.CLOSED,
-    focusLoop = LoopState.CLOSED
-  )
 
   val guidingConfig = GemsController.GemsOn(
     Cwfs1Usage.Use,
@@ -59,7 +52,7 @@ class GemsControllerEpicsSpec extends CatsEffectSuite {
     FocalPlaneOffset(tag[OffsetX](3.0.millimeters), tag[OffsetY](-3.0.millimeters))
 
   test("GemsControlerEpics should do nothing if there is no change in configuration") {
-    val gemsEpicsF = TestGemsEpics.build[IO](guidingState)
+    val gemsEpicsF = TestGemsEpics.build[IO](guidingStateAllEnabled)
 
     for {
       ge <- gemsEpicsF
@@ -78,7 +71,7 @@ class GemsControllerEpicsSpec extends CatsEffectSuite {
   }
 
   test("GemsControlerEpics should pause and resume guiding on offsets") {
-    val gemsEpicsF = TestGemsEpics.build[IO](guidingState)
+    val gemsEpicsF = TestGemsEpics.build[IO](guidingStateAllEnabled)
 
     for {
       ge <- gemsEpicsF
@@ -105,7 +98,7 @@ class GemsControllerEpicsSpec extends CatsEffectSuite {
   }
 
   test("GemsControlerEpics should pause guiding on a sky") {
-    val gemsEpicsF = TestGemsEpics.build[IO](guidingState)
+    val gemsEpicsF = TestGemsEpics.build[IO](guidingStateAllEnabled)
 
     for {
       ge <- gemsEpicsF
@@ -170,7 +163,7 @@ class GemsControllerEpicsSpec extends CatsEffectSuite {
   }
 
   test("GemsControlerEpics should properly handle offset to unguided position") {
-    val gemsEpicsF = TestGemsEpics.build[IO](guidingState)
+    val gemsEpicsF = TestGemsEpics.build[IO](guidingStateAllEnabled)
 
     for {
       ge <- gemsEpicsF
@@ -217,4 +210,12 @@ object GemsControllerEpicsSpec {
 
     override def endGuide: IO[Unit] = IO.unit
   }
+
+  val guidingStateAllEnabled = TestGemsEpics.defaultState.copy(
+    aniLoop = LoopState.CLOSED,
+    ttLoop = LoopState.CLOSED,
+    flexureLoop = LoopState.CLOSED,
+    focusLoop = LoopState.CLOSED
+  )
+
 }

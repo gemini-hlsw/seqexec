@@ -171,11 +171,12 @@ case class TestGemsEpics[F[_]: Async](
 
   override def sourceMask: F[Int] = state.get.map(State.sourceMask.get)
 
-  override def apd1Active: F[Boolean] = state.get.map(State.apd1Active.get)
+  // The apd statuses do not work in the real system.
+  override def apd1Active: F[Boolean] = false.pure[F]
 
-  override def apd2Active: F[Boolean] = state.get.map(State.apd2Active.get)
+  override def apd2Active: F[Boolean] = false.pure[F]
 
-  override def apd3Active: F[Boolean] = state.get.map(State.apd3Active.get)
+  override def apd3Active: F[Boolean] = false.pure[F]
 
   override def scienceAdcLoopActive: F[Boolean] = state.get.map(State.scienceAdcLoopActive.get)
 
