@@ -218,23 +218,27 @@ object TcsConfigRetriever {
     ).mapFilter { case (s, v) => s.map((_, v)) }.toMap
 
     private def getCwfs[T: DetectorStateOps: Eq](
+      getParked: F[Boolean],
       getFollow: F[Boolean]
     )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
+      prk <- getParked
       trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
       fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
       wfs <- active.map { x =>
                if (DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff
              }
-    } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+    } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)),
+                         wfs
+    )
 
     private val getCwfs1: (VirtualGemsTelescope, F[Cwfs1DetectorState]) => F[GuiderConfig] =
-      getCwfs(epicsSys.cwfs1Follow)
+      getCwfs(epicsSys.cwfs1Parked, epicsSys.cwfs1Follow)
 
     private val getCwfs2: (VirtualGemsTelescope, F[Cwfs2DetectorState]) => F[GuiderConfig] =
-      getCwfs(epicsSys.cwfs2Follow)
+      getCwfs(epicsSys.cwfs2Parked, epicsSys.cwfs2Follow)
 
     private val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
-      getCwfs(epicsSys.cwfs3Follow)
+      getCwfs(epicsSys.cwfs3Parked, epicsSys.cwfs3Follow)
 
     private def getOdgw[T: DetectorStateOps: Eq](
       getParked: F[Boolean],

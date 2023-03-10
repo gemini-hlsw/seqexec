@@ -6,6 +6,7 @@ package seqexec.server.tcs
 import cats.{ Applicative, Eq }
 import cats.effect.Async
 import cats.syntax.all._
+import mouse.boolean._
 import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
 import monocle.{ Getter, Lens }
 import monocle.macros.Lenses
@@ -58,7 +59,21 @@ case class TestTcsEpics[F[_]: Async](
       oiwfsProbeGuideCmd,
       oiwfsObserveCmd,
       oiwfsStopObserveCmd,
-      offsetACmd
+      offsetACmd,
+      cwfs1ParkCmd,
+      cwfs2ParkCmd,
+      cwfs3ParkCmd,
+      odgw1ParkCmd,
+      odgw2ParkCmd,
+      odgw3ParkCmd,
+      odgw4ParkCmd,
+      cwfs1FollowCmd,
+      cwfs2FollowCmd,
+      cwfs3FollowCmd,
+      odgw1FollowCmd,
+      odgw2FollowCmd,
+      odgw3FollowCmd,
+      odgw4FollowCmd
     ).map(_.post(DefaultTimeout))
       .sequence
       .map(_.find(_ =!= ApplyCommandResult.Completed).getOrElse(ApplyCommandResult.Completed))
@@ -595,41 +610,106 @@ case class TestTcsEpics[F[_]: Async](
 
   override def gwfs4Target: Target[F] = targetGetters(state, State.gwfs4Target.asGetter)
 
-  override val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val cwfs1FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.cwfs1FollowCmd,
+    State.cwfs1Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.cwfs1Parked,
+    TestTcsEvent.Cwfs1ProbeFollowCmd
+  )
 
-  override val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val cwfs2FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.cwfs2FollowCmd,
+    State.cwfs2Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.cwfs2Parked,
+    TestTcsEvent.Cwfs2ProbeFollowCmd
+  )
 
-  override val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val cwfs3FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.cwfs3FollowCmd,
+    State.cwfs3Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.cwfs3Parked,
+    TestTcsEvent.Cwfs3ProbeFollowCmd
+  )
 
-  override val odgw1FollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val odgw1FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.odgw1FollowCmd,
+    State.odgw1Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.odgw1Parked,
+    TestTcsEvent.Odgw1ProbeFollowCmd
+  )
 
-  override val odgw2FollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val odgw2FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.odgw2FollowCmd,
+    State.odgw2Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.odgw2Parked,
+    TestTcsEvent.Odgw2ProbeFollowCmd
+  )
 
-  override val odgw3FollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val odgw3FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.odgw3FollowCmd,
+    State.odgw3Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.odgw3Parked,
+    TestTcsEvent.Odgw3ProbeFollowCmd
+  )
 
-  override val odgw4FollowCmd: ProbeFollowCmd[F] = new DummyCmd[F] with ProbeFollowCmd[F] {
-    override def setFollowState(v: String): F[Unit] = Applicative[F].unit
-  }
+  override val odgw4FollowCmd: ProbeFollowCmd[F] = probeFollowCmd(
+    State.odgw4FollowCmd,
+    State.odgw4Follow.andThen(Lens[Boolean, String](_.fold("On", "Off"))(x => _ => x === "On")),
+    State.odgw4Parked,
+    TestTcsEvent.Odgw4ProbeFollowCmd
+  )
 
-  override val odgw1ParkCmd: EpicsCommand[F] = new DummyCmd[F]
+  override val cwfs1ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.ngsPr1ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Cwfs1ParkCmd
 
-  override val odgw2ParkCmd: EpicsCommand[F] = new DummyCmd[F]
+      override protected def cmd(st: State): State =
+        st.copy(cwfs1Follow = false, cwfs1Parked = true)
+    }
 
-  override val odgw3ParkCmd: EpicsCommand[F] = new DummyCmd[F]
+  override val cwfs2ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.ngsPr2ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Cwfs2ParkCmd
 
-  override val odgw4ParkCmd: EpicsCommand[F] = new DummyCmd[F]
+      override protected def cmd(st: State): State =
+        st.copy(cwfs2Follow = false, cwfs2Parked = true)
+    }
+
+  override val cwfs3ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.ngsPr3ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Cwfs3ParkCmd
+
+      override protected def cmd(st: State): State =
+        st.copy(cwfs3Follow = false, cwfs3Parked = true)
+    }
+
+  override val odgw1ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.odgw1ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Odgw1ParkCmd
+
+      override protected def cmd(st: State): State = st.copy(odgw1Follow = false, p2Parked = true)
+    }
+
+  override val odgw2ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.odgw2ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Odgw2ParkCmd
+
+      override protected def cmd(st: State): State = st.copy(odgw2Follow = false, p2Parked = true)
+    }
+
+  override val odgw3ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.odgw3ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Odgw3ParkCmd
+
+      override protected def cmd(st: State): State = st.copy(odgw3Follow = false, p2Parked = true)
+    }
+
+  override val odgw4ParkCmd: EpicsCommand[F] =
+    new TestEpicsCommand0[F, State, TestTcsEvent](State.odgw4ParkCmd, state, out) {
+      override protected def event(st: State): TestTcsEvent = TestTcsEvent.Odgw4ParkCmd
+
+      override protected def cmd(st: State): State = st.copy(odgw4Follow = false, p2Parked = true)
+    }
 
   override def cwfs1Follow: F[Boolean] = state.get.map(_.cwfs1Follow)
 
@@ -644,6 +724,12 @@ case class TestTcsEpics[F[_]: Async](
   override def odgw3Follow: F[Boolean] = state.get.map(_.odgw3Follow)
 
   override def odgw4Follow: F[Boolean] = state.get.map(_.odgw4Follow)
+
+  override def cwfs1Parked: F[Boolean] = state.get.map(_.cwfs1Parked)
+
+  override def cwfs2Parked: F[Boolean] = state.get.map(_.cwfs2Parked)
+
+  override def cwfs3Parked: F[Boolean] = state.get.map(_.cwfs3Parked)
 
   override def odgw1Parked: F[Boolean] = state.get.map(_.odgw1Parked)
 
@@ -860,6 +946,9 @@ object TestTcsEpics {
     odgw2Follow:               Boolean,
     odgw3Follow:               Boolean,
     odgw4Follow:               Boolean,
+    cwfs1Parked:               Boolean,
+    cwfs2Parked:               Boolean,
+    cwfs3Parked:               Boolean,
     odgw1Parked:               Boolean,
     odgw2Parked:               Boolean,
     odgw3Parked:               Boolean,
@@ -906,7 +995,21 @@ object TestTcsEpics {
     g1ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
     g2ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
     g3ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
-    g4ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String]
+    g4ProbeGuideConfigCmd:     TestEpicsCommand4.State[String, String, String, String],
+    ngsPr1ParkCmd:             TestEpicsCommand0.State,
+    ngsPr2ParkCmd:             TestEpicsCommand0.State,
+    ngsPr3ParkCmd:             TestEpicsCommand0.State,
+    odgw1ParkCmd:              TestEpicsCommand0.State,
+    odgw2ParkCmd:              TestEpicsCommand0.State,
+    odgw3ParkCmd:              TestEpicsCommand0.State,
+    odgw4ParkCmd:              TestEpicsCommand0.State,
+    cwfs1FollowCmd:            TestEpicsCommand1.State[String],
+    cwfs2FollowCmd:            TestEpicsCommand1.State[String],
+    cwfs3FollowCmd:            TestEpicsCommand1.State[String],
+    odgw1FollowCmd:            TestEpicsCommand1.State[String],
+    odgw2FollowCmd:            TestEpicsCommand1.State[String],
+    odgw3FollowCmd:            TestEpicsCommand1.State[String],
+    odgw4FollowCmd:            TestEpicsCommand1.State[String]
   )
 
   @Lenses
@@ -1047,6 +1150,20 @@ object TestTcsEpics {
     final case class AoProbeFollowCmd(state: String)               extends TestTcsEvent
     final case class AoCorrectCmd(correct: String, gains: Int)     extends TestTcsEvent
     final case class AoPrepareMatrix(aogsx: Double, aogsy: Double) extends TestTcsEvent
+    final case class Cwfs1ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Cwfs2ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Cwfs3ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Odgw1ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Odgw2ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Odgw3ProbeFollowCmd(state: String)            extends TestTcsEvent
+    final case class Odgw4ProbeFollowCmd(state: String)            extends TestTcsEvent
+    case object Cwfs1ParkCmd                                       extends TestTcsEvent
+    case object Cwfs2ParkCmd                                       extends TestTcsEvent
+    case object Cwfs3ParkCmd                                       extends TestTcsEvent
+    case object Odgw1ParkCmd                                       extends TestTcsEvent
+    case object Odgw2ParkCmd                                       extends TestTcsEvent
+    case object Odgw3ParkCmd                                       extends TestTcsEvent
+    case object Odgw4ParkCmd                                       extends TestTcsEvent
 
     implicit val eqTestTcsEvPent: Eq[TestTcsEvent] = Eq.instance {
       case (Pwfs1ParkCmd, Pwfs1ParkCmd)                                           => true
@@ -1081,6 +1198,20 @@ object TestTcsEpics {
         a === x && b === y && c === z && d === w
       case (G4ProbeGuideConfig(a, b, c, d), G4ProbeGuideConfig(x, y, z, w))       =>
         a === x && b === y && c === z && d === w
+      case (Cwfs1ProbeFollowCmd(a), Cwfs1ProbeFollowCmd(b))                       => a === b
+      case (Cwfs2ProbeFollowCmd(a), Cwfs2ProbeFollowCmd(b))                       => a === b
+      case (Cwfs3ProbeFollowCmd(a), Cwfs3ProbeFollowCmd(b))                       => a === b
+      case (Odgw1ProbeFollowCmd(a), Odgw1ProbeFollowCmd(b))                       => a === b
+      case (Odgw2ProbeFollowCmd(a), Odgw2ProbeFollowCmd(b))                       => a === b
+      case (Odgw3ProbeFollowCmd(a), Odgw3ProbeFollowCmd(b))                       => a === b
+      case (Odgw4ProbeFollowCmd(a), Odgw4ProbeFollowCmd(b))                       => a === b
+      case (Cwfs1ParkCmd, Cwfs1ParkCmd)                                           => true
+      case (Cwfs2ParkCmd, Cwfs2ParkCmd)                                           => true
+      case (Cwfs3ParkCmd, Cwfs3ParkCmd)                                           => true
+      case (Odgw1ParkCmd, Odgw1ParkCmd)                                           => true
+      case (Odgw2ParkCmd, Odgw2ParkCmd)                                           => true
+      case (Odgw3ParkCmd, Odgw3ParkCmd)                                           => true
+      case (Odgw4ParkCmd, Odgw4ParkCmd)                                           => true
       case _                                                                      => false
     }
 
@@ -1189,6 +1320,9 @@ object TestTcsEpics {
     odgw2Follow = false,
     odgw3Follow = false,
     odgw4Follow = false,
+    cwfs1Parked = true,
+    cwfs2Parked = true,
+    cwfs3Parked = true,
     odgw1Parked = true,
     odgw2Parked = true,
     odgw3Parked = true,
@@ -1242,7 +1376,21 @@ object TestTcsEpics {
     g3ProbeGuideConfigCmd =
       TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
     g4ProbeGuideConfigCmd =
-      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", "")
+      TestEpicsCommand4.State[String, String, String, String](mark = false, "", "", "", ""),
+    ngsPr1ParkCmd = false,
+    ngsPr2ParkCmd = false,
+    ngsPr3ParkCmd = false,
+    odgw1ParkCmd = false,
+    odgw2ParkCmd = false,
+    odgw3ParkCmd = false,
+    odgw4ParkCmd = false,
+    cwfs1FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    cwfs2FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    cwfs3FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    odgw1FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    odgw2FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    odgw3FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
+    odgw4FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off")
   )
 
   def build[F[_]: Async](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =

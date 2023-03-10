@@ -65,6 +65,13 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
     g1GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
     g2GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
     g3GuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
+    cwfs1Parked = false,
+    cwfs2Parked = false,
+    cwfs3Parked = false,
+    odgw1Parked = true,
+    odgw2Parked = true,
+    odgw3Parked = true,
+    odgw4Parked = true,
     gsaoiPort = 1,
     comaCorrect = "On",
     useAo = BinaryYesNo.Yes
@@ -388,6 +395,82 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       assert(!guideOffEvents.forall(head.contains))
       assert(guideOnEvents.forall(tail.contains))
     }
+
+  }
+
+  test("Park unused GeMS guiders") {
+    val dumbEpics = buildTcsEpics[IO](
+      TestTcsEpics.defaultState.copy(
+        p1Parked = false,
+        pwfs1On = BinaryYesNo.Yes,
+        p1FollowS = "On",
+        pwfs1ProbeGuideConfig = ProbeGuideConfigVals(1, 0, 0, 1),
+        sfName = "gsaoi",
+        gsaoiPort = 1,
+        useAo = BinaryYesNo.Yes,
+        cwfs1Follow = true,
+        cwfs2Follow = true,
+        cwfs3Follow = true,
+        cwfs1Parked = false,
+        cwfs2Parked = false,
+        cwfs3Parked = false,
+        odgw1Parked = false,
+        odgw2Parked = false,
+        odgw3Parked = false,
+        odgw4Parked = false
+      )
+    )
+
+    val gemsConfig = GemsOff
+
+    val config: TcsSouthAoConfig = baseConfig.copy(
+      gc = TelescopeGuideConfig(
+        MountGuideOption.MountGuideOff,
+        M1GuideConfig.M1GuideOff,
+        M2GuideConfig.M2GuideOff
+      ),
+      gds = baseConfig.gds.copy(
+        aoguide = GemsGuiders(
+          tag[CWFS1Config](
+            GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+          ),
+          tag[CWFS2Config](
+            GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+          ),
+          tag[CWFS3Config](
+            GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+          ),
+          tag[ODGW1Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+          tag[ODGW2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+          tag[ODGW3Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+          tag[ODGW4Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
+        )
+      ),
+      gaos = gemsConfig
+    )
+
+    val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](IO.unit.some, none))
+
+    val expectedCommands = List(
+      TestTcsEvent.Cwfs1ParkCmd,
+      TestTcsEvent.Cwfs2ParkCmd,
+      TestTcsEvent.Cwfs3ParkCmd,
+      TestTcsEvent.Odgw1ParkCmd,
+      TestTcsEvent.Odgw2ParkCmd,
+      TestTcsEvent.Odgw3ParkCmd,
+      TestTcsEvent.Odgw4ParkCmd
+    )
+
+    for {
+      d <- dumbEpics
+      c  = TcsSouthControllerEpicsAo(d)
+      _ <- c.applyAoConfig(TcsController.Subsystem.allButGaosNorOi.add(Subsystem.Gaos),
+                           gems,
+                           gemsConfig,
+                           config
+           )
+      r <- d.outputF
+    } yield assert(expectedCommands.forall(r.contains))
 
   }
 

@@ -12,6 +12,7 @@ import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
 import edu.gemini.seqexec.server.tcs.BinaryOnOff
 import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import edu.gemini.seqexec.server.tcs.ParkState
 import monocle.Iso
 import shapeless.tag
 import shapeless.tag.@@
@@ -78,6 +79,7 @@ package object tcs {
     Eq[Int].contramap(_.ordinal())
   implicit val endisEq: Eq[BinaryEnabledDisabled] =
     Eq[Int].contramap(_.ordinal())
+  implicit val parkEq: Eq[ParkState]              = Eq[Int].contramap(_.ordinal())
 
   def tagIso[B, T]: Iso[B @@ T, B] = Iso.apply[B @@ T, B](x => x)(tag[T](_))
 
