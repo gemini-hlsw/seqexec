@@ -525,42 +525,43 @@ object TcsControllerEpicsCommon {
       subsystems:   NonEmptySet[Subsystem],
       c:            ProbeTrackingConfig,
       d:            ProbeTrackingConfig
-    ): Option[WithDebug[C => F[C]]] =
-      if (subsystems.contains(guideControl.subs)) {
-        val actionList = List(
-          (c.getNodChop =!= d.getNodChop).option(
-            setNodChopProbeTrackingConfig(guideControl.nodChopGuideCmd)(d.getNodChop)
+    ): Option[WithDebug[C => F[C]]] = {
+      val actionList = List(
+        guideControl.nodChopGuideCmd
+          .map(x =>
+            setNodChopProbeTrackingConfig(x)(d.getNodChop)
               .withDebug(s"NodChop(${c.getNodChop} =!= ${d.getNodChop})")
-          ),
-          d match {
-            case ProbeTrackingConfig.Parked                                                       =>
-              (c =!= ProbeTrackingConfig.Parked).option(
-                guideControl.parkCmd.mark.withDebug(s"Parked($c =!= $d})")
+          )
+          .filter(_ => c.getNodChop =!= d.getNodChop),
+        d match {
+          case ProbeTrackingConfig.Parked                                                       =>
+            (c =!= ProbeTrackingConfig.Parked).option(
+              guideControl.parkCmd.mark.withDebug(s"Parked($c =!= $d})")
+            )
+          case ProbeTrackingConfig.On(_) | ProbeTrackingConfig.Off | ProbeTrackingConfig.Frozen =>
+            (c.follow =!= d.follow)
+              .option(
+                guideControl.followCmd
+                  .setFollowState(encode(d.follow))
+                  .withDebug(s"Follow(${c.follow} =!= ${d.follow})")
               )
-            case ProbeTrackingConfig.On(_) | ProbeTrackingConfig.Off | ProbeTrackingConfig.Frozen =>
-              (c.follow =!= d.follow)
-                .option(
-                  guideControl.followCmd
-                    .setFollowState(encode(d.follow))
-                    .withDebug(s"Follow(${c.follow} =!= ${d.follow})")
-                )
-          }
-        ).flattenOption
-
-        val actions =
-          actionList.reduceOption((a, b) => WithDebug(a.self *> b.self, a.debug + ", " + b.debug))
-
-        actions.map { r =>
-          { (x: C) =>
-            r.self.as(trkSet(d)(x))
-          }.withDebug(r.debug)
         }
-      } else none
+      ).flattenOption
+
+      val actions =
+        actionList.reduceOption((a, b) => WithDebug(a.self *> b.self, a.debug + ", " + b.debug))
+
+      actions.map { r =>
+        { (x: C) =>
+          r.self.as(trkSet(d)(x))
+        }.withDebug(r.debug)
+      }
+    }.filter(_ => subsystems.contains(guideControl.subs))
 
     private def pwfs1GuiderControl: GuideControl[F] =
       GuideControl(Subsystem.PWFS1,
                    epicsSys.pwfs1Park,
-                   epicsSys.pwfs1ProbeGuideCmd,
+                   epicsSys.pwfs1ProbeGuideCmd.some,
                    epicsSys.pwfs1ProbeFollowCmd
       )
 
@@ -576,7 +577,7 @@ object TcsControllerEpicsCommon {
     private def pwfs2GuiderControl: GuideControl[F] =
       GuideControl(Subsystem.PWFS2,
                    epicsSys.pwfs2Park,
-                   epicsSys.pwfs2ProbeGuideCmd,
+                   epicsSys.pwfs2ProbeGuideCmd.some,
                    epicsSys.pwfs2ProbeFollowCmd
       )
 
@@ -592,7 +593,7 @@ object TcsControllerEpicsCommon {
     private def oiwfsGuiderControl: GuideControl[F] =
       GuideControl(Subsystem.OIWFS,
                    epicsSys.oiwfsPark,
-                   epicsSys.oiwfsProbeGuideCmd,
+                   epicsSys.oiwfsProbeGuideCmd.some,
                    epicsSys.oiwfsProbeFollowCmd
       )
 

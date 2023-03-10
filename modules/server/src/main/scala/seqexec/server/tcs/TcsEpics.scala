@@ -6,18 +6,14 @@ package seqexec.server.tcs
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
-import edu.gemini.seqexec.server.tcs.BinaryOnOff
-import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import edu.gemini.seqexec.server.tcs.{ BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo, ParkState }
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommandBase
@@ -358,11 +354,11 @@ trait TcsEpics[F[_]] {
     case G4 => gwfs4Target
   }
 
-  val cwfs1ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs1FollowCmd: ProbeFollowCmd[F]
 
-  val cwfs2ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs2FollowCmd: ProbeFollowCmd[F]
 
-  val cwfs3ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs3FollowCmd: ProbeFollowCmd[F]
 
   val odgw1FollowCmd: ProbeFollowCmd[F]
 
@@ -371,6 +367,12 @@ trait TcsEpics[F[_]] {
   val odgw3FollowCmd: ProbeFollowCmd[F]
 
   val odgw4FollowCmd: ProbeFollowCmd[F]
+
+  val cwfs1ParkCmd: EpicsCommand[F]
+
+  val cwfs2ParkCmd: EpicsCommand[F]
+
+  val cwfs3ParkCmd: EpicsCommand[F]
 
   val odgw1ParkCmd: EpicsCommand[F]
 
@@ -395,6 +397,12 @@ trait TcsEpics[F[_]] {
   def odgw3Follow: F[Boolean]
 
   def odgw4Follow: F[Boolean]
+
+  def cwfs1Parked: F[Boolean]
+
+  def cwfs2Parked: F[Boolean]
+
+  def cwfs3Parked: F[Boolean]
 
   def odgw1Parked: F[Boolean]
 
@@ -1164,13 +1172,13 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def gwfs4Target: Target[F] = target("g4")
 
-  override val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs1FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr1Follow", epicsService)
 
-  override val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs2FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr2Follow", epicsService)
 
-  override val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs3FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr3Follow", epicsService)
 
   override val odgw1FollowCmd: ProbeFollowCmd[F] =
@@ -1184,6 +1192,24 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override val odgw4FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("odgw4Follow", epicsService)
+
+  override val cwfs1ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr1Park")
+    )
+  }
+
+  override val cwfs2ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr2Park")
+    )
+  }
+
+  override val cwfs3ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr3Park")
+    )
+  }
 
   override val odgw1ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
@@ -1246,6 +1272,18 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override def odgw4Follow: F[Boolean]                    =
     safeAttributeF(odgw4FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
+  val c1ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs1PrParked", s"${TcsTop}drives:ngsPr1Parked.VAL", classOf[ParkState])
+  override def cwfs1Parked: F[Boolean]     = safeAttributeF(c1ParkedAttr).map(_ === ParkState.PARKED)
+
+  val c2ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs2PrParked", s"${TcsTop}drives:ngsPr2Parked.VAL", classOf[ParkState])
+  override def cwfs2Parked: F[Boolean]     = safeAttributeF(c2ParkedAttr).map(_ === ParkState.PARKED)
+
+  val c3ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs3PrParked", s"${TcsTop}drives:ngsPr3Parked.VAL", classOf[ParkState])
+  override def cwfs3Parked: F[Boolean]     = safeAttributeF(c3ParkedAttr).map(_ === ParkState.PARKED)
+
   val OdgwParkedState: String = "Parked"
 
   override def odgw1Parked: F[Boolean] =
@@ -1299,7 +1337,6 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g3", tcsState)
 
   override val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g4", tcsState)
-
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
