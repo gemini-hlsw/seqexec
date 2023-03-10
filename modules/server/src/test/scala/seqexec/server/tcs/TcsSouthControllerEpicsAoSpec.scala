@@ -153,6 +153,16 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
       IO.unit
   }
 
+  val parkCommands = List(
+    TestTcsEvent.Cwfs1ParkCmd,
+    TestTcsEvent.Cwfs2ParkCmd,
+    TestTcsEvent.Cwfs3ParkCmd,
+    TestTcsEvent.Odgw1ParkCmd,
+    TestTcsEvent.Odgw2ParkCmd,
+    TestTcsEvent.Odgw3ParkCmd,
+    TestTcsEvent.Odgw4ParkCmd
+  )
+
   test("Don't touch guiding if configuration does not change") {
 
     val dumbEpics = buildTcsEpics[IO](baseStateWithGeMSPlusP1Guiding)
@@ -264,6 +274,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
 
       assert(guideOffEvents.forall(head.contains))
       assert(guideOnEvents.forall(tail.contains))
+      assert(!parkCommands.exists(r.contains))
     }
 
   }
@@ -331,6 +342,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
 
       assert(guideOffEvents.forall(head.contains))
       assert(!guideOnEvents.exists(tail.contains))
+      assert(!parkCommands.exists(r.contains))
     }
 
   }
@@ -394,6 +406,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
 
       assert(!guideOffEvents.forall(head.contains))
       assert(guideOnEvents.forall(tail.contains))
+      assert(!parkCommands.exists(r.contains))
     }
 
   }
@@ -451,16 +464,6 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
 
     val gems = buildGems(gemsConfig, Gaos.PauseResume[IO](IO.unit.some, none))
 
-    val expectedCommands = List(
-      TestTcsEvent.Cwfs1ParkCmd,
-      TestTcsEvent.Cwfs2ParkCmd,
-      TestTcsEvent.Cwfs3ParkCmd,
-      TestTcsEvent.Odgw1ParkCmd,
-      TestTcsEvent.Odgw2ParkCmd,
-      TestTcsEvent.Odgw3ParkCmd,
-      TestTcsEvent.Odgw4ParkCmd
-    )
-
     for {
       d <- dumbEpics
       c  = TcsSouthControllerEpicsAo(d)
@@ -470,7 +473,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
                            config
            )
       r <- d.outputF
-    } yield assert(expectedCommands.forall(r.contains))
+    } yield assert(parkCommands.forall(r.contains))
 
   }
 
