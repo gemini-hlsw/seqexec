@@ -104,10 +104,10 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
         tag[CWFS3Config](
           GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
         ),
-        tag[ODGW1Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
-        tag[ODGW2Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
-        tag[ODGW3Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
-        tag[ODGW4Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff))
+        tag[ODGW1Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+        tag[ODGW2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+        tag[ODGW3Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
+        tag[ODGW4Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
       ),
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff))
     ),

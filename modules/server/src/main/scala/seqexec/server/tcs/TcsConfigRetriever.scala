@@ -220,9 +220,10 @@ object TcsConfigRetriever {
     private def getCwfs[T: DetectorStateOps: Eq](
       getParked: F[Boolean],
       getFollow: F[Boolean]
-    )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
+    )(g: Option[VirtualGemsTelescope], active: F[T]): F[GuiderConfig] = for {
       prk <- getParked
-      trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
+      trk <- g.map(x => getNodChopTrackingConfig(epicsSys.gemsGuideConfig(x)))
+               .getOrElse(NodChopTrackingConfig.AllOff.pure[F])
       fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
       wfs <- active.map { x =>
                if (DetectorStateOps.isActive(x)) GuiderSensorOn else GuiderSensorOff
@@ -231,21 +232,22 @@ object TcsConfigRetriever {
                          wfs
     )
 
-    private val getCwfs1: (VirtualGemsTelescope, F[Cwfs1DetectorState]) => F[GuiderConfig] =
+    private val getCwfs1: (Option[VirtualGemsTelescope], F[Cwfs1DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs1Parked, epicsSys.cwfs1Follow)
 
-    private val getCwfs2: (VirtualGemsTelescope, F[Cwfs2DetectorState]) => F[GuiderConfig] =
+    private val getCwfs2: (Option[VirtualGemsTelescope], F[Cwfs2DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs2Parked, epicsSys.cwfs2Follow)
 
-    private val getCwfs3: (VirtualGemsTelescope, F[Cwfs3DetectorState]) => F[GuiderConfig] =
+    private val getCwfs3: (Option[VirtualGemsTelescope], F[Cwfs3DetectorState]) => F[GuiderConfig] =
       getCwfs(epicsSys.cwfs3Parked, epicsSys.cwfs3Follow)
 
     private def getOdgw[T: DetectorStateOps: Eq](
       getParked: F[Boolean],
       getFollow: F[Boolean]
-    )(g: VirtualGemsTelescope, active: F[T]): F[GuiderConfig] = for {
+    )(g: Option[VirtualGemsTelescope], active: F[T]): F[GuiderConfig] = for {
       prk <- getParked
-      trk <- getNodChopTrackingConfig(epicsSys.gemsGuideConfig(g))
+      trk <- g.map(x => getNodChopTrackingConfig(epicsSys.gemsGuideConfig(x)))
+               .getOrElse(NodChopTrackingConfig.AllOff.pure[F])
       fol <- getFollow.map(if (_) FollowOption.FollowOn else FollowOption.FollowOff)
       wfs <- active.map { x =>
                if (DetectorStateOps.isActive[T](x)) GuiderSensorOn else GuiderSensorOff
@@ -254,16 +256,16 @@ object TcsConfigRetriever {
                          wfs
     )
 
-    private val getOdgw1: (VirtualGemsTelescope, F[Odgw1DetectorState]) => F[GuiderConfig] =
+    private val getOdgw1: (Option[VirtualGemsTelescope], F[Odgw1DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw1Parked, epicsSys.odgw1Follow)
 
-    private val getOdgw2: (VirtualGemsTelescope, F[Odgw2DetectorState]) => F[GuiderConfig] =
+    private val getOdgw2: (Option[VirtualGemsTelescope], F[Odgw2DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw2Parked, epicsSys.odgw2Follow)
 
-    private val getOdgw3: (VirtualGemsTelescope, F[Odgw3DetectorState]) => F[GuiderConfig] =
+    private val getOdgw3: (Option[VirtualGemsTelescope], F[Odgw3DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw3Parked, epicsSys.odgw3Follow)
 
-    private val getOdgw4: (VirtualGemsTelescope, F[Odgw4DetectorState]) => F[GuiderConfig] =
+    private val getOdgw4: (Option[VirtualGemsTelescope], F[Odgw4DetectorState]) => F[GuiderConfig] =
       getOdgw(epicsSys.odgw4Parked, epicsSys.odgw4Follow)
 
     private def getInstrumentPorts: F[InstrumentPorts] = for {
@@ -294,29 +296,19 @@ object TcsConfigRetriever {
         ao   <- getAowfs(getAoFollow)
       } yield TcsNorthControllerEpicsAo.EpicsTcsAoConfig(base, ao)
 
-    private def retrieveGemsGuider(
-      mapping:    Map[GemsSource, VirtualGemsTelescope],
-      gemsSource: GemsSource,
-      getGuide:   VirtualGemsTelescope => F[GuiderConfig]
-    ): F[GuiderConfig] =
-      mapping
-        .get(gemsSource)
-        .map(getGuide)
-        .getOrElse(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff).pure[F])
-
     override def retrieveConfigurationSouth(
       gemsSt: GemsWfsState[F]
     ): F[TcsSouthControllerEpicsAo.EpicsTcsAoConfig] =
       for {
         base    <- retrieveBaseConfiguration
         mapping <- getGemsMap
-        cwfs1   <- retrieveGemsGuider(mapping, Cwfs1, getCwfs1(_, gemsSt.cwfs1))
-        cwfs2   <- retrieveGemsGuider(mapping, Cwfs2, getCwfs2(_, gemsSt.cwfs2))
-        cwfs3   <- retrieveGemsGuider(mapping, Cwfs3, getCwfs3(_, gemsSt.cwfs3))
-        odgw1   <- retrieveGemsGuider(mapping, Odgw1, getOdgw1(_, gemsSt.odgw1))
-        odgw2   <- retrieveGemsGuider(mapping, Odgw2, getOdgw2(_, gemsSt.odgw2))
-        odgw3   <- retrieveGemsGuider(mapping, Odgw3, getOdgw3(_, gemsSt.odgw3))
-        odgw4   <- retrieveGemsGuider(mapping, Odgw4, getOdgw4(_, gemsSt.odgw4))
+        cwfs1   <- getCwfs1(mapping.get(Cwfs1), gemsSt.cwfs1)
+        cwfs2   <- getCwfs2(mapping.get(Cwfs2), gemsSt.cwfs2)
+        cwfs3   <- getCwfs3(mapping.get(Cwfs3), gemsSt.cwfs3)
+        odgw1   <- getOdgw1(mapping.get(Odgw1), gemsSt.odgw1)
+        odgw2   <- getOdgw2(mapping.get(Odgw2), gemsSt.odgw2)
+        odgw3   <- getOdgw3(mapping.get(Odgw3), gemsSt.odgw3)
+        odgw4   <- getOdgw4(mapping.get(Odgw4), gemsSt.odgw4)
       } yield TcsSouthControllerEpicsAo.EpicsTcsAoConfig(
         base,
         mapping,
