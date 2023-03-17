@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
@@ -232,7 +232,7 @@ object LogArea {
     (_, _, _, _, _, _) => IconCopyOutline.clazz(SeqexecStyles.logIconHeader)
 
   private def colBuilder(b: Backend, size: Size)(
-    r:                      ColumnRenderArgs[TableColumn]
+    r: ColumnRenderArgs[TableColumn]
   ): Table.ColumnArg =
     r match {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>

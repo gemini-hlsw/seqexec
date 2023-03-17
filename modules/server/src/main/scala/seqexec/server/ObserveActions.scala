@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -151,7 +151,7 @@ trait ObserveActions {
   private def observeTail[F[_]: Temporal](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult): Stream[F, Result[F]] =
+  )(r: ObserveCommandResult): Stream[F, Result[F]] =
     Stream.eval(r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, stopped = false, env)

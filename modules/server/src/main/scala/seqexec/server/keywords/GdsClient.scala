@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -37,7 +37,7 @@ trait GdsClient[F[_]] extends Http4sClientDsl[F] {
 object GdsClient {
 
   def apply[F[_]](base: Client[F], gdsUri: Uri)(implicit
-    timer:              Async[F]
+    timer: Async[F]
   ): GdsClient[F] = new GdsClient[F] {
 
     private val client = {

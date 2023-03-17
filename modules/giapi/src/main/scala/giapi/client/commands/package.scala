@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package giapi.client
@@ -48,7 +48,7 @@ package commands {
       new DefaultConfiguration(new java.util.TreeMap(config.asJava))
   }
 
-  object Configuration  {
+  object Configuration {
     val Zero: Configuration = Configuration(Map.empty)
 
     def single[A: GiapiConfig](key: String, value: A): Configuration =

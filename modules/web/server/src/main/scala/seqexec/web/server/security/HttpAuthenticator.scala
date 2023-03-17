@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -55,7 +55,7 @@ class Http4sAuthentication[F[_]: Sync](auth: AuthenticationService[F]) extends H
  */
 object TokenRefresher {
   private def replaceCookie[F[_]: Monad](service: HttpRoutes[F], auth: Http4sAuthentication[F])(
-    result:                                       AuthResult
+    result: AuthResult
   ): Kleisli[OptionT[F, *], Request[F], Response[F]] = Kleisli { request =>
     result.fold(_ => service(request),
                 u =>

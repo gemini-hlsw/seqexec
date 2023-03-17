@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
@@ -153,7 +153,7 @@ object Flamingos2 {
 
   // This method deals with engineering parameters that can come as a T or an Option[T]
   private def extractEngineeringParam[T](item: Extracted[CleanConfig], default: T)(implicit
-    clazz:                                     ClassTag[T]
+    clazz: ClassTag[T]
   ): Either[ExtractFailure, T] = item.as[T].recoverWith {
     case _: ConfigUtilOps.KeyNotFound     => Right(default)
     case _: ConfigUtilOps.ConversionError =>

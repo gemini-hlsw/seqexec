@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -24,12 +24,12 @@ import seqexec.server.tcs.Gaos.ResumeConditionSet
 class GemsControllerEpics[F[_]: Async](
   epicsSys:    GemsEpics[F],
   gsaoiGuider: GsaoiGuider[F]
-)(implicit L:  Logger[F])
+)(implicit L: Logger[F])
     extends GemsController[F] {
   import GemsControllerEpics._
 
   override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
-    cfg:                                 GemsConfig
+    cfg: GemsConfig
   ): F[PauseResume[F]] = {
     val r1 = pause(pauseReasons)
     val r2 = resume(resumeReasons)

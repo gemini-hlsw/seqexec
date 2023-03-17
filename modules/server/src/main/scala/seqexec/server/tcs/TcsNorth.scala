@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -34,7 +34,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
   subsystems:    NonEmptySet[Subsystem],
   gaos:          Option[Altair[F]],
   guideDb:       GuideConfigDb[F]
-)(config:        TcsNorth.TcsSeqConfig[F])
+)(config: TcsNorth.TcsSeqConfig[F])
     extends Tcs[F] {
   import Tcs.GuideWithOps
 

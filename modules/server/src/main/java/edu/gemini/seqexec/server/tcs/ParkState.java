@@ -3,17 +3,16 @@
  * For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package edu.gemini.seqexec.server.altair;
+package edu.gemini.seqexec.server.tcs;
 
-public enum LgsSfoControl {
+public enum ParkState {
 
-    Disable("disabled"),
-    Enable("enabled"),
-    Pause("paused");
+    NOT_PARKED("NOT PARKED"),
+    PARKED("PARKED");
 
     final String name;
 
-    LgsSfoControl(String name) {
+    ParkState(String name) {
         this.name = name;
     }
 
@@ -21,4 +20,5 @@ public enum LgsSfoControl {
     public String toString() {
         return this.name;
     }
+
 }

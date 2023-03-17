@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -34,7 +34,7 @@ import cats.effect.{ Ref, Temporal }
  * Implementation of DhsClient that interfaces with the real DHS over the http interface
  */
 class DhsClientHttp[F[_]](base: Client[F], baseURI: Uri, maxKeywords: Int, instrumentName: String)(
-  implicit timer:               Temporal[F]
+  implicit timer: Temporal[F]
 ) extends DhsClient[F]
     with Http4sClientDsl[F] {
   import DhsClientHttp._
@@ -208,7 +208,7 @@ object DhsClientHttp {
   }
 
   def apply[F[_]](client: Client[F], uri: Uri, maxKeywords: Int, instrumentName: String)(implicit
-    timer:                Temporal[F]
+    timer: Temporal[F]
   ): DhsClient[F] =
     new DhsClientHttp[F](client, uri, maxKeywords, instrumentName)
 }

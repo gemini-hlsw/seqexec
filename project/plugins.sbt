@@ -1,6 +1,6 @@
-addSbtPlugin("edu.gemini" % "sbt-lucuma-app" % "0.10.7")
+addSbtPlugin("edu.gemini" % "sbt-lucuma-app" % "0.10.10")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.10.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.0")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 
@@ -11,7 +11,7 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
 
 // Support making distributions
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.11")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.15")
 
 // Built the version out of git
 //addSbtPlugin("com.github.sbt" % "sbt-git"    % "2.0.0")

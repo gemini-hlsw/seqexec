@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -31,7 +31,7 @@ trait GiapiInstrumentController[F[_], CFG] {
 private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[
   F
 ]](client: C)(implicit
-  L:       Logger[F]
+  L: Logger[F]
 ) extends GiapiInstrumentController[F, CFG] {
 
   def name: String

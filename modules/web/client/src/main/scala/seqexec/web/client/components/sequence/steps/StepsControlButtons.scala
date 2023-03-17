@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -71,7 +71,7 @@ object ControlButtons {
 
   private def requestedIcon(icon: Icon): IconGroup =
     IconGroup(
-      icon(^.key                                                   := "main"),
+      icon(^.key := "main"),
       IconCircleNotched.copy(loading = true, color = Yellow)(^.key := "requested")
     )
 

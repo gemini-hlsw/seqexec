@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
@@ -428,7 +428,7 @@ object SessionQueueTable extends Columns {
     }
 
   private def linkedTextRenderer(p: Props)(
-    f:                              SessionQueueRow => String
+    f: SessionQueueRow => String
   ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
     (_, _, _, row: SessionQueueRow, _) =>
       linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, <.p(SeqexecStyles.queueText, f(row)))

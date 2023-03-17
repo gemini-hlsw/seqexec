@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -51,7 +51,7 @@ abstract class Gmos[F[_]: Temporal: Logger, T <: GmosController.SiteDependentTyp
   val controller: GmosController[F, T],
   ss:             SiteSpecifics[T],
   nsCmdR:         Ref[F, Option[NSObserveCommand]]
-)(configTypes:    GmosController.Config[T])
+)(configTypes: GmosController.Config[T])
     extends DhsInstrument[F]
     with InstrumentSystem[F] {
   import Gmos._

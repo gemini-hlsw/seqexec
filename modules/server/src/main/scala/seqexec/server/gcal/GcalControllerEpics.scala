@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gcal
@@ -127,7 +127,7 @@ object GcalControllerEpics {
   )
 
   def configure[F[_]: Async](epics: GcalEpics[F], current: EpicsGcalConfig, demand: GcalConfig)(
-    implicit L:                     Logger[F]
+    implicit L: Logger[F]
   ): F[Unit] = {
     val params: List[F[Unit]] = List(
       applyParam(current.lampAr, encode(demand.lampAr.self), setArLampParams(epics)),

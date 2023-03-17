@@ -23,7 +23,7 @@ object Settings {
     val scalaJSReactSortable    = "0.5.2"
 
     // Scala libraries
-    val catsEffectVersion   = "3.4.1"
+    val catsEffectVersion   = "3.4.7"
     val catsVersion         = "2.9.0"
     val mouseVersion        = "1.2.1"
     val fs2Version          = "3.2.12"
@@ -32,17 +32,17 @@ object Settings {
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.4.0"
 
-    val http4sVersion                  = "0.23.14-27-fd0137d-SNAPSHOT"
-    val http4sBlazeVersion             = "0.23.12"
-    val http4sJdkHttpClientVersion     = "0.8.0"
+    val http4sVersion                  = "0.23.18"
+    val http4sBlazeVersion             = "0.23.14"
+    val http4sJdkHttpClientVersion     = "0.9.0"
     val http4sBoopickleVersion         = "0.23.11"
-    val http4sPrometheusMetricsVersion = "0.24.2"
-    val http4sScalaXmlVersion          = "0.23.12"
+    val http4sPrometheusMetricsVersion = "0.24.3"
+    val http4sScalaXmlVersion          = "0.23.13"
 
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "5.0.0"
+    val jwt            = "9.2.0"
     val slf4j          = "1.7.36"
     val log4s          = "1.10.0"
     val log4cats       = "2.5.0"
@@ -51,8 +51,8 @@ object Settings {
     val janino         = "3.1.9"
     val logstash       = "7.0"
     val pureConfig     = "0.17.2"
-    val monocleVersion = "3.1.0"
-    val circeVersion   = "0.14.2"
+    val monocleVersion = "3.2.0"
+    val circeVersion   = "0.14.5"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
 
@@ -125,11 +125,11 @@ object Settings {
     val CommonsHttp = "commons-httpclient" % "commons-httpclient" % LibraryVersions.commonsHttp
     val UnboundId   =
       "com.unboundid" % "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
-    val JwtCore          = "com.pauldijou" %% "jwt-core"     % LibraryVersions.jwt
-    val JwtCirce         = "com.pauldijou" %% "jwt-circe"    % LibraryVersions.jwt
-    val Slf4j            = "org.slf4j"      % "slf4j-api"    % LibraryVersions.slf4j
-    val JuliSlf4j        = "org.slf4j"      % "jul-to-slf4j" % LibraryVersions.slf4j
-    val NopSlf4j         = "org.slf4j"      % "slf4j-nop"    % LibraryVersions.slf4j
+    val JwtCore          = "com.github.jwt-scala" %% "jwt-core"     % LibraryVersions.jwt
+    val JwtCirce         = "com.github.jwt-scala" %% "jwt-circe"    % LibraryVersions.jwt
+    val Slf4j            = "org.slf4j"             % "slf4j-api"    % LibraryVersions.slf4j
+    val JuliSlf4j        = "org.slf4j"             % "jul-to-slf4j" % LibraryVersions.slf4j
+    val NopSlf4j         = "org.slf4j"             % "slf4j-nop"    % LibraryVersions.slf4j
     val CatsTime         = Def.setting(
       "io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
     )

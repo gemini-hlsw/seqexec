@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -47,7 +47,7 @@ class GmosInstrumentActions[F[_]: Temporal: Logger, A <: GmosController.SiteDepe
     fileId: ImageFileId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle
-  )(r:      ObserveCommandResult): F[Result[F]] =
+  )(r: ObserveCommandResult): F[Result[F]] =
     r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, stopped = false, env)
@@ -100,11 +100,11 @@ class GmosInstrumentActions[F[_]: Temporal: Logger, A <: GmosController.SiteDepe
     } yield t).safeResult
 
   private def continueResult(
-    fileId:    ImageFileId,
-    env:       ObserveEnvironment[F],
-    nsCfg:     NSConfig.NodAndShuffle,
-    subExp:    NSSubexposure,
-    nsObsCmd:  Option[NSObserveCommand]
+    fileId:   ImageFileId,
+    env:      ObserveEnvironment[F],
+    nsCfg:    NSConfig.NodAndShuffle,
+    subExp:   NSSubexposure,
+    nsObsCmd: Option[NSObserveCommand]
   )(obsResult: ObserveCommandResult): F[Result[F]] =
     (nsObsCmd, obsResult) match {
       case (Some(PauseImmediately), ObserveCommandResult.Paused) |

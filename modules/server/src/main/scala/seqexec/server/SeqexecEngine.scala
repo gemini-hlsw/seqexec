@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -250,7 +250,7 @@ trait SeqexecEngine[F[_]] {
 
   // Used by tests
   def stream(p: Stream[F, EventType[F]])(
-    s0:         EngineState[F]
+    s0: EngineState[F]
   ): Stream[F, (EventResult[SeqEvent], EngineState[F])]
 }
 
@@ -866,7 +866,7 @@ object SeqexecEngine {
       }
 
     override def stream(p: Stream[F, EventType[F]])(
-      s0:                  EngineState[F]
+      s0: EngineState[F]
     ): Stream[F, (EventResult[SeqEvent], EngineState[F])] =
       executeEngine.process(iterateQueues)(p)(s0)
 
@@ -1254,7 +1254,7 @@ object SeqexecEngine {
     }
 
     private def configSystemCheck(sid: Observation.Id, sys: Resource)(
-      st:                              EngineState[F]
+      st: EngineState[F]
     ): Boolean = {
       // Resources used by running sequences
       val used = resourcesInUse(st)
@@ -1594,7 +1594,7 @@ object SeqexecEngine {
    *   parallel.
    */
   private def nextRunnableObservations[F[_]](qid: QueueId, freed: Set[Resource])(
-    st:                                           EngineState[F]
+    st: EngineState[F]
   ): Set[Observation.Id] = {
     // Set of all resources in use
     val used = resourcesInUse(st)
@@ -1633,7 +1633,7 @@ object SeqexecEngine {
    * to check if sequences added to a queue should be started.
    */
   private def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(
-    st:                                 EngineState[F]
+    st: EngineState[F]
   ): Set[Observation.Id] =
     findRunnableObservations(qid)(st).intersect(sids)
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -73,7 +73,7 @@ object InstrumentControllerSim {
     stopObserveDelay:   FiniteDuration,
     configurationDelay: FiniteDuration,
     obsStateRef:        Ref[F, ObserveState]
-  )(implicit val F:     MonadError[*[_], Throwable][F], L: Logger[F], T: Temporal[F])
+  )(implicit val F: MonadError[*[_], Throwable][F], L: Logger[F], T: Temporal[F])
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
 

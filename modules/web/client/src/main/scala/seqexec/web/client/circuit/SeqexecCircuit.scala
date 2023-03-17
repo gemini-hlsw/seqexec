@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -143,8 +143,8 @@ object SeqexecCircuit
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
   def obsProgressReader[P <: Progress: Eq](
-    id:                     Observation.Id,
-    stepId:                 StepId
+    id:     Observation.Id,
+    stepId: StepId
   )(implicit progressPrism: Prism[Progress, P]): ModelR[SeqexecAppRootModel, Option[P]] =
     this.zoomO(AllObservationsProgressState.progressStateO[P](id, stepId))
 

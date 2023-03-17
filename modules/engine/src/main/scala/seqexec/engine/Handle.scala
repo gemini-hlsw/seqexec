@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -45,7 +45,7 @@ object Handle {
 
       override def flatMap[A, B](
         fa: Handle[F, D, V, A]
-      )(f:  A => Handle[F, D, V, B]): Handle[F, D, V, B] = Handle[F, D, V, B](
+      )(f: A => Handle[F, D, V, B]): Handle[F, D, V, B] = Handle[F, D, V, B](
         fa.run.flatMap { case (a, op1) =>
           f(a).run.map { case (b, op2) =>
             (b, concatOpP(op1, op2))

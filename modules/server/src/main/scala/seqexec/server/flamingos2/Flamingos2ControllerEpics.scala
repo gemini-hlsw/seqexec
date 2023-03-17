@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
@@ -112,7 +112,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](
-    sys:        => Flamingos2Epics[F]
+    sys: => Flamingos2Epics[F]
   )(implicit L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {

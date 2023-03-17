@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.nifs
@@ -115,7 +115,7 @@ object NifsControllerEpics extends NifsEncoders {
       .toOption
 
   def apply[F[_]: Async](
-    epicsSys:   => NifsEpics[F]
+    epicsSys: => NifsEpics[F]
   )(implicit L: Logger[F]): NifsController[F] = new NifsController[F] {
 
     private val unit = Applicative[F].unit

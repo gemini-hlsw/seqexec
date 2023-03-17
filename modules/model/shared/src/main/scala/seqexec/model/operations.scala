@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -40,20 +40,20 @@ object operations {
 
   sealed trait SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]]
   }
 
   private val F2SupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       Nil
   }
 
   private val GmosSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
         case ObservationLevel =>
@@ -86,7 +86,7 @@ object operations {
 
   private val GnirsSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
         case ObservationLevel =>
@@ -101,7 +101,7 @@ object operations {
 
   private val NiriSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
         case ObservationLevel =>
@@ -116,7 +116,7 @@ object operations {
 
   private val NifsSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
         case ObservationLevel =>
@@ -131,7 +131,7 @@ object operations {
 
   private val GsaoiSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
         case ObservationLevel =>
@@ -142,7 +142,7 @@ object operations {
 
   private val NilSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
-      level:                                        OperationLevelType[L]
+      level: OperationLevelType[L]
     ): List[Operations[L]] =
       Nil
   }
@@ -159,7 +159,7 @@ object operations {
 
   final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {
     def operations[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean = false)(
-      implicit level:                                    OperationLevelType[L]
+      implicit level: OperationLevelType[L]
     ): List[Operations[L]] =
       instrumentOperations
         .getOrElse(i, NilSupportedOperations)(isObservePaused, isMultiLevel)

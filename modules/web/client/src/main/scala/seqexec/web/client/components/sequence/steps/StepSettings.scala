@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -69,13 +69,13 @@ object ExposureTimeCell {
 
       // TODO Find a better way to output math-style text
       val seconds = List(
-        <.span(^.display       := "inline-block", ^.marginLeft := 5.px, "["),
-        <.span(^.display       := "inline-block",
+        <.span(^.display := "inline-block", ^.marginLeft := 5.px, "["),
+        <.span(^.display := "inline-block",
                ^.verticalAlign := "none",
                ^.fontStyle     := "italic",
                "s"
         ),
-        <.span(^.display       := "inline-block", "]")
+        <.span(^.display := "inline-block", "]")
       )
 
       val displayedText: TagMod = (coadds, exposureTime) match {

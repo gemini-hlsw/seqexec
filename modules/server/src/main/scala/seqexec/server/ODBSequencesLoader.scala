@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -20,8 +20,8 @@ import SeqexecFailure.SeqexecException
 import SeqexecFailure.UnrecognizedInstrument
 
 final class ODBSequencesLoader[F[_]: Async](
-  odbProxy:            OdbProxy[F],
-  translator:          SeqTranslate[F]
+  odbProxy:   OdbProxy[F],
+  translator: SeqTranslate[F]
 )(implicit execEngine: ExecEngineType[F]) {
 
   private def unloadEvent(seqId: Observation.Id): EventType[F] =

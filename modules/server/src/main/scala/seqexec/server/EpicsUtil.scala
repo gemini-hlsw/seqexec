@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -376,7 +376,7 @@ object EpicsUtil {
    */
   def applyParamT[F[_]](
     relTolerance: Double
-  )(c:            Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
+  )(c: Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
     if (areValuesDifferentEnough(relTolerance, c, d)) {
       set(d).some
     } else {
@@ -407,7 +407,7 @@ object EpicsUtil {
 
   def smartSetDoubleParamF[F[_]: Functor](
     relTolerance: Double
-  )(v:            Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
+  )(v: Double, get: F[Double], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(areValuesDifferentEnough(relTolerance, _, v).option(set))
 
   def defaultProgress[F[_]: Applicative](
