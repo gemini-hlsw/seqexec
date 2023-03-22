@@ -116,7 +116,8 @@ trait GhostLUT {
     ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_FOUR, 14.7.seconds, 9.8.seconds),
     ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_EIGHT, 8.4.seconds, 7.0.seconds),
     ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.FOUR_BY_FOUR, 9.5.seconds, 7.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_ONE, 50.1.seconds, 24.6.seconds),
+    // This mode is timing out at 50.1
+    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_ONE, 55.1.seconds, 24.6.seconds),
     ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_TWO, 26.1.seconds, 14.3.seconds),
     ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_FOUR, 13.9.seconds, 9.1.seconds),
     ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_EIGHT, 7.9.seconds, 6.5.seconds),
