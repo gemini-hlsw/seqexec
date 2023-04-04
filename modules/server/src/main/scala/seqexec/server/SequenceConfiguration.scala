@@ -24,6 +24,7 @@ import seqexec.server.gpi.Gpi
 import seqexec.server.gsaoi._
 import seqexec.server.nifs._
 import seqexec.server.niri._
+import seqexec.server.igrins2._
 
 trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =
@@ -40,6 +41,7 @@ trait SequenceConfiguration {
         case Niri.name       => Instrument.Niri.asRight
         case Nifs.name       => Instrument.Nifs.asRight
         case Gsaoi.name      => Instrument.Gsaoi.asRight
+        case Igrins2.name    => Instrument.Igrins2.asRight
         case ins             => UnrecognizedInstrument(s"inst $ins").asLeft
       }
 

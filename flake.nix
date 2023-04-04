@@ -25,11 +25,18 @@
           packages = [
             pkgs.nodePackages.vscode-langservers-extracted
             pkgs.nodePackages.prettier
+            pkgs.nodePackages.yarn
           ];
           typelevelShell = {
             nodejs.enable = true;
             jdk.package = pkgs.jdk17;
           };
+          env = [
+            {
+              name = "NODE_OPTIONS";
+              value = "--openssl-legacy-provider";
+            }
+          ];
         };
       }
 

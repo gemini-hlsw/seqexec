@@ -11,6 +11,7 @@ import shapeless.tag.@@
 
 trait GpiSettings
 trait GhostSettings
+trait Igrins2Settings
 
 /**
  * Configuration of the Seqexec Engine
@@ -61,6 +62,8 @@ final case class SeqexecEngineConfiguration(
   gpiGDS:                  Uri @@ GpiSettings,
   ghostUrl:                Uri @@ GhostSettings,
   ghostGDS:                Uri @@ GhostSettings,
+  igrins2Url:              Uri @@ Igrins2Settings,
+  igrins2GDS:              Uri @@ Igrins2Settings,
   tops:                    String,
   epicsCaAddrList:         Option[String],
   readRetries:             Int,
@@ -85,6 +88,8 @@ object SeqexecEngineConfiguration {
        x.gpiGDS,
        x.ghostUrl,
        x.ghostGDS,
+       x.igrins2Url,
+       x.igrins2GDS,
        x.tops,
        x.epicsCaAddrList,
        x.readRetries,

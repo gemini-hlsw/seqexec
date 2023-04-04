@@ -554,6 +554,8 @@ case class TestTcsEpics[F[_]: Async](
 
   override def ghostPort: F[Int] = state.get.map(_.ghostPort)
 
+  override def igrins2Port: F[Int] = state.get.map(_.igrins2Port)
+
   override def aoGuideStarX: F[Double] = state.get.map(_.aoGuideStarX)
 
   override def aoGuideStarY: F[Double] = state.get.map(_.aoGuideStarY)
@@ -931,6 +933,7 @@ object TestTcsEpics {
     nifsPort:                  Int,
     gmosPort:                  Int,
     ghostPort:                 Int,
+    igrins2Port:               Int,
     aoGuideStarX:              Double,
     aoGuideStarY:              Double,
     aoPreparedCMX:             Double,
@@ -1305,6 +1308,7 @@ object TestTcsEpics {
     nifsPort = 0,
     gmosPort = 0,
     ghostPort = 0,
+    igrins2Port = 0,
     aoGuideStarX = 0.0,
     aoGuideStarY = 0.0,
     aoPreparedCMX = 0.0,

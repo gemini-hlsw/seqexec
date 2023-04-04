@@ -53,6 +53,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import shapeless.tag
 
 import scala.concurrent.duration._
+import seqexec.server.igrins2.Igrins2Controller
+import giapi.client.igrins2.Igrins2Client
 
 class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
   import TestCommon._
@@ -70,9 +72,10 @@ class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
      GsaoiControllerSim[IO],
      gpiSim,
      ghostSim,
+     igrins2Sim,
      NiriControllerSim[IO],
      NifsControllerSim[IO]
-    ).mapN { (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, niri, nifs) =>
+    ).mapN { (dhs, f2, gmosS, gmosN, gnirs, gsaoi, gpi, ghost, igrins2, niri, nifs) =>
       Systems[IO](
         OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
         dhs,
@@ -86,6 +89,7 @@ class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
         gsaoi,
         gpi,
         ghost,
+        igrins2,
         niri,
         nifs,
         AltairControllerSim[IO],
@@ -146,6 +150,8 @@ object TestCommon {
       gpiGds = ControlStrategy.Simulated,
       ghost = ControlStrategy.Simulated,
       ghostGds = ControlStrategy.Simulated,
+      igrins2 = ControlStrategy.Simulated,
+      igrins2Gds = ControlStrategy.Simulated,
       gsaoi = ControlStrategy.Simulated,
       gws = ControlStrategy.Simulated,
       nifs = ControlStrategy.Simulated,
@@ -160,6 +166,8 @@ object TestCommon {
     tag[GpiSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     tag[GhostSettings][Uri](uri"vm://localhost:8888/xmlrpc"),
     tag[GhostSettings][Uri](uri"http://localhost:8888/xmlrpc"),
+    tag[Igrins2Settings][Uri](uri"vm://localhost:8888/xmlrpc"),
+    tag[Igrins2Settings][Uri](uri"http://localhost:8888/xmlrpc"),
     "",
     Some("127.0.0.1"),
     0,
@@ -254,6 +262,16 @@ object TestCommon {
       IO(
         GhostController(x,
                         GdsClient(GdsClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
+        )
+      )
+    )
+
+  private val igrins2Sim: IO[Igrins2Controller[IO]] = Igrins2Client
+    .simulatedIgrins2Client[IO]
+    .use(x =>
+      IO(
+        Igrins2Controller(x,
+                          GdsClient(GdsClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
         )
       )
     )

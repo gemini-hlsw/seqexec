@@ -51,6 +51,8 @@ import seqexec.server.ghost.Ghost
 import seqexec.server.ghost.GhostController
 import seqexec.server.ghost.GhostControllerDisabled
 import seqexec.server.ghost.GhostHeader
+import seqexec.server.igrins2.Igrins2Controller
+import seqexec.server.igrins2.Igrins2ControllerDisabled
 import seqexec.server.gmos.GmosController
 import seqexec.server.gmos.GmosControllerDisabled
 import seqexec.server.gmos.GmosHeader
@@ -75,6 +77,8 @@ import seqexec.server.tcs.TcsController.LightSource
 import seqexec.server.tcs._
 import squants.Time
 import squants.time.TimeConversions._
+import seqexec.server.igrins2.Igrins2
+import seqexec.server.igrins2.Igrins2Header
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 
@@ -382,52 +386,55 @@ object SeqTranslate {
       endPaused(seqId, _.abortPaused)
 
     def toInstrumentSys(inst: Instrument): SystemOverrides => InstrumentSystem[F] = inst match {
-      case Instrument.F2    =>
+      case Instrument.F2      =>
         ov: SystemOverrides =>
           Flamingos2(overriddenSystems.flamingos2(ov), overriddenSystems.dhs(ov)): InstrumentSystem[
             F
           ]
-      case Instrument.GmosS =>
+      case Instrument.GmosS   =>
         ov: SystemOverrides =>
           GmosSouth(overriddenSystems.gmosSouth(ov),
                     overriddenSystems.dhs(ov),
                     gmosNsCmd
           ): InstrumentSystem[F]
-      case Instrument.GmosN =>
+      case Instrument.GmosN   =>
         ov: SystemOverrides =>
           GmosNorth(overriddenSystems.gmosNorth(ov),
                     overriddenSystems.dhs(ov),
                     gmosNsCmd
           ): InstrumentSystem[F]
-      case Instrument.Gnirs =>
+      case Instrument.Gnirs   =>
         ov: SystemOverrides =>
           Gnirs(overriddenSystems.gnirs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Gpi   =>
+      case Instrument.Gpi     =>
         ov: SystemOverrides => Gpi(overriddenSystems.gpi(ov)): InstrumentSystem[F]
-      case Instrument.Ghost =>
+      case Instrument.Ghost   =>
         ov: SystemOverrides =>
           Ghost(overriddenSystems.ghost(ov), conditionsRef): InstrumentSystem[F]
-      case Instrument.Niri  =>
+      case Instrument.Niri    =>
         ov: SystemOverrides =>
           Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Nifs  =>
+      case Instrument.Nifs    =>
         ov: SystemOverrides =>
           Nifs(overriddenSystems.nifs(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
-      case Instrument.Gsaoi =>
+      case Instrument.Gsaoi   =>
         ov: SystemOverrides =>
           Gsaoi(overriddenSystems.gsaoi(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
+      case Instrument.Igrins2 =>
+        ov: SystemOverrides => Igrins2(overriddenSystems.igrins2(ov)): InstrumentSystem[F]
     }
 
     def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
-      case Instrument.F2    => Flamingos2.specifics
-      case Instrument.GmosS => GmosSouth.specifics
-      case Instrument.GmosN => GmosNorth.specifics
-      case Instrument.Gnirs => Gnirs.specifics
-      case Instrument.Gpi   => Gpi.specifics
-      case Instrument.Ghost => Ghost.specifics
-      case Instrument.Niri  => Niri.specifics
-      case Instrument.Nifs  => Nifs.specifics
-      case Instrument.Gsaoi => Gsaoi.specifics
+      case Instrument.F2      => Flamingos2.specifics
+      case Instrument.GmosS   => GmosSouth.specifics
+      case Instrument.GmosN   => GmosNorth.specifics
+      case Instrument.Gnirs   => Gnirs.specifics
+      case Instrument.Gpi     => Gpi.specifics
+      case Instrument.Ghost   => Ghost.specifics
+      case Instrument.Niri    => Niri.specifics
+      case Instrument.Nifs    => Nifs.specifics
+      case Instrument.Gsaoi   => Gsaoi.specifics
+      case Instrument.Igrins2 => Igrins2.specifics
     }
 
     import TcsController.Subsystem._
@@ -642,6 +649,8 @@ object SeqTranslate {
           )
         case Instrument.Ghost                    =>
           GhostHeader.header[F]
+        case Instrument.Igrins2                  =>
+          Igrins2Header.header[F]
         case Instrument.Niri                     =>
           NiriHeader.header[F](kwClient, systemss.niriKeywordReader, systemss.tcsKeywordReader)
         case Instrument.Nifs                     =>
@@ -805,6 +814,7 @@ object SeqTranslate {
     private val nifsDisabled: NifsController[F]             = new NifsControllerDisabled[F]
     private val niriDisabled: NiriController[F]             = new NiriControllerDisabled[F]
     private val gnirsDisabled: GnirsController[F]           = new GnirsControllerDisabled[F]
+    private val igrins2Disabled: Igrins2Controller[F]       = new Igrins2ControllerDisabled[F]
 
     def tcsSouth(overrides: SystemOverrides): TcsSouthController[F] =
       if (overrides.isTcsEnabled) systems.tcsSouth
@@ -866,6 +876,9 @@ object SeqTranslate {
       if (overrides.isInstrumentEnabled) systems.gnirs
       else gnirsDisabled
 
+    def igrins2(overrides: SystemOverrides): Igrins2Controller[F] =
+      if (overrides.isInstrumentEnabled) systems.igrins2
+      else igrins2Disabled
   }
 
 }

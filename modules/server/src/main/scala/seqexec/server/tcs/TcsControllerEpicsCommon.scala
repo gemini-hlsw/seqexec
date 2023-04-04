@@ -512,6 +512,7 @@ object TcsControllerEpicsCommon {
         case Gpi                           => ports.gpiPort
         case Ghost                         => ports.ghostPort
         case Gsaoi                         => ports.gsaoiPort
+        case Igrins2                       => ports.igrins2Port
         case Ac | Hr                       => BottomPort
         case Phoenix | Visitor             => InvalidPort
       }
@@ -838,12 +839,12 @@ object TcsControllerEpicsCommon {
     math.abs(wavel.length.toAngstroms - other.length.toAngstroms) <= WavelengthTolerance.toAngstroms
 
   def oiSelectionName(i: Instrument): Option[String] = i match {
-    case Instrument.F2                                        => "F2".some
-    case Instrument.GmosS | Instrument.GmosN                  => "GMOS".some
-    case Instrument.Gnirs                                     => "GNIRS".some
-    case Instrument.Niri                                      => "NIRI".some
-    case Instrument.Nifs                                      => "NIFS".some
-    case Instrument.Ghost | Instrument.Gpi | Instrument.Gsaoi => none
+    case Instrument.F2                                                             => "F2".some
+    case Instrument.GmosS | Instrument.GmosN                                       => "GMOS".some
+    case Instrument.Gnirs                                                          => "GNIRS".some
+    case Instrument.Niri                                                           => "NIRI".some
+    case Instrument.Nifs                                                           => "NIFS".some
+    case Instrument.Ghost | Instrument.Gpi | Instrument.Igrins2 | Instrument.Gsaoi => none
   }
 
   def calcMoveDistanceSquared(current: BaseEpicsTcsConfig, demand: TelescopeConfig): Option[Area] =

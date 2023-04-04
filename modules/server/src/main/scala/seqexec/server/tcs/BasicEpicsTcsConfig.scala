@@ -17,7 +17,8 @@ final case class InstrumentPorts(
   gpiPort:        Int,
   gsaoiPort:      Int,
   nifsPort:       Int,
-  niriPort:       Int
+  niriPort:       Int,
+  igrins2Port:    Int
 )
 
 @Lenses
