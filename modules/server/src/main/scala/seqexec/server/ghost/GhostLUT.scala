@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -10,6 +10,10 @@ import seqexec.model.Conditions
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.SkyBackground
+import squants.time.Seconds
+import squants.time.Milliseconds
+import squants.time.Time
+import java.time.{ Duration => JDuration }
 
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
 final case class SVCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
@@ -107,33 +111,100 @@ trait GhostLUT {
   // the List is never empty
   val SVMinimumTime = SVCameraTimesLUT.minBy(_.goodWeather)
 
-  val ReadoutTimesLUT = List(
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_ONE, 97.4.seconds, 45.6.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_TWO, 49.6.seconds, 24.8.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_FOUR, 25.7.seconds, 14.4.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.ONE_BY_EIGHT, 13.8.seconds, 9.1.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_TWO, 27.5.seconds, 15.4.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_FOUR, 14.7.seconds, 9.8.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.TWO_BY_EIGHT, 8.4.seconds, 7.0.seconds),
-    ReadoutTimes(ReadNoiseGain.Slow, GhostBinning.FOUR_BY_FOUR, 9.5.seconds, 7.9.seconds),
-    // This mode is timing out at 50.1
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_ONE, 55.1.seconds, 24.6.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_TWO, 26.1.seconds, 14.3.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_FOUR, 13.9.seconds, 9.1.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.ONE_BY_EIGHT, 7.9.seconds, 6.5.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_TWO, 15.7.seconds, 10.1.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_FOUR, 8.8.seconds, 7.2.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.TWO_BY_EIGHT, 5.4.seconds, 5.6.seconds),
-    ReadoutTimes(ReadNoiseGain.Medium, GhostBinning.FOUR_BY_FOUR, 6.5.seconds, 6.5.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_ONE, 21.7.seconds, 12.0.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_TWO, 11.7.seconds, 7.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_FOUR, 6.8.seconds, 5.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.ONE_BY_EIGHT, 4.3.seconds, 4.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_TWO, 8.6.seconds, 6.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_FOUR, 5.2.seconds, 5.6.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.TWO_BY_EIGHT, 3.6.seconds, 4.9.seconds),
-    ReadoutTimes(ReadNoiseGain.Fast, GhostBinning.FOUR_BY_FOUR, 4.7.seconds, 5.8.seconds)
-  )
+  private def duration(sec: Int, milliSeconds: Int): JDuration =
+    JDuration.ofSeconds(sec.toLong, milliSeconds.toLong * 1000000L)
+
+  // TODO: Call directlyy the OCS code
+  // Taken from OCS GhostCameras.scala
+  object Red {
+    val ReadoutTime: Map[(GhostBinning, ReadNoiseGain), JDuration] = {
+      import GhostBinning._
+      import ReadNoiseGain._
+      Map(
+        (ONE_BY_ONE, Slow)     -> duration(100, 675),
+        (ONE_BY_ONE, Medium)   -> duration(58, 994),
+        (ONE_BY_ONE, Fast)     -> duration(23, 520),
+        (ONE_BY_TWO, Slow)     -> duration(51, 271),
+        (ONE_BY_TWO, Medium)   -> duration(30, 230),
+        (ONE_BY_TWO, Fast)     -> duration(12, 341),
+        (ONE_BY_FOUR, Slow)    -> duration(26, 564),
+        (ONE_BY_FOUR, Medium)  -> duration(15, 838),
+        (ONE_BY_FOUR, Fast)    -> duration(6, 773),
+        (ONE_BY_EIGHT, Slow)   -> duration(14, 198),
+        (ONE_BY_EIGHT, Medium) -> duration(8, 686),
+        (ONE_BY_EIGHT, Fast)   -> duration(3, 977),
+        (TWO_BY_TWO, Slow)     -> duration(28, 364),
+        (TWO_BY_TWO, Medium)   -> duration(17, 696),
+        (TWO_BY_TWO, Fast)     -> duration(8, 577),
+        (TWO_BY_FOUR, Slow)    -> duration(15, 146),
+        (TWO_BY_FOUR, Medium)  -> duration(9, 638),
+        (TWO_BY_FOUR, Fast)    -> duration(4, 929),
+        (TWO_BY_EIGHT, Slow)   -> duration(8, 534),
+        (TWO_BY_EIGHT, Medium) -> duration(5, 580),
+        (TWO_BY_EIGHT, Fast)   -> duration(3, 578),
+        (FOUR_BY_FOUR, Slow)   -> duration(9, 536),
+        (FOUR_BY_FOUR, Medium) -> duration(6, 581),
+        (FOUR_BY_FOUR, Fast)   -> duration(4, 770)
+      )
+    }
+  }
+
+  object Blue {
+
+    val ReadoutTime: Map[(GhostBinning, ReadNoiseGain), JDuration] = {
+      import GhostBinning._
+      import ReadNoiseGain._
+      Map(
+        (ONE_BY_ONE, Slow)     -> duration(45, 957),
+        (ONE_BY_ONE, Medium)   -> duration(27, 118),
+        (ONE_BY_ONE, Fast)     -> duration(11, 78),
+        (ONE_BY_TWO, Slow)     -> duration(23, 808),
+        (ONE_BY_TWO, Medium)   -> duration(14, 237),
+        (ONE_BY_TWO, Fast)     -> duration(6, 72),
+        (ONE_BY_FOUR, Slow)    -> duration(12, 741),
+        (ONE_BY_FOUR, Medium)  -> duration(7, 784),
+        (ONE_BY_FOUR, Fast)    -> duration(3, 575),
+        (ONE_BY_EIGHT, Slow)   -> duration(7, 229),
+        (ONE_BY_EIGHT, Medium) -> duration(4, 574),
+        (ONE_BY_EIGHT, Fast)   -> duration(3, 75),
+        (TWO_BY_TWO, Slow)     -> duration(13, 644),
+        (TWO_BY_TWO, Medium)   -> duration(8, 633),
+        (TWO_BY_TWO, Fast)     -> duration(4, 425),
+        (TWO_BY_FOUR, Slow)    -> duration(7, 68),
+        (TWO_BY_FOUR, Medium)  -> duration(5, 24),
+        (TWO_BY_FOUR, Fast)    -> duration(3, 71),
+        (TWO_BY_EIGHT, Slow)   -> duration(4, 722),
+        (TWO_BY_EIGHT, Medium) -> duration(3, 223),
+        (TWO_BY_EIGHT, Fast)   -> duration(3, 42),
+        (FOUR_BY_FOUR, Slow)   -> duration(5, 226),
+        (FOUR_BY_FOUR, Medium) -> duration(3, 722),
+        (FOUR_BY_FOUR, Fast)   -> duration(3, 44)
+      )
+    }
+  }
+
+  // Readout time to fallback
+  val fallbackReadoutTimeRed: JDuration = Red.ReadoutTime.map(_._2).max
+
+  val fallbackReadoutTimeBlue: JDuration = Blue.ReadoutTime.map(_._2).max
+
+  // REL-4239
+  def totalObserveTime(config: GhostConfig): Time = {
+    val blueKey   =
+      (config.blueConfig.binning, config.blueConfig.readMode)
+    val blue      = Blue.ReadoutTime.getOrElse(blueKey, fallbackReadoutTimeBlue)
+    val redKey    =
+      (config.redConfig.binning, config.redConfig.readMode)
+    val red       = Red.ReadoutTime.getOrElse(redKey, fallbackReadoutTimeRed)
+    val blueTotal =
+      config.blueConfig.count.toLong * (config.blueConfig.exposure + Duration.fromNanos(
+        blue.toNanos
+      ))
+    val redTotal  =
+      config.redConfig.count.toLong * (config.redConfig.exposure + Duration.fromNanos(red.toNanos))
+
+    Milliseconds(blueTotal.max(redTotal).toMillis)
+  }
 
   def isPoorWeather(conditions: Conditions) =
     conditions.sb >= SkyBackground.Percent80 || conditions.cc >= CloudCover.Percent80 || conditions.iq === ImageQuality.Any || conditions.sb === SkyBackground.Unknown || conditions.cc === CloudCover.Unknown || conditions.iq === ImageQuality.Unknown
@@ -146,6 +217,15 @@ trait GhostLUT {
       )
       .getOrElse(SVMinimumTime)
     if (isPoorWeather(conditions)) times.poorWeather else times.goodWeather
+  }
+
+  val svReadoutTime = Seconds(2.0)
+
+  // REL-4270
+  def svCameraRepeats(conditions: Conditions, mag: Option[Double], config: GhostConfig): Int = {
+    val total  = totalObserveTime(config)
+    val svTime = Seconds(svCameraTime(conditions, mag))
+    (total / (svTime + svReadoutTime)).floor.toInt
   }
 
   def agCameraTime(conditions: Conditions, mag: Option[Double]): Double = {
@@ -176,7 +256,6 @@ trait GhostLUT {
     val isBias: Boolean = imageTypeConf(obsType).equalsIgnoreCase("BIAS")
     val isFlat: Boolean = imageTypeConf(obsType).equalsIgnoreCase("FLAT")
     val isArc: Boolean  = imageTypeConf(obsType).equalsIgnoreCase("ARC")
-    // val isDark: Boolean = imageTypeConf(obsType).equalsIgnoreCase("DARK")
 
     if (isBias) BiasSVTime else if (isFlat) FlatSVTime else if (isArc) ArcSVTime else 0.seconds
   }

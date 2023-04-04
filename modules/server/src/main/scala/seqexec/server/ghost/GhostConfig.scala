@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -136,7 +136,6 @@ sealed trait GhostConfig extends GhostLUT {
   def baseSVConfig: Configuration =
     giapiConfig(GhostSVCcdRequestType, "CCD_CAMERA_SET") |+|
       giapiConfig(GhostSVRequestType, "HARDWARE") |+|
-      giapiConfig(GhostSVRepeat, 2) |+|
       giapiConfig(GhostSVRunNumber, 0) |+|
       giapiConfig(GhostSVDoSave, 1) |+|
       giapiConfig(GhostSVDoDisplay, 1) |+|
@@ -184,11 +183,13 @@ sealed trait GhostConfig extends GhostLUT {
   def svCalib: Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, svCalibExposureTime(obsType).toMillis.toInt) |+|
+      giapiConfig(GhostSVRepeat, 2) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, (svCameraTime(conditions, mag) * SVDurationFactor).toInt) |+|
+      giapiConfig(GhostSVRepeat, svCameraRepeats(conditions, mag, this)) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   val AGDurationFactor = 10
@@ -205,9 +206,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
-  def configuration: Configuration = {
-    println(this)
-    println(slitMaskConfiguration)
+  def configuration: Configuration =
     baseConfiguration |+| slitMaskConfiguration |+| (
       if (!isScience(obsType)) {
         ifuCalibration |+| channelConfig |+|
@@ -223,7 +222,6 @@ sealed trait GhostConfig extends GhostLUT {
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
           svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+| */ thXeLamp
     ) |+| giapiConfig(GhostSlitMaskPositionerType, "SMP_DEMAND_POSITION")
-  }
 
 }
 
