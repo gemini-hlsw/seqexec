@@ -5,7 +5,7 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 
 // sbt revolver lets launching applications from the sbt console
-addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
 
 // Extract metadata from sbt and make it available to the code
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.11.0")
