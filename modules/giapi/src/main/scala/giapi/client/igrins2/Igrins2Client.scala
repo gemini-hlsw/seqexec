@@ -19,7 +19,7 @@ sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 object Igrins2Client {
 
   /**
-   * Client for GPI
+   * Client for Igrins2
    */
   final private class Igrins2ClientImpl[F[_]](
     override val giapi: Giapi[F],

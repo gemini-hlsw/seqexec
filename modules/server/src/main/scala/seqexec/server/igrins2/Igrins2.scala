@@ -4,6 +4,7 @@
 package seqexec.server.igrins2
 
 import cats.data.Kleisli
+import cats.MonadError
 import cats.effect.Sync
 import cats.syntax.all._
 import fs2.Stream
@@ -39,6 +40,8 @@ final case class Igrins2[F[_]: Logger: Async](
 
   override val contributorName: String = "igrins2"
 
+  val readoutOverhead: Time = Seconds(10)
+
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable
 
@@ -64,12 +67,22 @@ final case class Igrins2[F[_]: Logger: Async](
 
   override def notifyObserveStart: F[Unit] = Sync[F].unit
 
-  override def calcObserveTime(config: CleanConfig): F[Time] = Seconds(360).pure[F]
+  override def calcObserveTime(config: CleanConfig): F[Time] =
+    MonadError[F, Throwable].catchNonFatal {
+      val obsTime =
+        for {
+          exp <- config.extractObsAs[JDouble](SPIgrins2.EXPOSURE_TIME_PROP)
+          t    = Seconds(exp.toDouble)
+          f    = SPIgrins2.readoutTime(t)
+        } yield t + f + readoutOverhead
+      obsTime.getOrElse(readoutOverhead)
+    }
 
   override def observeProgress(
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
-  ): Stream[F, Progress] = Stream.empty
+  ): Stream[F, Progress] =
+    ProgressUtil.obsCountdown[F](total, elapsed.self)
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
@@ -88,11 +101,12 @@ object Igrins2 {
         (for {
           expTime       <-
             config.extractObsAs[JDouble](SPIgrins2.EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
-          igrins2Config <- Right(new Igrins2Config {
-                             override def configuration: Configuration =
-                               // TODO The ICD must indicate how to set the exposure time
-                               Configuration.single("igrin2:exposureTime", expTime.value)
-                           })
+          igrins2Config <-
+            Right(new Igrins2Config {
+              override def configuration: Configuration =
+                // TODO The ICD must indicate how to set the exposure time
+                Configuration.single("igrin2:exposureTime", expTime.value)
+            })
         } yield igrins2Config).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }.widenRethrowT

@@ -77,6 +77,8 @@ trait Columns {
   val FPUMinWidth: Double           = 46.667 + SeqexecStyles.TableBorderWidth
   val CameraWidth: Double           = 180
   val CameraMinWidth: Double        = 10
+  val FowlerSamplesWidth: Double    = 120
+  val FowlerSamplesMinWidth: Double = 120
   val DeckerWidth: Double           = 110
   val DeckerMinWidth: Double        = 10
   val ImagingMirrorWidth: Double    = 180
@@ -98,6 +100,7 @@ trait Columns {
   case object FPUColumn           extends TableColumn
   case object CameraColumn        extends TableColumn
   case object DeckerColumn        extends TableColumn
+  case object FowlerSamplesColumn extends TableColumn
   case object ReadModeColumn      extends TableColumn
   case object ImagingMirrorColumn extends TableColumn
   case object ObjectTypeColumn    extends TableColumn
@@ -115,6 +118,7 @@ trait Columns {
     FPUColumn           -> FPUWidth,
     CameraColumn        -> CameraWidth,
     DeckerColumn        -> DeckerWidth,
+    FowlerSamplesColumn -> FowlerSamplesWidth,
     ReadModeColumn      -> ReadModeWidth,
     ImagingMirrorColumn -> ImagingMirrorWidth,
     ObjectTypeColumn    -> ObjectTypeWidth,
@@ -220,6 +224,15 @@ trait Columns {
     width = VariableColumnWidth.unsafeFromDouble(0.1, DeckerMinWidth)
   )
 
+  val FowlerSamplesMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    FowlerSamplesColumn,
+    name = "fowler",
+    label = "Fowler Samples",
+    removeable = 5,
+    visible = true,
+    width = VariableColumnWidth.unsafeFromDouble(0.1, FowlerSamplesMinWidth)
+  )
+
   val ReadModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ReadModeColumn,
     name = "camera",
@@ -268,6 +281,7 @@ trait Columns {
       FPUMeta,
       CameraMeta,
       DeckerMeta,
+      FowlerSamplesMeta,
       ReadModeMeta,
       ImagingMirrorMeta,
       ObjectTypeMeta,
@@ -284,6 +298,7 @@ trait Columns {
     FPUColumn           -> FPUMinWidth,
     CameraColumn        -> CameraMinWidth,
     DeckerColumn        -> DeckerMinWidth,
+    FowlerSamplesColumn -> FowlerSamplesMinWidth,
     ImagingMirrorColumn -> ImagingMirrorMinWidth,
     ReadModeColumn      -> ReadModeMinWidth
   )
@@ -319,6 +334,7 @@ final case class StepsTable(
   val showFPU: Boolean                    = showProp(InstrumentProperties.FPU)
   val showCamera: Boolean                 = showProp(InstrumentProperties.Camera)
   val showDecker: Boolean                 = showProp(InstrumentProperties.Decker)
+  val showFowler: Boolean                 = showProp(InstrumentProperties.FowlerSamples)
   val showImagingMirror: Boolean          = showProp(
     InstrumentProperties.ImagingMirror
   )
@@ -404,6 +420,7 @@ final case class StepsTable(
       case FPUMeta           => showFPU
       case CameraMeta        => showCamera
       case DeckerMeta        => showDecker
+      case FowlerSamplesMeta => showFowler
       case ImagingMirrorMeta => showImagingMirror
       case ReadModeMeta      => showReadMode
       case _                 => true
@@ -417,6 +434,7 @@ final case class StepsTable(
                                       filter(s),
                                       fpuOrMask(s),
                                       camera(s),
+                                      s.fowlerSamples,
                                       s.deckerName,
                                       s.imagingMirrorName,
                                       s.observingMode,
@@ -430,6 +448,7 @@ final case class StepsTable(
     (DisperserColumn, disperser),
     (CameraColumn, camera),
     (DeckerColumn, _.deckerName),
+    (FowlerSamplesColumn, _.fowlerSamples.map(_.toString)),
     (ImagingMirrorColumn, _.imagingMirrorName),
     (ObservingModeColumn, _.observingMode),
     (ReadModeColumn, _.readMode)
@@ -726,7 +745,8 @@ object StepsTable extends Columns {
     case ControlColumn                => SeqexecStyles.controlCellRow.some
     case StepColumn | ExecutionColumn => SeqexecStyles.paddedStepRow.some
     case ObservingModeColumn | ExposureColumn | DisperserColumn | FilterColumn | FPUColumn |
-        CameraColumn | ObjectTypeColumn | DeckerColumn | ReadModeColumn | ImagingMirrorColumn =>
+        CameraColumn | ObjectTypeColumn | FowlerSamplesColumn | DeckerColumn | ReadModeColumn |
+        ImagingMirrorColumn =>
       SeqexecStyles.centeredCell.some
     case SettingsColumn               => SeqexecStyles.settingsCellRow.some
     case _                            => none
@@ -785,6 +805,7 @@ object StepsTable extends Columns {
       case SettingsColumn      => $.props.steps.map(p => settingsControlRenderer($.props, p))
       case ReadModeColumn      => stepItemRendererS(_.readMode).some
       case DeckerColumn        => stepItemRendererS(_.deckerName).some
+      case FowlerSamplesColumn => stepItemRendererS(_.fowlerSamples.map(_.toString)).some
       case ImagingMirrorColumn => stepItemRendererS(_.imagingMirrorName).some
       case _                   => none
     }
