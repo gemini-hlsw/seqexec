@@ -54,7 +54,7 @@ final case class Ghost[F[_]: Logger: Async](
     with InstrumentSystem[F]
     with GhostLUT {
 
-  val readOutTimeExtra: Time = Seconds(40)
+  val readOutTimeExtra: Time = Seconds(240)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
