@@ -14,6 +14,7 @@ import squants.time.Seconds
 import squants.time.Milliseconds
 import squants.time.Time
 import java.time.{ Duration => JDuration }
+import shapeless.tag.@@
 
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
 final case class SVCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
@@ -189,7 +190,10 @@ trait GhostLUT {
   val fallbackReadoutTimeBlue: JDuration = Blue.ReadoutTime.map(_._2).max
 
   // REL-4239
-  def totalObserveTime(blueChannel: ChannelConfig, redChannel: ChannelConfig): Time = {
+  def totalObserveTime(
+    blueChannel: ChannelConfig @@ BlueChannel,
+    redChannel:  ChannelConfig @@ RedChannel
+  ): Time = {
     val blueKey   =
       (blueChannel.binning, blueChannel.readMode)
     val blue      = Blue.ReadoutTime.getOrElse(blueKey, fallbackReadoutTimeBlue)
@@ -225,8 +229,8 @@ trait GhostLUT {
   def svCameraRepeats(
     conditions: Conditions,
     mag:        Option[Double],
-    blueConfig: ChannelConfig,
-    redConfig:  ChannelConfig
+    blueConfig: ChannelConfig @@ BlueChannel,
+    redConfig:  ChannelConfig @@ RedChannel
   ): Int = {
     val total  = totalObserveTime(blueConfig, redConfig)
     val svTime = Seconds(svCameraTime(conditions, mag))
@@ -253,9 +257,10 @@ trait GhostLUT {
 
   def isScience(obsType: String): Boolean = obsType.equalsIgnoreCase("object")
 
-  val BiasSVTime = 0.seconds
-  val FlatSVTime = 0.1.seconds
-  val ArcSVTime  = 300.seconds
+  val BiasSVTime               = 0.seconds
+  val FlatSVTime               = 0.1.seconds
+  val ArcSVTime                = 300.seconds
+  val GhostCalibrationSVRepeat = 2
 
   def svCalibExposureTime(obsType: String) = {
     val isBias: Boolean = imageTypeConf(obsType).equalsIgnoreCase("BIAS")

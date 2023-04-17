@@ -125,6 +125,9 @@ object ReadNoiseGain {
   implicit val ifuTargetTypeConfiguration: GiapiConfig[ReadNoiseGain] = _.value
 }
 
+trait BlueChannel
+trait RedChannel
+
 final case class ChannelConfig(
   binning:  GhostBinning,
   exposure: FiniteDuration,

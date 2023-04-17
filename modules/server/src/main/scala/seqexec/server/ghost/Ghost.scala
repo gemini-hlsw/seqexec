@@ -46,6 +46,7 @@ import scala.concurrent.duration._
 import squants.time.Seconds
 import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
+import shapeless.tag
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -247,15 +248,19 @@ object Ghost extends GhostConfigUtil {
                 GhostConfig.apply(
                   obsType = obsType,
                   obsClass = obsClass,
-                  blueConfig = ChannelConfig(blueBinning,
-                                             blueExposure.second,
-                                             blueCount,
-                                             gainFromODB(blueReadMode)
+                  blueConfig = tag[BlueChannel][ChannelConfig](
+                    ChannelConfig(blueBinning,
+                                  blueExposure.second,
+                                  blueCount,
+                                  gainFromODB(blueReadMode)
+                    )
                   ),
-                  redConfig = ChannelConfig(redBinning,
-                                            redExposure.second,
-                                            redCount,
-                                            gainFromODB(redReadMode)
+                  redConfig = tag[RedChannel][ChannelConfig](
+                    ChannelConfig(redBinning,
+                                  redExposure.second,
+                                  redCount,
+                                  gainFromODB(redReadMode)
+                    )
                   ),
                   baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                   fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
@@ -278,15 +283,19 @@ object Ghost extends GhostConfigUtil {
                 GhostCalibration(
                   obsType = obsType,
                   obsClass = obsClass,
-                  blueConfig = ChannelConfig(blueBinning,
-                                             blueExposure.second,
-                                             blueCount,
-                                             gainFromODB(blueReadMode)
+                  blueConfig = tag[BlueChannel][ChannelConfig](
+                    ChannelConfig(blueBinning,
+                                  blueExposure.second,
+                                  blueCount,
+                                  gainFromODB(blueReadMode)
+                    )
                   ),
-                  redConfig = ChannelConfig(redBinning,
-                                            redExposure.second,
-                                            redCount,
-                                            gainFromODB(redReadMode)
+                  redConfig = tag[RedChannel][ChannelConfig](
+                    ChannelConfig(redBinning,
+                                  redExposure.second,
+                                  redCount,
+                                  gainFromODB(redReadMode)
+                    )
                   ),
                   baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                   fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),

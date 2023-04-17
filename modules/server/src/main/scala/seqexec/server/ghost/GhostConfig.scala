@@ -19,13 +19,15 @@ import lucuma.core.enums.GiapiStatusApply
 import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 import edu.gemini.spModel.target.env.ResolutionMode
+import shapeless.tag
+import shapeless.tag.@@
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {
   def obsType: String
   def obsClass: String
-  def blueConfig: ChannelConfig
-  def redConfig: ChannelConfig
+  def blueConfig: ChannelConfig @@ BlueChannel
+  def redConfig: ChannelConfig @@ RedChannel
 
   def baseCoords: Option[Coordinates]
   def userTargets: List[GemTarget]
@@ -183,7 +185,7 @@ sealed trait GhostConfig extends GhostLUT {
   def svCalib: Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, svCalibExposureTime(obsType).toMillis.toInt) |+|
-      giapiConfig(GhostSVRepeat, 2) |+|
+      giapiConfig(GhostSVRepeat, GhostCalibrationSVRepeat) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =
@@ -279,8 +281,8 @@ object GhostConfig {
   def apply(
     obsType:          String,
     obsClass:         String,
-    blueConfig:       ChannelConfig,
-    redConfig:        ChannelConfig,
+    blueConfig:       ChannelConfig @@ BlueChannel,
+    redConfig:        ChannelConfig @@ RedChannel,
     baseCoords:       Option[Coordinates],
     fiberAgitator1:   FiberAgitator,
     fiberAgitator2:   FiberAgitator,
@@ -344,21 +346,22 @@ object GhostConfig {
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .DualTarget(obsType,
-                        obsClass,
-                        blueConfig,
-                        redConfig,
-                        baseCoords,
-                        fiberAgitator1,
-                        fiberAgitator2,
-                        t1,
-                        _,
-                        t2,
-                        _,
-                        userTargets,
-                        resolutionMode,
-                        conditions,
-                        scienceMagnitude
+            .DualTarget(
+              obsType,
+              obsClass,
+              tag[BlueChannel][ChannelConfig](blueConfig),
+              tag[RedChannel][ChannelConfig](redConfig),
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              t1,
+              _,
+              t2,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude
             )
         )
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
@@ -476,8 +479,8 @@ object GhostConfig {
 case class GhostCalibration(
   override val obsType:        String,
   override val obsClass:       String,
-  override val blueConfig:     ChannelConfig,
-  override val redConfig:      ChannelConfig,
+  override val blueConfig:     ChannelConfig @@ BlueChannel,
+  override val redConfig:      ChannelConfig @@ RedChannel,
   override val baseCoords:     Option[Coordinates],
   override val fiberAgitator1: FiberAgitator,
   override val fiberAgitator2: FiberAgitator,
@@ -563,8 +566,8 @@ object StandardResolutionMode {
   final case class SingleTarget(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -581,8 +584,8 @@ object StandardResolutionMode {
 
   implicit val srmSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
     (x.obsType,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,
@@ -598,8 +601,8 @@ object StandardResolutionMode {
   final case class DualTarget(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -622,8 +625,8 @@ object StandardResolutionMode {
 
   implicit val srmDualTargetEq: Eq[DualTarget] = Eq.by(x =>
     (x.obsType,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,
@@ -641,8 +644,8 @@ object StandardResolutionMode {
   final case class TargetPlusSky(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -664,8 +667,8 @@ object StandardResolutionMode {
 
   implicit val srmTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
     (x.obsType,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,
@@ -682,8 +685,8 @@ object StandardResolutionMode {
   final case class SkyPlusTarget(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -706,8 +709,8 @@ object StandardResolutionMode {
 
   implicit val srmSkyPlusTargetEq: Eq[SkyPlusTarget] = Eq.by(x =>
     (x.obsType,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,
@@ -755,8 +758,8 @@ object HighResolutionMode {
   final case class SingleTarget(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -773,8 +776,8 @@ object HighResolutionMode {
 
   implicit val hrSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
     (x.obsType,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,
@@ -790,8 +793,8 @@ object HighResolutionMode {
   final case class TargetPlusSky(
     override val obsType:          String,
     override val obsClass:         String,
-    override val blueConfig:       ChannelConfig,
-    override val redConfig:        ChannelConfig,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
@@ -814,8 +817,8 @@ object HighResolutionMode {
   implicit val hrTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
     (x.obsType,
      x.obsClass,
-     x.blueConfig,
-     x.redConfig,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
      x.baseCoords,
      x.fiberAgitator1,
      x.fiberAgitator2,

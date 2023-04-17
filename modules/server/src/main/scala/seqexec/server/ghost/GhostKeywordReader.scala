@@ -17,6 +17,7 @@ import seqexec.server.keywords._
 import edu.gemini.spModel.target.env.ResolutionMode
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import seqexec.model.Conditions
+import shapeless.tag
 import scala.concurrent.duration._
 
 sealed trait GhostKeywordsReader[F[_]] {
@@ -193,10 +194,14 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
             )
           conditions.get.map { c =>
             (blueConfig.toOption, redConfig.toOption).mapN { (blue, red) =>
-              svCameraRepeats(c, vMag.orElse(gMag), blue, red)
+              svCameraRepeats(c,
+                              vMag.orElse(gMag),
+                              tag[BlueChannel][ChannelConfig](blue),
+                              tag[RedChannel][ChannelConfig](red)
+              )
             }
           }
-        } else 2.some.pure[F]
+        } else GhostCalibrationSVRepeat.some.pure[F]
       val slitDuration: F[Option[Double]]     =
         if (isScience(obsType))
           conditions.get.map { c =>
