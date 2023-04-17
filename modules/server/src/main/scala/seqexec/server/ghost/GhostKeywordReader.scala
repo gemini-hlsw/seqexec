@@ -17,6 +17,7 @@ import seqexec.server.keywords._
 import edu.gemini.spModel.target.env.ResolutionMode
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import seqexec.model.Conditions
+import scala.concurrent.duration._
 
 sealed trait GhostKeywordsReader[F[_]] {
   def basePos: F[Boolean]
@@ -172,7 +173,30 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val resolutionMode: F[Option[String]]   = rm.toOption.map(resolutionMode2String).pure[F]
       val targetMode: F[Option[String]]       =
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
-      val slitCount: F[Option[Int]]           = 1.some.pure[F]
+      val slitCount: F[Option[Int]]           =
+        if (isScience(obsType)) {
+          val blueConfig = (blueBinning,
+                            blueExposure.map(_.second),
+                            blueExpCount,
+                            blueExpReadMode.map(Ghost.gainFromODB)
+          )
+            .mapN(
+              ChannelConfig.apply
+            )
+          val redConfig  = (redBinning,
+                           redExposure.map(_.second),
+                           redExpCount,
+                           redExpReadMode.map(Ghost.gainFromODB)
+          )
+            .mapN(
+              ChannelConfig.apply
+            )
+          conditions.get.map { c =>
+            (blueConfig.toOption, redConfig.toOption).mapN { (blue, red) =>
+              svCameraRepeats(c, vMag.orElse(gMag), blue, red)
+            }
+          }
+        } else 2.some.pure[F]
       val slitDuration: F[Option[Double]]     =
         if (isScience(obsType))
           conditions.get.map { c =>

@@ -189,19 +189,19 @@ trait GhostLUT {
   val fallbackReadoutTimeBlue: JDuration = Blue.ReadoutTime.map(_._2).max
 
   // REL-4239
-  def totalObserveTime(config: GhostConfig): Time = {
+  def totalObserveTime(blueChannel: ChannelConfig, redChannel: ChannelConfig): Time = {
     val blueKey   =
-      (config.blueConfig.binning, config.blueConfig.readMode)
+      (blueChannel.binning, blueChannel.readMode)
     val blue      = Blue.ReadoutTime.getOrElse(blueKey, fallbackReadoutTimeBlue)
     val redKey    =
-      (config.redConfig.binning, config.redConfig.readMode)
+      (redChannel.binning, redChannel.readMode)
     val red       = Red.ReadoutTime.getOrElse(redKey, fallbackReadoutTimeRed)
     val blueTotal =
-      config.blueConfig.count.toLong * (config.blueConfig.exposure + Duration.fromNanos(
+      blueChannel.count.toLong * (blueChannel.exposure + Duration.fromNanos(
         blue.toNanos
       ))
     val redTotal  =
-      config.redConfig.count.toLong * (config.redConfig.exposure + Duration.fromNanos(red.toNanos))
+      redChannel.count.toLong * (redChannel.exposure + Duration.fromNanos(red.toNanos))
 
     Milliseconds(blueTotal.max(redTotal).toMillis)
   }
@@ -222,8 +222,13 @@ trait GhostLUT {
   val svReadoutTime = Seconds(2.0)
 
   // REL-4270
-  def svCameraRepeats(conditions: Conditions, mag: Option[Double], config: GhostConfig): Int = {
-    val total  = totalObserveTime(config)
+  def svCameraRepeats(
+    conditions: Conditions,
+    mag:        Option[Double],
+    blueConfig: ChannelConfig,
+    redConfig:  ChannelConfig
+  ): Int = {
+    val total  = totalObserveTime(blueConfig, redConfig)
     val svTime = Seconds(svCameraTime(conditions, mag))
     (total / (svTime + svReadoutTime)).floor.toInt
   }

@@ -189,7 +189,9 @@ sealed trait GhostConfig extends GhostLUT {
   def svConfiguration(mag: Option[Double]): Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, (svCameraTime(conditions, mag) * SVDurationFactor).toInt) |+|
-      giapiConfig(GhostSVRepeat, svCameraRepeats(conditions, mag, this)) |+|
+      giapiConfig(GhostSVRepeat,
+                  svCameraRepeats(conditions, mag, this.blueConfig, this.redConfig)
+      ) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   val AGDurationFactor = 10

@@ -92,7 +92,7 @@ final case class Ghost[F[_]: Logger: Async](
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
-    ghostConfig.map(c => totalObserveTime(c) + readOutTimeExtra)
+    ghostConfig.map(c => totalObserveTime(c.blueConfig, c.redConfig) + readOutTimeExtra)
   }
 
   override def observeProgress(
@@ -142,6 +142,13 @@ object Ghost extends GhostConfigUtil {
 
   val sfName: String = "GHOST"
 
+  def gainFromODB(n: GhostReadNoiseGain): ReadNoiseGain = n match {
+    case GhostReadNoiseGain.SLOW_LOW   => ReadNoiseGain.Slow
+    case GhostReadNoiseGain.MEDIUM_LOW => ReadNoiseGain.Medium
+    case GhostReadNoiseGain.FAST_LOW   => ReadNoiseGain.Fast
+    case GhostReadNoiseGain.FAST_HIGH  => ReadNoiseGain.Fast
+  }
+
   def fromSequenceConfig[F[_]: Sync](
     config:     CleanConfig,
     conditions: Conditions
@@ -150,13 +157,6 @@ object Ghost extends GhostConfigUtil {
     val decExtractor = decExtractorBase(config)
 
     val MaxTargets = 8
-
-    def gainFromODB(n: GhostReadNoiseGain): ReadNoiseGain = n match {
-      case GhostReadNoiseGain.SLOW_LOW   => ReadNoiseGain.Slow
-      case GhostReadNoiseGain.MEDIUM_LOW => ReadNoiseGain.Medium
-      case GhostReadNoiseGain.FAST_LOW   => ReadNoiseGain.Fast
-      case GhostReadNoiseGain.FAST_HIGH  => ReadNoiseGain.Fast
-    }
 
     def userTargets: List[Option[Target]] = (for {
       i <- 1 to MaxTargets
