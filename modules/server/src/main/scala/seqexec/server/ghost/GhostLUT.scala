@@ -106,7 +106,8 @@ trait GhostLUT {
       SVCameraTimes(18.5, 300.0, 300.0),
       SVCameraTimes(19.0, 300.0, 300.0),
       SVCameraTimes(19.5, 600.0, 600.0),
-      SVCameraTimes(20.0, 600.0, 600.0)
+      SVCameraTimes(20.0, 600.0, 600.0),
+      SVCameraTimes(24.0, 600.0, 600.0)
     ).sortBy(_.gMag)
 
   // the List is never empty
