@@ -402,40 +402,6 @@ object GhostConfig {
                            scienceMagnitude
             )
         )
-      case (NoTarget, NoTarget, Target(t), NoTarget)    =>
-        hrifu1Coords.map(
-          HighResolutionMode.SingleTarget(obsType,
-                                          obsClass,
-                                          blueConfig,
-                                          redConfig,
-                                          baseCoords,
-                                          fiberAgitator1,
-                                          fiberAgitator2,
-                                          t,
-                                          _,
-                                          userTargets,
-                                          resolutionMode,
-                                          conditions,
-                                          scienceMagnitude
-          )
-        )
-      case (NoTarget, NoTarget, NoTarget, Target(t))    =>
-        hrifu2Coords.map(
-          HighResolutionMode.SingleTarget(obsType,
-                                          obsClass,
-                                          blueConfig,
-                                          redConfig,
-                                          baseCoords,
-                                          fiberAgitator1,
-                                          fiberAgitator2,
-                                          t,
-                                          _,
-                                          userTargets,
-                                          resolutionMode,
-                                          conditions,
-                                          scienceMagnitude
-          )
-        )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
@@ -469,7 +435,6 @@ object GhostConfig {
       a === b
     case (a: StandardResolutionMode.SkyPlusTarget, b: StandardResolutionMode.SkyPlusTarget) =>
       a === b
-    case (a: HighResolutionMode.SingleTarget, b: HighResolutionMode.SingleTarget)           => a === b
     case (a: HighResolutionMode.TargetPlusSky, b: HighResolutionMode.TargetPlusSky)         => a === b
     case _                                                                                  => false
   }
@@ -726,7 +691,6 @@ object StandardResolutionMode {
 }
 
 sealed trait HighResolutionMode extends GhostConfig {
-  import HighResolutionMode._
 
   override val slitMaskConfiguration: Configuration =
     giapiConfig(GhostSlitMaskPositioner, "SMP_HI_ONLY")
@@ -738,16 +702,10 @@ sealed trait HighResolutionMode extends GhostConfig {
   override def ifu1TargetType: IFUTargetType = IFUTargetType.Target(ifu1TargetName)
 
   override def ifu2TargetType: IFUTargetType =
-    this match {
-      case _: SingleTarget  => IFUTargetType.NoTarget
-      case _: TargetPlusSky => IFUTargetType.SkyPosition
-    }
+    IFUTargetType.SkyPosition
 
   override def ifu2BundleType: Option[BundleConfig] =
-    this match {
-      case _: SingleTarget  => None
-      case _: TargetPlusSky => Some(BundleConfig.Sky)
-    }
+    Some(BundleConfig.Sky)
 
   def adcConfiguration: Configuration =
     giapiConfig(GhostAdc1, "ADC_DEMAND_TRACK") |+|
@@ -755,41 +713,6 @@ sealed trait HighResolutionMode extends GhostConfig {
 }
 
 object HighResolutionMode {
-  final case class SingleTarget(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    override val ifu1TargetName:   String,
-    override val ifu1Coordinates:  Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
-  ) extends HighResolutionMode {
-    override def ifu2Configuration: Configuration =
-      GhostConfig.ifuPark(IFUNum.IFU2)
-  }
-
-  implicit val hrSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
-    (x.obsType,
-     x.blueConfig: ChannelConfig,
-     x.redConfig: ChannelConfig,
-     x.baseCoords,
-     x.fiberAgitator1,
-     x.fiberAgitator2,
-     x.ifu1TargetName,
-     x.ifu1Coordinates,
-     x.userTargets,
-     x.resolutionMode,
-     x.conditions,
-     x.scienceMagnitude
-    )
-  )
-
   final case class TargetPlusSky(
     override val obsType:          String,
     override val obsClass:         String,
