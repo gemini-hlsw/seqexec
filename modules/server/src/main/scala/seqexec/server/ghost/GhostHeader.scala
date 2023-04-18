@@ -57,4 +57,4 @@ object GhostHeader {
       override def sendAfter(id: ImageFileId): F[Unit] =
         Applicative[F].unit
     }
-}
+  }

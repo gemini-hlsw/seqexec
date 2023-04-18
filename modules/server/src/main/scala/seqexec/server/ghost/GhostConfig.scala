@@ -185,7 +185,7 @@ sealed trait GhostConfig extends GhostLUT {
   def svCalib: Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, svCalibExposureTime(obsType).toMillis.toInt) |+|
-      giapiConfig(GhostSVRepeat, GhostCalibrationSVRepeat) |+|
+      giapiConfig(GhostSVRepeat, svCalibSVRepeats(obsType, blueConfig, redConfig)) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =

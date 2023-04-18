@@ -190,6 +190,19 @@ trait GhostLUT {
 
   val fallbackReadoutTimeBlue: JDuration = Blue.ReadoutTime.map(_._2).max
 
+  def readoutTime(
+    blueChannel: ChannelConfig @@ BlueChannel,
+    redChannel:  ChannelConfig @@ RedChannel
+  ): Time = {
+    val blueKey =
+      (blueChannel.binning, blueChannel.readMode)
+    val blue    = Blue.ReadoutTime.getOrElse(blueKey, fallbackReadoutTimeBlue)
+    val redKey  =
+      (redChannel.binning, redChannel.readMode)
+    val red     = Red.ReadoutTime.getOrElse(redKey, fallbackReadoutTimeRed)
+
+    Milliseconds(blue.toMillis.max(red.toMillis))
+  }
   // REL-4239
   def totalObserveTime(
     blueChannel: ChannelConfig @@ BlueChannel,
@@ -237,6 +250,16 @@ trait GhostLUT {
     val svTime = Seconds(svCameraTime(conditions, mag))
     (total / (svTime + svReadoutTime)).floor.toInt
   }
+
+  def svCalibSVRepeats(
+    obsType:    String,
+    blueConfig: ChannelConfig @@ BlueChannel,
+    redConfig:  ChannelConfig @@ RedChannel
+  ): Int =
+    if (obsType.equalsIgnoreCase("bias")) {
+      val scienceReadout = readoutTime(blueConfig, redConfig)
+      (scienceReadout / svReadoutTime).floor.toInt.min(100)
+    } else GhostCalibrationSVRepeat
 
   def agCameraTime(conditions: Conditions, mag: Option[Double]): Double = {
     val times = mag
