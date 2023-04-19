@@ -237,7 +237,7 @@ trait GhostLUT {
     if (isPoorWeather(conditions)) times.poorWeather else times.goodWeather
   }
 
-  val svReadoutTime = Seconds(2.0)
+  val svReadoutTime = Seconds(0.2)
 
   // REL-4270
   def svCameraRepeats(
