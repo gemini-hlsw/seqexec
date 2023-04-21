@@ -133,7 +133,7 @@ object GcalControllerEpics {
       applyParam(current.lampAr, encode(demand.lampAr.self), setArLampParams(epics)),
       applyParam(current.lampCuAr, encode(demand.lampCuAr.self), setCuArLampParams(epics)),
       applyParam(current.lampQh5W, encode(demand.lampQh5W.self), setQH5WLampParams(epics)),
-      applyParam(current.lampQh5W, encode(demand.lampQh100W.self), setQH100WLampParams(epics)),
+      applyParam(current.lampQh100W, encode(demand.lampQh100W.self), setQH100WLampParams(epics)),
       applyParam(current.lampThAr, encode(demand.lampThAr.self), setThArLampParams(epics)),
       applyParam(current.lampXe, encode(demand.lampXe.self), setXeLampParams(epics)),
       demand.lampIrO.flatMap(d =>
