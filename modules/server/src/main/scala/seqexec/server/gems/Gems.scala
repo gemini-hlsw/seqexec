@@ -155,14 +155,22 @@ object Gems {
         config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs2.getSequenceProp)
       cwfs3 <-
         config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs3.getSequenceProp)
-      odgw1 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
-      odgw2 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
-      odgw3 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
-      odgw4 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
+      odgw1  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
+          .toOption
+      odgw2  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
+          .toOption
+      odgw3  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
+          .toOption
+      odgw4  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
+          .toOption
     } yield { c: GemsController[F] =>
       new GemsImpl[F](
         c,
@@ -170,10 +178,10 @@ object Gems {
           Cwfs1Usage.fromBoolean(cwfs1.isActive),
           Cwfs2Usage.fromBoolean(cwfs2.isActive),
           Cwfs3Usage.fromBoolean(cwfs3.isActive),
-          Odgw1Usage.fromBoolean(odgw1.isActive),
-          Odgw2Usage.fromBoolean(odgw2.isActive),
-          Odgw3Usage.fromBoolean(odgw3.isActive),
-          Odgw4Usage.fromBoolean(odgw4.isActive),
+          Odgw1Usage.fromBoolean(odgw1.exists(_.isActive)),
+          Odgw2Usage.fromBoolean(odgw2.exists(_.isActive)),
+          Odgw3Usage.fromBoolean(odgw3.exists(_.isActive)),
+          Odgw4Usage.fromBoolean(odgw4.exists(_.isActive)),
           P1Usage.fromBoolean(p1.isActive),
           OIUsage.fromBoolean(oi.exists(_.isActive))
         ),
