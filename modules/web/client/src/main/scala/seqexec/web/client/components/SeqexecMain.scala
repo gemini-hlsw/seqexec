@@ -14,7 +14,6 @@ import lucuma.core.enums.Site
 import react.common._
 import react.common.implicits._
 import react.semanticui.elements.divider.Divider
-//import react.semanticui.toasts._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.tabs.TabsArea
 import seqexec.web.client.model.Pages._
@@ -38,6 +37,8 @@ object AppTitle {
               clazz = SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
       )(
         s"Seqexec ${p.site.shortName}",
+        // TODO: Remove me
+        <.div(^.cls := "ghost-only", "GHOST ONLY!"),
         p.ws.ws.renderPending(_ =>
           <.div(
             SeqexecStyles.errorText,
@@ -73,10 +74,6 @@ object SeqexecMain {
     .stateless
     .render_P(p =>
       React.Fragment(
-//        SemanticToastContainer(position = ContainerPosition.BottomRight,
-//                               animation = SemanticAnimation.FadeUp,
-//                               clazz = SeqexecStyles.Toast
-//        ),
         <.div(SeqexecStyles.MainUI)(
           wsConnect(ws => AppTitle(p.site, ws())),
           <.div(SeqexecStyles.queueAreaRow)(
