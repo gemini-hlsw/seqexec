@@ -146,7 +146,7 @@ trait GhostLUT {
         (TWO_BY_EIGHT, Fast)   -> duration(3, 578),
         (FOUR_BY_FOUR, Slow)   -> duration(9, 536),
         (FOUR_BY_FOUR, Medium) -> duration(6, 581),
-        (FOUR_BY_FOUR, Fast)   -> duration(4, 770)
+        (FOUR_BY_FOUR, Fast)   -> duration(4, 77)
       )
     }
   }
@@ -190,19 +190,26 @@ trait GhostLUT {
 
   val fallbackReadoutTimeBlue: JDuration = Blue.ReadoutTime.map(_._2).max
 
-  def readoutTime(
-    blueChannel: ChannelConfig @@ BlueChannel,
-    redChannel:  ChannelConfig @@ RedChannel
-  ): Time = {
+  def blueReadoutTime(blueChannel: ChannelConfig @@ BlueChannel): Time = {
     val blueKey =
       (blueChannel.binning, blueChannel.readMode)
     val blue    = Blue.ReadoutTime.getOrElse(blueKey, fallbackReadoutTimeBlue)
-    val redKey  =
-      (redChannel.binning, redChannel.readMode)
-    val red     = Red.ReadoutTime.getOrElse(redKey, fallbackReadoutTimeRed)
-
-    Milliseconds(blue.toMillis.max(red.toMillis))
+    Milliseconds(blue.toMillis)
   }
+
+  def redReadoutTime(redChannel: ChannelConfig @@ RedChannel): Time = {
+    val redKey =
+      (redChannel.binning, redChannel.readMode)
+    val red    = Red.ReadoutTime.getOrElse(redKey, fallbackReadoutTimeRed)
+    Milliseconds(red.toMillis)
+  }
+
+  def readoutTime(
+    blueChannel: ChannelConfig @@ BlueChannel,
+    redChannel:  ChannelConfig @@ RedChannel
+  ): Time =
+    blueReadoutTime(blueChannel).max(redReadoutTime(redChannel))
+
   // REL-4239
   def totalObserveTime(
     blueChannel: ChannelConfig @@ BlueChannel,
@@ -254,11 +261,20 @@ trait GhostLUT {
   def svCalibSVRepeats(
     obsType:    String,
     blueConfig: ChannelConfig @@ BlueChannel,
-    redConfig:  ChannelConfig @@ RedChannel
+    redConfig:  ChannelConfig @@ RedChannel,
+    coAdds:     Option[Int]
   ): Int =
     if (obsType.equalsIgnoreCase("bias")) {
-      val scienceReadout = readoutTime(blueConfig, redConfig)
-      (scienceReadout / svReadoutTime).floor.toInt.min(100)
+      val scienceReadout  = readoutTime(blueConfig, redConfig)
+      val noCoaddsDefined = (scienceReadout / svReadoutTime).floor.toInt.min(100)
+      val coAddsDefined   = coAdds.map { c =>
+        // Science time taking coadds amount of exposures on red and blue
+        val scienceReadout: Time =
+          (blueReadoutTime(blueConfig) * c.toDouble).max(redReadoutTime(redConfig) * c.toDouble)
+        (scienceReadout / svReadoutTime).floor.toInt.min(100)
+      }
+      coAddsDefined.getOrElse(noCoaddsDefined)
+
     } else GhostCalibrationSVRepeat
 
   def agCameraTime(conditions: Conditions, mag: Option[Double]): Double = {

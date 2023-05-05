@@ -16,6 +16,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -211,6 +212,7 @@ object Ghost extends GhostConfigUtil {
           obsClass      <- config.extractObsAs[String](OBS_CLASS_PROP)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
           isScience      = obsType === SCIENCE_OBSERVE_TYPE
+          coAdds         = config.extractObsAs[JInt](COADDS_PROP).map(_.intValue())
 
           blueBinning  <- config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
           redBinning   <- config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
@@ -302,6 +304,7 @@ object Ghost extends GhostConfigUtil {
                   fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
                   rm.toOption,
                   conditions,
+                  coAdds.toOption,
                   isHR
                 ).asRight
               }

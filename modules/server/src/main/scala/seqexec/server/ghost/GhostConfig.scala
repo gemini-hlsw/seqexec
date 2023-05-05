@@ -42,6 +42,7 @@ sealed trait GhostConfig extends GhostLUT {
   def resolutionMode: Option[ResolutionMode]
   def conditions: Conditions
   def scienceMagnitude: Option[Double]
+  def coAdds: Option[Int] = None
 
   def baseConfiguration: Configuration = Configuration.Zero
 
@@ -105,13 +106,19 @@ sealed trait GhostConfig extends GhostLUT {
   final def ifu2Config: Configuration =
     ifu2Configuration
 
+  def blueCount =
+    if (obsType.equalsIgnoreCase("bias")) coAdds.getOrElse(blueConfig.count) else blueConfig.count
+
+  def redCount =
+    if (obsType.equalsIgnoreCase("bias")) coAdds.getOrElse(redConfig.count) else redConfig.count
+
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostBlueBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
       giapiConfig(GhostBlueDuration, blueConfig.exposure.toMillis.toInt) |+|
       giapiConfig(GhostBlueUnit, 0.001) |+|
       giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
-      giapiConfig(GhostBlueExposureCount, blueConfig.count) |+|
+      giapiConfig(GhostBlueExposureCount, blueCount) |+|
       giapiConfig(GhostBlueImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostBlueDoDisplay, 1) |+|
       giapiConfig(GhostBlueDoFlush, 1) |+|
@@ -125,7 +132,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
       giapiConfig(GhostRedUnit, 0.001) |+|
       giapiConfig(GhostRedRequestType, "HARDWARE") |+|
-      giapiConfig(GhostRedExposureCount, redConfig.count) |+|
+      giapiConfig(GhostRedExposureCount, redCount) |+|
       giapiConfig(GhostRedImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostRedDoDisplay, 1) |+|
       giapiConfig(GhostRedDoFlush, 1) |+|
@@ -185,7 +192,7 @@ sealed trait GhostConfig extends GhostLUT {
   def svCalib: Configuration =
     baseSVConfig |+|
       giapiConfig(GhostSVDuration, svCalibExposureTime(obsType).toMillis.toInt) |+|
-      giapiConfig(GhostSVRepeat, svCalibSVRepeats(obsType, blueConfig, redConfig)) |+|
+      giapiConfig(GhostSVRepeat, svCalibSVRepeats(obsType, blueConfig, redConfig, coAdds)) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
   def svConfiguration(mag: Option[Double]): Configuration =
@@ -451,6 +458,7 @@ case class GhostCalibration(
   override val fiberAgitator2: FiberAgitator,
   override val resolutionMode: Option[ResolutionMode],
   override val conditions:     Conditions,
+  override val coAdds:         Option[Int],
   val isHR:                    Boolean
 ) extends GhostConfig {
 
