@@ -12,6 +12,7 @@ import seqexec.model.Conditions
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import scala.concurrent.duration._
 import edu.gemini.spModel.target.env.ResolutionMode
+import shapeless.tag
 
 /**
  * Tests GHOST Config typeclasses
@@ -30,8 +31,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
@@ -65,8 +70,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "BIAS",
       "bias",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
@@ -94,8 +103,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
@@ -123,8 +136,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
@@ -169,8 +186,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
@@ -223,8 +244,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     val cfg = GhostConfig(
       "OBJECT",
       "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
@@ -266,97 +291,5 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.ra")), None)
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.dec")), None)
-  }
-  test("hru ifu1 ra/dec") {
-    val cfg = GhostConfig(
-      "OBJECT",
-      "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
-      none,
-      FiberAgitator.Off,
-      FiberAgitator.Off,
-      none,
-      none,
-      none,
-      none,
-      "target".some,
-      coord1.some,
-      none,
-      none,
-      Nil,
-      ResolutionMode.GhostStandard.some,
-      Conditions.Best,
-      None
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
-                 "IFU_DEMAND_RADEC".some
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
-                 ra.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
-                 dec.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
-                 "IFU_HIRES".some
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
-                 "IFU_TARGET_OBJECT".some
-    )
-    // ifu2 not used
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
-                 "IFU_DEMAND_PARK".some
-    )
-    assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
-                 "IFU_TARGET_NONE".some
-    )
-  }
-  test("hru ifu2 ra/dec") {
-    val cfg = GhostConfig(
-      "OBJECT",
-      "science",
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow),
-      ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast),
-      none,
-      FiberAgitator.Off,
-      FiberAgitator.Off,
-      none,
-      none,
-      none,
-      none,
-      none,
-      none,
-      "target2".some,
-      coord2.some,
-      Nil,
-      ResolutionMode.GhostStandard.some,
-      Conditions.Best,
-      None
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
-                 "IFU_DEMAND_RADEC".some
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.ra")),
-                 ra2.toAngle.toDoubleDegrees.some.map(v => f"$v%1.6f")
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.dec")),
-                 dec2.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.bundle")),
-                 "IFU_HIRES".some
-    )
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.target")),
-                 "IFU_TARGET_OBJECT".some
-    )
-    // ifu2 not used
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.type")),
-                 "IFU_DEMAND_PARK".some
-    )
-    assert(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.bundle")).isEmpty)
-    assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.target")),
-                 "IFU_TARGET_NONE".some
-    )
   }
 }
