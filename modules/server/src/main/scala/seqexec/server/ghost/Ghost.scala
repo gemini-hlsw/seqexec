@@ -94,7 +94,15 @@ final case class Ghost[F[_]: Logger: Async](
 
   override def calcObserveTime(config: CleanConfig): F[Time] = {
     val ghostConfig = conditions.get.flatMap(Ghost.fromSequenceConfig[F](config, _))
-    ghostConfig.map(c => totalObserveTime(c.blueConfig, c.redConfig) + readOutTimeExtra)
+    ghostConfig.map { c =>
+      if (c.isBias) {
+        val coAdds = c.coAdds.getOrElse(1)
+        totalObserveTime(tag[BlueChannel][ChannelConfig](c.blueConfig.copy(count = coAdds)),
+                         tag[RedChannel][ChannelConfig](c.redConfig.copy(count = coAdds))
+        ) + readOutTimeExtra
+      } else
+        totalObserveTime(c.blueConfig, c.redConfig) + readOutTimeExtra
+    }
   }
 
   override def observeProgress(
