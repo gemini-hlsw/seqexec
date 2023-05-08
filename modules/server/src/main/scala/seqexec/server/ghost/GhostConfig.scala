@@ -106,19 +106,13 @@ sealed trait GhostConfig extends GhostLUT {
   final def ifu2Config: Configuration =
     ifu2Configuration
 
-  def blueCount =
-    if (obsType.equalsIgnoreCase("bias")) coAdds.getOrElse(blueConfig.count) else blueConfig.count
-
-  def redCount =
-    if (obsType.equalsIgnoreCase("bias")) coAdds.getOrElse(redConfig.count) else redConfig.count
-
   def channelConfig: Configuration =
     giapiConfig(GhostBlueBinningRcf, blueConfig.binning.getSpectralBinning()) |+|
       giapiConfig(GhostBlueBinningCcf, blueConfig.binning.getSpatialBinning()) |+|
       giapiConfig(GhostBlueDuration, blueConfig.exposure.toMillis.toInt) |+|
       giapiConfig(GhostBlueUnit, 0.001) |+|
       giapiConfig(GhostBlueRequestType, "HARDWARE") |+|
-      giapiConfig(GhostBlueExposureCount, blueCount) |+|
+      giapiConfig(GhostBlueExposureCount, calcBlueCount(obsType, coAdds, blueConfig)) |+|
       giapiConfig(GhostBlueImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostBlueDoDisplay, 1) |+|
       giapiConfig(GhostBlueDoFlush, 1) |+|
@@ -132,7 +126,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostRedDuration, redConfig.exposure.toMillis.toInt) |+|
       giapiConfig(GhostRedUnit, 0.001) |+|
       giapiConfig(GhostRedRequestType, "HARDWARE") |+|
-      giapiConfig(GhostRedExposureCount, redCount) |+|
+      giapiConfig(GhostRedExposureCount, calcRedCount(obsType, coAdds, redConfig)) |+|
       giapiConfig(GhostRedImageType, imageTypeConf(obsType)) |+|
       giapiConfig(GhostRedDoDisplay, 1) |+|
       giapiConfig(GhostRedDoFlush, 1) |+|

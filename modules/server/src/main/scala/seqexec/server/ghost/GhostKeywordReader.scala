@@ -16,6 +16,7 @@ import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
 import seqexec.server.keywords._
 import edu.gemini.spModel.target.env.ResolutionMode
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
 import seqexec.model.Conditions
 import shapeless.tag
 import scala.concurrent.duration._
@@ -135,6 +136,7 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       redExpCount     = config.extractObsAs[JInt](SPGhost.RED_EXPOSURE_COUNT_PROP).map(_.intValue())
       blueBinning     = config.extractInstAs[GhostBinning](SPGhost.BLUE_BINNING_PROP)
       redBinning      = config.extractInstAs[GhostBinning](SPGhost.RED_BINNING_PROP)
+      coAdds          = config.extractObsAs[JInt](COADDS_PROP).map(_.intValue())
       blueExpReadMode =
         config
           .extractInstAs[GhostReadNoiseGain](SPGhost.BLUE_READ_NOISE_GAIN_PROP)
@@ -156,6 +158,17 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
           .map(_.doubleValue().some)
           .recoverWith(_ => none.asRight)
     } yield new GhostKeywordsReader[F] {
+      private val blueConfig =
+        (blueBinning,
+         blueExposure.map(_.second),
+         blueExpCount,
+         blueExpReadMode.map(Ghost.gainFromODB)
+        ).mapN(ChannelConfig.apply).map(tag[BlueChannel][ChannelConfig])
+      private val redConfig  =
+        (redBinning, redExposure.map(_.second), redExpCount, redExpReadMode.map(Ghost.gainFromODB))
+          .mapN(ChannelConfig.apply)
+          .map(tag[RedChannel][ChannelConfig])
+
       val basePos: F[Boolean]                 = (baseDecDMS.isEmpty && baseRAHMS.isEmpty).pure[F]
       val srifu1: F[String]                   = srifu1Name.getOrElse("    ").pure[F]
       val srifu2: F[String]                   = srifu2Name.getOrElse("    ").pure[F]
@@ -163,11 +176,13 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val hrifu2: F[String]                   = hrifu2Name.getOrElse("    ").pure[F]
       val fiberAgitator1Enabled: F[Boolean]   = fiberAgitator1.getOrElse(false).pure[F]
       val fiberAgitator2Enabled: F[Boolean]   = fiberAgitator2.getOrElse(false).pure[F]
-      val redCount: F[Option[Int]]            = redExpCount.toOption.pure[F]
+      val redCount: F[Option[Int]]            =
+        redConfig.map(r => calcRedCount(obsType, coAdds.toOption, r)).toOption.pure[F]
       val redDuration: F[Option[Double]]      = redExposure.toOption.pure[F]
       val redCcds: F[Option[String]]          = redBinning.toOption.map(_.displayValue()).pure[F]
       val redReadMode: F[Option[String]]      = redExpReadMode.toOption.map(readMode2String).pure[F]
-      val blueCount: F[Option[Int]]           = blueExpCount.toOption.pure[F]
+      val blueCount: F[Option[Int]]           =
+        blueConfig.map(b => calcBlueCount(obsType, coAdds.toOption, b)).toOption.pure[F]
       val blueDuration: F[Option[Double]]     = blueExposure.toOption.pure[F]
       val blueCcds: F[Option[String]]         = blueBinning.toOption.map(_.displayValue()).pure[F]
       val blueReadMode: F[Option[String]]     = blueExpReadMode.toOption.map(readMode2String).pure[F]
@@ -176,32 +191,18 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
       val slitCount: F[Option[Int]]           =
         if (isScience(obsType)) {
-          val blueConfig = (blueBinning,
-                            blueExposure.map(_.second),
-                            blueExpCount,
-                            blueExpReadMode.map(Ghost.gainFromODB)
-          )
-            .mapN(
-              ChannelConfig.apply
-            )
-          val redConfig  = (redBinning,
-                           redExposure.map(_.second),
-                           redExpCount,
-                           redExpReadMode.map(Ghost.gainFromODB)
-          )
-            .mapN(
-              ChannelConfig.apply
-            )
           conditions.get.map { c =>
             (blueConfig.toOption, redConfig.toOption).mapN { (blue, red) =>
-              svCameraRepeats(c,
-                              vMag.orElse(gMag),
-                              tag[BlueChannel][ChannelConfig](blue),
-                              tag[RedChannel][ChannelConfig](red)
-              )
+              svCameraRepeats(c, vMag.orElse(gMag), blue, red)
             }
           }
-        } else GhostCalibrationSVRepeat.some.pure[F]
+        } else
+          (blueConfig.toOption, redConfig.toOption)
+            .mapN((blueConfig, redConfig) =>
+              svCalibSVRepeats(obsType, blueConfig, redConfig, coAdds.toOption)
+            )
+            .orElse(GhostCalibrationSVRepeat.some)
+            .pure[F]
       val slitDuration: F[Option[Double]]     =
         if (isScience(obsType))
           conditions.get.map { c =>

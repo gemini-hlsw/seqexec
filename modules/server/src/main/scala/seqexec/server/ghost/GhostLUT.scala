@@ -185,6 +185,19 @@ trait GhostLUT {
     }
   }
 
+  def calcBlueCount(
+    obsType:    String,
+    coAdds:     Option[Int],
+    blueConfig: ChannelConfig @@ BlueChannel
+  ) =
+    calcCount(obsType, coAdds, blueConfig.count)
+
+  private def calcCount(obsType: String, coAdds: Option[Int], configCount: Int) =
+    if (obsType.equalsIgnoreCase("bias")) coAdds.getOrElse(configCount) else configCount
+
+  def calcRedCount(obsType: String, coAdds: Option[Int], redConfig: ChannelConfig @@ RedChannel) =
+    calcCount(obsType, coAdds, redConfig.count)
+
   // Readout time to fallback
   val fallbackReadoutTimeRed: JDuration = Red.ReadoutTime.map(_._2).max
 
