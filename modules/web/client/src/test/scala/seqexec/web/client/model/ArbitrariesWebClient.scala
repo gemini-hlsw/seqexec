@@ -551,10 +551,13 @@ trait ArbitrariesWebClient extends ArbObservationId with TableArbitraries with A
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[
+    Cogen[Option[Option[Option[Either[
       (Instrument, Observation.Id, StepIdDisplayed),
-      Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]
-    ]]]]]]
+      Either[
+        (Instrument, Observation.Id, StepIdDisplayed),
+        Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]
+      ]
+    ]]]]]
       .contramap {
         case Root                        => None
         case CalibrationQueuePage        => Some(None)
