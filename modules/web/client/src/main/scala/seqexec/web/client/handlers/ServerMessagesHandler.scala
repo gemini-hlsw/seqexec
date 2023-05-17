@@ -105,7 +105,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
       val openEffect      =
         if (value.serverVersion.exists(_ =!= v)) {
-          Effect(Future(window.location.reload(true)).as(NoAction))
+          Effect(Future(window.location.reload()).as(NoAction))
         } else {
           refreshRequestE
         }
