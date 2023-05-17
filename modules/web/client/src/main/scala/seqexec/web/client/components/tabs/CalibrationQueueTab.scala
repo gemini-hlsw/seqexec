@@ -11,6 +11,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
+import org.scalajs.dom
 import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
@@ -91,7 +92,9 @@ object CalibrationQueueTab {
         .unless(b.state.onDrag),
       SeqexecStyles.dropOnTab.when(b.state.onDrag),
       ^.onDragOver ==> { (e: ReactDragEvent) =>
-        e.preventDefaultCB *> Callback { e.dataTransfer.dropEffect = "copy" }
+        e.preventDefaultCB *> Callback {
+          e.dataTransfer.dropEffect = dom.DataTransferDropEffectKind.copy
+        }
       },
       ^.onDragEnter ==> onDragEnter(b) _,
       ^.onDrop ==> onDrop(b) _,
