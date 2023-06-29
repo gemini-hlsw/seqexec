@@ -47,7 +47,7 @@ object Settings {
     val log4s          = "1.10.0"
     val log4cats       = "2.6.0"
     val log4catsLevel  = "0.3.1"
-    val logback        = "1.4.6"
+    val logback        = "1.4.8"
     val janino         = "3.1.9"
     val logstash       = "7.0"
     val pureConfig     = "0.17.4"
