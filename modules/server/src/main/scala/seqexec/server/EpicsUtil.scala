@@ -52,7 +52,7 @@ abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsComma
               override def onFailure(cause: Exception): Unit = f(cause.asLeft)
             }
           }
-        // It should call f on all execution paths, thanks @tpolecat
+          // It should call f on all execution paths, thanks @tpolecat
         }.void
           .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
       }
