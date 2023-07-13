@@ -129,6 +129,6 @@ package object commands {
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(CommandResult(hr.getResponse)))
       }
-    // A third case is ACCEPTED but that is handled on the callback
+      // A third case is ACCEPTED but that is handled on the callback
     }
 }
