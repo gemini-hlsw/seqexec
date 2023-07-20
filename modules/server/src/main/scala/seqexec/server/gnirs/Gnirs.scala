@@ -176,13 +176,13 @@ object Gnirs {
         case _                  =>
           if (woll === WollastonPrism.YES) Decker.WOLLASTON
           else
-            pixScale match {
-              case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
-              case PixelScale.PS_015 =>
-                slit match {
-                  case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
-                  case SlitWidth.HR_IFU                 => Decker.HR_IFU
-                  case _                                => Decker.SHORT_CAM_LONG_SLIT
+            slit match {
+              case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
+              case SlitWidth.HR_IFU                 => Decker.HR_IFU
+              case _                                =>
+                pixScale match {
+                  case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
+                  case PixelScale.PS_015 => Decker.SHORT_CAM_LONG_SLIT
                 }
             }
       }
