@@ -26,4 +26,15 @@ class EpicsUtilSpec extends munit.CatsEffectSuite {
       EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), "")
   }
 
+  test("EpicsUtil waitForValue is cancelable") {
+    val attr: DummyAttribute[Integer]         = new DummyAttribute[Integer]("dummy", "foo")
+    val filtered: CaWindowStabilizer[Integer] =
+      new CaWindowStabilizer(attr, Duration.ofDays(50), executor)
+    attr.setValue(1)
+    IO.delay(filtered.restart) *>
+      EpicsUtil
+        .waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), "")
+        .intercept[SeqexecFailure.Timeout]
+  }
+
 }
