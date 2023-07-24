@@ -9,6 +9,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.instances.string._
 import cats.syntax.eq._
+import fs2.compression.Compression
 import org.http4s.CacheDirective._
 import org.http4s.HttpRoutes
 import org.http4s.Request
@@ -17,7 +18,7 @@ import org.http4s.StaticFile
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
 
-class StaticRoutes[F[_]: Sync](
+class StaticRoutes[F[_]: Sync: Compression](
   devMode:       Boolean,
   builtAtMillis: Long
 ) {

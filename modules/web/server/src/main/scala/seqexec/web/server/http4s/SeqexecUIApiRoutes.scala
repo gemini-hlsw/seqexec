@@ -12,8 +12,10 @@ import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
+import com.comcast.ip4s.Dns
 import fs2.Pipe
 import fs2.Stream
+import fs2.compression.Compression
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
@@ -49,7 +51,7 @@ import seqexec.web.server.security.TokenRefresher
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecUIApiRoutes[F[_]: Async](
+class SeqexecUIApiRoutes[F[_]: Async: Compression: Dns](
   site:             Site,
   mode:             Mode,
   auth:             AuthenticationService[F],
