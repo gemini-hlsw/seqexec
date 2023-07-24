@@ -7,17 +7,16 @@ import java.lang.{ Double => JDouble }
 import java.lang.{ Float => JFloat }
 import java.lang.{ Integer => JInt }
 import java.util
-import java.util.TimerTask
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantLock
-import java.util.{ Timer => JTimer }
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.math.abs
 import cats._
 import cats.data.Nested
 import cats.effect.Async
+import cats.effect.Cont
+import cats.effect.MonadCancel
 import cats.effect.Sync
+import cats.effect.syntax.all._
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import fs2.Stream
@@ -198,74 +197,48 @@ object EpicsCodex {
 
 object EpicsUtil {
 
-  // `locked` gets a piece of code and runs it protected by `lock`
-  private def locked[A](lock: ReentrantLock)(f: => A): A = {
-    lock.lock()
-    try f
-    finally lock.unlock()
-  }
-
-  def waitForValuesF[T, F[_]: Async](
+  def waitForValuesF[T, F[_]](
     attr:    CaAttribute[T],
     vv:      Seq[T],
     timeout: FiniteDuration,
     name:    String
-  ): F[T] =
-    Async[F].async_[T] { (f: Either[Throwable, T] => Unit) =>
-      // The task is created with async. So we do whatever we need to do,
-      // and then call `f` to signal the completion of the task.
+  )(implicit F: Async[F]): F[T] = F
+    .cont[T, T] {
+      new Cont[F, T, T] {
+        def apply[G[_]](implicit G: MonadCancel[G, Throwable]) = { (resume, get, lift) =>
+          G.uncancelable { poll =>
+            // First we verify that the attribute doesn't already have the required value.
+            lift(F.delay(!attr.values().isEmpty && vv.contains(attr.value))).flatMap {
+              case true  => lift(F.delay(attr.value))
+              case false => // If not we set a listener for the EPICS channel.
+                val statusListener = new CaAttributeListener[T] {
+                  def onValueChange(newVals: util.List[T]): Unit =
+                    if (!newVals.isEmpty && vv.contains(newVals.get(0))) {
+                      // This `right` looks a bit confusing because is not related to
+                      // the `TrySeq`, but to the result of `IO`.
+                      resume(newVals.get(0).asRight)
+                    }
 
-      // `resultGuard` and `lock` are used for synchronization.
-      val resultGuard = new AtomicInteger(1)
-      val lock        = new ReentrantLock()
+                  def onValidityChange(newValidity: Boolean): Unit = ()
+                }
 
-      // First we verify that the attribute doesn't already have the required value.
-      // NOTE: It was possible to lose a change to the right value if it happened between here and the line that
-      // subscribes to the attribute, and the wait would end in timeout. That is not the case anymore, because the
-      // CaAttribute will call the callback once on subscription.
-      if (!attr.values().isEmpty && vv.contains(attr.value)) {
-        f(attr.value.asRight)
-      } else {
-        // If not, we set a timer for the timeout, and a listener for the EPICS
-        // channel. The timer and the listener can both complete the IO. The
-        // first one to do it cancels the other.The use of `resultGuard`
-        // guarantees that only one of them will complete the IO.
-        val timer          = new JTimer
-        val statusListener = new CaAttributeListener[T] {
-          override def onValueChange(newVals: util.List[T]): Unit =
-            if (
-              !newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1
-            ) {
-              locked(lock) {
-                attr.removeListener(this)
-                timer.cancel()
-              }
-              // This `right` looks a bit confusing because is not related to
-              // the `TrySeq`, but to the result of `IO`.
-              f(newVals.get(0).asRight)
+                // Add the listener with bracket so it is guaranteed to be removed
+                lift(F.delay(attr.addListener(statusListener))).bracket { _ =>
+                  // double-check so we don't lose a change that happened between the first check and when we added the listener
+                  lift(F.delay(!attr.values().isEmpty && vv.contains(attr.value))).flatMap {
+                    case true  => lift(F.delay(attr.value))
+                    case false => // wait for the listener. poll allows it to be canceled e.g. by the timeout
+                      poll(get)
+                  }
+
+                }(_ => lift(F.delay(attr.removeListener(statusListener))))
             }
 
-          override def onValidityChange(newValidity: Boolean): Unit = {}
-        }
-
-        locked(lock) {
-          if (timeout.toMillis > 0) {
-            timer.schedule(
-              new TimerTask {
-                override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
-                  locked(lock) {
-                    attr.removeListener(statusListener)
-                  }
-                  f(SeqexecFailure.Timeout(name).asLeft)
-                }
-              },
-              timeout.toMillis
-            )
           }
-          attr.addListener(statusListener)
         }
       }
-    }
+    } // set the timeout
+    .timeoutTo(timeout, F.defer(F.raiseError(SeqexecFailure.Timeout(name))))
 
   def waitForValueF[T, F[_]: Async](
     attr:    CaAttribute[T],
