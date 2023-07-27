@@ -48,6 +48,7 @@ import squants.time.Seconds
 import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
 import shapeless.tag
+import squants.space.Length
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -329,6 +330,48 @@ object Ghost extends GhostConfigUtil {
     override val instrument: Instrument = Instrument.Ghost
 
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Ghost
+
+    // TODO add the defocus calculation to the sequences rather than do a full decode
+    override def defocusB(config: CleanConfig): Option[Length] = {
+      val raExtractor  = Ghost.raExtractorBase(config)
+      val decExtractor = Ghost.decExtractorBase(config)
+
+      (for {
+        baseRAHMS     <- raExtractor(SPGhost.BASE_RA_HMS)
+        baseDecDMS    <- decExtractor(SPGhost.BASE_DEC_DMS)
+        srifu1Type     = extractor[String](config, SPGhost.SRIFU1_NAME).map(r =>
+                           IFUTargetType.determineType(r.some)
+                         )
+        baseCoords     = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply)
+        srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
+        srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
+
+        srifu2Type   = extractor[String](config, SPGhost.SRIFU2_NAME).map(r =>
+                         IFUTargetType.determineType(r.some)
+                       )
+        srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply)
+
+        srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
+        srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2_DEC_DMS)
+        srifu2Coords   = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply)
+
+        hrifu1Type = extractor[String](config, SPGhost.HRIFU1_NAME).map(r =>
+                       IFUTargetType.determineType(r.some)
+                     )
+
+        hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
+        hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
+        hrifu1Coords   = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply)
+        ifu1Type      <- hrifu1Type.orElse(srifu1Type).toRight("No IFU1 type")
+        ifu1Coords    <- hrifu1Coords.orElse(srifu1Coords).toRight("No IFU1 coords")
+
+      } yield GhostConfig.defocusOffset(baseCoords,
+                                        ifu1Type,
+                                        ifu1Coords,
+                                        srifu2Type.getOrElse(IFUTargetType.NoTarget),
+                                        srifu2Coords
+      )).toOption
+    }
 
   }
 }

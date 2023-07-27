@@ -32,6 +32,7 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import squants.space.Millimeters
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
@@ -95,6 +96,12 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
     subsystems: NonEmptySet[Subsystem],
     current:    C,
     d:          AGConfig
+  ): Option[WithDebug[C => F[C]]]
+
+  def setInstrumentDefocus[C](l: Lens[C, BaseEpicsTcsConfig])(
+    subsystems: NonEmptySet[Subsystem],
+    current:    Length,
+    d:          Length
   ): Option[WithDebug[C => F[C]]]
 
   def setTelescopeOffset(c: FocalPlaneOffset): F[Unit]
@@ -281,6 +288,7 @@ object TcsControllerEpicsCommon {
   ) extends TcsControllerEpicsCommon[F]
       with TcsControllerEncoders
       with ScienceFoldPositionCodex {
+
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
     private val trace              =
       Option(System.getProperty("seqexec.server.tcs.trace")).flatMap(_.toBooleanOption).isDefined
@@ -443,6 +451,22 @@ object TcsControllerEpicsCommon {
           }
       }
     }
+
+    private implicit val eqLength: Eq[Length] = Eq.by(_.toMicrons)
+
+    override def setInstrumentDefocus[C](
+      l:          Lens[C, BaseEpicsTcsConfig]
+    )(
+      subsystems: NonEmptySet[Subsystem],
+      current:    Length,
+      d:          Length
+    ): Option[WithDebug[C => F[C]]] = applyParam(
+      subsystems.contains(Subsystem.M2),
+      current,
+      d,
+      (x: Length) => epicsSys.instrumentDefocusCmd.setDefocus(x),
+      l.andThen(BaseEpicsTcsConfig.defocusB)
+    )("defocus")
 
     /**
      * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current
@@ -666,21 +690,26 @@ object TcsControllerEpicsCommon {
       subsystems: NonEmptySet[Subsystem],
       current:    BaseEpicsTcsConfig,
       tcs:        BasicTcsConfig
-    ): List[WithDebug[BaseEpicsTcsConfig => F[BaseEpicsTcsConfig]]] = List(
-      setPwfs1Probe(Iso.id)(subsystems, current.pwfs1.tracking, tcs.gds.pwfs1.tracking),
-      setPwfs2Probe(Iso.id)(subsystems, current.pwfs2.tracking, tcs.gds.pwfs2.tracking),
-      setOiwfsProbe(Iso.id)(subsystems,
-                            current.oiwfs.tracking,
-                            tcs.gds.oiwfs.tracking,
-                            current.oiName,
-                            tcs.inst.instrument
-      ),
-      setPwfs1(Iso.id)(subsystems, current.pwfs1.detector, tcs.gds.pwfs1.detector),
-      setPwfs2(Iso.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
-      setOiwfs(Iso.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
-      setScienceFold(Iso.id)(subsystems, current, tcs.agc.sfPos),
-      setHrPickup(Iso.id)(subsystems, current, tcs.agc)
-    ).flattenOption
+    ): List[WithDebug[BaseEpicsTcsConfig => F[BaseEpicsTcsConfig]]] =
+      List(
+        setPwfs1Probe(Iso.id)(subsystems, current.pwfs1.tracking, tcs.gds.pwfs1.tracking),
+        setPwfs2Probe(Iso.id)(subsystems, current.pwfs2.tracking, tcs.gds.pwfs2.tracking),
+        setOiwfsProbe(Iso.id)(subsystems,
+                              current.oiwfs.tracking,
+                              tcs.gds.oiwfs.tracking,
+                              current.oiName,
+                              tcs.inst.instrument
+        ),
+        setPwfs1(Iso.id)(subsystems, current.pwfs1.detector, tcs.gds.pwfs1.detector),
+        setPwfs2(Iso.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
+        setOiwfs(Iso.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
+        setScienceFold(Iso.id)(subsystems, current, tcs.agc.sfPos),
+        setHrPickup(Iso.id)(subsystems, current, tcs.agc),
+        setInstrumentDefocus(Iso.id)(subsystems,
+                                     current.defocusB,
+                                     tcs.tc.defocusB.getOrElse(Millimeters(0))
+        )
+      ).flattenOption
 
     def guideOn(
       subsystems: NonEmptySet[Subsystem],
@@ -761,7 +790,8 @@ object TcsControllerEpicsCommon {
         _  <- guideOn(subsystems, s2, tcs)
       } yield ()
     }
-    override def notifyObserveStart: F[Unit]              =
+
+    override def notifyObserveStart: F[Unit] =
       L.debug("Send observe to TCS") *>
         epicsSys.observe.mark *>
         epicsSys.post(DefaultTimeout) *>
