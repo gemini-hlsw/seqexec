@@ -32,6 +32,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.Conditions
 import seqexec.server._
+import seqexec.server.InstrumentSystem._
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords.GdsClient
@@ -68,8 +69,19 @@ final case class Ghost[F[_]: Logger: Async](
 
   override val contributorName: String = "ghost"
 
-  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
-    InstrumentSystem.Uncontrollable
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] = {
+    println("Call observe control")
+    val u = CompleteControl(
+      StopObserveCmd(_ => controller.stopObserve),
+      AbortObserveCmd(controller.abortObserve),
+      PauseObserveCmd(_ => controller.pauseObserve),
+      ContinuePausedCmd(controller.resumePaused),
+      StopPausedCmd(controller.stopPaused),
+      AbortPausedCmd(controller.abortPaused)
+    )
+    println(u)
+    u
+  }
 
   override def observe(
     config: CleanConfig

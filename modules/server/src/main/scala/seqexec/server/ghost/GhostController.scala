@@ -11,14 +11,30 @@ import org.typelevel.log4cats.Logger
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.keywords.GdsClient
+import seqexec.model.enum.ObserveCommandResult
+import squants.time.Time
 
 trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def gdsClient: GdsClient[F]
+
+  def stopObserve: F[Unit]
+
+  def abortObserve: F[Unit]
+
+  def pauseObserve: F[Unit]
+
+  def resumePaused(expTime: Time): F[ObserveCommandResult]
+
+  def stopPaused: F[ObserveCommandResult]
+
+  def abortPaused: F[ObserveCommandResult]
 }
+
 object GhostController {
   def apply[F[_]: Sync: Logger](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
     new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client)
       with GhostController[F] {
+
       override val gdsClient: GdsClient[F] = gds
 
       override val name = "GHOST"
@@ -28,5 +44,24 @@ object GhostController {
         pprint.pprintln(c.config.toList.sortBy(_._1))
         c.pure[F]
       }
+
+      override def stopObserve: F[Unit] =
+        client.stop.void
+
+      override def abortObserve: F[Unit] =
+        client.abort.void
+
+      override def pauseObserve: F[Unit] =
+        client.pause.void
+
+      override def resumePaused(expTime: Time): F[ObserveCommandResult] =
+        client.continue.map(_ => ObserveCommandResult.Success)
+
+      override def stopPaused: F[ObserveCommandResult] =
+        client.stop.map(_ => ObserveCommandResult.Stopped)
+
+      override def abortPaused: F[ObserveCommandResult] =
+        client.abort.map(_ => ObserveCommandResult.Aborted)
+
     }
 }
