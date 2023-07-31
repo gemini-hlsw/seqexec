@@ -100,17 +100,18 @@ lazy val giapi = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(Cats.value,
-                                Mouse.value,
-                                Shapeless.value,
-                                CatsEffect.value,
-                                Fs2,
-                                GiapiJmsUtil,
-                                GiapiJmsProvider,
-                                GiapiStatusService,
-                                Giapi,
-                                GiapiCommandsClient
-    ) ++ Logging.value ++ Monocle.value,
+    libraryDependencies ++= Seq(
+      Cats.value,
+      Mouse.value,
+      Shapeless.value,
+      CatsEffect.value,
+      Fs2,
+      GiapiJmsUtil,
+      GiapiJmsProvider,
+      GiapiStatusService,
+      Giapi,
+      GiapiCommandsClient
+    ) ++ Logging.value ++ Monocle.value ++ LucumaCore.value,
     libraryDependencies ++= Seq(GmpStatusGateway  % "test",
                                 GmpStatusDatabase % "test",
                                 GmpCmdJmsBridge   % "test",

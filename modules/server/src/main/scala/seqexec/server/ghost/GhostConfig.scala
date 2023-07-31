@@ -8,6 +8,8 @@ import cats.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
 import giapi.client.syntax.all._
+import giapi.enums.GiapiStatusApply
+import giapi.enums.GiapiStatusApply._
 import seqexec.model.Conditions
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
@@ -15,8 +17,6 @@ import seqexec.server.ghost.implicits._
 import lucuma.core.model.{ Target => GemTarget }
 import lucuma.core.model.SiderealTracking
 import lucuma.core.math.Coordinates
-import lucuma.core.enums.GiapiStatusApply
-import lucuma.core.enums.GiapiStatusApply._
 import GhostConfig._
 import edu.gemini.spModel.target.env.ResolutionMode
 import shapeless.tag

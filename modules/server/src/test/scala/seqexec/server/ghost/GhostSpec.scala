@@ -4,7 +4,7 @@
 package seqexec.server.ghost
 
 import cats.syntax.all._
-import lucuma.core.enums.GiapiStatusApply._
+import seqexec.model.enums.GiapiStatusApply._
 import lucuma.core.math.Coordinates
 import lucuma.core.math.RightAscension
 import lucuma.core.math.Declination
