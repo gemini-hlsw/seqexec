@@ -4,14 +4,14 @@
 package seqexec.server.ghost
 
 import cats.syntax.all._
-import seqexec.model.enums.GiapiStatusApply._
+import giapi.enums.GiapiStatusApply._
 import lucuma.core.math.Coordinates
 import lucuma.core.math.RightAscension
 import lucuma.core.math.Declination
 import seqexec.model.Conditions
 import edu.gemini.spModel.gemini.ghost.GhostBinning
-import scala.concurrent.duration._
 import edu.gemini.spModel.target.env.ResolutionMode
+import scala.concurrent.duration._
 import shapeless.tag
 
 /**

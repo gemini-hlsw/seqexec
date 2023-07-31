@@ -88,7 +88,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore    = "0.47-52001ef-SNAPSHOT"
+    val lucumaCore    = "0.45.0"
     val lucumaUI      = "0.39.0"
     val lucumaSchemas = "0.33.0"
 
