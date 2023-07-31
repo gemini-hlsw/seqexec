@@ -9,7 +9,7 @@ import cats.syntax.all._
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
-import lucuma.core.enums.KeywordName
+import seqexec.model.enums.KeywordName
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GhostHeader {
