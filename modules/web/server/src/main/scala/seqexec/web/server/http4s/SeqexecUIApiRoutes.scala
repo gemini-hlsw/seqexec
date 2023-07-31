@@ -17,8 +17,8 @@ import fs2.Stream
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
+import giapi.enums.GiapiStatus
 import org.typelevel.log4cats.Logger
-import lucuma.core.enums.GiapiStatus
 import lucuma.core.enums.Site
 import org.http4s._
 import org.http4s.dsl._
