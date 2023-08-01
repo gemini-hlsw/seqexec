@@ -83,7 +83,7 @@ trait GhostArbitraries extends ArbTime {
     )
 
   implicit val ghostSRSingleTargetConfigCogen: Cogen[StandardResolutionMode.SingleTarget] =
-    Cogen[(Option[Coordinates], String, Coordinates)]
+    Cogen[(Option[Coordinates], String, Option[Coordinates])]
       .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates))
 
   val ghostSRDualTargetConfigGen: Gen[StandardResolutionMode.DualTarget] =
@@ -122,7 +122,7 @@ trait GhostArbitraries extends ArbTime {
     )
 
   implicit val ghostSRDualTargetConfigCogen: Cogen[StandardResolutionMode.DualTarget] =
-    Cogen[(Option[Coordinates], String, Coordinates, String, Option[Coordinates])]
+    Cogen[(Option[Coordinates], String, Option[Coordinates], String, Option[Coordinates])]
       .contramap(x =>
         (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates)
       )
@@ -161,7 +161,7 @@ trait GhostArbitraries extends ArbTime {
     )
 
   implicit val ghostSRTargetSkyConfigCogen: Cogen[StandardResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], String, Coordinates, Option[Coordinates])]
+    Cogen[(Option[Coordinates], String, Option[Coordinates], Option[Coordinates])]
       .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostSRSkyTargetConfigGen: Gen[StandardResolutionMode.SkyPlusTarget] =
@@ -198,7 +198,7 @@ trait GhostArbitraries extends ArbTime {
     )
 
   implicit val ghostSRSkyTargetConfigCogen: Cogen[StandardResolutionMode.SkyPlusTarget] =
-    Cogen[(Option[Coordinates], Coordinates, String, Option[Coordinates])]
+    Cogen[(Option[Coordinates], Option[Coordinates], String, Option[Coordinates])]
       .contramap(x => (x.baseCoords, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates))
 
   implicit val ghostHRTargetPlusSkyConfigGen: Gen[HighResolutionMode.TargetPlusSky] =
@@ -235,7 +235,7 @@ trait GhostArbitraries extends ArbTime {
     )
 
   implicit val ghostHRTargetSkyConfigCogen: Cogen[HighResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], String, Coordinates, Option[Coordinates])]
+    Cogen[(Option[Coordinates], String, Option[Coordinates], Option[Coordinates])]
       .contramap(x => (x.baseCoords, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostConfigArb: Arbitrary[GhostConfig] = Arbitrary {
@@ -261,7 +261,7 @@ trait GhostArbitraries extends ArbTime {
     }
 
     def extractSRIFU1Coordinates(x: GhostConfig): Option[Coordinates] = x match {
-      case c: StandardResolutionMode => Some(c.ifu1Coordinates)
+      case c: StandardResolutionMode => c.ifu1Coordinates
       case _                         => None
     }
 
@@ -290,7 +290,7 @@ trait GhostArbitraries extends ArbTime {
     }
 
     def extractHRIFU1Coordinates(x: GhostConfig): Option[Coordinates] = x match {
-      case c: HighResolutionMode => Some(c.ifu1Coordinates)
+      case c: HighResolutionMode => c.ifu1Coordinates
       case _                     => None
     }
 
