@@ -469,7 +469,8 @@ object SeqTranslate {
                     )(
                       config,
                       LightPath(lsource, inst.sfName(config)),
-                      w
+                      w,
+                      inst.defocusB(config)
                     ): System[F]
                 )
             else
@@ -482,7 +483,8 @@ object SeqTranslate {
                 )(
                   config,
                   LightPath(lsource, inst.sfName(config)),
-                  w
+                  w,
+                  inst.defocusB(config)
                 ): System[F]
               }.pure[F]
 
@@ -496,7 +498,8 @@ object SeqTranslate {
               )(
                 config,
                 LightPath(lsource, inst.sfName(config)),
-                w
+                w,
+                inst.defocusB(config)
               ): System[F]
             }.pure[F]
             else
@@ -509,7 +512,8 @@ object SeqTranslate {
                 )(
                   config,
                   LightPath(lsource, inst.sfName(config)),
-                  w
+                  w,
+                  inst.defocusB(config)
                 ): System[F]
               }.pure[F]
         }
@@ -524,7 +528,8 @@ object SeqTranslate {
       def adaptGcal(b: GcalController[F] => Gcal[F])(ov: SystemOverrides): Gcal[F] = b(
         overriddenSystems.gcal(ov)
       )
-      def defaultGcal: SystemOverrides => Gcal[F]                                  = adaptGcal(Gcal.defaultGcal)
+
+      def defaultGcal: SystemOverrides => Gcal[F] = adaptGcal(Gcal.defaultGcal)
 
       stepType match {
         case StepType.CelestialObject(inst) =>

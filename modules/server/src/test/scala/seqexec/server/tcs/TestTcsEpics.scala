@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 import cats.effect.{ Ref, Temporal }
+import squants.space.Length
 
 case class TestTcsEpics[F[_]: Async](
   state: Ref[F, TestTcsEpics.State],
@@ -305,6 +306,11 @@ case class TestTcsEpics[F[_]: Async](
 
   override val endObserve: EpicsCommand[F] = new DummyCmd[F]
 
+  override val instrumentDefocusCmd: InstrumentDefocusCmd[F] =
+    new DummyCmd[F] with InstrumentDefocusCmd[F] {
+      def setDefocus(v: Length): F[Unit] = Applicative[F].unit
+    }
+
   override val aoCorrect: AoCorrect[F] =
     new TestEpicsCommand2[F, State, TestTcsEvent, String, Int](State.aoCorrectCmd, state, out)
       with AoCorrect[F] {
@@ -444,6 +450,8 @@ case class TestTcsEpics[F[_]: Async](
   override def instrAA: F[Double] = state.get.map(_.instrAA)
 
   override def inPosition: F[String] = state.get.map(_.inPosition)
+
+  override def defocusB: F[Double] = state.get.map(_.defocusB)
 
   override def agInPosition: F[Double] = state.get.map(_.agInPosition)
 
@@ -967,6 +975,7 @@ object TestTcsEpics {
     g4GuideConfig:             ProbeGuideConfigVals,
     aoCorrect:                 String,
     aoGains:                   Int,
+    defocusB:                  Double,
     m1GuideCmd:                TestEpicsCommand1.State[String],
     m2GuideCmd:                TestEpicsCommand1.State[String],
     m2GuideModeCmd:            TestEpicsCommand1.State[String],
@@ -1341,6 +1350,7 @@ object TestTcsEpics {
     g4GuideConfig = ProbeGuideConfigVals.default,
     aoCorrect = "Off",
     aoGains = 0,
+    defocusB = 0.0,
     m1GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
     m2GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
     m2GuideModeCmd = TestEpicsCommand1.State[String](mark = false, ""),

@@ -28,6 +28,7 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.Angle
 import squants.space.Arcseconds
+import squants.space.Length
 
 class TcsNorth[F[_]: Sync: Logger] private (
   tcsController: TcsNorthController[F],
@@ -87,7 +88,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
   private def buildBasicTcsConfig(gc: GuideConfig): TcsNorthConfig =
     BasicTcsConfig(
       gc.tcsGuide,
-      TelescopeConfig(config.offsetA, config.wavelA),
+      TelescopeConfig(config.offsetA, config.wavelA, config.instrumentDefocus),
       BasicGuidersConfig(
         tag[P1Config](
           calcGuiderConfig(config.guideWithP1)
@@ -117,7 +118,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
 
     AoTcsConfig[GuiderConfig @@ AoGuide, AltairConfig](
       gc.tcsGuide,
-      TelescopeConfig(config.offsetA, config.wavelA),
+      TelescopeConfig(config.offsetA, config.wavelA, config.instrumentDefocus),
       AoGuidersConfig[GuiderConfig @@ AoGuide](
         tag[P1Config](
           calcGuiderConfig(config.guideWithP1)
@@ -159,14 +160,15 @@ object TcsNorth {
 
   @Lenses
   final case class TcsSeqConfig[F[_]](
-    guideWithP1: Option[StandardGuideOptions.Value],
-    guideWithP2: Option[StandardGuideOptions.Value],
-    guideWithOI: Option[StandardGuideOptions.Value],
-    guideWithAO: Option[StandardGuideOptions.Value],
-    offsetA:     Option[InstrumentOffset],
-    wavelA:      Option[Wavelength],
-    lightPath:   LightPath,
-    instrument:  InstrumentGuide
+    guideWithP1:       Option[StandardGuideOptions.Value],
+    guideWithP2:       Option[StandardGuideOptions.Value],
+    guideWithOI:       Option[StandardGuideOptions.Value],
+    guideWithAO:       Option[StandardGuideOptions.Value],
+    offsetA:           Option[InstrumentOffset],
+    wavelA:            Option[Wavelength],
+    instrumentDefocus: Option[Length],
+    lightPath:         LightPath,
+    instrument:        InstrumentGuide
   )
 
   def fromConfig[F[_]: Sync: Logger](
@@ -178,7 +180,8 @@ object TcsNorth {
   )(
     config:              CleanConfig,
     lightPath:           LightPath,
-    observingWavelength: Option[Wavelength]
+    observingWavelength: Option[Wavelength],
+    instrumentDefocus:   Option[Length]
   ): TcsNorth[F] = {
 
     val gwp1    = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
@@ -205,6 +208,7 @@ object TcsNorth {
       gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
       observingWavelength,
+      instrumentDefocus,
       lightPath,
       instrument
     )

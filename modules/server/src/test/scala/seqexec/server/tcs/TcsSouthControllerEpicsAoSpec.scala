@@ -89,7 +89,7 @@ class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
                          M1GuideConfig.M1GuideOff,
                          M2GuideConfig.M2GuideOff
     ),
-    TelescopeConfig(None, None),
+    TelescopeConfig(None, None, None),
     AoGuidersConfig(
       tag[P1Config](
         GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)

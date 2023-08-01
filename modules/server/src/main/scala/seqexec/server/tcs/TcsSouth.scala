@@ -53,6 +53,7 @@ import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
+import squants.space.Length
 
 case class TcsSouth[F[_]: Sync: Logger] private (
   tcsController: TcsSouthController[F],
@@ -106,7 +107,7 @@ case class TcsSouth[F[_]: Sync: Logger] private (
   def buildBasicTcsConfig(gc: GuideConfig): TcsSouthConfig =
     BasicTcsConfig(
       gc.tcsGuide,
-      TelescopeConfig(config.offsetA, config.wavelA),
+      TelescopeConfig(config.offsetA, config.wavelA, config.instrumentDefocus),
       BasicGuidersConfig(
         tag[P1Config](
           calcGuiderConfig(config.guideWithP1)
@@ -127,7 +128,7 @@ case class TcsSouth[F[_]: Sync: Logger] private (
 
     AoTcsConfig[GemsGuiders, GemsConfig](
       gc.tcsGuide,
-      TelescopeConfig(config.offsetA, config.wavelA),
+      TelescopeConfig(config.offsetA, config.wavelA, config.instrumentDefocus),
       AoGuidersConfig[GemsGuiders](
         tag[P1Config](
           calcGuiderConfig(config.guideWithP1)
@@ -179,20 +180,21 @@ object TcsSouth {
 
   @Lenses
   final case class TcsSeqConfig[F[_]](
-    guideWithP1:    Option[StandardGuideOptions.Value],
-    guideWithP2:    Option[StandardGuideOptions.Value],
-    guideWithOI:    Option[StandardGuideOptions.Value],
-    guideWithCWFS1: Option[StandardGuideOptions.Value],
-    guideWithCWFS2: Option[StandardGuideOptions.Value],
-    guideWithCWFS3: Option[StandardGuideOptions.Value],
-    guideWithODGW1: Option[StandardGuideOptions.Value],
-    guideWithODGW2: Option[StandardGuideOptions.Value],
-    guideWithODGW3: Option[StandardGuideOptions.Value],
-    guideWithODGW4: Option[StandardGuideOptions.Value],
-    offsetA:        Option[InstrumentOffset],
-    wavelA:         Option[Wavelength],
-    lightPath:      LightPath,
-    instrument:     InstrumentGuide
+    guideWithP1:       Option[StandardGuideOptions.Value],
+    guideWithP2:       Option[StandardGuideOptions.Value],
+    guideWithOI:       Option[StandardGuideOptions.Value],
+    guideWithCWFS1:    Option[StandardGuideOptions.Value],
+    guideWithCWFS2:    Option[StandardGuideOptions.Value],
+    guideWithCWFS3:    Option[StandardGuideOptions.Value],
+    guideWithODGW1:    Option[StandardGuideOptions.Value],
+    guideWithODGW2:    Option[StandardGuideOptions.Value],
+    guideWithODGW3:    Option[StandardGuideOptions.Value],
+    guideWithODGW4:    Option[StandardGuideOptions.Value],
+    offsetA:           Option[InstrumentOffset],
+    wavelA:            Option[Wavelength],
+    instrumentDefocus: Option[Length],
+    lightPath:         LightPath,
+    instrument:        InstrumentGuide
   )
 
   def fromConfig[F[_]: Sync: Logger](
@@ -204,7 +206,10 @@ object TcsSouth {
   )(
     config:              CleanConfig,
     lightPath:           LightPath,
-    observingWavelength: Option[Wavelength]
+    observingWavelength: Option[Wavelength],
+    instrumentDefocus:   Option[
+      Length
+    ] // We may add this to the sequence, in that case this param could be removed
   ): TcsSouth[F] = {
 
     val gwp1    = config.extractTelescopeAs[StandardGuideOptions.Value](GUIDE_WITH_PWFS1_PROP).toOption
@@ -257,6 +262,7 @@ object TcsSouth {
       gwod4,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
       observingWavelength,
+      instrumentDefocus,
       lightPath,
       instrument
     )
