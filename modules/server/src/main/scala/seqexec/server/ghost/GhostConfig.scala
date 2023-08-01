@@ -39,7 +39,7 @@ sealed trait GhostConfig extends GhostLUT {
   def ifu1TargetType: IFUTargetType
   def ifu2TargetType: IFUTargetType
   def ifu1BundleType: BundleConfig
-  def ifu1Coordinates: Coordinates
+  def ifu1Coordinates: Option[Coordinates]
   def ifu2Coordinates: Option[Coordinates]
   def ifu2BundleType: Option[BundleConfig]
   def resolutionMode: Option[ResolutionMode]
@@ -95,7 +95,9 @@ sealed trait GhostConfig extends GhostLUT {
     } else Configuration.Zero
 
   def ifu1Config: Configuration =
-    GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
+    ifu1Coordinates
+      .map(GhostConfig.ifuConfig(IFUNum.IFU1, ifu1TargetType, _, ifu1BundleType))
+      .orEmpty
 
   def isBias: Boolean = imageTypeConf(obsType).equalsIgnoreCase("BIAS")
   def isFlat: Boolean = imageTypeConf(obsType).equalsIgnoreCase("FLAT")
@@ -325,6 +327,7 @@ object GhostConfig {
     baseCoords:       Option[Coordinates],
     fiberAgitator1:   FiberAgitator,
     fiberAgitator2:   FiberAgitator,
+    objectName:       String,
     srifu1Name:       Option[String],
     srifu1Coords:     Option[Coordinates],
     srifu2Name:       Option[String],
@@ -460,8 +463,23 @@ object GhostConfig {
                            scienceMagnitude
             )
         )
+      // Fallback to non-sidereal though we'd rather detect the case
       case _                                            =>
-        None
+        StandardResolutionMode
+          .NonSiderealTarget(obsType,
+                             obsClass,
+                             blueConfig,
+                             redConfig,
+                             baseCoords,
+                             objectName,
+                             fiberAgitator1,
+                             fiberAgitator2,
+                             userTargets,
+                             resolutionMode,
+                             conditions,
+                             scienceMagnitude
+          )
+          .some
     }
 
     extracted.toRight(ContentError("Response does not constitute a valid GHOST configuration"))
@@ -473,6 +491,10 @@ object GhostConfig {
     case (a: StandardResolutionMode.TargetPlusSky, b: StandardResolutionMode.TargetPlusSky) =>
       a === b
     case (a: StandardResolutionMode.SkyPlusTarget, b: StandardResolutionMode.SkyPlusTarget) =>
+      a === b
+    case (a: StandardResolutionMode.NonSiderealTarget,
+          b: StandardResolutionMode.NonSiderealTarget
+        ) =>
       a === b
     case (a: HighResolutionMode.TargetPlusSky, b: HighResolutionMode.TargetPlusSky)         => a === b
     case _                                                                                  => false
@@ -515,7 +537,7 @@ case class GhostCalibration(
 
   override def ifu2Configuration: Configuration = Configuration.Zero
 
-  override val ifu1Coordinates: Coordinates = Coordinates.Zero
+  override val ifu1Coordinates: Option[Coordinates] = Coordinates.Zero.some
 
   override val ifu2Coordinates: Option[Coordinates] = None
 
@@ -530,31 +552,34 @@ case class GhostCalibration(
 sealed trait StandardResolutionMode extends GhostConfig {
   import StandardResolutionMode._
 
-  def ifu1Coordinates: Coordinates
+  def ifu1Coordinates: Option[Coordinates]
 
   override val slitMaskConfiguration: Configuration =
     giapiConfig(GhostSlitMaskPositioner, "SMP_STD_ONLY")
 
   override def ifu1TargetType: IFUTargetType =
     this match {
-      case s: SingleTarget   => IFUTargetType.Target(s.ifu1TargetName)
-      case d: DualTarget     => IFUTargetType.Target(d.ifu1TargetName)
-      case ts: TargetPlusSky => IFUTargetType.Target(ts.ifu1TargetName)
-      case _: SkyPlusTarget  => IFUTargetType.SkyPosition
+      case s: SingleTarget      => IFUTargetType.Target(s.ifu1TargetName)
+      case d: DualTarget        => IFUTargetType.Target(d.ifu1TargetName)
+      case ts: TargetPlusSky    => IFUTargetType.Target(ts.ifu1TargetName)
+      case _: SkyPlusTarget     => IFUTargetType.SkyPosition
+      case n: NonSiderealTarget => IFUTargetType.Target(n.targetName)
     }
 
   override def ifu2TargetType: IFUTargetType =
     this match {
-      case _: SingleTarget   => IFUTargetType.NoTarget
-      case d: DualTarget     => IFUTargetType.Target(d.ifu2TargetName)
-      case st: SkyPlusTarget => IFUTargetType.Target(st.ifu2TargetName)
-      case _: TargetPlusSky  => IFUTargetType.SkyPosition
+      case _: SingleTarget      => IFUTargetType.NoTarget
+      case d: DualTarget        => IFUTargetType.Target(d.ifu2TargetName)
+      case st: SkyPlusTarget    => IFUTargetType.Target(st.ifu2TargetName)
+      case _: TargetPlusSky     => IFUTargetType.SkyPosition
+      case _: NonSiderealTarget => IFUTargetType.NoTarget
     }
 
   override def ifu1BundleType: BundleConfig =
     this match {
       case _: SingleTarget | _: DualTarget | _: TargetPlusSky => BundleConfig.Standard
       case _: SkyPlusTarget                                   => BundleConfig.Sky
+      case _: NonSiderealTarget                               => BundleConfig.Standard
     }
 
   override def ifu2BundleType: Option[BundleConfig] =
@@ -562,6 +587,7 @@ sealed trait StandardResolutionMode extends GhostConfig {
       case _: SingleTarget                  => None
       case _: DualTarget | _: SkyPlusTarget => Some(BundleConfig.Standard)
       case _: TargetPlusSky                 => Some(BundleConfig.Sky)
+      case _: NonSiderealTarget             => Some(BundleConfig.Standard)
     }
 
   def adcConfiguration: Configuration =
@@ -579,13 +605,14 @@ object StandardResolutionMode {
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
     ifu1TargetName:                String,
-    override val ifu1Coordinates:  Coordinates,
+    ifu1Coords:                    Coordinates,
     override val userTargets:      List[GemTarget],
     override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
-    override def ifu2Configuration: Configuration =
+    override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
+    override def ifu2Configuration: Configuration     =
       GhostConfig.ifuPark(IFUNum.IFU2)
 
     override val ifu2Coordinates: Option[Coordinates] = None
@@ -607,6 +634,46 @@ object StandardResolutionMode {
     )
   )
 
+  final case class NonSiderealTarget(
+    override val obsType:          String,
+    override val obsClass:         String,
+    override val blueConfig:       ChannelConfig @@ BlueChannel,
+    override val redConfig:        ChannelConfig @@ RedChannel,
+    override val baseCoords:       Option[Coordinates],
+    targetName:                    String,
+    override val fiberAgitator1:   FiberAgitator,
+    override val fiberAgitator2:   FiberAgitator,
+    override val userTargets:      List[GemTarget],
+    override val resolutionMode:   Option[ResolutionMode],
+    override val conditions:       Conditions,
+    override val scienceMagnitude: Option[Double]
+  ) extends StandardResolutionMode {
+    override val ifu1Coordinates: Option[Coordinates] = none
+    override val ifu2Coordinates: Option[Coordinates] = none
+    override def ifu2Configuration: Configuration     =
+      GhostConfig.ifuPark(IFUNum.IFU2)
+    override def ifu1Config: Configuration            =
+      giapiConfig(IFUNum.IFU1.targetItem, ifu1TargetType) |+|
+        giapiConfig(IFUNum.IFU1.bundleItem, ifu1BundleType)
+
+  }
+
+  implicit val nonSiderealTargetEq: Eq[NonSiderealTarget] = Eq.by(x =>
+    (x.obsType,
+     x.obsClass,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
+     x.baseCoords,
+     x.targetName,
+     x.fiberAgitator1,
+     x.fiberAgitator2,
+     x.userTargets,
+     x.resolutionMode,
+     x.conditions,
+     x.scienceMagnitude
+    )
+  )
+
   final case class DualTarget(
     override val obsType:          String,
     override val obsClass:         String,
@@ -616,7 +683,7 @@ object StandardResolutionMode {
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
     ifu1TargetName:                String,
-    override val ifu1Coordinates:  Coordinates,
+    ifu1Coords:                    Coordinates,
     ifu2TargetName:                String,
     ifu2Coords:                    Coordinates,
     override val userTargets:      List[GemTarget],
@@ -624,6 +691,7 @@ object StandardResolutionMode {
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
+    override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override def ifu2Configuration: Configuration     =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.Target(ifu2TargetName),
@@ -660,7 +728,7 @@ object StandardResolutionMode {
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
     ifu1TargetName:                String,
-    override val ifu1Coordinates:  Coordinates,
+    ifu1Coords:                    Coordinates,
     ifu2Coords:                    Coordinates,
     override val userTargets:      List[GemTarget],
     override val resolutionMode:   Option[ResolutionMode],
@@ -670,6 +738,7 @@ object StandardResolutionMode {
     override def ifu2Configuration: Configuration     =
       GhostConfig.ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coords, BundleConfig.Sky)
     override val ifu2Coordinates: Option[Coordinates] = ifu2Coords.some
+    override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
   }
 
   implicit val srmTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
@@ -697,7 +766,7 @@ object StandardResolutionMode {
     override val baseCoords:       Option[Coordinates],
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
-    override val ifu1Coordinates:  Coordinates,
+    ifu1Coords:                    Coordinates,
     ifu2TargetName:                String,
     ifu2Coords:                    Coordinates,
     override val userTargets:      List[GemTarget],
@@ -705,6 +774,7 @@ object StandardResolutionMode {
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends StandardResolutionMode {
+    override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override def ifu2Configuration: Configuration     =
       GhostConfig.ifuConfig(IFUNum.IFU2,
                             IFUTargetType.Target(ifu2TargetName),
@@ -765,16 +835,17 @@ object HighResolutionMode {
     override val fiberAgitator1:   FiberAgitator,
     override val fiberAgitator2:   FiberAgitator,
     override val ifu1TargetName:   String,
-    override val ifu1Coordinates:  Coordinates,
+    ifu1Coords:                    Coordinates,
     ifu2Coords:                    Coordinates,
     override val userTargets:      List[GemTarget],
     override val resolutionMode:   Option[ResolutionMode],
     override val conditions:       Conditions,
     override val scienceMagnitude: Option[Double]
   ) extends HighResolutionMode {
+    override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
+    override val ifu2Coordinates: Option[Coordinates] = ifu2Coords.some
     override def ifu2Configuration: Configuration     =
       GhostConfig.ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coords, BundleConfig.Sky)
-    override val ifu2Coordinates: Option[Coordinates] = ifu2Coords.some
   }
 
   implicit val hrTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
