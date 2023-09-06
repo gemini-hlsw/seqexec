@@ -71,7 +71,7 @@ object ControlButtons {
 
   private def requestedIcon(icon: Icon): IconGroup =
     IconGroup(
-      icon(^.key := "main"),
+      icon(^.key                                                   := "main"),
       IconCircleNotched.copy(loading = true, color = Yellow)(^.key := "requested")
     )
 
