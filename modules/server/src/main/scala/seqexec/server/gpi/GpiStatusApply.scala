@@ -9,10 +9,10 @@ import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.commands.Configuration
 import giapi.client.syntax.status._
-import lucuma.core.enums.GiapiStatus
-import lucuma.core.enums.GiapiStatusApply
-import lucuma.core.enums.GiapiStatusApply._
-import lucuma.core.enums.GiapiType
+import giapi.enums.GiapiStatus
+import giapi.enums.GiapiType
+import giapi.enums.GiapiStatusApply
+import giapi.enums.GiapiStatusApply._
 import lucuma.core.enums.Instrument
 import lucuma.core.math.Angle
 import lucuma.core.syntax.all._
