@@ -258,7 +258,7 @@ lazy val seqexec_server = project
         TestLibs.value,
         PPrint.value,
         ACM,
-        Giapi
+        GiapiScala
       ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
