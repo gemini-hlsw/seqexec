@@ -94,31 +94,6 @@ publish / skip := true
 // Projects
 //////////////
 
-lazy val giapi = project
-  .in(file("modules/giapi"))
-  .enablePlugins(GitBranchPrompt)
-  .settings(commonSettings: _*)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(
-      Cats.value,
-      Mouse.value,
-      Shapeless.value,
-      CatsEffect.value,
-      Fs2,
-      GiapiJmsUtil,
-      GiapiJmsProvider,
-      GiapiStatusService,
-      Giapi,
-      GiapiCommandsClient
-    ) ++ Logging.value ++ Monocle.value ++ LucumaCore.value,
-    libraryDependencies ++= Seq(GmpStatusGateway  % "test",
-                                GmpStatusDatabase % "test",
-                                GmpCmdJmsBridge   % "test",
-                                NopSlf4j          % "test"
-    ) ++ MUnit.value
-  )
-
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/ocs2_api"))
@@ -282,7 +257,8 @@ lazy val seqexec_server = project
         Log4CatsNoop.value,
         TestLibs.value,
         PPrint.value,
-        ACM
+        ACM,
+        Giapi
       ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
@@ -293,7 +269,6 @@ lazy val seqexec_server = project
     buildInfoPackage          := "seqexec.server"
   )
   .dependsOn(seqexec_engine    % "compile->compile;test->test",
-             giapi,
              ocs2_api.jvm,
              seqexec_model.jvm % "compile->compile;test->test"
   )
