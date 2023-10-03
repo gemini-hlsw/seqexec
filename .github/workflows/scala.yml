@@ -14,7 +14,7 @@ jobs:
       - name: Set up Scala
         uses: olafurpg/setup-scala@v12
         with:
-          java-version: adopt@1.17
+          java-version: openjdk@1.17.0
       - name: Cache Coursier
         uses: actions/cache@v3.3.1
         with:
