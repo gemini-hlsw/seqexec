@@ -74,6 +74,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
+    val giapiScala          = "0.1.0"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
@@ -263,6 +264,7 @@ object Settings {
     )
 
     // GIAPI Libraries
+    val GiapiScala         = "edu.gemini"      %% "giapi"         % LibraryVersions.giapiScala
     val EpicsService       = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
     val GmpCommandsRecords =
       "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
