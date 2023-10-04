@@ -5,6 +5,7 @@ package seqexec.web.server.http4s
 
 import cats.effect.Async
 import cats.syntax.all._
+import fs2.compression.Compression
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.middleware.GZip
@@ -22,7 +23,7 @@ import seqexec.web.server.security.TokenRefresher
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecCommandRoutes[F[_]: Async](
+class SeqexecCommandRoutes[F[_]: Async: Compression](
   auth:       AuthenticationService[F],
   inputQueue: server.EventQueue[F],
   se:         SeqexecEngine[F]
