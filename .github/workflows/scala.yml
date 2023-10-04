@@ -16,12 +16,12 @@ jobs:
         with:
           java-version: openjdk@1.17.0
       - name: Cache Coursier
-        uses: actions/cache@v3.3.1
+        uses: actions/cache@v3.3.2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
       - name: Cache SBT
-        uses: actions/cache@v3.3.1
+        uses: actions/cache@v3.3.2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
