@@ -23,18 +23,18 @@ object Settings {
     val scalaJSReactSortable    = "0.5.2"
 
     // Scala libraries
-    val catsEffectVersion   = "3.4.11"
-    val catsVersion         = "2.9.0"
+    val catsEffectVersion   = "3.5.2"
+    val catsVersion         = "2.10.0"
     val mouseVersion        = "1.2.1"
-    val fs2Version          = "3.6.1"
+    val fs2Version          = "3.9.2"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.4.0"
 
-    val http4sVersion                  = "0.23.18"
-    val http4sBlazeVersion             = "0.23.14"
-    val http4sJdkHttpClientVersion     = "0.9.0"
+    val http4sVersion                  = "0.23.23"
+    val http4sBlazeVersion             = "0.23.15"
+    val http4sJdkHttpClientVersion     = "0.9.1"
     val http4sBoopickleVersion         = "0.23.11"
     val http4sPrometheusMetricsVersion = "0.24.3"
     val http4sScalaXmlVersion          = "0.23.13"
@@ -43,16 +43,16 @@ object Settings {
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "9.4.0"
-    val slf4j          = "2.0.7"
+    val slf4j          = "2.0.9"
     val log4s          = "1.10.0"
     val log4cats       = "2.6.0"
     val log4catsLevel  = "0.3.1"
-    val logback        = "1.4.6"
+    val logback        = "1.4.11"
     val janino         = "3.1.9"
     val logstash       = "7.0"
     val pureConfig     = "0.17.4"
     val monocleVersion = "3.2.0"
-    val circeVersion   = "0.14.5"
+    val circeVersion   = "0.14.6"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
 
@@ -74,6 +74,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
+    val giapiScala          = "0.1.0"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
@@ -263,6 +264,7 @@ object Settings {
     )
 
     // GIAPI Libraries
+    val GiapiScala         = "edu.gemini"      %% "giapi"         % LibraryVersions.giapiScala
     val EpicsService       = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
     val GmpCommandsRecords =
       "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords

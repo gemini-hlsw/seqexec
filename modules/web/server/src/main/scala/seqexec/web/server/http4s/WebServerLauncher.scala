@@ -55,6 +55,8 @@ import web.server.common.StaticRoutes
 import cats.effect.{ Ref, Resource, Temporal }
 import org.http4s.jdkhttpclient.JdkHttpClient
 import org.http4s.blaze.server.BlazeServerBuilder
+import com.comcast.ip4s.Dns
+import fs2.compression.Compression
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")
@@ -112,7 +114,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
   }
 
   /** Resource that yields the running web server */
-  def webServer[F[_]: Logger: Async](
+  def webServer[F[_]: Logger: Async: Dns: Compression](
     conf:      SeqexecConfiguration,
     cal:       SmartGcal,
     as:        AuthenticationService[F],
@@ -168,7 +170,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
   }
 
-  def redirectWebServer[F[_]: Logger: Async](
+  def redirectWebServer[F[_]: Logger: Async: Compression](
     gcdb: GuideConfigDb[F],
     cal:  SmartGcal
   )(conf: WebServerConfiguration): Resource[F, Server] = {
