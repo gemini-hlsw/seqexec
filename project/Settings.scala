@@ -55,6 +55,7 @@ object Settings {
     val circeVersion   = "0.14.6"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
+    val scoptVersion   = "4.1.0"
 
     // test libraries
     val xmlUnit                = "1.6"
@@ -122,6 +123,7 @@ object Settings {
     val Fs2         = "co.fs2"            %% "fs2-core"           % LibraryVersions.fs2Version
     val Fs2IO       = "co.fs2"            %% "fs2-io"             % LibraryVersions.fs2Version % "test"
     val Mouse       = Def.setting("org.typelevel" %%% "mouse" % LibraryVersions.mouseVersion)
+    val Scopt       = Def.setting("com.github.scopt" %% "scopt" % LibraryVersions.scoptVersion)
     val Shapeless   = Def.setting("com.chuusai" %%% "shapeless" % LibraryVersions.shapelessVersion)
     val CommonsHttp = "commons-httpclient" % "commons-httpclient" % LibraryVersions.commonsHttp
     val UnboundId   =

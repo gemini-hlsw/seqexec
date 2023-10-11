@@ -273,6 +273,12 @@ lazy val seqexec_server = project
              seqexec_model.jvm % "compile->compile;test->test"
   )
 
+lazy val authtester = project
+  .in(file("modules/authtester"))
+  .dependsOn(seqexec_web_server)
+  .settings(libraryDependencies += Scopt.value)
+  .enablePlugins(JavaAppPackaging)
+
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
 lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
