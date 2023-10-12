@@ -83,7 +83,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
 
   // Shorten the default timeout
   private val Timeout = 1000
-  private val Domain  = "@gemini.edu"
+  private val Domain  = "noirlab\\"
 
   lazy val ldapOptions: LDAPConnectionOptions = {
     val opts = new LDAPConnectionOptions()
@@ -97,7 +97,7 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
 
   override def authenticateUser(username: String, password: String): F[AuthResult] = {
     // We should always return the domain
-    val usernameWithDomain = if (username.endsWith(Domain)) username else s"$username$Domain"
+    val usernameWithDomain = if (username.startsWith(Domain)) username else s"$Domain$username"
 
     val rsrc =
       for {
@@ -105,6 +105,9 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
                Sync[F].delay(c.close())
              )
         x <- Resource.eval(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
+        _ <- Resource.eval(
+               Logger[F].info(s"LDAP authentication result on host $hosts for user '$username': $x")
+             )
       } yield x
 
     rsrc.use {
