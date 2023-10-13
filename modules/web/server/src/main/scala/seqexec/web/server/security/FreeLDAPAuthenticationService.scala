@@ -19,6 +19,8 @@ object FreeLDAPAuthenticationService {
   import LdapConnectionOps._
   import UserDetails._
 
+  val Domain = "@ad.noirlab.edu"
+
   sealed trait LdapOp[A]
   // Operations on ldap
   object LdapOp {
@@ -60,10 +62,14 @@ object FreeLDAPAuthenticationService {
   def authenticate(u: String, p: String): LdapM[UID] = bind(u, p)
 
   // Authenticate and reads the display name
-  def authenticationAndName(u: String, p: String): LdapM[UserDetails] = for {
-    u <- bind(u, p)
-    d <- displayName(u)
-  } yield UserDetails(u, d)
+  def authenticationAndName(u: String, p: String): LdapM[UserDetails] = {
+    // We should include the domain
+    val usernameWithDomain = s"$u$Domain"
+    for {
+      lu <- bind(usernameWithDomain, p)
+      d  <- displayName(lu)
+    } yield UserDetails(lu, d)
+  }
 
   // Authenticate and reads the name, groups and photo
   def authNameGroupThumb(u: String, p: String): LdapM[(UserDetails, Groups, Option[Thumbnail])] =
@@ -83,7 +89,6 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
 
   // Shorten the default timeout
   private val Timeout = 1000
-  private val Domain  = "noirlab\\"
 
   lazy val ldapOptions: LDAPConnectionOptions = {
     val opts = new LDAPConnectionOptions()
@@ -96,15 +101,13 @@ class FreeLDAPAuthenticationService[F[_]: Sync: Logger](hosts: List[(String, Int
     new FailoverServerSet(hosts.map(_._1).toArray, hosts.map(_._2).toArray, ldapOptions)
 
   override def authenticateUser(username: String, password: String): F[AuthResult] = {
-    // We should always return the domain
-    val usernameWithDomain = if (username.startsWith(Domain)) username else s"$Domain$username"
 
     val rsrc =
       for {
         c <- Resource.make(Sync[F].delay(failoverServerSet.getConnection))(c =>
                Sync[F].delay(c.close())
              )
-        x <- Resource.eval(runF(authenticationAndName(usernameWithDomain, password), c).attempt)
+        x <- Resource.eval(runF(authenticationAndName(username, password), c).attempt)
         _ <- Resource.eval(
                Logger[F].info(s"LDAP authentication result on host $hosts for user '$username': $x")
              )
