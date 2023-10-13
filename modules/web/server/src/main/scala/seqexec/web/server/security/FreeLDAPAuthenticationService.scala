@@ -19,7 +19,7 @@ object FreeLDAPAuthenticationService {
   import LdapConnectionOps._
   import UserDetails._
 
-  private val Domain = "@ad.noirlab.edu"
+  val Domain = "@ad.noirlab.edu"
 
   sealed trait LdapOp[A]
   // Operations on ldap
