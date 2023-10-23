@@ -36,7 +36,7 @@ object Settings {
     val http4sBlazeVersion             = "0.23.15"
     val http4sJdkHttpClientVersion     = "0.9.1"
     val http4sBoopickleVersion         = "0.23.11"
-    val http4sPrometheusMetricsVersion = "0.24.3"
+    val http4sPrometheusMetricsVersion = "0.24.6"
     val http4sScalaXmlVersion          = "0.23.13"
 
     val squants        = "1.8.3"
