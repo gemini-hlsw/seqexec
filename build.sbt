@@ -94,30 +94,6 @@ publish / skip := true
 // Projects
 //////////////
 
-lazy val giapi = project
-  .in(file("modules/giapi"))
-  .enablePlugins(GitBranchPrompt)
-  .settings(commonSettings: _*)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(Cats.value,
-                                Mouse.value,
-                                Shapeless.value,
-                                CatsEffect.value,
-                                Fs2,
-                                GiapiJmsUtil,
-                                GiapiJmsProvider,
-                                GiapiStatusService,
-                                Giapi,
-                                GiapiCommandsClient
-    ) ++ Logging.value ++ Monocle.value,
-    libraryDependencies ++= Seq(GmpStatusGateway  % "test",
-                                GmpStatusDatabase % "test",
-                                GmpCmdJmsBridge   % "test",
-                                NopSlf4j          % "test"
-    ) ++ MUnit.value
-  )
-
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("modules/ocs2_api"))
@@ -281,7 +257,8 @@ lazy val seqexec_server = project
         Log4CatsNoop.value,
         TestLibs.value,
         PPrint.value,
-        ACM
+        ACM,
+        GiapiScala
       ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
@@ -292,10 +269,15 @@ lazy val seqexec_server = project
     buildInfoPackage          := "seqexec.server"
   )
   .dependsOn(seqexec_engine    % "compile->compile;test->test",
-             giapi,
              ocs2_api.jvm,
              seqexec_model.jvm % "compile->compile;test->test"
   )
+
+lazy val authtester = project
+  .in(file("modules/authtester"))
+  .dependsOn(seqexec_web_server)
+  .settings(libraryDependencies += Scopt.value)
+  .enablePlugins(JavaAppPackaging)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level

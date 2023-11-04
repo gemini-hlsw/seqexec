@@ -12,13 +12,15 @@ import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
+import com.comcast.ip4s.Dns
 import fs2.Pipe
 import fs2.Stream
+import fs2.compression.Compression
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
+import giapi.enums.GiapiStatus
 import org.typelevel.log4cats.Logger
-import lucuma.core.enums.GiapiStatus
 import lucuma.core.enums.Site
 import org.http4s._
 import org.http4s.dsl._
@@ -49,7 +51,7 @@ import seqexec.web.server.security.TokenRefresher
 /**
  * Rest Endpoints under the /api route
  */
-class SeqexecUIApiRoutes[F[_]: Async](
+class SeqexecUIApiRoutes[F[_]: Async: Dns: Compression](
   site:             Site,
   mode:             Mode,
   auth:             AuthenticationService[F],

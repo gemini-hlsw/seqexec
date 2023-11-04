@@ -43,18 +43,22 @@ abstract class EpicsCommandBase[F[_]: Async](sysName: String) extends EpicsComma
 
   override def post(timeout: FiniteDuration): F[ApplyCommandResult] = setTimeout(timeout) *>
     Async[F]
-      .async_[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
-        cs.map { ccs =>
-          ccs.postCallback {
-            new CaCommandListener {
-              override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
-              override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
-              override def onFailure(cause: Exception): Unit = f(cause.asLeft)
-            }
+      .async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
+        Async[F]
+          .delay {
+            cs.map { ccs =>
+              ccs.postCallback {
+                new CaCommandListener {
+                  override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
+                  override def onPause(): Unit   = f(ApplyCommandResult.Paused.asRight)
+                  override def onFailure(cause: Exception): Unit = f(cause.asLeft)
+                }
+              }
+              // It should call f on all execution paths, thanks @tpolecat
+            }.void
+              .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
           }
-        // It should call f on all execution paths, thanks @tpolecat
-        }.void
-          .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+          .as(Some(Async[F].unit))
       }
       .addSystemNameToCmdError(sysName)
 
@@ -143,21 +147,25 @@ abstract class ObserveCommandBase[F[_]: Async](sysName: String) extends ObserveC
 
   override def post(timeout: FiniteDuration): F[ObserveCommandResult] = setTimeout(timeout) *>
     Async[F]
-      .async_[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
-        os.map { oos =>
-          oos.postCallback {
-            new CaCommandListener {
-              override def onSuccess(): Unit                 = f(ObserveCommandResult.Success.asRight)
-              override def onPause(): Unit                   = f(ObserveCommandResult.Paused.asRight)
-              override def onFailure(cause: Exception): Unit = cause match {
-                case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
-                case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
-                case _                   => f(cause.asLeft)
+      .async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
+        Async[F]
+          .delay {
+            os.map { oos =>
+              oos.postCallback {
+                new CaCommandListener {
+                  override def onSuccess(): Unit                 = f(ObserveCommandResult.Success.asRight)
+                  override def onPause(): Unit                   = f(ObserveCommandResult.Paused.asRight)
+                  override def onFailure(cause: Exception): Unit = cause match {
+                    case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
+                    case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
+                    case _                   => f(cause.asLeft)
+                  }
+                }
               }
-            }
+            }.void
+              .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
           }
-        }.void
-          .getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+          .as(Some(Async[F].unit))
       }
       .addSystemNameToCmdError(sysName)
 
@@ -211,60 +219,66 @@ object EpicsUtil {
     timeout: FiniteDuration,
     name:    String
   ): F[T] =
-    Async[F].async_[T] { (f: Either[Throwable, T] => Unit) =>
-      // The task is created with async. So we do whatever we need to do,
-      // and then call `f` to signal the completion of the task.
+    Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
+      Async[F]
+        .delay {
+          // The task is created with async. So we do whatever we need to do,
+          // and then call `f` to signal the completion of the task.
 
-      // `resultGuard` and `lock` are used for synchronization.
-      val resultGuard = new AtomicInteger(1)
-      val lock        = new ReentrantLock()
+          // `resultGuard` and `lock` are used for synchronization.
+          val resultGuard = new AtomicInteger(1)
+          val lock        = new ReentrantLock()
 
-      // First we verify that the attribute doesn't already have the required value.
-      // NOTE: It was possible to lose a change to the right value if it happened between here and the line that
-      // subscribes to the attribute, and the wait would end in timeout. That is not the case anymore, because the
-      // CaAttribute will call the callback once on subscription.
-      if (!attr.values().isEmpty && vv.contains(attr.value)) {
-        f(attr.value.asRight)
-      } else {
-        // If not, we set a timer for the timeout, and a listener for the EPICS
-        // channel. The timer and the listener can both complete the IO. The
-        // first one to do it cancels the other.The use of `resultGuard`
-        // guarantees that only one of them will complete the IO.
-        val timer          = new JTimer
-        val statusListener = new CaAttributeListener[T] {
-          override def onValueChange(newVals: util.List[T]): Unit =
-            if (
-              !newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1
-            ) {
-              locked(lock) {
-                attr.removeListener(this)
-                timer.cancel()
-              }
-              // This `right` looks a bit confusing because is not related to
-              // the `TrySeq`, but to the result of `IO`.
-              f(newVals.get(0).asRight)
+          // First we verify that the attribute doesn't already have the required value.
+          // NOTE: It was possible to lose a change to the right value if it happened between here and the line that
+          // subscribes to the attribute, and the wait would end in timeout. That is not the case anymore, because the
+          // CaAttribute will call the callback once on subscription.
+          if (!attr.values().isEmpty && vv.contains(attr.value)) {
+            f(attr.value.asRight)
+          } else {
+            // If not, we set a timer for the timeout, and a listener for the EPICS
+            // channel. The timer and the listener can both complete the IO. The
+            // first one to do it cancels the other.The use of `resultGuard`
+            // guarantees that only one of them will complete the IO.
+            val timer          = new JTimer
+            val statusListener = new CaAttributeListener[T] {
+              override def onValueChange(newVals: util.List[T]): Unit =
+                if (
+                  !newVals.isEmpty &&
+                  vv.contains(newVals.get(0)) &&
+                  resultGuard.getAndDecrement() === 1
+                ) {
+                  locked(lock) {
+                    attr.removeListener(this)
+                    timer.cancel()
+                  }
+                  // This `right` looks a bit confusing because is not related to
+                  // the `TrySeq`, but to the result of `IO`.
+                  f(newVals.get(0).asRight)
+                }
+
+              override def onValidityChange(newValidity: Boolean): Unit = {}
             }
 
-          override def onValidityChange(newValidity: Boolean): Unit = {}
-        }
-
-        locked(lock) {
-          if (timeout.toMillis > 0) {
-            timer.schedule(
-              new TimerTask {
-                override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
-                  locked(lock) {
-                    attr.removeListener(statusListener)
-                  }
-                  f(SeqexecFailure.Timeout(name).asLeft)
-                }
-              },
-              timeout.toMillis
-            )
+            locked(lock) {
+              if (timeout.toMillis > 0) {
+                timer.schedule(
+                  new TimerTask {
+                    override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
+                      locked(lock) {
+                        attr.removeListener(statusListener)
+                      }
+                      f(SeqexecFailure.Timeout(name).asLeft)
+                    }
+                  },
+                  timeout.toMillis
+                )
+              }
+              attr.addListener(statusListener)
+            }
           }
-          attr.addListener(statusListener)
         }
-      }
+        .as(Some(Async[F].unit))
     }
 
   def waitForValueF[T, F[_]: Async](
