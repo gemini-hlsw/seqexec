@@ -6,8 +6,8 @@ package seqexec.web.server.config
 import cats.effect.IO
 import lucuma.core.enums.Site
 import java.nio.file.Paths
-import org.http4s.Uri
-import org.http4s.implicits._
+import org.http4s._
+import org.http4s.syntax.all._
 import pureconfig._
 import scala.concurrent.duration._
 import seqexec.model.config._
@@ -53,7 +53,7 @@ class ConfigurationLoaderSpec extends CatsEffectSuite {
     2,
     3.seconds,
     tag[GpiSettings][Uri](uri"vm://gpi?marshal=false&broker.persistent=false"),
-    tag[GpiSettings][Uri](uri"http://localhost:8888/xmlrpc"),
+    tag[GpiSettings][Uri](uri"http://localhost:8888/gds-seqexec"),
     tag[GhostSettings][Uri](uri"vm://ghost?marshal=false&broker.persistent=false"),
     tag[GhostSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     tag[Igrins2Settings][Uri](uri"vm://igrins2?marshal=false&broker.persistent=false"),
@@ -156,7 +156,7 @@ seqexec-engine {
     dhsTimeout = 10 seconds
     dhsMaxSize = 32
     gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"
-    gpiGDS = "http://localhost:8888/xmlrpc"
+    gpiGDS = "http://localhost:8888/gds-seqexec"
     ghostUrl = "vm://ghost?marshal=false&broker.persistent=false"
     ghostGDS = "http://localhost:8888/xmlrpc"
 }

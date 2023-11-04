@@ -12,7 +12,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.MOS_PREIMAGING_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.READMODE_PROP
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.ReadMode
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
+import lucuma.core.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.CleanConfig

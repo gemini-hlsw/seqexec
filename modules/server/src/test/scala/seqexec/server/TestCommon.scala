@@ -40,7 +40,7 @@ import seqexec.server.gnirs.{ GnirsControllerSim, GnirsKeywordReaderDummy }
 import seqexec.server.gpi.GpiController
 import seqexec.server.gsaoi.{ GsaoiControllerSim, GsaoiKeywordReaderDummy }
 import seqexec.server.gws.DummyGwsKeywordsReader
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsClientSim, GdsClient }
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsClientSim }
 import seqexec.server.nifs.{ NifsControllerSim, NifsKeywordReaderDummy }
 import seqexec.server.niri.{ NiriControllerSim, NiriKeywordReaderDummy }
 import seqexec.server.tcs.{
@@ -55,6 +55,8 @@ import shapeless.tag
 import scala.concurrent.duration._
 import seqexec.server.igrins2.Igrins2Controller
 import giapi.client.igrins2.Igrins2Client
+import seqexec.server.keywords.GdsHttpClient
+import seqexec.server.keywords.GdsXmlrpcClient
 
 class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
   import TestCommon._
@@ -162,8 +164,8 @@ object TestCommon {
     instForceError = false,
     failAt = 0,
     10.seconds,
-    tag[GpiSettings][Uri](uri"vm://localhost:8888/xmlrpc"),
-    tag[GpiSettings][Uri](uri"http://localhost:8888/xmlrpc"),
+    tag[GpiSettings][Uri](uri"vm://localhost:8888/gds-seqexec"),
+    tag[GpiSettings][Uri](uri"http://localhost:8888/gds-seqexec"),
     tag[GhostSettings][Uri](uri"vm://localhost:8888/xmlrpc"),
     tag[GhostSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     tag[Igrins2Settings][Uri](uri"vm://localhost:8888/xmlrpc"),
@@ -252,7 +254,9 @@ object TestCommon {
     .simulatedGpiClient[IO]
     .use(x =>
       IO(
-        GpiController(x, GdsClient(GdsClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc"))
+        GpiController(x,
+                      GdsHttpClient(GdsHttpClient.alwaysOkClient[IO], uri"http://localhost:8888")
+        )
       )
     )
 
@@ -260,8 +264,9 @@ object TestCommon {
     .simulatedGhostClient[IO]
     .use(x =>
       IO(
-        GhostController(x,
-                        GdsClient(GdsClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
+        GhostController(
+          x,
+          GdsXmlrpcClient(GdsXmlrpcClient.alwaysOkClient[IO], uri"http://localhost:8888")
         )
       )
     )

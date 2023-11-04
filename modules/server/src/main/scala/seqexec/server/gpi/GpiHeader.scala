@@ -7,7 +7,7 @@ import cats.Applicative
 import cats.data.Nested
 import cats.effect.Sync
 import cats.syntax.all._
-import seqexec.model.enums.KeywordName
+import lucuma.core.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
