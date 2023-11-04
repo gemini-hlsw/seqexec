@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -8,7 +8,7 @@ import cats.data.NonEmptySet
 import cats.data.OneAnd
 import cats.implicits._
 import edu.gemini.spModel.core.Wavelength
-import lucuma.core.enum._
+import lucuma.core.enums._
 import monocle.macros.Lenses
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.InstrumentGuide

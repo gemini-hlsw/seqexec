@@ -1,15 +1,15 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import cats.effect.IO
-import lucuma.core.enum.KeywordName
+import lucuma.core.enums.KeywordName
 import org.typelevel.log4cats.noop.NoOpLogger
 import java.time.LocalDate
 import seqexec.server.keywords.DhsClient.Permanent
 
-class DhsClientSimSpec extends munit.FunSuite {
+class DhsClientSimSpec extends munit.CatsEffectSuite {
   private implicit def logger = NoOpLogger.impl[IO]
 
   test("produce data labels for today") {

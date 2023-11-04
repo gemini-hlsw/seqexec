@@ -1,16 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.{ Async, Sync }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
@@ -20,7 +17,7 @@ import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import lucuma.core.syntax.string._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -29,20 +26,20 @@ import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gnirs.GnirsController.{ CCConfig, DCConfig, Filter1, Other, ReadMode }
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs[F[_]: Logger: Concurrent: Timer](
-  controller: GnirsController[F],
-  dhsClient:  DhsClient[F]
+final case class Gnirs[F[_]: Logger: Async](
+  controller:        GnirsController[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
   override val contributorName: String   = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val keywordsClient: KeywordsClient[F] = this
 
@@ -179,13 +176,13 @@ object Gnirs {
         case _                  =>
           if (woll === WollastonPrism.YES) Decker.WOLLASTON
           else
-            pixScale match {
-              case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
-              case PixelScale.PS_015 =>
-                slit match {
-                  case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
-                  case SlitWidth.HR_IFU                 => Decker.HR_IFU
-                  case _                                => Decker.SHORT_CAM_LONG_SLIT
+            slit match {
+              case SlitWidth.IFU | SlitWidth.LR_IFU => Decker.LR_IFU
+              case SlitWidth.HR_IFU                 => Decker.HR_IFU
+              case _                                =>
+                pixScale match {
+                  case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
+                  case PixelScale.PS_015 => Decker.SHORT_CAM_LONG_SLIT
                 }
             }
       }
@@ -257,6 +254,9 @@ object Gnirs {
     case SlitWidth.SW_6         => GnirsController.SlitWidth.Slit0_68.some
     case SlitWidth.SW_7         => GnirsController.SlitWidth.Slit1_00.some
     case SlitWidth.PUPIL_VIEWER => GnirsController.SlitWidth.PupilViewer.some
+    case SlitWidth.LR_IFU       => GnirsController.SlitWidth.LR_IFU.some
+    case SlitWidth.IFU          => GnirsController.SlitWidth.LR_IFU.some
+    case SlitWidth.HR_IFU       => GnirsController.SlitWidth.HR_IFU.some
     case _                      => None
   }
 
@@ -270,7 +270,7 @@ object Gnirs {
     }
 
   object specifics extends InstrumentSpecifics {
-    override val instrument: Instrument                     = Instrument.Gnirs
+    override val instrument: Instrument = Instrument.Gnirs
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gnirs
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client
@@ -41,7 +41,7 @@ package circuit {
    */
   class CircuitOps[M <: AnyRef](circuit: Circuit[M]) {
     def zoomRWL[A: Eq](lens: Lens[M, A]): ModelRW[M, A] =
-      circuit.zoomRW(lens.get)((m, a) => lens.set(a)(m))(fastEq[A])
+      circuit.zoomRW(lens.get)((m, a) => lens.replace(a)(m))(fastEq[A])
 
     def zoomL[A: Eq](lens: Lens[M, A]): ModelR[M, A] =
       circuit.zoom[A](lens.get)(fastEq[A])
@@ -133,7 +133,7 @@ package circuit {
       id: Observation.Id
     ): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
       val getter =
-        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+        SeqexecAppRootModel.sequencesOnDisplayL.andThen(SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           val targetName =
@@ -167,7 +167,7 @@ package circuit {
       id: Observation.Id
     ): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
       val getter =
-        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+        SeqexecAppRootModel.sequencesOnDisplayL.andThen(SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> { case (canOperate, st) =>
         st.map { case SeqexecTabActive(tab, _) =>
           StatusAndStepFocus(canOperate,
@@ -232,7 +232,7 @@ package circuit {
       id: Observation.Id
     ): Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
       val tabGetter =
-        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+        SeqexecAppRootModel.sequencesOnDisplayL.andThen(SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(tabGetter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           SequenceControlFocus(tab.instrument,

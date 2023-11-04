@@ -1,19 +1,15 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
 
 import java.lang.{ Double => JDouble }
-
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.SECONDS
 import scala.reflect.ClassTag
-
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
@@ -22,25 +18,24 @@ import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.flamingos2.Flamingos2Controller._
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
 import squants.time.Seconds
 import squants.time.Time
+import cats.effect.Async
 
-final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
-  f2Controller: Flamingos2Controller[F],
-  dhsClient:    DhsClient[F]
+final case class Flamingos2[F[_]: Async: Logger](
+  f2Controller:      Flamingos2Controller[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -51,6 +46,8 @@ final case class Flamingos2[F[_]: Timer: Logger: Concurrent](
   override val contributorName: String = "flamingos2"
 
   override val dhsInstrumentName: String = "F2"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val keywordsClient: KeywordsClient[F] = this
 
@@ -156,7 +153,7 @@ object Flamingos2 {
 
   // This method deals with engineering parameters that can come as a T or an Option[T]
   private def extractEngineeringParam[T](item: Extracted[CleanConfig], default: T)(implicit
-    clazz:                                     ClassTag[T]
+    clazz: ClassTag[T]
   ): Either[ExtractFailure, T] = item.as[T].recoverWith {
     case _: ConfigUtilOps.KeyNotFound     => Right(default)
     case _: ConfigUtilOps.ConversionError =>

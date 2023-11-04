@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -6,28 +6,21 @@ package seqexec.server
 import cats.Monoid
 import cats.syntax.all._
 import cats.effect._
+import cats.effect.unsafe.implicits.global
 import cats.data.NonEmptyList
 import fs2.Stream
 import seqexec.model.Observation
-import lucuma.core.enum.Site
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.noop.NoOpLogger
-
-import scala.concurrent.ExecutionContext
+import lucuma.core.enums.Site
 import seqexec.engine.{ Action, Result, Sequence }
+import seqexec.model.Conditions
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.dhs._
 import seqexec.model.{ ActionType, SequenceState }
 import seqexec.server.Response.Observed
-import seqexec.server.TestCommon.defaultSystems
+import seqexec.server.TestCommon._
 import squants.time.Seconds
-import org.scalatest.flatspec.AnyFlatSpec
 
-class SeqTranslateSpec extends AnyFlatSpec {
-  private implicit def logger: Logger[IO] = NoOpLogger.impl[IO]
-
-  implicit val ioTimer: Timer[IO]        = IO.timer(ExecutionContext.global)
-  implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+class SeqTranslateSpec extends TestCommon {
 
   private val config: CleanConfig                                                     = CleanConfig.empty
   private val fileId                                                                  = "DummyFileId"
@@ -60,8 +53,10 @@ class SeqTranslateSpec extends AnyFlatSpec {
 
   private val baseState: EngineState[IO] =
     (ODBSequencesLoader.loadSequenceEndo[IO](seqId, seqg, executeEngine) >>>
-      (EngineState.sequenceStateIndex[IO](seqId) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqId)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
   // Observe started
   private val s0: EngineState[IO] = EngineState
@@ -102,7 +97,10 @@ class SeqTranslateSpec extends AnyFlatSpec {
     .sequenceStateIndex[IO](seqId)
     .modify(_.mark(0)(Result.OKAborted(Response.Aborted(toImageFileId(fileId)))))(baseState)
 
-  private val translator = SeqTranslate(Site.GS, defaultSystems).unsafeRunSync()
+  private val translator = Ref
+    .of[IO, Conditions](Conditions.Default)
+    .flatMap(cs => SeqTranslate(Site.GS, defaultSystems, cs))
+    .unsafeRunSync()
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId, graceful = false).apply(s0).isDefined)

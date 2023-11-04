@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -13,7 +13,7 @@ import seqexec.server.tcs.Tcs
  */
 final case class ObserveEnvironment[F[_]](
   odb:      OdbProxy[F],
-  dhs:      DhsClient[F],
+  dhs:      DhsClientProvider[F],
   config:   CleanConfig,
   stepType: StepType,
   obsId:    Observation.Id,

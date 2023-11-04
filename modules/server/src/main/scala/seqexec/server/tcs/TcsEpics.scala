@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -6,19 +6,14 @@ package seqexec.server.tcs
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
-import edu.gemini.seqexec.server.tcs.BinaryOnOff
-import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import edu.gemini.seqexec.server.tcs.{ BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo, ParkState }
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommandBase
@@ -28,6 +23,7 @@ import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Angle
 import squants.space.Degrees
+import cats.effect.Temporal
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all
@@ -200,14 +196,14 @@ trait TcsEpics[F[_]] {
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                  Timer[F]
+    T: Temporal[F]
   ): F[Unit]
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
-  def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit]
+  def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit]
 
   def hourAngle: F[String]
 
@@ -358,11 +354,11 @@ trait TcsEpics[F[_]] {
     case G4 => gwfs4Target
   }
 
-  val cwfs1ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs1FollowCmd: ProbeFollowCmd[F]
 
-  val cwfs2ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs2FollowCmd: ProbeFollowCmd[F]
 
-  val cwfs3ProbeFollowCmd: ProbeFollowCmd[F]
+  val cwfs3FollowCmd: ProbeFollowCmd[F]
 
   val odgw1FollowCmd: ProbeFollowCmd[F]
 
@@ -371,6 +367,12 @@ trait TcsEpics[F[_]] {
   val odgw3FollowCmd: ProbeFollowCmd[F]
 
   val odgw4FollowCmd: ProbeFollowCmd[F]
+
+  val cwfs1ParkCmd: EpicsCommand[F]
+
+  val cwfs2ParkCmd: EpicsCommand[F]
+
+  val cwfs3ParkCmd: EpicsCommand[F]
 
   val odgw1ParkCmd: EpicsCommand[F]
 
@@ -395,6 +397,12 @@ trait TcsEpics[F[_]] {
   def odgw3Follow: F[Boolean]
 
   def odgw4Follow: F[Boolean]
+
+  def cwfs1Parked: F[Boolean]
+
+  def cwfs2Parked: F[Boolean]
+
+  def cwfs3Parked: F[Boolean]
 
   def odgw1Parked: F[Boolean]
 
@@ -768,7 +776,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   )
 
   private val m1GuideAttr: CaAttribute[BinaryOnOff] =
-    tcsState.addEnum("m1Guide", s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide")
+    tcsState.addEnum("m1Guide", s"${TcsTop}im:m1GuideOn.VAL", classOf[BinaryOnOff], "M1 guide")
 
   override def m1Guide: F[BinaryOnOff] = safeAttributeF(m1GuideAttr)
 
@@ -784,7 +792,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val m2GuideStateAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum(
     "m2GuideState",
-    s"${TcsTop}om:m2GuideState",
+    s"${TcsTop}om:m2GuideState.VAL",
     classOf[BinaryOnOff],
     "M2 guiding state"
   )
@@ -850,7 +858,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "pwfs1On",
-    s"${TcsTop}drives:p1Integrating",
+    s"${TcsTop}drives:p1Integrating.VAL",
     classOf[BinaryYesNo],
     "P1 integrating"
   )
@@ -859,7 +867,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val pwfs2OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "pwfs2On",
-    s"${TcsTop}drives:p2Integrating",
+    s"${TcsTop}drives:p2Integrating.VAL",
     classOf[BinaryYesNo],
     "P2 integrating"
   )
@@ -868,7 +876,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   private val oiwfsOnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "oiwfsOn",
-    s"${TcsTop}drives:oiIntegrating",
+    s"${TcsTop}drives:oiIntegrating.VAL",
     classOf[BinaryYesNo],
     "P2 integrating"
   )
@@ -912,7 +920,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   // for the in-position to change to true and stay true for stabilizationTime. It will wait up to `timeout`
   // seconds for that to happen.
   override def waitInPosition(stabilizationTime: Duration, timeout: FiniteDuration)(implicit
-    T:                                           Timer[F]
+    T: Temporal[F]
   ): F[Unit] =
     T.sleep(FiniteDuration(tcsSettleTime.toMillis, TimeUnit.MILLISECONDS)) *> (
       if (stabilizationTime.isZero) {
@@ -935,8 +943,8 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
    * an error. A better solution is to detect the edge, from not in position to in-position.
    */
-  private val AGSettleTime                                                              = FiniteDuration(1100, MILLISECONDS)
-  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Timer[F]): F[Unit] =
+  private val AGSettleTime                                                                 = FiniteDuration(1100, MILLISECONDS)
+  override def waitAGInPosition(timeout: FiniteDuration)(implicit T: Temporal[F]): F[Unit] =
     T.sleep(AGSettleTime) *>
       Sync[F]
         .delay(filteredAGInPositionAttr.restart)
@@ -1164,13 +1172,13 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def gwfs4Target: Target[F] = target("g4")
 
-  override val cwfs1ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs1FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr1Follow", epicsService)
 
-  override val cwfs2ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs2FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr2Follow", epicsService)
 
-  override val cwfs3ProbeFollowCmd: ProbeFollowCmd[F] =
+  override val cwfs3FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("ngsPr3Follow", epicsService)
 
   override val odgw1FollowCmd: ProbeFollowCmd[F] =
@@ -1184,6 +1192,24 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override val odgw4FollowCmd: ProbeFollowCmd[F] =
     new ProbeFollowCmdImpl("odgw4Follow", epicsService)
+
+  override val cwfs1ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr1Park")
+    )
+  }
+
+  override val cwfs2ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr2Park")
+    )
+  }
+
+  override val cwfs3ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
+    override protected val cs: Option[CaCommandSender] = Option(
+      epicsService.getCommandSender("ngsPr3Park")
+    )
+  }
 
   override val odgw1ParkCmd: EpicsCommand[F] = new EpicsCommandBase[F](sysName) {
     override protected val cs: Option[CaCommandSender] = Option(
@@ -1246,6 +1272,18 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override def odgw4Follow: F[Boolean]                    =
     safeAttributeF(odgw4FollowAttr).map(_ === BinaryEnabledDisabled.Enabled)
 
+  val c1ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs1PrParked", s"${TcsTop}drives:ngsPr1Parked.VAL", classOf[ParkState])
+  override def cwfs1Parked: F[Boolean]     = safeAttributeF(c1ParkedAttr).map(_ === ParkState.PARKED)
+
+  val c2ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs2PrParked", s"${TcsTop}drives:ngsPr2Parked.VAL", classOf[ParkState])
+  override def cwfs2Parked: F[Boolean]     = safeAttributeF(c2ParkedAttr).map(_ === ParkState.PARKED)
+
+  val c3ParkedAttr: CaAttribute[ParkState] =
+    tcsState.addEnum("cwfs3PrParked", s"${TcsTop}drives:ngsPr3Parked.VAL", classOf[ParkState])
+  override def cwfs3Parked: F[Boolean]     = safeAttributeF(c3ParkedAttr).map(_ === ParkState.PARKED)
+
   val OdgwParkedState: String = "Parked"
 
   override def odgw1Parked: F[Boolean] =
@@ -1299,7 +1337,6 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g3", tcsState)
 
   override val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g4", tcsState)
-
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
@@ -1324,16 +1361,16 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
       with ProbeGuideCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
-    private val nodachopa                         = cs.map(_.getString("nodachopa"))
+    private val nodachopa = cs.map(_.getString("nodachopa"))
     override def setNodachopa(v: String): F[Unit] = setParameter(nodachopa, v)
 
-    private val nodachopb                         = cs.map(_.getString("nodachopb"))
+    private val nodachopb = cs.map(_.getString("nodachopb"))
     override def setNodachopb(v: String): F[Unit] = setParameter(nodachopb, v)
 
-    private val nodbchopa                         = cs.map(_.getString("nodbchopa"))
+    private val nodbchopa = cs.map(_.getString("nodbchopa"))
     override def setNodbchopa(v: String): F[Unit] = setParameter(nodbchopa, v)
 
-    private val nodbchopb                         = cs.map(_.getString("nodbchopb"))
+    private val nodbchopb = cs.map(_.getString("nodbchopb"))
     override def setNodbchopb(v: String): F[Unit] = setParameter(nodbchopb, v)
   }
 
@@ -1352,25 +1389,25 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
       with WfsObserveCmd[F] {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
 
-    private val noexp                          = cs.map(_.getInteger("noexp"))
+    private val noexp = cs.map(_.getInteger("noexp"))
     override def setNoexp(v: Integer): F[Unit] = setParameter(noexp, v)
 
-    private val int                         = cs.map(_.getDouble("int"))
+    private val int = cs.map(_.getDouble("int"))
     override def setInt(v: Double): F[Unit] = setParameter[F, java.lang.Double](int, v)
 
-    private val outopt                         = cs.map(_.getString("outopt"))
+    private val outopt = cs.map(_.getString("outopt"))
     override def setOutopt(v: String): F[Unit] = setParameter(outopt, v)
 
-    private val label                         = cs.map(_.getString("label"))
+    private val label = cs.map(_.getString("label"))
     override def setLabel(v: String): F[Unit] = setParameter(label, v)
 
-    private val output                         = cs.map(_.getString("output"))
+    private val output = cs.map(_.getString("output"))
     override def setOutput(v: String): F[Unit] = setParameter(output, v)
 
-    private val path                         = cs.map(_.getString("path"))
+    private val path = cs.map(_.getString("path"))
     override def setPath(v: String): F[Unit] = setParameter(path, v)
 
-    private val name                         = cs.map(_.getString("name"))
+    private val name = cs.map(_.getString("name"))
     override def setName(v: String): F[Unit] = setParameter(name, v)
   }
 
@@ -1385,7 +1422,7 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
       epicsService.getCommandSender(csName)
     )
 
-    private val follow                              = cs.map(_.getString("followState"))
+    private val follow = cs.map(_.getString("followState"))
     override def setFollowState(v: String): F[Unit] = setParameter(follow, v)
   }
 

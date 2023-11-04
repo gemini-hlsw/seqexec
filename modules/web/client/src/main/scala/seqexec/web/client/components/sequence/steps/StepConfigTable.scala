@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -12,7 +12,7 @@ import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.facade.JsNumber
 import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
@@ -141,7 +141,7 @@ object StepConfigTable {
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = TableState.scrollPosition[TableColumn].set(pos)(b.state)
+    val s = TableState.scrollPosition[TableColumn].replace(pos)(b.state)
     b.setState(s) *> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
   }
 

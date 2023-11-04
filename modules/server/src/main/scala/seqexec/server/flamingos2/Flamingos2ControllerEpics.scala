@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.flamingos2
@@ -10,7 +10,6 @@ import scala.concurrent.duration.FiniteDuration
 
 import cats.data.StateT
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -70,7 +69,7 @@ trait Flamingos2Encoders {
   // Removed obsolete filter positions Open and DK_G0807
   implicit val encodeFilterPosition: EncodeEpicsValue[Filter, Option[String]] =
     EncodeEpicsValue.applyO {
-      case Filter.Y       => "Y_G0811"
+      case Filter.Y       => "YJH_G0818"
       case Filter.F1056   => "F1056"
       case Filter.F1063   => "F1063"
       case Filter.J_LOW   => "J-lo_G0801"
@@ -78,10 +77,11 @@ trait Flamingos2Encoders {
       case Filter.H       => "H_G0803"
       case Filter.K_LONG  => "K-long_G0812"
       case Filter.K_SHORT => "Ks_G0804"
-      case Filter.JH      => "JH_G0809"
-      case Filter.HK      => "HK_G0806"
+      case Filter.JH      => "JH_G0816"
+      case Filter.HK      => "HK_G0817"
       case Filter.K_BLUE  => "K-blue_G0814"
       case Filter.K_RED   => "K-red_G0815"
+      case Filter.OPEN    => "Open"
     }
 
   implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String] = EncodeEpicsValue {
@@ -112,8 +112,8 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](
-    sys:          => Flamingos2Epics[F]
-  )(implicit tio: Timer[F], L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+    sys: => Flamingos2Epics[F]
+  )(implicit L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
       _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
@@ -122,16 +122,28 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- sys.dcConfigCmd.setBiasMode(encode(dc.b))
     } yield ()
 
+    private def filterAndLyot(cc: CCConfig): (Option[String], String) =
+      if (filterInLyotWheel(cc.f)) {
+        (
+          encode(Filter.OPEN),
+          encode(cc.f).getOrElse(encode(cc.l))
+        )
+      } else
+        (
+          encode(cc.f),
+          encode(cc.l)
+        )
+
     private def setCCConfig(cc: CCConfig): F[Unit] = {
-      val fpu    = encode(cc.fpu)
-      val filter = encode(cc.f)
+      val fpu                      = encode(cc.fpu)
+      val (filterValue, lyotValue) = filterAndLyot(cc)
       for {
         _ <- sys.configCmd.setWindowCover(encode(cc.w))
         _ <- sys.configCmd.setDecker(encode(cc.d))
         _ <- sys.configCmd.setMOS(fpu._1)
         _ <- sys.configCmd.setMask(fpu._2)
-        _ <- filter.map(sys.configCmd.setFilter).getOrElse(Async[F].unit)
-        _ <- sys.configCmd.setLyot(encode(cc.l))
+        _ <- filterValue.map(sys.configCmd.setFilter).getOrElse(Async[F].unit)
+        _ <- sys.configCmd.setLyot(lyotValue)
         _ <- sys.configCmd.setGrism(encode(cc.g))
       } yield ()
     }
@@ -176,5 +188,10 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
         .dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
         .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
     }
+  }
+
+  def filterInLyotWheel(filter: Filter): Boolean = filter match {
+    case Filter.Y | Filter.J_LOW => true
+    case _                       => false
   }
 }

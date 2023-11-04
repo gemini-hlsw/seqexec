@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -33,7 +33,7 @@ class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthC
   override def nod(
     subsystems: NonEmptySet[Subsystem],
     tcsConfig:  TcsSouthConfig
-  )(stage:      NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
+  )(stage: NodAndShuffleStage, offset: InstrumentOffset, guided: Boolean): F[Unit] =
     sim.nod(stage, offset, guided)
 }
 

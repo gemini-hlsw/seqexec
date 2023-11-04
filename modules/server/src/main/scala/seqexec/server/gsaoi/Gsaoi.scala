@@ -1,22 +1,19 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gsaoi
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.{ Async, Sync }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -33,9 +30,7 @@ import seqexec.server.InstrumentSystem._
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
 import seqexec.server.gsaoi.GsaoiController._
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import shapeless.tag
 import squants.Length
@@ -43,9 +38,9 @@ import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
 
-final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
-  controller: GsaoiController[F],
-  dhsClient:  DhsClient[F]
+final case class Gsaoi[F[_]: Logger: Async](
+  controller:        GsaoiController[F],
+  dhsClientProvider: DhsClientProvider[F]
 ) extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -86,6 +81,8 @@ final case class Gsaoi[F[_]: Logger: Concurrent: Timer](
     controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "GSAOI"
+
+  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val resource: Instrument = Instrument.Gsaoi
 

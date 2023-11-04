@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -38,8 +38,8 @@ object Step {
       _.status
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.status.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.status.set(n)(s)
+        case s: StandardStep      => StandardStep.status.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.status.replace(n)(s)
       }
     }
 
@@ -48,8 +48,8 @@ object Step {
       _.config
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.config.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.config.set(n)(s)
+        case s: StandardStep      => StandardStep.config.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.config.replace(n)(s)
       }
     }
 
@@ -58,8 +58,8 @@ object Step {
       _.id
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.id.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.id.set(n)(s)
+        case s: StandardStep      => StandardStep.id.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.id.replace(n)(s)
       }
     }
 
@@ -68,8 +68,8 @@ object Step {
       _.skip
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.skip.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.skip.set(n)(s)
+        case s: StandardStep      => StandardStep.skip.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.skip.replace(n)(s)
       }
     }
 
@@ -78,8 +78,8 @@ object Step {
       _.breakpoint
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.breakpoint.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.breakpoint.set(n)(s)
+        case s: StandardStep      => StandardStep.breakpoint.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.breakpoint.replace(n)(s)
       }
     }
 
@@ -89,9 +89,9 @@ object Step {
       case s: NodAndShuffleStep => s.nsStatus.observing.some
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.observeStatus.set(n)(s)
+        case s: StandardStep      => StandardStep.observeStatus.replace(n)(s)
         case s: NodAndShuffleStep =>
-          (NodAndShuffleStep.nsStatus ^|-> NodAndShuffleStatus.observing).set(n)(s)
+          NodAndShuffleStep.nsStatus.andThen(NodAndShuffleStatus.observing).replace(n)(s)
       }
     }
 
@@ -101,8 +101,8 @@ object Step {
       case s: NodAndShuffleStep => s.configStatus.some
     } { n => a =>
       a match {
-        case s: StandardStep      => StandardStep.configStatus.set(n)(s)
-        case s: NodAndShuffleStep => NodAndShuffleStep.configStatus.set(n)(s)
+        case s: StandardStep      => StandardStep.configStatus.replace(n)(s)
+        case s: NodAndShuffleStep => NodAndShuffleStep.configStatus.replace(n)(s)
       }
     }
 

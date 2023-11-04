@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -12,7 +12,7 @@ import monocle.Lens
 import monocle.Traversal
 import monocle.function.Each.each
 import monocle.function.Each.listEach
-import monocle.function.FilterIndex.filterIndex
+import monocle.function.FilterIndex.sortedMapFilterIndex
 import monocle.macros.Lenses
 import seqexec.model.ExecutionQueueView
 import seqexec.model.Observation
@@ -41,31 +41,34 @@ object CalQueueFocus {
   def seqQueueOpsT(
     id: Observation.Id
   ): Traversal[CalQueueFocus, QueueSeqOperations] =
-    CalQueueFocus.seqOps ^|->>
-      filterIndex((oid: Observation.Id) => oid === id)
+    CalQueueFocus.seqOps.andThen(
+      sortedMapFilterIndex[Observation.Id, QueueSeqOperations].filterIndex((oid: Observation.Id) =>
+        oid === id
+      )
+    )
 
   // All metadata of the given obs
   def calSeq(
     id: Observation.Id
   ): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
-    SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
+    SeqexecAppRootModel.sequences.andThen(CalQueueSeq.calQueueSeqG(id))
 
   def calTS(
     id: QueueId
   ): Lens[SeqexecAppRootModel, Option[TableState[CalQueueTable.TableColumn]]] =
-    SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.appTableStates ^|->
-      AppTableStates.queueTableAtL(id)
+    SeqexecAppRootModel.uiModel
+      .andThen(SeqexecUIModel.appTableStates)
+      .andThen(AppTableStates.queueTableAtL(id))
 
   private def seqOpsL(id: QueueId) =
-    SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.queues ^|-?
-      CalibrationQueues.calStateSeqOpsT(id)
+    SeqexecAppRootModel.uiModel
+      .andThen(SeqexecUIModel.queues)
+      .andThen(CalibrationQueues.calStateSeqOpsT(id))
 
   private def qLastOpL(id: QueueId) =
-    SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.queues ^|-?
-      CalibrationQueues.calLastOpO(id)
+    SeqexecAppRootModel.uiModel
+      .andThen(SeqexecUIModel.queues)
+      .andThen(CalibrationQueues.calLastOpO(id))
 
   // A fairly complicated getter
   def calQueueG(
@@ -73,9 +76,7 @@ object CalQueueFocus {
   ): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
     // All ids on the queue
     val ids: Traversal[SeqexecAppRootModel, Observation.Id] =
-      SeqexecAppRootModel.executionQueuesT(id) ^|->
-        ExecutionQueueView.queue ^|->>
-        each
+      SeqexecAppRootModel.executionQueuesT(id).andThen(ExecutionQueueView.queue).andThen(each)
 
     // combine
     val calQueueSeqG = (s: SeqexecAppRootModel) => ids.getAll(s).map(i => calSeq(i).get(s))

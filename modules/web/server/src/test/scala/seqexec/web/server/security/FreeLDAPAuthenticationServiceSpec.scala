@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -41,12 +41,16 @@ class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
       runMock(authenticate(u, ""), db) shouldEqual u
     }
   }
+
   test("LDAP Auth Service: support auth and name") {
     forAll { (u: String, t: (String, String)) =>
-      val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = true)
-      runMock(authenticationAndName(u, ""), db) shouldEqual UserDetails(u, t._2)
+      val username = s"$u${FreeLDAPAuthenticationService.Domain}"
+      val db       =
+        MockAuthDB(Map(username -> t), acceptEmptyPwd = true)
+      runMock(authenticationAndName(u, ""), db) shouldEqual UserDetails(username, t._2)
     }
   }
+
   test("LDAP Auth Service: support auth and name with a password") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)
@@ -55,6 +59,7 @@ class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
       }
     }
   }
+
   test("LDAP Auth Service: handle exceptions") {
     forAll { (u: String, t: (String, String)) =>
       val db = MockAuthDB(Map(u -> t), acceptEmptyPwd = false)

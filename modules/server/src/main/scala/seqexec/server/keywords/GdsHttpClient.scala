@@ -1,11 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
+import cats.effect.Temporal
 import cats.syntax.all._
 import io.circe.{ Encoder, Json }
 import io.circe.syntax._
@@ -19,9 +18,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
 
 object GdsHttpClient {
-  def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit
-    timer:                          Timer[F]
-  ): GdsClient[F] = new GdsClient[F] {
+  def apply[F[_]: Temporal](base: Client[F], gdsUri: Uri): GdsClient[F] = new GdsClient[F] {
 
     private val client = makeClient(base)
 
@@ -79,7 +76,7 @@ object GdsHttpClient {
   /**
    * Client for testing always returns ok
    */
-  def alwaysOkClient[F[_]: Sync]: Client[F] = {
+  def alwaysOkClient[F[_]: Async]: Client[F] = {
     val service = HttpRoutes.of[F] { case _ =>
       Response[F](Status.Ok).withEntity("Success").pure[F]
     }

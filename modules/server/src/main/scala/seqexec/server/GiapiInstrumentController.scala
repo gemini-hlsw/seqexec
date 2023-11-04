@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -31,7 +31,7 @@ trait GiapiInstrumentController[F[_], CFG] {
 private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[
   F
 ]](client: C)(implicit
-  L:       Logger[F]
+  L: Logger[F]
 ) extends GiapiInstrumentController[F, CFG] {
 
   def name: String
@@ -48,8 +48,8 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
   private def configure(config: CFG): F[CommandResult] = {
     val cfg: F[Configuration] = configuration(config)
     val isEmpty               = cfg.map(_.config.isEmpty)
-    isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
-                  .pure[F]),
+    isEmpty.ifM(CommandResult(HandlerResponse.Response.ACCEPTED)
+                  .pure[F],
                 cfg.flatMap(client.genericApply)
     )
   }.adaptError(adaptGiapiError)

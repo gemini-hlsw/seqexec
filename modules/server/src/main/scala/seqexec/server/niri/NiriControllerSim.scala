@@ -1,10 +1,9 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.niri
 
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -18,7 +17,7 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object NiriControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[NiriController[F]] =
+  def apply[F[_]: Async: Logger]: F[NiriController[F]] =
     InstrumentControllerSim[F](s"NIRI").map { sim =>
       new NiriController[F] {
         override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult] =

@@ -1,12 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import scala.concurrent.duration._
-
-import cats.effect.Concurrent
-import cats.effect.Timer
+import cats.effect.Temporal
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.client.middleware.Retry
@@ -30,7 +28,7 @@ trait GdsClient[F[_]] extends Http4sClientDsl[F] {
 
   def abortObservation(id: ImageFileId): F[Unit]
 
-  def makeClient(base: Client[F])(implicit c: Concurrent[F], timer: Timer[F]) = {
+  def makeClient(base: Client[F])(implicit timer: Temporal[F]) = {
     val max             = 2
     var attemptsCounter = 1
     val policy          = RetryPolicy[F] { attempts: Int =>

@@ -1,11 +1,8 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
 
-import cats.effect.Concurrent
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth._
@@ -13,7 +10,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon.FPU_PROP_NAME
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import seqexec.model.enum.Instrument
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
@@ -25,15 +22,16 @@ import seqexec.server.StepType
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.NorthTypes
 import seqexec.server.gmos.GmosController.northConfigTypes
-import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.{ DhsClient, DhsClientProvider }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
+import cats.effect.{ Ref, Temporal }
 
-final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
-  c:         GmosNorthController[F],
-  dhsClient: DhsClient[F],
-  nsCmdR:    Ref[F, Option[NSObserveCommand]]
+final case class GmosNorth[F[_]: Temporal: Logger] private (
+  c:                 GmosNorthController[F],
+  dhsClientProvider: DhsClientProvider[F],
+  nsCmdR:            Ref[F, Option[NSObserveCommand]]
 ) extends Gmos[F, NorthTypes](
       c,
       new SiteSpecifics[NorthTypes] {
@@ -67,20 +65,23 @@ final case class GmosNorth[F[_]: Concurrent: Timer: Logger] private (
           }
       },
       nsCmdR
-    )(northConfigTypes) {
+    )(
+      northConfigTypes
+    ) {
   override val resource: Instrument      = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
+  override val dhsClient: DhsClient[F]   = dhsClientProvider.dhsClient(dhsInstrumentName)
 
 }
 
 object GmosNorth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply[F[_]: Concurrent: Timer: Logger](
-    c:         GmosController[F, NorthTypes],
-    dhsClient: DhsClient[F],
-    nsCmdR:    Ref[F, Option[NSObserveCommand]]
-  ): GmosNorth[F] = new GmosNorth[F](c, dhsClient, nsCmdR)
+  def apply[F[_]: Temporal: Logger](
+    c:                 GmosController[F, NorthTypes],
+    dhsClientProvider: DhsClientProvider[F],
+    nsCmdR:            Ref[F, Option[NSObserveCommand]]
+  ): GmosNorth[F] = new GmosNorth[F](c, dhsClientProvider, nsCmdR)
 
   object specifics extends InstrumentSpecifics {
     override val instrument: Instrument = Instrument.GmosN

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -10,8 +10,8 @@ import cats.Order
 import cats.Show
 import cats.syntax.all._
 import io.chrisdavenport.cats.time.instances.all._
-import lucuma.core.enum.ProgramType
-import lucuma.core.enum.Site
+import lucuma.core.enums.ProgramType
+import lucuma.core.enums.Site
 import lucuma.core.math.Index
 import lucuma.core.model.Semester
 import lucuma.core.syntax.parser._

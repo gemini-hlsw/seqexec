@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -6,8 +6,8 @@ package seqexec.web.client.circuit
 import scala.collection.immutable.SortedMap
 
 import cats._
-import cats.implicits._
-import lucuma.core.enum.Site
+import cats.Order._
+import lucuma.core.enums.Site
 import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model.Observation
@@ -76,7 +76,7 @@ object WebSocketsFocus {
           uiModel = m.uiModel.copy(
             user = v.user,
             sequencesOnDisplay = SequencesOnDisplay.sequenceTabs.modify(seqTab =>
-              SequenceTab.resourcesRunOperationsL.set(
+              SequenceTab.resourcesRunOperationsL.replace(
                 v.resourceRunRequested
                   .getOrElse(seqTab.obsId, SortedMap.empty)
               )(seqTab)

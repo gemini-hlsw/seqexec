@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gpi
@@ -23,9 +23,9 @@ import giapi.client.GiapiStatusDb
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
+import giapi.enums.GiapiStatusApply._
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.GiapiStatusApply._
-import lucuma.core.enum.GpiReadMode
+import lucuma.core.enums.GpiReadMode
 import mouse.boolean._
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController

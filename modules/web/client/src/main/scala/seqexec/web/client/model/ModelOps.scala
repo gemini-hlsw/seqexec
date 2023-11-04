@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats.Show
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.Step
@@ -74,13 +74,13 @@ object ModelOps {
       s.steps match {
         case x if x.forall(s => s.status === StepState.Pending && !s.skip) =>
           Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.isFinished)                                  => None // All steps have been executed
-        case x if x.exists(_.hasError)                                    =>
+        case x if x.forall(_.isFinished)                                   => None // All steps have been executed
+        case x if x.exists(_.hasError)                                     =>
           Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =!= -1)
-        case x if x.exists(s => s.status === StepState.Paused && !s.skip) =>
+        case x if x.exists(s => s.status === StepState.Paused && !s.skip)  =>
           Option(x.indexWhere((s: Step) => s.status === StepState.Paused))
             .filter(_ =!= -1)
-        case x                                                            =>
+        case x                                                             =>
           Option(x.indexWhere((s: Step) => !s.isFinished && !s.skip))
             .filter(_ =!= -1)
       }

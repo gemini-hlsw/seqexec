@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -33,23 +33,23 @@ object AllObservationsProgressState {
     Eq.by(_.obsProgress)
 
   def progressStateO[P <: Progress](
-    obsId:                  Observation.Id,
-    stepId:                 StepId
+    obsId:  Observation.Id,
+    stepId: StepId
   )(implicit progressPrism: Prism[Progress, P]): Optional[SeqexecAppRootModel, P] =
-    SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.obsProgress ^|-?
-      progressByIdO(obsId, stepId)
+    SeqexecAppRootModel.uiModel
+      .andThen(SeqexecUIModel.obsProgress)
+      .andThen(progressByIdO(obsId, stepId))
 
   def progressByIdL(
     obsId:  Observation.Id,
     stepId: StepId
   ): Lens[AllObservationsProgressState, Option[Progress]] =
-    AllObservationsProgressState.obsProgress ^|-> at((obsId, stepId))
+    AllObservationsProgressState.obsProgress.andThen(at((obsId, stepId)))
 
   def progressByIdO[P <: Progress](
-    obsId:                  Observation.Id,
-    stepId:                 StepId
+    obsId:  Observation.Id,
+    stepId: StepId
   )(implicit progressPrism: Prism[Progress, P]): Optional[AllObservationsProgressState, P] =
-    progressByIdL(obsId, stepId) ^<-? some ^<-? progressPrism
+    progressByIdL(obsId, stepId).andThen(some[Progress]).andThen(progressPrism)
 
 }

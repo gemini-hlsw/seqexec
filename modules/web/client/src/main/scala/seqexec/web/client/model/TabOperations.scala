@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -6,7 +6,8 @@ package seqexec.web.client.model
 import scala.collection.immutable.SortedMap
 
 import cats.Eq
-import cats.implicits._
+import cats.syntax.all._
+import cats.Order._
 import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.function.At.at
@@ -204,7 +205,7 @@ object TabOperations {
   def resourceRun(
     r: Resource
   ): Lens[TabOperations, Option[ResourceRunOperation]] =
-    TabOperations.resourceRunRequested ^|-> at(r)
+    TabOperations.resourceRunRequested.andThen(at(r))
 
   // Set the resource operations in the map to idle.
   def clearAllResourceOperations: TabOperations => TabOperations =

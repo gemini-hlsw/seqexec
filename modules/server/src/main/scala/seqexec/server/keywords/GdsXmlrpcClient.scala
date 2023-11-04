@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -6,8 +6,7 @@ package seqexec.server.keywords
 import scala.xml.Elem
 
 import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.client.Client
@@ -20,9 +19,7 @@ import seqexec.server.SeqexecFailure
 
 object GdsXmlrpcClient {
 
-  def apply[F[_]: Concurrent](base: Client[F], gdsUri: Uri)(implicit
-    timer:                          Timer[F]
-  ): GdsClient[F] = new GdsClient[F] {
+  def apply[F[_]: Async](base: Client[F], gdsUri: Uri): GdsClient[F] = new GdsClient[F] {
 
     private val client = makeClient(base)
 
@@ -50,7 +47,7 @@ object GdsXmlrpcClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsXmlrpcClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -86,7 +83,7 @@ object GdsXmlrpcClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsXmlrpcClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -112,7 +109,7 @@ object GdsXmlrpcClient {
 
       // Do the request
       client
-        .expect[Elem](postRequest)(scalaxml.xml)
+        .expect[Elem](postRequest)(scalaxml.xmlDecoder)
         .map(GdsXmlrpcClient.parseError)
         .ensureOr(toSeqexecFailure)(_.isRight)
         .void
@@ -154,7 +151,7 @@ object GdsXmlrpcClient {
   /**
    * Client for testing always returns ok
    */
-  def alwaysOkClient[F[_]: Sync]: Client[F] = {
+  def alwaysOkClient[F[_]: Async]: Client[F] = {
     val service = HttpRoutes.of[F] { case _ =>
       val response =
         <methodResponse>

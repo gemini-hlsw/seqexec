@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -158,7 +158,7 @@ object Sequence {
       GenLens[Zipper[F]](_.focus)
 
     def current[F[_]]: Lens[Zipper[F], Execution[F]] =
-      focus ^|-> Step.Zipper.current
+      focus.andThen(Step.Zipper.current)
 
   }
 
@@ -360,14 +360,16 @@ object Sequence {
         GenLens[Zipper[F]](_.zipper)
 
       override def mark(i: Int)(r: Result[F]): State[F] = {
-        val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
+        val currentExecutionL: Lens[Zipper[F], Execution[F]] =
+          zipperL.andThen(Sequence.Zipper.current)
 
         currentExecutionL.modify(_.mark(i)(r))(self)
       }
 
       override def start(i: Int): State[F] = {
 
-        val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
+        val currentExecutionL: Lens[Zipper[F], Execution[F]] =
+          zipperL.andThen(Sequence.Zipper.current)
 
         currentExecutionL.modify(_.start(i))(self).clearSingles
       }

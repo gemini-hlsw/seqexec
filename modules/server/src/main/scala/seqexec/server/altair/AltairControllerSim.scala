@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -21,11 +21,11 @@ object AltairControllerSim {
       resumeReasons: ResumeConditionSet,
       currentOffset: TcsController.FocalPlaneOffset,
       instrument:    Instrument
-    )(cfg:           AltairController.AltairConfig): F[AltairPauseResume[F]] =
+    )(cfg: AltairController.AltairConfig): F[AltairPauseResume[F]] =
       AltairPauseResume(
         L.info(s"Simulate pausing Altair loops because of $pauseReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
-        filterTarget = false,
+        pauseTargetFilter = false,
         L.info(s"Simulate restoring Altair configuration $cfg because of $resumeReasons").some,
         GuideCapabilities(canGuideM2 = false, canGuideM1 = false),
         none,

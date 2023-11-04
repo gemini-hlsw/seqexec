@@ -1,11 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.logging
 
 import java.time.Instant
-
 import cats.effect.IO
+import cats.effect.std.Dispatcher
 import cats.syntax.all._
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.ILoggingEvent
@@ -20,7 +20,8 @@ import seqexec.model.events._
  *
  * This is out of the scala/http4s loop
  */
-class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILoggingEvent] {
+class AppenderForClients(out: Topic[IO, SeqexecEvent])(dispatcher: Dispatcher[IO])
+    extends AppenderBase[ILoggingEvent] {
   // Remove some loggers. This is a weak form of protection where he don't send some
   // loggers to the cilent, e.g. security related logs
   private val blackListedLoggers = List(""".*\.security\..*""".r)
@@ -37,9 +38,10 @@ class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILog
 
     // Send a message to the clients if level is INFO or higher
     // We are outside the normal execution loop, thus we need to call unsafePerformSync directly
-    level
-      .filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined))
-      .fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage)))
-      .unsafeRunSync()
+    dispatcher.unsafeRunAndForget(
+      level
+        .filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined))
+        .fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage)).void)
+    )
   }
 }

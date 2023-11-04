@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
@@ -8,20 +8,20 @@ import scala.reflect.ClassTag
 
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.LightSinkName
+import lucuma.core.enums.LightSinkName
 import lucuma.core.math.Coordinates
 import lucuma.core.math.Declination
 import lucuma.core.math.RightAscension
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.Conditions
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
@@ -32,9 +32,12 @@ import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
 import squants.time.Seconds
 import squants.time.Time
+import cats.effect.Async
 
-final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostController[F])
-    extends GdsInstrument[F]
+final case class Ghost[F[_]: Logger: Async](
+  controller: GhostController[F],
+  conditions: Ref[F, Conditions]
+) extends GdsInstrument[F]
     with InstrumentSystem[F] {
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
@@ -60,10 +63,11 @@ final case class Ghost[F[_]: Logger: Concurrent: Timer](controller: GhostControl
     }
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
-    Ghost
-      .fromSequenceConfig[F](config)
-      .flatMap(controller.applyConfig)
-      .as(ConfigResult[F](this))
+    conditions.get.flatMap(a => Logger[F].info(a.toString)) *>
+      Ghost
+        .fromSequenceConfig[F](config)
+        .flatMap(controller.applyConfig)
+        .as(ConfigResult[F](this))
 
   override def notifyObserveEnd: F[Unit] =
     controller.endObserve

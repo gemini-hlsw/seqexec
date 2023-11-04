@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -23,7 +23,7 @@ object GemsControllerSim {
   def apply[F[_]: Applicative](implicit L: Logger[F]): GemsController[F] =
     new GemsController[F] {
       override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
-        cfg:                                 GemsConfig
+        cfg: GemsConfig
       ): F[PauseResume[F]] =
         PauseResume(
           L.info(s"Simulate pausing GeMS loops because of $pauseReasons").some,

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -66,7 +66,7 @@ final class SeqexecServerLensesSpec
       .copy(selected = Map(Instrument.F2 -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1")))
     EngineState
       .instrumentLoadedL(Instrument.Gpi)
-      .set(seqId.some)
+      .replace(seqId.some)
       .apply(base) shouldEqual base.copy(selected = base.selected + (Instrument.Gpi -> seqId))
   }
   test("Support replacing loaded sequences") {
@@ -79,7 +79,7 @@ final class SeqexecServerLensesSpec
       )
     EngineState
       .instrumentLoadedL(Instrument.Gpi)
-      .set(seqId.some)
+      .replace(seqId.some)
       .apply(base) shouldEqual base.copy(selected = base.selected.updated(Instrument.Gpi, seqId))
   }
 }

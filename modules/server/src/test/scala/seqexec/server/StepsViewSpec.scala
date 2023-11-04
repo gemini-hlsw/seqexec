@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -7,19 +7,28 @@ import cats.Id
 import cats.effect.IO
 import cats.syntax.all._
 import cats.data.NonEmptyList
-import fs2.concurrent.Queue
+import cats.effect.std.Queue
+import cats.effect.unsafe.implicits.global
+import fs2.Stream
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.server.TestCommon._
 import seqexec.engine._
-import seqexec.model.{ Conditions, Observer, Operator, SequenceState, StepState, UserDetails }
+import seqexec.model.{
+  Conditions,
+  Observation,
+  Observer,
+  Operator,
+  SequenceState,
+  StepState,
+  UserDetails
+}
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
-import monocle.Monocle._
+import monocle.function.Index.mapIndex
 
-class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions {
+class StepsViewSpec extends TestCommon with Matchers with NonImplicitAssertions {
 
   "StepsView configStatus" should
     "build empty without tasks" in {
@@ -161,7 +170,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.iq).get)) { case Some(op) =>
       op shouldBe iq
     }).unsafeRunSync()
 
@@ -173,7 +182,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.wv).get(_))) { case Some(op) =>
       op shouldBe wv
     }).unsafeRunSync()
   }
@@ -184,7 +193,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.cc).get(_))) { case Some(op) =>
       op shouldBe cc
     }).unsafeRunSync()
   }
@@ -195,7 +204,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
-    } yield inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) { case Some(op) =>
+    } yield inside(sf.map(EngineState.conditions.andThen(Conditions.sb).get(_))) { case Some(op) =>
       op shouldBe sb
     }).unsafeRunSync()
   }
@@ -210,7 +219,12 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       sf <-
         advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield inside(
-      sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption).flatMap(_.observer)
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      ).flatMap(_.observer)
     ) { case Some(op) =>
       op shouldBe observer
     }).unsafeRunSync()
@@ -227,8 +241,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -260,8 +276,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         sequenceWithResources(seqObsId2, Instrument.GmosS, Set(Instrument.GmosS)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -305,11 +323,17 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                               clientId
                    )
         )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -319,8 +343,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
       sequenceWithResources(seqObsId1, Instrument.F2, Set(Instrument.F2, TCS)),
       executeEngine
     ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -336,11 +362,17 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                               clientId
                    )
         )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId1)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId1))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -355,8 +387,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -372,11 +406,17 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                          clientId
               )
             )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId2))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -391,8 +431,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
@@ -408,11 +450,17 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                          clientId
               )
             )
-    } yield inside(sf.flatMap((EngineState.sequences[IO] ^|-? index(seqObsId2)).getOption)) {
-      case Some(s) =>
-        assertResult(Some(Action.ActionState.Idle))(
-          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
-        )
+    } yield inside(
+      sf.flatMap(
+        EngineState
+          .sequences[IO]
+          .andThen(mapIndex[Observation.Id, SequenceData[IO]].index(seqObsId2))
+          .getOption
+      )
+    ) { case Some(s) =>
+      assertResult(Some(Action.ActionState.Idle))(
+        s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+      )
     }).unsafeRunSync()
   }
 
@@ -432,7 +480,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                     RunOverride.Default
             )
       sf <- seqexecEngine
-              .stream(q.dequeue)(s0)
+              .stream(Stream.fromQueueUnterminated(q))(s0)
               .map(_._2)
               .takeThrough(_.sequences.values.exists(_.seq.status.isRunning))
               .compile
@@ -457,8 +505,10 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
         sequenceWithResources(seqObsId2, Instrument.F2, Set(Instrument.F2)),
         executeEngine
       ) >>>
-      (EngineState.sequenceStateIndex[IO](seqObsId1) ^|-> Sequence.State.status)
-        .set(SequenceState.Running.init))(EngineState.default[IO])
+      EngineState
+        .sequenceStateIndex[IO](seqObsId1)
+        .andThen(Sequence.State.status[IO])
+        .replace(SequenceState.Running.init))(EngineState.default[IO])
 
     val runStepId = 2
 
@@ -472,7 +522,7 @@ class StepsViewSpec extends AnyFlatSpec with Matchers with NonImplicitAssertions
                                     RunOverride.Default
             )
       sf <- seqexecEngine
-              .stream(q.dequeue)(s0)
+              .stream(Stream.fromQueueUnterminated(q))(s0)
               .map(_._2)
               .takeThrough(_.sequences.get(seqObsId2).exists(_.seq.status.isRunning))
               .compile

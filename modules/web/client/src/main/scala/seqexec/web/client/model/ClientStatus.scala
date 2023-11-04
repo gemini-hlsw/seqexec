@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -43,5 +43,5 @@ object ClientStatus {
     )
 
   val canOperateG: Getter[SeqexecAppRootModel, Boolean] =
-    clientStatusFocusL.composeGetter(Getter[ClientStatus, Boolean](_.canOperate))
+    clientStatusFocusL.andThen(Getter[ClientStatus, Boolean](_.canOperate))
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -98,7 +98,7 @@ object ACProgressBar {
       )(s"Align and Calib: $msg")
     }
     .getDerivedStateFromProps((p, s) =>
-      (State.counter.modify(_ + 1) >>> State.msg.set(p.step.show))(s)
+      (State.counter.modify(_ + 1) >>> State.msg.replace(p.step.show))(s)
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

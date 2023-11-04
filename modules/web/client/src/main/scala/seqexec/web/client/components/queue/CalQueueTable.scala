@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.queue
@@ -13,12 +13,12 @@ import cats.syntax.all._
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.TimerSupport
-import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.facade.JsNumber
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.Lens
 import monocle.macros.Lenses
@@ -221,10 +221,10 @@ object CalQueueTable {
       State(EditableTableState, animationRendered = false, moved = None, prevLastOp = None)
 
     val scrollPosition: Lens[State, JsNumber] =
-      State.tableState ^|-> TableState.scrollPosition
+      State.tableState.andThen(TableState.scrollPosition)
 
     val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
-      State.tableState ^|-> TableState.columns
+      State.tableState.andThen(TableState.columns)
   }
 
   implicit val propsReuse: Reusability[Props]    = Reusability.derive[Props]
@@ -370,7 +370,7 @@ object CalQueueTable {
     def updateScrollPosition(pos: JsNumber): Callback =
       b.props.zip(b.state) >>= { case (p, state) =>
         val s =
-          State.scrollPosition.set(pos)(state)
+          State.scrollPosition.replace(pos)(state)
         b.setState(s) *>
           SeqexecCircuit.dispatchCB(UpdateCalTableState(p.queueId, s.tableState))
       }
@@ -488,10 +488,10 @@ object CalQueueTable {
       }
 
       (
-        State.animationRendered.set(animationRendered) >>>
-          State.moved.set(moved) >>>
-          State.columns.set(cols) >>>
-          State.prevLastOp.set(props.data.lastOp)
+        State.animationRendered.replace(animationRendered) >>>
+          State.moved.replace(moved) >>>
+          State.columns.replace(cols) >>>
+          State.prevLastOp.replace(props.data.lastOp)
       )(state)
     }
     .componentDidMount($ => $.backend.resetAnim($.props))

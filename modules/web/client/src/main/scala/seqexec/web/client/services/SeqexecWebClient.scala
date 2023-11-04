@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.services
@@ -33,6 +33,7 @@ import seqexec.model.enum.Resource
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.web.client.actions.RunOptions
+import scala.annotation.nowarn
 
 /**
  * Encapsulates remote calls to the Seqexec Web API
@@ -58,6 +59,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def toggleInstrument(id: Observation.Id, enabled: Boolean): Future[Unit] =
     toggle(id, enabled, "instEnabled")
 
+  @nowarn
   def toggle(id: Observation.Id, enabled: Boolean, section: String): Future[Unit] =
     Ajax
       .post(
@@ -65,6 +67,7 @@ object SeqexecWebClient extends ModelBooPicklers {
       )
       .void
 
+  @nowarn
   def sync(id: Observation.Id): Future[Unit] =
     Ajax
       .post(
@@ -75,6 +78,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to execute a sequence
    */
+  @nowarn
   def run(
     id:       Observation.Id,
     name:     Observer,
@@ -96,6 +100,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set a breakpoint
    */
+  @nowarn
   def breakpoint(sid: Observation.Id, name: Observer, step: Step): Future[Unit] =
     Ajax
       .post(
@@ -107,6 +112,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set a breakpoint
    */
+  @nowarn
   def skip(sid: Observation.Id, name: Observer, step: Step): Future[Unit] =
     Ajax
       .post(
@@ -118,6 +124,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to stop this sequence immediately
    */
+  @nowarn
   def stop(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -128,6 +135,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to stop this sequence gracefully
    */
+  @nowarn
   def stopGracefully(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -139,6 +147,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to abort this sequenece immediately
    */
+  @nowarn
   def abort(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -149,6 +158,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to hold the current exposure immediately
    */
+  @nowarn
   def pauseObs(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -159,6 +169,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to hold the current exposure gracefully
    */
+  @nowarn
   def pauseObsGracefully(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -170,6 +181,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to resume the current exposure
    */
+  @nowarn
   def resumeObs(sid: Observation.Id, name: Observer, step: StepId): Future[Unit] =
     Ajax
       .post(
@@ -180,6 +192,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the operator name of a sequence
    */
+  @nowarn
   def setOperator(name: Operator): Future[Unit] =
     Ajax
       .post(
@@ -190,6 +203,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the observer name of a sequence
    */
+  @nowarn
   def setObserver(id: Observation.Id, name: String): Future[Unit] =
     Ajax
       .post(
@@ -200,6 +214,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the ImageQuality
    */
+  @nowarn
   def setImageQuality(iq: ImageQuality): Future[Unit] =
     Ajax
       .post(
@@ -211,6 +226,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the CloudCover
    */
+  @nowarn
   def setCloudCover(cc: CloudCover): Future[Unit] =
     Ajax
       .post(
@@ -222,6 +238,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the WaterVapor
    */
+  @nowarn
   def setWaterVapor(wv: WaterVapor): Future[Unit] =
     Ajax
       .post(
@@ -233,6 +250,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to set the SkyBackground
    */
+  @nowarn
   def setSkyBackground(sb: SkyBackground): Future[Unit] =
     Ajax
       .post(
@@ -244,6 +262,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to send a copy of the current state
    */
+  @nowarn
   def refresh(clientId: ClientId): Future[Unit] =
     Ajax
       .get(
@@ -254,6 +273,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to pause a sequence
    */
+  @nowarn
   def pause(id: Observation.Id, name: Observer): Future[Unit] =
     Ajax
       .post(
@@ -264,6 +284,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Requests the backend to cancel a pausing request in process
    */
+  @nowarn
   def cancelPause(id: Observation.Id, name: Observer): Future[Unit] =
     Ajax
       .post(
@@ -274,6 +295,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Login request
    */
+  @nowarn
   def login(u: String, p: String): Future[UserDetails] =
     Ajax
       .post(
@@ -286,6 +308,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Logout request
    */
+  @nowarn
   def logout(): Future[String] =
     Ajax
       .post(
@@ -296,6 +319,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Ping request
    */
+  @nowarn
   def ping(): Future[Int] =
     Ajax
       .get(
@@ -307,6 +331,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Load a sequence
    */
+  @nowarn
   def loadSequence(
     instrument: Instrument,
     id:         Observation.Id,
@@ -316,14 +341,15 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(
-          id.format
-        )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
+            id.format
+          )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
       )
       .void
 
   /**
    * Read the site of the server
    */
+  @nowarn
   def site(): Future[String] =
     Ajax
       .post(
@@ -334,6 +360,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Add a sequence from a queue
    */
+  @nowarn
   def removeSequenceFromQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
     Ajax
       .post(
@@ -345,6 +372,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Clears a queue
    */
+  @nowarn
   def clearQueue(queueId: QueueId): Future[Unit] =
     Ajax
       .post(
@@ -355,6 +383,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Runs a queue
    */
+  @nowarn
   def runQueue(queueId: QueueId, clientId: ClientId, observer: Observer): Future[Unit] =
     Ajax
       .post(
@@ -366,6 +395,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Stops a queue
    */
+  @nowarn
   def stopQueue(queueId: QueueId, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
@@ -377,6 +407,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Add a sequence from a queue
    */
+  @nowarn
   def addSequencesToQueue(ids: List[Observation.Id], qid: QueueId): Future[Unit] =
     Ajax
       .post(
@@ -388,6 +419,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Add a sequence from a queue
    */
+  @nowarn
   def addSequenceToQueue(id: Observation.Id, qid: QueueId): Future[Unit] =
     Ajax
       .post(
@@ -398,6 +430,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
    * Stops a queue
    */
+  @nowarn
   def moveSequenceQueue(
     queueId:  QueueId,
     obsId:    Observation.Id,
@@ -407,14 +440,15 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(
-          obsId.self.format
-        )}/$pos/${encodeURI(clientId.self.show)}"
+            obsId.self.format
+          )}/$pos/${encodeURI(clientId.self.show)}"
       )
       .void
 
   /**
    * Runs a reusource
    */
+  @nowarn
   def runResource(
     pos:      Int,
     resource: Resource,
@@ -425,14 +459,15 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(
-          resource.show
-        )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
+            resource.show
+          )}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}"
       )
       .void
 
   /**
    * Runs a step starting at
    */
+  @nowarn
   def runFrom(
     obsId:    Observation.Id,
     stepId:   StepId,
@@ -447,8 +482,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url = s"$baseUrl/commands/${encodeURI(obsId.self.format)}/$stepId/startFrom/${encodeURI(
-          name.value
-        )}/${encodeURI(clientId.self.show)}$param"
+            name.value
+          )}/${encodeURI(clientId.self.show)}$param"
       )
       .void
   }

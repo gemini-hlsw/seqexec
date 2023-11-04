@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.tabs
@@ -45,7 +45,7 @@ object SeqexecTabs {
           tabsL
             .sortBy {
               case Left(_)                 => Int.MinValue
-              case Right(t) if t.isPreview => (Int.MinValue + 1)
+              case Right(t) if t.isPreview => Int.MinValue + 1
               case Right(t)                => t.instrument.ordinal
             }
             .map {

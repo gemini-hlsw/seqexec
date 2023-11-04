@@ -1,16 +1,17 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import monocle.macros.Lenses
+import org.scalajs.dom
 import react.common._
 import react.semanticui.colors._
 import react.semanticui.elements.label.Label
@@ -91,7 +92,9 @@ object CalibrationQueueTab {
         .unless(b.state.onDrag),
       SeqexecStyles.dropOnTab.when(b.state.onDrag),
       ^.onDragOver ==> { (e: ReactDragEvent) =>
-        e.preventDefaultCB *> Callback { e.dataTransfer.dropEffect = "copy" }
+        e.preventDefaultCB *> Callback {
+          e.dataTransfer.dropEffect = dom.DataTransferDropEffectKind.copy
+        }
       },
       ^.onDragEnter ==> onDragEnter(b) _,
       ^.onDrop ==> onDrop(b) _,

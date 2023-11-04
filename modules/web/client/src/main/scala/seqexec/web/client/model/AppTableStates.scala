@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -41,10 +41,10 @@ object AppTableStates {
   def stepsTableAtL(
     id: Observation.Id
   ): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
-    AppTableStates.stepsTables ^|-> at(id)
+    AppTableStates.stepsTables.andThen(at(id))
 
   def queueTableAtL(
     id: QueueId
   ): Lens[AppTableStates, Option[TableState[CalQueueTable.TableColumn]]] =
-    AppTableStates.queueTables ^|-> at(id)
+    AppTableStates.queueTables.andThen(at(id))
 }

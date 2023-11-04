@@ -1,10 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
 
-import cats.effect.Sync
+import cats.effect.Async
 import cats.syntax.all._
+import fs2.compression.Compression
 import org.typelevel.log4cats.Logger
 import org.http4s.EntityDecoder
 import org.http4s.HttpRoutes
@@ -15,7 +16,8 @@ import seqexec.server.tcs.GuideConfig
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.server.tcs.GuideConfigDb._
 
-class GuideConfigDbRoutes[F[_]: Sync: Logger](db: GuideConfigDb[F]) extends Http4sDsl[F] {
+class GuideConfigDbRoutes[F[_]: Async: Logger: Compression](db: GuideConfigDb[F])
+    extends Http4sDsl[F] {
 
   implicit val decoder: EntityDecoder[F, GuideConfig] = jsonOf
 

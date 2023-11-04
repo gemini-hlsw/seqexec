@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -228,7 +228,7 @@ object GmosController {
   }
 
   final class SouthConfigTypes extends Config[SouthTypes] {
-    override val mirror                                             = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth.MIRROR
+    override val mirror = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth.MIRROR
     override def isMirror(v: GmosSouthType.DisperserSouth): Boolean = v === mirror
   }
   val southConfigTypes: SouthConfigTypes = new SouthConfigTypes
@@ -241,7 +241,7 @@ object GmosController {
   }
 
   final class NorthConfigTypes extends Config[NorthTypes] {
-    override val mirror                                             = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
+    override val mirror = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
     override def isMirror(v: GmosNorthType.DisperserNorth): Boolean = v === mirror
   }
 

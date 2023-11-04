@@ -5,7 +5,6 @@ import Common._
 import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
-import sbtcrossproject.crossProject
 import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
@@ -16,26 +15,27 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / semanticdbEnabled := true
 
 ThisBuild / Compile / packageDoc / publishArtifact := false
-ThisBuild / Test / bspEnabled                      := false
 
 // Gemini repository
 ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-Global / resolvers += Resolver.sonatypeRepo("public")
+Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
-// This key is used to find the JRE dir. It could/should be overriden on a user basis
+// This key is used to find the JRE dir. It could/should be overridden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
-ThisBuild / ocsJreDir := Path.userHome / ".jres8_ocs3"
+ThisBuild / ocsJreDir := Path.userHome / ".jres17"
+
+ThisBuild / evictionErrorLevel := Level.Info
 
 Global / cancelable := true
 
 // Should make CI builds more robust
-concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
+Global / concurrentRestrictions += Tags.limit(ScalaJSTags.Link, 2)
 
 // Uncomment for local gmp testing
-// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+// ThisBuild / resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -83,8 +83,7 @@ addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 
-ThisBuild / resolvers +=
-  Resolver.sonatypeRepo("snapshots")
+ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
 
 ThisBuild / updateOptions := updateOptions.value.withLatestSnapshots(false)
 
@@ -93,30 +92,6 @@ publish / skip := true
 //////////////
 // Projects
 //////////////
-
-lazy val giapi = project
-  .in(file("modules/giapi"))
-  .enablePlugins(GitBranchPrompt)
-  .settings(commonSettings: _*)
-  .settings(
-    addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(Cats.value,
-                                Mouse.value,
-                                Shapeless.value,
-                                CatsEffect.value,
-                                Fs2,
-                                GiapiJmsUtil,
-                                GiapiJmsProvider,
-                                GiapiStatusService,
-                                Giapi,
-                                GiapiCommandsClient
-    ) ++ Logging.value ++ Monocle.value,
-    libraryDependencies ++= Seq(GmpStatusGateway  % "test",
-                                GmpStatusDatabase % "test",
-                                GmpCmdJmsBridge   % "test",
-                                NopSlf4j          % "test"
-    )
-  )
 
 lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
@@ -140,6 +115,7 @@ lazy val seqexec_web_server = project
     libraryDependencies ++= Seq(UnboundId,
                                 JwtCore,
                                 JwtCirce,
+                                Http4sServer,
                                 Http4sPrometheus,
                                 CommonsHttp,
                                 ScalaMock,
@@ -168,7 +144,7 @@ lazy val seqexec_web_client = project
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .settings(lucumaScalaJsSettings: _*)
+//  .settings(lucumaScalaJsSettings: _*)
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
@@ -184,7 +160,7 @@ lazy val seqexec_web_client = project
     fullOptJS / webpackBundlingMode := BundlingMode.Application,
     webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort            := 9090,
-    webpack / version               := "4.44.1",
+    webpack / version               := "4.46.0",
     startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     fullOptJS / webpackConfigFile   := Some(
@@ -228,8 +204,7 @@ lazy val seqexec_web_client = project
       "terser-webpack-plugin"         -> "3.0.6",
       "html-webpack-plugin"           -> "4.3.0",
       "css-minimizer-webpack-plugin"  -> "1.1.5",
-      "favicons-webpack-plugin"       -> "4.2.0",
-      "@packtracker/webpack-plugin"   -> "2.3.0"
+      "favicons-webpack-plugin"       -> "4.2.0"
     ),
     libraryDependencies ++= Seq(
       Cats.value,
@@ -281,7 +256,8 @@ lazy val seqexec_server = project
         Log4CatsNoop.value,
         TestLibs.value,
         PPrint.value,
-        ACM
+        ACM,
+        GiapiScala
       ) ++ MUnit.value ++ Http4s ++ Http4sClient ++ PureConfig ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++
         Circe.value
   )
@@ -292,10 +268,15 @@ lazy val seqexec_server = project
     buildInfoPackage          := "seqexec.server"
   )
   .dependsOn(seqexec_engine    % "compile->compile;test->test",
-             giapi,
              ocs2_api.jvm,
              seqexec_model.jvm % "compile->compile;test->test"
   )
+
+lazy val authtester = project
+  .in(file("modules/authtester"))
+  .dependsOn(seqexec_web_server)
+  .settings(libraryDependencies += Scopt.value)
+  .enablePlugins(JavaAppPackaging)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
@@ -316,7 +297,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     commonSettings,
     libraryDependencies += Http4sCore
   )
-  .jsSettings(lucumaScalaJsSettings)
+//  .jsSettings(lucumaScalaJsSettings)
   .jsSettings(
     // And add a custom one
     libraryDependencies += JavaTimeJS.value,

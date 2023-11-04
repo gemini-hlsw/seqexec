@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -11,7 +11,6 @@ import scala.concurrent.duration.FiniteDuration
 import cats.Applicative
 import cats.ApplicativeError
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -168,8 +167,7 @@ object GmosControllerEpics extends GmosEncoders {
     cfg: GmosController.Config[T]
   )(implicit
     e:   Encoders[T],
-    L:   Logger[F],
-    T:   Timer[F]
+    L:   Logger[F]
   ): GmosController[F, T] =
     new GmosController[F, T] {
       private val CC = sys.configCmd
@@ -335,7 +333,7 @@ object GmosControllerEpics extends GmosEncoders {
 
           // TODO Improve data model to remove this case. It is here because search includes types of
           // both sites.
-          case _ => List.empty
+          case _                                 => List.empty
         }
 
         // If disperser, order or wavelength are set, force mode configuration. If not, check if it needs to be set anyways

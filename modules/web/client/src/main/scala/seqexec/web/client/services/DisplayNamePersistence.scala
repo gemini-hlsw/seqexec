@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.services
@@ -21,19 +21,19 @@ trait DisplayNamePersistence {
   def persistDisplayName(result: Map[String, String])(implicit ec: ExecutionContext): Future[Unit] =
     Future {
       import io.circe.syntax._
-      (for {
+      for {
         ls <- Option(window.localStorage)
         m  <- Option(result.asJson.spaces2SortKeys)
-      } yield ls.setItem("displayNames", m))
+      } yield ls.setItem("displayNames", m)
     }.void
 
   def removeDisplayName(result: Map[String, String])(implicit ec: ExecutionContext): Future[Unit] =
     Future {
       import io.circe.syntax._
-      (for {
+      for {
         ls <- Option(window.localStorage)
         m  <- Option(result.asJson.spaces2SortKeys)
-      } yield ls.setItem("displayNames", m))
+      } yield ls.setItem("displayNames", m)
     }.void
 
 }

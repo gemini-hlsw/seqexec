@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -99,7 +99,7 @@ object ConfigUtilOps {
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractInstAs[A](key: PropertyDescriptor)(implicit
-      clazz:                  ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, INSTRUMENT_KEY / key).as[A]
 
@@ -109,7 +109,7 @@ object ConfigUtilOps {
 
     // config syntax: cfg.extractInstAs[Type](key)
     def extractObsAs[A](key: PropertyDescriptor)(implicit
-      clazz:                 ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, OBSERVE_KEY / key).as[A]
 
@@ -119,7 +119,7 @@ object ConfigUtilOps {
 
     // config syntax: cfg.extractTelescopeAs[Type](key)
     def extractTelescopeAs[A](key: PropertyDescriptor)(implicit
-      clazz:                       ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, TELESCOPE_KEY / key).as[A]
 
@@ -129,19 +129,19 @@ object ConfigUtilOps {
 
     // config syntax: cfg.extractCalibrationAs[Type](key)
     def extractCalibrationAs[A](key: PropertyDescriptor)(implicit
-      clazz:                         ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, CALIBRATION_KEY / key).as[A]
 
     // config syntax: cfg.extractCalibrationAs[Type](key)
     def extractCalibrationAs[A](key: String)(implicit
-      clazz:                         ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, CALIBRATION_KEY / key).as[A]
 
     // config syntax: cfg.extractAOAs[Type](key)
     def extractAOAs[A](key: PropertyDescriptor)(implicit
-      clazz:                ClassTag[A]
+      clazz: ClassTag[A]
     ): Either[ExtractFailure, A] =
       new Extracted(c, AO_KEY / key).as[A]
 

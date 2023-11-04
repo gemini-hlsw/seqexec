@@ -1,17 +1,15 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.server.common
 
 import scala.concurrent.duration._
-
 import cats.data.NonEmptyList
 import cats.data.OptionT
-import cats.effect.Blocker
-import cats.effect.ContextShift
 import cats.effect.Sync
 import cats.instances.string._
 import cats.syntax.eq._
+import fs2.compression.Compression
 import org.http4s.CacheDirective._
 import org.http4s.HttpRoutes
 import org.http4s.Request
@@ -20,10 +18,9 @@ import org.http4s.StaticFile
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
 
-class StaticRoutes[F[_]: Sync: ContextShift](
+class StaticRoutes[F[_]: Sync: Compression](
   devMode:       Boolean,
-  builtAtMillis: Long,
-  blocker:       Blocker
+  builtAtMillis: Long
 ) {
   val oneYear: Int = 365 * 24 * 60 * 60 // One year in seconds
 
@@ -33,13 +30,13 @@ class StaticRoutes[F[_]: Sync: ContextShift](
 
   // Get a resource from a local file, useful for development
   def localResource(path: String, req: Request[F]): OptionT[F, Response[F]] =
-    StaticFile.fromResource(path, blocker, Some(req)).map(_.putHeaders())
+    StaticFile.fromResource(path, Some(req)).map(_.putHeaders())
 
   // Get a resource from a local file, used in production
   def embeddedResource(path: String, req: Request[F]): OptionT[F, Response[F]] =
     OptionT
       .fromOption(Option(getClass.getResource(path)))
-      .flatMap(StaticFile.fromURL(_, blocker, Some(req)))
+      .flatMap(StaticFile.fromURL(_, Some(req)))
 
   implicit class ReqOps(req: Request[F]) {
     private val timestampRegex = s"(.*)\\.$builtAtMillis\\.(.*)".r
@@ -53,13 +50,13 @@ class StaticRoutes[F[_]: Sync: ContextShift](
         case xs                   => xs
       }
 
-    def endsWith(exts: String*): Boolean = exts.exists(req.pathInfo.endsWith)
+    def endsWith(exts: String*): Boolean = exts.exists(req.pathInfo.toString.endsWith)
 
     def serve(path: String): F[Response[F]] =
       // To find scala.js generated files we need to go into the dir below, hopefully this can be improved
       localResource(removeTimestamp(path), req)
         .orElse(embeddedResource(removeTimestamp(path), req))
-        .map(_.putHeaders(cacheHeaders: _*))
+        .map(x => x.putHeaders(cacheHeaders))
         .getOrElse(Response.notFound[F])
   }
 
@@ -80,10 +77,10 @@ class StaticRoutes[F[_]: Sync: ContextShift](
 
   def service: HttpRoutes[F] = GZip {
     HttpRoutes.of[F] {
-      case req if req.pathInfo === "/"                 => req.serve("/index.html")
-      case req if req.endsWith(supportedExtension: _*) => req.serve(req.pathInfo)
+      case req if req.pathInfo.toString() === "/"      => req.serve("/index.html")
+      case req if req.endsWith(supportedExtension: _*) => req.serve(req.pathInfo.toString)
       // This maybe not desired in all cases but it helps to keep client side routing cleaner
-      case req if !req.pathInfo.contains(".")          => req.serve("/index.html")
+      case req if !req.pathInfo.toString.contains(".") => req.serve("/index.html")
     }
   }
 }

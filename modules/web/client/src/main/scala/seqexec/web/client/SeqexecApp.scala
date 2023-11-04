@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client
@@ -9,9 +9,9 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 import cats.effect.Sync
 import cats.effect._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.Element
+import org.scalajs.dom.Element
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -19,13 +19,16 @@ import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.SeqexecWebClient
 import typings.loglevel.mod.{ ^ => logger }
 
+import scala.annotation.nowarn
+
 /**
  * Seqexec WebApp entry point
  */
 final class SeqexecLauncher[F[_]](implicit val F: Sync[F], L: LiftIO[F]) {
   // japgolly.scalajs.react.extra.ReusabilityOverlay.overrideGloballyInDev()
 
-  def serverSite(implicit cs: ContextShift[IO]): F[Site] =
+  @nowarn("cat=other")
+  def serverSite: F[Site] =
     L.liftIO(IO.fromFuture {
       IO {
         import ExecutionContext.Implicits.global

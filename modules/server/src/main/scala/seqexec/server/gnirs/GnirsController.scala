@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
@@ -115,6 +115,8 @@ object GnirsController {
     case object SmallPinhole extends SlitWidth
     case object LargePinhole extends SlitWidth
     case object Acquisition  extends SlitWidth
+    case object LR_IFU       extends SlitWidth
+    case object HR_IFU       extends SlitWidth
 
     implicit val eq: Eq[SlitWidth] = Eq.fromUniversalEquals
   }

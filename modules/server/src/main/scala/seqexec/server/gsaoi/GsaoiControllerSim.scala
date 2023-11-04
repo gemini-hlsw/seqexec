@@ -1,11 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gsaoi
 
 import cats.Applicative
-import cats.effect.Sync
-import cats.effect.Timer
+import cats.effect.Async
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
@@ -19,7 +18,7 @@ import squants.Time
 import squants.time.TimeConversions._
 
 object GsaoiControllerSim {
-  def apply[F[_]: Sync: Logger: Timer]: F[GsaoiFullHandler[F]] =
+  def apply[F[_]: Logger: Async]: F[GsaoiFullHandler[F]] =
     InstrumentControllerSim[F]("GSAOI").map { sim =>
       new GsaoiFullHandler[F] {
 

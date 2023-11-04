@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -68,7 +68,8 @@ object SequenceGen {
       stepGen match {
         case p: PendingStepGen[F]          =>
           EngineStep.init[F](stepGen.id, p.generator.generate(ctx, systemOverrides))
-        case SkippedStepGen(id, _, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
+        case SkippedStepGen(id, _, _)      =>
+          EngineStep.skippedL.replace(true)(EngineStep.init[F](id, Nil))
         case CompletedStepGen(id, _, _, _) => EngineStep.init[F](id, Nil)
       }
   }

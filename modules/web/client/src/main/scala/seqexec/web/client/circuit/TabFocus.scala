@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -20,9 +20,9 @@ object TabFocus {
     Eq.by(x => (x.canOperate, x.tabs, x.displayName))
 
   val tabFocusG: Getter[SeqexecAppRootModel, TabFocus] = {
-    val getter = SeqexecAppRootModel.uiModel.composeGetter(
-      (SeqexecUIModel.sequencesOnDisplay
-        .composeGetter(SequencesOnDisplay.availableTabsG))
+    val getter = SeqexecAppRootModel.uiModel.andThen(
+      SeqexecUIModel.sequencesOnDisplay
+        .andThen(SequencesOnDisplay.availableTabsG)
         .zip(SeqexecUIModel.displayNameG)
     )
     ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>

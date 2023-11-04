@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -85,7 +85,7 @@ class ObservationsProgressStateHandler[M](modelRW: ModelRW[M, AllObservationsPro
           updatedL(
             AllObservationsProgressState
               .progressByIdL(obsId, curSIdx)
-              .set(none)
+              .replace(none)
           )
         } else {
           noChange
@@ -109,7 +109,7 @@ class ObservationsProgressStateHandler[M](modelRW: ModelRW[M, AllObservationsPro
       resetStepProgress(e, obsId)
 
     // Remove the progress once the step completes
-    case ServerMessage(e @ StepExecuted(obsId, _)) =>
+    case ServerMessage(e @ StepExecuted(obsId, _))  =>
       resetStepProgress(
         e,
         obsId,

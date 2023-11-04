@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -24,12 +24,12 @@ import seqexec.server.tcs.Gaos.ResumeConditionSet
 class GemsControllerEpics[F[_]: Async](
   epicsSys:    GemsEpics[F],
   gsaoiGuider: GsaoiGuider[F]
-)(implicit L:  Logger[F])
+)(implicit L: Logger[F])
     extends GemsController[F] {
   import GemsControllerEpics._
 
   override def pauseResume(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet)(
-    cfg:                                 GemsConfig
+    cfg: GemsConfig
   ): F[PauseResume[F]] = {
     val r1 = pause(pauseReasons)
     val r2 = resume(resumeReasons)
@@ -69,9 +69,9 @@ class GemsControllerEpics[F[_]: Async](
 
     reasons.nonEmpty.option {
       L.debug(s"Send pause command to GeMS, reasons: $reasons") *>
-        epicsSys.LoopControl.setCommand(PauseCmd) *>
-        epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.post(CmdTimeout) *>
+        epicsSys.loopControl.setCommand(PauseCmd) *>
+        epicsSys.loopControl.setReasons(reasons.mkString("|")) *>
+        epicsSys.loopControl.post(CmdTimeout) *>
         L.debug("Pause command sent to GeMS")
     }
 
@@ -87,9 +87,9 @@ class GemsControllerEpics[F[_]: Async](
 
     reasons.nonEmpty.option {
       L.debug(s"Send resume command to GeMS, reasons: $reasons") *>
-        epicsSys.LoopControl.setCommand(ResumeCmd) *>
-        epicsSys.LoopControl.setReasons(reasons.mkString("|")) *>
-        epicsSys.LoopControl.post(CmdTimeout) *>
+        epicsSys.loopControl.setCommand(ResumeCmd) *>
+        epicsSys.loopControl.setReasons(reasons.mkString("|")) *>
+        epicsSys.loopControl.post(CmdTimeout) *>
         epicsSys.waitForStableLoops(LoopStabilizationTimeout) *>
         L.debug("Resume command sent to GeMS")
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -34,7 +34,7 @@ object TcsSettleTimeCalculator {
     override def counter: Angle = angle
 
     def times(a: Angle): Time = convertToBase(a)
-    def *(a: Angle): Time     = times(a)
+    def *(a:     Angle): Time = times(a)
   }
 
   // We are using constant values for now. Values are taken from old Seqexec

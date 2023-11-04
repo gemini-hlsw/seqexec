@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.client
@@ -11,8 +11,8 @@ import scala.scalajs.js.annotation.JSGlobal
 @js.native
 @JSGlobal
 class Audio(val src: String) extends js.Object {
-  def play(): js.Any                  = js.native
-  def pause(): js.Any                 = js.native
+  def play(): js.Any  = js.native
+  def pause(): js.Any = js.native
   def canPlayType(tp: String): String = js.native
 }
 

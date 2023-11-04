@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -7,10 +7,8 @@ import java.time.Duration
 import cats._
 import cats.data.NonEmptySet
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import monocle.Lens
 import monocle.macros.Lenses
 import mouse.boolean._
 import seqexec.model.M1GuideConfig
@@ -21,7 +19,6 @@ import seqexec.model.enum.ComaOption
 import seqexec.model.enum.M1Source
 import seqexec.model.enum.MountGuideOption
 import seqexec.model.enum.TipTiltSource
-import seqexec.server.EpicsCodex.encode
 import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.GemsConfig
@@ -37,7 +34,6 @@ import seqexec.server.tcs.TcsController.GuiderSensorOff
 import seqexec.server.tcs.TcsController.GuiderSensorOption
 import seqexec.server.tcs.TcsController.ProbeTrackingConfig
 import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsEpics.ProbeFollowCmd
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import seqexec.server.tcs.TcsSouthController.GemsGuiders
 import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
@@ -71,8 +67,8 @@ object TcsSouthControllerEpicsAo {
     odgw4:   GuiderConfig
   )
 
-  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(
-    implicit L:                                                                   Logger[F]
+  private final class TcsSouthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit
+    L: Logger[F]
   ) extends TcsSouthControllerEpicsAo[F]
       with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
@@ -80,132 +76,129 @@ object TcsSouthControllerEpicsAo {
     private val trace              =
       Option(System.getProperty("seqexec.server.tcs.trace")).flatMap(_.toBooleanOption).isDefined
 
-    def setNgsGuide(followCmd: ProbeFollowCmd[F], l: Lens[EpicsTcsAoConfig, GuiderConfig])(
-      name:                    String
-    )(
-      g:                       VirtualGemsTelescope,
-      subsystems:              NonEmptySet[Subsystem],
-      current:                 ProbeTrackingConfig,
-      demand:                  ProbeTrackingConfig
+    def cwfs1GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] = GuideControl(
+      Subsystem.Gaos,
+      epicsSys.cwfs1ParkCmd,
+      g.map(epicsSys.gemsProbeGuideCmd),
+      epicsSys.cwfs1FollowCmd
+    )
+
+    def setCwfs1Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
-      if (subsystems.contains(Subsystem.Gaos)) {
-        val actionList = List(
-          (current.getNodChop =!= demand.getNodChop).option(
-            commonController
-              .setNodChopProbeTrackingConfig(epicsSys.gemsProbeGuideCmd(g))(demand.getNodChop)
-              .withDebug(s"NodChop(${current.getNodChop} =!= ${demand.getNodChop})")
-          ),
-          (current.follow =!= demand.follow).option(
-            followCmd
-              .setFollowState(encode(demand.follow))
-              .withDebug(s"follow(${current.follow} =!= ${demand.follow})")
-          )
-        ).flattenOption
+      commonController
+        .setGuideProbe(cwfs1GuiderControl(g),
+                       EpicsTcsAoConfig.cwfs1.andThen(GuiderConfig.tracking).replace
+        )(a, b, c)
+        .map(_.mapDebug(m => s"CWFS1: $m"))
 
-        val actions = actionList.reduceOption { (a, b) =>
-          WithDebug(a.self *> b.self, a.debug + ", " + b.debug)
-        }
+    def cwfs2GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] = GuideControl(
+      Subsystem.Gaos,
+      epicsSys.cwfs2ParkCmd,
+      g.map(epicsSys.gemsProbeGuideCmd),
+      epicsSys.cwfs2FollowCmd
+    )
 
-        actions.map { r =>
-          { (x: EpicsTcsAoConfig) =>
-            r.self.as((l ^|-> GuiderConfig.tracking).set(demand)(x))
-          }.withDebug(s"$name tracking set because ${r.debug}")
-        }
-      } else none
+    def setCwfs2Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
+    ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
+      commonController
+        .setGuideProbe(cwfs2GuiderControl(g),
+                       EpicsTcsAoConfig.cwfs2.andThen(GuiderConfig.tracking).replace
+        )(a, b, c)
+        .map(_.mapDebug(m => s"CWFS2: $m"))
 
-    val setCwfs1Guide: (
-      VirtualGemsTelescope,
-      NonEmptySet[Subsystem],
-      ProbeTrackingConfig,
-      ProbeTrackingConfig
-    ) => Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
-      setNgsGuide(epicsSys.cwfs1ProbeFollowCmd, EpicsTcsAoConfig.cwfs1)("C1")
+    def cwfs3GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] = GuideControl(
+      Subsystem.Gaos,
+      epicsSys.cwfs3ParkCmd,
+      g.map(epicsSys.gemsProbeGuideCmd),
+      epicsSys.cwfs3FollowCmd
+    )
 
-    val setCwfs2Guide: (
-      VirtualGemsTelescope,
-      NonEmptySet[Subsystem],
-      ProbeTrackingConfig,
-      ProbeTrackingConfig
-    ) => Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
-      setNgsGuide(epicsSys.cwfs2ProbeFollowCmd, EpicsTcsAoConfig.cwfs2)("C2")
+    def setCwfs3Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
+    ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
+      commonController
+        .setGuideProbe(cwfs3GuiderControl(g),
+                       EpicsTcsAoConfig.cwfs3.andThen(GuiderConfig.tracking).replace
+        )(a, b, c)
+        .map(_.mapDebug(m => s"CWFS3: $m"))
 
-    val setCwfs3Guide: (
-      VirtualGemsTelescope,
-      NonEmptySet[Subsystem],
-      ProbeTrackingConfig,
-      ProbeTrackingConfig
-    ) => Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
-      setNgsGuide(epicsSys.cwfs3ProbeFollowCmd, EpicsTcsAoConfig.cwfs3)("C3")
-
-    private def odgw1GuiderControl(g: VirtualGemsTelescope): GuideControl[F] =
+    private def odgw1GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] =
       GuideControl(Subsystem.Gaos,
                    epicsSys.odgw1ParkCmd,
-                   epicsSys.gemsProbeGuideCmd(g),
+                   g.map(epicsSys.gemsProbeGuideCmd),
                    epicsSys.odgw1FollowCmd
       )
 
-    def setOdgw1Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+    def setOdgw1Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw1GuiderControl(g),
-                       (EpicsTcsAoConfig.odgw1 ^|-> GuiderConfig.tracking).set
+                       EpicsTcsAoConfig.odgw1.andThen(GuiderConfig.tracking).replace
         )(a, b, c)
         .map(_.mapDebug(m => s"ODGW1: $m"))
 
-    private def odgw2GuiderControl(g: VirtualGemsTelescope): GuideControl[F] =
+    private def odgw2GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] =
       GuideControl(Subsystem.Gaos,
                    epicsSys.odgw2ParkCmd,
-                   epicsSys.gemsProbeGuideCmd(g),
+                   g.map(epicsSys.gemsProbeGuideCmd),
                    epicsSys.odgw2FollowCmd
       )
 
-    def setOdgw2Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+    def setOdgw2Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw2GuiderControl(g),
-                       (EpicsTcsAoConfig.odgw2 ^|-> GuiderConfig.tracking).set
+                       EpicsTcsAoConfig.odgw2.andThen(GuiderConfig.tracking).replace
         )(a, b, c)
         .map(_.mapDebug(m => s"ODGW2: $m"))
 
-    private def odgw3GuiderControl(g: VirtualGemsTelescope): GuideControl[F] =
+    private def odgw3GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] =
       GuideControl(Subsystem.Gaos,
                    epicsSys.odgw3ParkCmd,
-                   epicsSys.gemsProbeGuideCmd(g),
+                   g.map(epicsSys.gemsProbeGuideCmd),
                    epicsSys.odgw3FollowCmd
       )
 
-    def setOdgw3Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+    def setOdgw3Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw3GuiderControl(g),
-                       (EpicsTcsAoConfig.odgw3 ^|-> GuiderConfig.tracking).set
+                       EpicsTcsAoConfig.odgw3.andThen(GuiderConfig.tracking).replace
         )(a, b, c)
         .map(_.mapDebug(m => s"ODGW3: $m"))
 
-    private def odgw4GuiderControl(g: VirtualGemsTelescope): GuideControl[F] =
+    private def odgw4GuiderControl(g: Option[VirtualGemsTelescope]): GuideControl[F] =
       GuideControl(Subsystem.Gaos,
                    epicsSys.odgw4ParkCmd,
-                   epicsSys.gemsProbeGuideCmd(g),
+                   g.map(epicsSys.gemsProbeGuideCmd),
                    epicsSys.odgw4FollowCmd
       )
 
-    def setOdgw4Probe(g: VirtualGemsTelescope)(
-      a:                 NonEmptySet[Subsystem],
-      b:                 ProbeTrackingConfig,
-      c:                 ProbeTrackingConfig
+    def setOdgw4Probe(g: Option[VirtualGemsTelescope])(
+      a: NonEmptySet[Subsystem],
+      b: ProbeTrackingConfig,
+      c: ProbeTrackingConfig
     ): Option[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] =
       commonController
         .setGuideProbe(odgw4GuiderControl(g),
-                       (EpicsTcsAoConfig.odgw4 ^|-> GuiderConfig.tracking).set
+                       EpicsTcsAoConfig.odgw4.andThen(GuiderConfig.tracking).replace
         )(a, b, c)
         .map(_.mapDebug(m => s"ODGW4: $m"))
 
@@ -214,27 +207,34 @@ object TcsSouthControllerEpicsAo {
       current:    EpicsTcsAoConfig,
       demand:     GemsGuiders
     ): List[WithDebug[EpicsTcsAoConfig => F[EpicsTcsAoConfig]]] = List(
-      current.mapping
-        .get(Cwfs1)
-        .flatMap(setCwfs1Guide(_, subsystems, current.cwfs1.tracking, demand.cwfs1.tracking)),
-      current.mapping
-        .get(Cwfs2)
-        .flatMap(setCwfs2Guide(_, subsystems, current.cwfs2.tracking, demand.cwfs2.tracking)),
-      current.mapping
-        .get(Cwfs3)
-        .flatMap(setCwfs3Guide(_, subsystems, current.cwfs3.tracking, demand.cwfs3.tracking)),
-      current.mapping
-        .get(Odgw1)
-        .flatMap(setOdgw1Probe(_)(subsystems, current.odgw1.tracking, demand.odgw1.tracking)),
-      current.mapping
-        .get(Odgw2)
-        .flatMap(setOdgw2Probe(_)(subsystems, current.odgw2.tracking, demand.odgw2.tracking)),
-      current.mapping
-        .get(Odgw3)
-        .flatMap(setOdgw3Probe(_)(subsystems, current.odgw3.tracking, demand.odgw3.tracking)),
-      current.mapping
-        .get(Odgw4)
-        .flatMap(setOdgw4Probe(_)(subsystems, current.odgw4.tracking, demand.odgw4.tracking))
+      setCwfs1Probe(current.mapping.get(Cwfs1))(subsystems,
+                                                current.cwfs1.tracking,
+                                                demand.cwfs1.tracking
+      ),
+      setCwfs2Probe(current.mapping.get(Cwfs2))(subsystems,
+                                                current.cwfs2.tracking,
+                                                demand.cwfs2.tracking
+      ),
+      setCwfs3Probe(current.mapping.get(Cwfs3))(subsystems,
+                                                current.cwfs3.tracking,
+                                                demand.cwfs3.tracking
+      ),
+      setOdgw1Probe(current.mapping.get(Odgw1))(subsystems,
+                                                current.odgw1.tracking,
+                                                demand.odgw1.tracking
+      ),
+      setOdgw2Probe(current.mapping.get(Odgw2))(subsystems,
+                                                current.odgw2.tracking,
+                                                demand.odgw2.tracking
+      ),
+      setOdgw3Probe(current.mapping.get(Odgw3))(subsystems,
+                                                current.odgw3.tracking,
+                                                demand.odgw3.tracking
+      ),
+      setOdgw4Probe(current.mapping.get(Odgw4))(subsystems,
+                                                current.odgw4.tracking,
+                                                demand.odgw4.tracking
+      )
     ).flattenOption
 
     // It will be a GeMS guided step only if all GeMS sources used in the base configuration are active
@@ -275,22 +275,26 @@ object TcsSouthControllerEpicsAo {
     ): Boolean =
       !isCurrentlyGuiding(current, baseAoCfg) && isAoGuidedStep(baseAoCfg, demand)
 
+    // Don't check cwfsx detector status, they do not work nor can we control them
+    private def isAnyGemsSourceUsed(
+      current: EpicsTcsAoConfig,
+      demand:  TcsSouthAoConfig
+    ): Boolean = (demand.gaos.isCwfs1Used && current.cwfs1.tracking.isActive) ||
+      (demand.gaos.isCwfs2Used && current.cwfs2.tracking.isActive) ||
+      (demand.gaos.isCwfs3Used && current.cwfs3.tracking.isActive) ||
+      (demand.gaos.isOdgw1Used && current.odgw1.isActive) ||
+      (demand.gaos.isOdgw2Used && current.odgw2.isActive) ||
+      (demand.gaos.isOdgw3Used && current.odgw3.isActive) ||
+      (demand.gaos.isOdgw4Used && current.odgw4.isActive)
+
     private def mustPauseAoWhileOffseting(
       current: EpicsTcsAoConfig,
       demand:  TcsSouthAoConfig
     ): Boolean = {
       val distanceSquared = calcMoveDistanceSquared(current.base, demand.tc)
 
-      val isAnyGemsSourceUsed = (demand.gaos.isCwfs1Used && current.cwfs1.isActive) ||
-        (demand.gaos.isCwfs2Used && !current.cwfs2.isActive) ||
-        (demand.gaos.isCwfs3Used && !current.cwfs3.isActive) ||
-        (demand.gaos.isOdgw1Used && !current.odgw1.isActive) ||
-        (demand.gaos.isOdgw2Used && !current.odgw2.isActive) ||
-        (demand.gaos.isOdgw3Used && !current.odgw3.isActive) ||
-        (demand.gaos.isOdgw4Used && !current.odgw4.isActive)
-
       distanceSquared.exists(dd =>
-        (isAnyGemsSourceUsed && dd > AoOffsetThreshold * AoOffsetThreshold) ||
+        (isAnyGemsSourceUsed(current, demand) && dd > AoOffsetThreshold * AoOffsetThreshold) ||
           (demand.gaos.isP1Used && dd > pwfs1OffsetThreshold * pwfs1OffsetThreshold) ||
           (demand.gaos.isOIUsed && demand.inst.oiOffsetGuideThreshold.exists(t => dd > t * t))
       )
@@ -384,27 +388,35 @@ object TcsSouthControllerEpicsAo {
       (AoTcsConfig
         .gds[GemsGuiders, GemsConfig]
         .modify(
-          (AoGuidersConfig.pwfs1[GemsGuiders] ^<-> tagIso ^|-> GuiderConfig.detector)
-            .set(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
-            (AoGuidersConfig.oiwfs[GemsGuiders] ^<-> tagIso ^|-> GuiderConfig.detector)
-              .set(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
+          AoGuidersConfig
+            .pwfs1[GemsGuiders]
+            .andThen(tagIso[GuiderConfig, TcsController.P1Config])
+            .andThen(GuiderConfig.detector)
+            .replace(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+            AoGuidersConfig
+              .oiwfs[GemsGuiders]
+              .andThen(tagIso[GuiderConfig, TcsController.OIConfig])
+              .andThen(GuiderConfig.detector)
+              .replace(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
         ) >>>
         AoTcsConfig
           .gc[GemsGuiders, GemsConfig]
           .modify(
-            TelescopeGuideConfig.mountGuide.set(
+            TelescopeGuideConfig.mountGuide.replace(
               (mustOff || demand.gc.mountGuide === MountGuideOption.MountGuideOff)
                 .fold(MountGuideOption.MountGuideOff, current.base.telescopeGuideConfig.mountGuide)
             ) >>>
-              TelescopeGuideConfig.m1Guide.set(
+              TelescopeGuideConfig.m1Guide.replace(
                 (mustOff || demand.gc.m1Guide === M1GuideConfig.M1GuideOff)
                   .fold(M1GuideConfig.M1GuideOff, current.base.telescopeGuideConfig.m1Guide)
               ) >>>
-              TelescopeGuideConfig.m2Guide.set(
+              TelescopeGuideConfig.m2Guide.replace(
                 (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff)
                   .fold(M2GuideConfig.M2GuideOff, current.base.telescopeGuideConfig.m2Guide)
               )
-          ) >>> normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(
+          ) >>> normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(
+          gaosEnabled
+        ) >>> normalizeMountGuiding)(
         demand
       )
 
@@ -468,8 +480,9 @@ object TcsSouthControllerEpicsAo {
       gaosEnabled: Boolean
     ): F[EpicsTcsAoConfig] = {
       // If the demand turned off any WFS, normalize will turn off the corresponding processing
-      val normalizedGuiding = (normalizeM1Guiding >>> normalizeM2Guiding(gaosEnabled) >>>
-        normalizeMountGuiding)(demand)
+      val normalizedGuiding =
+        (normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>>
+          normalizeMountGuiding)(demand)
 
       val paramList = guideParams(subsystems, current, normalizedGuiding)
 
@@ -563,54 +576,61 @@ object TcsSouthControllerEpicsAo {
         _  <- pr.pause.getOrElse(Applicative[F].unit)
         s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
         s2 <- sysConfig(s1)
-        _  <- guideOn(subsystems, s2, tcs, pr.resume.isDefined)
+        _  <- guideOn(subsystems, s2, tcs, isAnyGemsSourceUsed(s2, tcs))
         _  <- pr.resume.getOrElse(Applicative[F].unit)
       } yield ()
     }
 
     // Disable M1 guiding if source is off
-    def normalizeM1Guiding: Endo[TcsSouthAoConfig] = cfg =>
-      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify {
-        case g @ M1GuideConfig.M1GuideOn(src) =>
-          src match {
-            case M1Source.PWFS1 => if (cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
-            case M1Source.OIWFS => if (cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
-            case _              => g
-          }
-        case x                                => x
-      }(cfg)
+    def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsSouthAoConfig] = cfg =>
+      AoTcsConfig.gc
+        .andThen(TelescopeGuideConfig.m1Guide)
+        .modify {
+          case g @ M1GuideConfig.M1GuideOn(src) =>
+            src match {
+              case M1Source.PWFS1 => if (cfg.gds.pwfs1.isActive) g else M1GuideConfig.M1GuideOff
+              case M1Source.OIWFS => if (cfg.gds.oiwfs.isActive) g else M1GuideConfig.M1GuideOff
+              case M1Source.GAOS  => if (gaosEnabled) g else M1GuideConfig.M1GuideOff
+              case _              => g
+            }
+          case x                                => x
+        }(cfg)
 
     // Disable M2 sources if they are off, disable M2 guiding if all are off
     def normalizeM2Guiding(gaosEnabled: Boolean): Endo[TcsSouthAoConfig] = cfg =>
-      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify {
-        case M2GuideConfig.M2GuideOn(coma, srcs) =>
-          val ss = srcs.filter {
-            case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
-            case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
-            case TipTiltSource.GAOS  => gaosEnabled
-            case _                   => true
-          }
-          if (ss.isEmpty) M2GuideConfig.M2GuideOff
-          else
-            M2GuideConfig.M2GuideOn(if (cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff) coma
-                                    else ComaOption.ComaOff,
-                                    ss
-            )
-        case x                                   => x
-      }(cfg)
+      AoTcsConfig.gc
+        .andThen(TelescopeGuideConfig.m2Guide)
+        .modify {
+          case M2GuideConfig.M2GuideOn(coma, srcs) =>
+            val ss = srcs.filter {
+              case TipTiltSource.PWFS1 => cfg.gds.pwfs1.isActive
+              case TipTiltSource.OIWFS => cfg.gds.oiwfs.isActive
+              case TipTiltSource.GAOS  => gaosEnabled
+              case _                   => true
+            }
+            if (ss.isEmpty) M2GuideConfig.M2GuideOff
+            else
+              M2GuideConfig.M2GuideOn(if (cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff) coma
+                                      else ComaOption.ComaOff,
+                                      ss
+              )
+          case x                                   => x
+        }(cfg)
   }
 
   // Disable Mount guiding if M2 guiding is disabled
   val normalizeMountGuiding: Endo[TcsSouthAoConfig] = cfg =>
-    (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify { m =>
-      (m, cfg.gc.m2Guide) match {
-        case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) =>
-          MountGuideOption.MountGuideOn
-        case _                                                              => MountGuideOption.MountGuideOff
-      }
-    }(cfg)
+    AoTcsConfig.gc
+      .andThen(TelescopeGuideConfig.mountGuide)
+      .modify { m =>
+        (m, cfg.gc.m2Guide) match {
+          case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) =>
+            MountGuideOption.MountGuideOn
+          case _                                                              => MountGuideOption.MountGuideOff
+        }
+      }(cfg)
 
-  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsSouthControllerEpicsAo[F] =
     new TcsSouthControllerEpicsAoImpl(epicsSys)
 
 }

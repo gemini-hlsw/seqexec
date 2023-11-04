@@ -1,10 +1,9 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import scala.concurrent.duration._
-
 import cats._
 import cats.effect._
 import cats.syntax.all._
@@ -17,6 +16,7 @@ import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem._
 import squants.time.Time
 import squants.time.TimeConversions._
+import cats.effect.Temporal
 
 /**
  * Methods usedd to generate observation related actions
@@ -148,10 +148,10 @@ trait ObserveActions {
   /**
    * Method to process observe results and act accordingly to the response
    */
-  private def observeTail[F[_]: Timer](
+  private def observeTail[F[_]: Temporal](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
-  )(r:      ObserveCommandResult)(implicit cio: Concurrent[F]): Stream[F, Result[F]] =
+  )(r: ObserveCommandResult): Stream[F, Result[F]] =
     Stream.eval(r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, stopped = false, env)
@@ -215,7 +215,7 @@ trait ObserveActions {
   /**
    * Observe for a typical instrument
    */
-  def stdObserve[F[_]: Concurrent: Timer: Logger](
+  def stdObserve[F[_]: Temporal: Logger](
     fileId: ImageFileId,
     env:    ObserveEnvironment[F]
   ): Stream[F, Result[F]] =

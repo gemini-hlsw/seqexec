@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gcal
@@ -46,7 +46,7 @@ object GcalKeywordsReaderEpics {
         xe    <- sys.lampXe.map(onCheck(_).option("Xe"))
         cuAr  <- sys.lampCuAr.map(onCheck(_).option("CuAr"))
         thAr  <- sys.lampThAr.map(onCheck(_).option("ThAr"))
-        qh5   <- sys.lampQH5W.map(onCheck(_).option("QH5W"))
+        qh5   <- sys.lampQH5W.map(onCheck(_).option("QH"))
         qh100 <- sys.lampQH100W.map(onCheck(_).option("QH100W"))
         ir    <- sys.lampIr.map {
                    case BinaryOnOff.ON => "IRhigh".some

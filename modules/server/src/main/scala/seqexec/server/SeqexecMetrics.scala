@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -6,7 +6,7 @@ package seqexec.server
 import cats.effect.Sync
 import cats.syntax.all._
 import io.prometheus.client._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import seqexec.model.enum.Instrument
 
 final case class SeqexecMetrics private (

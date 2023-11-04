@@ -1,20 +1,15 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
 
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
-
 import scala.concurrent.duration._
-
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
@@ -44,19 +39,19 @@ import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
-import seqexec.server.keywords.DhsInstrument
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{ DhsInstrument, KeywordsClient }
 import shapeless.tag
+import cats.effect.{ Ref, Temporal }
 import squants.Seconds
 import squants.Time
 import squants.space.Length
 import squants.space.LengthConversions._
 
-abstract class Gmos[F[_]: Concurrent: Timer: Logger, T <: GmosController.SiteDependentTypes](
+abstract class Gmos[F[_]: Temporal: Logger, T <: GmosController.SiteDependentTypes](
   val controller: GmosController[F, T],
   ss:             SiteSpecifics[T],
   nsCmdR:         Ref[F, Option[NSObserveCommand]]
-)(configTypes:    GmosController.Config[T])
+)(configTypes: GmosController.Config[T])
     extends DhsInstrument[F]
     with InstrumentSystem[F] {
   import Gmos._

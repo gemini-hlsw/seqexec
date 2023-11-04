@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
@@ -72,15 +72,14 @@ object ControlMenu {
               ),
               MenuHeader(clazz =
                 SeqexecStyles.onlyMobile |+| SeqexecStyles.ui |+| SeqexecStyles.item
-              )(
-                // Ideally we'd do this with css text-overflow but it is not
-                // working properly inside a header item, let's abbreviate in code
-                u.displayName
-                  .split("\\s")
-                  .headOption
-                  .map(_.substring(0, 10) + "...")
-                  .getOrElse[String]("")
               ),
+              // Ideally we'd do this with css text-overflow but it is not
+              // working properly inside a header item, let's abbreviate in code
+              u.displayName
+                .split("\\s")
+                .headOption
+                .map(r => r.substring(0, 10.min(r.length)) + "...")
+                .getOrElse[String](""),
               MenuItem(clazz = SeqexecStyles.notInMobile)(
                 helpButton,
                 soundConnect(x => SoundControl(x())),

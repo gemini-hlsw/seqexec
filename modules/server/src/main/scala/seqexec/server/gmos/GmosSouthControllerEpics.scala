@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -65,11 +65,11 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
     case Filter.Y_G0344                 => ("Y_G0344", "open2-8")
     case Filter.HeII_G0340              => ("HeII_G0340", "open2-8")
     case Filter.HeIIC_G0341             => ("open1-6", "HeIIC_G0341")
-    case Filter.SII_G0335               => ("open1-6", "SII_G0335")
+    case Filter.SII_G0335               => ("SII_G0335", "open2-8")
     case Filter.Ha_G0336                => ("open1-6", "Ha_G0336")
     case Filter.HaC_G0337               => ("open1-6", "HaC_G0337")
-    case Filter.OIII_G0338              => ("open1-6", "OIII_G0338")
-    case Filter.OIIIC_G0339             => ("open1-6", "OIIIC_G0339")
+    case Filter.OIII_G0338              => ("OIII_G0338", "open2-8")
+    case Filter.OIIIC_G0339             => ("OIIIC_G0339", "open2-8")
     case Filter.OVI_G0347               => ("OVI_G0347", "open2-8")
     case Filter.OVIC_G0348              => ("OVIC_G0348", "open2-8")
     case Filter.u_G0332                 => ("open1-6", "u_G0332")
@@ -129,7 +129,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
 }
 
 object GmosSouthControllerEpics {
-  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, SouthTypes] = {
+  def apply[F[_]: Async: Logger](sys: => GmosEpics[F]): GmosController[F, SouthTypes] = {
     implicit val encoders = GmosSouthEncoders
     GmosControllerEpics[F, SouthTypes](sys, southConfigTypes)
   }

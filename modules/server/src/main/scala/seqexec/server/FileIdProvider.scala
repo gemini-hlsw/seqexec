@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -10,8 +10,10 @@ object FileIdProvider {
 
   def fileId[F[_]](env: ObserveEnvironment[F]): F[ImageFileId] =
     // All instruments ask the DHS for an ImageFileId
-    env.dhs.createImage(
-      DhsClient.ImageParameters(DhsClient.Permanent, List(env.inst.contributorName, "dhs-http"))
-    )
+    env.dhs
+      .dhsClient("")
+      .createImage(
+        DhsClient.ImageParameters(DhsClient.Permanent, List(env.inst.contributorName, "dhs-http"))
+      )
 
 }

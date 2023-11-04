@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gpi
@@ -9,11 +9,11 @@ import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.commands.Configuration
 import giapi.client.syntax.status._
-import lucuma.core.enum.GiapiStatus
-import lucuma.core.enum.GiapiStatusApply
-import lucuma.core.enum.GiapiStatusApply._
-import lucuma.core.enum.GiapiType
-import lucuma.core.enum.Instrument
+import giapi.enums.GiapiStatus
+import giapi.enums.GiapiType
+import giapi.enums.GiapiStatusApply
+import giapi.enums.GiapiStatusApply._
+import lucuma.core.enums.Instrument
 import lucuma.core.math.Angle
 import lucuma.core.syntax.all._
 import ocs2.Parsers
@@ -88,8 +88,8 @@ object GpiStatusApply extends GpiLookupTables {
             subSystemsNotMatching.map {
               case true  =>
                 // force the obs mode if a subsystem doesn't match
-                (config.remove(GpiObservationMode.applyItem) |+| Configuration
-                  .single(GpiObservationMode.applyItem, obsModeLUT.getOrElse(o, UNKNOWN_SETTING)))
+                config.remove(GpiObservationMode.applyItem) |+| Configuration
+                  .single(GpiObservationMode.applyItem, obsModeLUT.getOrElse(o, UNKNOWN_SETTING))
               case false =>
                 config
             }

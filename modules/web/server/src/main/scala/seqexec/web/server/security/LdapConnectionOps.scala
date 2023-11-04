@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -75,7 +75,6 @@ object LdapConnectionOps {
         Filter.createEqualityFilter("objectClass", "user")
       )
 
-      // val attributes = List("displayName", "memberOf", "thumbnailPhoto")
       val search       = new SearchRequest(s"cn=users,$baseDN", SearchScope.SUB, filter, attributes: _*)
       // Search to read user data, it may throw an exception
       val searchResult = c.search(search)

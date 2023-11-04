@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -22,8 +22,8 @@ class EpicsUtilSpec extends munit.CatsEffectSuite {
     val filtered: CaWindowStabilizer[Integer] =
       new CaWindowStabilizer(attr, Duration.ofMillis(50), executor)
     attr.setValue(1)
-    (IO.delay(filtered.restart) *>
-      EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), ""))
+    IO.delay(filtered.restart) *>
+      EpicsUtil.waitForValueF[Integer, IO](filtered, 1, FiniteDuration(100, MILLISECONDS), "")
   }
 
 }

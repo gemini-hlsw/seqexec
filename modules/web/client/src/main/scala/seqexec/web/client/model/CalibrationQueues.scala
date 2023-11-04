@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -9,9 +9,8 @@ import cats._
 import cats.syntax.all._
 import monocle.Optional
 import monocle.Traversal
-import monocle.function.At.at
 import monocle.function.At.atSortedMap
-import monocle.function.Each.each
+import monocle.function.Each.mapEach
 import monocle.macros.Lenses
 import monocle.std
 import seqexec.model.CalibrationQueueId
@@ -50,7 +49,7 @@ final case class CalibrationQueues(queues: SortedMap[QueueId, CalQueueState]) {
         (i,
          queueTs
            .get(i)
-           .map(CalQueueState.tableState.set)
+           .map(CalQueueState.tableState.replace)
            .map(_(st))
            .getOrElse(st)
         )
@@ -68,54 +67,54 @@ object CalibrationQueues {
   def queueO(
     qid: QueueId
   ): Optional[CalibrationQueues, CalQueueState] =
-    CalibrationQueues.queues ^|->
-      at(qid) ^<-?
-      std.option.some
+    CalibrationQueues.queues
+      .andThen(atSortedMap[QueueId, CalQueueState].at(qid))
+      .andThen(std.option.some[CalQueueState])
 
   def calQueueStateL(
     qid: QueueId
   ): Optional[CalibrationQueues, QueueOperations] =
-    queueO(qid) ^|-> CalQueueState.ops
+    queueO(qid).andThen(CalQueueState.ops)
 
   def calLastOpO(
     qid: QueueId
   ): Optional[CalibrationQueues, Option[QueueManipulationOp]] =
-    queueO(qid) ^|-> CalQueueState.lastOp
+    queueO(qid).andThen(CalQueueState.lastOp)
 
   def calQueueStateSeqOpsO(
     qid: QueueId,
     oid: Observation.Id
   ): Optional[CalibrationQueues, QueueSeqOperations] =
-    queueO(qid) ^|->
-      CalQueueState.seqOps ^|->
-      at(oid) ^<-?
-      std.option.some
+    queueO(qid)
+      .andThen(CalQueueState.seqOps)
+      .andThen(atSortedMap[Observation.Id, QueueSeqOperations].at(oid))
+      .andThen(std.option.some[QueueSeqOperations])
 
   def calStateSeqOpsT(
     qid: QueueId
   ): Optional[CalibrationQueues, SortedMap[Observation.Id, QueueSeqOperations]] =
-    queueO(qid) ^|-> CalQueueState.seqOps
+    queueO(qid).andThen(CalQueueState.seqOps)
 
   def tableStatesT: Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
-    CalibrationQueues.queues ^|->>
-      each ^|->
-      CalQueueState.tableState
+    CalibrationQueues.queues
+      .andThen(mapEach[QueueId, CalQueueState].each)
+      .andThen(CalQueueState.tableState)
 
   def runCalL(qid: QueueId): Optional[CalibrationQueues, RunCalOperation] =
-    calQueueStateL(qid) ^|-> QueueOperations.runCalRequested
+    calQueueStateL(qid).andThen(QueueOperations.runCalRequested)
 
   def stopCalL(qid: QueueId): Optional[CalibrationQueues, StopCalOperation] =
-    calQueueStateL(qid) ^|-> QueueOperations.stopCalRequested
+    calQueueStateL(qid).andThen(QueueOperations.stopCalRequested)
 
   def addDayCalL(
     qid: QueueId
   ): Optional[CalibrationQueues, AddDayCalOperation] =
-    calQueueStateL(qid) ^|-> QueueOperations.addDayCalRequested
+    calQueueStateL(qid).andThen(QueueOperations.addDayCalRequested)
 
   def clearAllCalL(
     qid: QueueId
   ): Optional[CalibrationQueues, ClearAllCalOperation] =
-    calQueueStateL(qid) ^|-> QueueOperations.clearAllCalRequested
+    calQueueStateL(qid).andThen(QueueOperations.clearAllCalRequested)
 
   def addSeqOps(
     qid: QueueId,

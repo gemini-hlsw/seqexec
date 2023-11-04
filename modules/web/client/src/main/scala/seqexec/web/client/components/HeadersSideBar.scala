@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components
@@ -7,15 +7,15 @@ import scala.concurrent.duration._
 
 import cats.Eq
 import cats.syntax.all._
-import japgolly.scalajs.react.CatsReact._
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactCats._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.StateSnapshot
 import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.vdom.html_<^._
 import lucuma.core.util.Display
 import lucuma.ui.forms._
-import lucuma.ui.optics.InputFormat
+import lucuma.ui.input.InputFormat
 import monocle.macros.Lenses
 import react.common._
 import react.semanticui.collections.form._
@@ -168,28 +168,28 @@ object HeadersSideBar {
             )
           ),
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
-            EnumSelect[ImageQuality]("Image Quality",
-                                     p.model.conditions.iq.some,
+            EnumSelect[ImageQuality](p.model.conditions.iq.some,
+                                     "Image Quality",
                                      "Select",
                                      disabled = !enabled,
                                      iqChanged
             ),
-            EnumSelect[CloudCover]("Cloud Cover",
-                                   p.model.conditions.cc.some,
+            EnumSelect[CloudCover](p.model.conditions.cc.some,
+                                   "Cloud Cover",
                                    "Select",
                                    disabled = !enabled,
                                    ccChanged
             )
           ),
           FormGroup(widths = Two, clazz = SeqexecStyles.fieldsNoBottom)(
-            EnumSelect[WaterVapor]("Water Vapor",
-                                   p.model.conditions.wv.some,
+            EnumSelect[WaterVapor](p.model.conditions.wv.some,
+                                   "Water Vapor",
                                    "Select",
                                    disabled = !enabled,
                                    wvChanged
             ),
-            EnumSelect[SkyBackground]("Sky Background",
-                                      p.model.conditions.sb.some,
+            EnumSelect[SkyBackground](p.model.conditions.sb.some,
+                                      "Sky Background",
                                       "Select",
                                       disabled = !enabled,
                                       sbChanged
@@ -209,14 +209,14 @@ object HeadersSideBar {
       sOpt.fold(State(operator, displayName)) { s =>
         Function.chain(
           List(
-            State.operator.set(operator),
-            State.prevOperator.set(operator)
+            State.operator.replace(operator),
+            State.prevOperator.replace(operator)
           ).some
             .filter(_ => (operator =!= s.prevOperator) && operator.nonEmpty)
             .orEmpty :::
             List(
-              State.displayName.set(displayName),
-              State.prevDisplayName.set(displayName)
+              State.displayName.replace(displayName),
+              State.prevDisplayName.replace(displayName)
             ).some
               .filter(_ => (displayName =!= s.prevDisplayName) && displayName.nonEmpty)
               .orEmpty

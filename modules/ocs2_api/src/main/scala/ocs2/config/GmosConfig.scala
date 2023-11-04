@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package ocs2.config
@@ -8,9 +8,9 @@ import java.time.Duration
 import cats.Eq
 import cats.Order
 import io.chrisdavenport.cats.time.instances.all._
-import lucuma.core.enum._
+import lucuma.core.enums._
 import lucuma.core.math.Offset
-import lucuma.core.math.Wavelength
+//import lucuma.core.math.Wavelength
 import monocle._
 
 /**
@@ -53,9 +53,9 @@ object GmosConfig {
      * Constructs a shuffle offset using the default number of detector rows associated with the
      * detector.
      */
-    def defaultFromDetector(detector: GmosDetector): GmosShuffleOffset =
-      fromRowCount(detector.shuffleOffset)
-        .getOrElse(sys.error(s"Misconfigured GmosDetector $detector"))
+//    def defaultFromDetector(detector: GmosDetector): GmosShuffleOffset =
+//      fromRowCount(detector.shuffleOffset)
+//        .getOrElse(sys.error(s"Misconfigured GmosDetector $detector"))
 
     implicit val EqualGmosShuffleOffset: Eq[GmosShuffleOffset] =
       Eq.fromUniversalEquals
@@ -132,14 +132,14 @@ object GmosConfig {
   )
 
   object GmosNodAndShuffle extends GmosNodAndShuffleOptics {
-    val Default: GmosNodAndShuffle =
-      GmosNodAndShuffle(
-        Offset.Zero,
-        Offset.Zero,
-        GmosEOffsetting.Off,
-        GmosShuffleOffset.defaultFromDetector(GmosDetector.HAMAMATSU),
-        GmosShuffleCycles.Default
-      )
+//    val Default: GmosNodAndShuffle =
+//      GmosNodAndShuffle(
+//        Offset.Zero,
+//        Offset.Zero,
+//        GmosEOffsetting.Off,
+//        GmosShuffleOffset.defaultFromDetector(GmosDetector.HAMAMATSU),
+//        GmosShuffleCycles.Default
+//      )
 
     implicit val EqualGmosNodAndShuffle: Eq[GmosNodAndShuffle] =
       Eq.fromUniversalEquals
@@ -275,51 +275,51 @@ object GmosConfig {
   /**
    * Shared static configuration for both GMOS-N and GMOS-S.
    */
-  final case class GmosCommonStaticConfig(
-    detector:      GmosDetector,
-    mosPreImaging: MosPreImaging,
-    nodAndShuffle: Option[GmosNodAndShuffle],
-    customRois:    Set[GmosCustomRoiEntry]
-  )
+//  final case class GmosCommonStaticConfig(
+//    detector:      GmosDetector,
+//    mosPreImaging: MosPreImaging,
+//    nodAndShuffle: Option[GmosNodAndShuffle],
+//    customRois:    Set[GmosCustomRoiEntry]
+//  )
 
-  object GmosCommonStaticConfig extends GmosCommonStaticConfigOptics {
+//  object GmosCommonStaticConfig extends GmosCommonStaticConfigOptics {
 
-    val Default: GmosCommonStaticConfig =
-      GmosCommonStaticConfig(
-        GmosDetector.HAMAMATSU,
-        MosPreImaging.IsNotMosPreImaging,
-        None,
-        Set.empty[GmosCustomRoiEntry]
-      )
+//    val Default: GmosCommonStaticConfig =
+//      GmosCommonStaticConfig(
+//        GmosDetector.HAMAMATSU,
+//        MosPreImaging.IsNotMosPreImaging,
+//        None,
+//        Set.empty[GmosCustomRoiEntry]
+//      )
 
-    implicit val EqGmosCommonStaticConfig: Eq[GmosCommonStaticConfig] =
-      Eq.by(c => (c.detector, c.mosPreImaging, c.nodAndShuffle, c.customRois))
+//    implicit val EqGmosCommonStaticConfig: Eq[GmosCommonStaticConfig] =
+//      Eq.by(c => (c.detector, c.mosPreImaging, c.nodAndShuffle, c.customRois))
 
-  }
+//  }
 
-  trait GmosCommonStaticConfigOptics {
+//  trait GmosCommonStaticConfigOptics {
 
-    /** @group Optics */
-    val detector: Lens[GmosCommonStaticConfig, GmosDetector] =
-      Lens[GmosCommonStaticConfig, GmosDetector](_.detector)(a => _.copy(detector = a))
+  /** @group Optics */
+//    val detector: Lens[GmosCommonStaticConfig, GmosDetector] =
+//      Lens[GmosCommonStaticConfig, GmosDetector](_.detector)(a => _.copy(detector = a))
 
-    /** @group Optics */
-    val mosPreImaging: Lens[GmosCommonStaticConfig, MosPreImaging] =
-      Lens[GmosCommonStaticConfig, MosPreImaging](_.mosPreImaging)(a => _.copy(mosPreImaging = a))
+  /** @group Optics */
+//    val mosPreImaging: Lens[GmosCommonStaticConfig, MosPreImaging] =
+//      Lens[GmosCommonStaticConfig, MosPreImaging](_.mosPreImaging)(a => _.copy(mosPreImaging = a))
+//
+//    /** @group Optics */
+//    val nodAndShuffle: Lens[GmosCommonStaticConfig, Option[GmosNodAndShuffle]] =
+//      Lens[GmosCommonStaticConfig, Option[GmosNodAndShuffle]](_.nodAndShuffle)(a =>
+//        _.copy(nodAndShuffle = a)
+//      )
+//
+//    /** @group Optics */
+//    val customRois: Lens[GmosCommonStaticConfig, Set[GmosCustomRoiEntry]] =
+//      Lens[GmosCommonStaticConfig, Set[GmosCustomRoiEntry]](_.customRois)(a =>
+//        _.copy(customRois = a)
+//      )
 
-    /** @group Optics */
-    val nodAndShuffle: Lens[GmosCommonStaticConfig, Option[GmosNodAndShuffle]] =
-      Lens[GmosCommonStaticConfig, Option[GmosNodAndShuffle]](_.nodAndShuffle)(a =>
-        _.copy(nodAndShuffle = a)
-      )
-
-    /** @group Optics */
-    val customRois: Lens[GmosCommonStaticConfig, Set[GmosCustomRoiEntry]] =
-      Lens[GmosCommonStaticConfig, Set[GmosCustomRoiEntry]](_.customRois)(a =>
-        _.copy(customRois = a)
-      )
-
-  }
+//  }
 
   /**
    * Parameters that determine GMOS CCD readout.
@@ -455,32 +455,32 @@ object GmosConfig {
    * @tparam D
    *   disperser type, expected to be `GmosNorthDisperser` or `GmosSouthDisperser`
    */
-  final case class GmosGrating[D](
-    disperser:  D,
-    order:      GmosDisperserOrder,
-    wavelength: Wavelength
-  )
+//  final case class GmosGrating[D](
+//    disperser:  D,
+//    order:      GmosDisperserOrder,
+//    wavelength: Wavelength
+//  )
 
-  object GmosGrating extends GmosGratingOptics {
-
-    implicit def EqualGmosGrating[D: Eq]: Eq[GmosGrating[D]] =
-      Eq.by(g => (g.disperser, g.order, g.wavelength))
-
-  }
-
-  trait GmosGratingOptics {
-
-    /** @group Optics */
-    def disperser[D]: Lens[GmosGrating[D], D] =
-      Lens[GmosGrating[D], D](_.disperser)(a => _.copy(disperser = a))
-
-    /** @group Optics */
-    def order[D]: Lens[GmosGrating[D], GmosDisperserOrder] =
-      Lens[GmosGrating[D], GmosDisperserOrder](_.order)(a => _.copy(order = a))
-
-    /** @group Optics */
-    def wavelength[D]: Lens[GmosGrating[D], Wavelength] =
-      Lens[GmosGrating[D], Wavelength](_.wavelength)(a => _.copy(wavelength = a))
-
-  }
+//  object GmosGrating extends GmosGratingOptics {
+//
+//    implicit def EqualGmosGrating[D: Eq]: Eq[GmosGrating[D]] =
+//      Eq.by(g => (g.disperser, g.order, g.wavelength))
+//
+//  }
+//
+//  trait GmosGratingOptics {
+//
+//    /** @group Optics */
+//    def disperser[D]: Lens[GmosGrating[D], D] =
+//      Lens[GmosGrating[D], D](_.disperser)(a => _.copy(disperser = a))
+//
+//    /** @group Optics */
+//    def order[D]: Lens[GmosGrating[D], GmosDisperserOrder] =
+//      Lens[GmosGrating[D], GmosDisperserOrder](_.order)(a => _.copy(order = a))
+//
+//    /** @group Optics */
+//    def wavelength[D]: Lens[GmosGrating[D], Wavelength] =
+//      Lens[GmosGrating[D], Wavelength](_.wavelength)(a => _.copy(wavelength = a))
+//
+//  }
 }

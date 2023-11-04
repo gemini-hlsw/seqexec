@@ -1,14 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import scala.concurrent.duration._
-
 import cats._
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
@@ -17,9 +14,11 @@ import monocle.macros.Lenses
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.server.InstrumentSystem.ElapsedTime
-import seqexec.server.SeqexecFailure.SeqexecException
+import InstrumentSystem.ElapsedTime
+import SeqexecFailure.SeqexecException
+import cats.effect.kernel.Async
 import squants.time.Time
+import cats.effect.{ Ref, Temporal }
 
 sealed trait InstrumentControllerSim[F[_]] {
   def log(msg: => String): F[Unit]
@@ -60,7 +59,7 @@ object InstrumentControllerSim {
       ObserveState(stopFlag = false, abortFlag = false, pauseFlag = false, remainingTime = 0)
 
     val pauseFalse = (o: ObserveState) =>
-      (ObserveState.pauseFlag.set(false)(o), ObserveState.pauseFlag.set(false)(o))
+      (ObserveState.pauseFlag.replace(false)(o), ObserveState.pauseFlag.replace(false)(o))
 
     def unsafeRef[F[_]: Sync]: Ref[F, ObserveState] = Ref.unsafe(Zero)
 
@@ -74,7 +73,7 @@ object InstrumentControllerSim {
     stopObserveDelay:   FiniteDuration,
     configurationDelay: FiniteDuration,
     obsStateRef:        Ref[F, ObserveState]
-  )(implicit val F:     MonadError[*[_], Throwable][F], L: Logger[F], T: Timer[F])
+  )(implicit val F: MonadError[*[_], Throwable][F], L: Logger[F], T: Temporal[F])
       extends InstrumentControllerSim[F] {
     private val TIC = 200L
 
@@ -91,7 +90,7 @@ object InstrumentControllerSim {
       } else if (observeState.abortFlag) {
         ObserveCommandResult.Aborted.pure[F].widen
       } else if (observeState.pauseFlag) {
-        obsStateRef.update(ObserveState.remainingTime.set(observeState.remainingTime)) *>
+        obsStateRef.update(ObserveState.remainingTime.replace(observeState.remainingTime)) *>
           ObserveCommandResult.Paused.pure[F].widen
       } else if (timeout.exists(_ <= 0)) {
         F.raiseError(SeqexecException(new TimeoutException()))
@@ -110,10 +109,10 @@ object InstrumentControllerSim {
     def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = {
       val totalTime = expTime.millis + readOutDelay.toMillis
       log(s"Simulate taking $name observation with label $fileId") *> {
-        val upd = ObserveState.stopFlag.set(false) >>>
-          ObserveState.pauseFlag.set(false) >>>
-          ObserveState.abortFlag.set(false) >>>
-          ObserveState.remainingTime.set(totalTime)
+        val upd = ObserveState.stopFlag.replace(false) >>>
+          ObserveState.pauseFlag.replace(false) >>>
+          ObserveState.abortFlag.replace(false) >>>
+          ObserveState.remainingTime.replace(totalTime)
         obsStateRef.modify(tupledUpdate(upd))
       } *> observeTic(useTimeout.option(totalTime + 2 * TIC))
     }
@@ -125,42 +124,42 @@ object InstrumentControllerSim {
     def stopObserve: F[Unit] =
       log(s"Simulate stopping $name exposure") *>
         T.sleep(stopObserveDelay) *>
-        obsStateRef.update(ObserveState.stopFlag.set(true))
+        obsStateRef.update(ObserveState.stopFlag.replace(true))
 
     def abortObserve: F[Unit] =
       log(s"Simulate aborting $name exposure") *>
-        obsStateRef.update(ObserveState.abortFlag.set(true))
+        obsStateRef.update(ObserveState.abortFlag.replace(true))
 
     def endObserve: F[Unit] =
       log(s"Simulate sending endObserve to $name")
 
     def pauseObserve: F[Unit] =
       log(s"Simulate pausing $name exposure") *>
-        obsStateRef.update(ObserveState.pauseFlag.set(true))
+        obsStateRef.update(ObserveState.pauseFlag.replace(true))
 
     def resumePaused: F[ObserveCommandResult] =
       log(s"Simulate resuming $name observation") *> {
-        val upd = ObserveState.stopFlag.set(false) >>>
-          ObserveState.pauseFlag.set(false) >>>
-          ObserveState.abortFlag.set(false)
+        val upd = ObserveState.stopFlag.replace(false) >>>
+          ObserveState.pauseFlag.replace(false) >>>
+          ObserveState.abortFlag.replace(false)
         obsStateRef.modify(tupledUpdate(upd))
       } >>= { s => observeTic(useTimeout.option(s.remainingTime + 2 * TIC)) }
 
     def stopPaused: F[ObserveCommandResult] =
       log(s"Simulate stopping $name paused observation") *> {
-        val upd = ObserveState.stopFlag.set(true) >>>
-          ObserveState.pauseFlag.set(false) >>>
-          ObserveState.abortFlag.set(false) >>>
-          ObserveState.remainingTime.set(1000)
+        val upd = ObserveState.stopFlag.replace(true) >>>
+          ObserveState.pauseFlag.replace(false) >>>
+          ObserveState.abortFlag.replace(false) >>>
+          ObserveState.remainingTime.replace(1000)
         obsStateRef.modify(tupledUpdate(upd))
       } *> observeTic(none)
 
     def abortPaused: F[ObserveCommandResult] =
       log(s"Simulate aborting $name paused observation") *> {
-        val upd = ObserveState.stopFlag.set(false) >>>
-          ObserveState.pauseFlag.set(false) >>>
-          ObserveState.abortFlag.set(true) >>>
-          ObserveState.remainingTime.set(1000)
+        val upd = ObserveState.stopFlag.replace(false) >>>
+          ObserveState.pauseFlag.replace(false) >>>
+          ObserveState.abortFlag.replace(true) >>>
+          ObserveState.remainingTime.replace(1000)
         obsStateRef.modify(tupledUpdate(upd))
       } *> observeTic(none)
 
@@ -172,7 +171,7 @@ object InstrumentControllerSim {
 
   }
 
-  def apply[F[_]: Sync: Logger: Timer](name: String): F[InstrumentControllerSim[F]] =
+  def apply[F[_]: Logger: Async](name: String): F[InstrumentControllerSim[F]] =
     InstrumentControllerSim.ObserveState.ref[F].map { obsStateRef =>
       new InstrumentControllerSimImpl[F](name,
                                          false,
@@ -183,7 +182,7 @@ object InstrumentControllerSim {
       )
     }
 
-  def unsafeWithTimes[F[_]: Sync: Logger: Timer](
+  def unsafeWithTimes[F[_]: Async: Logger](
     name:               String,
     readOutDelay:       FiniteDuration,
     stopObserveDelay:   FiniteDuration,

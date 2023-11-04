@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -33,7 +33,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedL(
         CalibrationQueues
           .addDayCalL(qid)
-          .set(AddDayCalOperation.AddDayCalInFlight)
+          .replace(AddDayCalOperation.AddDayCalInFlight)
       )
 
   }
@@ -42,28 +42,28 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     updatedL(
       CalibrationQueues
         .clearAllCalL(qid)
-        .set(ClearAllCalOperation.ClearAllCalInFlight)
+        .replace(ClearAllCalOperation.ClearAllCalInFlight)
     )
 
   }
 
   def handleRunCal: PartialFunction[Any, ActionResult[M]] = { case RequestRunCal(qid) =>
     updatedL(
-      CalibrationQueues.calLastOpO(qid).set(none) >>>
-        CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalInFlight)
+      CalibrationQueues.calLastOpO(qid).replace(none) >>>
+        CalibrationQueues.runCalL(qid).replace(RunCalOperation.RunCalInFlight)
     )
 
   }
 
   def handleClearLastOp: PartialFunction[Any, ActionResult[M]] = { case ClearLastQueueOp(qid) =>
-    updatedL(CalibrationQueues.calLastOpO(qid).set(none))
+    updatedL(CalibrationQueues.calLastOpO(qid).replace(none))
 
   }
 
   def handleStopCal: PartialFunction[Any, ActionResult[M]] = { case RequestStopCal(qid) =>
     updatedL(
-      CalibrationQueues.calLastOpO(qid).set(none) >>>
-        CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight)
+      CalibrationQueues.calLastOpO(qid).replace(none) >>>
+        CalibrationQueues.stopCalL(qid).replace(StopCalOperation.StopCalInFlight)
     )
 
   }
@@ -71,13 +71,13 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleSeqOps: PartialFunction[Any, ActionResult[M]] = {
     case RequestStopCal(qid) =>
       updatedL(
-        CalibrationQueues.calLastOpO(qid).set(none) >>>
-          CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight)
+        CalibrationQueues.calLastOpO(qid).replace(none) >>>
+          CalibrationQueues.stopCalL(qid).replace(StopCalOperation.StopCalInFlight)
       )
 
     case RequestRemoveSeqCal(qid, id) =>
       updatedL(
-        CalibrationQueues.calLastOpO(qid).set(none) >>>
+        CalibrationQueues.calLastOpO(qid).replace(none) >>>
           CalibrationQueues.modifyOrAddSeqOps(
             qid,
             id,
@@ -89,27 +89,27 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
 
   def handleRequestResultOk: PartialFunction[Any, ActionResult[M]] = {
     case AllDayCalCompleted(qid) =>
-      updatedL(CalibrationQueues.addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle))
+      updatedL(CalibrationQueues.addDayCalL(qid).replace(AddDayCalOperation.AddDayCalIdle))
 
     case ClearAllCalCompleted(qid) =>
       updatedL(
         CalibrationQueues
           .clearAllCalL(qid)
-          .set(ClearAllCalOperation.ClearAllCalIdle)
+          .replace(ClearAllCalOperation.ClearAllCalIdle)
       )
 
     case RunCalCompleted(_) =>
       noChange
 
     case StopCalCompleted(qid) =>
-      updatedL(CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle))
+      updatedL(CalibrationQueues.stopCalL(qid).replace(StopCalOperation.StopCalIdle))
   }
 
   def handleRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {
     case AllDayCalFailed(qid) =>
       val msg          = s"Failed to add all day cal sequences"
       val notification = Effect(Future(RequestFailedNotification(RequestFailed(List(msg)))))
-      updatedLE(CalibrationQueues.addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle),
+      updatedLE(CalibrationQueues.addDayCalL(qid).replace(AddDayCalOperation.AddDayCalIdle),
                 notification
       )
 
@@ -118,19 +118,19 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       val notification = Effect(Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(CalibrationQueues
                   .clearAllCalL(qid)
-                  .set(ClearAllCalOperation.ClearAllCalIdle),
+                  .replace(ClearAllCalOperation.ClearAllCalIdle),
                 notification
       )
 
     case RunCalFailed(qid) =>
       val msg          = s"Failed to execute the cal queue"
       val notification = Effect(Future(RequestFailedNotification(RequestFailed(List(msg)))))
-      updatedLE(CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalIdle), notification)
+      updatedLE(CalibrationQueues.runCalL(qid).replace(RunCalOperation.RunCalIdle), notification)
 
     case StopCalFailed(qid) =>
       val msg          = s"Failed to stop queue execution"
       val notification = Effect(Future(RequestFailedNotification(RequestFailed(List(msg)))))
-      updatedLE(CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle), notification)
+      updatedLE(CalibrationQueues.stopCalL(qid).replace(StopCalOperation.StopCalIdle), notification)
   }
 
   def handleSeqRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {

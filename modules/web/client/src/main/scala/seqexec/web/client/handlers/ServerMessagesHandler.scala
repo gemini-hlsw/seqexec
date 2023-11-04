@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -35,6 +35,8 @@ import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.services.DisplayNamePersistence
 import web.client.Audio
+
+import scala.util.matching.Regex
 
 /**
  * Handles messages received over the WS channel
@@ -103,16 +105,16 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
       val openEffect      =
         if (value.serverVersion.exists(_ =!= v)) {
-          Effect(Future(window.location.reload(true)).as(NoAction))
+          Effect(Future(window.location.reload()).as(NoAction))
         } else {
           refreshRequestE
         }
       val displayNames    =
-        (u.map(u =>
+        u.map(u =>
           if (value.displayNames.contains(u.username))
             value.displayNames
           else value.displayNames + (u.username -> u.displayName)
-        )).getOrElse(value.displayNames)
+        ).getOrElse(value.displayNames)
       updated(
         value.copy(user = u,
                    displayNames = displayNames,
@@ -268,8 +270,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(s.view)), clearAction)
   }
 
-  val MsgRegex  = "Application exception: (.*)".r
-  val InstRegex = "Sequence execution failed with error: (.*)".r
+  val MsgRegex: Regex  = "Application exception: (.*)".r
+  val InstRegex: Regex = "Sequence execution failed with error: (.*)".r
 
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
@@ -296,12 +298,12 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val guideConfigMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(r: GuideConfigUpdate) =>
-      updatedL(WebSocketsFocus.guideConfig.set(r.telescope))
+      updatedL(WebSocketsFocus.guideConfig.replace(r.telescope))
   }
 
   val acMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(AlignAndCalibEvent(i)) =>
-      updatedL(WebSocketsFocus.alignAndCalib.set(AlignAndCalibStep.fromInt(i)))
+      updatedL(WebSocketsFocus.alignAndCalib.replace(AlignAndCalibStep.fromInt(i)))
   }
 
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = { case ServerMessage(_) =>

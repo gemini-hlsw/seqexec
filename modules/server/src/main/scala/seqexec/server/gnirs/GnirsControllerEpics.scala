@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gnirs
@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.Sync
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Camera, Decker, Disperser, ReadMode }
@@ -59,6 +58,8 @@ trait GnirsEncoders {
     case SlitWidth.SmallPinhole => "SmPinholes"
     case SlitWidth.LargePinhole => "LgPinholes"
     case SlitWidth.Acquisition  => "Acq"
+    case SlitWidth.HR_IFU       => "HR-IFU"
+    case SlitWidth.LR_IFU       => "LR-IFU"
   }
 
   implicit val deckerEncoder: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
@@ -70,8 +71,8 @@ trait GnirsEncoders {
     case Decker.LONG_CAM_X_DISP     => "LCXD"
     case Decker.IFU                 => "IFU1"
     case Decker.WOLLASTON           => "Woll"
-    case Decker.LR_IFU              => "IFU1"
-    case Decker.HR_IFU              => "IFU2"
+    case Decker.LR_IFU              => "LR-IFU"
+    case Decker.HR_IFU              => "HR-IFU"
   }
 
   implicit val filter1Encoder: EncodeEpicsValue[Filter1, String] = EncodeEpicsValue {
@@ -118,8 +119,8 @@ object GnirsControllerEpics extends GnirsEncoders {
     }
   }
 
-  def apply[F[_]: Async: Timer](
-    epicsSys:   => GnirsEpics[F]
+  def apply[F[_]: Async](
+    epicsSys: => GnirsEpics[F]
   )(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {
 
@@ -150,25 +151,30 @@ object GnirsControllerEpics extends GnirsEncoders {
         smartSetParamF(v, epicsSys.acqMirror.map(removePartName), ccCmd.setAcqMirror(v))
       }
 
-      private def setGrating(s: Spectrography, c: Camera): List[F[Option[F[Unit]]]] = {
-        def stdConversion(d: Disperser): String = (d, c) match {
-          case (Disperser.D_10, Camera.SHORT_RED)   => "10/mmSR"
-          case (Disperser.D_32, Camera.SHORT_RED)   => "32/mmSR"
-          case (Disperser.D_111, Camera.SHORT_RED)  => "111/mmSR"
-          case (Disperser.D_10, Camera.LONG_RED)    => "10/mmLR"
-          case (Disperser.D_32, Camera.LONG_RED)    => "32/mmLR"
-          case (Disperser.D_111, Camera.LONG_RED)   => "111/mmLR"
-          case (Disperser.D_10, Camera.SHORT_BLUE)  => "10/mmSB"
-          case (Disperser.D_32, Camera.SHORT_BLUE)  => "32/mmSB"
-          case (Disperser.D_111, Camera.SHORT_BLUE) => "111/mmSB"
-          case (Disperser.D_10, Camera.LONG_BLUE)   => "10/mmLB"
-          case (Disperser.D_32, Camera.LONG_BLUE)   => "32/mmLB"
-          case (Disperser.D_111, Camera.LONG_BLUE)  => "111/mmLB"
-        }
+      private def disperserStr(d: Disperser): String = d match {
+        case Disperser.D_10  => "10"
+        case Disperser.D_32  => "32"
+        case Disperser.D_111 => "111"
+      }
+      private def cameraStr(c: Camera)               = c match {
+        case Camera.SHORT_BLUE => "SB"
+        case Camera.LONG_BLUE  => "LB"
+        case Camera.SHORT_RED  => "SR"
+        case Camera.LONG_RED   => "LR"
+      }
+
+      private def setGrating(
+        s:    Spectrography,
+        c:    Camera,
+        slit: Option[SlitWidth]
+      ): List[F[Option[F[Unit]]]] = {
+        def stdConversion(d:     Disperser): String = s"${disperserStr(d)}/mm${cameraStr(c)}"
+        def specialConversion(d: Disperser): String = s"${disperserStr(d)}/mm${cameraStr(c)}HR"
 
         val v = s match {
           case CrossDisperserS(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBSX"
           case CrossDisperserL(Disperser.D_10) if c === Camera.LONG_BLUE => "10/mmLBLX"
+          case Mirror(d) if slit.exists(_ === SlitWidth.HR_IFU)          => specialConversion(d)
           case _                                                         => stdConversion(s.disperser)
         }
 
@@ -180,25 +186,28 @@ object GnirsControllerEpics extends GnirsEncoders {
         )
       }
 
-      private def setSpectrographyComponents(mode: Mode, c: Camera): List[F[Option[F[Unit]]]] =
+      private def setSpectrographyComponents(
+        mode: Mode,
+        c:    Camera,
+        slit: Option[SlitWidth]
+      ): List[F[Option[F[Unit]]]] =
         mode match {
           case Acquisition      => Nil
-          case s: Spectrography => setGrating(s, c) :+ setPrism(s, c)
+          case s: Spectrography => setGrating(s, c, slit) :+ setPrism(s, c, slit)
         }
 
-      private def setPrism(s: Spectrography, c: Camera): F[Option[F[Unit]]] = {
-        val cameraStr = c match {
-          case Camera.LONG_BLUE  => "LB"
-          case Camera.LONG_RED   => "LR"
-          case Camera.SHORT_BLUE => "SB"
-          case Camera.SHORT_RED  => "SR"
-        }
+      private def setPrism(
+        s:    Spectrography,
+        c:    Camera,
+        slit: Option[SlitWidth]
+      ): F[Option[F[Unit]]] = {
+        lazy val specialConversion: String = s"${cameraStr(c)}+MIR${disperserStr(s.disperser)}"
 
         val v = s match {
-          case Mirror(_)          => "MIR"
+          case Mirror(_)          => if (slit.exists(_ === SlitWidth.HR_IFU)) specialConversion else "MIR"
           case Wollaston(_)       => "WOLL"
-          case CrossDisperserL(_) => s"$cameraStr+LXD"
-          case CrossDisperserS(_) => s"$cameraStr+SXD"
+          case CrossDisperserL(_) => s"${cameraStr(c)}+LXD"
+          case CrossDisperserS(_) => s"${cameraStr(c)}+SXD"
         }
 
         smartSetParamF(v, epicsSys.prism.map(removePartName), ccCmd.setPrism(v))
@@ -241,7 +250,7 @@ object GnirsControllerEpics extends GnirsEncoders {
                                     ccCmd.setCamera(encode(config.camera))
         )
         val spectrographyAndCamera           =
-          setSpectrographyComponents(config.mode, config.camera) :+ camera
+          setSpectrographyComponents(config.mode, config.camera, config.slitWidth) :+ camera
         val params: List[F[Option[F[Unit]]]] =
           List(setAcquisitionMirror(config.mode), filter1, filter2) ::: spectrographyAndCamera
 

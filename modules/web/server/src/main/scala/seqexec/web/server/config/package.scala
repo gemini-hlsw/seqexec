@@ -1,13 +1,11 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server
 
-import cats.effect.Blocker
-import cats.effect.ContextShift
 import cats.effect.Sync
 import cats.syntax.all._
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import org.http4s.Uri
 import pureconfig._
 import pureconfig.error._
@@ -75,10 +73,7 @@ package object config {
   implicit val systemsControlHint         =
     ProductHint[SystemsControlConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
 
-  def loadConfiguration[F[_]: Sync: ContextShift](
-    config:  ConfigObjectSource,
-    blocker: Blocker
-  ): F[SeqexecConfiguration] =
-    config.loadF[F, SeqexecConfiguration](blocker)
+  def loadConfiguration[F[_]: Sync](config: ConfigObjectSource): F[SeqexecConfiguration] =
+    config.loadF[F, SeqexecConfiguration]()
 
 }

@@ -1,17 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import scala.concurrent.duration._
-
 import cats._
 import cats.data.EitherT
 import cats.data.NonEmptySet
-import cats.effect.Concurrent
-import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
+import cats.effect.{ Async, Ref, Sync, Temporal }
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.ExecutedDataset
 import edu.gemini.seqexec.odb.SeqexecSequence
@@ -22,7 +18,7 @@ import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.Site
+import lucuma.core.enums.Site
 import mouse.all._
 import seqexec.engine.Action.ActionState
 import seqexec.engine._
@@ -83,37 +79,33 @@ import squants.time.TimeConversions._
 trait SeqTranslate[F[_]] extends ObserveActions {
 
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
-    cio:              Concurrent[F],
-    tio:              Timer[F]
+    tio: Temporal[F]
   ): F[(List[Throwable], Option[SequenceGen[F]])]
 
   def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-    cio:                 Concurrent[F],
-    tio:                 Timer[F]
+    tio: Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def abortObserve(seqId: Observation.Id)(implicit
-    cio:                  Concurrent[F],
-    tio:                  Timer[F]
+    tio: Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-    tio:                  Timer[F],
-    cio:                  Concurrent[F]
+    tio: Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
   def resumePaused(seqId: Observation.Id)(implicit
-    cio:                  Concurrent[F],
-    tio:                  Timer[F]
+    tio: Temporal[F]
   ): EngineState[F] => Option[Stream[F, EventType[F]]]
 
 }
 
 object SeqTranslate {
-  private class SeqTranslateImpl[F[_]: Sync: Logger](
-    site:      Site,
-    systemss:  Systems[F],
-    gmosNsCmd: Ref[F, Option[NSObserveCommand]]
+  private class SeqTranslateImpl[F[_]: Async: Logger](
+    site:          Site,
+    systemss:      Systems[F],
+    gmosNsCmd:     Ref[F, Option[NSObserveCommand]],
+    conditionsRef: Ref[F, Conditions]
   ) extends SeqTranslate[F] {
 
     private val overriddenSystems = new OverriddenSystems[F](systemss)
@@ -125,9 +117,6 @@ object SeqTranslate {
       nextToRun:  StepId,
       datasets:   Map[Int, ExecutedDataset],
       isNightSeq: Boolean
-    )(implicit
-      cio:        Concurrent[F],
-      tio:        Timer[F]
     ): F[StepGen[F]] = {
       def buildStep(
         dataId:    DataId,
@@ -218,8 +207,7 @@ object SeqTranslate {
     }
 
     override def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(implicit
-      cio:                       Concurrent[F],
-      tio:                       Timer[F]
+      tio: Temporal[F]
     ): F[(List[Throwable], Option[SequenceGen[F]])] = {
 
       // Step Configs are wrapped in a CleanConfig to fix some known inconsistencies that can appear in the sequence
@@ -266,9 +254,7 @@ object SeqTranslate {
     }
 
     private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[F] => F[Unit])(
-      st:                                EngineState[F]
-    )(implicit
-      cio:                               Concurrent[F]
+      st: EngineState[F]
     ): Option[Stream[F, EventType[F]]] = {
 
       def isObserving(v: Action[F]): Boolean =
@@ -297,8 +283,7 @@ object SeqTranslate {
     }
 
     override def stopObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-      cio:                          Concurrent[F],
-      tio:                          Timer[F]
+      tio: Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
         case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop(graceful)
@@ -309,8 +294,7 @@ object SeqTranslate {
     }
 
     override def abortObserve(seqId: Observation.Id)(implicit
-      cio:                           Concurrent[F],
-      tio:                           Timer[F]
+      tio: Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = st => {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
         case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort
@@ -322,8 +306,7 @@ object SeqTranslate {
     }
 
     override def pauseObserve(seqId: Observation.Id, graceful: Boolean)(implicit
-      tio:                           Timer[F],
-      cio:                           Concurrent[F]
+      tio: Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = {
       def f(oc: ObserveControl[F]): F[Unit] = oc match {
         case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause(graceful)
@@ -333,8 +316,7 @@ object SeqTranslate {
     }
 
     override def resumePaused(seqId: Observation.Id)(implicit
-      cio:                           Concurrent[F],
-      tio:                           Timer[F]
+      tio: Temporal[F]
     ): EngineState[F] => Option[Stream[F, EventType[F]]] = (st: EngineState[F]) => {
       val observeIndex: Option[(ObserveContext[F], Option[Time], Int)] =
         st.sequences
@@ -370,7 +352,7 @@ object SeqTranslate {
     }
 
     private def endPaused(seqId: Observation.Id, l: ObserveContext[F] => Stream[F, Result[F]])(
-      st:                        EngineState[F]
+      st: EngineState[F]
     ): Option[Stream[F, EventType[F]]] =
       st.sequences
         .get(seqId)
@@ -399,10 +381,7 @@ object SeqTranslate {
     ): EngineState[F] => Option[Stream[F, EventType[F]]] =
       endPaused(seqId, _.abortPaused)
 
-    def toInstrumentSys(inst: Instrument)(implicit
-      ev:                     Timer[F],
-      cio:                    Concurrent[F]
-    ): SystemOverrides => InstrumentSystem[F] = inst match {
+    def toInstrumentSys(inst: Instrument): SystemOverrides => InstrumentSystem[F] = inst match {
       case Instrument.F2    =>
         ov: SystemOverrides =>
           Flamingos2(overriddenSystems.flamingos2(ov), overriddenSystems.dhs(ov)): InstrumentSystem[
@@ -426,7 +405,8 @@ object SeqTranslate {
       case Instrument.Gpi   =>
         ov: SystemOverrides => Gpi(overriddenSystems.gpi(ov)): InstrumentSystem[F]
       case Instrument.Ghost =>
-        ov: SystemOverrides => Ghost(overriddenSystems.ghost(ov)): InstrumentSystem[F]
+        ov: SystemOverrides =>
+          Ghost(overriddenSystems.ghost(ov), conditionsRef): InstrumentSystem[F]
       case Instrument.Niri  =>
         ov: SystemOverrides =>
           Niri(overriddenSystems.niri(ov), overriddenSystems.dhs(ov)): InstrumentSystem[F]
@@ -492,18 +472,19 @@ object SeqTranslate {
                       w
                     ): System[F]
                 )
-            else { (ov: SystemOverrides) =>
-              TcsSouth.fromConfig[F](overriddenSystems.tcsSouth(ov),
-                                     subs,
-                                     None,
-                                     inst,
-                                     systemss.guideDb
-              )(
-                config,
-                LightPath(lsource, inst.sfName(config)),
-                w
-              ): System[F]
-            }.pure[F]
+            else
+              { (ov: SystemOverrides) =>
+                TcsSouth.fromConfig[F](overriddenSystems.tcsSouth(ov),
+                                       subs,
+                                       None,
+                                       inst,
+                                       systemss.guideDb
+                )(
+                  config,
+                  LightPath(lsource, inst.sfName(config)),
+                  w
+                ): System[F]
+              }.pure[F]
 
           case Site.GN =>
             if (useGaos) { (ov: SystemOverrides) =>
@@ -518,18 +499,19 @@ object SeqTranslate {
                 w
               ): System[F]
             }.pure[F]
-            else { (ov: SystemOverrides) =>
-              TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
-                                     subs,
-                                     none,
-                                     inst,
-                                     systemss.guideDb
-              )(
-                config,
-                LightPath(lsource, inst.sfName(config)),
-                w
-              ): System[F]
-            }.pure[F]
+            else
+              { (ov: SystemOverrides) =>
+                TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
+                                       subs,
+                                       none,
+                                       inst,
+                                       systemss.guideDb
+                )(
+                  config,
+                  LightPath(lsource, inst.sfName(config)),
+                  w
+                ): System[F]
+              }.pure[F]
         }
       }
 
@@ -672,7 +654,7 @@ object SeqTranslate {
       config:        CleanConfig,
       tcsSubsystems: List[TcsController.Subsystem],
       kwClient:      KeywordsClient[F]
-    )(ctx:           HeaderExtraData): Header[F] =
+    )(ctx: HeaderExtraData): Header[F] =
       new StandardHeader(
         kwClient,
         ObsKeywordReader[F](config, site),
@@ -785,8 +767,14 @@ object SeqTranslate {
 
   }
 
-  def apply[F[_]: Sync: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
-    Ref.of[F, Option[NSObserveCommand]](none).map(new SeqTranslateImpl(site, systems, _))
+  def apply[F[_]: Async: Logger](
+    site:          Site,
+    systems:       Systems[F],
+    conditionsRef: Ref[F, Conditions]
+  ): F[SeqTranslate[F]] =
+    Ref
+      .of[F, Option[NSObserveCommand]](none)
+      .map(new SeqTranslateImpl(site, systems, _, conditionsRef))
 
   def dataIdFromConfig[F[_]: MonadError[*[_], Throwable]](config: CleanConfig): F[DataId] =
     EitherT
@@ -804,7 +792,7 @@ object SeqTranslate {
     private val tcsNorthDisabled: TcsNorthController[F]     = new TcsNorthControllerDisabled[F]
     private val gemsDisabled: GemsController[F]             = new GemsControllerDisabled[F]
     private val altairDisabled: AltairController[F]         = new AltairControllerDisabled[F]
-    private val dhsDisabled: DhsClient[F]                   = new DhsClientDisabled[F]
+    private val dhsDisabled: DhsClientProvider[F]           = (_: String) => new DhsClientDisabled[F]
     private val gcalDisabled: GcalController[F]             = new GcalControllerDisabled[F]
     private val flamingos2Disabled: Flamingos2Controller[F] = new Flamingos2ControllerDisabled[F]
     private val gmosSouthDisabled: GmosSouthController[F]   =
@@ -834,7 +822,7 @@ object SeqTranslate {
       if (overrides.isTcsEnabled) systems.altair
       else altairDisabled
 
-    def dhs(overrides: SystemOverrides): DhsClient[F] =
+    def dhs(overrides: SystemOverrides): DhsClientProvider[F] =
       if (overrides.isDhsEnabled) systems.dhs
       else dhsDisabled
 

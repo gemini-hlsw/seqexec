@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -6,7 +6,7 @@ package seqexec.server.gems
 import cats.Applicative
 import cats.Eq
 import cats.MonadError
-import cats.implicits._
+import cats.syntax.all._
 import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -55,7 +55,7 @@ object Gems {
     controller:    GemsController[F],
     config:        GemsConfig,
     guideConfigDb: GuideConfigDb[F]
-  )(implicit L:    Logger[F])
+  )(implicit L: Logger[F])
       extends Gems[F] {
 
     override val cfg: GemsConfig = config
@@ -84,14 +84,14 @@ object Gems {
                   x.pause.map(
                     _.flatMap(_ =>
                       guideConfigDb
-                        .update(GuideConfig.gemsSkyPaused.set(true))
+                        .update(GuideConfig.gemsSkyPaused.replace(true))
                         .whenA(filteredPauseReasons.contains(PauseCondition.GaosGuideOff))
                     )
                   ),
                   x.resume.map(
                     _.flatMap(_ =>
                       guideConfigDb
-                        .update(GuideConfig.gemsSkyPaused.set(false))
+                        .update(GuideConfig.gemsSkyPaused.replace(false))
                         .whenA(filteredResumeReasons.contains(ResumeCondition.GaosGuideOn))
                     )
                   )
@@ -108,6 +108,7 @@ object Gems {
       }
 
     override val stateGetter: GemsWfsState[F] = controller.stateGetter
+
   }
 
   // Ignore GaosGuideOff if it was already sent in a previous step
@@ -154,28 +155,37 @@ object Gems {
         config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs2.getSequenceProp)
       cwfs3 <-
         config.extractTelescopeAs[StandardGuideOptions.Value](CanopusWfs.cwfs3.getSequenceProp)
-      odgw1 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
-      odgw2 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
-      odgw3 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
-      odgw4 <-
-        config.extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
+      odgw1  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw1.getSequenceProp)
+          .toOption
+      odgw2  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw2.getSequenceProp)
+          .toOption
+      odgw3  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw3.getSequenceProp)
+          .toOption
+      odgw4  =
+        config
+          .extractTelescopeAs[StandardGuideOptions.Value](GsaoiOdgw.odgw4.getSequenceProp)
+          .toOption
     } yield { c: GemsController[F] =>
-      new GemsImpl[F](c,
-                      GemsController.GemsOn(
-                        Cwfs1Usage.fromBoolean(cwfs1.isActive),
-                        Cwfs2Usage.fromBoolean(cwfs2.isActive),
-                        Cwfs3Usage.fromBoolean(cwfs3.isActive),
-                        Odgw1Usage.fromBoolean(odgw1.isActive),
-                        Odgw2Usage.fromBoolean(odgw2.isActive),
-                        Odgw3Usage.fromBoolean(odgw3.isActive),
-                        Odgw4Usage.fromBoolean(odgw4.isActive),
-                        P1Usage.fromBoolean(p1.isActive),
-                        OIUsage.fromBoolean(oi.exists(_.isActive))
-                      ),
-                      guideConfigDb
+      new GemsImpl[F](
+        c,
+        GemsController.GemsOn(
+          Cwfs1Usage.fromBoolean(cwfs1.isActive),
+          Cwfs2Usage.fromBoolean(cwfs2.isActive),
+          Cwfs3Usage.fromBoolean(cwfs3.isActive),
+          Odgw1Usage.fromBoolean(odgw1.exists(_.isActive)),
+          Odgw2Usage.fromBoolean(odgw2.exists(_.isActive)),
+          Odgw3Usage.fromBoolean(odgw3.exists(_.isActive)),
+          Odgw4Usage.fromBoolean(odgw4.exists(_.isActive)),
+          P1Usage.fromBoolean(p1.isActive),
+          OIUsage.fromBoolean(oi.exists(_.isActive))
+        ),
+        guideConfigDb
       ): Gems[F]
     }
   }.toF[F]

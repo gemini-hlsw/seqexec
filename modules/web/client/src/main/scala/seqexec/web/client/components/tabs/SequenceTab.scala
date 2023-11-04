@@ -1,10 +1,10 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.tabs
 
 import cats.syntax.all._
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
@@ -231,13 +231,13 @@ object SequenceTab {
       // Reset the loading state if the id changes
       Function.chain(
         State.loading
-          .set(false)
+          .replace(false)
           .some
           .filter(_ => preview && (id =!= newId || (wasLoading && !isLoading)))
           .toList :::
           List(
-            State.prevTabId.set(newId),
-            State.prevTabLoading.set(isLoading)
+            State.prevTabId.replace(newId),
+            State.prevTabLoading.replace(isLoading)
           )
       )(state)
     }

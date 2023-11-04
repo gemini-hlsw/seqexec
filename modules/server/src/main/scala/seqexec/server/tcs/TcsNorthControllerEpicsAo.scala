@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -7,7 +7,6 @@ import java.time.Duration
 import cats._
 import cats.data._
 import cats.effect.Async
-import cats.effect.Timer
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
@@ -44,8 +43,8 @@ trait TcsNorthControllerEpicsAo[F[_]] {
 
 object TcsNorthControllerEpicsAo {
 
-  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async: Timer](epicsSys: TcsEpics[F])(
-    implicit L:                                                                   Logger[F]
+  private final class TcsNorthControllerEpicsAoImpl[F[_]: Async](epicsSys: TcsEpics[F])(implicit
+    L: Logger[F]
   ) extends TcsNorthControllerEpicsAo[F]
       with TcsControllerEncoders {
     private val tcsConfigRetriever = TcsConfigRetriever[F](epicsSys)
@@ -81,7 +80,7 @@ object TcsNorthControllerEpicsAo {
 
         actions.map { r =>
           { (x: EpicsTcsAoConfig) =>
-            r.self.as(EpicsTcsAoConfig.aowfs.set(d)(x))
+            r.self.as(EpicsTcsAoConfig.aowfs.replace(d)(x))
           }.withDebug(s"AltairProbe(${r.debug})")
         }
       } else none
@@ -123,10 +122,10 @@ object TcsNorthControllerEpicsAo {
           L.debug(s"Target filtering ${filterEnabled.fold("activated", "deactivated")}.")
 
       def sysConfig(
-        current:      EpicsTcsAoConfig,
-        demand:       TcsNorthAoConfig,
-        filterTarget: Boolean,
-        aoConfigO:    Option[F[Unit]]
+        current:           EpicsTcsAoConfig,
+        demand:            TcsNorthAoConfig,
+        pauseTargetFilter: Boolean,
+        aoConfigO:         Option[F[Unit]]
       ): F[EpicsTcsAoConfig] = {
         val mountConfigParams   =
           commonController.configMountPos(subsystems, current, demand.tc, EpicsTcsAoConfig.base)
@@ -147,7 +146,7 @@ object TcsNorthControllerEpicsAo {
             _ <- L.debug(s"TCS configuration: ${demand.show}")
             _ <- L.debug(s"for subsystems $subsystems")
             _ <- L.debug(s"TCS set because $debug").whenA(trace)
-            _ <- executeTargetFilterConf(true).whenA(filterTarget && demand.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(false).whenA(pauseTargetFilter && mountMoves)
             _ <- aoConfigO.getOrElse(Applicative[F].unit)
             s <- params
             _ <- epicsSys.post(TcsControllerEpicsCommon.ConfigTimeout)
@@ -162,7 +161,7 @@ object TcsNorthControllerEpicsAo {
                  )
                    epicsSys.waitAGInPosition(agTimeout) *> L.debug("AG inposition")
                  else Applicative[F].unit
-            _ <- executeTargetFilterConf(false).whenA(filterTarget && demand.tc.offsetA.isDefined)
+            _ <- executeTargetFilterConf(true).whenA(pauseTargetFilter && mountMoves)
             _ <- L.debug("Completed TCS configuration")
           } yield s
         } else
@@ -188,16 +187,17 @@ object TcsNorthControllerEpicsAo {
                            .whenA(!s0.base.useAo)
         pr            <- pauseResumeGaos(gaos, s0, tcs)
         adjustedDemand =
-          (AoTcsConfig.gds ^|-> AoGuidersConfig
-            .aoguide[GuiderConfig @@ AoGuide] ^<-> tagIso ^|-> GuiderConfig.tracking).modify(t =>
-            (pr.forceFreeze && t.isActive).fold(ProbeTrackingConfig.Off, t)
-          )(tcs)
+          AoTcsConfig.gds
+            .andThen(AoGuidersConfig.aoguide[GuiderConfig @@ AoGuide])
+            .andThen(tagIso[GuiderConfig, AoGuide])
+            .andThen(GuiderConfig.tracking)
+            .modify(t => (pr.forceFreeze && t.isActive).fold(ProbeTrackingConfig.Off, t))(tcs)
         _             <- pr.pause.getOrElse(Applicative[F].unit)
         s1            <- guideOff(subsystems, s0, adjustedDemand, pr.guideWhilePaused)
         s2            <- sysConfig(
                            s1,
                            adjustedDemand,
-                           pr.filterTarget,
+                           pr.pauseTargetFilter,
                            pr.config
                          )
         _             <- guideOn(subsystems, s2, adjustedDemand, pr.restoreOnResume)
@@ -234,12 +234,12 @@ object TcsNorthControllerEpicsAo {
     ).flattenOption
 
     private def calcGuideOffCapabilities(m2Name: TipTiltSource, m1Name: M1Source)(
-      tcsGuideCurrent:                           TelescopeGuideConfig,
-      guiderCurrent:                             GuiderConfig,
-      tcsGuideDemand:                            TelescopeGuideConfig,
-      guiderDemand:                              GuiderConfig,
-      distanceSquared:                           Option[Area],
-      threshold:                                 Option[Length]
+      tcsGuideCurrent: TelescopeGuideConfig,
+      guiderCurrent:   GuiderConfig,
+      tcsGuideDemand:  TelescopeGuideConfig,
+      guiderDemand:    GuiderConfig,
+      distanceSquared: Option[Area],
+      threshold:       Option[Length]
     ): GuideCapabilities = {
       val canGuideWhileOffseting = (distanceSquared, threshold) match {
         case (None, _)           => true
@@ -313,17 +313,27 @@ object TcsNorthControllerEpicsAo {
       (AoTcsConfig
         .gds[GuiderConfig @@ AoGuide, AltairConfig]
         .modify(
-          (AoGuidersConfig.pwfs1[GuiderConfig @@ AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
-            .set(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
-            (AoGuidersConfig.oiwfs[GuiderConfig @@ AoGuide] ^<-> tagIso ^|-> GuiderConfig.detector)
-              .set(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
+          AoGuidersConfig
+            .pwfs1[GuiderConfig @@ AoGuide]
+            .andThen(tagIso[GuiderConfig, P1Config])
+            .andThen(GuiderConfig.detector)
+            .replace(calc(current.base.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+            AoGuidersConfig
+              .oiwfs[GuiderConfig @@ AoGuide]
+              .andThen(tagIso[GuiderConfig, OIConfig])
+              .andThen(GuiderConfig.detector)
+              .replace(calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
         ) >>> m1Enabled.fold(
         identity[AoTcsConfig[GuiderConfig @@ AoGuide, AltairConfig]](_),
-        (AoTcsConfig.gc[GuiderConfig @@ AoGuide, AltairConfig] ^|-> TelescopeGuideConfig.m1Guide)
-          .set(M1GuideConfig.M1GuideOff)
-      ) >>> (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-        m2config
-      ) >>> normalizeMountGuiding)(demand)
+        AoTcsConfig
+          .gc[GuiderConfig @@ AoGuide, AltairConfig]
+          .andThen(TelescopeGuideConfig.m1Guide)
+          .replace(M1GuideConfig.M1GuideOff)
+      ) >>> AoTcsConfig.gc
+        .andThen(TelescopeGuideConfig.m2Guide)
+        .replace(
+          m2config
+        ) >>> normalizeMountGuiding)(demand)
     }
 
     def calcAoPauseConditions(
@@ -426,10 +436,12 @@ object TcsNorthControllerEpicsAo {
       val newGuideConfig = (
         enableM1Guide.fold[TcsNorthAoConfig => TcsNorthAoConfig](
           identity,
-          (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(M1GuideConfig.M1GuideOff)
-        ) >>> (AoTcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-          m2config
-        ) >>> normalizeMountGuiding
+          AoTcsConfig.gc.andThen(TelescopeGuideConfig.m1Guide).replace(M1GuideConfig.M1GuideOff)
+        ) >>> AoTcsConfig.gc
+          .andThen(TelescopeGuideConfig.m2Guide)
+          .replace(
+            m2config
+          ) >>> normalizeMountGuiding
       )(demand)
 
       val paramList = guideParams(subsystems, current, newGuideConfig)
@@ -450,17 +462,19 @@ object TcsNorthControllerEpicsAo {
 
     // Disable Mount guiding if M2 guiding is disabled
     val normalizeMountGuiding: Endo[TcsNorthAoConfig] = cfg =>
-      (AoTcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify { m =>
-        (m, cfg.gc.m2Guide) match {
-          case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) =>
-            MountGuideOption.MountGuideOn
-          case _                                                              => MountGuideOption.MountGuideOff
-        }
-      }(cfg)
+      AoTcsConfig.gc
+        .andThen(TelescopeGuideConfig.mountGuide)
+        .modify { m =>
+          (m, cfg.gc.m2Guide) match {
+            case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) =>
+              MountGuideOption.MountGuideOn
+            case _                                                              => MountGuideOption.MountGuideOff
+          }
+        }(cfg)
 
   }
 
-  def apply[F[_]: Async: Logger: Timer](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
+  def apply[F[_]: Async: Logger](epicsSys: TcsEpics[F]): TcsNorthControllerEpicsAo[F] =
     new TcsNorthControllerEpicsAoImpl(epicsSys)
 
   @Lenses

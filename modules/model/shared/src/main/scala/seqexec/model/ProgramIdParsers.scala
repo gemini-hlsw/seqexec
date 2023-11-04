@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model
@@ -6,8 +6,8 @@ package parser
 
 import atto._
 import cats.syntax.all._
-import lucuma.core.enum.ProgramType
-import lucuma.core.enum.Site
+import lucuma.core.enums.ProgramType
+import lucuma.core.enums.Site
 import lucuma.core.model.Semester
 import lucuma.core.parser.MiscParsers
 import lucuma.core.parser.TimeParsers
@@ -17,7 +17,7 @@ import Atto._
 
 /** Parsers for ProgramId. */
 trait ProgramIdParsers {
-  import lucuma.core.enum.parser.EnumParsers._
+  import lucuma.core.enums.parser.EnumParsers._
   import lucuma.core.model.parser.SemesterParsers._
   import ProgramId._
   import MiscParsers._

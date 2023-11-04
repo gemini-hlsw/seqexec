@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.circuit
@@ -26,12 +26,13 @@ object CalQueueSeq {
     id: Observation.Id
   ): Getter[SequencesQueue[SequenceView], Option[CalQueueSeq]] = {
     val seqO =
-      SequencesQueue.queueItemG[SequenceView](_.id === id) ^<-?
-        std.option.some
+      SequencesQueue
+        .queueItemG[SequenceView](_.id === id)
+        .andThen(std.option.some[SequenceView])
 
-    val sidO = seqO ^|-> SequenceView.id
-    val siO  = seqO ^|-> SequenceView.metadata ^|-> SequenceMetadata.instrument
-    val siS  = seqO ^|-> SequenceView.status
+    val sidO = seqO.andThen(SequenceView.id)
+    val siO  = seqO.andThen(SequenceView.metadata).andThen(SequenceMetadata.instrument)
+    val siS  = seqO.andThen(SequenceView.status)
 
     (Getter(sidO.headOption)
       .zip(Getter(siO.headOption).zip(Getter(siS.headOption)))) >>> {

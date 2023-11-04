@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package ocs2
@@ -12,11 +12,11 @@ import cats.Eq
 import cats.data.NonEmptySet
 import cats.syntax.all._
 import io.chrisdavenport.cats.time.instances.all._
-import lucuma.core.enum.GcalArc
-import lucuma.core.enum.GcalContinuum
-import lucuma.core.enum.GcalDiffuser
-import lucuma.core.enum.GcalFilter
-import lucuma.core.enum.GcalShutter
+import lucuma.core.enums.GcalArc
+import lucuma.core.enums.GcalContinuum
+import lucuma.core.enums.GcalDiffuser
+import lucuma.core.enums.GcalFilter
+import lucuma.core.enums.GcalShutter
 import monocle._
 import monocle.std.either.stdLeft
 import monocle.std.either.stdRight
@@ -140,10 +140,10 @@ trait GcalConfigOptics {
 
   /** @group Optics */
   val continuum: Optional[GcalConfig, GcalContinuum] =
-    lamp.composePrism(stdLeft)
+    lamp.andThen(stdLeft[GcalContinuum, GcalArcs])
 
   /** @group Optics */
   val arcs: Optional[GcalConfig, NonEmptySet[GcalArc]] =
-    lamp.composePrism(stdRight).composeLens(GcalArcs.arcs)
+    lamp.andThen(stdRight[GcalContinuum, GcalArcs]).andThen(GcalArcs.arcs)
 
 }

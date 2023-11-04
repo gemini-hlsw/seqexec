@@ -1,19 +1,14 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
 import scala.concurrent.duration._
-
 import cats.FlatMap
 import cats.data.EitherT
-import cats.effect.Concurrent
 import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import io.circe.Decoder
@@ -21,7 +16,7 @@ import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.syntax._
-import lucuma.core.enum.DhsKeywordName
+import lucuma.core.enums.{ DhsKeywordName, KeywordName }
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -33,12 +28,14 @@ import seqexec.model.dhs._
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import seqexec.server.keywords.DhsClient.ImageParameters
+import cats.effect.{ Ref, Temporal }
 
 /**
  * Implementation of DhsClient that interfaces with the real DHS over the http interface
  */
-class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit timer: Timer[F])
-    extends DhsClient[F]
+class DhsClientHttp[F[_]](base: Client[F], baseURI: Uri, maxKeywords: Int, instrumentName: String)(
+  implicit timer: Temporal[F]
+) extends DhsClient[F]
     with Http4sClientDsl[F] {
   import DhsClientHttp._
 
@@ -70,27 +67,64 @@ class DhsClientHttp[F[_]: Concurrent](base: Client[F], baseURI: Uri)(implicit ti
       .liftF
   }
 
+  private def keywordsPutReq(id: ImageFileId, keywords: List[InternalKeyword], finalFlag: Boolean) =
+    PUT(
+      Json.obj(
+        "setKeywords" :=
+          Json.obj(
+            "final"    := finalFlag,
+            "keywords" := keywords
+          )
+      ),
+      baseURI / id / "keywords"
+    )
+
   override def setKeywords(
     id:        ImageFileId,
     keywords:  KeywordBag,
     finalFlag: Boolean
   ): F[Unit] = {
-    val req = PUT(
-      Json.obj(
-        "setKeywords" :=
-          Json.obj(
-            "final"    := finalFlag,
-            "keywords" := keywords.keywords
+
+    val minKeywords: Int = 10
+
+    val limit = minKeywords.max(maxKeywords)
+
+    val pkgs = keywords.keywords.grouped(limit).toList
+
+    if (pkgs.isEmpty) {
+      clientWithRetry
+        .expect[Either[SeqexecFailure, Unit]](
+          keywordsPutReq(
+            id,
+            List(internalKeywordConvert(StringKeyword(KeywordName.INSTRUMENT, instrumentName))),
+            finalFlag
           )
-      ),
-      baseURI / id / "keywords"
-    )
-    clientWithRetry
-      .expect[Either[SeqexecFailure, Unit]](req)(jsonOf[F, Either[SeqexecFailure, Unit]])
-      .attemptT
-      .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
-      .flatMap(EitherT.fromEither(_))
-      .liftF
+        )(jsonOf[F, Either[SeqexecFailure, Unit]])
+        .attemptT
+        .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
+        .flatMap(EitherT.fromEither(_))
+        .liftF
+        .whenA(finalFlag)
+    } else
+      pkgs.zipWithIndex
+        .map { case (l, i) =>
+          clientWithRetry
+            .expect[Either[SeqexecFailure, Unit]](
+              keywordsPutReq(
+                id,
+                l.prepended(
+                  internalKeywordConvert(StringKeyword(KeywordName.INSTRUMENT, instrumentName))
+                ),
+                (i === pkgs.length - 1) && finalFlag
+              )
+            )(jsonOf[F, Either[SeqexecFailure, Unit]])
+            .attemptT
+            .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
+            .flatMap(EitherT.fromEither(_))
+            .liftF
+        }
+        .sequence
+        .void
   }
 
 }
@@ -173,8 +207,10 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply[F[_]: Concurrent](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] =
-    new DhsClientHttp[F](client, uri)
+  def apply[F[_]](client: Client[F], uri: Uri, maxKeywords: Int, instrumentName: String)(implicit
+    timer: Temporal[F]
+  ): DhsClient[F] =
+    new DhsClientHttp[F](client, uri, maxKeywords, instrumentName)
 }
 
 /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -11,7 +11,7 @@ import cats.syntax.all._
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CtorType
-import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala
 import japgolly.scalajs.react.extra.TimerSupport
@@ -57,7 +57,7 @@ trait SmoothProgressBar[P <: SmoothProgressBarProps[P]] {
     def tickTotal: Callback =
       b.props.zip(b.state) >>= { case (p, s) =>
         val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-        (b.setStateL(State.value)(min(p.maxValue, next)))
+        b.setStateL(State.value)(min(p.maxValue, next))
           .when(!p.paused && !p.stopping)
           .void
       }

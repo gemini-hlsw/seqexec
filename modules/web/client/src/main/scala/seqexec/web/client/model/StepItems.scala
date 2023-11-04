@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.model
@@ -6,9 +6,9 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.Monoid
 import cats.syntax.all._
-import lucuma.core.enum.GpiDisperser
-import lucuma.core.enum.GpiFilter
-import lucuma.core.enum.GpiObservingMode
+import lucuma.core.enums.GpiDisperser
+import lucuma.core.enums.GpiFilter
+import lucuma.core.enums.GpiObservingMode
 import lucuma.core.math.Offset
 import seqexec.model.NodAndShuffleStatus
 import seqexec.model.NodAndShuffleStep
@@ -45,7 +45,6 @@ object StepItems {
       i match {
         case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
         case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
-        case Instrument.F2    => enumerations.fpu.Flamingos2.get
         case _                => _ => none
       }
 
@@ -68,7 +67,10 @@ object StepItems {
       (i, instrumentFPUO.getOption(s), instrumentFPUCustomMaskO.getOption(s)) match {
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, Some("CUSTOM_MASK"), c) => c
         case (Instrument.GmosS | Instrument.GmosN | Instrument.F2, None, c @ Some(_))      => c
-        case (_, Some(b), _)                                                               => fpuNameMapper(i)(b)
+        case (Instrument.F2, Some("Custom Mask"), c)                                       => c
+        case (Instrument.F2, a @ Some(_), _)                                               => a
+        case (_, Some(b), _)                                                               =>
+          fpuNameMapper(i)(b)
         case _                                                                             => none
       }
 
@@ -127,7 +129,6 @@ object StepItems {
         case Instrument.F2    =>
           instrumentFilterO
             .getOption(s)
-            .flatMap(enumerations.filter.F2Filter.get)
         case Instrument.Niri  =>
           instrumentFilterO
             .getOption(s)

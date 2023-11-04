@@ -1,16 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.niri
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.Applicative
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.{ BeamSplitter => JBeamSplitter }
 import edu.gemini.seqexec.server.niri.{ BuiltInROI => JBuiltInROI }
@@ -142,8 +139,8 @@ object NiriControllerEpics extends NiriEncoders {
   private val ConfigTimeout: FiniteDuration  = FiniteDuration(180, SECONDS)
   private val DefaultTimeout: FiniteDuration = FiniteDuration(60, SECONDS)
 
-  def apply[F[_]: Timer: Async](
-    epicsSys:   => NiriEpics[F]
+  def apply[F[_]: Async](
+    epicsSys: => NiriEpics[F]
   )(implicit L: Logger[F]): NiriController[F] =
     new NiriController[F] {
 

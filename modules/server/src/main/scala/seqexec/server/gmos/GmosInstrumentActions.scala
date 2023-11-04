@@ -1,11 +1,8 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
 
-import cats.effect.Concurrent
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -29,14 +26,12 @@ import seqexec.server.tcs.TcsController.OffsetQ
 import shapeless.tag
 import squants.Time
 import squants.space.AngleConversions._
+import cats.effect.{ Ref, Temporal }
 
 /**
  * Gmos needs different actions for N&S
  */
-class GmosInstrumentActions[
-  F[_]: Concurrent: Timer: Logger,
-  A <: GmosController.SiteDependentTypes
-](
+class GmosInstrumentActions[F[_]: Temporal: Logger, A <: GmosController.SiteDependentTypes](
   inst:   Gmos[F, A],
   config: CleanConfig
 ) extends InstrumentActions[F] {
@@ -52,7 +47,7 @@ class GmosInstrumentActions[
     fileId: ImageFileId,
     env:    ObserveEnvironment[F],
     nsCfg:  NSConfig.NodAndShuffle
-  )(r:      ObserveCommandResult): F[Result[F]] =
+  )(r: ObserveCommandResult): F[Result[F]] =
     r match {
       case ObserveCommandResult.Success =>
         okTail(fileId, stopped = false, env)
@@ -105,11 +100,11 @@ class GmosInstrumentActions[
     } yield t).safeResult
 
   private def continueResult(
-    fileId:    ImageFileId,
-    env:       ObserveEnvironment[F],
-    nsCfg:     NSConfig.NodAndShuffle,
-    subExp:    NSSubexposure,
-    nsObsCmd:  Option[NSObserveCommand]
+    fileId:   ImageFileId,
+    env:      ObserveEnvironment[F],
+    nsCfg:    NSConfig.NodAndShuffle,
+    subExp:   NSSubexposure,
+    nsObsCmd: Option[NSObserveCommand]
   )(obsResult: ObserveCommandResult): F[Result[F]] =
     (nsObsCmd, obsResult) match {
       case (Some(PauseImmediately), ObserveCommandResult.Paused) |
@@ -143,7 +138,7 @@ class GmosInstrumentActions[
           .flatMap(observeTail(fileId, env, nsCfg))
 
       // We reach here only if the result was Paused and no command made it stop/pause/abort
-      case _ => Result.Partial(NSContinue).pure[F].widen[Result[F]]
+      case _                                                     => Result.Partial(NSContinue).pure[F].widen[Result[F]]
 
     }
 

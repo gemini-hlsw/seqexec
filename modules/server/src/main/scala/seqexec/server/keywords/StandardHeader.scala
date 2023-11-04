@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -9,7 +9,7 @@ import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.KeywordName
+import lucuma.core.enums.KeywordName
 import seqexec.model.Conditions
 import seqexec.model.Observation
 import seqexec.model.Observer
@@ -26,7 +26,7 @@ final case class StateKeywordsReader[F[_]: Applicative](
   observer:   Option[Observer]
 ) {
   private def encodeCondition(c: Option[Int]): F[String] =
-    c.map(c => (if (c === 100) "Any" else s"$c-percentile")).getOrElse("UNKNOWN").pure[F]
+    c.map(c => if (c === 100) "Any" else s"$c-percentile").getOrElse("UNKNOWN").pure[F]
 
   def observerName: F[String]       =
     observer.map(_.value).filter(_.nonEmpty).getOrElse("observer").pure[F]
@@ -55,7 +55,7 @@ class StandardHeader[F[_]: Sync: Logger](
     else obsObject
 
   private def optTcsKeyword[B](s: TcsController.Subsystem)(v: F[B])(implicit
-    d:                            DefaultHeaderValue[B]
+    d: DefaultHeaderValue[B]
   ): F[B] =
     if (tcsSubsystems.contains(s)) v else d.default.pure[F]
 

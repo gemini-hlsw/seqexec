@@ -1,14 +1,13 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
 
 import cats.data.NonEmptyList
-import monocle.function.Index.index
 import monocle.function.Index.listIndex
-import monocle.syntax.apply._
+import monocle.syntax.all._
 import mouse.boolean._
-import seqexec.engine.Action.ActionState
+import Action.ActionState
 
 /**
  * This structure holds the current `Execution` under execution. It carries information about which
@@ -49,10 +48,16 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
    * If the index doesn't exist, `Current` is returned unmodified.
    */
   def mark(i: Int)(r: Result[F]): Execution[F] =
-    Execution((execution &|-? index(i) ^|-> Action.state).modify(actionStateFromResult(r)))
+    Execution(
+      execution
+        .focus()
+        .andThen(listIndex[Action[F]].index(i))
+        .andThen(Action.state[F])
+        .modify(actionStateFromResult(r))
+    )
 
   def start(i: Int): Execution[F] =
-    Execution((execution &|-? index(i) ^|-> Action.runStateL).set(ActionState.Started))
+    Execution(execution.focus().index(i).andThen(Action.runStateL[F]).replace(ActionState.Started))
 }
 
 object Execution {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec
@@ -15,7 +15,7 @@ import cats.syntax.all._
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.Stream
-import fs2.concurrent.Queue
+import cats.effect.std.Queue
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import monocle.Lens
@@ -60,13 +60,13 @@ package server {
     def instrumentLoadedL[F[_]](
       instrument: Instrument
     ): Lens[EngineState[F], Option[Observation.Id]] =
-      GenLens[EngineState[F]](_.selected) ^|-> at(instrument)
+      GenLens[EngineState[F]](_.selected).andThen(at(instrument))
 
     def atSequence[F[_]](sid: Observation.Id): Optional[EngineState[F], SequenceData[F]] =
-      EngineState.sequences ^|-? index(sid)
+      EngineState.sequences.andThen(mapIndex[Observation.Id, SequenceData[F]].index(sid))
 
     def sequenceStateIndex[F[_]](sid: Observation.Id): Optional[EngineState[F], Sequence.State[F]] =
-      atSequence[F](sid) ^|-> SequenceData.seq
+      atSequence[F](sid).andThen(SequenceData.seq)
 
     def engineState[F[_]]: Engine.State[F, EngineState[F]] = new Engine.State[F, EngineState[F]] {
       override def sequenceStateIndex(
@@ -99,7 +99,7 @@ package server {
 
 }
 
-package object server    {
+package object server {
   implicit def geEq[D <: SequenceableSpType]: Eq[D] =
     Eq[String].contramap(_.sequenceValue())
 
@@ -163,9 +163,9 @@ package object server    {
       }
     }
 
-    def addSeq(sid: Observation.Id): ExecutionQueue              = q.copy(queue = q.queue :+ sid)
-    def addSeqs(sids: List[Observation.Id]): ExecutionQueue      = q.copy(queue = q.queue ++ sids)
-    def removeSeq(sid: Observation.Id): ExecutionQueue           = q.copy(queue = q.queue.filter(_ =!= sid))
+    def addSeq(sid:    Observation.Id): ExecutionQueue       = q.copy(queue = q.queue :+ sid)
+    def addSeqs(sids:  List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
+    def removeSeq(sid: Observation.Id): ExecutionQueue       = q.copy(queue = q.queue.filter(_ =!= sid))
     def moveSeq(sid: Observation.Id, delta: Int): ExecutionQueue =
       q.copy(queue = moveElement(q.queue, sid, delta))
     def clear: ExecutionQueue                                    = q.copy(queue = List.empty)

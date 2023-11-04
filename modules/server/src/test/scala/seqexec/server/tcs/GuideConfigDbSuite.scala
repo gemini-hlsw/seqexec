@@ -1,9 +1,8 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import org.scalatest.matchers.should.Matchers._
 import io.circe.parser._
 import cats.effect.IO
 import seqexec.model.enum._
@@ -24,7 +23,7 @@ import seqexec.server.gems.GemsController.Cwfs2Usage
 import seqexec.server.gems.GemsController.Cwfs3Usage
 import squants.space.Millimeters
 
-final class GuideConfigDbSuite extends munit.FunSuite {
+final class GuideConfigDbSuite extends munit.CatsEffectSuite {
 
   val rawJson1: String          = """
   {
@@ -145,18 +144,15 @@ final class GuideConfigDbSuite extends munit.FunSuite {
   )
 
   test("GuideConfigDb provide decoders") {
-    decode[GuideConfig](rawJson1) shouldBe Right(guideConfig1)
-    decode[GuideConfig](rawJson2) shouldBe Right(guideConfig2)
-    decode[GuideConfig](rawJson3) shouldBe Right(guideConfig3)
+    assertEquals(decode[GuideConfig](rawJson1), Right(guideConfig1))
+    assertEquals(decode[GuideConfig](rawJson2), Right(guideConfig2))
+    assertEquals(decode[GuideConfig](rawJson3), Right(guideConfig3))
   }
 
   test("retrieve the same configuration that was set") {
-    implicit val ctx = IO.contextShift(scala.concurrent.ExecutionContext.global)
-    val db           = GuideConfigDb.newDb[IO]
+    val db = GuideConfigDb.newDb[IO]
 
-    val ret = db.flatMap(x => x.set(guideConfig1) *> x.value).unsafeRunSync()
-
-    ret shouldBe guideConfig1
+    db.flatMap(x => x.set(guideConfig1) *> x.value).map(assertEquals(_, guideConfig1))
   }
 
 }

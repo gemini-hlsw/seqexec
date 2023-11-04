@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
@@ -19,7 +19,7 @@ trait AltairController[F[_]] {
     resumeReasons: ResumeConditionSet,
     currentOffset: FocalPlaneOffset,
     instrument:    Instrument
-  )(cfg:           AltairConfig): F[AltairPauseResume[F]]
+  )(cfg: AltairConfig): F[AltairPauseResume[F]]
 
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
 
@@ -56,13 +56,13 @@ object AltairController {
   implicit val showAltairConfig: Show[AltairConfig] = Show.fromToString[AltairConfig]
 
   sealed case class AltairPauseResume[F[_]](
-    pause:            Option[F[Unit]],
-    guideWhilePaused: GuideCapabilities,
-    filterTarget:     Boolean,
-    resume:           Option[F[Unit]],
-    restoreOnResume:  GuideCapabilities,
-    config:           Option[F[Unit]],
-    forceFreeze:      Boolean
+    pause:             Option[F[Unit]],
+    guideWhilePaused:  GuideCapabilities,
+    pauseTargetFilter: Boolean,
+    resume:            Option[F[Unit]],
+    restoreOnResume:   GuideCapabilities,
+    config:            Option[F[Unit]],
+    forceFreeze:       Boolean
   )
 
 }

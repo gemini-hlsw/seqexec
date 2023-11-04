@@ -1,22 +1,16 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-
-import cats._
+import cats.{ Applicative, Endo }
 import cats.data.NonEmptyList
 import cats.data.StateT
-import cats.effect.Concurrent
-import cats.effect.ConcurrentEffect
-import cats.effect.Sync
-import cats.effect.Timer
-import cats.effect.concurrent.Ref
+import cats.effect.Async
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
@@ -33,8 +27,8 @@ import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
 import org.typelevel.log4cats.Logger
-import lucuma.core.enum.Site
-import monocle.Monocle.index
+import lucuma.core.enums.Site
+import monocle.function.Index.mapIndex
 import monocle.Optional
 import mouse.all._
 import seqexec.engine.EventResult._
@@ -61,6 +55,8 @@ import seqexec.model.events.{ SequenceStart => ClientSequenceStart, _ }
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.EngineState.atSequence
 import seqexec.server.SeqEvent._
+import cats.effect.kernel.Sync
+import cats.effect.{ Ref, Temporal }
 
 trait SeqexecEngine[F[_]] {
 
@@ -254,17 +250,18 @@ trait SeqexecEngine[F[_]] {
 
   // Used by tests
   def stream(p: Stream[F, EventType[F]])(
-    s0:         EngineState[F]
+    s0: EngineState[F]
   ): Stream[F, (EventResult[SeqEvent], EngineState[F])]
 }
 
 object SeqexecEngine {
 
-  private class SeqexecEngineImpl[F[_]: ConcurrentEffect: Timer: Logger](
+  private class SeqexecEngineImpl[F[_]: Async: Logger](
     override val systems: Systems[F],
     settings:             SeqexecEngineConfiguration,
     sm:                   SeqexecMetrics,
-    translator:           SeqTranslate[F]
+    translator:           SeqTranslate[F],
+    conditionsRef:        Ref[F, Conditions]
   )(implicit
     executeEngine:        seqexec.server.ExecEngineType[F]
   ) extends SeqexecEngine[F] {
@@ -272,12 +269,7 @@ object SeqexecEngine {
     private val odbLoader = new ODBSequencesLoader[F](systems.odb, translator)
 
     override def sync(q: EventQueue[F], seqId: Observation.Id): F[Unit] =
-      odbLoader.loadEvents(seqId).flatMap { e =>
-        q.enqueue(
-          Stream.emits(e)
-        ).compile
-          .drain
-      }
+      odbLoader.loadEvents(seqId).flatMap(_.map(q.offer).sequence.void)
 
     /**
      * Check if the resources to run a sequence are available
@@ -471,14 +463,14 @@ object SeqexecEngine {
     }
 
     private def clearObsCmd(id: Observation.Id): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
-      ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(None)(s),
+      (EngineState.atSequence[F](id).andThen(SequenceData.pendingObsCmd[F]).replace(None)(s),
        SeqEvent.NullSeqEvent: SeqEvent
       )
     }.toHandle
 
     private def setObsCmd(id: Observation.Id, cmd: PendingObserveCmd): HandleType[F, SeqEvent] = {
       (s: EngineState[F]) =>
-        ((EngineState.atSequence[F](id) ^|-> SequenceData.pendingObsCmd).set(cmd.some)(s),
+        (EngineState.atSequence[F](id).andThen(SequenceData.pendingObsCmd[F]).replace(cmd.some)(s),
          SeqEvent.NullSeqEvent: SeqEvent
         )
     }.toHandle
@@ -576,7 +568,7 @@ object SeqexecEngine {
       clientId:    ClientId,
       runOverride: RunOverride
     ): F[Unit] =
-      q.enqueue1(
+      q.offer(
         Event.modifyState[F, EngineState[F], SeqEvent](
           setObserver(id, observer) *>
             clearObsCmd(id) *>
@@ -594,7 +586,7 @@ object SeqexecEngine {
       clientId:    ClientId,
       runOverride: RunOverride
     ): F[Unit] =
-      q.enqueue1(
+      q.offer(
         Event.modifyState[F, EngineState[F], SeqEvent](
           setObserver(id, observer) *>
             clearObsCmd(id) *>
@@ -609,7 +601,7 @@ object SeqexecEngine {
       user:     UserDetails
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.pause[F, EngineState[F], SeqEvent](seqId, user))
+        q.offer(Event.pause[F, EngineState[F], SeqEvent](seqId, user))
 
     override def requestCancelPause(
       q:        EventQueue[F],
@@ -618,7 +610,7 @@ object SeqexecEngine {
       user:     UserDetails
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.cancelPause[F, EngineState[F], SeqEvent](seqId, user))
+        q.offer(Event.cancelPause[F, EngineState[F], SeqEvent](seqId, user))
 
     override def setBreakpoint(
       q:        EventQueue[F],
@@ -629,13 +621,13 @@ object SeqexecEngine {
       v:        Boolean
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
+        q.offer(Event.breakpoint[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def setOperator(q: EventQueue[F], user: UserDetails, name: Operator): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}") *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            (EngineState.operator[F].set(name.some) >>> refreshSequences)
+            (EngineState.operator[F].replace(name.some) >>> refreshSequences)
               .withEvent(SetOperator(name, user.some))
               .toHandle
           )
@@ -646,8 +638,10 @@ object SeqexecEngine {
       observer: Observer,
       event:    SeqEvent = SeqEvent.NullSeqEvent
     ): HandleType[F, SeqEvent] = { (s: EngineState[F]) =>
-      ((EngineState.sequences[F] ^|-? index(id))
-         .modify(SequenceData.observer.set(observer.some))(s),
+      (EngineState
+         .sequences[F]
+         .index(id)
+         .modify(SequenceData.observer.replace(observer.some))(s),
        event
       )
     }.toHandle
@@ -662,10 +656,12 @@ object SeqexecEngine {
         q,
         s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}"
       ) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.sequences[F] ^|-? index(seqId))
-              .modify(SequenceData.observer.set(name.some)) >>>
+            (EngineState
+              .sequences[F]
+              .andThen(mapIndex[Observation.Id, SequenceData[F]].index(seqId))
+              .modify(SequenceData.observer.replace(name.some)) >>>
               refreshSequence(seqId)).withEvent(SetObserver(seqId, user.some, name)).toHandle
           )
         )
@@ -678,9 +674,11 @@ object SeqexecEngine {
       clientId: ClientId
     ): EventType[F] = {
       val lens                                     =
-        (EngineState.sequences[F] ^|-? index(sid))
-          .modify(SequenceData.observer.set(observer.some)) >>>
-          EngineState.instrumentLoadedL[F](i).set(sid.some) >>>
+        EngineState
+          .sequences[F]
+          .andThen(mapIndex[Observation.Id, SequenceData[F]].index(sid))
+          .modify(SequenceData.observer.replace(observer.some)) >>>
+          EngineState.instrumentLoadedL[F](i).replace(sid.some) >>>
           refreshSequence(sid)
       def testRunning(st: EngineState[F]): Boolean = (for {
         sels   <- st.selected.get(i)
@@ -690,7 +688,7 @@ object SeqexecEngine {
       Event.modifyState[F, EngineState[F], SeqEvent] {
         (
           (st: EngineState[F]) =>
-            if (!testRunning(st))(lens.withEvent(AddLoadedSequence(i, sid, user, clientId)))(st)
+            if (!testRunning(st)) lens.withEvent(AddLoadedSequence(i, sid, user, clientId))(st)
             else (st, NotifyUser(InstrumentInUse(sid, i), clientId))
         ).toHandle
       }
@@ -707,7 +705,7 @@ object SeqexecEngine {
       Sync[F]
         .delay(Instant.now)
         .flatMap { ts =>
-          q.enqueue1(
+          q.offer(
             Event.logInfoMsg[F, EngineState[F], SeqEvent](
               s"User '${user.displayName}' sync and load sequence ${sid.format} on ${i.show}",
               ts
@@ -715,18 +713,18 @@ object SeqexecEngine {
           )
         } *>
         sync(q, sid) *>
-        q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId))
+        q.offer(selectSequenceEvent(i, sid, observer, user, clientId))
 
     private def logDebugEvent(q: EventQueue[F], msg: String): F[Unit] =
-      Event.logDebugMsgF[F, EngineState[F], SeqEvent](msg).flatMap(q.enqueue1)
+      Event.logDebugMsgF[F, EngineState[F], SeqEvent](msg).flatMap(q.offer)
 
     override def clearLoadedSequences(q: EventQueue[F], user: UserDetails): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Updating loaded sequences") *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             EngineState
               .selected[F]
-              .set(Map.empty)
+              .replace(Map.empty)
               .withEvent(ClearLoadedSequences(user.some))
               .toHandle
           )
@@ -734,9 +732,10 @@ object SeqexecEngine {
 
     override def resetConditions(q: EventQueue[F]): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Reset conditions") *>
-        q.enqueue1(
+        conditionsRef.set(Conditions.Default) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            (EngineState.conditions[F].set(Conditions.Default) >>> refreshSequences)
+            (EngineState.conditions[F].replace(Conditions.Default) >>> refreshSequences)
               .withEvent(SetConditions(Conditions.Default, None))
               .toHandle
           )
@@ -748,9 +747,10 @@ object SeqexecEngine {
       user:       UserDetails
     ): F[Unit] =
       logDebugEvent(q, "SeqexecEngine: Setting conditions") *>
-        q.enqueue1(
+        conditionsRef.set(conditions) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            (EngineState.conditions[F].set(conditions) >>> refreshSequences)
+            (EngineState.conditions[F].replace(conditions) >>> refreshSequences)
               .withEvent(SetConditions(conditions, user.some))
               .toHandle
           )
@@ -758,9 +758,10 @@ object SeqexecEngine {
 
     override def setImageQuality(q: EventQueue[F], iq: ImageQuality, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting image quality to $iq") *>
-        q.enqueue1(
+        conditionsRef.update(Conditions.iq.replace(iq)) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.conditions[F] ^|-> Conditions.iq).set(iq) >>> refreshSequences)
+            (EngineState.conditions[F].andThen(Conditions.iq).replace(iq) >>> refreshSequences)
               .withEvent(SetImageQuality(iq, user.some))
               .toHandle
           )
@@ -768,9 +769,10 @@ object SeqexecEngine {
 
     override def setWaterVapor(q: EventQueue[F], wv: WaterVapor, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting water vapor to $wv") *>
-        q.enqueue1(
+        conditionsRef.update(Conditions.wv.replace(wv)) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.conditions[F] ^|-> Conditions.wv).set(wv) >>> refreshSequences)
+            (EngineState.conditions[F].andThen(Conditions.wv).replace(wv) >>> refreshSequences)
               .withEvent(SetWaterVapor(wv, user.some))
               .toHandle
           )
@@ -778,9 +780,10 @@ object SeqexecEngine {
 
     override def setSkyBackground(q: EventQueue[F], sb: SkyBackground, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting sky background to $sb") *>
-        q.enqueue1(
+        conditionsRef.update(Conditions.sb.replace(sb)) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.conditions[F] ^|-> Conditions.sb).set(sb) >>> refreshSequences)
+            (EngineState.conditions[F].andThen(Conditions.sb).replace(sb) >>> refreshSequences)
               .withEvent(SetSkyBackground(sb, user.some))
               .toHandle
           )
@@ -788,9 +791,10 @@ object SeqexecEngine {
 
     override def setCloudCover(q: EventQueue[F], cc: CloudCover, user: UserDetails): F[Unit] =
       logDebugEvent(q, s"SeqexecEngine: Setting cloud cover to $cc") *>
-        q.enqueue1(
+        conditionsRef.update(Conditions.cc.replace(cc)) *>
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.conditions[F] ^|-> Conditions.cc).set(cc) >>> refreshSequences)
+            (EngineState.conditions[F].andThen(Conditions.cc).replace(cc) >>> refreshSequences)
               .withEvent(SetCloudCover(cc, user.some))
               .toHandle
           )
@@ -805,10 +809,10 @@ object SeqexecEngine {
       v:        Boolean
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
+        q.offer(Event.skip[F, EngineState[F], SeqEvent](seqId, user, stepId, v))
 
     override def requestRefresh(q: EventQueue[F], clientId: ClientId): F[Unit] =
-      q.enqueue1(Event.poll(clientId))
+      q.offer(Event.poll(clientId))
 
     private def seqQueueRefreshStream: Stream[F, Either[SeqexecFailure, EventType[F]]] = {
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
@@ -850,7 +854,8 @@ object SeqexecEngine {
 
     override def eventStream(q: EventQueue[F]): Stream[F, SeqexecEvent] =
       stream(
-        q.dequeue
+        Stream
+          .fromQueueUnterminated(q)
           .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream))
       )(EngineState.default[F]).flatMap(x => Stream.eval(notifyODB(x).attempt)).flatMap {
         case Right((ev, qState)) =>
@@ -861,7 +866,7 @@ object SeqexecEngine {
       }
 
     override def stream(p: Stream[F, EventType[F]])(
-      s0:                  EngineState[F]
+      s0: EngineState[F]
     ): Stream[F, (EventResult[SeqEvent], EngineState[F])] =
       executeEngine.process(iterateQueues)(p)(s0)
 
@@ -873,9 +878,9 @@ object SeqexecEngine {
       graceful: Boolean
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, StopGracefully)))
+        q.offer(Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, StopGracefully)))
           .whenA(graceful) *>
-        q.enqueue1(
+        q.offer(
           Event.actionStop[F, EngineState[F], SeqEvent](seqId,
                                                         translator.stopObserve(seqId, graceful)
           )
@@ -888,7 +893,7 @@ object SeqexecEngine {
       user:     UserDetails
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(
+        q.offer(
           Event.actionStop[F, EngineState[F], SeqEvent](seqId, translator.abortObserve(seqId))
         )
 
@@ -900,10 +905,10 @@ object SeqexecEngine {
       graceful: Boolean
     ): F[Unit] =
       setObserver(q, seqId, user, observer) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](setObsCmd(seqId, PauseGracefully))
         ).whenA(graceful) *>
-        q.enqueue1(
+        q.offer(
           Event.actionStop[F, EngineState[F], SeqEvent](seqId,
                                                         translator.pauseObserve(seqId, graceful)
           )
@@ -915,15 +920,15 @@ object SeqexecEngine {
       observer: Observer,
       user:     UserDetails
     ): F[Unit] =
-      q.enqueue1(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(seqId))) *>
+      q.offer(Event.modifyState[F, EngineState[F], SeqEvent](clearObsCmd(seqId))) *>
         setObserver(q, seqId, user, observer) *>
-        q.enqueue1(Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId)))
+        q.offer(Event.getState[F, EngineState[F], SeqEvent](translator.resumePaused(seqId)))
 
     private def queueO(qid: QueueId): Optional[EngineState[F], ExecutionQueue] =
-      EngineState.queues[F] ^|-? index(qid)
+      EngineState.queues[F].andThen(mapIndex[QueueId, ExecutionQueue].index(qid))
 
     private def cmdStateO(qid: QueueId): Optional[EngineState[F], BatchCommandState] =
-      queueO(qid) ^|-> ExecutionQueue.cmdState
+      queueO(qid).andThen(ExecutionQueue.cmdState)
 
     private def addSeqs(
       qid:    QueueId,
@@ -948,8 +953,11 @@ object SeqexecEngine {
           } yield executeEngine.modify(queueO(qid).modify(_.addSeqs(seqs))) *>
             ((q.cmdState, q.status(st)) match {
               case (_, BatchExecState.Completed)       =>
-                ((EngineState.queues[F] ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
-                  .set(BatchCommandState.Idle) >>> {
+                (EngineState
+                  .queues[F]
+                  .andThen(mapIndex[QueueId, ExecutionQueue].index(qid))
+                  .andThen(ExecutionQueue.cmdState)
+                  .replace(BatchCommandState.Idle) >>> {
                   (_, List.empty[(Observation.Id, StepId)])
                 }).toHandle
               case (BatchCommandState.Run(o, u, c), _) =>
@@ -965,7 +973,7 @@ object SeqexecEngine {
       q:      EventQueue[F],
       qid:    QueueId,
       seqIds: List[Observation.Id]
-    ): F[Unit] = q.enqueue1(
+    ): F[Unit] = q.offer(
       Event.modifyState[F, EngineState[F], SeqEvent](
         addSeqs(qid, seqIds)
           .as[SeqEvent](UpdateQueueAdd(qid, seqIds))
@@ -1013,7 +1021,7 @@ object SeqexecEngine {
       q:     EventQueue[F],
       qid:   QueueId,
       seqId: Observation.Id
-    ): F[Unit] = q.enqueue1(
+    ): F[Unit] = q.offer(
       Event.modifyState[F, EngineState[F], SeqEvent](
         executeEngine.get.flatMap(st =>
           removeSeq(qid, seqId)
@@ -1044,7 +1052,7 @@ object SeqexecEngine {
       seqId: Observation.Id,
       delta: Int,
       cid:   ClientId
-    ): F[Unit] = q.enqueue1(
+    ): F[Unit] = q.offer(
       Event.modifyState[F, EngineState[F], SeqEvent](
         executeEngine.get.flatMap(_ =>
           moveSeq(qid, seqId, delta).withEvent(UpdateQueueMoved(qid, cid, seqId, 0)).toHandle
@@ -1061,7 +1069,7 @@ object SeqexecEngine {
         }
         .getOrElse(st)
 
-    override def clearQueue(q: EventQueue[F], qid: QueueId): F[Unit] = q.enqueue1(
+    override def clearQueue(q: EventQueue[F], qid: QueueId): F[Unit] = q.offer(
       Event.modifyState[F, EngineState[F], SeqEvent](
         clearQ(qid).withEvent(UpdateQueueClear(qid)).toHandle
       )
@@ -1074,32 +1082,32 @@ object SeqexecEngine {
       clientId: ClientId
     ): HandleType[F, Unit] = Handle(
       StateT[F, EngineState[F], (Unit, Option[Stream[F, EventType[F]]])] { st: EngineState[F] =>
-        (
-          (EngineState.sequences[F] ^|-? index(sid))
-            .getOption(st)
-            .map { obsseq =>
-              (EngineState
-                .sequences[F]
-                .modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
-                refreshSequence(sid) >>>
-                EngineState.instrumentLoadedL[F](obsseq.seqGen.instrument).set(sid.some) >>> {
-                  (_,
-                   ((),
-                    Stream[Pure, EventType[F]](
-                      Event.modifyState[F, EngineState[F], SeqEvent](
-                        { s: EngineState[F] => s }
-                          .withEvent(
-                            AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
-                          )
-                          .toHandle
-                      )
-                    ).covary[F].some
-                   )
-                  )
-                })(st)
-            }
-            .getOrElse((st, ((), None)))
-          )
+        EngineState
+          .sequences[F]
+          .andThen(mapIndex[Observation.Id, SequenceData[F]].index(sid))
+          .getOption(st)
+          .map { obsseq =>
+            (EngineState
+              .sequences[F]
+              .modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
+              refreshSequence(sid) >>>
+              EngineState.instrumentLoadedL[F](obsseq.seqGen.instrument).replace(sid.some) >>> {
+                (_,
+                 ((),
+                  Stream[Pure, EventType[F]](
+                    Event.modifyState[F, EngineState[F], SeqEvent](
+                      { s: EngineState[F] => s }
+                        .withEvent(
+                          AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
+                        )
+                        .toHandle
+                    )
+                  ).covary[F].some
+                 )
+                )
+              })(st)
+          }
+          .getOrElse((st, ((), None)))
           .pure[F]
       }
     )
@@ -1156,7 +1164,7 @@ object SeqexecEngine {
       observer: Observer,
       user:     UserDetails,
       clientId: ClientId
-    ): F[Unit] = q.enqueue1(
+    ): F[Unit] = q.offer(
       Event.modifyState[F, EngineState[F], SeqEvent](executeEngine.get.flatMap { st =>
         queueO(qid)
           .getOption(st)
@@ -1164,8 +1172,13 @@ object SeqexecEngine {
           .map {
             _.status(st) match {
               case BatchExecState.Idle | BatchExecState.Stopping =>
-                ((EngineState.queues[F] ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
-                  .set(BatchCommandState.Run(observer, user, clientId)) >>> { (_, ()) }).toHandle *>
+                (EngineState
+                  .queues[F]
+                  .andThen(mapIndex[QueueId, ExecutionQueue].index(qid))
+                  .andThen(ExecutionQueue.cmdState)
+                  .replace(BatchCommandState.Run(observer, user, clientId)) >>> {
+                  (_, ())
+                }).toHandle *>
                   runQueue(qid, observer, user, clientId)
               case _                                             => executeEngine.pure(List.empty)
             }
@@ -1192,7 +1205,7 @@ object SeqexecEngine {
         .flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
 
     override def stopQueue(q: EventQueue[F], qid: QueueId, clientId: ClientId): F[Unit] =
-      q.enqueue1(
+      q.offer(
         Event.modifyState[F, EngineState[F], SeqEvent](
           executeEngine.get
             .flatMap { st =>
@@ -1201,10 +1214,10 @@ object SeqexecEngine {
                 .map {
                   _.status(st) match {
                     case BatchExecState.Running =>
-                      (cmdStateO(qid).set(BatchCommandState.Stop) >>> { (_, ()) }).toHandle *>
+                      (cmdStateO(qid).replace(BatchCommandState.Stop) >>> { (_, ()) }).toHandle *>
                         stopSequencesInQueue(qid)
                     case BatchExecState.Waiting =>
-                      (cmdStateO(qid).set(BatchCommandState.Stop) >>> { (_, ()) }).toHandle
+                      (cmdStateO(qid).replace(BatchCommandState.Stop) >>> { (_, ()) }).toHandle
                     case _                      => executeEngine.unit
                   }
                 }
@@ -1241,7 +1254,7 @@ object SeqexecEngine {
     }
 
     private def configSystemCheck(sid: Observation.Id, sys: Resource)(
-      st:                              EngineState[F]
+      st: EngineState[F]
     ): Boolean = {
       // Resources used by running sequences
       val used = resourcesInUse(st)
@@ -1288,7 +1301,7 @@ object SeqexecEngine {
       clientID: ClientId
     ): F[Unit] =
       setObserver(q, sid, user, observer) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
             configSystemHandle(sid, stepId, sys, clientID)
           )
@@ -1370,11 +1383,14 @@ object SeqexecEngine {
         q,
         s"SeqexecEngine: Setting TCS enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}"
       ) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
-              x => if (enabled) x.enableTcs else x.disableTcs
-            }) >>>
+            (EngineState
+              .sequences[F]
+              .andThen(mapIndex[Observation.Id, SequenceData[F]].index(seqId))
+              .modify(SequenceData.overrides.modify { x =>
+                if (enabled) x.enableTcs else x.disableTcs
+              }) >>>
               refreshSequence(seqId)).withEvent(SetTcsEnabled(seqId, user.some, enabled)).toHandle
           )
         )
@@ -1389,11 +1405,14 @@ object SeqexecEngine {
         q,
         s"SeqexecEngine: Setting Gcal enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}"
       ) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
-              x => if (enabled) x.enableGcal else x.disableGcal
-            }) >>>
+            (EngineState
+              .sequences[F]
+              .andThen(mapIndex[Observation.Id, SequenceData[F]].index(seqId))
+              .modify(SequenceData.overrides.modify { x =>
+                if (enabled) x.enableGcal else x.disableGcal
+              }) >>>
               refreshSequence(seqId)).withEvent(SetGcalEnabled(seqId, user.some, enabled)).toHandle
           )
         )
@@ -1408,11 +1427,14 @@ object SeqexecEngine {
         q,
         s"SeqexecEngine: Setting instrument enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}"
       ) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
-              x => if (enabled) x.enableInstrument else x.disableInstrument
-            }) >>>
+            (EngineState
+              .sequences[F]
+              .andThen(mapIndex[Observation.Id, SequenceData[F]].index(seqId))
+              .modify(SequenceData.overrides.modify { x =>
+                if (enabled) x.enableInstrument else x.disableInstrument
+              }) >>>
               refreshSequence(seqId))
               .withEvent(SetInstrumentEnabled(seqId, user.some, enabled))
               .toHandle
@@ -1429,18 +1451,25 @@ object SeqexecEngine {
         q,
         s"SeqexecEngine: Setting DHS enabled flag to '$enabled' for sequence '${seqId.format}' by ${user.username}"
       ) *>
-        q.enqueue1(
+        q.offer(
           Event.modifyState[F, EngineState[F], SeqEvent](
-            ((EngineState.sequences[F] ^|-? index(seqId)).modify(SequenceData.overrides.modify {
-              x => if (enabled) x.enableDhs else x.disableDhs
-            }) >>>
+            (EngineState
+              .sequences[F]
+              .andThen(mapIndex[Observation.Id, SequenceData[F]].index(seqId))
+              .modify(SequenceData.overrides.modify { x =>
+                if (enabled) x.enableDhs else x.disableDhs
+              }) >>>
               refreshSequence(seqId)).withEvent(SetDhsEnabled(seqId, user.some, enabled)).toHandle
           )
         )
   }
 
-  def createTranslator[F[_]: Sync: Logger](site: Site, systems: Systems[F]): F[SeqTranslate[F]] =
-    SeqTranslate(site, systems)
+  def createTranslator[F[_]: Async: Logger](
+    site:          Site,
+    systems:       Systems[F],
+    conditionsRef: Ref[F, Conditions]
+  ): F[SeqTranslate[F]] =
+    SeqTranslate(site, systems, conditionsRef)
 
   private def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -1492,12 +1521,12 @@ object SeqexecEngine {
    * Credit: Fabio Labella
    * https://gitter.im/functional-streams-for-scala/fs2?at=5e0a6efbfd580457e79aaf0a
    */
-  def failIfNoEmitsWithin[F[_]: Concurrent: Timer, A](
+  def failIfNoEmitsWithin[F[_]: Async, A](
     timeout: FiniteDuration,
     msg:     String
   ): Pipe[F, A, A] = in => {
     import scala.concurrent.TimeoutException
-    def now = Timer[F].clock.monotonic(NANOSECONDS).map(_.nanos)
+    def now = Temporal[F].realTime
 
     Stream.eval(now.flatMap(Ref[F].of)).flatMap { lastActivityAt =>
       in.evalTap(_ => now.flatMap(lastActivityAt.set))
@@ -1510,7 +1539,7 @@ object SeqexecEngine {
 
                 Sync[F]
                   .raiseError[Unit](new TimeoutException(msg))
-                  .whenA(t <= 0.nanos) >> Timer[F].sleep(t)
+                  .whenA(t <= 0.nanos) >> Temporal[F].sleep(t)
               }
           }
         }
@@ -1565,7 +1594,7 @@ object SeqexecEngine {
    *   parallel.
    */
   private def nextRunnableObservations[F[_]](qid: QueueId, freed: Set[Resource])(
-    st:                                           EngineState[F]
+    st: EngineState[F]
   ): Set[Observation.Id] = {
     // Set of all resources in use
     val used = resourcesInUse(st)
@@ -1604,14 +1633,14 @@ object SeqexecEngine {
    * to check if sequences added to a queue should be started.
    */
   private def shouldSchedule[F[_]](qid: QueueId, sids: Set[Observation.Id])(
-    st:                                 EngineState[F]
+    st: EngineState[F]
   ): Set[Observation.Id] =
     findRunnableObservations(qid)(st).intersect(sids)
 
   /**
    * Build the seqexec and setup epics
    */
-  def build[F[_]: ConcurrentEffect: Timer: Logger](
+  def build[F[_]: Async: Logger](
     site:          Site,
     systems:       Systems[F],
     conf:          SeqexecEngineConfiguration,
@@ -1619,8 +1648,10 @@ object SeqexecEngine {
   )(implicit
     executeEngine: ExecEngineType[F]
   ): F[SeqexecEngine[F]] =
-    createTranslator(site, systems)
-      .map(new SeqexecEngineImpl[F](systems, conf, metrics, _))
+    Ref.of[F, Conditions](Conditions.Default).flatMap { rc =>
+      createTranslator(site, systems, rc)
+        .map(new SeqexecEngineImpl[F](systems, conf, metrics, _, rc))
+    }
 
   private def modifyStateEvent[F[_]](
     v:   SeqEvent,
@@ -1707,11 +1738,11 @@ object SeqexecEngine {
         case steps
             if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
           val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Pending)
-          xs ++ (Step.status.set(StepState.Running)(y) :: ys)
+          xs ++ (Step.status.replace(StepState.Running)(y) :: ys)
         case steps
             if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
           val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Running)
-          xs ++ (Step.status.set(StepState.Paused)(y) :: ys)
+          xs ++ (Step.status.replace(StepState.Paused)(y) :: ys)
         case x   => x
       }
 

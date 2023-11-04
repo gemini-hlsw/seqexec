@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -6,17 +6,17 @@ package seqexec.web.server.http4s
 import java.time.Instant
 
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import org.http4s.headers.`User-Agent`
 import seqexec.model.ClientId
+import cats.effect.Ref
 
 trait ClientsSetDb[F[_]] {
   def newClient(
-    id:                ClientId,
-    addr:              ClientsSetDb.ClientAddr,
-    ua:                Option[ClientsSetDb.UserAgent]
+    id:   ClientId,
+    addr: ClientsSetDb.ClientAddr,
+    ua:   Option[ClientsSetDb.UserAgent]
   ): F[Unit]
   def removeClient(id: ClientId): F[Unit]
   def report: F[Unit]

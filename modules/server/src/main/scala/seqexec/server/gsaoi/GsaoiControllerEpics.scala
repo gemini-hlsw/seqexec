@@ -1,15 +1,12 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gsaoi
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
 import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
-import cats.effect.Timer
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
@@ -89,10 +86,10 @@ object GsaoiControllerEpics {
   }
 
   // This looks a bit silly, but I prefer to keep it in case the definition is changed in the future.
-  private def readModeFromMode(rm: ReadMode): String = rm match {
-    case ReadMode.BRIGHT     => "FOWLER"
-    case ReadMode.FAINT      => "FOWLER"
-    case ReadMode.VERY_FAINT => "FOWLER"
+  private def readModeFromMode(rm: ReadMode): ReadMethod = rm match {
+    case ReadMode.BRIGHT     => ReadMethod.Fowler
+    case ReadMode.FAINT      => ReadMethod.Fowler
+    case ReadMode.VERY_FAINT => ReadMethod.Fowler
   }
 
   final case class EpicsGsaoiConfig(
@@ -107,7 +104,7 @@ object GsaoiControllerEpics {
     guiding:       Boolean
   )
 
-  def apply[F[_]: Async: Timer: Logger](epicsSys: => GsaoiEpics[F]): GsaoiFullHandler[F] =
+  def apply[F[_]: Async: Logger](epicsSys: => GsaoiEpics[F]): GsaoiFullHandler[F] =
     new GsaoiFullHandler[F] {
       private val L: Logger[F] = Logger[F]
 
@@ -124,7 +121,8 @@ object GsaoiControllerEpics {
           )
         ).flattenOption
 
-        val dcParams = List(
+        val readMethod: ReadMethod = readModeFromMode(config.dc.readMode)
+        val dcParams               = List(
           applyParam(current.coadds, config.dc.coadds, epicsSys.dcConfigCmd.setNumberOfCoadds),
           applyParam(current.exposureTime,
                      encode(config.dc.exposureTime),
@@ -134,9 +132,8 @@ object GsaoiControllerEpics {
                      fowlerSamplesFromMode(config.dc.readMode),
                      epicsSys.dcConfigCmd.setFowlerSamples
           ),
-          applyParam(current.readMode,
-                     readModeFromMode(config.dc.readMode),
-                     epicsSys.dcConfigCmd.setReadMode
+          (current.readMode =!= readMethod.name).option(
+            epicsSys.dcConfigCmd.setReadMode(readMethod.index)
           ),
           applyParam(current.roi, encode(config.dc.roi), epicsSys.dcConfigCmd.setRoi)
         ).flattenOption

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.nifs
@@ -125,7 +125,7 @@ object NifsController {
       case Left(_)                                  => 1 // TBD What should this be?
     }
 
-    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds))
+    cfg.coadds * (cfg.exposureTime + readOutTime.seconds)
   }
 
 }

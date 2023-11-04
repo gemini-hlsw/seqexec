@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.client.table
@@ -40,7 +40,7 @@ object ColumnWidth {
 
 object FixedColumnWidth {
   implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
-  private[table] def apply(p: Double)      = new FixedColumnWidth(p) {}
+  private[table] def apply(p: Double) = new FixedColumnWidth(p) {}
 
   def fromDouble(width: Double): Option[FixedColumnWidth] =
     (width >= 0).option(FixedColumnWidth(width))

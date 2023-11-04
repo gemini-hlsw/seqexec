@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gmos
@@ -37,7 +37,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
       case Filter.CaT_G0309               => ("CaT_G0309", "open2-8")
       case Filter.Ha_G0310                => ("open1-6", "Ha_G0310")
       case Filter.HaC_G0311               => ("open1-6", "HaC_G0311")
-      case Filter.DS920_G0312             => ("open1-6", "DS920_G0312")
+      case Filter.DS920_G0312             => ("DS920_G0312", "open2-8")
       case Filter.SII_G0317               => ("SII_G0317", "open2-8")
       case Filter.OIII_G0318              => ("OIII_G0318", "open2-8")
       case Filter.OIIIC_G0319             => ("OIIIC_G0319", "open2-8")
@@ -126,7 +126,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
 }
 
 object GmosNorthControllerEpics {
-  def apply[F[_]: Async: Timer: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
+  def apply[F[_]: Async: Logger](sys: => GmosEpics[F]): GmosController[F, NorthTypes] = {
     implicit val encoders = GmosNorthEncoders
     GmosControllerEpics[F, NorthTypes](sys, northConfigTypes)
   }

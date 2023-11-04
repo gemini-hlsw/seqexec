@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -15,7 +15,7 @@ class GemsControllerDisabled[F[_]: Logger: Applicative] extends GemsController[F
   override def pauseResume(
     pauseReasons:  Gaos.PauseConditionSet,
     resumeReasons: Gaos.ResumeConditionSet
-  )(cfg:           GemsController.GemsConfig): F[Gaos.PauseResume[F]] =
+  )(cfg: GemsController.GemsConfig): F[Gaos.PauseResume[F]] =
     PauseResume(
       overrideLogMessage("GeMS", "pause AO loops").some,
       overrideLogMessage("GeMS", "resume AO loops").some

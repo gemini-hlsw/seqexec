@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -12,6 +12,7 @@ import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
 import edu.gemini.seqexec.server.tcs.BinaryOnOff
 import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import edu.gemini.seqexec.server.tcs.ParkState
 import monocle.Iso
 import shapeless.tag
 import shapeless.tag.@@
@@ -30,7 +31,7 @@ package tcs {
     override def counter: Length = length
 
     def times(l: Length): Angle = convertToBase(l)
-    def *(l: Length): Angle     = times(l)
+    def *(l:     Length): Angle = times(l)
 
     def divide(a: Angle): Length = convertToCounter(a)
   }
@@ -39,12 +40,12 @@ package tcs {
 
     implicit class AngleOps(a: Angle) {
       def dividedBy(fps: FocalPlaneScale): Length = fps.divide(a)
-      def /(fps: FocalPlaneScale): Length         = dividedBy(fps)
+      def /(fps:         FocalPlaneScale): Length = dividedBy(fps)
     }
 
     implicit class LengthOps(l: Length) {
       def times(fps: FocalPlaneScale): Angle = fps * l
-      def *(fps: FocalPlaneScale): Angle     = times(fps)
+      def *(fps:     FocalPlaneScale): Angle = times(fps)
     }
 
   }
@@ -55,7 +56,7 @@ package tcs {
 
 }
 
-package object tcs                                       {
+package object tcs {
   val BottomPort: Int  = 1
   val InvalidPort: Int = 0
 
@@ -78,6 +79,7 @@ package object tcs                                       {
     Eq[Int].contramap(_.ordinal())
   implicit val endisEq: Eq[BinaryEnabledDisabled] =
     Eq[Int].contramap(_.ordinal())
+  implicit val parkEq: Eq[ParkState]              = Eq[Int].contramap(_.ordinal())
 
   def tagIso[B, T]: Iso[B @@ T, B] = Iso.apply[B @@ T, B](x => x)(tag[T](_))
 

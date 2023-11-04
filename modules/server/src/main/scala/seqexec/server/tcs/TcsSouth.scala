@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
@@ -14,16 +14,13 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
-import seqexec.model.enum.M1Source
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
-import seqexec.model.enum.TipTiltSource
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentGuide
-import seqexec.server.SeqexecFailure
 import seqexec.server.gems.Gems
 import seqexec.server.gems.GemsController.{ GemsConfig, GemsOff }
 import seqexec.server.tcs.TcsController.AGConfig
@@ -62,9 +59,10 @@ case class TcsSouth[F[_]: Sync: Logger] private (
   subsystems:    NonEmptySet[Subsystem],
   gaos:          Option[Gems[F]],
   guideDb:       GuideConfigDb[F]
-)(config:        TcsSouth.TcsSeqConfig[F])
+)(config: TcsSouth.TcsSeqConfig[F])
     extends Tcs[F] {
-  import Tcs.{ GuideWithOps, calcGuiderInUse }
+
+  import Tcs.GuideWithOps
 
   val Log: Logger[F] = Logger[F]
 
@@ -91,13 +89,13 @@ case class TcsSouth[F[_]: Sync: Logger] private (
       }
       .as(ConfigResult(this))
 
-  val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+  private val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+
   def calcGuiderConfig(
-    inUse:     Boolean,
     guideWith: Option[StandardGuideOptions.Value]
   ): GuiderConfig =
     guideWith
-      .flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+      .map(v => GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))
       .getOrElse(defaultGuiderConf)
 
   /*
@@ -105,115 +103,70 @@ case class TcsSouth[F[_]: Sync: Logger] private (
    * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
    * it will not be used for the step, regardless of the sequence values.
    */
-  def buildBasicTcsConfig(gc: GuideConfig): F[TcsSouthConfig] =
-    (BasicTcsConfig(
+  def buildBasicTcsConfig(gc: GuideConfig): TcsSouthConfig =
+    BasicTcsConfig(
       gc.tcsGuide,
       TelescopeConfig(config.offsetA, config.wavelA),
       BasicGuidersConfig(
         tag[P1Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1),
-                           config.guideWithP1
-          )
+          calcGuiderConfig(config.guideWithP1)
         ),
         tag[P2Config](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-                           config.guideWithP2
-          )
+          calcGuiderConfig(config.guideWithP2)
         ),
         tag[OIConfig](
-          calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS),
-                           config.guideWithOI
-          )
+          calcGuiderConfig(config.guideWithOI)
         )
       ),
       AGConfig(config.lightPath, HrwfsConfig.Auto.some),
       config.instrument
-    ): TcsSouthConfig).pure[F]
+    )
 
-  private def anyGeMSGuiderActive(gc: TcsSouth.TcsSeqConfig[F]): Boolean =
-    gc.guideWithCWFS1.exists(_.isActive) ||
-      gc.guideWithCWFS2.exists(_.isActive) ||
-      gc.guideWithCWFS3.exists(_.isActive) ||
-      gc.guideWithODGW1.exists(_.isActive) ||
-      gc.guideWithODGW2.exists(_.isActive) ||
-      gc.guideWithODGW3.exists(_.isActive) ||
-      gc.guideWithODGW4.exists(_.isActive)
+  private def buildTcsAoConfig(gc: GuideConfig): TcsSouthConfig = {
+    val aog = gc.gaosGuide.flatMap(_.toOption).getOrElse(GemsOff)
 
-  private def buildTcsAoConfig(gc: GuideConfig): F[TcsSouthConfig] =
-    gc.gaosGuide
-      .flatMap(_.toOption)
-      .fold {
-        // Only raise an error if there is no GeMS config coming from TCS and step has a GeMS guider active.
-        if (anyGeMSGuiderActive(config))
-          SeqexecFailure
-            .Execution("Attempting to run GeMS sequence before GeMS was configured.")
-            .raiseError[F, GemsConfig]
-        else
-          GemsOff.pure[F].widen[GemsConfig]
-      }(_.pure[F])
-      .map { aog =>
-        AoTcsConfig[GemsGuiders, GemsConfig](
-          gc.tcsGuide,
-          TelescopeConfig(config.offsetA, config.wavelA),
-          AoGuidersConfig[GemsGuiders](
-            tag[P1Config](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aog.isP1Used,
-                config.guideWithP1
-              )
-            ),
-            GemsGuiders(
-              tag[CWFS1Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS1
-                )
-              ),
-              tag[CWFS2Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS2
-                )
-              ),
-              tag[CWFS3Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithCWFS3
-                )
-              ),
-              tag[ODGW1Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW1
-                )
-              ),
-              tag[ODGW2Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW2
-                )
-              ),
-              tag[ODGW3Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW3
-                )
-              ),
-              tag[ODGW4Config](
-                calcGuiderConfig(calcGuiderInUse(gc.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-                                 config.guideWithODGW4
-                )
-              )
-            ),
-            tag[OIConfig](
-              calcGuiderConfig(
-                calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aog.isOIUsed,
-                config.guideWithOI
-              )
-            )
+    AoTcsConfig[GemsGuiders, GemsConfig](
+      gc.tcsGuide,
+      TelescopeConfig(config.offsetA, config.wavelA),
+      AoGuidersConfig[GemsGuiders](
+        tag[P1Config](
+          calcGuiderConfig(config.guideWithP1)
+        ),
+        GemsGuiders(
+          tag[CWFS1Config](
+            calcGuiderConfig(config.guideWithCWFS1)
           ),
-          AGConfig(config.lightPath, HrwfsConfig.Auto.some),
-          aog,
-          config.instrument
-        ): TcsSouthConfig
-      }
+          tag[CWFS2Config](
+            calcGuiderConfig(config.guideWithCWFS2)
+          ),
+          tag[CWFS3Config](
+            calcGuiderConfig(config.guideWithCWFS3)
+          ),
+          tag[ODGW1Config](
+            calcGuiderConfig(config.guideWithODGW1)
+          ),
+          tag[ODGW2Config](
+            calcGuiderConfig(config.guideWithODGW2)
+          ),
+          tag[ODGW3Config](
+            calcGuiderConfig(config.guideWithODGW3)
+          ),
+          tag[ODGW4Config](
+            calcGuiderConfig(config.guideWithODGW4)
+          )
+        ),
+        tag[OIConfig](
+          calcGuiderConfig(config.guideWithOI)
+        )
+      ),
+      AGConfig(config.lightPath, HrwfsConfig.Auto.some),
+      aog,
+      config.instrument
+    )
+  }
 
   def buildTcsConfig: F[TcsSouthConfig] =
-    guideDb.value.flatMap { c =>
+    guideDb.value.map { c =>
       if (gaos.isDefined) buildTcsAoConfig(c)
       else buildBasicTcsConfig(c)
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
@@ -7,15 +7,15 @@ import cats.effect._
 import cats.tests.CatsSuite
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.implicits._
+import org.http4s.syntax.all._
 import io.circe.syntax._
 import java.time.Year
-import lucuma.core.enum.{ Half, KeywordName, ProgramType, Site }
+import lucuma.core.enums.{ Half, KeywordName, ProgramType, Site }
 import lucuma.core.math.Index
 import lucuma.core.model.Semester
 import seqexec.model.dhs._
+import cats.effect.unsafe.implicits.global
 import seqexec.model.{ Observation, ProgramId }
-import seqexec.server.TestCommon._
 import seqexec.server.SeqexecFailure
 
 import GdsHttpClient._
@@ -31,7 +31,9 @@ final class GdsHttpClientSpec extends CatsSuite {
     val obsId  = Observation.Id(progId, Index.One)
     val id     = toImageFileId("label")
     val ks     =
-      KeywordBag(BooleanKeyword(KeywordName.SSA, false), DoubleKeyword(KeywordName.OBJECT, 98.76))
+      KeywordBag(BooleanKeyword(KeywordName.SSA: KeywordName, false),
+                 DoubleKeyword(KeywordName.OBJECT, 98.76)
+      )
     client.openObservation(obsId, id, ks).attempt.unsafeRunSync().isRight shouldEqual true
   }
 

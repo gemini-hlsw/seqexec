@@ -15,8 +15,8 @@
             </parameter>
             <parameter name="readMode">
                 <channel>dc:seqObs.A</channel>
-                <type>STRING</type>
-                <description>Read mode (DCS|FOWLER|SINGLE)</description>
+                <type>INTEGER</type>
+                <description>Read mode 0(DCS)|1(FOWLER)|2(SINGLE)</description>
             </parameter>
             <parameter name="exposureTime">
                 <channel>dc:seqObs.F</channel>
