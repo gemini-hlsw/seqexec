@@ -275,8 +275,9 @@ object TestCommon {
     .simulatedIgrins2Client[IO]
     .use(x =>
       IO(
-        Igrins2Controller(x,
-                          GdsClient(GdsClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
+        Igrins2Controller(
+          x,
+          GdsHttpClient(GdsHttpClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
         )
       )
     )

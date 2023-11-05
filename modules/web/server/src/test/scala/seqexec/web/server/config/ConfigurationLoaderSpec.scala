@@ -135,6 +135,8 @@ seqexec-engine {
         gnirs = simulated
         gpi = simulated
         gpiGds = simulated
+        igrins2 = simulated
+        igrins2Gds = simulated
         gsaoi = simulated
         gws = simulated
         nifs = simulated
@@ -159,6 +161,8 @@ seqexec-engine {
     gpiGDS = "http://localhost:8888/gds-seqexec"
     ghostUrl = "vm://ghost?marshal=false&broker.persistent=false"
     ghostGDS = "http://localhost:8888/xmlrpc"
+    igrins2Url = "vm://igrins2?marshal=false&broker.persistent=false"
+    igrins2GDS = "http://localhost:8888/xmlrpc"
 }
 
 """

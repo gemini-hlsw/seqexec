@@ -350,9 +350,9 @@ object Systems {
 
       def igrins2GDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
         Resource.pure[F, GdsClient[F]](
-          GdsClient(if (settings.systemControl.igrins2Gds.command) httpClient
-                    else GdsClient.alwaysOkClient[F],
-                    settings.igrins2GDS
+          GdsHttpClient(if (settings.systemControl.igrins2Gds.command) httpClient
+                        else GdsHttpClient.alwaysOkClient[F],
+                        settings.igrins2GDS
           )
         )
 

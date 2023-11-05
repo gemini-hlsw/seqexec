@@ -25,6 +25,9 @@ class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Contro
 
     override def closeObservation(id: ImageFileId): F[Unit] =
       overrideLogMessage(name, "closeObservation")
+
+    override def abortObservation(id: ImageFileId): F[Unit] =
+      overrideLogMessage(name, "abortObservation")
   }
 
   override def applyConfig(config: Igrins2Config): F[Unit] = overrideLogMessage(name, "applyConfig")
