@@ -977,7 +977,7 @@
     <Status name="tcsstate">
         <top>tcs</top>
         <attribute name="dtelFocusB">
-            <channel>sad:dtelFocus.B</channel>
+            <channel>dtelFocus.B</channel>
             <type>DOUBLE</type>
             <description>Instrument defocus</description>
         </attribute>
