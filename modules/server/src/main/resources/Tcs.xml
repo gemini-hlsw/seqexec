@@ -170,7 +170,7 @@
         <command name="instrumentDefocus">
             <description>Instrument defocus</description>
             <parameter name="dtelFocus">
-                <channel>dtelFocus.B</channel>
+                <channel>dtelFocus.VALB</channel>
                 <type>DOUBLE</type>
                 <description>Defocus offset B in mm</description>
             </parameter>
