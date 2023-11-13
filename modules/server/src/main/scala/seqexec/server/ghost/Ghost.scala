@@ -69,9 +69,8 @@ final case class Ghost[F[_]: Logger: Async](
 
   override val contributorName: String = "ghost"
 
-  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] = {
-    println("Call observe control")
-    val u = CompleteControl(
+  override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
+    CompleteControl(
       StopObserveCmd(_ => controller.stopObserve),
       AbortObserveCmd(controller.abortObserve),
       PauseObserveCmd(_ => controller.pauseObserve),
@@ -79,9 +78,6 @@ final case class Ghost[F[_]: Logger: Async](
       StopPausedCmd(controller.stopPaused),
       AbortPausedCmd(controller.abortPaused)
     )
-    println(u)
-    u
-  }
 
   override def observe(
     config: CleanConfig

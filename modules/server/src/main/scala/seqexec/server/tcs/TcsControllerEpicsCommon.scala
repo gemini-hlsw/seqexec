@@ -460,13 +460,16 @@ object TcsControllerEpicsCommon {
       subsystems: NonEmptySet[Subsystem],
       current:    Length,
       d:          Length
-    ): Option[WithDebug[C => F[C]]] = applyParam(
-      subsystems.contains(Subsystem.M2),
-      current,
-      d,
-      (x: Length) => epicsSys.instrumentDefocusCmd.setDefocus(x),
-      l.andThen(BaseEpicsTcsConfig.defocusB)
-    )("defocus")
+    ): Option[WithDebug[C => F[C]]] =
+      applyParam(
+        subsystems.contains(Subsystem.M2),
+        current,
+        d,
+        (x: Length) =>
+          Logger[F].debug(s"Set defocus to $x") *> epicsSys.instrumentDefocusCmd
+            .setDefocus(x),
+        l.andThen(BaseEpicsTcsConfig.defocusB)
+      )("defocus")
 
     /**
      * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current

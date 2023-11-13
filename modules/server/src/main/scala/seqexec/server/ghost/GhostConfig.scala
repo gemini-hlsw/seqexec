@@ -272,28 +272,26 @@ object GhostConfig {
     def defocusAmount(r: Double): Length =
       Microns(4.85 * r * r + 0.067 * r)
 
-    (ifu1Type, ifu2Type) match {
+    (ifu1Type, ifu2Type, baseCoords) match {
       // Dual target
-      case (IFUTargetType.Target(_), IFUTargetType.Target(_)) if baseCoords.isDefined =>
+      case (IFUTargetType.Target(_), IFUTargetType.Target(_), Some(baseCoords)) =>
         // if not linked get the average distance of each target to the base position
-        val r = baseCoords
-          .map { baseCoords =>
-            val r1 = ifu1Coords.diff(baseCoords).distance.toDoubleDegrees / 60
-            val r2 = ifu2Coords.foldMap(_.diff(baseCoords).distance.toDoubleDegrees / 60)
-            (r1 + r2) / 2
-          }
-          .getOrElse {
-            // If linked half the the distance between the two targets
-            ifu2Coords.foldMap(_.diff(ifu1Coords).distance.toDoubleDegrees / 60 / 2)
-          }
+        val r1 = ifu1Coords.angularDistance(baseCoords).toDoubleDegrees * 60
+        val r2 = ifu2Coords.foldMap(_.angularDistance(baseCoords).toDoubleDegrees * 60)
+        val r  = (r1 + r2) / 2
         defocusAmount(r)
-      case (IFUTargetType.Target(_), _)                                               =>
-        val r = baseCoords.foldMap(ifu1Coords.diff(_).distance.toDoubleDegrees / 60)
+      case (IFUTargetType.Target(_), IFUTargetType.Target(_), None)             =>
+        // If linked calculate the base the two targets
+        val base = ifu2Coords.map(a => a.interpolate(ifu1Coords, 0.5))
+        val u    = base.foldMap(_.angularDistance(ifu1Coords).toDoubleDegrees * 60)
+        defocusAmount(u)
+      case (IFUTargetType.Target(_), _, _)                                      =>
+        val r = baseCoords.foldMap(ifu1Coords.angularDistance(_).toDoubleDegrees * 60)
         defocusAmount(r)
-      case (_, IFUTargetType.Target(_))                                               =>
-        val r = (ifu2Coords, baseCoords).mapN((a, b) => a.diff(b).distance.toDoubleDegrees / 60)
+      case (_, IFUTargetType.Target(_), _)                                      =>
+        val r = (ifu2Coords, baseCoords).mapN((a, b) => a.angularDistance(b).toDoubleDegrees * 60)
         defocusAmount(r.orEmpty)
-      case _                                                                          => Microns(0)
+      case _                                                                    => Microns(0)
     }
   }
 
