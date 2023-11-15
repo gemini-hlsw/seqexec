@@ -154,9 +154,15 @@ object operations {
       level match {
         case ObservationLevel =>
           if (isObservePaused) {
-            List(Operations.StopObservation, Operations.AbortObservation)
+            List(Operations.StopObservation,
+                 Operations.AbortObservation,
+                 Operations.ResumeObservation
+            )
           } else {
-            List(Operations.StopObservation, Operations.AbortObservation)
+            List(Operations.StopObservation,
+                 Operations.AbortObservation,
+                 Operations.PauseObservation
+            )
           }
         case _                => Nil
       }
