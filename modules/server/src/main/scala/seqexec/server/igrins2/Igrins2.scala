@@ -18,6 +18,7 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import edu.gemini.spModel.obscomp.InstConstants
 import squants.time.Seconds
 import squants.time.Time
 import cats.effect.Async
@@ -25,6 +26,7 @@ import seqexec.model.dhs.ImageFileId
 import giapi.client.commands.Configuration
 import squants.time.TimeConversions._
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.tcs.Tcs._
 import cats.data.EitherT
 
 final case class Igrins2[F[_]: Logger: Async](
@@ -101,11 +103,21 @@ object Igrins2 {
         (for {
           expTime       <-
             config.extractObsAs[JDouble](SPIgrins2.EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+          clazz         <- config.extractObsAs[String](InstConstants.OBS_CLASS_PROP)
+          p             <- config.extractTelescopeAs[String](P_OFFSET_PROP)
+          q             <- config.extractTelescopeAs[String](Q_OFFSET_PROP)
+          obsClass       = clazz match {
+                             case "acq" | "acqCal" => "acq"
+                             case _                => "sci"
+                           }
           igrins2Config <-
             Right(new Igrins2Config {
               override def configuration: Configuration =
                 // TODO The ICD must indicate how to set the exposure time
-                Configuration.single("igrin2:exposureTime", expTime.value)
+                Configuration.single("ig2:dcs:expTime", expTime.value) |+|
+                  Configuration.single("ig2:seq:state", obsClass) |+|
+                  Configuration.single("ig2:seq:p", p.toDouble) |+|
+                  Configuration.single("ig2:seq:q", q.toDouble)
             })
         } yield igrins2Config).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }

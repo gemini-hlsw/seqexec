@@ -29,7 +29,9 @@ object Igrins2Controller {
 
       override val name = "IGRINS-2"
 
-      override def configuration(config: Igrins2Config): F[Configuration] =
+      override def configuration(config: Igrins2Config): F[Configuration] = {
+        pprint.pprintln(config.configuration)
         config.configuration.pure[F]
+      }
     }
 }
