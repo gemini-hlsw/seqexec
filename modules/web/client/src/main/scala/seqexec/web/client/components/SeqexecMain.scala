@@ -37,7 +37,8 @@ object AppTitle {
               horizontal = true,
               clazz = SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
       )(
-        s"Seqexec ${p.site.shortName}",
+        s"Seqexec ${p.site.shortName}", // TODO: Remove me
+        <.div(^.cls := "igrins2-only", "IGRINS2 ONLY!"),
         p.ws.ws.renderPending(_ =>
           <.div(
             SeqexecStyles.errorText,
