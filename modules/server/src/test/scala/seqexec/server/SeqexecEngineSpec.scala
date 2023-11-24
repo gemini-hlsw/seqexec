@@ -24,7 +24,6 @@ import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.WATER_VAPOR_PROP
 import cats.effect.std.Queue
 import fs2.Stream
 import lucuma.core.enums.Site
-import io.prometheus.client.CollectorRegistry
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers
@@ -495,8 +494,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -526,8 +524,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -557,8 +554,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -588,8 +584,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -619,8 +614,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -650,8 +644,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -681,8 +674,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -716,8 +708,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
         advanceOne(
@@ -746,8 +737,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
         seqexecEngine.startFrom(q, seqObsId1, Observer(""), 2, clientId, RunOverride.Default) *>
@@ -785,8 +775,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
         advanceOne(
@@ -817,8 +806,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, systems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
         advanceOne(
@@ -884,8 +872,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <- advanceOne(
                          q,
@@ -918,8 +905,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       result        <-
         seqexecEngine.start(q,
@@ -961,8 +947,7 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
       .apply(EngineState.default[IO])
 
     (for {
-      sm            <- SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry())
-      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm)
+      seqexecEngine <- SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings)
       q             <- Queue.bounded[IO, executeEngine.EventType](10)
       sf            <-
         advanceN(

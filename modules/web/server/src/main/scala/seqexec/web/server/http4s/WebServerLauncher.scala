@@ -21,18 +21,14 @@ import cats.effect.std.{ Dispatcher, Queue }
 import fs2.concurrent.Topic
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import io.prometheus.client.CollectorRegistry
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.client.middleware.RequestLogger
 import org.http4s.client.middleware.ResponseLogger
-import org.http4s.metrics.prometheus.Prometheus
-import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.Router
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.Server
 import org.http4s.server.websocket.WebSocketBuilder2
-import org.http4s.server.middleware.Metrics
 import org.http4s.server.middleware.{ Logger => Http4sLogger }
 import pureconfig._
 import seqexec.model.config._
@@ -41,7 +37,6 @@ import seqexec.server
 import seqexec.server.CaServiceInit
 import seqexec.server.SeqexecEngine
 import seqexec.server.SeqexecFailure
-import seqexec.server.SeqexecMetrics
 import seqexec.server.Systems
 import seqexec.server.executeEngine
 import seqexec.server.tcs.GuideConfigDb
@@ -121,14 +116,8 @@ object WebServerLauncher extends IOApp with LogInitialization {
     inputs:    server.EventQueue[F],
     outputs:   Topic[F, SeqexecEvent],
     se:        SeqexecEngine[F],
-    cr:        CollectorRegistry,
     clientsDb: ClientsSetDb[F]
   ): Resource[F, Server] = {
-
-    // The prometheus route does not get logged
-    val prRouter = Router[F](
-      "/" -> PrometheusExportService[F](cr).routes
-    )
 
     val ssl: F[Option[SSLContext]] = conf.webServer.tls.map(makeContext[F]).sequence
 
@@ -137,7 +126,7 @@ object WebServerLauncher extends IOApp with LogInitialization {
         val builder =
           BlazeServerBuilder[F]
             .bindHttp(conf.webServer.port, conf.webServer.host)
-            .withHttpWebSocketApp(wsb => (prRouter <+> all(wsb)).orNotFound)
+            .withHttpWebSocketApp(all(_).orNotFound)
         ssl.map(_.fold(builder)(builder.withSslContext)).map(_.resource)
       }.flatten
 
@@ -161,12 +150,10 @@ object WebServerLauncher extends IOApp with LogInitialization {
       "/ping" -> new PingRoutes(as).service
     )
 
-    def loggedRoutes(wsb: WebSocketBuilder2[F])                               =
+    def loggedRoutes(wsb: WebSocketBuilder2[F]) =
       pingRouter <+> Http4sLogger.httpRoutes(logHeaders = false, logBody = false)(router(wsb))
-    val metricsMiddleware: Resource[F, WebSocketBuilder2[F] => HttpRoutes[F]] =
-      Prometheus.metricsOps[F](cr, "seqexec").map(x => wsb => Metrics[F](x)(loggedRoutes(wsb)))
 
-    metricsMiddleware.flatMap(x => build(x))
+    build(loggedRoutes)
 
   }
 
@@ -249,14 +236,12 @@ object WebServerLauncher extends IOApp with LogInitialization {
 
     def engineIO(
       conf:       SeqexecConfiguration,
-      httpClient: Client[IO],
-      collector:  CollectorRegistry
+      httpClient: Client[IO]
     ): Resource[IO, SeqexecEngine[IO]] =
       for {
-        met  <- Resource.eval(SeqexecMetrics.build[IO](conf.site, collector))
         caS  <- Resource.eval(CaServiceInit.caInit[IO](conf.seqexecEngine))
         sys  <- Systems.build(conf.site, httpClient, conf.seqexecEngine, caS)
-        seqE <- Resource.eval(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine, met))
+        seqE <- Resource.eval(SeqexecEngine.build(conf.site, sys, conf.seqexecEngine))
       } yield seqE
 
     def webServerIO(
@@ -264,14 +249,13 @@ object WebServerLauncher extends IOApp with LogInitialization {
       in:   Queue[IO, executeEngine.EventType],
       out:  Topic[IO, SeqexecEvent],
       en:   SeqexecEngine[IO],
-      cr:   CollectorRegistry,
       cs:   ClientsSetDb[IO]
     ): Resource[IO, Unit] =
       for {
         as <- Resource.eval(authService[IO](conf.mode, conf.authentication))
         ca <- Resource.eval(SmartGcalInitializer.init[IO](conf.smartGcal))
         _  <- redirectWebServer(en.systems.guideDb, ca)(conf.webServer)
-        _  <- webServer[IO](conf, ca, as, in, out, en, cr, cs)
+        _  <- webServer[IO](conf, ca, as, in, out, en, cs)
       } yield ()
 
     def publishStats[F[_]: Temporal](cs: ClientsSetDb[F]): Stream[F, Unit] =
@@ -292,13 +276,12 @@ object WebServerLauncher extends IOApp with LogInitialization {
         // the order of the log messages.
         dsp    <- Dispatcher.sequential[IO](true)
         _      <- Resource.eval(logToClients(out, dsp))
-        cr     <- Resource.eval(IO(new CollectorRegistry))
         cs     <- Resource.eval(
                     Ref.of[IO, ClientsSetDb.ClientsSet](Map.empty).map(ClientsSetDb.apply[IO](_))
                   )
         _      <- Resource.eval(publishStats(cs).compile.drain.start)
-        engine <- engineIO(conf, cli, cr)
-        _      <- webServerIO(conf, inq, out, engine, cr, cs)
+        engine <- engineIO(conf, cli)
+        _      <- webServerIO(conf, inq, out, engine, cs)
         _      <- Resource.eval(
                     inq.size
                       .map(l => Logger[IO].debug(s"Queue length: $l").whenA(l > 1))

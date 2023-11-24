@@ -9,7 +9,6 @@ import cats.syntax.all._
 import cats.data.NonEmptyList
 import cats.effect.unsafe.IORuntime
 import fs2.Stream
-import io.prometheus.client.CollectorRegistry
 import org.typelevel.log4cats.noop.NoOpLogger
 import org.typelevel.log4cats.Logger
 
@@ -110,10 +109,8 @@ class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
       )
     }.unsafeRunSync()
 
-  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync()
-
   val seqexecEngine: SeqexecEngine[IO] =
-    SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings, sm).unsafeRunSync()
+    SeqexecEngine.build(Site.GS, defaultSystems, defaultSettings).unsafeRunSync()
 
   def advanceOne(
     q:   EventQueue[IO],

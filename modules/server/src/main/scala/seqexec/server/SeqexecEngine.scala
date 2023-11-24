@@ -259,7 +259,6 @@ object SeqexecEngine {
   private class SeqexecEngineImpl[F[_]: Async: Logger](
     override val systems: Systems[F],
     settings:             SeqexecEngineConfiguration,
-    sm:                   SeqexecMetrics,
     translator:           SeqTranslate[F],
     conditionsRef:        Ref[F, Conditions]
   )(implicit
@@ -859,8 +858,7 @@ object SeqexecEngine {
           .mergeHaltBoth(seqQueueRefreshStream.rethrow.mergeHaltL(heartbeatStream))
       )(EngineState.default[F]).flatMap(x => Stream.eval(notifyODB(x).attempt)).flatMap {
         case Right((ev, qState)) =>
-          val sequences = qState.sequences.values.map(viewSequence).toList
-          toSeqexecEvent[F](ev, qState) <* Stream.eval(updateMetrics(ev, sequences))
+          toSeqexecEvent[F](ev, qState)
         case Left(x)             =>
           Stream.eval(Logger[F].error(x)("Error notifying the ODB").as(NullEvent))
       }
@@ -1329,29 +1327,6 @@ object SeqexecEngine {
         case _                                                  => Applicative[F].unit
       }).as(i)
 
-    /**
-     * Update some metrics based on the event types
-     */
-    def updateMetrics(e: EventResult[SeqEvent], sequences: List[SequenceView]): F[Unit] = {
-      def instrument(id: Observation.Id): Option[Instrument] =
-        sequences.find(_.id === id).map(_.metadata.instrument)
-
-      (e match {
-        // TODO Add metrics for more events
-        case UserCommandResponse(ue, _, _) =>
-          ue match {
-            case UserEvent.Start(id, _, _) =>
-              instrument(id).map(sm.startRunning[F]).getOrElse(Sync[F].unit)
-            case _                         => Sync[F].unit
-          }
-        case SystemUpdate(se, _)           =>
-          se match {
-            case _ => Sync[F].unit
-          }
-        case _                             => Sync[F].unit
-      }).flatMap(_ => Sync[F].unit)
-    }
-
     private def updateSequenceEndo(
       seqId:  Observation.Id,
       obsseq: SequenceData[F]
@@ -1643,14 +1618,13 @@ object SeqexecEngine {
   def build[F[_]: Async: Logger](
     site:          Site,
     systems:       Systems[F],
-    conf:          SeqexecEngineConfiguration,
-    metrics:       SeqexecMetrics
+    conf:          SeqexecEngineConfiguration
   )(implicit
     executeEngine: ExecEngineType[F]
   ): F[SeqexecEngine[F]] =
     Ref.of[F, Conditions](Conditions.Default).flatMap { rc =>
       createTranslator(site, systems, rc)
-        .map(new SeqexecEngineImpl[F](systems, conf, metrics, _, rc))
+        .map(new SeqexecEngineImpl[F](systems, conf, _, rc))
     }
 
   private def modifyStateEvent[F[_]](

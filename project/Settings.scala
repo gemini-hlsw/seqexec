@@ -32,12 +32,11 @@ object Settings {
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.5.1"
 
-    val http4sVersion                  = "0.23.24"
-    val http4sBlazeVersion             = "0.23.15"
-    val http4sJdkHttpClientVersion     = "0.9.1"
-    val http4sBoopickleVersion         = "0.23.11"
-    val http4sPrometheusMetricsVersion = "0.24.3"
-    val http4sScalaXmlVersion          = "0.23.13"
+    val http4sVersion              = "0.23.24"
+    val http4sBlazeVersion         = "0.23.15"
+    val http4sJdkHttpClientVersion = "0.9.1"
+    val http4sBoopickleVersion     = "0.23.11"
+    val http4sScalaXmlVersion      = "0.23.13"
 
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
@@ -84,7 +83,6 @@ object Settings {
     val gmpStatusDatabase   = "0.3.7"
     val gmpCmdClientBridge  = "0.6.7"
     val guava               = "31.0.1-jre"
-    val prometheusClient    = "0.16.0"
     val geminiLocales       = "0.7.0"
     val pprint              = "0.8.1"
     val jaxb                = "2.3.1"
@@ -151,35 +149,31 @@ object Settings {
         "com.rpiaggio"  %%% "log4cats-loglevel" % LibraryVersions.log4catsLevel
       )
     )
-    val PrometheusClient =
-      "io.prometheus" % "simpleclient_common" % LibraryVersions.prometheusClient
-    val Logging         = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
-    val PureConfig      = Seq(
+    val Logging          = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
+    val PureConfig       = Seq(
       "com.github.pureconfig" %% "pureconfig"             % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats"        % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-cats-effect" % LibraryVersions.pureConfig,
       "com.github.pureconfig" %% "pureconfig-http4s"      % LibraryVersions.pureConfig
     )
-    val OpenCSV         = "net.sf.opencsv" % "opencsv" % LibraryVersions.opencsv
-    val Squants         = Def.setting("org.typelevel" %%% "squants" % LibraryVersions.squants)
-    val ScalaXml        =
+    val OpenCSV          = "net.sf.opencsv"        % "opencsv"      % LibraryVersions.opencsv
+    val Squants          = Def.setting("org.typelevel" %%% "squants" % LibraryVersions.squants)
+    val ScalaXml         =
       Def.setting("org.scala-lang.modules" %%% "scala-xml" % LibraryVersions.scalaXmlVersion)
-    val Http4s          = Seq("org.http4s" %% "http4s-dsl" % LibraryVersions.http4sVersion,
+    val Http4s           = Seq("org.http4s" %% "http4s-dsl" % LibraryVersions.http4sVersion,
                      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4sBlazeVersion
     )
-    val Http4sClient    = Seq(
+    val Http4sClient     = Seq(
       "org.http4s" %% "http4s-dsl"             % LibraryVersions.http4sVersion,
       "org.http4s" %% "http4s-jdk-http-client" % LibraryVersions.http4sJdkHttpClientVersion
     )
-    val Http4sBoopickle =
+    val Http4sBoopickle  =
       "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4sBoopickleVersion
-    val Http4sCore       = "org.http4s" %% "http4s-core"        % LibraryVersions.http4sVersion
-    val Http4sServer     = "org.http4s" %% "http4s-server"      % LibraryVersions.http4sVersion
-    val Http4sCirce      = "org.http4s" %% "http4s-circe"       % LibraryVersions.http4sVersion
-    val Http4sXml        = "org.http4s" %% "http4s-scala-xml-1" % LibraryVersions.http4sScalaXmlVersion
-    val Http4sPrometheus =
-      "org.http4s" %% "http4s-prometheus-metrics" % LibraryVersions.http4sPrometheusMetricsVersion
-    val Monocle = Def.setting(
+    val Http4sCore   = "org.http4s" %% "http4s-core"        % LibraryVersions.http4sVersion
+    val Http4sServer = "org.http4s" %% "http4s-server"      % LibraryVersions.http4sVersion
+    val Http4sCirce  = "org.http4s" %% "http4s-circe"       % LibraryVersions.http4sVersion
+    val Http4sXml    = "org.http4s" %% "http4s-scala-xml-1" % LibraryVersions.http4sScalaXmlVersion
+    val Monocle      = Def.setting(
       Seq(
         "dev.optics" %%% "monocle-core"   % LibraryVersions.monocleVersion,
         "dev.optics" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
@@ -187,7 +181,7 @@ object Settings {
         "dev.optics" %%% "monocle-law"    % LibraryVersions.monocleVersion
       )
     )
-    val Circe   = Def.setting(
+    val Circe        = Def.setting(
       Seq(
         "io.circe" %%% "circe-core"    % LibraryVersions.circeVersion,
         "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,
