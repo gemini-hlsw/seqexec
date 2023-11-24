@@ -11,7 +11,7 @@ import scala.collection.immutable.SortedSet
 import cats.Eq
 import cats.data.NonEmptySet
 import cats.syntax.all._
-import io.chrisdavenport.cats.time.instances.all._
+import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums.GcalArc
 import lucuma.core.enums.GcalContinuum
 import lucuma.core.enums.GcalDiffuser
