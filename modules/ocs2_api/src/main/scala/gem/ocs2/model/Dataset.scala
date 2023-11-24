@@ -7,7 +7,7 @@ import java.time.Instant
 
 import cats.Order
 import cats.Show
-import io.chrisdavenport.cats.time.instances.instant.instantInstances
+import org.typelevel.cats.time.instances.instant.instantInstances
 import lucuma.core.optics.Format
 import lucuma.core.syntax.string._
 import seqexec.model.Observation

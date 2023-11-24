@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package io.chrisdavenport.cats.time.instances
+package org.typelevel.cats.time.instances
 
 import java.time._
 

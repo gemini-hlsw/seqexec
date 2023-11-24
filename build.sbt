@@ -291,6 +291,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
       Squants.value,
       Mouse.value,
       BooPickle.value,
+      TestLibs.value,
       CatsTime.value
     ) ++ MUnit.value ++ Monocle.value ++ LucumaCore.value
   )
