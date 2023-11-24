@@ -2,7 +2,7 @@ addSbtPlugin("edu.gemini" % "sbt-lucuma-app" % "0.10.13")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.2")
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.1")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 
 // sbt revolver lets launching applications from the sbt console
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
