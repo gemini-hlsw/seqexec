@@ -10,7 +10,7 @@ object Settings {
   /** Library versions */
   object LibraryVersions {
     // ScalaJS libraries
-    val scalaDom                = "2.6.0"
+    val scalaDom                = "2.8.0"
     val scalajsReact            = "2.1.1"
     val booPickle               = "1.4.0"
     val diode                   = "1.2.0-RC4"
@@ -25,14 +25,14 @@ object Settings {
     // Scala libraries
     val catsEffectVersion   = "3.5.2"
     val catsVersion         = "2.10.0"
-    val mouseVersion        = "1.2.1"
-    val fs2Version          = "3.9.2"
+    val mouseVersion        = "1.2.2"
+    val fs2Version          = "3.9.3"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.4.0"
 
-    val http4sVersion                  = "0.23.23"
+    val http4sVersion                  = "0.23.24"
     val http4sBlazeVersion             = "0.23.15"
     val http4sJdkHttpClientVersion     = "0.9.1"
     val http4sBoopickleVersion         = "0.23.11"
@@ -42,13 +42,13 @@ object Settings {
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "9.4.0"
+    val jwt            = "9.4.5"
     val slf4j          = "2.0.9"
     val log4s          = "1.10.0"
     val log4cats       = "2.6.0"
     val log4catsLevel  = "0.3.1"
     val logback        = "1.4.11"
-    val janino         = "3.1.9"
+    val janino         = "3.1.10"
     val logstash       = "7.0"
     val pureConfig     = "0.17.4"
     val monocleVersion = "3.2.0"
