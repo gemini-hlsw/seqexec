@@ -60,9 +60,9 @@ object Settings {
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "5.2.0"
-    val munitVersion           = "0.7.29"
+    val munitVersion           = "1.0.0-M10"
     val munitDisciplineVersion = "1.0.9"
-    val munitCatsEffectVersion = "1.0.7"
+    val munitCatsEffectVersion = "2.0.0-M4"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
@@ -105,9 +105,9 @@ object Settings {
     )
     val MUnit          = Def.setting(
       Seq(
-        "org.scalameta" %%% "munit"               % LibraryVersions.munitVersion           % Test,
-        "org.typelevel" %%% "munit-cats-effect-3" % LibraryVersions.munitCatsEffectVersion % Test,
-        "org.typelevel" %%% "discipline-munit"    % LibraryVersions.munitDisciplineVersion % Test
+        "org.scalameta" %%% "munit"             % LibraryVersions.munitVersion           % Test,
+        "org.typelevel" %%% "munit-cats-effect" % LibraryVersions.munitCatsEffectVersion % Test,
+        "org.typelevel" %%% "discipline-munit"  % LibraryVersions.munitDisciplineVersion % Test
       )
     )
     val XmlUnit        = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
