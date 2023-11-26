@@ -978,7 +978,7 @@
         <top>tcs</top>
         <attribute name="dtelFocusB">
             <channel>dtelFocus.VALB</channel>
-            <type>DOUBLE</type>
+            <type>STRING</type>
             <description>Instrument defocus</description>
         </attribute>
         <attribute name="crfollow">
