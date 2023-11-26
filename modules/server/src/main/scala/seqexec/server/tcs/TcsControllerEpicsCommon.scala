@@ -466,8 +466,10 @@ object TcsControllerEpicsCommon {
         current,
         d,
         (x: Length) =>
-          Logger[F].debug(s"Set defocus to $x") *> epicsSys.instrumentDefocusCmd
-            .setDefocus(x),
+          Logger[F].debug(
+            s"Set defocus to $x ${epicsSys.instrumentDefocusCmd}"
+          ) *> epicsSys.instrumentDefocusCmd
+            .setDefocus(x) <* Logger[F].debug("Set defocus done"),
         l.andThen(BaseEpicsTcsConfig.defocusB)
       )("defocus")
 
@@ -711,7 +713,7 @@ object TcsControllerEpicsCommon {
         setInstrumentDefocus(Iso.id)(subsystems,
                                      current.defocusB,
                                      tcs.tc.defocusB.getOrElse(Millimeters(0))
-        )
+        ).filter(_ => false)
       ).flattenOption
 
     def guideOn(
