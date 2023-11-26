@@ -466,9 +466,7 @@ object TcsControllerEpicsCommon {
         current,
         d,
         (x: Length) =>
-          Logger[F].debug(
-            s"Set defocus to $x ${epicsSys.instrumentDefocusCmd}"
-          ) *> epicsSys.instrumentDefocusCmd
+          Logger[F].debug( s"Set defocus to $x") *> epicsSys.instrumentDefocusCmd
             .setDefocus(x) <* Logger[F].debug("Set defocus done"),
         l.andThen(BaseEpicsTcsConfig.defocusB)
       )("defocus")
