@@ -30,7 +30,7 @@ object Settings {
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVersion     = "1.2.0"
-    val catsTime            = "0.4.0"
+    val catsTime            = "0.5.1"
 
     val http4sVersion              = "0.23.24"
     val http4sBlazeVersion         = "0.23.15"
@@ -60,9 +60,9 @@ object Settings {
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "5.2.0"
-    val munitVersion           = "0.7.29"
+    val munitVersion           = "1.0.0-M10"
     val munitDisciplineVersion = "1.0.9"
-    val munitCatsEffectVersion = "1.0.7"
+    val munitCatsEffectVersion = "2.0.0-M4"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
@@ -105,9 +105,9 @@ object Settings {
     )
     val MUnit          = Def.setting(
       Seq(
-        "org.scalameta" %%% "munit"               % LibraryVersions.munitVersion           % Test,
-        "org.typelevel" %%% "munit-cats-effect-3" % LibraryVersions.munitCatsEffectVersion % Test,
-        "org.typelevel" %%% "discipline-munit"    % LibraryVersions.munitDisciplineVersion % Test
+        "org.scalameta" %%% "munit"             % LibraryVersions.munitVersion           % Test,
+        "org.typelevel" %%% "munit-cats-effect" % LibraryVersions.munitCatsEffectVersion % Test,
+        "org.typelevel" %%% "discipline-munit"  % LibraryVersions.munitDisciplineVersion % Test
       )
     )
     val XmlUnit        = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
@@ -132,7 +132,7 @@ object Settings {
     val JuliSlf4j        = "org.slf4j"             % "jul-to-slf4j" % LibraryVersions.slf4j
     val NopSlf4j         = "org.slf4j"             % "slf4j-nop"    % LibraryVersions.slf4j
     val CatsTime         = Def.setting(
-      "io.chrisdavenport" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
+      "org.typelevel" %%% "cats-time" % LibraryVersions.catsTime % "compile->compile;test->test"
     )
     val Log4Cats         = Def.setting("org.typelevel" %%% "log4cats-slf4j" % LibraryVersions.log4cats)
     val Log4CatsNoop     =
