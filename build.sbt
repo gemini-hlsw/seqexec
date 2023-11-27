@@ -117,14 +117,12 @@ lazy val seqexec_web_server = project
                                 JwtCore,
                                 JwtCirce,
                                 Http4sServer,
-                                Http4sPrometheus,
                                 CommonsHttp,
                                 ScalaMock,
                                 Log4CatsNoop.value
     ) ++
       Http4sClient ++ Http4s ++ PureConfig ++ Logging.value,
     // Supports launching the server in the background
-    reStart / javaOptions += s"-javaagent:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(ThisBuild / baseDirectory).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     reStart / mainClass  := Some("seqexec.web.server.http4s.WebServerLauncher"),
     Compile / bspEnabled := false
   )
@@ -252,7 +250,6 @@ lazy val seqexec_server = project
         OpenCSV,
         Http4sXml,
         Http4sBoopickle,
-        PrometheusClient,
         Log4Cats.value,
         Log4CatsNoop.value,
         TestLibs.value,
@@ -340,7 +337,6 @@ lazy val seqexecCommonSettings = Seq(
   // Specify a different name for the config file
   bashScriptConfigLocation        := Some("${app_home}/../conf/launcher.args"),
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
-  bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
   Universal / mappings += {
     val f = (seqexec_web_server / Compile / resourceDirectory).value / "logback.xml"
