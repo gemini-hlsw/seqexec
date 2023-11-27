@@ -711,7 +711,7 @@ object TcsControllerEpicsCommon {
         setInstrumentDefocus(Iso.id)(subsystems,
                                      current.defocusB,
                                      tcs.tc.defocusB.getOrElse(Millimeters(0))
-        ).filter(_ => false)
+        )
       ).flattenOption
 
     def guideOn(
