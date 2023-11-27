@@ -32,7 +32,7 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.space.Millimeters
+// import squants.space.Millimeters
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
@@ -98,11 +98,11 @@ sealed trait TcsControllerEpicsCommon[F[_]] {
     d:          AGConfig
   ): Option[WithDebug[C => F[C]]]
 
-  def setInstrumentDefocus[C](l: Lens[C, BaseEpicsTcsConfig])(
-    subsystems: NonEmptySet[Subsystem],
-    current:    Length,
-    d:          Length
-  ): Option[WithDebug[C => F[C]]]
+  // def setInstrumentDefocus[C](l: Lens[C, BaseEpicsTcsConfig])(
+  //   subsystems: NonEmptySet[Subsystem],
+  //   current:    Length,
+  //   d:          Length
+  // ): Option[WithDebug[C => F[C]]]
 
   def setTelescopeOffset(c: FocalPlaneOffset): F[Unit]
 
@@ -452,25 +452,23 @@ object TcsControllerEpicsCommon {
       }
     }
 
-    private implicit val eqLength: Eq[Length] = Eq.by(_.toMicrons)
-
-    override def setInstrumentDefocus[C](
-      l:          Lens[C, BaseEpicsTcsConfig]
-    )(
-      subsystems: NonEmptySet[Subsystem],
-      current:    Length,
-      d:          Length
-    ): Option[WithDebug[C => F[C]]] =
-      applyParam(
-        subsystems.contains(Subsystem.M2),
-        current,
-        d,
-        (x: Length) =>
-          Logger[F].debug(s"Set defocus to $x") *>
-            epicsSys.instrumentDefocusCmd.setDefocus(x),
-        l.andThen(BaseEpicsTcsConfig.defocusB)
-      )("defocus")
-
+    // override def setInstrumentDefocus[C](
+    //   l:          Lens[C, BaseEpicsTcsConfig]
+    // )(
+    //   subsystems: NonEmptySet[Subsystem],
+    //   current:    Length,
+    //   d:          Length
+    // ): Option[WithDebug[C => F[C]]] =
+    //   applyParam(
+    //     subsystems.contains(Subsystem.M2),
+    //     current,
+    //     d,
+    //     (x: Length) =>
+    //       Logger[F].debug( s"Set defocus to $x") *> epicsSys.instrumentDefocusCmd
+    //         .setDefocus(x) <* Logger[F].debug("Set defocus done"),
+    //     l.andThen(BaseEpicsTcsConfig.defocusB)
+    //   )("defocus")
+    //
     /**
      * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current
      * position is Parked and requested position is OUT (or the other way around), then it is not
@@ -707,11 +705,11 @@ object TcsControllerEpicsCommon {
         setPwfs2(Iso.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
         setOiwfs(Iso.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
         setScienceFold(Iso.id)(subsystems, current, tcs.agc.sfPos),
-        setHrPickup(Iso.id)(subsystems, current, tcs.agc),
-        setInstrumentDefocus(Iso.id)(subsystems,
-                                     current.defocusB,
-                                     tcs.tc.defocusB.getOrElse(Millimeters(0))
-        )
+        setHrPickup(Iso.id)(subsystems, current, tcs.agc)
+        // setInstrumentDefocus(Iso.id)(subsystems,
+        //                              current.defocusB,
+        //                              tcs.tc.defocusB.getOrElse(Millimeters(0))
+        // )
       ).flattenOption
 
     def guideOn(
