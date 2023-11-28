@@ -285,13 +285,14 @@ object GhostConfig {
         val base = ifu2Coords.map(a => a.interpolate(ifu1Coords, 0.5))
         val u    = base.foldMap(_.angularDistance(ifu1Coords).toDoubleDegrees * 60)
         defocusAmount(u)
-      case (IFUTargetType.Target(_), _, _)                                      =>
+      case (IFUTargetType.Target(_), IFUTargetType.SkyPosition, _)              =>
         val r = baseCoords.foldMap(ifu1Coords.angularDistance(_).toDoubleDegrees * 60)
         defocusAmount(r)
-      case (_, IFUTargetType.Target(_), _)                                      =>
+      case (IFUTargetType.SkyPosition, IFUTargetType.Target(_), _)              =>
         val r = (ifu2Coords, baseCoords).mapN((a, b) => a.angularDistance(b).toDoubleDegrees * 60)
         defocusAmount(r.orEmpty)
-      case _                                                                    => Microns(0)
+      case _                                                                    =>
+        Microns(0)
     }
   }
 
