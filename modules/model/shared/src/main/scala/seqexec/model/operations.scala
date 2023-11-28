@@ -152,19 +152,20 @@ object operations {
       level: OperationLevelType[L]
     ): List[Operations[L]] =
       level match {
-        // case ObservationLevel =>
-        //   if (isObservePaused) {
-        //     List(Operations.StopObservation,
-        //          Operations.AbortObservation,
-        //          Operations.ResumeObservation
-        //     )
-        //   } else {
-        //     List(Operations.StopObservation,
-        //          Operations.AbortObservation,
-        //          Operations.PauseObservation
-        //     )
-        //   }
-        case _ => Nil
+        case ObservationLevel =>
+          // if (isObservePaused) {
+          //   List(Operations.StopObservation,
+          //        Operations.AbortObservation,
+          //        Operations.ResumeObservation
+          //   )
+          // } else {
+          //   List(Operations.StopObservation,
+          //        Operations.AbortObservation,
+          //        Operations.PauseObservation
+          //   )
+          // }
+          List(Operations.AbortObservation)
+        case _                => Nil
       }
   }
 
