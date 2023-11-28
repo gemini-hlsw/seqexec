@@ -164,7 +164,8 @@ object operations {
           //        Operations.PauseObservation
           //   )
           // }
-          List(Operations.AbortObservation)
+          // List(Operations.AbortObservation)
+          Nil
         case _                => Nil
       }
   }
