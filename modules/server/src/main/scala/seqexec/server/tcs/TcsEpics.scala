@@ -1464,7 +1464,8 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     private val defocus = cs.map(_.getDouble("dtelFocus"))
 
     override def setDefocus(v: Length): F[Unit] =
-      setParameter[F, java.lang.Double](defocus, v.toMillimeters)
+      Async[F]
+        .delay(println(defocus)) *> setParameter[F, java.lang.Double](defocus, v.toMillimeters)
   }
 
   trait ProbeGuideConfig[F[_]] {

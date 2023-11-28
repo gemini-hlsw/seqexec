@@ -171,7 +171,7 @@
             <description>Instrument defocus</description>
             <parameter name="dtelFocus">
                 <channel>dtelFocus.B</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Defocus offset B in mm</description>
             </parameter>
         </command>
