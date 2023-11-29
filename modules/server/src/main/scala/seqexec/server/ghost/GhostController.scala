@@ -39,11 +39,8 @@ object GhostController {
 
       override val name = "GHOST"
 
-      override def configuration(config: GhostConfig): F[Configuration] = {
-        val c = config.configuration
-        pprint.pprintln(c.config.toList.sortBy(_._1))
-        c.pure[F]
-      }
+      override def configuration(config: GhostConfig): F[Configuration] =
+        config.configuration.pure[F]
 
       override def stopObserve: F[Unit] =
         client.stop.void
