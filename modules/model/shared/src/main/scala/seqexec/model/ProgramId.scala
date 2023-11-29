@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 import cats.Order
 import cats.Show
 import cats.syntax.all._
-import io.chrisdavenport.cats.time.instances.all._
+import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums.ProgramType
 import lucuma.core.enums.Site
 import lucuma.core.math.Index

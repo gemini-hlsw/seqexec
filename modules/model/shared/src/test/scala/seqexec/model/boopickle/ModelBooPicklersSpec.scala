@@ -12,8 +12,8 @@ import seqexec.model.SequenceEventsArbitraries._
 import seqexec.model.arb.all._
 import squants.time.Time
 import java.time._
-import io.chrisdavenport.cats.time.instances.all._
-import io.chrisdavenport.cats.time.instances.TimeArbitraries._
+import org.typelevel.cats.time.instances.all._
+import org.typelevel.cats.time.instances.TimeArbitraries._
 import lucuma.core.math.Index
 import lucuma.core.math.arb.ArbIndex._
 import seqexec.model.arb._
