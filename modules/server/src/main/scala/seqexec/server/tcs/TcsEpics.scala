@@ -24,7 +24,7 @@ import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Angle
 import squants.space.Degrees
 import cats.effect.Temporal
-// import squants.space.Length
+import squants.space.Length
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all
@@ -113,7 +113,7 @@ trait TcsEpics[F[_]] {
 
   val targetFilter: TargetFilter[F]
 
-  // val instrumentDefocusCmd: InstrumentDefocusCmd[F]
+  val instrumentDefocusCmd: InstrumentDefocusCmd[F]
 
   def absorbTipTilt: F[Int]
 
@@ -252,7 +252,7 @@ trait TcsEpics[F[_]] {
 
   def aoFoldPosition: F[String]
 
-  // def defocusB: F[Double]
+  def defocusB: F[Double]
 
   def useAo: F[BinaryYesNo]
 
@@ -770,8 +770,8 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
     override def setShortCircuit(v: String): F[Unit] = setParameter(shortCircuit, v)
   }
 
-  // override val instrumentDefocusCmd: InstrumentDefocusCmd[F] =
-  //   new InstrumentDefocusCmdImpl[F]("instrumentDefocus", epicsService)
+  override val instrumentDefocusCmd: InstrumentDefocusCmd[F] =
+    new InstrumentDefocusCmdImpl[F]("instrumentDefocus", epicsService)
 
   private val tcsState = epicsService.getStatusAcceptor("tcsstate")
 
@@ -1014,9 +1014,9 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
 
-  // override def defocusB: F[Double] = safeAttributeSDoubleF(
-  //   tcsState.getDoubleAttribute("dtelFocusB")
-  // )
+  override def defocusB: F[Double] = safeAttributeSDoubleF(
+    tcsState.getDoubleAttribute("dtelFocusB")
+  )
 
   private val useAoAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "useAo",
@@ -1452,21 +1452,21 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     override def setWavel(v: Double): F[Unit] = setParameter[F, java.lang.Double](wavel, v)
   }
 
-  // trait InstrumentDefocusCmd[F[_]] extends EpicsCommand[F] {
-  //   def setDefocus(v: Length): F[Unit]
-  // }
-  //
-  // final class InstrumentDefocusCmdImpl[F[_]: Async](csName: String, epicsService: CaService)
-  //     extends EpicsCommandBase[F](sysName)
-  //     with InstrumentDefocusCmd[F] {
-  //   override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
-  //
-  //   private val defocus = cs.map(_.getDouble("dtelFocus"))
-  //
-  //   override def setDefocus(v: Length): F[Unit] =
-  //     setParameter[F, java.lang.Double](none, v.toMillimeters)
-  // }
-  //
+  trait InstrumentDefocusCmd[F[_]] extends EpicsCommand[F] {
+    def setDefocus(v: Length): F[Unit]
+  }
+
+  final class InstrumentDefocusCmdImpl[F[_]: Async](csName: String, epicsService: CaService)
+      extends EpicsCommandBase[F](sysName)
+      with InstrumentDefocusCmd[F] {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
+
+    private val defocus = cs.map(_.getDouble("dtelFocus"))
+
+    override def setDefocus(v: Length): F[Unit] =
+      setParameter[F, java.lang.Double](defocus, v.toMillimeters)
+  }
+
   trait ProbeGuideConfig[F[_]] {
     def nodachopa: F[Int]
     def nodachopb: F[Int]

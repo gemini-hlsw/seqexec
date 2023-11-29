@@ -102,7 +102,7 @@ object TcsConfigRetriever {
 
     private def decodeNodChopOption(s: Int): Boolean = s =!= 0
 
-    // private def getDefocusB: F[Length] = epicsSys.defocusB.map(Millimeters(_))
+    private def getDefocusB: F[Length] = epicsSys.defocusB.map(Millimeters(_))
 
     private def getNodChopTrackingConfig(
       g: TcsEpics.ProbeGuideConfig[F]
@@ -329,7 +329,7 @@ object TcsConfigRetriever {
         offX   <- getOffsetX
         offY   <- getOffsetY
         wl     <- getWavelength
-        // df     <- getDefocusB
+        df     <- getDefocusB
         p1     <- getPwfs1
         p2     <- getPwfs2
         oi     <- getOiwfs
@@ -344,7 +344,7 @@ object TcsConfigRetriever {
         iaa,
         FocalPlaneOffset(tag[OffsetX](offX), tag[OffsetY](offY)),
         wl,
-        // df,
+        df,
         p1,
         p2,
         oi,

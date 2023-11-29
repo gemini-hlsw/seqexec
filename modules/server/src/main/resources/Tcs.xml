@@ -167,14 +167,14 @@
             <record>aoFlatten</record>
             <description>Flatten AO light path</description>
         </command>
-        <!-- <command name="instrumentDefocus"> -->
-        <!--     <description>Instrument defocus</description> -->
-        <!--     <parameter name="dtelFocus"> -->
-        <!--         <channel>dtelFocus.B</channel> -->
-        <!--         <type>STRING</type> -->
-        <!--         <description>Defocus offset B in mm</description> -->
-        <!--     </parameter> -->
-        <!-- </command> -->
+        <command name="instrumentDefocus">
+            <description>Instrument defocus</description>
+            <parameter name="dtelFocus">
+                <channel>dtelFocus.B</channel>
+                <type>STRING</type>
+                <description>Defocus offset B in mm</description>
+            </parameter>
+        </command>
         <command name="aoFollow">
             <description>GAOS probe following</description>
             <parameter name="followState">
@@ -976,11 +976,11 @@
     </Status>
     <Status name="tcsstate">
         <top>tcs</top>
-        <!-- <attribute name="dtelFocusB"> -->
-        <!--     <channel>dtelFocus.VALB</channel> -->
-        <!--     <type>DOUBLE</type> -->
-        <!--     <description>Instrument defocus</description> -->
-        <!-- </attribute> -->
+        <attribute name="dtelFocusB">
+            <channel>dtelFocus.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Instrument defocus</description>
+        </attribute>
         <attribute name="crfollow">
             <channel>crFollow.VAL</channel>
             <type>INTEGER</type>
