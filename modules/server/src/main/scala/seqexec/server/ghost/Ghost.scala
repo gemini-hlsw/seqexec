@@ -71,14 +71,6 @@ final case class Ghost[F[_]: Logger: Async](
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     Uncontrollable
-  // CompleteControl(
-  //   StopObserveCmd(_ => controller.stopObserve),
-  //   AbortObserveCmd(controller.abortObserve),
-  //   PauseObserveCmd(_ => controller.pauseObserve),
-  //   ContinuePausedCmd(controller.resumePaused),
-  //   StopPausedCmd(controller.stopPaused),
-  //   AbortPausedCmd(controller.abortPaused)
-  // )
 
   override def observe(
     config: CleanConfig

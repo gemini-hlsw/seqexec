@@ -177,8 +177,6 @@ lazy val seqexec_web_client = project
     Test / parallelExecution        := false,
     installJsdom / version          := "16.4.0",
     Test / requireJsDomEnv          := true,
-    // Use yarn as it is faster than npm
-    // useYarn                         := true,
     // JS dependencies via npm
     Compile / npmDependencies ++= Seq(
       "fomantic-ui-less"  -> LibraryVersions.fomanticUI,
