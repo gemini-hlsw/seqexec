@@ -147,6 +147,7 @@ lazy val seqexec_web_client = project
   .settings(
     // Needed for Monocle macros
     scalacOptions += "-Ymacro-annotations",
+    scalacOptions += "-P:scalajs:nowarnGlobalExecutionContext",
     scalacOptions ~= (_.filterNot(
       Set(
         // By necessity facades will have unused params
@@ -160,6 +161,7 @@ lazy val seqexec_web_client = project
     webpackResources                := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort            := 9090,
     webpack / version               := "4.46.0",
+    npmExtraArgs                    := Seq("--legacy-peer-deps"),
     startWebpackDevServer / version := "3.11.0",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     fullOptJS / webpackConfigFile   := Some(
@@ -175,13 +177,12 @@ lazy val seqexec_web_client = project
     Test / parallelExecution        := false,
     installJsdom / version          := "16.4.0",
     Test / requireJsDomEnv          := true,
-    // Use yarn as it is faster than npm
-    useYarn                         := true,
     // JS dependencies via npm
     Compile / npmDependencies ++= Seq(
-      "fomantic-ui-less" -> LibraryVersions.fomanticUI,
-      "prop-types"       -> "15.7.2",
-      "core-js"          -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
+      "fomantic-ui-less"  -> LibraryVersions.fomanticUI,
+      "prop-types"        -> "15.7.2",
+      "react-virtualized" -> "9.21.1",
+      "core-js"           -> "2.6.11" // Without this, core-js 3 is used, which conflicts with @babel/runtime-corejs2
     ),
     Compile / fastOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
     Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withSourceMap(false) },
@@ -525,6 +526,34 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
     description          := "Seqexec Gemini North server production",
     applicationConfName  := "seqexec",
     applicationConfSite  := DeploymentSite.GN,
+    Universal / mappings := {
+      // filter out sjs jar files. otherwise it could generate some conflicts
+      val universalMappings = (app_seqexec_server / Universal / mappings).value
+      val filtered          = universalMappings.filter { case (_, name) =>
+        !name.contains("_sjs")
+      }
+      filtered
+    }
+  )
+  .settings(embeddedJreSettingsLinux64: _*)
+  .dependsOn(seqexec_server)
+
+/**
+ * Project for the GHOST tests seqexec server app for production on Linux 64
+ */
+lazy val app_seqexec_server_ghost = preventPublication(project.in(file("app/seqexec-server-ghost")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
+  .enablePlugins(LinuxPlugin, RpmPlugin)
+  .enablePlugins(JavaServerAppPackaging)
+  .enablePlugins(GitBranchPrompt)
+  .settings(seqexecCommonSettings: _*)
+  .settings(seqexecLinux: _*)
+  .settings(deployedAppMappings: _*)
+  .settings(
+    description          := "Seqexec GHOST production",
+    applicationConfName  := "seqexec",
+    applicationConfSite  := DeploymentSite.GS,
     Universal / mappings := {
       // filter out sjs jar files. otherwise it could generate some conflicts
       val universalMappings = (app_seqexec_server / Universal / mappings).value

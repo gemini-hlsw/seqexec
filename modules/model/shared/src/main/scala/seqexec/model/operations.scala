@@ -147,6 +147,12 @@ object operations {
       Nil
   }
 
+  private val GhostSupportedOperations = new SupportedOperations {
+    def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
+      level: OperationLevelType[L]
+    ): List[Operations[L]] = Nil
+  }
+
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
     F2    -> F2SupportedOperations,
     GmosS -> GmosSupportedOperations,
@@ -154,7 +160,8 @@ object operations {
     Gnirs -> GnirsSupportedOperations,
     Niri  -> NiriSupportedOperations,
     Nifs  -> NifsSupportedOperations,
-    Gsaoi -> GsaoiSupportedOperations
+    Gsaoi -> GsaoiSupportedOperations,
+    Ghost -> GhostSupportedOperations
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {

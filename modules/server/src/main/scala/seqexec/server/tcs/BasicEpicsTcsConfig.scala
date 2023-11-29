@@ -8,6 +8,7 @@ import monocle.macros.Lenses
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.tcs.TcsController._
 import squants.Angle
+import squants.space.Length
 
 final case class InstrumentPorts(
   flamingos2Port: Int,
@@ -25,6 +26,7 @@ final case class BaseEpicsTcsConfig(
   iaa:                  Angle,
   offset:               FocalPlaneOffset,
   wavelA:               Wavelength,
+  defocusB:             Length,
   pwfs1:                GuiderConfig,
   pwfs2:                GuiderConfig,
   oiwfs:                GuiderConfig,
