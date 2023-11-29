@@ -37,8 +37,6 @@ object AppTitle {
               clazz = SeqexecStyles.titleRow |+| SeqexecStyles.notInMobile |+| SeqexecStyles.header
       )(
         s"Seqexec ${p.site.shortName}",
-        // TODO: Remove me
-        <.div(^.cls := "ghost-only", "GHOST ONLY!"),
         p.ws.ws.renderPending(_ =>
           <.div(
             SeqexecStyles.errorText,
