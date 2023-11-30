@@ -31,6 +31,8 @@ import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.GdsClient
+import squants.time.Seconds
+import giapi.client.GiapiClient
 
 final case class AOFlags(
   useAo:      Boolean,
@@ -293,8 +295,10 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
     client: GpiClient[F],
     gds:    GdsClient[F]
   ): GpiController[F] =
-    new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
-      with GpiController[F] {
+    new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](
+      client,
+      Seconds(GiapiClient.DefaultCommandTimeout.toSeconds)
+    ) with GpiController[F] {
       private implicit val eqResponse: Eq[Response] = Eq.fromUniversalEquals
       override val gdsClient: GdsClient[F]          = gds
 

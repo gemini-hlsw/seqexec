@@ -13,6 +13,7 @@ import seqexec.server.GiapiInstrumentController
 import seqexec.server.keywords.GdsClient
 import seqexec.model.enum.ObserveCommandResult
 import squants.time.Time
+import squants.time.Seconds
 
 trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def gdsClient: GdsClient[F]
@@ -32,7 +33,7 @@ trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
 
 object GhostController {
   def apply[F[_]: Sync: Logger](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
-    new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client)
+    new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client, Seconds(90))
       with GhostController[F] {
 
       override val gdsClient: GdsClient[F] = gds
@@ -40,7 +41,7 @@ object GhostController {
       override val name = "GHOST"
 
       override def configuration(config: GhostConfig): F[Configuration] =
-        config.configuration.pure[F]
+        Logger[F].debug(pprint.apply(config.configuration).toString) *> config.configuration.pure[F]
 
       override def stopObserve: F[Unit] =
         client.stop.void
