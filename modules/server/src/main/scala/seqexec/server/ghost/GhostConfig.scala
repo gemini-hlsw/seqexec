@@ -274,30 +274,24 @@ object GhostConfig {
 
     (ifu1Type, ifu2Type, baseCoords) match {
       // Dual target
-      case (IFUTargetType.Target(_) | IFUTargetType.SkyPosition,
-            IFUTargetType.Target(_) | IFUTargetType.SkyPosition,
-            Some(baseCoords)
-          ) =>
+      case (IFUTargetType.Target(_), IFUTargetType.Target(_), Some(baseCoords)) =>
         // if not linked get the average distance of each target to the base position
         val r1 = ifu1Coords.angularDistance(baseCoords).toDoubleDegrees * 60
         val r2 = ifu2Coords.foldMap(_.angularDistance(baseCoords).toDoubleDegrees * 60)
         val r  = (r1 + r2) / 2
         defocusAmount(r)
-      case (IFUTargetType.Target(_) | IFUTargetType.SkyPosition,
-            IFUTargetType.Target(_) | IFUTargetType.SkyPosition,
-            None
-          ) =>
+      case (IFUTargetType.Target(_), IFUTargetType.Target(_), None)             =>
         // If linked calculate the base the two targets
         val base = ifu2Coords.map(a => a.interpolate(ifu1Coords, 0.5))
         val u    = base.foldMap(_.angularDistance(ifu1Coords).toDoubleDegrees * 60)
         defocusAmount(u)
-      case (IFUTargetType.Target(_), _, _) =>
+      case (IFUTargetType.Target(_), _, _)                                      =>
         val r = baseCoords.foldMap(ifu1Coords.angularDistance(_).toDoubleDegrees * 60)
         defocusAmount(r)
-      case (_, IFUTargetType.Target(_), _) =>
+      case (_, IFUTargetType.Target(_), _)                                      =>
         val r = (ifu2Coords, baseCoords).mapN((a, b) => a.angularDistance(b).toDoubleDegrees * 60)
         defocusAmount(r.orEmpty)
-      case _                               =>
+      case _                                                                    =>
         Microns(0)
     }
   }
