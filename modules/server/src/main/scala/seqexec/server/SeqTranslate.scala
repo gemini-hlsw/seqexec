@@ -51,6 +51,7 @@ import seqexec.server.ghost.Ghost
 import seqexec.server.ghost.GhostController
 import seqexec.server.ghost.GhostControllerDisabled
 import seqexec.server.ghost.GhostHeader
+import seqexec.server.ghost.GhostKeywordsReader
 import seqexec.server.igrins2.Igrins2Controller
 import seqexec.server.igrins2.Igrins2ControllerDisabled
 import seqexec.server.gmos.GmosController
@@ -425,16 +426,15 @@ object SeqTranslate {
     }
 
     def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
-      case Instrument.F2      => Flamingos2.specifics
-      case Instrument.GmosS   => GmosSouth.specifics
-      case Instrument.GmosN   => GmosNorth.specifics
-      case Instrument.Gnirs   => Gnirs.specifics
-      case Instrument.Gpi     => Gpi.specifics
-      case Instrument.Ghost   => Ghost.specifics
-      case Instrument.Niri    => Niri.specifics
-      case Instrument.Nifs    => Nifs.specifics
-      case Instrument.Gsaoi   => Gsaoi.specifics
-      case Instrument.Igrins2 => Igrins2.specifics
+      case Instrument.F2    => Flamingos2.specifics
+      case Instrument.GmosS => GmosSouth.specifics
+      case Instrument.GmosN => GmosNorth.specifics
+      case Instrument.Gnirs => Gnirs.specifics
+      case Instrument.Gpi   => Gpi.specifics
+      case Instrument.Ghost => Ghost.specifics
+      case Instrument.Niri  => Niri.specifics
+      case Instrument.Nifs  => Nifs.specifics
+      case Instrument.Gsaoi => Gsaoi.specifics
     }
 
     import TcsController.Subsystem._
@@ -476,7 +476,8 @@ object SeqTranslate {
                     )(
                       config,
                       LightPath(lsource, inst.sfName(config)),
-                      w
+                      w,
+                      inst.defocusB(config)
                     ): System[F]
                 )
             else
@@ -489,7 +490,8 @@ object SeqTranslate {
                 )(
                   config,
                   LightPath(lsource, inst.sfName(config)),
-                  w
+                  w,
+                  inst.defocusB(config)
                 ): System[F]
               }.pure[F]
 
@@ -503,7 +505,8 @@ object SeqTranslate {
               )(
                 config,
                 LightPath(lsource, inst.sfName(config)),
-                w
+                w,
+                inst.defocusB(config)
               ): System[F]
             }.pure[F]
             else
@@ -516,7 +519,8 @@ object SeqTranslate {
                 )(
                   config,
                   LightPath(lsource, inst.sfName(config)),
-                  w
+                  w,
+                  inst.defocusB(config)
                 ): System[F]
               }.pure[F]
         }
@@ -531,7 +535,8 @@ object SeqTranslate {
       def adaptGcal(b: GcalController[F] => Gcal[F])(ov: SystemOverrides): Gcal[F] = b(
         overriddenSystems.gcal(ov)
       )
-      def defaultGcal: SystemOverrides => Gcal[F]                                  = adaptGcal(Gcal.defaultGcal)
+
+      def defaultGcal: SystemOverrides => Gcal[F] = adaptGcal(Gcal.defaultGcal)
 
       stepType match {
         case StepType.CelestialObject(inst) =>
@@ -648,7 +653,10 @@ object SeqTranslate {
                               ObsKeywordReader[F](config, site)
           )
         case Instrument.Ghost                    =>
-          GhostHeader.header[F]
+          GhostHeader.header[F](systemss.ghost.gdsClient,
+                                systemss.tcsKeywordReader,
+                                GhostKeywordsReader[F](config, conditionsRef)
+          )
         case Instrument.Igrins2                  =>
           Igrins2Header.header[F]
         case Instrument.Niri                     =>

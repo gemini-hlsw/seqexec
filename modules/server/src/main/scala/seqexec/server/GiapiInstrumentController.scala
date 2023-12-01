@@ -30,7 +30,7 @@ trait GiapiInstrumentController[F[_], CFG] {
  */
 private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[
   F
-]](client: C)(implicit
+]](client: C, configureTimeout: Time)(implicit
   L: Logger[F]
 ) extends GiapiInstrumentController[F, CFG] {
 
@@ -50,7 +50,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     val isEmpty               = cfg.map(_.config.isEmpty)
     isEmpty.ifM(CommandResult(HandlerResponse.Response.ACCEPTED)
                   .pure[F],
-                cfg.flatMap(client.genericApply)
+                cfg.flatMap(client.genericApply(_, configureTimeout.toMilliseconds.milliseconds))
     )
   }.adaptError(adaptGiapiError)
 
@@ -61,7 +61,7 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
       L.debug(s"Completed $name configuration")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] = (
-    L.debug(s"Send observe to $name, file id $fileId") *>
+    L.debug(s"Send observe to $name, file id $fileId and $expTime") *>
       client.observe(fileId: String, expTime.toMilliseconds.milliseconds) *>
       L.debug(s"Completed $name observe")
   )

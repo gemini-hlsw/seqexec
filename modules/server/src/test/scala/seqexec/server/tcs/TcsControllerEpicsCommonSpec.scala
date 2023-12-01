@@ -59,6 +59,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     Arcseconds(33.8),
     FocalPlaneOffset(tag[OffsetX](Millimeters(0.0)), tag[OffsetY](Millimeters(0.0))),
     Wavelength(Microns(400)),
+    Millimeters(0.0),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
@@ -89,7 +90,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
                          M1GuideConfig.M1GuideOff,
                          M2GuideConfig.M2GuideOff
     ),
-    TelescopeConfig(None, None),
+    TelescopeConfig(None, None, None),
     BasicGuidersConfig(
       tag[P1Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
       tag[P2Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
@@ -896,7 +897,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     )
 
     val config = baseConfig.copy(
-      tc = TelescopeConfig(offsetDemand.some, wavelength.some)
+      tc = TelescopeConfig(offsetDemand.some, wavelength.some, none)
     )
 
     val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
@@ -936,7 +937,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     )
 
     val config = baseConfig.copy(
-      tc = TelescopeConfig(offset.some, wavelength.some)
+      tc = TelescopeConfig(offset.some, wavelength.some, none)
     )
 
     val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
@@ -970,7 +971,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     )
 
     val config = baseConfig.copy(
-      tc = TelescopeConfig(None, wavelengthDemand.some)
+      tc = TelescopeConfig(None, wavelengthDemand.some, None)
     )
 
     val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {
@@ -1003,7 +1004,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
     )
 
     val config = baseConfig.copy(
-      tc = TelescopeConfig(None, wavelength.some)
+      tc = TelescopeConfig(None, wavelength.some, None)
     )
 
     val genOut: IO[List[TestTcsEpics.TestTcsEvent]] = for {

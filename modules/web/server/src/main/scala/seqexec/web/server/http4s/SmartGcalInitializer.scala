@@ -22,7 +22,7 @@ object SmartGcalInitializer {
   private final case class SmartGcalImpl(val cal: CalibrationUpdater) extends SmartGcal
 
   def init[F[_]: Sync](conf: SmartGcalConfiguration): F[SmartGcal] =
-    Sync[F].delay {
+    Sync[F].blocking {
       val peer       = new Peer(conf.smartGCalHost.renderString, 8443, edu.gemini.spModel.core.Site.GS)
       val calService = new CalibrationRemoteRepository(peer.host, peer.port)
       val cachedRepo = new CalibrationFileCache(conf.smartGCalDir.toFile)

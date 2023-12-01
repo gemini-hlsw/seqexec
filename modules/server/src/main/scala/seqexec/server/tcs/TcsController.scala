@@ -264,8 +264,9 @@ object TcsController {
 
   @Lenses
   final case class TelescopeConfig(
-    offsetA: Option[InstrumentOffset],
-    wavelA:  Option[Wavelength]
+    offsetA:  Option[InstrumentOffset],
+    wavelA:   Option[Wavelength],
+    defocusB: Option[Length]
   )
 
   implicit val wavelengthEq: Eq[Wavelength] = Eq.by(_.length.value)

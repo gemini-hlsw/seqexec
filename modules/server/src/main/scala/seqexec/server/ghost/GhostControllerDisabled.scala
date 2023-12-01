@@ -12,6 +12,7 @@ import seqexec.server.overrideLogMessage
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
 import squants.time.Time
+import seqexec.model.enum.ObserveCommandResult
 
 class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController[F] {
   private val name = "GHOST"
@@ -36,4 +37,18 @@ class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController
     overrideLogMessage(name, s"observe $fileId").as(fileId)
 
   override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+
+  override def stopObserve: F[Unit] = Applicative[F].unit
+
+  override def abortObserve: F[Unit] = Applicative[F].unit
+
+  override def pauseObserve: F[Unit] = Applicative[F].unit
+
+  override def resumePaused(expTime: Time): F[ObserveCommandResult] =
+    ObserveCommandResult.Success.pure[F].widen
+
+  override def stopPaused: F[ObserveCommandResult] = ObserveCommandResult.Stopped.pure[F].widen
+
+  override def abortPaused: F[ObserveCommandResult] = ObserveCommandResult.Aborted.pure[F].widen
+
 }
