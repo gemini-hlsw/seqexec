@@ -11,6 +11,8 @@ import cats.effect.Sync
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import giapi.client.commands.Configuration
+import giapi.client.GiapiClient
+import squants.time.Seconds
 
 trait Igrins2Config {
   def configuration: Configuration
@@ -23,8 +25,10 @@ trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config
 
 object Igrins2Controller {
   def apply[F[_]: Sync: Logger](client: Igrins2Client[F], gds: GdsClient[F]): Igrins2Controller[F] =
-    new AbstractGiapiInstrumentController[F, Igrins2Config, Igrins2Client[F]](client)
-      with Igrins2Controller[F] {
+    new AbstractGiapiInstrumentController[F, Igrins2Config, Igrins2Client[F]](
+      client,
+      Seconds(GiapiClient.DefaultCommandTimeout.toSeconds)
+    ) with Igrins2Controller[F] {
       override val gdsClient: GdsClient[F] = gds
 
       override val name = "IGRINS-2"
