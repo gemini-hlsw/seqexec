@@ -426,15 +426,16 @@ object SeqTranslate {
     }
 
     def instrumentSpecs(instrument: Instrument): InstrumentSpecifics = instrument match {
-      case Instrument.F2    => Flamingos2.specifics
-      case Instrument.GmosS => GmosSouth.specifics
-      case Instrument.GmosN => GmosNorth.specifics
-      case Instrument.Gnirs => Gnirs.specifics
-      case Instrument.Gpi   => Gpi.specifics
-      case Instrument.Ghost => Ghost.specifics
-      case Instrument.Niri  => Niri.specifics
-      case Instrument.Nifs  => Nifs.specifics
-      case Instrument.Gsaoi => Gsaoi.specifics
+      case Instrument.F2      => Flamingos2.specifics
+      case Instrument.GmosS   => GmosSouth.specifics
+      case Instrument.GmosN   => GmosNorth.specifics
+      case Instrument.Gnirs   => Gnirs.specifics
+      case Instrument.Gpi     => Gpi.specifics
+      case Instrument.Ghost   => Ghost.specifics
+      case Instrument.Niri    => Niri.specifics
+      case Instrument.Nifs    => Nifs.specifics
+      case Instrument.Gsaoi   => Gsaoi.specifics
+      case Instrument.Igrins2 => Igrins2.specifics
     }
 
     import TcsController.Subsystem._

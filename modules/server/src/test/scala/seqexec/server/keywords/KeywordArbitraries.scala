@@ -3,7 +3,7 @@
 
 package seqexec.server.keywords
 
-import lucuma.core.enums.KeywordName
+import seqexec.model.enums.KeywordName
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
