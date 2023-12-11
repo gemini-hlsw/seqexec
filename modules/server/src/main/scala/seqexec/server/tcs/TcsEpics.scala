@@ -1016,9 +1016,10 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
 
-  override def defocusB: F[Double] = safeAttributeSDoubleF(
-    tcsState.getDoubleAttribute("dtelFocusB")
-  )
+  override def defocusB: F[Double] = 0.0.pure[F]
+  // safeAttributeSDoubleF(
+  //   tcsState.getDoubleAttribute("dtelFocusB")
+  // )
 
   private val useAoAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "useAo",
