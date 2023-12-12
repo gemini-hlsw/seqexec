@@ -14,6 +14,11 @@ import cats.effect.Temporal
 import cats.effect.kernel.Async
 import fs2.Stream
 import org.typelevel.log4cats.Logger
+import giapi.client.commands.Command
+import edu.gemini.aspen.giapi.commands.SequenceCommand
+import edu.gemini.aspen.giapi.commands.Activity
+import scala.concurrent.duration._
+import giapi.client.commands.Configuration
 
 sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
@@ -24,6 +29,8 @@ sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
   def exposureProgress: F[Stream[F, Int]]
 
   def currentStatus: F[String]
+
+  // def abort: F[Unit]
 
 }
 
@@ -50,6 +57,13 @@ object Igrins2Client {
         statusDb.optional(TimeProgress).flatMap(r => Logger[F].info(r.toString)) *>
         statusDb.optional(CurrentStatus).flatMap(r => Logger[F].info(r.toString)) *>
         statusDb.optional(ObsTime).map(_.floatValue)
+
+    // def abort: F[Unit] = giapi
+    //   .command(
+    //     Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero),
+    //     10.seconds
+    //   )
+    //   .void
   }
 
   // Used for simulations

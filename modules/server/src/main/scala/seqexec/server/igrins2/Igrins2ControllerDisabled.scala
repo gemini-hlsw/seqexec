@@ -51,4 +51,6 @@ class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Contro
     overrideLogMessage(name, s"observe $fileId").as(fileId)
 
   override def endObserve: F[Unit] = overrideLogMessage(name, "endObserve")
+
+  override def abort: F[Unit] = overrideLogMessage(name, "abort")
 }

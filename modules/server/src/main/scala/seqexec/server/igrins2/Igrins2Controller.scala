@@ -36,6 +36,8 @@ trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config
 
   def dcIsReadingOut: F[Boolean]
 
+  def abort: F[Unit]
+
 }
 
 sealed trait Igrins2ControllerState extends Product with Serializable
@@ -78,6 +80,8 @@ object Igrins2Controller {
       def dcIsReadingOut: F[Boolean] = currentStatus.map(u =>
         u === Igrins2ControllerState.ReadingOut || u === Igrins2ControllerState.CreatingMEF
       )
+
+      override def abort: F[Unit] = client.abort.void
 
       override def configuration(config: Igrins2Config): F[Configuration] = {
         pprint.pprintln(config.configuration)

@@ -45,8 +45,12 @@ final case class Igrins2[F[_]: Logger: Async](
 
   val readoutOverhead: Time = Seconds(120)
 
+  val abort: F[Unit] = controller.abort
+
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
-    InstrumentSystem.Uncontrollable
+    InstrumentSystem.UnpausableControl(InstrumentSystem.StopObserveCmd(_ => Async[F].unit),
+                                       InstrumentSystem.AbortObserveCmd(abort)
+    )
 
   override def observe(
     config: CleanConfig
@@ -85,9 +89,6 @@ final case class Igrins2[F[_]: Logger: Async](
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
-    // println("------------------------_")
-    // println(total)
-    // println(elapsed)
     Stream.eval(controller.requestedTime).map(_.map(Seconds(_)).getOrElse(total)).flatMap { total =>
       ProgressUtil.obsCountdownWithObsStage[F](
         total,
