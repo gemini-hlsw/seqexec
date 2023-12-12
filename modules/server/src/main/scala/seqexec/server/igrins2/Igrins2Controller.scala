@@ -13,14 +13,42 @@ import org.typelevel.log4cats.Logger
 import giapi.client.commands.Configuration
 import giapi.client.GiapiClient
 import squants.time.Seconds
+import fs2.Stream
+import lucuma.core.util.Enumerated
 
 trait Igrins2Config {
   def configuration: Configuration
+
 }
 
 trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config] {
   def gdsClient: GdsClient[F]
 
+  def exposureProgress: F[Stream[F, Int]]
+
+  def requestedTime: F[Option[Float]]
+
+  def currentStatus: F[Igrins2ControllerState]
+
+  def dcIsPreparing: F[Boolean]
+
+  def dcIsAcquiring: F[Boolean]
+
+  def dcIsReadingOut: F[Boolean]
+
+}
+
+sealed trait Igrins2ControllerState extends Product with Serializable
+
+object Igrins2ControllerState {
+  case object Idle        extends Igrins2ControllerState
+  case object Exposing    extends Igrins2ControllerState
+  case object ReadingOut  extends Igrins2ControllerState
+  case object CreatingMEF extends Igrins2ControllerState
+  case object Error       extends Igrins2ControllerState
+
+  implicit val igrins2ControllerStateEnum: Enumerated[Igrins2ControllerState] =
+    Enumerated.of(Idle, Exposing, ReadingOut, CreatingMEF, Error)
 }
 
 object Igrins2Controller {
@@ -32,6 +60,24 @@ object Igrins2Controller {
       override val gdsClient: GdsClient[F] = gds
 
       override val name = "IGRINS-2"
+
+      override def exposureProgress: F[Stream[F, Int]] =
+        client.exposureProgress
+
+      def requestedTime: F[Option[Float]] = client.requestedTime
+
+      def currentStatus: F[Igrins2ControllerState] =
+        client.currentStatus
+          .map(Enumerated[Igrins2ControllerState].fromTag)
+          .map(_.getOrElse(Igrins2ControllerState.Error))
+
+      def dcIsPreparing: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.Idle)
+
+      def dcIsAcquiring: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.Exposing)
+
+      def dcIsReadingOut: F[Boolean] = currentStatus.map(u =>
+        u === Igrins2ControllerState.ReadingOut || u === Igrins2ControllerState.CreatingMEF
+      )
 
       override def configuration(config: Igrins2Config): F[Configuration] = {
         pprint.pprintln(config.configuration)

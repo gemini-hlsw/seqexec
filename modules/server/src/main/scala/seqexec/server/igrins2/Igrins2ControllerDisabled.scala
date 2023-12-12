@@ -12,9 +12,24 @@ import seqexec.server.overrideLogMessage
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
 import squants.time.Time
+import fs2.Stream
 
 class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Controller[F] {
   private val name = "IGRINS2"
+
+  override def exposureProgress: F[Stream[F, Int]] =
+    Stream.emit[F, Int](0).pure[F]
+
+  def requestedTime: F[Option[Float]] =
+    none[Float].pure[F]
+
+  def currentStatus: F[Igrins2ControllerState] = Igrins2ControllerState.Idle.pure[F].widen
+
+  def dcIsPreparing: F[Boolean] = false.pure[F]
+
+  def dcIsAcquiring: F[Boolean] = false.pure[F]
+
+  def dcIsReadingOut: F[Boolean] = false.pure[F]
 
   override def gdsClient: GdsClient[F] = new GdsClient[F] {
     override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] =

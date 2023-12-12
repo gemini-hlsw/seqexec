@@ -28,6 +28,7 @@ import squants.time.TimeConversions._
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.Tcs._
 import cats.data.EitherT
+import seqexec.model.ObserveStage
 
 final case class Igrins2[F[_]: Logger: Async](
   controller: Igrins2Controller[F]
@@ -42,7 +43,7 @@ final case class Igrins2[F[_]: Logger: Async](
 
   override val contributorName: String = "igrins2"
 
-  val readoutOverhead: Time = Seconds(10)
+  val readoutOverhead: Time = Seconds(120)
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable
@@ -84,7 +85,18 @@ final case class Igrins2[F[_]: Logger: Async](
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
-    ProgressUtil.obsCountdown[F](total, elapsed.self)
+    // println("------------------------_")
+    // println(total)
+    // println(elapsed)
+    Stream.eval(controller.requestedTime).map(_.map(Seconds(_)).getOrElse(total)).flatMap { total =>
+      ProgressUtil.obsCountdownWithObsStage[F](
+        total,
+        elapsed.self,
+        (controller.dcIsPreparing, controller.dcIsAcquiring, controller.dcIsReadingOut).mapN(
+          ObserveStage.fromBooleans
+        )
+      )
+    }
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]

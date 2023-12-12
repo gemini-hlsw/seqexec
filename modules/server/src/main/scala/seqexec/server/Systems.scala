@@ -345,7 +345,7 @@ object Systems {
     ): Resource[F, Igrins2Controller[F]] = {
       def igrins2Client: Resource[F, Igrins2Client[F]] =
         if (settings.systemControl.igrins2.command)
-          Igrins2Client.igrins2Client[F](settings.igrins2Url.renderString, Nil)
+          Igrins2Client.igrins2Client[F](settings.igrins2Url.renderString)
         else Igrins2Client.simulatedIgrins2Client
 
       def igrins2GDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
