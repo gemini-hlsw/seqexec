@@ -4,16 +4,29 @@
 package seqexec.server.igrins2
 
 import cats.Applicative
+import cats.MonadThrow
+import cats.syntax.all._
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
+import seqexec.model.enums.KeywordName
+import seqexec.server.tcs.TcsKeywordsReader
 
 object Igrins2Header {
 
-  def header[F[_]: Applicative]: Header[F] =
+  def header[F[_]: MonadThrow](
+    gdsClient:         GdsClient[F],
+    tcsKeywordsReader: TcsKeywordsReader[F]
+  ): Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-        Applicative[F].unit
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
+        val ks = GdsInstrument.bundleKeywords[F] {
+          List(
+            buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT)
+          )
+        }
+        ks.flatMap(gdsClient.openObservation(obsId, id, _))
+      }
 
       override def sendAfter(id: ImageFileId): F[Unit] =
         Applicative[F].unit
