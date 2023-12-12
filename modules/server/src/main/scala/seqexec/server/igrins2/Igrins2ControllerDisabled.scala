@@ -31,6 +31,8 @@ class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Contro
 
   def dcIsReadingOut: F[Boolean] = false.pure[F]
 
+  def dcIsWritingMEF: F[Boolean] = false.pure[F]
+
   override def gdsClient: GdsClient[F] = new GdsClient[F] {
     override def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] =
       overrideLogMessage(name, "setKeywords")

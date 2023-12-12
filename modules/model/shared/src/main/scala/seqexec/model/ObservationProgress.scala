@@ -78,9 +78,10 @@ object ObserveStage {
   case object Preparing  extends ObserveStage
   case object Acquiring  extends ObserveStage
   case object ReadingOut extends ObserveStage
+  case object WritingMEF extends ObserveStage
 
   implicit val observeStageEnum: Enumerated[ObserveStage] =
-    Enumerated.of(Idle, Preparing, Acquiring, ReadingOut)
+    Enumerated.of(Idle, Preparing, Acquiring, ReadingOut, WritingMEF)
 
   def fromBooleans(prep: Boolean, acq: Boolean, rdout: Boolean): ObserveStage =
     if (prep) Preparing
@@ -88,4 +89,10 @@ object ObserveStage {
     else if (rdout) ReadingOut
     else Idle
 
+  def fromBooleans(prep: Boolean, acq: Boolean, rdout: Boolean, mef: Boolean): ObserveStage =
+    if (prep) Preparing
+    else if (acq) Acquiring
+    else if (rdout) ReadingOut
+    else if (mef) WritingMEF
+    else Idle
 }

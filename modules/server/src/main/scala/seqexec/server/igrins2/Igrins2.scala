@@ -96,8 +96,12 @@ final case class Igrins2[F[_]: Logger: Async](
       } yield ProgressUtil
         .realCountdownWithObsStage[F](
           totalExp,
-          progress.map(Seconds(_) + Seconds(1)),
-          (controller.dcIsPreparing, controller.dcIsAcquiring, controller.dcIsReadingOut).mapN {
+          progress.map(Seconds(_) + Seconds(1.5)), // 1 experimentally determined
+          (controller.dcIsPreparing,
+           controller.dcIsAcquiring,
+           controller.dcIsReadingOut,
+           controller.dcIsWritingMEF
+          ).mapN {
             ObserveStage.fromBooleans
           }
         )

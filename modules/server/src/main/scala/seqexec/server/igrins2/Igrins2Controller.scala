@@ -36,6 +36,8 @@ trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config
 
   def dcIsReadingOut: F[Boolean]
 
+  def dcIsWritingMEF: F[Boolean]
+
   def abort: F[Unit]
 
 }
@@ -96,9 +98,9 @@ object Igrins2Controller {
         currentStatus
           .map(_ === Igrins2ControllerState.Exposing)
 
-      def dcIsReadingOut: F[Boolean] = currentStatus.map(u =>
-        u === Igrins2ControllerState.ReadingOut || u === Igrins2ControllerState.CreatingMEF
-      )
+      def dcIsReadingOut: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.ReadingOut)
+
+      def dcIsWritingMEF: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.CreatingMEF)
 
       override def abort: F[Unit] = client.abort.void
 
