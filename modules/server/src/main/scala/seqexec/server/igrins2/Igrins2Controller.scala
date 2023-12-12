@@ -40,14 +40,31 @@ trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config
 
 }
 
-sealed trait Igrins2ControllerState extends Product with Serializable
+sealed trait Igrins2ControllerState extends Product with Serializable {
+  def tag: String
+}
 
 object Igrins2ControllerState {
-  case object Idle        extends Igrins2ControllerState
-  case object Exposing    extends Igrins2ControllerState
-  case object ReadingOut  extends Igrins2ControllerState
-  case object CreatingMEF extends Igrins2ControllerState
-  case object Error       extends Igrins2ControllerState
+  case object Idle        extends Igrins2ControllerState {
+    override def tag: String = "IDLE"
+  }
+  case object Exposing    extends Igrins2ControllerState {
+    override def tag: String = "EXPOSING"
+  }
+  case object ReadingOut  extends Igrins2ControllerState {
+    override def tag: String = "READING OUT"
+  }
+  case object CreatingMEF extends Igrins2ControllerState {
+    override def tag: String = "CREATING MEF"
+  }
+  case object Error       extends Igrins2ControllerState {
+    override def tag: String = "ERROR"
+  }
+
+  def fromString(s: String): Option[Igrins2ControllerState] =
+    all.find(_.tag === s)
+
+  val all = List(Idle, Exposing, ReadingOut, CreatingMEF, Error)
 
   implicit val igrins2ControllerStateEnum: Enumerated[Igrins2ControllerState] =
     Enumerated.of(Idle, Exposing, ReadingOut, CreatingMEF, Error)
@@ -70,12 +87,14 @@ object Igrins2Controller {
 
       def currentStatus: F[Igrins2ControllerState] =
         client.currentStatus
-          .map(Enumerated[Igrins2ControllerState].fromTag)
+          .map(Igrins2ControllerState.fromString)
           .map(_.getOrElse(Igrins2ControllerState.Error))
 
       def dcIsPreparing: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.Idle)
 
-      def dcIsAcquiring: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.Exposing)
+      def dcIsAcquiring: F[Boolean] =
+        currentStatus
+          .map(_ === Igrins2ControllerState.Exposing)
 
       def dcIsReadingOut: F[Boolean] = currentStatus.map(u =>
         u === Igrins2ControllerState.ReadingOut || u === Igrins2ControllerState.CreatingMEF
@@ -83,9 +102,7 @@ object Igrins2Controller {
 
       override def abort: F[Unit] = client.abort.void
 
-      override def configuration(config: Igrins2Config): F[Configuration] = {
-        pprint.pprintln(config.configuration)
+      override def configuration(config: Igrins2Config): F[Configuration] =
         config.configuration.pure[F]
-      }
     }
 }

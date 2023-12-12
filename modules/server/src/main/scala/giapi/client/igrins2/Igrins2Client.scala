@@ -13,12 +13,6 @@ import giapi.client.syntax.status._
 import cats.effect.Temporal
 import cats.effect.kernel.Async
 import fs2.Stream
-import org.typelevel.log4cats.Logger
-import giapi.client.commands.Command
-import edu.gemini.aspen.giapi.commands.SequenceCommand
-import edu.gemini.aspen.giapi.commands.Activity
-import scala.concurrent.duration._
-import giapi.client.commands.Configuration
 
 sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
@@ -30,8 +24,6 @@ sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
   def currentStatus: F[String]
 
-  // def abort: F[Unit]
-
 }
 
 object Igrins2Client {
@@ -42,7 +34,7 @@ object Igrins2Client {
   /**
    * Client for Igrins2
    */
-  final private class Igrins2ClientImpl[F[_]: cats.Monad: Logger](
+  final private class Igrins2ClientImpl[F[_]: Functor](
     override val giapi: Giapi[F],
     val statusDb:       GiapiStatusDb[F]
   ) extends Igrins2Client[F] {
@@ -53,21 +45,12 @@ object Igrins2Client {
       statusDb.optional(CurrentStatus).map(_.stringValue.orEmpty)
 
     def requestedTime: F[Option[Float]] =
-      statusDb.optional(ObsTime).flatMap(r => Logger[F].info(r.toString)) *>
-        statusDb.optional(TimeProgress).flatMap(r => Logger[F].info(r.toString)) *>
-        statusDb.optional(CurrentStatus).flatMap(r => Logger[F].info(r.toString)) *>
-        statusDb.optional(ObsTime).map(_.floatValue)
+      statusDb.optional(ObsTime).map(_.floatValue)
 
-    // def abort: F[Unit] = giapi
-    //   .command(
-    //     Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero),
-    //     10.seconds
-    //   )
-    //   .void
   }
 
   // Used for simulations
-  def simulatedIgrins2Client[F[_]: Temporal: Logger]: Resource[F, Igrins2Client[F]] =
+  def simulatedIgrins2Client[F[_]: Temporal]: Resource[F, Igrins2Client[F]] =
     Resource.eval(
       Giapi
         .simulatedGiapiConnection[F]
@@ -75,7 +58,7 @@ object Igrins2Client {
         .map(new Igrins2ClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
-  def igrins2Client[F[_]: Async: Logger](
+  def igrins2Client[F[_]: Async](
     url: String
   ): Resource[F, Igrins2Client[F]] = {
     val giapi: Resource[F, Giapi[F]] =

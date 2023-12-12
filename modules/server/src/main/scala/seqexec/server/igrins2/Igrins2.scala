@@ -89,15 +89,19 @@ final case class Igrins2[F[_]: Logger: Async](
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
-    Stream.eval(controller.requestedTime).map(_.map(Seconds(_)).getOrElse(total)).flatMap { total =>
-      ProgressUtil.obsCountdownWithObsStage[F](
-        total,
-        elapsed.self,
-        (controller.dcIsPreparing, controller.dcIsAcquiring, controller.dcIsReadingOut).mapN(
-          ObserveStage.fromBooleans
+    Stream.force(
+      for {
+        progress <- controller.exposureProgress
+        totalExp <- controller.requestedTime.map(_.map(Seconds(_)).getOrElse(total))
+      } yield ProgressUtil
+        .realCountdownWithObsStage[F](
+          totalExp,
+          progress.map(Seconds(_) + Seconds(1)),
+          (controller.dcIsPreparing, controller.dcIsAcquiring, controller.dcIsReadingOut).mapN {
+            ObserveStage.fromBooleans
+          }
         )
-      )
-    }
+    )
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]
@@ -106,7 +110,8 @@ final case class Igrins2[F[_]: Logger: Async](
 
 object Igrins2 {
   val INSTRUMENT_NAME_PROP: String = "IGRINS2"
-  val name: String                 = INSTRUMENT_NAME_PROP
+
+  val name: String = INSTRUMENT_NAME_PROP
 
   val sfName: String = "IGRINS2"
 

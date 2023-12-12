@@ -32,7 +32,6 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.space.Millimeters
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
