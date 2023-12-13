@@ -3,7 +3,6 @@
 
 package seqexec.server.igrins2
 
-import cats.Applicative
 import cats.MonadThrow
 import cats.syntax.all._
 import seqexec.model.Observation
@@ -11,10 +10,11 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.model.enums.KeywordName
 import seqexec.server.tcs.TcsKeywordsReader
+import org.typelevel.log4cats.Logger
 
 object Igrins2Header {
 
-  def header[F[_]: MonadThrow](
+  def header[F[_]: MonadThrow: Logger](
     gdsClient:         GdsClient[F],
     tcsKeywordsReader: TcsKeywordsReader[F]
   ): Header[F] =
@@ -29,6 +29,12 @@ object Igrins2Header {
       }
 
       override def sendAfter(id: ImageFileId): F[Unit] =
-        Applicative[F].unit
+        sendGdsKeywords(id,
+                        gdsClient,
+                        List(
+                          buildString(tcsKeywordsReader.hourAngle, KeywordName.HAEND),
+                          buildString(tcsKeywordsReader.date, KeywordName.DATEEND)
+                        )
+        )
     }
 }
