@@ -25,7 +25,7 @@ object Igrins2Header {
             buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT)
           )
         }
-        ks.flatMap(gdsClient.openObservation(obsId, id, _))
+        ks.flatMap(gdsClient.setKeywords(id, _))
       }
 
       override def sendAfter(id: ImageFileId): F[Unit] =
