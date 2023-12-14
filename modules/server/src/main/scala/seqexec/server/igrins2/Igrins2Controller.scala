@@ -54,7 +54,7 @@ object Igrins2ControllerState {
     override def tag: String = "EXPOSING"
   }
   case object ReadingOut  extends Igrins2ControllerState {
-    override def tag: String = "READING OUT"
+    override def tag: String = "FOWLER_BACK"
   }
   case object CreatingMEF extends Igrins2ControllerState {
     override def tag: String = "CREATING MEF"
