@@ -13,6 +13,7 @@ import giapi.client.syntax.status._
 import cats.effect.Temporal
 import cats.effect.kernel.Async
 import fs2.Stream
+import org.typelevel.log4cats.Logger
 
 sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
@@ -34,12 +35,12 @@ object Igrins2Client {
   /**
    * Client for Igrins2
    */
-  final private class Igrins2ClientImpl[F[_]: Functor](
+  final private class Igrins2ClientImpl[F[_]: cats.Monad: Logger](
     override val giapi: Giapi[F],
     val statusDb:       GiapiStatusDb[F]
   ) extends Igrins2Client[F] {
     def exposureProgress: F[Stream[F, Int]] =
-      giapi.stream[Int](TimeProgress)
+      giapi.stream[Int](TimeProgress).flatTap(i => Logger[F].info(s"Exposure progress: $i"))
 
     def currentStatus: F[String] =
       statusDb.optional(CurrentStatus).map(_.stringValue.orEmpty)
@@ -50,7 +51,7 @@ object Igrins2Client {
   }
 
   // Used for simulations
-  def simulatedIgrins2Client[F[_]: Temporal]: Resource[F, Igrins2Client[F]] =
+  def simulatedIgrins2Client[F[_]: Temporal: Logger]: Resource[F, Igrins2Client[F]] =
     Resource.eval(
       Giapi
         .simulatedGiapiConnection[F]
@@ -58,7 +59,7 @@ object Igrins2Client {
         .map(new Igrins2ClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
-  def igrins2Client[F[_]: Async](
+  def igrins2Client[F[_]: Async: Logger](
     url: String
   ): Resource[F, Igrins2Client[F]] = {
     val giapi: Resource[F, Giapi[F]] =
