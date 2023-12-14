@@ -98,7 +98,7 @@ object Igrins2Controller {
         currentStatus
           .map(_ === Igrins2ControllerState.Exposing)
 
-      def dcIsReadingOut: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.ReadingOut)
+      def dcIsReadingOut: F[Boolean] = false.pure[F]
 
       def dcIsWritingMEF: F[Boolean] = currentStatus.map(_ === Igrins2ControllerState.CreatingMEF)
 

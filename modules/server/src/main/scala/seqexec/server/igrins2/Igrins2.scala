@@ -91,18 +91,23 @@ final case class Igrins2[F[_]: Logger: Async](
   ): Stream[F, Progress] =
     Stream.force(
       for {
+        _        <- Logger[F].info(s"Calculating progress for $total")
         progress <- controller.exposureProgress
+        _        <- Logger[F].info(s"Got it progress $progress")
         totalExp <- controller.requestedTime.map(_.map(Seconds(_)).getOrElse(total))
+        _        <- Logger[F].info(s"Got it req time $totalExp")
       } yield ProgressUtil
         .realCountdownWithObsStage[F](
           totalExp,
-          progress.map(Seconds(_) + Seconds(1.5)), // 1 experimentally determined
+          progress
+            .map(Seconds(_) + Seconds(1.5))
+            .flatTap(t => Stream.eval(Logger[F].info(t.toString))), // 1 experimentally determined
           (controller.dcIsPreparing,
            controller.dcIsAcquiring,
            controller.dcIsReadingOut,
            controller.dcIsWritingMEF
-          ).mapN {
-            ObserveStage.fromBooleans
+          ).mapN { (a, b, c, d) =>
+            ObserveStage.fromBooleans(a, b, c, d)
           }
         )
     )
