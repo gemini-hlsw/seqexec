@@ -3,7 +3,6 @@
 
 package giapi.client.igrins2
 
-import cats.Functor
 import cats.effect.Resource
 import cats.syntax.all._
 import giapi.client.Giapi
