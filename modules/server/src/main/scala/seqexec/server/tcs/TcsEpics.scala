@@ -252,6 +252,8 @@ trait TcsEpics[F[_]] {
 
   def aoFoldPosition: F[String]
 
+  def defocusA: F[Double]
+
   def defocusB: F[Double]
 
   def useAo: F[BinaryYesNo]
@@ -457,6 +459,29 @@ trait TcsEpics[F[_]] {
     case G4 => g4GuideConfig
   }
 
+  def p2ara: F[Double]
+
+  def p2adec: F[Double]
+
+  def p2arv: F[Double]
+
+  def p2awavel: F[Double]
+
+  def p2aepoch: F[String]
+
+  def p2aequin: F[String]
+
+  def p2aframe: F[String]
+
+  def p2aobject: F[String]
+
+  def p2apmdec: F[Double]
+
+  def p2apmra: F[Double]
+
+  def p2aparal: F[Double]
+
+  def p2observeB: F[Double]
 }
 
 final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String, String])
@@ -1016,6 +1041,9 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
 
+  override def defocusA: F[Double] =
+    safeAttributeSDoubleF(tcsState.getDoubleAttribute("dtelFocusA"))
+
   override def defocusB: F[Double] = 0.0.pure[F]
   // safeAttributeSDoubleF(
   //   tcsState.getDoubleAttribute("dtelFocusB")
@@ -1353,6 +1381,32 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g3", tcsState)
 
   override val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g4", tcsState)
+
+  def p2ara: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2ara"))
+
+  def p2adec: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2adec"))
+
+  def p2arv: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2arv"))
+
+  def p2awavel: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2awavel"))
+
+  def p2aepoch: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aepoch"))
+
+  def p2aequin: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aequin"))
+
+  def p2aframe: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aframe"))
+
+  def p2aobject: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aobject"))
+
+  def p2apmdec: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2apmdec"))
+
+  def p2apmra: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2apmra"))
+
+  def p2aparal: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2aparal"))
+
+  def p2observeB: F[Double] = safeAttributeF(tcsState.getStringAttribute("p2observeB"))
+    .map(_.toDouble)
+    .adaptError { case e => SeqexecException(e) }
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {

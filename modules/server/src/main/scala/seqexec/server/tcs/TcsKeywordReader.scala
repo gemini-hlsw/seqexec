@@ -175,6 +175,32 @@ trait TcsKeywordsReader[F[_]] {
 
   def crFollow: F[Option[CRFollow]]
 
+  def p2ara: F[Double]
+
+  def p2adec: F[Double]
+
+  def p2arv: F[Double]
+
+  def p2awavel: F[Double]
+
+  def p2aepoch: F[String]
+
+  def p2aequin: F[String]
+
+  def p2aframe: F[String]
+
+  def p2aobject: F[String]
+
+  def p2apmdec: F[Double]
+
+  def p2apmra: F[Double]
+
+  def p2aparal: F[Double]
+
+  def defocusA: F[Double]
+
+  def freq: F[Double]
+
 }
 
 trait TcsKeywordDefaults {
@@ -336,6 +362,32 @@ object DummyTcsKeywordsReader {
     override def raOffset: F[Double] = 0.0.pure[F]
 
     override def decOffset: F[Double] = 0.0.pure[F]
+
+    override def p2ara: F[Double] = 0.0.pure[F]
+
+    override def p2adec: F[Double] = 0.0.pure[F]
+
+    override def p2arv: F[Double] = 0.0.pure[F]
+
+    override def p2awavel: F[Double] = 0.0.pure[F]
+
+    override def p2aepoch: F[String] = "".pure[F]
+
+    override def p2aequin: F[String] = "".pure[F]
+
+    override def p2aframe: F[String] = "".pure[F]
+
+    override def p2aobject: F[String] = "".pure[F]
+
+    override def p2apmdec: F[Double] = 0.0.pure[F]
+
+    override def p2apmra: F[Double] = 0.0.pure[F]
+
+    override def p2aparal: F[Double] = 0.0.pure[F]
+
+    override def defocusA: F[Double] = 0.0.pure[F]
+
+    override def freq: F[Double] = 1.0.pure[F]
   }
 
   def apply[F[_]: Applicative]: TcsKeywordsReader[F] = new DummyTcsKeywordReaderImpl[F]
@@ -585,5 +637,31 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         ipa <- OptionT.liftF(sys.instrPA.map(Degrees(_)))
       } yield -1 * p * ipa.sin + q * ipa.cos
     ).map(_.toArcseconds).value.safeValOrDefault
+
+    override def p2ara: F[Double] = sys.p2ara.safeValOrDefault
+
+    override def p2adec: F[Double] = sys.p2adec.safeValOrDefault
+
+    override def p2arv: F[Double] = sys.p2arv.safeValOrDefault
+
+    override def p2awavel: F[Double] = sys.p2awavel.safeValOrDefault
+
+    override def p2aepoch: F[String] = sys.p2aepoch.safeValOrDefault
+
+    override def p2aequin: F[String] = sys.p2aequin.safeValOrDefault
+
+    override def p2aframe: F[String] = sys.p2aframe.safeValOrDefault
+
+    override def p2aobject: F[String] = sys.p2aobject.safeValOrDefault
+
+    override def p2apmdec: F[Double] = sys.p2apmdec.safeValOrDefault
+
+    override def p2apmra: F[Double] = sys.p2apmra.safeValOrDefault
+
+    override def p2aparal: F[Double] = sys.p2aparal.safeValOrDefault
+
+    override def defocusA: F[Double] = sys.defocusA.safeValOrDefault
+
+    override def freq: F[Double] = sys.p2observeB.map(1 / _) safeValOrDefault
   }
 }

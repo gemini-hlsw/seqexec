@@ -1008,6 +1008,16 @@
             <description>ISS port 1 label</description>
             <top>ag</top>
         </attribute>
+        <attribute name="dtelFocusA">
+            <channel>dtelFocus.VALA</channel>
+            <type>DOUBLE</type>
+            <description>Instrument defocus</description>
+        </attribute>
+        <attribute name="p2observeB">
+            <channel>pwfs2Observe.VALB</channel>
+            <type>STRING</type>
+            <description>Instrument defocus</description>
+        </attribute>
         <!--
         <attribute name="ngs1Follow">
             <channel>ngsPr1FollowStat.VAL</channel>
