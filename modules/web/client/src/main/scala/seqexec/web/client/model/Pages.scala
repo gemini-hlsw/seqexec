@@ -67,13 +67,13 @@ object Pages {
 
   // Pages forms a prism with Page
   val PageActionP: Prism[Action, SeqexecPages] = Prism[Action, SeqexecPages] {
-    case SelectRoot                         => Root.some
     case RequestSoundEcho                   => SoundTest.some
     case SelectCalibrationQueue             => CalibrationQueuePage.some
     case SelectSequencePreview(i, id, step) => PreviewPage(i, id, step).some
     case ShowPreviewStepConfig(i, id, step) => PreviewConfigPage(i, id, step).some
     case SelectIdToDisplay(i, id, step)     => SequencePage(i, id, step).some
     case ShowStepConfig(i, id, step)        => SequenceConfigPage(i, id, step).some
+    case _                                  => Root.some
   } {
     case Root                            => SelectRoot
     case SoundTest                       => RequestSoundEcho

@@ -42,7 +42,7 @@ object Settings {
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
     val jwt            = "9.4.5"
-    val slf4j          = "2.0.9"
+    val slf4j          = "2.0.10"
     val log4s          = "1.10.0"
     val log4cats       = "2.6.0"
     val log4catsLevel  = "0.3.1"
@@ -88,7 +88,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore    = "0.45.0"
+    val lucumaCore    = "0.45.1"
     val lucumaUI      = "0.39.0"
     val lucumaSchemas = "0.33.0"
 

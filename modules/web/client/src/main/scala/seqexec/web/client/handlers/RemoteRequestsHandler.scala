@@ -39,7 +39,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
 
   def handlePause: PartialFunction[Any, ActionResult[M]] = { case RequestPause(id) =>
     val effect = (value.clientId, value.observer)
-      .mapN((clientId, observer) =>
+      .mapN((_, observer) =>
         requestEffect(id,
                       SeqexecWebClient.pause(_, observer),
                       RunPaused.apply,
@@ -66,7 +66,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
 
   def handleCancelPause: PartialFunction[Any, ActionResult[M]] = { case RequestCancelPause(id) =>
     val effect = (value.clientId, value.observer)
-      .mapN((clientId, observer) =>
+      .mapN((_, observer) =>
         requestEffect(id,
                       SeqexecWebClient.cancelPause(_, observer),
                       RunCancelPaused.apply,
@@ -80,7 +80,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
   def handleStop: PartialFunction[Any, ActionResult[M]] = { case RequestStop(id, step) =>
     effectOnly(
       (value.clientId, value.observer)
-        .mapN((clientId, observer) =>
+        .mapN((_, observer) =>
           Effect(
             SeqexecWebClient
               .stop(id, observer, step)
@@ -98,7 +98,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
     case RequestGracefulStop(id, step) =>
       effectOnly(
         (value.clientId, value.observer)
-          .mapN((clientId, observer) =>
+          .mapN((_, observer) =>
             Effect(
               SeqexecWebClient
                 .stopGracefully(id, observer, step)
@@ -115,7 +115,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
   def handleAbort: PartialFunction[Any, ActionResult[M]] = { case RequestAbort(id, step) =>
     effectOnly(
       (value.clientId, value.observer)
-        .mapN((clientId, observer) =>
+        .mapN((_, observer) =>
           Effect(
             SeqexecWebClient
               .abort(id, observer, step)
@@ -132,7 +132,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
   def handleObsPause: PartialFunction[Any, ActionResult[M]] = { case RequestObsPause(id, step) =>
     effectOnly(
       (value.clientId, value.observer)
-        .mapN((clientId, observer) =>
+        .mapN((_, observer) =>
           Effect(
             SeqexecWebClient
               .pauseObs(id, observer, step)
@@ -150,7 +150,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
     case RequestGracefulObsPause(id, step) =>
       effectOnly(
         (value.clientId, value.observer)
-          .mapN((clientId, observer) =>
+          .mapN((_, observer) =>
             Effect(
               SeqexecWebClient
                 .pauseObsGracefully(id, observer, step)
@@ -167,7 +167,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, ClientStatus])
   def handleObsResume: PartialFunction[Any, ActionResult[M]] = { case RequestObsResume(id, step) =>
     effectOnly(
       (value.clientId, value.observer)
-        .mapN((clientId, observer) =>
+        .mapN((_, observer) =>
           Effect(
             SeqexecWebClient
               .resumeObs(id, observer, step)
