@@ -45,7 +45,7 @@ final case class AuthenticationService[F[_]: Sync: Logger](
   config: AuthenticationConfig
 ) extends AuthService[F] {
   import AuthenticationService._
-  implicit val clock = java.time.Clock.systemUTC()
+  implicit val clock: java.time.Clock = java.time.Clock.systemUTC()
 
   private val hosts =
     config.ldapURLs.map(u => new LDAPURL(u.renderString)).map(u => (u.getHost, u.getPort))

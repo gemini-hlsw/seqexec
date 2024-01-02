@@ -41,7 +41,7 @@ sealed trait ProgramId extends Product with Serializable {
 object ProgramId {
 
   /** A standard science program id with a site, semester, program type, and positive index. */
-  final case class Science private (
+  final case class Science private[model] (
     site:        Site,
     semester:    Semester,
     programType: ProgramType,

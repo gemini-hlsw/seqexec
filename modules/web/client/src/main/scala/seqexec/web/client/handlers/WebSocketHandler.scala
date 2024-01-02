@@ -33,6 +33,7 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model._
 import typings.loglevel.mod.{ ^ => logger }
+import diode.util.RunAfter
 
 /**
  * Handles the WebSocket connection and performs reconnection if needed
@@ -42,7 +43,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     with Handlers[M, WebSocketConnection]
     with ModelBooPicklers {
 
-  private implicit val runner = new RunAfterJS
+  private implicit val runner: RunAfter = new RunAfterJS
 
   // Makes a websocket connection and setups event listeners
   def webSocket: Future[Action] = Future[Action] {
