@@ -216,8 +216,12 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
+  private val internalFocusConfiguration: Configuration =
+    giapiConfig(GhostBFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION") |+|
+      giapiConfig(GhostRFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION")
+
   def configuration: Configuration =
-    baseConfiguration |+| slitMaskConfiguration |+| (
+    baseConfiguration |+| slitMaskConfiguration |+| internalFocusConfiguration |+| (
       if (!isScience(obsType)) {
         ifuCalibration |+| channelConfig |+|
           svCalib |+|
