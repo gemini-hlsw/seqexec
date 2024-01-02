@@ -10,6 +10,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.spModel.core.Peer
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
+import giapi.client.igrins2.Igrins2Client
 import org.typelevel.log4cats.Logger
 import lucuma.core.enums.Site
 import mouse.boolean._
@@ -32,6 +33,7 @@ import seqexec.server.keywords._
 import seqexec.server.nifs._
 import seqexec.server.niri._
 import seqexec.server.tcs._
+import seqexec.server.igrins2._
 import cats.effect.Temporal
 
 final case class Systems[F[_]](
@@ -47,6 +49,7 @@ final case class Systems[F[_]](
   gsaoi:               GsaoiController[F],
   gpi:                 GpiController[F],
   ghost:               GhostController[F],
+  igrins2:             Igrins2Controller[F],
   niri:                NiriController[F],
   nifs:                NifsController[F],
   altair:              AltairController[F],
@@ -309,9 +312,9 @@ object Systems {
 
       def gpiGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
         Resource.pure[F, GdsClient[F]](
-          GdsClient(if (settings.systemControl.gpiGds.command) httpClient
-                    else GdsClient.alwaysOkClient[F],
-                    settings.gpiGDS
+          GdsHttpClient(if (settings.systemControl.gpiGds.command) httpClient
+                        else GdsHttpClient.alwaysOkClient[F],
+                        settings.gpiGDS
           )
         )
 
@@ -328,16 +331,34 @@ object Systems {
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
         Resource.pure[F, GdsClient[F]](
-          GdsClient(if (settings.systemControl.ghostGds.command) httpClient
-                    else GdsClient.alwaysOkClient[F],
-                    settings.ghostGDS
+          GdsXmlrpcClient(if (settings.systemControl.ghostGds.command) httpClient
+                          else GdsXmlrpcClient.alwaysOkClient[F],
+                          settings.ghostGDS
           )
         )
 
       (ghostClient, ghostGDS(httpClient)).mapN(GhostController(_, _))
     }
 
-    def gws: IO[GwsKeywordReader[IO]] =
+    def igrins2[F[_]: Async: Logger](
+      httpClient: Client[F]
+    ): Resource[F, Igrins2Controller[F]] = {
+      def igrins2Client: Resource[F, Igrins2Client[F]] =
+        if (settings.systemControl.igrins2.command)
+          Igrins2Client.igrins2Client[F](settings.igrins2Url.renderString)
+        else Igrins2Client.simulatedIgrins2Client
+
+      def igrins2GDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
+        Resource.pure[F, GdsClient[F]](
+          GdsHttpClient(if (settings.systemControl.igrins2Gds.command) httpClient
+                        else GdsHttpClient.alwaysOkClient[F],
+                        settings.igrins2GDS
+          )
+        )
+
+      (igrins2Client, igrins2GDS(httpClient)).mapN(Igrins2Controller(_, _))
+    }
+    def gws: IO[GwsKeywordReader[IO]]            =
       if (settings.systemControl.gws.realKeywords)
         GwsEpics.instance[IO](service, tops).map(GwsKeywordsReaderEpics[IO])
       else DummyGwsKeywordsReader[IO].pure[IO]
@@ -357,6 +378,7 @@ object Systems {
         (gmosSouthCtr, gmosNorthCtr, gmosKR)       <- Resource.eval(gmosObjects(site))
         gpiController                              <- gpi[IO](httpClient)
         ghostController                            <- ghost[IO](httpClient)
+        igrins2Controller                          <- igrins2[IO](httpClient)
         gwsKR                                      <- Resource.eval(gws)
       } yield Systems[IO](
         odbProxy,
@@ -371,6 +393,7 @@ object Systems {
         gsaoiCtr,
         gpiController,
         ghostController,
+        igrins2Controller,
         niriCtr,
         nifsCtr,
         altairCtr,

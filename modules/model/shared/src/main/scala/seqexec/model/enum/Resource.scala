@@ -43,15 +43,16 @@ sealed abstract class Instrument(ordinal: Int, label: String) extends Resource(o
 
 object Instrument {
 
-  case object F2    extends Instrument(11, "Flamingos2")
-  case object Ghost extends Instrument(12, "GHOST")
-  case object GmosS extends Instrument(13, "GMOS-S")
-  case object GmosN extends Instrument(14, "GMOS-N")
-  case object Gnirs extends Instrument(15, "GNIRS")
-  case object Gpi   extends Instrument(16, "GPI")
-  case object Gsaoi extends Instrument(17, "GSAOI")
-  case object Niri  extends Instrument(18, "NIRI")
-  case object Nifs  extends Instrument(19, "NIFS")
+  case object F2      extends Instrument(11, "Flamingos2")
+  case object Ghost   extends Instrument(12, "GHOST")
+  case object GmosS   extends Instrument(13, "GMOS-S")
+  case object GmosN   extends Instrument(14, "GMOS-N")
+  case object Gnirs   extends Instrument(15, "GNIRS")
+  case object Gpi     extends Instrument(16, "GPI")
+  case object Gsaoi   extends Instrument(17, "GSAOI")
+  case object Niri    extends Instrument(18, "NIRI")
+  case object Nifs    extends Instrument(19, "NIFS")
+  case object Igrins2 extends Instrument(20, "IGRINS-2")
 
   implicit val show: Show[Instrument] =
     Show.show(_.label)
@@ -60,7 +61,7 @@ object Instrument {
     NonEmptyList.of(F2, Ghost, GmosS, Gpi, Gsaoi)
 
   val gnInstruments: NonEmptyList[Instrument] =
-    NonEmptyList.of(GmosN, Gnirs, Niri, Nifs)
+    NonEmptyList.of(GmosN, Gnirs, Niri, Nifs, Igrins2)
 
   val all: NonEmptyList[Instrument] =
     gsInstruments.concatNel(gnInstruments)

@@ -32,7 +32,6 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import squants.space.Millimeters
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
@@ -539,6 +538,7 @@ object TcsControllerEpicsCommon {
         case Gpi                           => ports.gpiPort
         case Ghost                         => ports.ghostPort
         case Gsaoi                         => ports.gsaoiPort
+        case Igrins2                       => ports.igrins2Port
         case Ac | Hr                       => BottomPort
         case Phoenix | Visitor             => InvalidPort
       }
@@ -707,11 +707,11 @@ object TcsControllerEpicsCommon {
         setPwfs2(Iso.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
         setOiwfs(Iso.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
         setScienceFold(Iso.id)(subsystems, current, tcs.agc.sfPos),
-        setHrPickup(Iso.id)(subsystems, current, tcs.agc),
-        setInstrumentDefocus(Iso.id)(subsystems,
-                                     current.defocusB,
-                                     tcs.tc.defocusB.getOrElse(Millimeters(0))
-        )
+        setHrPickup(Iso.id)(subsystems, current, tcs.agc)
+        // setInstrumentDefocus(Iso.id)(subsystems,
+        //                              current.defocusB,
+        //                              tcs.tc.defocusB.getOrElse(Millimeters(0))
+        // )
       ).flattenOption
 
     def guideOn(
@@ -871,12 +871,12 @@ object TcsControllerEpicsCommon {
     math.abs(wavel.length.toAngstroms - other.length.toAngstroms) <= WavelengthTolerance.toAngstroms
 
   def oiSelectionName(i: Instrument): Option[String] = i match {
-    case Instrument.F2                                        => "F2".some
-    case Instrument.GmosS | Instrument.GmosN                  => "GMOS".some
-    case Instrument.Gnirs                                     => "GNIRS".some
-    case Instrument.Niri                                      => "NIRI".some
-    case Instrument.Nifs                                      => "NIFS".some
-    case Instrument.Ghost | Instrument.Gpi | Instrument.Gsaoi => none
+    case Instrument.F2                                                             => "F2".some
+    case Instrument.GmosS | Instrument.GmosN                                       => "GMOS".some
+    case Instrument.Gnirs                                                          => "GNIRS".some
+    case Instrument.Niri                                                           => "NIRI".some
+    case Instrument.Nifs                                                           => "NIFS".some
+    case Instrument.Ghost | Instrument.Gpi | Instrument.Igrins2 | Instrument.Gsaoi => none
   }
 
   def calcMoveDistanceSquared(current: BaseEpicsTcsConfig, demand: TelescopeConfig): Option[Area] =

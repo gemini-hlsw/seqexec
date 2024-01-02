@@ -2661,6 +2661,12 @@ object KeywordName {
   /** @group Constructors */
   case object TARGET2 extends KeywordName("TARGET2", "TARGET2")
 
+  /** @group Constructors */
+  case object HAEND extends KeywordName("HAEND", "HAEND")
+
+  /** @group Constructors */
+  case object DATEEND extends KeywordName("DATEEND", "DATE_END")
+
   /** All members of KeywordName, in canonical order. */
   val all: List[KeywordName] =
     List(

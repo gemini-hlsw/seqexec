@@ -251,6 +251,9 @@ trait ModelLenses {
   val instrumentDeckerO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument, "decker", stringToString)
 
+  val instrumentFowlerSamplesO: Optional[Step, Int] =
+    stepObserveOptional(SystemName.Instrument, "fowlerSamples", stringToInt)
+
   // Composite lens to find the instrument decker on GNIRS
   val instrumentImagingMirrorO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument, "imagingMirror", stringToString)

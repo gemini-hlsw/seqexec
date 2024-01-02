@@ -38,6 +38,7 @@ trait ProgressLabel {
       stage match {
         case ObserveStage.Preparing  => "Preparing".some
         case ObserveStage.ReadingOut => "Reading out...".some
+        case ObserveStage.WritingMEF => "Writing file...".some
         case _                       => None
       }
 

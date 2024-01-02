@@ -331,6 +331,18 @@ package object keywords {
         keywClient.setKeywords(id, bag, finalFlag = false)
       }
 
+  def sendGdsKeywords[F[_]: MonadError[*[_], Throwable]: Logger](
+    id:         ImageFileId,
+    keywClient: GdsClient[F],
+    b:          List[KeywordBag => F[KeywordBag]]
+  ): F[Unit] =
+    GdsInstrument
+      .bundleKeywords(b)
+      .redeemWith(e => Logger[F].error(e.getMessage) *> KeywordBag.empty.pure[F], _.pure[F])
+      .flatMap { bag =>
+        keywClient.setKeywords(id, bag)
+      }
+
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       Applicative[F].unit
