@@ -539,6 +539,8 @@ object TcsControllerEpicsCommon {
         case Gpi                           => ports.gpiPort
         case Ghost                         => ports.ghostPort
         case Gsaoi                         => ports.gsaoiPort
+        // TODO Needs to use the real IG2 port
+        case Igrins2                       => BottomPort
         case Ac | Hr                       => BottomPort
         case Phoenix | Visitor             => InvalidPort
       }

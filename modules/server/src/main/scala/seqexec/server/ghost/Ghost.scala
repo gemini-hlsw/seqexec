@@ -179,7 +179,9 @@ object Ghost extends GhostConfigUtil {
         ra  <- raExtractor(d)
         dec <- decExtractor(e)
         c    = (ra, dec).mapN(Coordinates.apply)
-        n   <- config.extractInstAs[String](a).flatMap(refineV[NonEmpty](_))
+        n   <- config
+                 .extractInstAs[String](a)
+                 .flatMap(refineV[NonEmpty](_).leftMap(ContentError(_)))
         // Note the coordinates are PM corrected on the OT side
       } yield c.map(coord =>
         Target.Sidereal(
@@ -366,8 +368,8 @@ object Ghost extends GhostConfigUtil {
         hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
         hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
         hrifu1Coords   = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply)
-        ifu1Type      <- hrifu1Type.orElse(srifu1Type).toRight("No IFU1 type")
-        ifu1Coords    <- hrifu1Coords.orElse(srifu1Coords).toRight("No IFU1 coords")
+        ifu1Type      <- hrifu1Type.orElse(srifu1Type).toRight(ContentError("No IFU1 type"))
+        ifu1Coords    <- hrifu1Coords.orElse(srifu1Coords).toRight(ContentError("No IFU1 coords"))
 
       } yield GhostConfig.defocusOffset(baseCoords,
                                         ifu1Type,

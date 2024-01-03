@@ -68,6 +68,7 @@ trait TableArbitraries {
         case y: Int    => y.toDouble
         case y: Float  => y.toDouble
         case y: Double => y
+        case _         => sys.error("Unsupported type")
       }
     }
 
@@ -101,7 +102,7 @@ trait TableArbitraries {
       (x.userModified, x.scrollPosition.toDouble, x.columns.toList)
     )
 
-  implicit def columnMetaNelArb[A: Arbitrary: Eq]: Arbitrary[NonEmptyList[ColumnMeta[A]]] =
+  implicit def columnMetaNelArb[A: Arbitrary]: Arbitrary[NonEmptyList[ColumnMeta[A]]] =
     Arbitrary {
       for {
         c <- Gen.nonEmptyListOf[ColumnMeta[A]](arbitrary[ColumnMeta[A]])

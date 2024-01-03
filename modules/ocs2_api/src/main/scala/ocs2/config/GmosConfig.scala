@@ -10,7 +10,6 @@ import cats.Order
 import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums._
 import lucuma.core.math.Offset
-//import lucuma.core.math.Wavelength
 import monocle._
 
 /**
