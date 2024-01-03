@@ -540,7 +540,7 @@ object TcsControllerEpicsCommon {
         case Ghost                         => ports.ghostPort
         case Gsaoi                         => ports.gsaoiPort
         // TODO Needs to use the real IG2 port
-        case Igrins2                       => BottomPort
+        case Igrins2                       => sys.error("IGRINS2 not supported")
         case Ac | Hr                       => BottomPort
         case Phoenix | Visitor             => InvalidPort
       }
