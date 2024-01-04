@@ -1396,7 +1396,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   def p2aframe: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aframe"))
 
-  def p2aobject: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aobject"))
+  def p2aobject: F[String] = safeAttributeF(tcsState.getStringAttribute("p2aobjec"))
 
   def p2apmdec: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("p2apmdec"))
 

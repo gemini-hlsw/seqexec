@@ -3,6 +3,7 @@
 
 package giapi.client.igrins2
 
+import cats.Monad
 import cats.effect.Resource
 import cats.syntax.all._
 import giapi.client.Giapi
@@ -34,12 +35,12 @@ object Igrins2Client {
   /**
    * Client for Igrins2
    */
-  final private class Igrins2ClientImpl[F[_]: cats.Monad: Logger](
+  final private class Igrins2ClientImpl[F[_]: Monad: Logger](
     override val giapi: Giapi[F],
     val statusDb:       GiapiStatusDb[F]
   ) extends Igrins2Client[F] {
     def exposureProgress: F[Stream[F, Int]] =
-      giapi.stream[Int](TimeProgress).flatTap(i => Logger[F].info(s"Exposure progress: $i"))
+      giapi.stream[Int](TimeProgress)
 
     def currentStatus: F[String] =
       statusDb.optional(CurrentStatus).map(_.stringValue.orEmpty)
