@@ -48,17 +48,19 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
   private def configure(config: CFG): F[CommandResult] = {
     val cfg: F[Configuration] = configuration(config)
     val isEmpty               = cfg.map(_.config.isEmpty)
-    isEmpty.ifM(CommandResult(HandlerResponse.Response.ACCEPTED)
-                  .pure[F],
-                cfg.flatMap(client.genericApply(_, configureTimeout.toMilliseconds.milliseconds))
+    isEmpty.ifM(
+      CommandResult(HandlerResponse.Response.ACCEPTED)
+        .pure[F],
+      cfg
+        .flatTap(c => L.debug(s"Configuration $c"))
+        .flatMap(client.genericApply(_, configureTimeout.toMilliseconds.milliseconds))
     )
   }.adaptError(adaptGiapiError)
 
   override def applyConfig(config: CFG): F[Unit] =
     L.debug(s"Start $name configuration") *>
-      L.debug(s"$name configuration $config") *>
       configure(config) *>
-      L.debug(s"Completed $name configuration")
+      L.debug(s"Configuration for $name sent")
 
   override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] = (
     L.debug(s"Send observe to $name, file id $fileId and $expTime") *>

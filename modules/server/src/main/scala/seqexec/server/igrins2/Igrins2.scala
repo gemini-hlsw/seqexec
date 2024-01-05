@@ -135,12 +135,12 @@ object Igrins2 {
           q              = config.extractTelescopeAs[String](Q_OFFSET_PROP)
           obsClass       = clazz match {
                              case "acq" | "acqCal" => "acq"
+                             case "dayCal"         => "dayCal"
                              case _                => "sci"
                            }
           igrins2Config <-
             Right(new Igrins2Config {
               override def configuration: Configuration =
-                // TODO The ICD must indicate how to set the exposure time
                 Configuration.single("ig2:dcs:expTime", expTime.value) |+|
                   Configuration.single("ig2:seq:state", obsClass) |+|
                   p.foldMap(p => Configuration.single("ig2:seq:p", p.toDouble)) |+|
