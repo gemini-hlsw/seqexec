@@ -11,12 +11,21 @@ import cats.data.NonEmptyList
 import fs2.Stream
 import seqexec.model.Observation
 import lucuma.core.enums.Site
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
+import edu.gemini.seqexec.odb.SeqexecSequence
+import edu.gemini.spModel.config2.ConfigSequence
+import edu.gemini.spModel.config2.DefaultConfig
+import edu.gemini.spModel.obscomp.InstConstants._
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.config2.ItemKey
 import seqexec.engine.{ Action, Result, Sequence }
 import seqexec.model.Conditions
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.dhs._
 import seqexec.model.{ ActionType, SequenceState }
 import seqexec.server.Response.Observed
+import seqexec.server.SequenceGen._
 import seqexec.server.TestCommon._
 import squants.time.Seconds
 
@@ -122,4 +131,86 @@ class SeqTranslateSpec extends TestCommon {
     assert(translator.abortObserve(seqId).apply(s6).isEmpty)
   }
 
+  "SeqTranslate" should "include GCAL for GMOS darks" in {
+    val darkConfig     = new ConfigSequence()
+    val darkStepConfig = new DefaultConfig()
+    darkStepConfig.putItem(OBSERVE_TYPE_KEY, DARK_OBSERVE_TYPE)
+    darkStepConfig.putItem(INST_INSTRUMENT_KEY, "GMOS-S")
+    darkStepConfig.putItem(new ItemKey(OBSERVE_KEY, DATA_LABEL_PROP), "GHOST")
+    darkStepConfig.putItem(new ItemKey(OBSERVE_KEY, STATUS_PROP), "ready")
+    darkConfig.addStep(0, darkStepConfig)
+    val odbSequence    = new SeqexecSequence("title", Map.empty, darkConfig, Nil)
+    val resources      =
+      translator
+        .sequence(seqId, odbSequence)
+        .unsafeRunSync()
+        ._2
+        .foldMap(_.steps.collect { case PendingStepGen(_, _, _, r, _, _) => r.toList })
+        .flatten
+    assert(
+      resources.contains(Resource.Gcal) && resources.contains(Instrument.GmosS)
+    )
+  }
+
+  "SeqTranslate" should "include GCAL for GMOS biases" in {
+    val biasConfig     = new ConfigSequence()
+    val biasStepConfig = new DefaultConfig()
+    biasStepConfig.putItem(OBSERVE_TYPE_KEY, DARK_OBSERVE_TYPE)
+    biasStepConfig.putItem(INST_INSTRUMENT_KEY, "GMOS-S")
+    biasStepConfig.putItem(new ItemKey(OBSERVE_KEY, DATA_LABEL_PROP), "GHOST")
+    biasStepConfig.putItem(new ItemKey(OBSERVE_KEY, STATUS_PROP), "ready")
+    biasConfig.addStep(0, biasStepConfig)
+    val odbSequence    = new SeqexecSequence("title", Map.empty, biasConfig, Nil)
+    val resources      =
+      translator
+        .sequence(seqId, odbSequence)
+        .unsafeRunSync()
+        ._2
+        .foldMap(_.steps.collect { case PendingStepGen(_, _, _, r, _, _) => r.toList })
+        .flatten
+    assert(
+      resources.contains(Resource.Gcal) && resources.contains(Instrument.GmosS)
+    )
+  }
+  "SeqTranslate" should "include GCAL for GHOST darks" in {
+    val darkConfig     = new ConfigSequence()
+    val darkStepConfig = new DefaultConfig()
+    darkStepConfig.putItem(OBSERVE_TYPE_KEY, DARK_OBSERVE_TYPE)
+    darkStepConfig.putItem(INST_INSTRUMENT_KEY, "GHOST")
+    darkStepConfig.putItem(new ItemKey(OBSERVE_KEY, DATA_LABEL_PROP), "GHOST")
+    darkStepConfig.putItem(new ItemKey(OBSERVE_KEY, STATUS_PROP), "ready")
+    darkConfig.addStep(0, darkStepConfig)
+    val odbSequence    = new SeqexecSequence("title", Map.empty, darkConfig, Nil)
+    val resources      =
+      translator
+        .sequence(seqId, odbSequence)
+        .unsafeRunSync()
+        ._2
+        .foldMap(_.steps.collect { case PendingStepGen(_, _, _, r, _, _) => r.toList })
+        .flatten
+    assert(
+      resources.contains(Resource.Gcal) && resources.contains(Instrument.Ghost)
+    )
+  }
+
+  "SeqTranslate" should "include GCAL for GHOST biases" in {
+    val biasConfig     = new ConfigSequence()
+    val biasStepConfig = new DefaultConfig()
+    biasStepConfig.putItem(OBSERVE_TYPE_KEY, DARK_OBSERVE_TYPE)
+    biasStepConfig.putItem(INST_INSTRUMENT_KEY, "GHOST")
+    biasStepConfig.putItem(new ItemKey(OBSERVE_KEY, DATA_LABEL_PROP), "GHOST")
+    biasStepConfig.putItem(new ItemKey(OBSERVE_KEY, STATUS_PROP), "ready")
+    biasConfig.addStep(0, biasStepConfig)
+    val odbSequence    = new SeqexecSequence("title", Map.empty, biasConfig, Nil)
+    val resources      =
+      translator
+        .sequence(seqId, odbSequence)
+        .unsafeRunSync()
+        ._2
+        .foldMap(_.steps.collect { case PendingStepGen(_, _, _, r, _, _) => r.toList })
+        .flatten
+    assert(
+      resources.contains(Resource.Gcal) && resources.contains(Instrument.Ghost)
+    )
+  }
 }
