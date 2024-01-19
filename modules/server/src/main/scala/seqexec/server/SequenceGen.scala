@@ -82,12 +82,13 @@ object SequenceGen {
       NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
         post(ctx, overrides)
 
-    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)]   = {
+    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {
       val i = configs.keys.toIndexedSeq.indexOf(r)
       (i >= 0)
         .option(i)
         .map(i => (ExecutionIndex(0), ActionIndex(i.toLong)))
     }
+
     def resourceAtCoords(ex: ExecutionIndex, ac: ActionIndex): Option[Resource] =
       if (ex.self === 0) configs.keys.toList.get(ac.self)
       else None
