@@ -70,7 +70,10 @@ final case class Ghost[F[_]: Logger: Async](
   override val contributorName: String = "ghost"
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
-    Uncontrollable
+    UnpausableControl(
+      StopObserveCmd(_ => controller.stopObserve),
+      AbortObserveCmd(controller.abortObserve)
+    )
 
   override def observe(
     config: CleanConfig

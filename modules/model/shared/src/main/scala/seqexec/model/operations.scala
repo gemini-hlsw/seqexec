@@ -150,7 +150,16 @@ object operations {
   private val GhostSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
       level: OperationLevelType[L]
-    ): List[Operations[L]] = Nil
+    ): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          if (isObservePaused) {
+            List(Operations.StopObservation, Operations.AbortObservation)
+          } else {
+            List(Operations.StopObservation, Operations.AbortObservation)
+          }
+        case _                => Nil
+      }
   }
 
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
