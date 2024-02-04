@@ -12,11 +12,16 @@ import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.keywords.GdsClient
 import seqexec.model.enum.ObserveCommandResult
+import fs2.Stream
 import squants.time.Time
 import squants.time.Seconds
 
 trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def gdsClient: GdsClient[F]
+
+  def exposureProgress: F[Stream[F, Int]]
+
+  def redDetectorActivity: F[Int]
 
   def stopObserve: F[Unit]
 
@@ -29,6 +34,13 @@ trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def stopPaused: F[ObserveCommandResult]
 
   def abortPaused: F[ObserveCommandResult]
+
+  def dcIsPreparing: F[Boolean]
+
+  def dcIsAcquiring: F[Boolean]
+
+  def dcIsReadingOut: F[Boolean]
+
 }
 
 object GhostController {
@@ -42,6 +54,9 @@ object GhostController {
 
       override def configuration(config: GhostConfig): F[Configuration] =
         Logger[F].debug(pprint.apply(config.configuration).toString) *> config.configuration.pure[F]
+
+      override def exposureProgress: F[Stream[F, Int]] =
+        client.redProgress
 
       override def stopObserve: F[Unit] =
         client.stop.void
@@ -61,5 +76,14 @@ object GhostController {
       override def abortPaused: F[ObserveCommandResult] =
         client.abort.map(_ => ObserveCommandResult.Aborted)
 
+      override def redDetectorActivity: F[Int] =
+        client.redDetectorActivity.flatTap(x => Logger[F].debug(s"Red detector activity: $x"))
+
+      // Numbers are defined on the GHOST ICD
+      def dcIsPreparing: F[Boolean] = redDetectorActivity.map(x => x < 3 || x > 4)
+
+      def dcIsAcquiring: F[Boolean] = redDetectorActivity.map(_ === 3)
+
+      def dcIsReadingOut: F[Boolean] = redDetectorActivity.map(_ === 4)
     }
 }

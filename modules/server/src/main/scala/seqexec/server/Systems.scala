@@ -323,7 +323,7 @@ object Systems {
     ): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
         if (settings.systemControl.ghost.command)
-          GhostClient.ghostClient[F](settings.ghostUrl.renderString)
+          GhostClient.ghostClient[F](settings.ghostUrl.renderString, GhostStatus.statusesToMonitor)
         else GhostClient.simulatedGhostClient
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =

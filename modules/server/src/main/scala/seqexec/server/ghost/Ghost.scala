@@ -51,6 +51,7 @@ import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
 import shapeless.tag
 import squants.space.Length
+import seqexec.model.ObserveStage
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -59,7 +60,7 @@ final case class Ghost[F[_]: Logger: Async](
     with InstrumentSystem[F]
     with GhostLUT {
 
-  val readOutTimeExtra: Time = Seconds(420)
+  val readOutTimeExtra: Time = Seconds(60)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
@@ -115,7 +116,22 @@ final case class Ghost[F[_]: Logger: Async](
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): Stream[F, Progress] =
-    ProgressUtil.obsCountdown[F](total, elapsed.self)
+    Stream.force(
+      for {
+        progress <- controller.exposureProgress
+      } yield {
+        ProgressUtil.realCountdownWithObsStage[F](
+          total,
+          progress.map(Seconds(_)).flatTap(t => Stream.eval(Logger[F].info(t.toString))),
+          (controller.dcIsPreparing, controller.dcIsAcquiring, controller.dcIsReadingOut)
+            .mapN(
+              ObserveStage.fromBooleans
+            )
+            .flatTap(s => Logger[F].info(s.toString))
+        )
+      }
+    )
+  // ProgressUtil.obsCountdown[F](total, elapsed.self)
 
   override def instrumentActions(config: CleanConfig): InstrumentActions[F] =
     InstrumentActions.defaultInstrumentActions[F]

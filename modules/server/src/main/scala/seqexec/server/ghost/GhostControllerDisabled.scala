@@ -13,8 +13,10 @@ import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
 import squants.time.Time
 import seqexec.model.enum.ObserveCommandResult
+import fs2.Stream
 
 class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController[F] {
+
   private val name = "GHOST"
 
   override def gdsClient: GdsClient[F] = new GdsClient[F] {
@@ -48,4 +50,14 @@ class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController
 
   override def abortPaused: F[ObserveCommandResult] = ObserveCommandResult.Aborted.pure[F].widen
 
+  override def exposureProgress: F[Stream[F, Int]] =
+    Stream.empty.covary[F].pure[F]
+
+  override def redDetectorActivity: F[Int] = 0.pure[F]
+
+  def dcIsPreparing: F[Boolean] = false.pure[F]
+
+  def dcIsAcquiring: F[Boolean] = false.pure[F]
+
+  def dcIsReadingOut: F[Boolean] = false.pure[F]
 }
