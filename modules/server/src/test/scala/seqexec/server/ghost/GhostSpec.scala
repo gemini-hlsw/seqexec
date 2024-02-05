@@ -52,6 +52,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostRedBinningRcf.applyItem)),
@@ -67,6 +69,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  "1".some
     )
   }
+
   test("fiber agitator on/off for bias") {
     val cfg = GhostConfig(
       "BIAS",
@@ -92,6 +95,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator1.applyItem)),
@@ -101,6 +106,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  "FA_DEMAND_OFF".some
     )
   }
+
   test("fiber agitator on/off") {
     val cfg = GhostConfig(
       "OBJECT",
@@ -126,6 +132,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostFiberAgitator1.applyItem)),
@@ -135,6 +143,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  "FA_DEMAND_NONE".some
     )
   }
+
   test("sru ifu1 ra/dec") {
     val cfg = GhostConfig(
       "OBJECT",
@@ -160,6 +169,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
@@ -211,6 +222,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
@@ -245,6 +258,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
                  dec2.toAngle.toSignedDoubleDegrees.some.map(v => f"$v%1.6f")
     )
   }
+
   test("sru ifu1 park if only one used") {
     val cfg = GhostConfig(
       "OBJECT",
@@ -270,6 +284,8 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       Nil,
       ResolutionMode.GhostStandard.some,
       Conditions.Best,
+      None,
+      None,
       None
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu1.type")),
@@ -297,5 +313,75 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     )
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.ra")), None)
     assertEquals(cfg.toOption.flatMap(_.configuration.value("ghost:cc:cu:ifu2.dec")), None)
+  }
+
+  test("Support SV overrides") {
+    val cfg = GhostConfig(
+      "OBJECT",
+      "science",
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
+      none,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      "target",
+      "target".some,
+      coord1.some,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None,
+      None,
+      Some(5.seconds)
+    )
+
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostSVDuration.applyItem)),
+                 Some("5000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostSVRepeat.applyItem)), Some("9"))
+  }
+
+  test("Support SV overrides") {
+    val cfg = GhostConfig(
+      "OBJECT",
+      "science",
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
+      none,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      "target",
+      "target".some,
+      coord1.some,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None,
+      Some(5.seconds),
+      None
+    )
+
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostAGDuration.applyItem)), Some("50"))
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostAGRepeat.applyItem)), None)
   }
 }
