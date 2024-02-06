@@ -351,7 +351,7 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostSVRepeat.applyItem)), Some("9"))
   }
 
-  test("Support SV overrides") {
+  test("Support AG overrides".ignore) {
     val cfg = GhostConfig(
       "OBJECT",
       "science",

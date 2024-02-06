@@ -216,6 +216,7 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostAGDuration, (agCameraTime(conditions, mag) * AGDurationFactor).toInt) |+|
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
 
+  // Unused, sets the ag exposure time override
   def agOverride: Configuration =
     guideCameraOverride.foldMap(f =>
       giapiConfig(GhostAGDuration, ((f.toMillis.toDouble / 1000) * AGDurationFactor).toInt) |+|
@@ -247,7 +248,7 @@ sealed trait GhostConfig extends GhostLUT {
             GhostConfig.fiberConfig2(FiberAgitator.None)
         } |+|
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-          agOverride |+|
+          // agOverride |+|
           svConfiguration(svCameraOverride, scienceMagnitude) |+| thXeLamp
     ) |+| giapiConfig(GhostSlitMaskPositionerType, "SMP_DEMAND_POSITION")
 
