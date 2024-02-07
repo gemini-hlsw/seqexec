@@ -16,7 +16,9 @@ import squants.time.Time
 import java.time.{ Duration => JDuration }
 import shapeless.tag.@@
 
+// times in seconds
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
+// times in seconds
 final case class SVCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)
 final case class ReadoutTimes(
   mode:     ReadNoiseGain,
@@ -268,6 +270,17 @@ trait GhostLUT {
   ): Int = {
     val total  = totalObserveTime(blueConfig, redConfig)
     val svTime = Seconds(svCameraTime(conditions, mag))
+    (total / (svTime + svReadoutTime)).floor.toInt
+  }
+
+  // REL-4372
+  def svOverrideCameraRepeats(
+    svOverrideTime: FiniteDuration,
+    blueConfig:     ChannelConfig @@ BlueChannel,
+    redConfig:      ChannelConfig @@ RedChannel
+  ): Int = {
+    val total  = totalObserveTime(blueConfig, redConfig)
+    val svTime = Milliseconds(svOverrideTime.toMillis)
     (total / (svTime + svReadoutTime)).floor.toInt
   }
 

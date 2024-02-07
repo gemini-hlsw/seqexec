@@ -66,6 +66,8 @@ trait GhostArbitraries extends ArbTime {
       rm              <- arbitrary[Option[ResolutionMode]]
       conditions      <- arbitrary[Conditions]
       mag             <- arbitrary[Option[Double]]
+      ag              <- arbitrary[Option[FiniteDuration]]
+      sv              <- arbitrary[Option[FiniteDuration]]
     } yield StandardResolutionMode.SingleTarget(
       obsType,
       obsClass,
@@ -79,7 +81,9 @@ trait GhostArbitraries extends ArbTime {
       targets,
       rm,
       conditions,
-      mag
+      mag,
+      ag,
+      sv
     )
 
   implicit val ghostSRSingleTargetConfigCogen: Cogen[StandardResolutionMode.SingleTarget] =
@@ -103,6 +107,8 @@ trait GhostArbitraries extends ArbTime {
       rm              <- arbitrary[Option[ResolutionMode]]
       conditions      <- arbitrary[Conditions]
       mag             <- arbitrary[Option[Double]]
+      ag              <- arbitrary[Option[FiniteDuration]]
+      sv              <- arbitrary[Option[FiniteDuration]]
     } yield StandardResolutionMode.DualTarget(
       obsType,
       obsClass,
@@ -118,7 +124,9 @@ trait GhostArbitraries extends ArbTime {
       targets,
       rm,
       conditions,
-      mag
+      mag,
+      ag,
+      sv
     )
 
   implicit val ghostSRDualTargetConfigCogen: Cogen[StandardResolutionMode.DualTarget] =
@@ -143,6 +151,8 @@ trait GhostArbitraries extends ArbTime {
       rm              <- arbitrary[Option[ResolutionMode]]
       conditions      <- arbitrary[Conditions]
       mag             <- arbitrary[Option[Double]]
+      ag              <- arbitrary[Option[FiniteDuration]]
+      sv              <- arbitrary[Option[FiniteDuration]]
     } yield StandardResolutionMode.TargetPlusSky(
       obsType,
       obsClass,
@@ -157,7 +167,9 @@ trait GhostArbitraries extends ArbTime {
       targets,
       rm,
       conditions,
-      mag
+      mag,
+      ag,
+      sv
     )
 
   implicit val ghostSRTargetSkyConfigCogen: Cogen[StandardResolutionMode.TargetPlusSky] =
@@ -180,6 +192,8 @@ trait GhostArbitraries extends ArbTime {
       rm              <- arbitrary[Option[ResolutionMode]]
       conditions      <- arbitrary[Conditions]
       mag             <- arbitrary[Option[Double]]
+      ag              <- arbitrary[Option[FiniteDuration]]
+      sv              <- arbitrary[Option[FiniteDuration]]
     } yield StandardResolutionMode.SkyPlusTarget(
       obsType,
       obsClass,
@@ -194,7 +208,9 @@ trait GhostArbitraries extends ArbTime {
       targets,
       rm,
       conditions,
-      mag
+      mag,
+      ag,
+      sv
     )
 
   implicit val ghostSRSkyTargetConfigCogen: Cogen[StandardResolutionMode.SkyPlusTarget] =
@@ -217,6 +233,8 @@ trait GhostArbitraries extends ArbTime {
       rm         <- arbitrary[Option[ResolutionMode]]
       conditions <- arbitrary[Conditions]
       mag        <- arbitrary[Option[Double]]
+      ag         <- arbitrary[Option[FiniteDuration]]
+      sv         <- arbitrary[Option[FiniteDuration]]
     } yield HighResolutionMode.TargetPlusSky(
       obsType,
       obsClass,
@@ -231,7 +249,9 @@ trait GhostArbitraries extends ArbTime {
       targets,
       rm,
       conditions,
-      mag
+      mag,
+      ag,
+      sv
     )
 
   implicit val ghostHRTargetSkyConfigCogen: Cogen[HighResolutionMode.TargetPlusSky] =
@@ -250,14 +270,47 @@ trait GhostArbitraries extends ArbTime {
 
   object GhostHelpers {
     def extractSRIFU1Name(x: GhostConfig): Option[String] = x match {
-      case StandardResolutionMode.SingleTarget(_, _, _, _, _, _, _, name, _, _, _, _, _)     =>
+      case StandardResolutionMode.SingleTarget(_, _, _, _, _, _, _, name, _, _, _, _, _, _, _) =>
         Some(name)
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, name, _, _, _, _, _, _, _) =>
+      case StandardResolutionMode.DualTarget(_,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             name,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _
+          ) =>
         Some(name)
-      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, _, name, _, _, _, _, _, _) =>
+      case StandardResolutionMode.TargetPlusSky(_,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                name,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _
+          ) =>
         Some(name)
-      case _: StandardResolutionMode.SkyPlusTarget                                           => Some("Sky")
-      case _                                                                                 => None
+      case _: StandardResolutionMode.SkyPlusTarget                                             => Some("Sky")
+      case _                                                                                   => None
     }
 
     def extractSRIFU1Coordinates(x: GhostConfig): Option[Coordinates] = x match {
@@ -266,22 +319,104 @@ trait GhostArbitraries extends ArbTime {
     }
 
     def extractSRIFU2Name(x: GhostConfig): Option[String] = x match {
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, _, name, _, _, _, _, _) =>
+      case StandardResolutionMode.DualTarget(_,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             name,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _
+          ) =>
         Some(name)
-      case _: StandardResolutionMode.TargetPlusSky                                           => Some("Sky")
-      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, _, name, _, _, _, _, _) =>
+      case _: StandardResolutionMode.TargetPlusSky => Some("Sky")
+      case StandardResolutionMode.SkyPlusTarget(_,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                name,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _
+          ) =>
         Some(name)
-      case _                                                                                 => None
+      case _                                       => None
     }
 
     def extractSRIFU2Coordinates(x: GhostConfig): Option[Coordinates] = x match {
-      case StandardResolutionMode.DualTarget(_, _, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+      case StandardResolutionMode.DualTarget(_,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             coords,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _,
+                                             _
+          ) =>
         Some(coords)
-      case StandardResolutionMode.TargetPlusSky(_, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+      case StandardResolutionMode.TargetPlusSky(_,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                coords,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _
+          ) =>
         Some(coords)
-      case StandardResolutionMode.SkyPlusTarget(_, _, _, _, _, _, _, _, _, coords, _, _, _, _) =>
+      case StandardResolutionMode.SkyPlusTarget(_,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                coords,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _,
+                                                _
+          ) =>
         Some(coords)
-      case _                                                                                   => None
+      case _ => None
     }
 
     def extractHRIFU1Name(x: GhostConfig): Option[String] = x match {
