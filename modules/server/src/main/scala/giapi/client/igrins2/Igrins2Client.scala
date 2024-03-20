@@ -3,16 +3,14 @@
 
 package giapi.client.igrins2
 
-import cats.Monad
-import cats.effect.Resource
+import cats._
+import cats.effect._
 import cats.syntax.all._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
-import giapi.client.GiapiStatusDb
 import giapi.client.syntax.status._
-import cats.effect.Temporal
-import cats.effect.kernel.Async
-import fs2.Stream
+import fs2._
+import giapi.client.GiapiStatusDb
 
 sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
@@ -69,7 +67,7 @@ object Igrins2Client {
     val db: Resource[F, GiapiStatusDb[F]] =
       Resource.make(
         GiapiStatusDb
-          .newStatusDb[F](url, List(TimeProgress, CurrentStatus, ObsTime))
+          .newStatusDb[F](url, List(TimeProgress, CurrentStatus, ObsTime), List("*"))
       )(_.close)
 
     (giapi, db).mapN(new Igrins2ClientImpl[F](_, _)).widen[Igrins2Client[F]]
