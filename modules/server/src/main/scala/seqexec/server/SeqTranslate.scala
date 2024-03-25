@@ -117,7 +117,8 @@ object SeqTranslate {
       config:     CleanConfig,
       nextToRun:  StepId,
       datasets:   Map[Int, ExecutedDataset],
-      isNightSeq: Boolean
+      isNightSeq: Boolean,
+      lastStep:   Boolean
     ): F[StepGen[F]] = {
       def buildStep(
         dataId:    DataId,
@@ -160,15 +161,23 @@ object SeqTranslate {
           inst.instrumentActions(config).observeActions(env)
         }
 
+        val endSequenceAction: SystemOverrides => Action[F] = { ov: SystemOverrides =>
+          val is = instf(ov)
+          is.sequenceComplete
+            .as(Response.Configured(is.resource))
+            .toAction(ActionType.Configure(is.resource))
+        }
+
         extractStatus(config) match {
           case StepState.Pending if i >= nextToRun =>
+            println(s"Step $i is pending and next to run is $lastStep")
             SequenceGen.PendingStepGen(
               i,
               dataId,
               config,
               otherSysf.keys.toSet + instRes,
               { ov: SystemOverrides => instf(ov).observeControl(config) },
-              StepActionsGen(configs, rest)
+              StepActionsGen(configs, rest, Option(endSequenceAction).filter(_ => lastStep))
             )
           case StepState.Pending                   =>
             SequenceGen.SkippedStepGen(
@@ -224,7 +233,14 @@ object SeqTranslate {
 
       val steps = configs.zipWithIndex
         .map { case (c, i) =>
-          step(obsId, i, c, nextToRun, sequence.datasets, isNightSeq).attempt
+          step(obsId,
+               i,
+               c,
+               nextToRun,
+               sequence.datasets,
+               isNightSeq,
+               i === configs.length - 1
+          ).attempt
         }
         .sequence
         .map(_.separate)

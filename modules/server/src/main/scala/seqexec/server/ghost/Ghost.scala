@@ -3,6 +3,7 @@
 
 package seqexec.server.ghost
 
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
@@ -82,6 +83,8 @@ final case class Ghost[F[_]: Logger: Async](
           .as(ObserveCommandResult.Success: ObserveCommandResult)
       }
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     for {

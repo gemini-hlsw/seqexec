@@ -3,6 +3,8 @@
 
 package seqexec.server.gmos
 
+import cats.Applicative
+import cats.effect.{ Ref, Temporal }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosNorthType
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth._
@@ -26,7 +28,6 @@ import seqexec.server.keywords.{ DhsClient, DhsClientProvider }
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
-import cats.effect.{ Ref, Temporal }
 
 final case class GmosNorth[F[_]: Temporal: Logger] private (
   c:                 GmosNorthController[F],
@@ -71,6 +72,7 @@ final case class GmosNorth[F[_]: Temporal: Logger] private (
   override val resource: Instrument      = Instrument.GmosN
   override val dhsInstrumentName: String = "GMOS-N"
   override val dhsClient: DhsClient[F]   = dhsClientProvider.dhsClient(dhsInstrumentName)
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
 }
 

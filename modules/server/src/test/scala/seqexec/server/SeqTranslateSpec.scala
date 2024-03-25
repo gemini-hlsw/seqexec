@@ -54,7 +54,8 @@ class SeqTranslateSpec extends TestCommon {
         Set(GmosS),
         _ => InstrumentSystem.Uncontrollable,
         SequenceGen.StepActionsGen(Map.empty,
-                                   (_, _) => List(observeActions(Action.ActionState.Idle))
+                                   (_, _) => List(observeActions(Action.ActionState.Idle)),
+                                   None
         )
       )
     )

@@ -7,10 +7,12 @@ import java.lang.{ Double => JDouble }
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.SECONDS
 import scala.reflect.ClassTag
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
 import cats.syntax.all._
+import cats.effect.Async
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
@@ -31,7 +33,6 @@ import squants.Length
 import squants.space.Arcseconds
 import squants.time.Seconds
 import squants.time.Time
-import cats.effect.Async
 
 final case class Flamingos2[F[_]: Async: Logger](
   f2Controller:      Flamingos2Controller[F],
@@ -50,6 +51,8 @@ final case class Flamingos2[F[_]: Async: Logger](
   override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
 
   override val keywordsClient: KeywordsClient[F] = this
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable

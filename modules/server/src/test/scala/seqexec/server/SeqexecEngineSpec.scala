@@ -464,7 +464,8 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
           _ => InstrumentSystem.Uncontrollable,
           generator = SequenceGen.StepActionsGen(
             configs = resources.map(r => r -> { _: SystemOverrides => pendingAction[IO](r) }).toMap,
-            post = (_, _) => Nil
+            post = (_, _) => Nil,
+            None
           )
         )
       }
@@ -853,7 +854,8 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
           _ => InstrumentSystem.Uncontrollable,
           generator = SequenceGen.StepActionsGen(
             configs = resources.map(r => r -> { _: SystemOverrides => pendingAction[IO](r) }).toMap,
-            post = (_, _) => Nil
+            post = (_, _) => Nil,
+            None
           )
         )
       }

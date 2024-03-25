@@ -41,6 +41,7 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import cats.Applicative
 
 final case class Nifs[F[_]: Logger: Async](
   controller:        NifsController[F],
@@ -66,6 +67,8 @@ final case class Nifs[F[_]: Logger: Async](
         .widenRethrowT
         .flatMap(controller.observe(fileId, _))
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
