@@ -75,12 +75,22 @@ object SequenceGen {
   }
 
   final case class StepActionsGen[F[_]](
-    configs: Map[Resource, SystemOverrides => Action[F]],
-    post:    (HeaderExtraData, SystemOverrides) => List[ParallelActions[F]]
+    configs:          Map[Resource, SystemOverrides => Action[F]],
+    post:             (HeaderExtraData, SystemOverrides) => List[ParallelActions[F]],
+    endObserveAction: Option[SystemOverrides => Action[F]]
   ) {
-    def generate(ctx: HeaderExtraData, overrides: SystemOverrides): List[ParallelActions[F]] =
+
+    def generate(
+      ctx:       HeaderExtraData,
+      overrides: SystemOverrides
+    ): List[ParallelActions[F]] = {
+      val postActions =
+        this.endObserveAction.fold(post(ctx, overrides))(a =>
+          post(ctx, overrides) :+ NonEmptyList.one(a(overrides))
+        )
       NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
-        post(ctx, overrides)
+        postActions
+    }
 
     def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {
       val i = configs.keys.toIndexedSeq.indexOf(r)

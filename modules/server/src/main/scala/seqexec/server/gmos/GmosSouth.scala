@@ -27,6 +27,7 @@ import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
 import cats.effect.{ Ref, Temporal }
+import cats.Applicative
 
 final case class GmosSouth[F[_]: Temporal: Logger] private (
   c:                 GmosSouthController[F],
@@ -71,6 +72,7 @@ final case class GmosSouth[F[_]: Temporal: Logger] private (
   override val resource: Instrument      = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"
   override val dhsClient: DhsClient[F]   = dhsClientProvider.dhsClient(dhsInstrumentName)
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 }
 
 object GmosSouth {
