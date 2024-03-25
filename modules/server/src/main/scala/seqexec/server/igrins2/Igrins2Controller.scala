@@ -26,6 +26,8 @@ trait Igrins2Controller[F[_]] extends GiapiInstrumentController[F, Igrins2Config
 
   def exposureProgress: F[Stream[F, Int]]
 
+  def sequenceComplete: F[Unit]
+
   def requestedTime: F[Option[Float]]
 
   def currentStatus: F[Igrins2ControllerState]
@@ -84,6 +86,9 @@ object Igrins2Controller {
 
       override def exposureProgress: F[Stream[F, Int]] =
         client.exposureProgress
+
+      override def sequenceComplete: F[Unit] =
+        client.sequenceComplete
 
       def requestedTime: F[Option[Float]] = client.requestedTime
 

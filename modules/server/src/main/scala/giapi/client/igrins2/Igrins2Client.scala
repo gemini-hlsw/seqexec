@@ -6,11 +6,13 @@ package giapi.client.igrins2
 import cats._
 import cats.effect._
 import cats.syntax.all._
-import giapi.client.Giapi
-import giapi.client.GiapiClient
+import giapi.client.commands.Command
+import edu.gemini.aspen.giapi.commands.Activity
+import edu.gemini.aspen.giapi.commands.SequenceCommand
+import giapi.client._
 import giapi.client.syntax.status._
+import giapi.client.commands.Configuration
 import fs2._
-import giapi.client.GiapiStatusDb
 
 sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
 
@@ -21,6 +23,8 @@ sealed trait Igrins2Client[F[_]] extends GiapiClient[F] {
   def exposureProgress: F[Stream[F, Int]]
 
   def currentStatus: F[String]
+
+  def sequenceComplete: F[Unit]
 
 }
 
@@ -45,6 +49,16 @@ object Igrins2Client {
     def requestedTime: F[Option[Float]] =
       statusDb.optional(ObsTime).map(_.floatValue)
 
+    def sequenceComplete: F[Unit] =
+      giapi
+        .command(Command(
+                   SequenceCommand.ENGINEERING,
+                   Activity.PRESET_START,
+                   Configuration.single("COMMAND_NAME", "testFast")
+                 ),
+                 GiapiClient.DefaultCommandTimeout
+        )
+        .void
   }
 
   // Used for simulations

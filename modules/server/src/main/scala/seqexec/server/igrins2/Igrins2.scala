@@ -47,6 +47,10 @@ final case class Igrins2[F[_]: Logger: Async](
 
   val abort: F[Unit] = controller.abort
 
+  def sequenceComplete: F[Unit] =
+    Logger[F].info("IGRINS 2 Sequence complete") *>
+      controller.sequenceComplete
+
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.UnpausableControl(InstrumentSystem.StopObserveCmd(_ => Async[F].unit),
                                        InstrumentSystem.AbortObserveCmd(abort)
@@ -91,11 +95,8 @@ final case class Igrins2[F[_]: Logger: Async](
   ): Stream[F, Progress] =
     Stream.force(
       for {
-        _        <- Logger[F].info(s"Calculating progress for $total")
         progress <- controller.exposureProgress
-        _        <- Logger[F].info(s"Got it progress $progress")
         totalExp <- controller.requestedTime.map(_.map(Seconds(_)).getOrElse(total))
-        _        <- Logger[F].info(s"Got it req time $totalExp")
       } yield ProgressUtil
         .realCountdownWithObsStage[F](
           totalExp,

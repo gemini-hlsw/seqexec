@@ -23,6 +23,8 @@ class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Contro
   def requestedTime: F[Option[Float]] =
     none[Float].pure[F]
 
+  def sequenceComplete: F[Unit] = Applicative[F].unit
+
   def currentStatus: F[Igrins2ControllerState] = Igrins2ControllerState.Idle.pure[F].widen
 
   def dcIsPreparing: F[Boolean] = false.pure[F]
