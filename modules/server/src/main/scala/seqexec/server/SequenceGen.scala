@@ -86,7 +86,7 @@ object SequenceGen {
     ): List[ParallelActions[F]] = {
       val postActions =
         this.endObserveAction.fold(post(ctx, overrides))(a =>
-          post(ctx, overrides) :+ NonEmptyList.one(a(overrides))
+          post(ctx, overrides) :+ NonEmptyList.one(a(overrides).makeUninterruptible)
         )
       NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
         postActions

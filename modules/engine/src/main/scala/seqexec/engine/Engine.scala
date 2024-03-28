@@ -162,7 +162,10 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
               putS(id)(qs) *> send(finished(id))
             // Execution completed
             case Some(qs)                          =>
-              putS(id)(qs) *> switch(id)(SequenceState.Idle)
+              putS(id)(qs) *> (
+                if (qs.current.execution.exists(_.uninterruptible)) send(executing(id))
+                else switch(id)(SequenceState.Idle)
+              )
           }
         } else if (Sequence.State.isRunning(seq)) {
           seq.next match {
@@ -174,7 +177,10 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
               putS(id)(qs) *> send(finished(id))
             // Execution completed. Check breakpoint here
             case Some(qs)                          =>
-              putS(id)(qs) *> (if (qs.getCurrentBreakpoint) {
+              putS(id)(qs) *> (if (
+                                 qs.getCurrentBreakpoint && !qs.current.execution
+                                   .exists(_.uninterruptible)
+                               ) {
                                  switch(id)(SequenceState.Idle) *> send(breakpointReached(id))
                                } else send(executing(id)))
           }

@@ -667,7 +667,7 @@ class StepSpec extends CatsEffectSuite {
       inside(x.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
         case Some(Sequence.State.Zipper(zipper, status, _)) =>
           inside(zipper.focus.focus.execution.headOption) {
-            case Some(Action(_, _, Action.State(Action.ActionState.Started, v :: _))) =>
+            case Some(Action(_, _, Action.State(Action.ActionState.Started, v :: _), _)) =>
               assertEquals(v, PartialValDouble(0.5))
           }
           assert(status.isRunning)
