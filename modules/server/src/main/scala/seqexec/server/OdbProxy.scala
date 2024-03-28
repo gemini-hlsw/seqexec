@@ -164,10 +164,12 @@ object OdbProxy {
           .getObservations(sessionName)
           .toList
           .flatMap(id => Observation.Id.fromString(id).toList)
-      ).recoverWith { case e: ServiceException =>
-        // We'll survive exceptions at the level of connecting to the wdba
-        L.warn(e.getMessage) *> List.empty.pure[F]
-      }
+      ).flatTap(ids => L.debug(s"ODB poll returned: $ids"))
+        .recoverWith { case e: ServiceException =>
+          e.printStackTrace()
+          // We'll survive exceptions at the level of connecting to the wdba
+          L.warn(e.getMessage) *> List.empty.pure[F]
+        }
   }
 
 }

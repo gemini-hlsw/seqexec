@@ -819,6 +819,7 @@ object SeqexecEngine {
         .fixedDelay[F](fd)
         .evalMap(_ => systems.odb.queuedSequences)
         .flatMap { x =>
+          println(x)
           Stream.emit(
             Event
               .getState[F, EngineState[F], SeqEvent] { st =>
@@ -829,8 +830,10 @@ object SeqexecEngine {
         }
         .handleErrorWith {
           case e: SeqFailure =>
+            e.printStackTrace()
             Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
           case e             =>
+            e.printStackTrace()
             Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }

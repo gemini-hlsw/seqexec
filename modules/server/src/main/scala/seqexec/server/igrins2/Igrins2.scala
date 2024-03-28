@@ -49,7 +49,9 @@ final case class Igrins2[F[_]: Logger: Async](
 
   def sequenceComplete: F[Unit] =
     Logger[F].info("IGRINS 2 Sequence complete") *>
-      controller.sequenceComplete
+      controller.sequenceComplete.handleErrorWith { e =>
+        Logger[F].error(e)("Error in sequence complete")
+      }
 
   override def observeControl(config: CleanConfig): InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.UnpausableControl(InstrumentSystem.StopObserveCmd(_ => Async[F].unit),
