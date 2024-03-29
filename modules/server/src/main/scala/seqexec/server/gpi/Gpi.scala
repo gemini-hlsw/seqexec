@@ -67,6 +67,8 @@ final case class Gpi[F[_]: Temporal: Logger](controller: GpiController[F])
       }
     }
 
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
+
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     if (Gpi.isAlignAndCalib(config)) {
       controller.alignAndCalib.as(ConfigResult(this))

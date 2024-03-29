@@ -44,6 +44,7 @@ import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
 import cats.effect.Async
+import cats.Applicative
 
 final case class Niri[F[_]: Async: Logger](
   controller:        NiriController[F],
@@ -67,6 +68,8 @@ final case class Niri[F[_]: Async: Logger](
         .widenRethrowT
         .flatMap(controller.observe(fileId, _))
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
