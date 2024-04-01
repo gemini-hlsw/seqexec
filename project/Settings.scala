@@ -26,7 +26,7 @@ object Settings {
     val catsEffectVersion   = "3.5.2"
     val catsVersion         = "2.10.0"
     val mouseVersion        = "1.2.2"
-    val fs2Version          = "3.9.3"
+    val fs2Version          = "3.9.4"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVersion     = "1.2.0"
@@ -41,7 +41,7 @@ object Settings {
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "9.4.5"
+    val jwt            = "9.4.6"
     val slf4j          = "2.0.12"
     val log4s          = "1.10.0"
     val log4cats       = "2.6.0"
@@ -60,13 +60,13 @@ object Settings {
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "5.2.0"
-    val munitVersion           = "1.0.0-M10"
+    val munitVersion           = "1.0.0-M11"
     val munitDisciplineVersion = "1.0.9"
     val munitCatsEffectVersion = "2.0.0-M4"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
-    val ocsVersion = "2023001.2.4"
+    val ocsVersion = "2024001.1.2"
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.3"
@@ -74,7 +74,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
-    val giapiScala          = "0.1.2"
+    val giapiScala          = "0.1.3"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
@@ -88,7 +88,7 @@ object Settings {
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
-    val lucumaCore    = "0.45.1"
+    val lucumaCore    = "0.47.0"
     val lucumaUI      = "0.39.0"
     val lucumaSchemas = "0.33.0"
 

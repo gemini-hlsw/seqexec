@@ -152,11 +152,15 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
           .map(_.doubleValue().some)
           .recoverWith(_ => none.asRight)
 
-      gMag <-
+      gMag      <-
         config
           .extractInstAs[JDouble](SPGhost.MAG_G_PROP)
           .map(_.doubleValue().some)
           .recoverWith(_ => none.asRight)
+      svOverride =
+        config
+          .extractInstAs[JDouble](SPGhost.SLIT_VIEWING_CAMERA_EXPOSURE_TIME_PROP)
+          .map(_.doubleValue)
     } yield new GhostKeywordsReader[F] {
       private val blueConfig =
         (blueBinning,
@@ -193,7 +197,14 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
         if (isScience(obsType)) {
           conditions.get.map { c =>
             (blueConfig.toOption, redConfig.toOption).mapN { (blue, red) =>
-              svCameraRepeats(c, vMag.orElse(gMag), blue, red)
+              svOverride.toOption
+                .map(t =>
+                  svOverrideCameraRepeats(FiniteDuration((t * 1000).toLong, MILLISECONDS),
+                                          blue,
+                                          red
+                  )
+                )
+                .getOrElse(svCameraRepeats(c, vMag.orElse(gMag), blue, red))
             }
           }
         } else
@@ -206,7 +217,7 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val slitDuration: F[Option[Double]]     =
         if (isScience(obsType))
           conditions.get.map { c =>
-            svCameraTime(c, vMag.orElse(gMag)).some
+            svOverride.toOption.orElse(svCameraTime(c, vMag.orElse(gMag)).some)
           }
         else
           (svCalibExposureTime(obsType).toMillis / 1000.0).some.pure[F]

@@ -3,6 +3,7 @@
 
 package seqexec.server.ghost
 
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
 import cats.effect.Sync
@@ -82,6 +83,8 @@ final case class Ghost[F[_]: Logger: Async](
           .as(ObserveCommandResult.Success: ObserveCommandResult)
       }
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def configure(config: CleanConfig): F[ConfigResult[F]] =
     for {
@@ -251,12 +254,20 @@ object Ghost extends GhostConfigUtil {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
 
-          gMag   <-
+          gMag                   <-
             config
               .extractInstAs[JDouble](SPGhost.MAG_G_PROP)
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
-          config <- {
+          guideCameraExposureTime =
+            config
+              .extractInstAs[JDouble](SPGhost.GUIDE_CAMERA_EXPOSURE_TIME_PROP)
+              .map(_.doubleValue)
+          svExposureTime          =
+            config
+              .extractInstAs[JDouble](SPGhost.SLIT_VIEWING_CAMERA_EXPOSURE_TIME_PROP)
+              .map(_.doubleValue)
+          config                 <- {
             if (isScience && rm.toOption.isEmpty) {
               Left(ContentError("Science steps need a resolution mode defined"))
             } else {
@@ -293,7 +304,11 @@ object Ghost extends GhostConfigUtil {
                   userTargets = userTargets.flatten,
                   rm.toOption,
                   conditions,
-                  vMag.orElse(gMag)
+                  vMag.orElse(gMag),
+                  guideCameraExposureTime.toOption.map(x =>
+                    FiniteDuration((x * 1000).toLong, MILLISECONDS)
+                  ),
+                  svExposureTime.toOption.map(x => FiniteDuration((x * 1000).toLong, MILLISECONDS))
                 )
               } else {
                 val isHR = hrifu1RAHMS.isDefined || hrifu2RAHMS.isDefined

@@ -37,6 +37,7 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
+import cats.Applicative
 
 final case class Gsaoi[F[_]: Logger: Async](
   controller:        GsaoiController[F],
@@ -66,6 +67,8 @@ final case class Gsaoi[F[_]: Logger: Async](
         .widenRethrowT
         .flatMap(x => controller.observe(fileId, x))
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     readDCConfig(config)

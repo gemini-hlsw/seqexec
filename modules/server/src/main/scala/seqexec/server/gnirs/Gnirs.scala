@@ -30,6 +30,7 @@ import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, Ke
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import cats.Applicative
 
 final case class Gnirs[F[_]: Logger: Async](
   controller:        GnirsController[F],
@@ -57,6 +58,8 @@ final case class Gnirs[F[_]: Logger: Async](
         controller.observe(fileId, x)
       }
     }
+
+  override val sequenceComplete: F[Unit] = Applicative[F].unit
 
   override def calcObserveTime(config: CleanConfig): F[Time] =
     getDCConfig(config)
