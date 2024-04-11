@@ -54,7 +54,7 @@ object Igrins2Client {
         .command(Command(
                    SequenceCommand.ENGINEERING,
                    Activity.PRESET_START,
-                   Configuration.single("COMMAND_NAME", "testFast")
+                   Configuration.single("COMMAND_NAME", "endsequence")
                  ),
                  GiapiClient.DefaultCommandTimeout
         )

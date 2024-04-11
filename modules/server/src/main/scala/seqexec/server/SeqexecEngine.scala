@@ -823,7 +823,14 @@ object SeqexecEngine {
           Stream.emit(
             Event
               .getState[F, EngineState[F], SeqEvent] { st =>
-                Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
+                Stream
+                  .eval(
+                    Logger[F].info("pre refresh") *> odbLoader
+                      .refreshSequenceList(x, st)
+                      .flatTap(_ => Logger[F].info("post refresh"))
+                  )
+                  .flatMap(Stream.emits)
+                  .some
               }
               .asRight
           )

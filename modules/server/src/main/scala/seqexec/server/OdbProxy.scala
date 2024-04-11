@@ -159,17 +159,18 @@ object OdbProxy {
         L.debug("ODB event observationStop sent")
 
     override def queuedSequences: F[List[Observation.Id]] =
-      F.delay(
-        xmlrpcClient
-          .getObservations(sessionName)
-          .toList
-          .flatMap(id => Observation.Id.fromString(id).toList)
-      ).flatTap(ids => L.debug(s"ODB poll returned: $ids"))
-        .recoverWith { case e: ServiceException =>
-          e.printStackTrace()
-          // We'll survive exceptions at the level of connecting to the wdba
-          L.warn(e.getMessage) *> List.empty.pure[F]
-        }
+      L.debug("Polling ODB for queued sequences") *>
+        F.delay(
+          xmlrpcClient
+            .getObservations(sessionName)
+            .toList
+            .flatMap(id => Observation.Id.fromString(id).toList)
+        ).flatTap(ids => L.debug(s"ODB poll returned: $ids"))
+          .recoverWith { case e =>
+            e.printStackTrace()
+            // We'll survive exceptions at the level of connecting to the wdba
+            L.warn(e.getMessage) *> List.empty.pure[F]
+          }
   }
 
 }
