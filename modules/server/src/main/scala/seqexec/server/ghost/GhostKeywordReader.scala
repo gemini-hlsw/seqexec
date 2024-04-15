@@ -18,6 +18,7 @@ import edu.gemini.spModel.target.env.ResolutionMode
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
 import seqexec.model.Conditions
+import seqexec.model.GhostTargetName
 import shapeless.tag
 import scala.concurrent.duration._
 
@@ -45,7 +46,10 @@ sealed trait GhostKeywordsReader[F[_]] {
   def slitDuration: F[Option[Double]]
 }
 
-final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
+final class DefaultGhostKeywordsReader[F[_]: Applicative]
+    extends GhostKeywordsReader[F]
+    with GhostTargetName {
+
   val basePos: F[Boolean]                 = true.pure[F]
   val srifu1: F[String]                   = "".pure[F]
   val srifu2: F[String]                   = "".pure[F]
@@ -69,7 +73,7 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val exposureDuration: F[Option[Double]] = doubleDefault[F].map(_.some)
 }
 
-object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
+object GhostKeywordsReader extends GhostConfigUtil with GhostLUT with GhostTargetName {
   val readMode2String: GhostReadNoiseGain => String = {
     case GhostReadNoiseGain.SLOW_LOW   => "Slow"
     case GhostReadNoiseGain.MEDIUM_LOW => "Medium"
@@ -82,45 +86,6 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     case ResolutionMode.GhostStandard => "Standard"
     case ResolutionMode.GhostHigh     => "High"
     case ResolutionMode.GhostPRV      => "PRV"
-  }
-
-  def targetModeFromNames(
-    srifu1: Option[String],
-    srifu2: Option[String],
-    hrifu1: Option[String],
-    hrifu2: Option[String]
-  ): Option[String] = (srifu1, srifu2, hrifu1, hrifu2) match {
-    case (Some(_), Some("Sky"), None, None)       => "SRIFU1 Target, SRIFU2 Sky".some
-    case (Some("Sky"), Some(_), None, None)       => "SRIFU1 Sky, SRIFU2 Target".some
-    case (Some(_), Some(_), None, None)           => "Dual Target".some
-    case (Some(_), None, None, None)              => "Single Target".some
-    case (None, None, Some(_), Some("Sky"))       => "HRIFU Target, Sky".some
-    case (None, None, Some(_), Some("Sky (PRV)")) => "HRIFU Target, Sky (PRV)".some
-    case _                                        => None
-  }
-
-  private def ellipsis(text: String, max: Int): String =
-    if (text.length <= max) {
-      text
-    } else {
-      text.substring(0, max - 3) + "..."
-    }
-
-  def targetNameFromNames(
-    srifu1: Option[String],
-    srifu2: Option[String],
-    hrifu1: Option[String],
-    hrifu2: Option[String]
-  ): Option[String] = (srifu1, srifu2, hrifu1, hrifu2) match {
-    case (Some(t), Some("Sky"), None, None)       => t.some
-    case (Some("Sky"), Some(t), None, None)       => t.some
-    // max value length is 70 so we have to subtract 3 for the ellipsis
-    case (Some(t1), Some(t2), None, None)         =>
-      s"${ellipsis(t1, 35 - 3)}, ${ellipsis(t2, 35 - 3)}".some
-    case (Some(t), None, None, None)              => t.some
-    case (None, None, Some(t), Some("Sky"))       => t.some
-    case (None, None, Some(t), Some("Sky (PRV)")) => t.some
-    case _                                        => None
   }
 
   def exposureTime(
