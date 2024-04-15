@@ -647,6 +647,7 @@ object SeqTranslate {
           )
         case Instrument.Ghost                    =>
           GhostHeader.header[F](systemss.ghost.gdsClient,
+                                ObsKeywordReader[F](config, site),
                                 systemss.tcsKeywordReader,
                                 GhostKeywordsReader[F](config, conditionsRef)
           )

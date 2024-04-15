@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.Applicative
+import cats.FlatMap
 import cats.data.Nested
 import cats.effect.Sync
 import cats.syntax.all._
@@ -37,6 +38,17 @@ final case class StateKeywordsReader[F[_]: Applicative](
   def rawBackgroundLight: F[String] = encodeCondition(conditions.sb.toInt)
 }
 
+trait ObsObjectReader {
+  def obsObject[F[_]: FlatMap](obsReader: ObsKeywordsReader[F], objectName: F[String]) =
+    for {
+      obsType   <- obsReader.obsType
+      obsObject <- obsReader.obsObject
+      tcsObject <- objectName
+    } yield
+      if (obsType === "OBJECT" && obsObject =!= "Twilight" && obsObject =!= "Domeflat") tcsObject
+      else obsObject
+}
+
 class StandardHeader[F[_]: Sync: Logger](
   kwClient:      KeywordsClient[F],
   obsReader:     ObsKeywordsReader[F],
@@ -44,15 +56,8 @@ class StandardHeader[F[_]: Sync: Logger](
   stateReader:   StateKeywordsReader[F],
   tcsSubsystems: List[TcsController.Subsystem]
 ) extends Header[F]
+    with ObsObjectReader
     with ObsKeywordsReaderConstants {
-
-  val obsObject: F[String] = for {
-    obsType   <- obsReader.obsType
-    obsObject <- obsReader.obsObject
-    tcsObject <- tcsReader.sourceATarget.objectName
-  } yield
-    if (obsType === "OBJECT" && obsObject =!= "Twilight" && obsObject =!= "Domeflat") tcsObject
-    else obsObject
 
   private def optTcsKeyword[B](s: TcsController.Subsystem)(v: F[B])(implicit
     d: DefaultHeaderValue[B]
@@ -70,7 +75,7 @@ class StandardHeader[F[_]: Sync: Logger](
 
   private val baseKeywords = List(
     buildString(OcsBuildInfo.version.pure[F], KeywordName.SEQEXVER),
-    buildString(obsObject, KeywordName.OBJECT),
+    buildString(obsObject[F](obsReader, tcsReader.sourceATarget.objectName), KeywordName.OBJECT),
     buildString(obsReader.obsType, KeywordName.OBSTYPE),
     buildString(obsReader.obsClass, KeywordName.OBSCLASS),
     buildString(obsReader.gemPrgId, KeywordName.GEMPRGID),

@@ -40,6 +40,7 @@ sealed trait GhostKeywordsReader[F[_]] {
   def exposureDuration: F[Option[Double]]
   def resolutionMode: F[Option[String]]
   def targetMode: F[Option[String]]
+  val targetName: F[Option[String]]
   def slitCount: F[Option[Int]]
   def slitDuration: F[Option[Double]]
 }
@@ -62,6 +63,7 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val blueReadMode: F[Option[String]]     = strDefault[F].map(_.some)
   val resolutionMode: F[Option[String]]   = strDefault[F].map(_.some)
   val targetMode: F[Option[String]]       = strDefault[F].map(_.some)
+  val targetName: F[Option[String]]       = strDefault[F].map(_.some)
   val slitCount: F[Option[Int]]           = intDefault[F].map(_.some)
   val slitDuration: F[Option[Double]]     = doubleDefault[F].map(_.some)
   val exposureDuration: F[Option[Double]] = doubleDefault[F].map(_.some)
@@ -94,6 +96,30 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     case (Some(_), None, None, None)              => "Single Target".some
     case (None, None, Some(_), Some("Sky"))       => "HRIFU Target, Sky".some
     case (None, None, Some(_), Some("Sky (PRV)")) => "HRIFU Target, Sky (PRV)".some
+    case _                                        => None
+  }
+
+  private def ellipsis(text: String, max: Int): String =
+    if (text.length <= max) {
+      text
+    } else {
+      text.substring(0, max - 3) + "..."
+    }
+
+  def targetNameFromNames(
+    srifu1: Option[String],
+    srifu2: Option[String],
+    hrifu1: Option[String],
+    hrifu2: Option[String]
+  ): Option[String] = (srifu1, srifu2, hrifu1, hrifu2) match {
+    case (Some(t), Some("Sky"), None, None)       => t.some
+    case (Some("Sky"), Some(t), None, None)       => t.some
+    // max value length is 70 so we have to subtract 3 for the ellipsis
+    case (Some(t1), Some(t2), None, None)         =>
+      s"${ellipsis(t1, 35 - 3)}, ${ellipsis(t2, 35 - 3)}".some
+    case (Some(t), None, None, None)              => t.some
+    case (None, None, Some(t), Some("Sky"))       => t.some
+    case (None, None, Some(t), Some("Sky (PRV)")) => t.some
     case _                                        => None
   }
 
@@ -193,6 +219,8 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val resolutionMode: F[Option[String]]   = rm.toOption.map(resolutionMode2String).pure[F]
       val targetMode: F[Option[String]]       =
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
+      val targetName: F[Option[String]]       =
+        targetNameFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
       val slitCount: F[Option[Int]]           =
         if (isScience(obsType)) {
           conditions.get.map { c =>

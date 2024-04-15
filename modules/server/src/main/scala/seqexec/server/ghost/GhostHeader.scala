@@ -17,10 +17,12 @@ object GhostHeader {
 
   def header[F[_]: MonadThrow](
     gdsClient:           GdsClient[F],
+    obsReader:           ObsKeywordsReader[F],
     tcsKeywordsReader:   TcsKeywordsReader[F],
     ghostKeywordsReader: GhostKeywordsReader[F]
   ): Header[F] =
-    new Header[F] {
+    new Header[F] with ObsObjectReader {
+
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords[F](
           List(
@@ -48,7 +50,19 @@ object GhostHeader {
             buildString(ghostKeywordsReader.resolutionMode.orDefault, KeywordName.RESOLUT),
             buildInt32(ghostKeywordsReader.slitCount.orDefault, KeywordName.NSLITEXP),
             buildDouble(ghostKeywordsReader.slitDuration.orDefault, KeywordName.SLITEXPT),
-            buildDouble(ghostKeywordsReader.exposureDuration.orDefault, KeywordName.TEXPTIME)
+            buildDouble(ghostKeywordsReader.exposureDuration.orDefault, KeywordName.TEXPTIME),
+            // We are overriding OBJECT here. This works because the GMP keeps a map
+            // of keywords and their values, and the last value set is the one that is used
+            // This is slightly fragile as it depends on the order
+            buildString(
+              obsObject[F](
+                obsReader,
+                ghostKeywordsReader.targetName
+                  .orElse(tcsKeywordsReader.sourceATarget.objectName.map(_.some))
+                  .orDefault
+              ),
+              KeywordName.OBJECT
+            )
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
