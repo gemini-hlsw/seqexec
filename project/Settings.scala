@@ -84,7 +84,7 @@ object Settings {
     val gmpCmdClientBridge  = "0.6.7"
     val guava               = "31.0.1-jre"
     val geminiLocales       = "0.7.0"
-    val pprint              = "0.8.1"
+    val pprint              = "0.9.0"
     val jaxb                = "2.3.1"
 
     // Gemini Libraries
