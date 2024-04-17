@@ -15,15 +15,11 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / semanticdbEnabled := true
 
 ThisBuild / Compile / packageDoc / publishArtifact := false
-ThisBuild / Test / bspEnabled                      := false
 
 // Gemini repository
 ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
-
-ThisBuild / scalaVersion       := "2.13.10"
-ThisBuild / crossScalaVersions := Seq("2.13.10")
 
 Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 

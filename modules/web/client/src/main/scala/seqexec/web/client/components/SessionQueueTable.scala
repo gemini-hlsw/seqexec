@@ -767,7 +767,7 @@ object SessionQueueTable extends Columns {
     .render(b =>
       AutoSizer(
         AutoSizer
-          .props(table(b)(_), disableHeight = true, onResize = onResize(b))
+          .props(table(b), disableHeight = true, onResize = onResize(b))
       )
     )
     .configure(Reusability.shouldComponentUpdate)
