@@ -74,7 +74,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
-    val giapiScala          = "0.1.3"
+    val giapiScala          = "0.2.1"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
