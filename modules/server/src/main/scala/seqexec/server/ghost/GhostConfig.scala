@@ -223,9 +223,23 @@ sealed trait GhostConfig extends GhostLUT {
         giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
     )
 
-  def thXeLamp: Configuration =
+  def prvMode: Configuration =
     if (isScience(obsType) && resolutionMode === Some(ResolutionMode.GhostPRV)) {
-      giapiConfig(GhostThXeLamp, 1)
+      val blue   = blueConfig.exposure.toSeconds
+      val red    = redConfig.exposure.toSeconds
+      val result = if (blue > red) {
+        CameraFilterWheelLUT
+          .findLast(_.red.toSeconds <= red)
+          .map(_.pos)
+          .getOrElse(CameraFilterWheelLUT.headOption.foldMap(_.pos))
+      } else {
+        CameraFilterWheelLUT
+          .findLast(_.blue.toSeconds <= blue)
+          .map(_.pos)
+          .getOrElse(CameraFilterWheelLUT.headOption.foldMap(_.pos))
+      }
+
+      giapiConfig(GhostThXeLamp, 1) |+| giapiConfig(GhostCalibrationFilterWheel, result)
     } else {
       giapiConfig(GhostThXeLamp, 0)
     }
@@ -249,7 +263,7 @@ sealed trait GhostConfig extends GhostLUT {
         } |+|
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
           // agOverride |+|
-          svConfiguration(svCameraOverride, scienceMagnitude) |+| thXeLamp
+          svConfiguration(svCameraOverride, scienceMagnitude) |+| prvMode
     ) |+| giapiConfig(GhostSlitMaskPositionerType, "SMP_DEMAND_POSITION")
 
 }

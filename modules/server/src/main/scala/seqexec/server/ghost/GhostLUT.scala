@@ -26,9 +26,26 @@ final case class ReadoutTimes(
   readRed:  Duration,
   readBlue: Duration
 )
+// times in seconds
+final case class CalibrationWheelPosition(pos: String, blue: Duration, red: Duration)
 
 // GHOST Lookup tables
 trait GhostLUT {
+  val CameraFilterWheelLUT =
+    List(
+      CalibrationWheelPosition("CFW_CLEAR", 1.seconds, 1.seconds),
+      // The roles below essentially overrride the first row
+      // CalibrationWheelPosition("CFW_OD_0_5", 1.seconds, 1.seconds),
+      // CalibrationWheelPosition("CFW_OD_1_0", 1.seconds, 1.seconds),
+      CalibrationWheelPosition("CFW_OD_1_5", 5.seconds, 1.seconds),
+      CalibrationWheelPosition("CFW_OD_2_0", 15.seconds, 3.seconds),
+      CalibrationWheelPosition("CFW_OD_2_5", 90.seconds, 10.seconds),
+      CalibrationWheelPosition("CFW_OD_3_0", 150.seconds, 15.seconds),
+      CalibrationWheelPosition("CFW_OD_3_5", 1000.seconds, 45.seconds),
+      CalibrationWheelPosition("CFW_OD_4_0", 2500.seconds, 120.seconds),
+      CalibrationWheelPosition("CFW_OD_5_0", 3600.seconds, 300.seconds)
+    )
+
   val GuideCameraTimesLUT =
     List(
       GuideCameraTimes(03.0, 00.1, 00.1),
