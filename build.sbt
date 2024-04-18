@@ -21,6 +21,9 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
+ThisBuild / scalaVersion       := "2.13.10"
+ThisBuild / crossScalaVersions := Seq("2.13.10")
+
 Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
 // This key is used to find the JRE dir. It could/should be overridden on a user basis
