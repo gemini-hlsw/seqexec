@@ -34,7 +34,7 @@ package config {
  */
 package object config {
 
-  implicit val siteReader: ConfigReader[Site] = ConfigReader.fromCursor[Site] { cf =>
+  implicit val siteReader = ConfigReader.fromCursor[Site] { cf =>
     cf.asString.flatMap {
       case "GS" => Site.GS.asRight
       case "GN" => Site.GN.asRight
@@ -42,7 +42,7 @@ package object config {
     }
   }
 
-  implicit val modeReader: ConfigReader[Mode] = ConfigReader.fromCursor[Mode] { cf =>
+  implicit val modeReader = ConfigReader.fromCursor[Mode] { cf =>
     cf.asString.flatMap {
       case "production" => Mode.Production.asRight
       case "dev"        => Mode.Development.asRight
