@@ -64,7 +64,7 @@ object Gaos {
   }
 
   // Non-repeatable collection of PauseCondition that admits only one OffsetMove
-  final case class PauseConditionSet private (
+  final case class PauseConditionSet private[seqexec] (
     offsetO: Option[OffsetMove],
     fixed:   Set[FixedPauseCondition]
   ) {
@@ -133,7 +133,7 @@ object Gaos {
   }
 
   // Non-repeatable collection of ResumeCondition that admits only one OffsetMove
-  final case class ResumeConditionSet private (
+  final case class ResumeConditionSet private[seqexec] (
     offsetO: Option[OffsetReached],
     fixed:   Set[FixedResumeCondition]
   ) {

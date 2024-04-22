@@ -182,7 +182,9 @@ object Ghost extends GhostConfigUtil {
         ra  <- raExtractor(d)
         dec <- decExtractor(e)
         c    = (ra, dec).mapN(Coordinates.apply)
-        n   <- config.extractInstAs[String](a).flatMap(refineV[NonEmpty](_))
+        n   <- config
+                 .extractInstAs[String](a)
+                 .flatMap(refineV[NonEmpty](_).leftMap(ContentError(_)))
         // Note the coordinates are PM corrected on the OT side
       } yield c.map(coord =>
         Target.Sidereal(
@@ -252,12 +254,20 @@ object Ghost extends GhostConfigUtil {
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
 
-          gMag   <-
+          gMag                   <-
             config
               .extractInstAs[JDouble](SPGhost.MAG_G_PROP)
               .map(_.doubleValue().some)
               .recoverWith(_ => none.asRight)
-          config <- {
+          guideCameraExposureTime =
+            config
+              .extractInstAs[JDouble](SPGhost.GUIDE_CAMERA_EXPOSURE_TIME_PROP)
+              .map(_.doubleValue)
+          svExposureTime          =
+            config
+              .extractInstAs[JDouble](SPGhost.SLIT_VIEWING_CAMERA_EXPOSURE_TIME_PROP)
+              .map(_.doubleValue)
+          config                 <- {
             if (isScience && rm.toOption.isEmpty) {
               Left(ContentError("Science steps need a resolution mode defined"))
             } else {
@@ -294,7 +304,11 @@ object Ghost extends GhostConfigUtil {
                   userTargets = userTargets.flatten,
                   rm.toOption,
                   conditions,
-                  vMag.orElse(gMag)
+                  vMag.orElse(gMag),
+                  guideCameraExposureTime.toOption.map(x =>
+                    FiniteDuration((x * 1000).toLong, MILLISECONDS)
+                  ),
+                  svExposureTime.toOption.map(x => FiniteDuration((x * 1000).toLong, MILLISECONDS))
                 )
               } else {
                 val isHR = hrifu1RAHMS.isDefined || hrifu2RAHMS.isDefined
@@ -369,8 +383,8 @@ object Ghost extends GhostConfigUtil {
         hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
         hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
         hrifu1Coords   = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply)
-        ifu1Type      <- hrifu1Type.orElse(srifu1Type).toRight("No IFU1 type")
-        ifu1Coords    <- hrifu1Coords.orElse(srifu1Coords).toRight("No IFU1 coords")
+        ifu1Type      <- hrifu1Type.orElse(srifu1Type).toRight(ContentError("No IFU1 type"))
+        ifu1Coords    <- hrifu1Coords.orElse(srifu1Coords).toRight(ContentError("No IFU1 coords"))
 
       } yield GhostConfig.defocusOffset(baseCoords,
                                         ifu1Type,

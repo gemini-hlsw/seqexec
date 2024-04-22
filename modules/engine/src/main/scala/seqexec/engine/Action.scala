@@ -15,10 +15,11 @@ import seqexec.model.enum.ActionStatus
 
 @Lenses
 final case class Action[F[_]](
-  kind:  ActionType,
-  gen:   Stream[F, Result[F]],
-  state: Action.State[F]
-)
+  kind:            ActionType,
+  gen:             Stream[F, Result[F]],
+  state:           Action.State[F],
+  uninterruptible: Boolean = false
+) { def makeUninterruptible: Action[F] = this.copy(uninterruptible = true) }
 
 object Action {
 

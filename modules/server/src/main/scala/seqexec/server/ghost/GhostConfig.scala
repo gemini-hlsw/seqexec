@@ -23,6 +23,7 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.space.Length
 import squants.space.Microns
+import scala.concurrent.duration.FiniteDuration
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {
@@ -46,6 +47,8 @@ sealed trait GhostConfig extends GhostLUT {
   def conditions: Conditions
   def scienceMagnitude: Option[Double]
   def coAdds: Option[Int] = None
+  def guideCameraOverride: Option[FiniteDuration]
+  def svCameraOverride: Option[FiniteDuration]
 
   def baseConfiguration: Configuration = Configuration.Zero
 
@@ -194,20 +197,31 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostSVRepeat, svCalibSVRepeats(obsType, blueConfig, redConfig, coAdds)) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
 
-  def svConfiguration(mag: Option[Double]): Configuration =
+  def svConfiguration(timeOverride: Option[FiniteDuration], mag: Option[Double]): Configuration = {
+    val time    = timeOverride.map(_.toMillis.toDouble / 1000).getOrElse(svCameraTime(conditions, mag))
+    val repeats = timeOverride
+      .map(t => svOverrideCameraRepeats(t, blueConfig, redConfig))
+      .getOrElse(svCameraRepeats(conditions, mag, this.blueConfig, this.redConfig))
     baseSVConfig |+|
-      giapiConfig(GhostSVDuration, (svCameraTime(conditions, mag) * SVDurationFactor).toInt) |+|
-      giapiConfig(GhostSVRepeat,
-                  svCameraRepeats(conditions, mag, this.blueConfig, this.redConfig)
-      ) |+|
+      giapiConfig(GhostSVDuration, (time * SVDurationFactor).toInt) |+|
+      giapiConfig(GhostSVRepeat, repeats) |+|
       giapiConfig(GhostSVUnit, 1.0 / SVDurationFactor)
+  }
 
   val AGDurationFactor = 10
 
+  // Unused we are not setting AG unless we do an override
   def agConfiguration(mag: Option[Double]): Configuration =
     baseAGConfig |+|
       giapiConfig(GhostAGDuration, (agCameraTime(conditions, mag) * AGDurationFactor).toInt) |+|
       giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
+
+  // Unused, sets the ag exposure time override
+  def agOverride: Configuration =
+    guideCameraOverride.foldMap(f =>
+      giapiConfig(GhostAGDuration, ((f.toMillis.toDouble / 1000) * AGDurationFactor).toInt) |+|
+        giapiConfig(GhostAGUnit, 1.0 / AGDurationFactor)
+    )
 
   def thXeLamp: Configuration =
     if (isScience(obsType) && resolutionMode === Some(ResolutionMode.GhostPRV)) {
@@ -216,8 +230,12 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
+  private val internalFocusConfiguration: Configuration =
+    giapiConfig(GhostBFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION") |+|
+      giapiConfig(GhostRFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION")
+
   def configuration: Configuration =
-    baseConfiguration |+| slitMaskConfiguration |+| (
+    baseConfiguration |+| slitMaskConfiguration |+| internalFocusConfiguration |+| (
       if (!isScience(obsType)) {
         ifuCalibration |+| channelConfig |+|
           svCalib |+|
@@ -230,7 +248,8 @@ sealed trait GhostConfig extends GhostLUT {
             GhostConfig.fiberConfig2(FiberAgitator.None)
         } |+|
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
-          svConfiguration(scienceMagnitude) |+| /* agConfiguration(scienceMagnitude) |+| */ thXeLamp
+          // agOverride |+|
+          svConfiguration(svCameraOverride, scienceMagnitude) |+| thXeLamp
     ) |+| giapiConfig(GhostSlitMaskPositionerType, "SMP_DEMAND_POSITION")
 
 }
@@ -319,26 +338,28 @@ object GhostConfig {
     giapiConfig(GhostFiberAgitator2, fa)
 
   def apply(
-    obsType:          String,
-    obsClass:         String,
-    blueConfig:       ChannelConfig @@ BlueChannel,
-    redConfig:        ChannelConfig @@ RedChannel,
-    baseCoords:       Option[Coordinates],
-    fiberAgitator1:   FiberAgitator,
-    fiberAgitator2:   FiberAgitator,
-    objectName:       String,
-    srifu1Name:       Option[String],
-    srifu1Coords:     Option[Coordinates],
-    srifu2Name:       Option[String],
-    srifu2Coords:     Option[Coordinates],
-    hrifu1Name:       Option[String],
-    hrifu1Coords:     Option[Coordinates],
-    hrifu2Name:       Option[String],
-    hrifu2Coords:     Option[Coordinates],
-    userTargets:      List[GemTarget],
-    resolutionMode:   Option[ResolutionMode],
-    conditions:       Conditions,
-    scienceMagnitude: Option[Double]
+    obsType:             String,
+    obsClass:            String,
+    blueConfig:          ChannelConfig @@ BlueChannel,
+    redConfig:           ChannelConfig @@ RedChannel,
+    baseCoords:          Option[Coordinates],
+    fiberAgitator1:      FiberAgitator,
+    fiberAgitator2:      FiberAgitator,
+    objectName:          String,
+    srifu1Name:          Option[String],
+    srifu1Coords:        Option[Coordinates],
+    srifu2Name:          Option[String],
+    srifu2Coords:        Option[Coordinates],
+    hrifu1Name:          Option[String],
+    hrifu1Coords:        Option[Coordinates],
+    hrifu2Name:          Option[String],
+    hrifu2Coords:        Option[Coordinates],
+    userTargets:         List[GemTarget],
+    resolutionMode:      Option[ResolutionMode],
+    conditions:          Conditions,
+    scienceMagnitude:    Option[Double],
+    guideCameraOverride: Option[FiniteDuration],
+    svCameraOverride:    Option[FiniteDuration]
   ): Either[ExtractFailure, GhostConfig] = {
     import IFUTargetType._
 
@@ -351,37 +372,43 @@ object GhostConfig {
       case (Target(t), NoTarget, NoTarget, NoTarget)    =>
         srifu1Coords.map(
           StandardResolutionMode
-            .SingleTarget(obsType,
-                          obsClass,
-                          blueConfig,
-                          redConfig,
-                          baseCoords,
-                          fiberAgitator1,
-                          fiberAgitator2,
-                          t,
-                          _,
-                          userTargets,
-                          resolutionMode,
-                          conditions,
-                          scienceMagnitude
+            .SingleTarget(
+              obsType,
+              obsClass,
+              blueConfig,
+              redConfig,
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              t,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       case (NoTarget, Target(t), NoTarget, NoTarget)    =>
         srifu2Coords.map(
           StandardResolutionMode
-            .SingleTarget(obsType,
-                          obsClass,
-                          blueConfig,
-                          redConfig,
-                          baseCoords,
-                          fiberAgitator1,
-                          fiberAgitator2,
-                          t,
-                          _,
-                          userTargets,
-                          resolutionMode,
-                          conditions,
-                          scienceMagnitude
+            .SingleTarget(
+              obsType,
+              obsClass,
+              blueConfig,
+              redConfig,
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              t,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       case (Target(t1), Target(t2), NoTarget, NoTarget) =>
@@ -402,81 +429,95 @@ object GhostConfig {
               userTargets,
               resolutionMode,
               conditions,
-              scienceMagnitude
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       case (Target(t), SkyPosition, NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .TargetPlusSky(obsType,
-                           obsClass,
-                           blueConfig,
-                           redConfig,
-                           baseCoords,
-                           fiberAgitator1,
-                           fiberAgitator2,
-                           t,
-                           _,
-                           _,
-                           userTargets,
-                           resolutionMode,
-                           conditions,
-                           scienceMagnitude
+            .TargetPlusSky(
+              obsType,
+              obsClass,
+              blueConfig,
+              redConfig,
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              t,
+              _,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       case (SkyPosition, Target(t), NoTarget, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
-            .SkyPlusTarget(obsType,
-                           obsClass,
-                           blueConfig,
-                           redConfig,
-                           baseCoords,
-                           fiberAgitator1,
-                           fiberAgitator2,
-                           _,
-                           t,
-                           _,
-                           userTargets,
-                           resolutionMode,
-                           conditions,
-                           scienceMagnitude
+            .SkyPlusTarget(
+              obsType,
+              obsClass,
+              blueConfig,
+              redConfig,
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              _,
+              t,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       case (NoTarget, NoTarget, Target(t), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
-            .TargetPlusSky(obsType,
-                           obsClass,
-                           blueConfig,
-                           redConfig,
-                           baseCoords,
-                           fiberAgitator1,
-                           fiberAgitator2,
-                           t,
-                           _,
-                           _,
-                           userTargets,
-                           resolutionMode,
-                           conditions,
-                           scienceMagnitude
+            .TargetPlusSky(
+              obsType,
+              obsClass,
+              blueConfig,
+              redConfig,
+              baseCoords,
+              fiberAgitator1,
+              fiberAgitator2,
+              t,
+              _,
+              _,
+              userTargets,
+              resolutionMode,
+              conditions,
+              scienceMagnitude,
+              guideCameraOverride,
+              svCameraOverride
             )
         )
       // Fallback to non-sidereal though we'd rather detect the case
       case _                                            =>
         StandardResolutionMode
-          .NonSiderealTarget(obsType,
-                             obsClass,
-                             blueConfig,
-                             redConfig,
-                             baseCoords,
-                             objectName,
-                             fiberAgitator1,
-                             fiberAgitator2,
-                             userTargets,
-                             resolutionMode,
-                             conditions,
-                             scienceMagnitude
+          .NonSiderealTarget(
+            obsType,
+            obsClass,
+            blueConfig,
+            redConfig,
+            baseCoords,
+            objectName,
+            fiberAgitator1,
+            fiberAgitator2,
+            userTargets,
+            resolutionMode,
+            conditions,
+            scienceMagnitude,
+            guideCameraOverride,
+            svCameraOverride
           )
           .some
     }
@@ -546,6 +587,9 @@ case class GhostCalibration(
 
   def adcConfiguration: Configuration = Configuration.Zero
 
+  override val guideCameraOverride: Option[FiniteDuration] = None
+
+  override val svCameraOverride: Option[FiniteDuration] = None
 }
 
 sealed trait StandardResolutionMode extends GhostConfig {
@@ -596,19 +640,21 @@ sealed trait StandardResolutionMode extends GhostConfig {
 
 object StandardResolutionMode {
   final case class SingleTarget(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    ifu1TargetName:                String,
-    ifu1Coords:                    Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    ifu1TargetName:                   String,
+    ifu1Coords:                       Coordinates,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override def ifu2Configuration: Configuration     =
@@ -634,18 +680,20 @@ object StandardResolutionMode {
   )
 
   final case class NonSiderealTarget(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    targetName:                    String,
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    targetName:                       String,
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = none
     override val ifu2Coordinates: Option[Coordinates] = none
@@ -674,21 +722,23 @@ object StandardResolutionMode {
   )
 
   final case class DualTarget(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    ifu1TargetName:                String,
-    ifu1Coords:                    Coordinates,
-    ifu2TargetName:                String,
-    ifu2Coords:                    Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    ifu1TargetName:                   String,
+    ifu1Coords:                       Coordinates,
+    ifu2TargetName:                   String,
+    ifu2Coords:                       Coordinates,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override def ifu2Configuration: Configuration     =
@@ -719,20 +769,22 @@ object StandardResolutionMode {
   )
 
   final case class TargetPlusSky(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    ifu1TargetName:                String,
-    ifu1Coords:                    Coordinates,
-    ifu2Coords:                    Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    ifu1TargetName:                   String,
+    ifu1Coords:                       Coordinates,
+    ifu2Coords:                       Coordinates,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends StandardResolutionMode {
     override def ifu2Configuration: Configuration     =
       GhostConfig.ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coords, BundleConfig.Sky)
@@ -758,20 +810,22 @@ object StandardResolutionMode {
   )
 
   final case class SkyPlusTarget(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    ifu1Coords:                    Coordinates,
-    ifu2TargetName:                String,
-    ifu2Coords:                    Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    ifu1Coords:                       Coordinates,
+    ifu2TargetName:                   String,
+    ifu2Coords:                       Coordinates,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override def ifu2Configuration: Configuration     =
@@ -826,20 +880,22 @@ sealed trait HighResolutionMode extends GhostConfig {
 
 object HighResolutionMode {
   final case class TargetPlusSky(
-    override val obsType:          String,
-    override val obsClass:         String,
-    override val blueConfig:       ChannelConfig @@ BlueChannel,
-    override val redConfig:        ChannelConfig @@ RedChannel,
-    override val baseCoords:       Option[Coordinates],
-    override val fiberAgitator1:   FiberAgitator,
-    override val fiberAgitator2:   FiberAgitator,
-    override val ifu1TargetName:   String,
-    ifu1Coords:                    Coordinates,
-    ifu2Coords:                    Coordinates,
-    override val userTargets:      List[GemTarget],
-    override val resolutionMode:   Option[ResolutionMode],
-    override val conditions:       Conditions,
-    override val scienceMagnitude: Option[Double]
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    override val ifu1TargetName:      String,
+    ifu1Coords:                       Coordinates,
+    ifu2Coords:                       Coordinates,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
   ) extends HighResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = ifu1Coords.some
     override val ifu2Coordinates: Option[Coordinates] = ifu2Coords.some

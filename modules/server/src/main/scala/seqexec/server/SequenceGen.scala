@@ -86,18 +86,19 @@ object SequenceGen {
     ): List[ParallelActions[F]] = {
       val postActions =
         this.endObserveAction.fold(post(ctx, overrides))(a =>
-          post(ctx, overrides) :+ NonEmptyList.one(a(overrides))
+          post(ctx, overrides) :+ NonEmptyList.one(a(overrides).makeUninterruptible)
         )
       NonEmptyList.fromList(configs.values.toList.map(_(overrides))).toList ++
         postActions
     }
 
-    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)]   = {
+    def configActionCoord(r: Resource): Option[(ExecutionIndex, ActionIndex)] = {
       val i = configs.keys.toIndexedSeq.indexOf(r)
       (i >= 0)
         .option(i)
         .map(i => (ExecutionIndex(0), ActionIndex(i.toLong)))
     }
+
     def resourceAtCoords(ex: ExecutionIndex, ac: ActionIndex): Option[Resource] =
       if (ex.self === 0) configs.keys.toList.get(ac.self)
       else None

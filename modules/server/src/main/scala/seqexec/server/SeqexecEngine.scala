@@ -374,7 +374,11 @@ object SeqexecEngine {
     private def extractCloudCover(config: CleanConfig): Option[SPSiteQuality.CloudCover] =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / CLOUD_COVER_PROP)
-        .flatMap(_.parseInt)
+        .flatMap(
+          _.parseInt.leftMap(r =>
+            ConversionError(OCS_KEY / ObsConditionsProp / CLOUD_COVER_PROP, r.getMessage)
+          )
+        )
         .toOption
         .flatMap { x =>
           List(
@@ -390,7 +394,11 @@ object SeqexecEngine {
     private def extractImageQuality(config: CleanConfig): Option[SPSiteQuality.ImageQuality] =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / IMAGE_QUALITY_PROP)
-        .flatMap(_.parseInt)
+        .flatMap(
+          _.parseInt.leftMap(r =>
+            ConversionError(OCS_KEY / ObsConditionsProp / IMAGE_QUALITY_PROP, r.getMessage)
+          )
+        )
         .toOption
         .flatMap { x =>
           List(
@@ -404,7 +412,11 @@ object SeqexecEngine {
     private def extractSkyBackground(config: CleanConfig): Option[SPSiteQuality.SkyBackground] =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / SKY_BACKGROUND_PROP)
-        .flatMap(_.parseInt)
+        .flatMap(
+          _.parseInt.leftMap(r =>
+            ConversionError(OCS_KEY / ObsConditionsProp / SKY_BACKGROUND_PROP, r.getMessage)
+          )
+        )
         .toOption
         .flatMap { x =>
           List(
@@ -418,7 +430,11 @@ object SeqexecEngine {
     private def extractWaterVapor(config: CleanConfig): Option[SPSiteQuality.WaterVapor] =
       config
         .extractAs[String](OCS_KEY / ObsConditionsProp / WATER_VAPOR_PROP)
-        .flatMap(_.parseInt)
+        .flatMap(
+          _.parseInt.leftMap(r =>
+            ConversionError(OCS_KEY / ObsConditionsProp / WATER_VAPOR_PROP, r.getMessage)
+          )
+        )
         .toOption
         .flatMap { x =>
           List(
@@ -1702,7 +1718,8 @@ object SeqexecEngine {
       case s: SequenceGen.PendingStepGen[F] => s.resources.toList
       case _                                => List.empty
     }
-    def engineSteps(seq: Sequence[F]): List[Step]            =
+
+    def engineSteps(seq: Sequence[F]): List[Step] =
       obsSeq.seqGen.steps.zip(seq.steps).map { case (a, b) =>
         StepsView
           .stepsView(instrument)

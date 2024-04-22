@@ -300,7 +300,8 @@ object TestCommon {
         _ => InstrumentSystem.Uncontrollable,
         generator = SequenceGen.StepActionsGen(
           configs = Map(),
-          post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
+          post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2))),
+          None
         )
       )
     )
@@ -321,7 +322,8 @@ object TestCommon {
           _ => InstrumentSystem.Uncontrollable,
           generator = SequenceGen.StepActionsGen(
             configs = Map.empty,
-            post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2)))
+            post = (_, _) => List(NonEmptyList.one(pendingAction[IO](Instrument.F2))),
+            None
           )
         )
       )
@@ -344,7 +346,8 @@ object TestCommon {
         _ => InstrumentSystem.Uncontrollable,
         generator = SequenceGen.StepActionsGen(
           configs = resources.map(r => r -> { _: SystemOverrides => pendingAction[IO](r) }).toMap,
-          post = (_, _) => Nil
+          post = (_, _) => Nil,
+          None
         )
       ),
       SequenceGen.PendingStepGen(
@@ -355,7 +358,8 @@ object TestCommon {
         _ => InstrumentSystem.Uncontrollable,
         generator = SequenceGen.StepActionsGen(
           configs = resources.map(r => r -> { _: SystemOverrides => pendingAction[IO](r) }).toMap,
-          post = (_, _) => Nil
+          post = (_, _) => Nil,
+          None
         )
       )
     )

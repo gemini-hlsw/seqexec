@@ -28,17 +28,17 @@ final case class GuideConfigStatus(config: TelescopeGuideConfig)
 object GuideConfigStatus {
   type Props = GuideConfigStatus
 
-  implicit val mountGuideShow = Show.show[MountGuideOption] {
+  implicit val mountGuideShow: Show[MountGuideOption] = Show.show[MountGuideOption] {
     case MountGuideOption.MountGuideOn  => "On"
     case MountGuideOption.MountGuideOff => "Off"
   }
 
-  implicit val comaOptionShow = Show.show[ComaOption] {
+  implicit val comaOptionShow: Show[ComaOption] = Show.show[ComaOption] {
     case ComaOption.ComaOn  => "On"
     case ComaOption.ComaOff => "Off"
   }
 
-  implicit val m1GuideShow = Show.show[M1GuideConfig] {
+  implicit val m1GuideShow: Show[M1GuideConfig] = Show.show[M1GuideConfig] {
     case s: M1GuideConfig.M1GuideOn => s.show
     case M1GuideConfig.M1GuideOff   => "Off"
   }

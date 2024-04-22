@@ -50,27 +50,29 @@ package object config {
     }
   }
 
-  implicit val controlStrategyReader = ConfigReader.fromCursor[ControlStrategy] { cf =>
-    cf.asString.flatMap { c =>
-      ControlStrategy.fromString(c) match {
-        case Some(x) => x.asRight
-        case _       => cf.failed(StrategyValueUnknown(c))
+  implicit val controlStrategyReader: ConfigReader[ControlStrategy] =
+    ConfigReader.fromCursor[ControlStrategy] { cf =>
+      cf.asString.flatMap { c =>
+        ControlStrategy.fromString(c) match {
+          case Some(x) => x.asRight
+          case _       => cf.failed(StrategyValueUnknown(c))
+        }
       }
     }
-  }
 
   implicit def uriSettings[A]: ConfigReader[Uri @@ A] = ConfigReader[Uri].map(tag[A][Uri])
 
-  implicit val tlsInfoHint                = ProductHint[TLSConfig](ConfigFieldMapping(KebabCase, KebabCase))
-  implicit val webServerConfigurationHint =
+  implicit val tlsInfoHint: ProductHint[TLSConfig]                             =
+    ProductHint[TLSConfig](ConfigFieldMapping(KebabCase, KebabCase))
+  implicit val webServerConfigurationHint: ProductHint[WebServerConfiguration] =
     ProductHint[WebServerConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
-  implicit val smartGcalConfigurationHint =
+  implicit val smartGcalConfigurationHint: ProductHint[SmartGcalConfiguration] =
     ProductHint[SmartGcalConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
-  implicit val authenticationConfigHint   =
+  implicit val authenticationConfigHint: ProductHint[AuthenticationConfig]     =
     ProductHint[AuthenticationConfig](ConfigFieldMapping(KebabCase, KebabCase))
-  implicit val seqexecServerHint          =
+  implicit val seqexecServerHint: ProductHint[SeqexecEngineConfiguration]      =
     ProductHint[SeqexecEngineConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
-  implicit val systemsControlHint         =
+  implicit val systemsControlHint: ProductHint[SystemsControlConfiguration]    =
     ProductHint[SystemsControlConfiguration](ConfigFieldMapping(KebabCase, KebabCase))
 
   def loadConfiguration[F[_]: Sync](config: ConfigObjectSource): F[SeqexecConfiguration] =
