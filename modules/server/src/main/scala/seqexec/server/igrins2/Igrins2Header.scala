@@ -23,6 +23,7 @@ object Igrins2Header {
         val ks = GdsInstrument.bundleKeywords[F] {
           List(
             buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT),
+            buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS),
             buildDouble(tcsKeywordsReader.p2ara, KeywordName.P2ARA),
             buildDouble(tcsKeywordsReader.p2adec, KeywordName.P2ADEC),
             buildDouble(tcsKeywordsReader.p2arv, KeywordName.P2ARV),
