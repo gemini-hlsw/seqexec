@@ -18,7 +18,6 @@ import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
-import edu.gemini.spModel.obscomp.InstConstants.OBJECT_PROP
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -230,7 +229,6 @@ object Ghost extends GhostConfigUtil {
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
           obsClass      <- config.extractObsAs[String](OBS_CLASS_PROP)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
-          objectName    <- config.extractObsAs[String](OBJECT_PROP)
           isScience      = obsType === SCIENCE_OBSERVE_TYPE
           coAdds         = config.extractObsAs[JInt](COADDS_PROP).map(_.intValue())
 
@@ -295,7 +293,6 @@ object Ghost extends GhostConfigUtil {
                   baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                   fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
                   fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                  objectName,
                   srifu1Name = srifu1Name,
                   srifu1Type = srifu1Type,
                   srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),

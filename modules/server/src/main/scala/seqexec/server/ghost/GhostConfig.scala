@@ -287,12 +287,12 @@ object GhostConfig {
   ): Configuration =
     bundleConfig match {
       case BundleConfig.Standard =>
-        giapiConfig(IFUNum.IFU2.demandItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+        giapiConfig(IFUNum.IFU2.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
           giapiConfig(IFUNum.IFU2.demandItem, DemandType.DemandPark: DemandType) |+|
           giapiConfig(GhostIFU2X, 0.0) |+|
           giapiConfig(GhostIFU2Y, 0.0)
       case _                     =>
-        giapiConfig(IFUNum.IFU2.demandItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+        giapiConfig(IFUNum.IFU2.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
           giapiConfig(IFUNum.IFU2.demandItem, DemandType.DemandXY: DemandType) |+|
           giapiConfig(GhostIFU2X, -100.0) |+|
           giapiConfig(GhostIFU2Y, 0.0)
@@ -377,7 +377,6 @@ object GhostConfig {
     baseCoords:          Option[Coordinates],
     fiberAgitator1:      FiberAgitator,
     fiberAgitator2:      FiberAgitator,
-    objectName:          String,
     srifu1Name:          Option[String],
     srifu1Type:          Option[TargetType],
     srifu1Coords:        Option[Coordinates],
@@ -557,7 +556,7 @@ object GhostConfig {
             )
         )
 
-      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), SkyPosition) =>
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _) =>
         HighResolutionMode
           .NonSidereal(
             obsType,
@@ -577,26 +576,7 @@ object GhostConfig {
           )
           .some
 
-      case (_, _, NoTarget, Target(t), _, NoTarget) =>
-        StandardResolutionMode
-          .NonSiderealTarget(
-            obsType,
-            obsClass,
-            blueConfig,
-            redConfig,
-            baseCoords,
-            t,
-            fiberAgitator1,
-            fiberAgitator2,
-            userTargets,
-            resolutionMode,
-            conditions,
-            scienceMagnitude,
-            guideCameraOverride,
-            svCameraOverride
-          )
-          .some
-      case _                                        =>
+      case _ =>
         none
     }
 
@@ -776,7 +756,7 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = none
     override val ifu2Coordinates: Option[Coordinates] = none
     override def ifu2Configuration: Configuration     =
-      GhostConfig.ifu2NonSidereal(BundleConfig.HighRes)
+      GhostConfig.ifu2NonSidereal(BundleConfig.Standard)
     override def ifu1Config: Configuration            =
       GhostConfig.ifuConfigNonSidereal(IFUNum.IFU1,
                                        IFUTargetType.Target(targetName),
