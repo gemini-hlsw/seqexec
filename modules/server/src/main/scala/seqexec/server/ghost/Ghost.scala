@@ -52,6 +52,7 @@ import lucuma.core.enums.StellarLibrarySpectrum
 import edu.gemini.spModel.target.env.ResolutionMode
 import shapeless.tag
 import squants.space.Length
+import edu.gemini.spModel.core.Target.TargetType
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -177,7 +178,7 @@ object Ghost extends GhostConfigUtil {
     def userTargets: List[Option[Target]] = (for {
       i <- 1 to MaxTargets
     } yield {
-      val (a, _, _, d, e) = SPGhost.userTargetParams(i)
+      val (a, _, _, _, d, e) = SPGhost.userTargetParams(i)
       (for {
         ra  <- raExtractor(d)
         dec <- decExtractor(e)
@@ -214,6 +215,7 @@ object Ghost extends GhostConfigUtil {
           srifu1Name     = extractor[String](config, SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
+          srifu1Type     = extractor[TargetType](config, SPGhost.SRIFU1_TYPE)
 
           srifu2Name     = extractor[String](config, SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
@@ -222,6 +224,7 @@ object Ghost extends GhostConfigUtil {
           hrifu1Name     = extractor[String](config, SPGhost.HRIFU1_NAME)
           hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
           hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
+          hrifu1Type     = extractor[TargetType](config, SPGhost.HRIFU1_TYPE)
 
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
@@ -294,10 +297,12 @@ object Ghost extends GhostConfigUtil {
                   fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
                   objectName,
                   srifu1Name = srifu1Name,
+                  srifu1Type = srifu1Type,
                   srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
                   srifu2Name = srifu2Name,
                   srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
                   hrifu1Name = hrifu1Name,
+                  hrifu1Type = hrifu1Type,
                   hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
                   hrifu2Name = hrifu2RAHMS.as("Sky"),
                   hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),
