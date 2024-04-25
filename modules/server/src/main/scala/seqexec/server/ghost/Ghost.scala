@@ -19,13 +19,15 @@ import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.target.env.ResolutionMode
+import edu.gemini.spModel.core.Target.TargetType
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
-import lucuma.core.math.Coordinates
-import lucuma.core.math.Declination
-import lucuma.core.math.RightAscension
-import lucuma.core.model.UnnormalizedSED
+import lucuma.core.enums.StellarLibrarySpectrum
+import lucuma.core.math._
+import lucuma.core.model._
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -38,20 +40,15 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import shapeless.tag
 import squants.time.Time
-import scala.reflect.ClassTag
-import lucuma.core.math._
-import lucuma.core.model._
+import squants.time.Seconds
+import squants.space.Length
+
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
-import edu.gemini.spModel.gemini.ghost.GhostBinning
+import scala.reflect.ClassTag
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-import squants.time.Seconds
-import lucuma.core.enums.StellarLibrarySpectrum
-import edu.gemini.spModel.target.env.ResolutionMode
-import shapeless.tag
-import squants.space.Length
-import edu.gemini.spModel.core.Target.TargetType
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
