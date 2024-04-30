@@ -540,30 +540,3 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
   .settings(embeddedJreSettingsLinux64: _*)
   .dependsOn(seqexec_server)
 
-/**
- * Project for the GHOST tests seqexec server app for production on Linux 64
- */
-lazy val app_seqexec_server_ghost = preventPublication(project.in(file("app/seqexec-server-ghost")))
-  .dependsOn(seqexec_web_server, seqexec_web_client)
-  .aggregate(seqexec_web_server, seqexec_web_client)
-  .enablePlugins(LinuxPlugin, RpmPlugin)
-  .enablePlugins(JavaServerAppPackaging)
-  .enablePlugins(GitBranchPrompt)
-  .settings(seqexecCommonSettings: _*)
-  .settings(seqexecLinux: _*)
-  .settings(deployedAppMappings: _*)
-  .settings(
-    description          := "Seqexec GHOST production",
-    applicationConfName  := "seqexec",
-    applicationConfSite  := DeploymentSite.GS,
-    Universal / mappings := {
-      // filter out sjs jar files. otherwise it could generate some conflicts
-      val universalMappings = (app_seqexec_server / Universal / mappings).value
-      val filtered          = universalMappings.filter { case (_, name) =>
-        !name.contains("_sjs")
-      }
-      filtered
-    }
-  )
-  .settings(embeddedJreSettingsLinux64: _*)
-  .dependsOn(seqexec_server)
