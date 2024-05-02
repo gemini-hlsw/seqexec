@@ -4,7 +4,7 @@
 package seqexec.server.gnirs
 
 import cats.effect.Sync
-import org.typelevel.log4cats.Logger
+import cats.syntax.all._
 import seqexec.model.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
@@ -12,15 +12,13 @@ import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GnirsHeader {
-  def header[F[_]: Sync: Logger](
-    kwClient:    KeywordsClient[F],
+  def header[F[_]: Sync](
+    gdsClient:   GdsClient[F],
     gnirsReader: GnirsKeywordReader[F],
     tcsReader:   TcsKeywordsReader[F]
   ): Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-      sendKeywords(
-        id,
-        kwClient,
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
+      val ks = GdsInstrument.bundleKeywords[F](
         List(
           buildInt32(tcsReader.gnirsInstPort, KeywordName.INPORT),
           buildString(gnirsReader.arrayId, KeywordName.ARRAYID),
@@ -52,14 +50,17 @@ object GnirsHeader {
           buildDouble(gnirsReader.detectorBias, KeywordName.DETBIAS)
         )
       )
+      ks.flatMap(gdsClient.openObservation(obsId, id, _))
+    }
 
-    override def sendAfter(id: ImageFileId): F[Unit] =
-      sendKeywords(id,
-                   kwClient,
-                   List(
-                     buildString(tcsReader.ut, KeywordName.UTEND),
-                     buildDouble(gnirsReader.obsEpoch, KeywordName.OBSEPOCH)
-                   )
+    override def sendAfter(obsId: ImageFileId): F[Unit] = {
+      val ks = GdsInstrument.bundleKeywords[F](
+        List(
+          buildString(tcsReader.ut, KeywordName.UTEND),
+          buildDouble(gnirsReader.obsEpoch, KeywordName.OBSEPOCH)
+        )
       )
+      ks.flatMap(gdsClient.setKeywords(obsId, _)) *> gdsClient.closeObservation(obsId)
+    }
   }
 }

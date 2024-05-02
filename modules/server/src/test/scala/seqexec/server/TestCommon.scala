@@ -69,7 +69,9 @@ class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
      Flamingos2ControllerSim[IO],
      GmosControllerSim.south[IO],
      GmosControllerSim.north[IO],
-     GnirsControllerSim[IO],
+     GnirsControllerSim[IO](
+       GdsHttpClient(GdsHttpClient.alwaysOkClient[IO], uri"http://localhost:8888/xmlrpc")
+     ),
      GsaoiControllerSim[IO],
      gpiSim,
      ghostSim,
@@ -151,6 +153,7 @@ object TestCommon {
       ghostGds = ControlStrategy.Simulated,
       igrins2 = ControlStrategy.Simulated,
       igrins2Gds = ControlStrategy.Simulated,
+      gnirsGds = ControlStrategy.Simulated,
       gsaoi = ControlStrategy.Simulated,
       gws = ControlStrategy.Simulated,
       nifs = ControlStrategy.Simulated,
@@ -167,6 +170,7 @@ object TestCommon {
     tag[GhostSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     tag[Igrins2Settings][Uri](uri"vm://localhost:8888/xmlrpc"),
     tag[Igrins2Settings][Uri](uri"http://localhost:8888/xmlrpc"),
+    tag[GnirsSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     "",
     Some("127.0.0.1"),
     0,

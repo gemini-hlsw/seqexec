@@ -12,7 +12,6 @@ import edu.gemini.seqexec.odb.SeqExecService
 import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.core.Peer
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
-import edu.gemini.wdba.xmlrpc.ServiceException
 import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs._

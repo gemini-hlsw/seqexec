@@ -13,13 +13,18 @@ import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.Progress
 import seqexec.server.gnirs.GnirsController.DCConfig
 import seqexec.server.gnirs.GnirsController.GnirsConfig
+import seqexec.server.keywords.GdsClient
 import squants.Time
 import squants.time.TimeConversions._
 
 object GnirsControllerSim {
-  def apply[F[_]: Logger: Async]: F[GnirsController[F]] =
-    InstrumentControllerSim[F]("GNIRS").map { sim =>
+  private val name = "GNIRS"
+
+  def apply[F[_]: Logger: Async](client: GdsClient[F]): F[GnirsController[F]] =
+    InstrumentControllerSim[F](name).map { sim =>
       new GnirsController[F] {
+
+        override def gdsClient: GdsClient[F] = client
 
         override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
           sim.observe(fileId, expTime)

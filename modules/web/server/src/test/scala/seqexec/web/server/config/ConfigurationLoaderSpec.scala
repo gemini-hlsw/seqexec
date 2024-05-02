@@ -42,6 +42,7 @@ class ConfigurationLoaderSpec extends CatsEffectSuite {
       ghostGds = ControlStrategy.Simulated,
       igrins2 = ControlStrategy.Simulated,
       igrins2Gds = ControlStrategy.Simulated,
+      gnirsGds = ControlStrategy.Simulated,
       gsaoi = ControlStrategy.Simulated,
       gws = ControlStrategy.Simulated,
       nifs = ControlStrategy.Simulated,
@@ -58,6 +59,7 @@ class ConfigurationLoaderSpec extends CatsEffectSuite {
     tag[GhostSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     tag[Igrins2Settings][Uri](uri"vm://igrins2?marshal=false&broker.persistent=false"),
     tag[Igrins2Settings][Uri](uri"http://localhost:8888/xmlrpc"),
+    tag[GnirsSettings][Uri](uri"http://localhost:8888/xmlrpc"),
     "tcs=tcs:, ao=ao:, gm=gm:, gc=gc:, gw=ws:, m2=m2:, oiwfs=oiwfs:, ag=ag:, f2=f2:, gsaoi=gsaoi:, aom=aom:, myst=myst:, rtc=rtc:",
     Some("127.0.0.1"),
     0,
@@ -137,6 +139,7 @@ seqexec-engine {
         gpiGds = simulated
         igrins2 = simulated
         igrins2Gds = simulated
+        gnirsGds = simulated
         gsaoi = simulated
         gws = simulated
         nifs = simulated
@@ -163,6 +166,7 @@ seqexec-engine {
     ghostGDS = "http://localhost:8888/xmlrpc"
     igrins2Url = "vm://igrins2?marshal=false&broker.persistent=false"
     igrins2GDS = "http://localhost:8888/xmlrpc"
+    gnirsGDS = "http://localhost:8888/xmlrpc"
 }
 
 """

@@ -15,8 +15,10 @@ import seqexec.server.gnirs.GnirsController.GnirsConfig
 import squants.Length
 import squants.Time
 import squants.time.TimeConversions._
+import seqexec.server.keywords.GdsClient
 
 trait GnirsController[F[_]] {
+  def gdsClient: GdsClient[F]
 
   def applyConfig(config: GnirsConfig): F[Unit]
 

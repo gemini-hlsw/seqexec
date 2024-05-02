@@ -26,21 +26,22 @@ import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gnirs.GnirsController.{ CCConfig, DCConfig, Filter1, Other, ReadMode }
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
+import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.GdsInstrument
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 import cats.Applicative
+import seqexec.server.keywords.GdsClient
 
 final case class Gnirs[F[_]: Logger: Async](
-  controller:        GnirsController[F],
-  dhsClientProvider: DhsClientProvider[F]
-) extends DhsInstrument[F]
+  controller: GnirsController[F]
+) extends GdsInstrument[F]
     with InstrumentSystem[F] {
-  override val contributorName: String   = "ngnirsdc1"
-  override val dhsInstrumentName: String = "GNIRS"
 
-  override val dhsClient: DhsClient[F] = dhsClientProvider.dhsClient(dhsInstrumentName)
+  override val gdsClient: GdsClient[F] = controller.gdsClient
+
+  override val contributorName: String = "ngnirsdc1"
 
   override val keywordsClient: KeywordsClient[F] = this
 

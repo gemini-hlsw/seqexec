@@ -242,15 +242,28 @@ object Systems {
       else
         simCtrlBuilder.map((_, simKeyReaderBuilder))
 
-    def gnirs: IO[(GnirsController[IO], GnirsKeywordReader[IO])] =
-      instObjects(
-        settings.systemControl.gnirs,
-        GnirsEpics.instance[IO],
-        GnirsControllerEpics.apply[IO],
-        GnirsControllerSim.apply[IO],
-        GnirsKeywordReaderEpics[IO],
-        GnirsKeywordReaderDummy[IO]
+    def gnirs(
+      httpClient: Client[IO]
+    ): IO[(GnirsController[IO], GnirsKeywordReader[IO])] = {
+      def gnirsGDS: IO[GdsClient[IO]] =
+        IO(
+          GdsHttpClient[IO](if (settings.systemControl.gnirsGds.command) httpClient
+                            else GdsHttpClient.alwaysOkClient[IO],
+                            settings.gnirsGDS
+          )
+        )
+
+      gnirsGDS.flatMap(gds =>
+        instObjects(
+          settings.systemControl.gnirs,
+          GnirsEpics.instance[IO],
+          GnirsControllerEpics.apply[IO](gds),
+          GnirsControllerSim.apply[IO](gds),
+          GnirsKeywordReaderEpics[IO],
+          GnirsKeywordReaderDummy[IO]
+        )
       )
+    }
 
     def niri: IO[(NiriController[IO], NiriKeywordReader[IO])] =
       instObjects(
@@ -371,7 +384,7 @@ object Systems {
         (gcalCtr, gcalKR)                          <- Resource.eval(gcal)
         (tcsGN, tcsGS, tcsKR, altairCtr, altairKR) <- Resource.eval(tcsObjects(gcdb, site))
         (gemsCtr, gemsKR, gsaoiCtr, gsaoiKR)       <- Resource.eval(gemsObjects)
-        (gnirsCtr, gnirsKR)                        <- Resource.eval(gnirs)
+        (gnirsCtr, gnirsKR)                        <- Resource.eval(gnirs(httpClient))
         f2Controller                               <- Resource.eval(flamingos2)
         (niriCtr, niriKR)                          <- Resource.eval(niri)
         (nifsCtr, nifsKR)                          <- Resource.eval(nifs)

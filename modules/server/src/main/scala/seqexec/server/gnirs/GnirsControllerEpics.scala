@@ -25,6 +25,7 @@ import squants.Time
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import seqexec.server.keywords.GdsClient
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {
@@ -120,22 +121,16 @@ object GnirsControllerEpics extends GnirsEncoders {
   }
 
   def apply[F[_]: Async](
-    epicsSys: => GnirsEpics[F]
-  )(implicit L: Logger[F]): GnirsController[F] =
+    client: GdsClient[F]
+  )(epicsSys: => GnirsEpics[F])(implicit L: Logger[F]): GnirsController[F] =
     new GnirsController[F] {
+      override val gdsClient: GdsClient[F] = client
 
       private val ccCmd = epicsSys.configCCCmd
       private val dcCmd = epicsSys.configDCCmd
 
-      private val warnOnDhs =
-        epicsSys.dhsConnected.flatMap(L.warn("GNIRS is not connected to DHS").unlessA)
-
       private val warnOnArray =
         epicsSys.arrayActive.flatMap(L.warn("GNIRS detector array is not active").unlessA)
-
-      private val checkDhs = failUnlessM(epicsSys.dhsConnected,
-                                         SeqexecFailure.Execution("GNIRS is not connected to DHS")
-      )
 
       private val checkArray =
         failUnlessM(epicsSys.arrayActive,
@@ -337,7 +332,6 @@ object GnirsControllerEpics extends GnirsEncoders {
       override def applyConfig(config: GnirsConfig): F[Unit] =
         L.debug("Starting GNIRS configuration") *>
           L.debug(s"GNIRS configuration: ${config.show}") *>
-          warnOnDhs *>
           warnOnArray *>
           setDCParams(config.dc) *>
           setCCParams(config.cc) *>
@@ -345,7 +339,6 @@ object GnirsControllerEpics extends GnirsEncoders {
 
       override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         L.debug(s"Start GNIRS observe, file id $fileId") *>
-          checkDhs *>
           checkArray *>
           epicsSys.observeCmd.setLabel(fileId) *>
           epicsSys.observeCmd

@@ -25,13 +25,14 @@ trait ArbSystemsControlConfiguration {
         gpiGds     <- arbitrary[ControlStrategy]
         ghost      <- arbitrary[ControlStrategy]
         ghostGds   <- arbitrary[ControlStrategy]
+        igrins2    <- arbitrary[ControlStrategy]
+        igrins2Gds <- arbitrary[ControlStrategy]
+        gnirsGds   <- arbitrary[ControlStrategy]
         gsaoi      <- arbitrary[ControlStrategy]
         gws        <- arbitrary[ControlStrategy]
         nifs       <- arbitrary[ControlStrategy]
         niri       <- arbitrary[ControlStrategy]
         tcs        <- arbitrary[ControlStrategy]
-        igrins2    <- arbitrary[ControlStrategy]
-        igrins2Gds <- arbitrary[ControlStrategy]
       } yield SystemsControlConfiguration(altair,
                                           gems,
                                           dhs,
@@ -45,6 +46,7 @@ trait ArbSystemsControlConfiguration {
                                           ghostGds,
                                           igrins2,
                                           igrins2Gds,
+                                          gnirsGds,
                                           gsaoi,
                                           gws,
                                           nifs,
@@ -56,6 +58,7 @@ trait ArbSystemsControlConfiguration {
   implicit val systemsControlConfigurationCogen: Cogen[SystemsControlConfiguration] =
     Cogen[
       (
+        ControlStrategy,
         ControlStrategy,
         ControlStrategy,
         ControlStrategy,
@@ -89,6 +92,7 @@ trait ArbSystemsControlConfiguration {
        x.ghostGds,
        x.igrins2,
        x.igrins2Gds,
+       x.gnirsGds,
        x.gsaoi,
        x.gws,
        x.nifs,
