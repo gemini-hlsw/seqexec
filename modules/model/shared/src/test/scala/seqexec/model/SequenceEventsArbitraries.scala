@@ -28,7 +28,8 @@ trait SequenceEventsArbitraries {
       u  <- arbitrary[Option[UserDetails]]
       id <- arbitrary[ClientId]
       v  <- arbitrary[String]
-    } yield ConnectionOpenEvent(u, id, v)
+      r  <- arbitrary[List[Resource]]
+    } yield ConnectionOpenEvent(u, id, v, r)
   }
 
   implicit val sseArb = Arbitrary[SequenceStart] {
@@ -247,8 +248,8 @@ trait SequenceEventsArbitraries {
   }
 
   implicit val coeCogen: Cogen[ConnectionOpenEvent] =
-    Cogen[(Option[UserDetails], ClientId, String)]
-      .contramap(x => (x.userDetails, x.clientId, x.serverVersion))
+    Cogen[(Option[UserDetails], ClientId, String, List[Resource])]
+      .contramap(x => (x.userDetails, x.clientId, x.serverVersion, x.simulatedResources))
 
   implicit val smuCogen: Cogen[SeqexecModelUpdate] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)

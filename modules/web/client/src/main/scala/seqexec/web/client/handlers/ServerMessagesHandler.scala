@@ -100,7 +100,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   }
 
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(ConnectionOpenEvent(u, c, v)) =>
+    case ServerMessage(ConnectionOpenEvent(u, c, v, _)) =>
       // After connected to the Websocket request a refresh
       val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
       val openEffect      =

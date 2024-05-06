@@ -133,14 +133,16 @@ object WebServerLauncher extends IOApp with LogInitialization {
     def router(wsb: WebSocketBuilder2[F]) = Router[F](
       "/"                     -> new StaticRoutes(conf.mode === Mode.Development, OcsBuildInfo.builtAtMillis).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site,
-                                       conf.mode,
-                                       as,
-                                       se.systems.guideDb,
-                                       se.systems.gpi.statusDb,
-                                       clientsDb,
-                                       outputs,
-                                       wsb
+      "/api"                  -> new SeqexecUIApiRoutes(
+        conf.site,
+        conf.mode,
+        as,
+        se.systems.guideDb,
+        se.systems.gpi.statusDb,
+        clientsDb,
+        conf.seqexecEngine.systemControl.simulatedResources(conf.site),
+        outputs,
+        wsb
       ).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(se.systems.guideDb).service,
       "/smartgcal"            -> new SmartGcalRoutes[F](cal).service

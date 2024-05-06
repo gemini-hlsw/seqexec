@@ -47,9 +47,10 @@ object events {
   }
 
   final case class ConnectionOpenEvent(
-    userDetails:   Option[UserDetails],
-    clientId:      ClientId,
-    serverVersion: String
+    userDetails:        Option[UserDetails],
+    clientId:           ClientId,
+    serverVersion:      String,
+    simulatedResources: List[Resource]
   ) extends SeqexecEvent
 
   object ConnectionOpenEvent {

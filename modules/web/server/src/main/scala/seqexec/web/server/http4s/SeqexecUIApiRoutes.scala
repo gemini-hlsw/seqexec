@@ -39,6 +39,7 @@ import seqexec.model._
 import seqexec.model.boopickle._
 import seqexec.model.config._
 import seqexec.model.events._
+import seqexec.model.enum.Resource
 import seqexec.server.SeqexecEngine
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.server.OcsBuildInfo
@@ -58,6 +59,7 @@ class SeqexecUIApiRoutes[F[_]: Async: Dns: Compression](
   guideConfigS:     GuideConfigDb[F],
   giapiDB:          GiapiStatusDb[F],
   clientsDb:        ClientsSetDb[F],
+  simulated:        List[Resource],
   engineOutput:     Topic[F, SeqexecEvent],
   webSocketBuilder: WebSocketBuilder2[F]
 )(implicit
@@ -156,7 +158,9 @@ class SeqexecUIApiRoutes[F[_]: Async: Dns: Compression](
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
 
         def initialEvent(clientId: ClientId): Stream[F, WebSocketFrame] =
-          Stream.emit(toFrame(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version)))
+          Stream.emit(
+            toFrame(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version, simulated))
+          )
 
         def engineEvents(clientId: ClientId): Stream[F, WebSocketFrame] =
           engineOutput
