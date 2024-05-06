@@ -371,10 +371,8 @@ final case class StepsTable(
     steps.exists(s => s.instrument.displayItems.contains(p))
 
   val showOffsets: Boolean =
-    stepsList.headOption.flatMap(stepTypeO.getOption) match {
-      case Some(StepType.Object) => showProp(InstrumentProperties.Offsets)
-      case _                     => false
-    }
+    showProp(InstrumentProperties.Offsets) &&
+      stepsList.exists(s => stepTypeO.getOption(s).contains(StepType.Object))
 
   val offsetWidth: Option[Double] = {
     val (maxWidth, maxAxisLabelWidth, maxNodLabelWidth) = stepsList.sequenceOffsetMaxWidth
