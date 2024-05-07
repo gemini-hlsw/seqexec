@@ -10,6 +10,7 @@ import lucuma.core.math.RightAscension
 import lucuma.core.math.Declination
 import seqexec.model.Conditions
 import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.core.Target.TargetType
 import edu.gemini.spModel.target.env.ResolutionMode
 import scala.concurrent.duration._
 import shapeless.tag
@@ -40,9 +41,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       Coordinates.Zero.some,
+      none,
       none,
       none,
       none,
@@ -83,9 +85,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       Coordinates.Zero.some,
+      none,
       none,
       none,
       none,
@@ -120,9 +123,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.On,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       Coordinates.Zero.some,
+      none,
       none,
       none,
       none,
@@ -157,9 +161,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       coord1.some,
+      none,
       none,
       none,
       none,
@@ -210,11 +215,12 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       coord1.some,
       "target2".some,
       coord2.some,
+      none,
       none,
       none,
       none,
@@ -272,9 +278,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       coord1.some,
+      none,
       none,
       none,
       none,
@@ -328,9 +335,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       coord1.some,
+      none,
       none,
       none,
       none,
@@ -364,9 +372,10 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
       none,
       FiberAgitator.Off,
       FiberAgitator.Off,
-      "target",
       "target".some,
+      Some(TargetType.Sidereal),
       coord1.some,
+      none,
       none,
       none,
       none,
@@ -383,5 +392,103 @@ final class GhostSpec extends munit.DisciplineSuite with GhostArbitraries {
 
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostAGDuration.applyItem)), Some("50"))
     assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostAGRepeat.applyItem)), None)
+  }
+
+  test("Support SR non-sidereal") {
+    val cfg = GhostConfig(
+      "OBJECT",
+      "science",
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
+      none,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      "target".some,
+      Some(TargetType.NonSidereal),
+      coord1.some,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None,
+      Some(5.seconds),
+      None
+    )
+
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1X.applyItem)),
+                 Some("0.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1Y.applyItem)),
+                 Some("0.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1Type.applyItem)),
+                 Some("IFU_DEMAND_XY")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU2Type.applyItem)),
+                 Some("IFU_DEMAND_PARK")
+    )
+
+  }
+
+  test("Support HR non-sidereal") {
+    val cfg = GhostConfig(
+      "OBJECT",
+      "science",
+      tag[BlueChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Slow)
+      ),
+      tag[RedChannel][ChannelConfig](
+        ChannelConfig(GhostBinning.ONE_BY_ONE, 1.seconds, 1, ReadNoiseGain.Fast)
+      ),
+      none,
+      FiberAgitator.Off,
+      FiberAgitator.Off,
+      none,
+      none,
+      none,
+      none,
+      none,
+      "target".some,
+      Some(TargetType.NonSidereal),
+      coord1.some,
+      none,
+      none,
+      Nil,
+      ResolutionMode.GhostStandard.some,
+      Conditions.Best,
+      None,
+      Some(5.seconds),
+      None
+    )
+
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1X.applyItem)),
+                 Some("0.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1Y.applyItem)),
+                 Some("0.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU1Type.applyItem)),
+                 Some("IFU_DEMAND_XY")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU2X.applyItem)),
+                 Some("-100.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU2Y.applyItem)),
+                 Some("0.000000")
+    )
+    assertEquals(cfg.toOption.flatMap(_.configuration.value(GhostIFU2Type.applyItem)),
+                 Some("IFU_DEMAND_XY")
+    )
+
   }
 }

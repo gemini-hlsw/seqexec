@@ -18,15 +18,16 @@ import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
-import edu.gemini.spModel.obscomp.InstConstants.OBJECT_PROP
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.target.env.ResolutionMode
+import edu.gemini.spModel.core.Target.TargetType
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
-import lucuma.core.math.Coordinates
-import lucuma.core.math.Declination
-import lucuma.core.math.RightAscension
-import lucuma.core.model.UnnormalizedSED
+import lucuma.core.enums.StellarLibrarySpectrum
+import lucuma.core.math._
+import lucuma.core.model._
 import lucuma.core.optics.Format
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -39,19 +40,15 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import shapeless.tag
 import squants.time.Time
-import scala.reflect.ClassTag
-import lucuma.core.math._
-import lucuma.core.model._
+import squants.time.Seconds
+import squants.space.Length
+
 import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
-import edu.gemini.spModel.gemini.ghost.GhostBinning
+import scala.reflect.ClassTag
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-import squants.time.Seconds
-import lucuma.core.enums.StellarLibrarySpectrum
-import edu.gemini.spModel.target.env.ResolutionMode
-import shapeless.tag
-import squants.space.Length
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -177,7 +174,7 @@ object Ghost extends GhostConfigUtil {
     def userTargets: List[Option[Target]] = (for {
       i <- 1 to MaxTargets
     } yield {
-      val (a, _, _, d, e) = SPGhost.userTargetParams(i)
+      val (a, _, _, _, d, e) = SPGhost.userTargetParams(i)
       (for {
         ra  <- raExtractor(d)
         dec <- decExtractor(e)
@@ -214,6 +211,7 @@ object Ghost extends GhostConfigUtil {
           srifu1Name     = extractor[String](config, SPGhost.SRIFU1_NAME)
           srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1_RA_HMS)
           srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1_DEC_DMS)
+          srifu1Type     = extractor[TargetType](config, SPGhost.SRIFU1_TYPE)
 
           srifu2Name     = extractor[String](config, SPGhost.SRIFU2_NAME)
           srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2_RA_HMS)
@@ -222,12 +220,12 @@ object Ghost extends GhostConfigUtil {
           hrifu1Name     = extractor[String](config, SPGhost.HRIFU1_NAME)
           hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1_RA_HMS)
           hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1_DEC_DMS)
+          hrifu1Type     = extractor[TargetType](config, SPGhost.HRIFU1_TYPE)
 
           hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2_RA_HMS)
           hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2_DEC_DMS)
           obsClass      <- config.extractObsAs[String](OBS_CLASS_PROP)
           obsType       <- config.extractObsAs[String](OBSERVE_TYPE_PROP)
-          objectName    <- config.extractObsAs[String](OBJECT_PROP)
           isScience      = obsType === SCIENCE_OBSERVE_TYPE
           coAdds         = config.extractObsAs[JInt](COADDS_PROP).map(_.intValue())
 
@@ -292,12 +290,13 @@ object Ghost extends GhostConfigUtil {
                   baseCoords = (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
                   fiberAgitator1 = FiberAgitator.fromBoolean(fiberAgitator1.getOrElse(false)),
                   fiberAgitator2 = FiberAgitator.fromBoolean(fiberAgitator2.getOrElse(false)),
-                  objectName,
                   srifu1Name = srifu1Name,
+                  srifu1Type = srifu1Type,
                   srifu1Coords = (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
                   srifu2Name = srifu2Name,
                   srifu2Coords = (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
                   hrifu1Name = hrifu1Name,
+                  hrifu1Type = hrifu1Type,
                   hrifu1Coords = (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
                   hrifu2Name = hrifu2RAHMS.as("Sky"),
                   hrifu2Coords = (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply),

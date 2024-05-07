@@ -170,7 +170,6 @@ object SeqTranslate {
 
         extractStatus(config) match {
           case StepState.Pending if i >= nextToRun =>
-            println(s"Step $i is pending and next to run is $lastStep")
             SequenceGen.PendingStepGen(
               i,
               dataId,

@@ -5,6 +5,8 @@ package seqexec.server.ghost
 
 import cats.Eq
 import cats.syntax.all._
+import edu.gemini.spModel.core.Target.TargetType
+import edu.gemini.spModel.target.env.ResolutionMode
 import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
 import giapi.client.syntax.all._
@@ -18,7 +20,6 @@ import lucuma.core.model.{ Target => GemTarget }
 import lucuma.core.model.SiderealTracking
 import lucuma.core.math.Coordinates
 import GhostConfig._
-import edu.gemini.spModel.target.env.ResolutionMode
 import shapeless.tag
 import shapeless.tag.@@
 import squants.space.Length
@@ -295,6 +296,37 @@ object GhostConfig {
     current
   }
 
+  private[ghost] def ifu2NonSidereal(
+    bundleConfig: BundleConfig
+  ): Configuration =
+    bundleConfig match {
+      case BundleConfig.Standard =>
+        giapiConfig(IFUNum.IFU2.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+          giapiConfig(IFUNum.IFU2.demandItem, DemandType.DemandPark: DemandType) |+|
+          giapiConfig(GhostIFU2X, 0.0) |+|
+          giapiConfig(GhostIFU2Y, 0.0)
+      case _                     =>
+        giapiConfig(IFUNum.IFU2.targetItem, IFUTargetType.NoTarget: IFUTargetType) |+|
+          giapiConfig(IFUNum.IFU2.demandItem, DemandType.DemandXY: DemandType) |+|
+          giapiConfig(GhostIFU2X, -100.0) |+|
+          giapiConfig(GhostIFU2Y, 0.0)
+
+    }
+
+  private[ghost] def ifuConfigNonSidereal(
+    ifuNum:        IFUNum,
+    ifuTargetType: IFUTargetType,
+    bundleConfig:  BundleConfig
+  ): Configuration = {
+    val demand: DemandType = DemandType.DemandXY
+
+    giapiConfig(ifuNum.targetItem, ifuTargetType) |+|
+      giapiConfig(ifuNum.demandItem, demand) |+|
+      giapiConfig(GhostIFU1X, 0.0) |+|
+      giapiConfig(GhostIFU1Y, 0.0) |+|
+      giapiConfig(ifuNum.bundleItem, bundleConfig)
+  }
+
   private[ghost] def defocusOffset(
     baseCoords: Option[Coordinates],
     ifu1Type:   IFUTargetType,
@@ -359,12 +391,13 @@ object GhostConfig {
     baseCoords:          Option[Coordinates],
     fiberAgitator1:      FiberAgitator,
     fiberAgitator2:      FiberAgitator,
-    objectName:          String,
     srifu1Name:          Option[String],
+    srifu1Type:          Option[TargetType],
     srifu1Coords:        Option[Coordinates],
     srifu2Name:          Option[String],
     srifu2Coords:        Option[Coordinates],
     hrifu1Name:          Option[String],
+    hrifu1Type:          Option[TargetType],
     hrifu1Coords:        Option[Coordinates],
     hrifu2Name:          Option[String],
     hrifu2Coords:        Option[Coordinates],
@@ -382,8 +415,8 @@ object GhostConfig {
     val hifu1 = determineType(hrifu1Name)
     val hifu2 = determineType(hrifu2Name)
 
-    val extracted = (sifu1, sifu2, hifu1, hifu2) match {
-      case (Target(t), NoTarget, NoTarget, NoTarget)    =>
+    val extracted = (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2) match {
+      case (Target(t), Some(TargetType.Sidereal), NoTarget, NoTarget, _, NoTarget) =>
         srifu1Coords.map(
           StandardResolutionMode
             .SingleTarget(
@@ -404,7 +437,28 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      case (NoTarget, Target(t), NoTarget, NoTarget)    =>
+
+      case (Target(t), Some(TargetType.NonSidereal), NoTarget, NoTarget, _, NoTarget) =>
+        StandardResolutionMode
+          .NonSiderealTarget(
+            obsType,
+            obsClass,
+            blueConfig,
+            redConfig,
+            baseCoords,
+            t,
+            fiberAgitator1,
+            fiberAgitator2,
+            userTargets,
+            resolutionMode,
+            conditions,
+            scienceMagnitude,
+            guideCameraOverride,
+            svCameraOverride
+          )
+          .some
+
+      case (NoTarget, _, Target(t), NoTarget, _, NoTarget)    =>
         srifu2Coords.map(
           StandardResolutionMode
             .SingleTarget(
@@ -425,7 +479,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      case (Target(t1), Target(t2), NoTarget, NoTarget) =>
+      case (Target(t1), _, Target(t2), NoTarget, _, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .DualTarget(
@@ -448,7 +502,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      case (Target(t), SkyPosition, NoTarget, NoTarget) =>
+      case (Target(t), _, SkyPosition, NoTarget, _, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .TargetPlusSky(
@@ -470,7 +524,8 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      case (SkyPosition, Target(t), NoTarget, NoTarget) =>
+
+      case (SkyPosition, _, Target(t), NoTarget, Some(TargetType.Sidereal), NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .SkyPlusTarget(
@@ -492,7 +547,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      case (NoTarget, NoTarget, Target(t), SkyPosition) =>
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
             .TargetPlusSky(
@@ -514,18 +569,18 @@ object GhostConfig {
               svCameraOverride
             )
         )
-      // Fallback to non-sidereal though we'd rather detect the case
-      case _                                            =>
-        StandardResolutionMode
-          .NonSiderealTarget(
+
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _) =>
+        HighResolutionMode
+          .NonSidereal(
             obsType,
             obsClass,
             blueConfig,
             redConfig,
             baseCoords,
-            objectName,
             fiberAgitator1,
             fiberAgitator2,
+            t,
             userTargets,
             resolutionMode,
             conditions,
@@ -534,6 +589,9 @@ object GhostConfig {
             svCameraOverride
           )
           .some
+
+      case _ =>
+        none
     }
 
     extracted.toRight(ContentError("Response does not constitute a valid GHOST configuration"))
@@ -712,10 +770,12 @@ object StandardResolutionMode {
     override val ifu1Coordinates: Option[Coordinates] = none
     override val ifu2Coordinates: Option[Coordinates] = none
     override def ifu2Configuration: Configuration     =
-      GhostConfig.ifuPark(IFUNum.IFU2)
+      GhostConfig.ifu2NonSidereal(BundleConfig.Standard)
     override def ifu1Config: Configuration            =
-      giapiConfig(IFUNum.IFU1.targetItem, ifu1TargetType) |+|
-        giapiConfig(IFUNum.IFU1.bundleItem, ifu1BundleType)
+      GhostConfig.ifuConfigNonSidereal(IFUNum.IFU1,
+                                       IFUTargetType.Target(targetName),
+                                       BundleConfig.Standard
+      )
 
   }
 
@@ -918,6 +978,51 @@ object HighResolutionMode {
   }
 
   implicit val hrTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
+    (x.obsType,
+     x.obsClass,
+     x.blueConfig: ChannelConfig,
+     x.redConfig: ChannelConfig,
+     x.baseCoords,
+     x.fiberAgitator1,
+     x.fiberAgitator2,
+     x.ifu1TargetName,
+     x.ifu1Coordinates,
+     x.ifu2Coordinates,
+     x.userTargets,
+     x.resolutionMode,
+     x.conditions,
+     x.scienceMagnitude
+    )
+  )
+
+  final case class NonSidereal(
+    override val obsType:             String,
+    override val obsClass:            String,
+    override val blueConfig:          ChannelConfig @@ BlueChannel,
+    override val redConfig:           ChannelConfig @@ RedChannel,
+    override val baseCoords:          Option[Coordinates],
+    override val fiberAgitator1:      FiberAgitator,
+    override val fiberAgitator2:      FiberAgitator,
+    override val ifu1TargetName:      String,
+    override val userTargets:         List[GemTarget],
+    override val resolutionMode:      Option[ResolutionMode],
+    override val conditions:          Conditions,
+    override val scienceMagnitude:    Option[Double],
+    override val guideCameraOverride: Option[FiniteDuration],
+    override val svCameraOverride:    Option[FiniteDuration]
+  ) extends HighResolutionMode {
+    override val ifu1Coordinates: Option[Coordinates] = none
+    override val ifu2Coordinates: Option[Coordinates] = none
+    override def ifu2Configuration: Configuration     =
+      GhostConfig.ifu2NonSidereal(BundleConfig.HighRes)
+    override def ifu1Config: Configuration            =
+      GhostConfig.ifuConfigNonSidereal(IFUNum.IFU1,
+                                       IFUTargetType.Target(ifu1TargetName),
+                                       BundleConfig.HighRes
+      )
+  }
+
+  implicit val hrNonSiderealEq: Eq[NonSidereal] = Eq.by(x =>
     (x.obsType,
      x.obsClass,
      x.blueConfig: ChannelConfig,
