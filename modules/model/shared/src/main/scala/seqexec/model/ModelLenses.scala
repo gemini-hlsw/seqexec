@@ -172,6 +172,11 @@ trait ModelLenses {
       }
     }
 
+  val instrumentStepT: Traversal[StepConfig, Parameters] =
+    filterEntry[SystemName, Parameters] { case (s, _) =>
+      s === SystemName.Instrument
+    }
+
   val scienceTargetNameO: Optional[Parameters, TargetName] =
     paramValueL(SystemName.Observe.withParam("object")).andThen( // find the target name
       some[String]
@@ -301,16 +306,6 @@ trait ModelLenses {
         stringToGuidingP // to guiding
       )
 
-  // Composite lens to find the step config
-  val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT
-      .andThen( // sequence configuration
-        scienceStepT
-      )
-      .andThen( // science steps
-        scienceTargetNameO
-      ) // science target name
-
   // Composite lens to find the sequence obs class
   val obsClassT: Traversal[SequenceView, String] =
     obsStepsL
@@ -339,6 +334,18 @@ trait ModelLenses {
     sequenceConfigT.andThen( // configuration of the step
       configParamValueO(SystemName.Telescope, "Base:name")
     )                        // on the configuration find the target name
+
+  val firstScienceStepT: Traversal[SequenceView, Parameters] =
+    obsStepsL
+      .andThen( // observation steps
+        eachStepT
+      )
+      .andThen( // each step
+        Step.config
+      )
+      .andThen( // only standard steps
+        instrumentStepT
+      )
 
   // Composite lens to find the first science step and from there the target name
   val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =

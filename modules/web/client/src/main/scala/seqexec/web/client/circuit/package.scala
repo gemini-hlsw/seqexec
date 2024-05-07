@@ -15,7 +15,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model._
-import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
+import seqexec.web.client.model.lenses._
 
 package object circuit {
   implicit def CircuitToOps[T <: AnyRef](c: Circuit[T]): CircuitOps[T] =
@@ -125,7 +125,7 @@ package circuit {
     targetName: Option[TargetName]
   )
 
-  object SequenceInfoFocus {
+  object SequenceInfoFocus extends GhostTargetName {
     implicit val eq: Eq[SequenceInfoFocus] =
       Eq.by(x => (x.canOperate, x.obsName, x.status, x.targetName))
 
@@ -136,8 +136,17 @@ package circuit {
         SeqexecAppRootModel.sequencesOnDisplayL.andThen(SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
-          val targetName =
-            firstScienceStepTargetNameT.headOption(tab.sequence)
+          val targetName = tab.sequence.metadata.instrument match {
+            case Instrument.Ghost =>
+              val config =
+                firstScienceStepT.headOption(tab.sequence).orEmpty
+              val srifu1 = config.get("instrument:srifu1Name")
+              val srifu2 = config.get("instrument:srifu2Name")
+              val hrifu1 = config.get("instrument:hrifu1Name")
+              val hrifu2 = config.get("instrument:hrifu2Name")
+              targetNameFromNames(srifu1, srifu2, hrifu1, hrifu2)
+            case _                => firstScienceStepTargetNameT.headOption(tab.sequence)
+          }
           SequenceInfoFocus(status,
                             tab.sequence.metadata.name,
                             tab.sequence.status,
