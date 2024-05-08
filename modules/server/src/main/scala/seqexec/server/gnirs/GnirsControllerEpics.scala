@@ -201,7 +201,7 @@ object GnirsControllerEpics extends GnirsEncoders {
         c:    Camera,
         slit: Option[SlitWidth]
       ): F[Option[F[Unit]]] = {
-        lazy val specialConversion: String = s"${cameraStr(c)}+MIR${disperserStr(s.disperser)}"
+        lazy val specialConversion: String = s"${cameraStr(c)}${disperserStr(s.disperser)}+MIR"
 
         val v = s match {
           case Mirror(_)          => if (slit.exists(_ === SlitWidth.HR_IFU)) specialConversion else "MIR"

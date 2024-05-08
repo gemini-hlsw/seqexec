@@ -1,0 +1,52 @@
+#
+#  Run Seqexec locally in docker
+#
+#  -- on host --
+#  docker build -t registry.gitlab.com/nsf-noirlab/gemini/rtsw/user-tools/seqexec-tester/seqexec-dev -f Dockerfile.dev .
+#  docker run --rm -it --name webseq-container -p 9091:9091 -p 9090:9090 registry.gitlab.com/nsf-noirlab/gemini/rtsw/user-tools/seqexec-tester/seqexec-dev bash -l
+#  
+#  -- in container --
+#  cd /seqexec/app/seqexec-server-gn-test/target/universal/app_seqexec_server_gn_test-<date...>/
+#  vi conf/app.conf [customize config]
+#  ./bin/seqexec-server
+#
+# -- in browser on host --
+#  http://localhost:9090/ 
+#  login: telops
+#  password: pwd
+#
+#
+
+FROM registry.gitlab.com/nsf-noirlab/gemini/rtsw/user-tools/seqexec-tester/seqexec-base
+
+
+# Set environment variables
+ENV SBT_OPTS="-Xmx2048m -Xms1024m -Xss2M"
+
+# Copy the application directory
+COPY . /seqexec
+
+# Set working directory
+WORKDIR /seqexec
+
+# Compile, stage, and package the Scala application
+RUN sbt clean 
+RUN sbt app_seqexec_server_gn_test/compile 
+RUN sbt app_seqexec_server_gn_test/stage 
+RUN sbt app_seqexec_server_gn_test/universal:packageZipTarball
+
+# Set the new working directory to where the tarball is located
+WORKDIR /seqexec/app/seqexec-server-gn-test/target/universal/
+
+# Extract the tarball and change directory dynamically
+RUN cd /seqexec/app/seqexec-server-gn-test/target/universal/ && \
+    tar -xvf *.tgz && \
+    NEW_DIR=$(ls -d */ | head -n 1 | tr -d '/') && \
+    cd "$NEW_DIR" && \
+    ln -s /usr/lib/jvm/java-11-openjdk-amd64/ jre
+
+# Change to the correct directory
+WORKDIR /seqexec/app/seqexec-server-gn-test/target/universal/
+
+# Optionally, set the start script as the entrypoint
+# ENTRYPOINT ["/start-seqexec.sh"]
