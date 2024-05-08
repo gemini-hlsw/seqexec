@@ -240,7 +240,9 @@ sealed trait GhostConfig extends GhostLUT {
           .getOrElse(CameraFilterWheelLUT.headOption.foldMap(_.pos))
       }
 
-      giapiConfig(GhostThXeLamp, 1) |+| giapiConfig(GhostCalibrationFilterWheel, result)
+      giapiConfig(GhostThXeLamp, 1) |+|
+        giapiConfig(GhostCalibrationFilterDemand, "CFW_DEMAND_POSITION") |+|
+        giapiConfig(GhostCalibrationFilterWheel, result)
     } else {
       giapiConfig(GhostThXeLamp, 0)
     }
