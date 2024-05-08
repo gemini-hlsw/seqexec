@@ -18,6 +18,7 @@ import edu.gemini.spModel.target.env.ResolutionMode
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
 import seqexec.model.Conditions
+import seqexec.model.GhostTargetName
 import shapeless.tag
 import scala.concurrent.duration._
 
@@ -40,11 +41,15 @@ sealed trait GhostKeywordsReader[F[_]] {
   def exposureDuration: F[Option[Double]]
   def resolutionMode: F[Option[String]]
   def targetMode: F[Option[String]]
+  val targetName: F[Option[String]]
   def slitCount: F[Option[Int]]
   def slitDuration: F[Option[Double]]
 }
 
-final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsReader[F] {
+final class DefaultGhostKeywordsReader[F[_]: Applicative]
+    extends GhostKeywordsReader[F]
+    with GhostTargetName {
+
   val basePos: F[Boolean]                 = true.pure[F]
   val srifu1: F[String]                   = "".pure[F]
   val srifu2: F[String]                   = "".pure[F]
@@ -62,12 +67,13 @@ final class DefaultGhostKeywordsReader[F[_]: Applicative] extends GhostKeywordsR
   val blueReadMode: F[Option[String]]     = strDefault[F].map(_.some)
   val resolutionMode: F[Option[String]]   = strDefault[F].map(_.some)
   val targetMode: F[Option[String]]       = strDefault[F].map(_.some)
+  val targetName: F[Option[String]]       = strDefault[F].map(_.some)
   val slitCount: F[Option[Int]]           = intDefault[F].map(_.some)
   val slitDuration: F[Option[Double]]     = doubleDefault[F].map(_.some)
   val exposureDuration: F[Option[Double]] = doubleDefault[F].map(_.some)
 }
 
-object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
+object GhostKeywordsReader extends GhostConfigUtil with GhostLUT with GhostTargetName {
   val readMode2String: GhostReadNoiseGain => String = {
     case GhostReadNoiseGain.SLOW_LOW   => "Slow"
     case GhostReadNoiseGain.MEDIUM_LOW => "Medium"
@@ -80,21 +86,6 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
     case ResolutionMode.GhostStandard => "Standard"
     case ResolutionMode.GhostHigh     => "High"
     case ResolutionMode.GhostPRV      => "PRV"
-  }
-
-  def targetModeFromNames(
-    srifu1: Option[String],
-    srifu2: Option[String],
-    hrifu1: Option[String],
-    hrifu2: Option[String]
-  ): Option[String] = (srifu1, srifu2, hrifu1, hrifu2) match {
-    case (Some(_), Some("Sky"), None, None)       => "SRIFU1 Target, SRIFU2 Sky".some
-    case (Some("Sky"), Some(_), None, None)       => "SRIFU1 Sky, SRIFU2 Target".some
-    case (Some(_), Some(_), None, None)           => "Dual Target".some
-    case (Some(_), None, None, None)              => "Single Target".some
-    case (None, None, Some(_), Some("Sky"))       => "HRIFU Target, Sky".some
-    case (None, None, Some(_), Some("Sky (PRV)")) => "HRIFU Target, Sky (PRV)".some
-    case _                                        => None
   }
 
   def exposureTime(
@@ -193,6 +184,8 @@ object GhostKeywordsReader extends GhostConfigUtil with GhostLUT {
       val resolutionMode: F[Option[String]]   = rm.toOption.map(resolutionMode2String).pure[F]
       val targetMode: F[Option[String]]       =
         targetModeFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
+      val targetName: F[Option[String]]       =
+        targetNameFromNames(srifu1Name, srifu2Name, hrifu1Name, hrifu2Name).pure[F]
       val slitCount: F[Option[Int]]           =
         if (isScience(obsType)) {
           conditions.get.map { c =>

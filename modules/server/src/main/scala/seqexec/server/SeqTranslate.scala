@@ -174,7 +174,6 @@ object SeqTranslate {
 
         extractStatus(config) match {
           case StepState.Pending if i >= nextToRun =>
-            println(s"Step $i is pending and next to run is $lastStep")
             SequenceGen.PendingStepGen(
               i,
               dataId,
@@ -671,6 +670,7 @@ object SeqTranslate {
           )
         case Instrument.Ghost                    =>
           GhostHeader.header[F](systemss.ghost.gdsClient,
+                                ObsKeywordReader[F](config, site),
                                 systemss.tcsKeywordReader,
                                 GhostKeywordsReader[F](config, conditionsRef)
           )
