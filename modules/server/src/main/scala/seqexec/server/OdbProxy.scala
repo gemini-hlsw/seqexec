@@ -12,7 +12,6 @@ import edu.gemini.seqexec.odb.SeqExecService
 import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.core.Peer
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
-import edu.gemini.wdba.xmlrpc.ServiceException
 import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs._
@@ -159,13 +158,13 @@ object OdbProxy {
         L.debug("ODB event observationStop sent")
 
     override def queuedSequences: F[List[Observation.Id]] =
-      L.debug("Polling ODB for queued sequences") *>
+      L.trace("Polling ODB for queued sequences") *>
         F.delay(
           xmlrpcClient
             .getObservations(sessionName)
             .toList
             .flatMap(id => Observation.Id.fromString(id).toList)
-        ).flatTap(ids => L.debug(s"ODB poll returned: $ids"))
+        ).flatTap(ids => L.trace(s"ODB poll returned: $ids"))
           .recoverWith { case e =>
             e.printStackTrace()
             // We'll survive exceptions at the level of connecting to the wdba

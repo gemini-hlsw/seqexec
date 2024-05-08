@@ -835,15 +835,14 @@ object SeqexecEngine {
         .fixedDelay[F](fd)
         .evalMap(_ => systems.odb.queuedSequences)
         .flatMap { x =>
-          println(x)
           Stream.emit(
             Event
               .getState[F, EngineState[F], SeqEvent] { st =>
                 Stream
                   .eval(
-                    Logger[F].info("pre refresh") *> odbLoader
+                    Logger[F].trace("pre refresh") *> odbLoader
                       .refreshSequenceList(x, st)
-                      .flatTap(_ => Logger[F].info("post refresh"))
+                      .flatTap(_ => Logger[F].trace("post refresh"))
                   )
                   .flatMap(Stream.emits)
                   .some
