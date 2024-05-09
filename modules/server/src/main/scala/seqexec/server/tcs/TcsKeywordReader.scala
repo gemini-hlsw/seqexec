@@ -81,6 +81,9 @@ trait TcsKeywordsReader[F[_]] {
 
   def date: F[String]
 
+  // Combination of date and UT
+  def dateUT: F[String]
+
   def m2Baffle: F[String]
 
   def m2CentralBaffle: F[String]
@@ -241,6 +244,10 @@ object DummyTcsKeywordsReader {
     override def date: F[String] =
       LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
 
+    // Combination of date and UT
+    def dateUT: F[String] =
+      LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).pure[F]
+
     override def m2Baffle: F[String] = "OUT".pure[F]
 
     override def m2CentralBaffle: F[String] = "OUT".pure[F]
@@ -370,6 +377,11 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def ut: F[String] = sys.ut.safeValOrDefault
 
     override def date: F[String] = sys.date.safeValOrDefault
+
+    // date and time come on ISO 8601 formmatt but with just one decimal
+    override def dateUT: F[String] = (sys.date, sys.ut).mapN { case (d, t) =>
+      s"${d}T${t}00"
+    }.safeValOrDefault
 
     override def m2Baffle: F[String] = sys.m2Baffle.safeValOrDefault
 
