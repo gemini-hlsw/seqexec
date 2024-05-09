@@ -459,29 +459,6 @@ trait TcsEpics[F[_]] {
     case G4 => g4GuideConfig
   }
 
-  def p2ara: F[Double]
-
-  def p2adec: F[Double]
-
-  def p2arv: F[Double]
-
-  def p2awavel: F[Double]
-
-  def p2aepoch: F[String]
-
-  def p2aequin: F[String]
-
-  def p2aframe: F[String]
-
-  def p2aobject: F[String]
-
-  def p2apmdec: F[Double]
-
-  def p2apmra: F[Double]
-
-  def p2aparal: F[Double]
-
-  def p2observeB: F[Double]
 }
 
 final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String, String])

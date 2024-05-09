@@ -22,19 +22,7 @@ object Igrins2Header {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords[F] {
           List(
-            buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT),
-            buildDouble(tcsKeywordsReader.p2ara, KeywordName.P2ARA),
-            buildDouble(tcsKeywordsReader.p2adec, KeywordName.P2ADEC),
-            buildDouble(tcsKeywordsReader.p2arv, KeywordName.P2ARV),
-            buildDouble(tcsKeywordsReader.p2awavel, KeywordName.P2AWAVEL),
-            buildString(tcsKeywordsReader.p2aepoch, KeywordName.P2AEPOCH),
-            buildString(tcsKeywordsReader.p2aequin, KeywordName.P2AEQUIN),
-            buildString(tcsKeywordsReader.p2aobject, KeywordName.P2AOBJEC),
-            buildDouble(tcsKeywordsReader.p2apmdec, KeywordName.P2APMDEC),
-            buildDouble(tcsKeywordsReader.p2apmra, KeywordName.P2APMRA),
-            buildDouble(tcsKeywordsReader.p2aparal, KeywordName.P2APARAL),
-            buildDouble(tcsKeywordsReader.defocusA, KeywordName.P2FOCUS),
-            buildDouble(tcsKeywordsReader.freq, KeywordName.P2FREQ)
+            buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT)
           )
         }
         ks.flatMap(gdsClient.setKeywords(id, _))
