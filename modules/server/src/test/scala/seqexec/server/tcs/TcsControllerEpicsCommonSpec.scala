@@ -79,6 +79,7 @@ class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester 
       gnirsPort = 0,
       gpiPort = 0,
       gsaoiPort = 1,
+      igrins2Port = 1,
       nifsPort = 0,
       niriPort = 0
     )

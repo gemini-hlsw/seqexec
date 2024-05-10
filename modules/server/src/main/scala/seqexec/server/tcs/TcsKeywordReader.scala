@@ -81,6 +81,9 @@ trait TcsKeywordsReader[F[_]] {
 
   def date: F[String]
 
+  // Combination of date and UT
+  def dateUT: F[String]
+
   def m2Baffle: F[String]
 
   def m2CentralBaffle: F[String]
@@ -171,6 +174,8 @@ trait TcsKeywordsReader[F[_]] {
 
   def ghostInstPort: F[Int]
 
+  def igrins2InstPort: F[Int]
+
   def crFollow: F[Option[CRFollow]]
 
 }
@@ -238,6 +243,10 @@ object DummyTcsKeywordsReader {
 
     override def date: F[String] =
       LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE).pure[F]
+
+    // Combination of date and UT
+    def dateUT: F[String] =
+      LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).pure[F]
 
     override def m2Baffle: F[String] = "OUT".pure[F]
 
@@ -323,6 +332,8 @@ object DummyTcsKeywordsReader {
 
     override def ghostInstPort: F[Int] = 0.pure[F]
 
+    override def igrins2InstPort: F[Int] = 0.pure[F]
+
     override def crFollow: F[Option[CRFollow]] = CRFollow.Off.some.pure[F].widen[Option[CRFollow]]
 
     override def pOffset: F[Double] = 0.0.pure[F]
@@ -332,6 +343,7 @@ object DummyTcsKeywordsReader {
     override def raOffset: F[Double] = 0.0.pure[F]
 
     override def decOffset: F[Double] = 0.0.pure[F]
+
   }
 
   def apply[F[_]: Applicative]: TcsKeywordsReader[F] = new DummyTcsKeywordReaderImpl[F]
@@ -365,6 +377,11 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def ut: F[String] = sys.ut.safeValOrDefault
 
     override def date: F[String] = sys.date.safeValOrDefault
+
+    // date and time come on ISO 8601 formmatt but with just one decimal
+    override def dateUT: F[String] = (sys.date, sys.ut).mapN { case (d, t) =>
+      s"${d}T${t}00"
+    }.safeValOrDefault
 
     override def m2Baffle: F[String] = sys.m2Baffle.safeValOrDefault
 
@@ -531,6 +548,8 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
 
     override def ghostInstPort: F[Int] = sys.ghostPort.safeValOrDefault
 
+    override def igrins2InstPort: F[Int] = sys.igrins2Port.safeValOrDefault
+
     override def crFollow: F[Option[CRFollow]] =
       sys.crTrackingFrame
         .map(TrackingFrame.fromString)
@@ -579,5 +598,6 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
         ipa <- OptionT.liftF(sys.instrPA.map(Degrees(_)))
       } yield -1 * p * ipa.sin + q * ipa.cos
     ).map(_.toArcseconds).value.safeValOrDefault
+
   }
 }

@@ -140,6 +140,17 @@ object operations {
       }
   }
 
+  private val Igrins2SupportedOperations = new SupportedOperations {
+    def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
+      level: OperationLevelType[L]
+    ): List[Operations[L]] =
+      level match {
+        case ObservationLevel =>
+          List(Operations.AbortObservation)
+        case _                => Nil
+      }
+  }
+
   private val NilSupportedOperations = new SupportedOperations {
     def apply[L <: OperationLevel](isObservePaused: Boolean, isMultiLevel: Boolean)(implicit
       level: OperationLevelType[L]
@@ -154,14 +165,15 @@ object operations {
   }
 
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
-    F2    -> F2SupportedOperations,
-    GmosS -> GmosSupportedOperations,
-    GmosN -> GmosSupportedOperations,
-    Gnirs -> GnirsSupportedOperations,
-    Niri  -> NiriSupportedOperations,
-    Nifs  -> NifsSupportedOperations,
-    Gsaoi -> GsaoiSupportedOperations,
-    Ghost -> GhostSupportedOperations
+    F2      -> F2SupportedOperations,
+    GmosS   -> GmosSupportedOperations,
+    GmosN   -> GmosSupportedOperations,
+    Gnirs   -> GnirsSupportedOperations,
+    Niri    -> NiriSupportedOperations,
+    Nifs    -> NifsSupportedOperations,
+    Gsaoi   -> GsaoiSupportedOperations,
+    Ghost   -> GhostSupportedOperations,
+    Igrins2 -> Igrins2SupportedOperations
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {

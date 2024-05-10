@@ -303,6 +303,8 @@ trait TcsEpics[F[_]] {
 
   def ghostPort: F[Int]
 
+  def igrins2Port: F[Int]
+
   def aoGuideStarX: F[Double]
 
   def aoGuideStarY: F[Double]
@@ -1014,9 +1016,8 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
 
   override def aoFoldPosition: F[String] = safeAttributeF(tcsState.getStringAttribute("aoName"))
 
-  override def defocusB: F[Double] = safeAttributeSDoubleF(
-    tcsState.getDoubleAttribute("dtelFocusB")
-  )
+  override def defocusB: F[Double] =
+    safeAttributeSDoubleF(tcsState.getDoubleAttribute("dtelFocusB"))
 
   private val useAoAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum(
     "useAo",
@@ -1135,14 +1136,15 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   private def instPort(name: String): F[Int] =
     safeAttributeSIntF(tcsState.getIntegerAttribute(s"${name}Port"))
 
-  override def gsaoiPort: F[Int] = instPort("gsaoi")
-  override def gpiPort: F[Int]   = instPort("gpi")
-  override def f2Port: F[Int]    = instPort("f2")
-  override def niriPort: F[Int]  = instPort("niri")
-  override def gnirsPort: F[Int] = instPort("nirs")
-  override def nifsPort: F[Int]  = instPort("nifs")
-  override def gmosPort: F[Int]  = instPort("gmos")
-  override def ghostPort: F[Int] = instPort("ghost")
+  override def gsaoiPort: F[Int]   = instPort("gsaoi")
+  override def gpiPort: F[Int]     = instPort("gpi")
+  override def f2Port: F[Int]      = instPort("f2")
+  override def niriPort: F[Int]    = instPort("niri")
+  override def gnirsPort: F[Int]   = instPort("nirs")
+  override def nifsPort: F[Int]    = instPort("nifs")
+  override def gmosPort: F[Int]    = instPort("gmos")
+  override def ghostPort: F[Int]   = instPort("ghost")
+  override def igrins2Port: F[Int] = instPort("igrins2")
 
   override def aoGuideStarX: F[Double] = safeAttributeSDoubleF(tcsState.getDoubleAttribute("aogsx"))
 
@@ -1349,6 +1351,7 @@ final class TcsEpicsImpl[F[_]: Async](epicsService: CaService, tops: Map[String,
   override val g3GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g3", tcsState)
 
   override val g4GuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfigImpl("g4", tcsState)
+
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {

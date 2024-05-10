@@ -2183,6 +2183,12 @@
             <description>GHOST Port</description>
             <top>ag</top>
         </attribute>
+        <attribute name="igrins2Port">
+            <channel>port:igrins2.VAL</channel>
+            <type>INTEGER</type>
+            <description>IGRINS2 Port</description>
+            <top>ag</top>
+        </attribute>
     </Status>
     <Status name="pwfs1state">
         <top>pwfs1</top>

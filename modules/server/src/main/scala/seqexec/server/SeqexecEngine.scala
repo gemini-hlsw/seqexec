@@ -838,15 +838,24 @@ object SeqexecEngine {
           Stream.emit(
             Event
               .getState[F, EngineState[F], SeqEvent] { st =>
-                Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
+                Stream
+                  .eval(
+                    Logger[F].trace("pre refresh") *> odbLoader
+                      .refreshSequenceList(x, st)
+                      .flatTap(_ => Logger[F].trace("post refresh"))
+                  )
+                  .flatMap(Stream.emits)
+                  .some
               }
               .asRight
           )
         }
         .handleErrorWith {
           case e: SeqFailure =>
+            e.printStackTrace()
             Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
           case e             =>
+            e.printStackTrace()
             Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }

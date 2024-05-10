@@ -197,6 +197,9 @@ object StepItems {
     def deckerName: Option[String] =
       instrumentDeckerO.getOption(s)
 
+    def fowlerSamples: Option[Int] =
+      instrumentFowlerSamplesO.getOption(s)
+
     def imagingMirrorName: Option[String] =
       instrumentImagingMirrorO.getOption(s)
   }

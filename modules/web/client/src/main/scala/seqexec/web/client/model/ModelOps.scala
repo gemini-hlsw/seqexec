@@ -111,19 +111,20 @@ object ModelOps {
     case object Decker        extends InstrumentProperties
     case object ImagingMirror extends InstrumentProperties
     case object ReadMode      extends InstrumentProperties
+    case object FowlerSamples extends InstrumentProperties
   }
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
 
     def displayItems: Set[InstrumentProperties] =
       i match {
-        case Instrument.F2    =>
+        case Instrument.F2      =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Filter,
               InstrumentProperties.Offsets,
               InstrumentProperties.FPU
           )
-        case Instrument.Nifs  =>
+        case Instrument.Nifs    =>
           Set(
             InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
@@ -132,21 +133,21 @@ object ModelOps {
             InstrumentProperties.FPU,
             InstrumentProperties.ImagingMirror
           )
-        case Instrument.GmosS =>
+        case Instrument.GmosS   =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Filter,
               InstrumentProperties.Offsets,
               InstrumentProperties.Disperser,
               InstrumentProperties.FPU
           )
-        case Instrument.GmosN =>
+        case Instrument.GmosN   =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Filter,
               InstrumentProperties.Offsets,
               InstrumentProperties.Disperser,
               InstrumentProperties.FPU
           )
-        case Instrument.Gnirs =>
+        case Instrument.Gnirs   =>
           Set(
             InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
@@ -155,26 +156,31 @@ object ModelOps {
             InstrumentProperties.Decker,
             InstrumentProperties.FPU
           )
-        case Instrument.Gpi   =>
+        case Instrument.Gpi     =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Filter,
               InstrumentProperties.ObservingMode,
               InstrumentProperties.Disperser
           )
-        case Instrument.Niri  =>
+        case Instrument.Niri    =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Offsets,
               InstrumentProperties.Filter,
               InstrumentProperties.Camera
           )
-        case Instrument.Gsaoi =>
+        case Instrument.Gsaoi   =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Offsets,
               InstrumentProperties.Filter,
               InstrumentProperties.ReadMode
           )
-        case Instrument.Ghost => Set.empty
-        case _                =>
+        case Instrument.Ghost   => Set.empty
+        case Instrument.Igrins2 =>
+          Set(InstrumentProperties.Exposure,
+              InstrumentProperties.Offsets,
+              InstrumentProperties.FowlerSamples
+          )
+        case _                  =>
           Set(InstrumentProperties.Exposure,
               InstrumentProperties.Filter,
               InstrumentProperties.Offsets,
