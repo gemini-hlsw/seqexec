@@ -103,8 +103,7 @@ final case class Igrins2[F[_]: Logger: Async](
         .realCountdownWithObsStage[F](
           totalExp,
           progress
-            .map(Seconds(_) + Seconds(1.5))
-            .flatTap(t => Stream.eval(Logger[F].info(t.toString))), // 1 experimentally determined
+            .map(Seconds(_) + Seconds(1.5)),
           (controller.dcIsPreparing,
            controller.dcIsAcquiring,
            controller.dcIsReadingOut,

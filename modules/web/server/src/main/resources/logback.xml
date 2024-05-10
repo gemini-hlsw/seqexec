@@ -18,7 +18,7 @@
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>/gemsoft/var/log/seqexec-ng/seqexec-ng.log</file>
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                <fileNamePattern>/home/softawre/logs/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <fileNamePattern>/gemsoft/var/log/seqexec-ng/seqexec-ng.%d{yyyy-MM-dd}.log</fileNamePattern>
                 <maxHistory>366</maxHistory>
                 <totalSizeCap>8GB</totalSizeCap>
             </rollingPolicy>

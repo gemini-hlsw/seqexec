@@ -32,6 +32,7 @@ import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import squants.space.Millimeters
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used
@@ -707,11 +708,11 @@ object TcsControllerEpicsCommon {
         setPwfs2(Iso.id)(subsystems, current.pwfs2.detector, tcs.gds.pwfs2.detector),
         setOiwfs(Iso.id)(subsystems, current.oiwfs.detector, tcs.gds.oiwfs.detector),
         setScienceFold(Iso.id)(subsystems, current, tcs.agc.sfPos),
-        setHrPickup(Iso.id)(subsystems, current, tcs.agc)
-        // setInstrumentDefocus(Iso.id)(subsystems,
-        //                              current.defocusB,
-        //                              tcs.tc.defocusB.getOrElse(Millimeters(0))
-        // )
+        setHrPickup(Iso.id)(subsystems, current, tcs.agc),
+        setInstrumentDefocus(Iso.id)(subsystems,
+                                     current.defocusB,
+                                     tcs.tc.defocusB.getOrElse(Millimeters(0))
+        )
       ).flattenOption
 
     def guideOn(

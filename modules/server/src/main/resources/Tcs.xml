@@ -167,14 +167,14 @@
             <record>aoFlatten</record>
             <description>Flatten AO light path</description>
         </command>
-        <!--command name="instrumentDefocus">
+        <command name="instrumentDefocus">
             <description>Instrument defocus</description>
             <parameter name="dtelFocus">
                 <channel>dtelFocus.B</channel>
                 <type>DOUBLE</type>
                 <description>Defocus offset B in mm</description>
             </parameter>
-        </command-->
+        </command>
         <command name="aoFollow">
             <description>GAOS probe following</description>
             <parameter name="followState">
@@ -976,11 +976,11 @@
     </Status>
     <Status name="tcsstate">
         <top>tcs</top>
-        <!--attribute name="dtelFocusB">
+        <attribute name="dtelFocusB">
             <channel>dtelFocus.VALB</channel>
             <type>DOUBLE</type>
             <description>Instrument defocus</description>
-        </attribute-->
+        </attribute>
         <attribute name="crfollow">
             <channel>crFollow.VAL</channel>
             <type>INTEGER</type>
@@ -1007,16 +1007,6 @@
             <type>STRING</type>
             <description>ISS port 1 label</description>
             <top>ag</top>
-        </attribute>
-        <attribute name="dtelFocusA">
-            <channel>dtelFocus.VALA</channel>
-            <type>DOUBLE</type>
-            <description>Instrument defocus</description>
-        </attribute>
-        <attribute name="p2observeB">
-            <channel>pwfs2Observe.VALB</channel>
-            <type>STRING</type>
-            <description>Instrument defocus</description>
         </attribute>
         <!--
         <attribute name="ngs1Follow">
@@ -1809,6 +1799,56 @@
             <channel>sad:pwfs2ObjectName.VAL</channel>
             <type>STRING</type>
             <description>P2 Object Name</description>
+        </attribute>
+        <attribute name="p2ara">
+            <channel>sad:pwfs2RA.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 RA</description>
+        </attribute>
+        <attribute name="p2arv">
+            <channel>sad:pwfs2RV.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 Radial Velocity</description>
+        </attribute>
+        <attribute name="p2adec">
+            <channel>sad:pwfs2Dec.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 DEC</description>
+        </attribute>
+        <attribute name="p2aparal">
+            <channel>sad:pwfs2Parallax.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 Parallax</description>
+        </attribute>
+        <attribute name="p2awavel">
+            <channel>sad:pwfs2Wavelength.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 Wavelength</description>
+        </attribute>
+        <attribute name="p2aequin">
+            <channel>sad:pwfs2Equinox.VAL</channel>
+            <type>STRING</type>
+            <description>P2 Equinox</description>
+        </attribute>
+        <attribute name="p2aframe">
+            <channel>sad:pwfs2InputFrame.VAL</channel>
+            <type>STRING</type>
+            <description>P2 Frame</description>
+        </attribute>
+        <attribute name="p2aepoch">
+            <channel>sad:pwfs2Epoch.VAL</channel>
+            <type>STRING</type>
+            <description>P2 Epoch</description>
+        </attribute>
+        <attribute name="p2apmdec">
+            <channel>sad:pwfs2PMDec.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 Proper motion Dec</description>
+        </attribute>
+        <attribute name="p2apmra">
+            <channel>sad:pwfs2PMRA.VAL</channel>
+            <type>DOUBLE</type>
+            <description>P2 Proper motion RA</description>
         </attribute>
         <attribute name="oiapmdec">
             <channel>sad:oiwfsPMDec.VAL</channel>

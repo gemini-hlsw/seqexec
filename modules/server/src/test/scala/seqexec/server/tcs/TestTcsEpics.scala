@@ -451,8 +451,6 @@ case class TestTcsEpics[F[_]: Async](
 
   override def inPosition: F[String] = state.get.map(_.inPosition)
 
-  override def defocusA: F[Double] = state.get.map(_.defocusA)
-
   override def defocusB: F[Double] = state.get.map(_.defocusB)
 
   override def agInPosition: F[Double] = state.get.map(_.agInPosition)
@@ -776,30 +774,6 @@ case class TestTcsEpics[F[_]: Async](
   override val g4GuideConfig: ProbeGuideConfig[F] =
     probeGuideConfigGetters(state, State.g4GuideConfig.asGetter)
 
-  def p2adec: F[Double] = state.get.map(_.p2adec)
-
-  def p2ara: F[Double] = state.get.map(_.p2ara)
-
-  def p2arv: F[Double] = state.get.map(_.p2arv)
-
-  def p2awavel: F[Double] = state.get.map(_.p2awavel)
-
-  def p2aepoch: F[String] = state.get.map(_.p2aepoch)
-
-  def p2aequin: F[String] = state.get.map(_.p2aequin)
-
-  def p2aframe: F[String] = state.get.map(_.p2aframe)
-
-  def p2aobject: F[String] = state.get.map(_.p2aobject)
-
-  def p2apmdec: F[Double] = state.get.map(_.p2apmdec)
-
-  def p2apmra: F[Double] = state.get.map(_.p2apmra)
-
-  def p2aparal: F[Double] = state.get.map(_.p2aparal)
-
-  def p2observeB: F[Double] = state.get.map(_.p2observeB)
-
   private def probeGuideConfigCmd(
     cmdL:      Lens[State, TestEpicsCommand4.State[String, String, String, String]],
     statusL:   Lens[State, ProbeGuideConfigVals],
@@ -1004,7 +978,6 @@ object TestTcsEpics {
     g4GuideConfig:             ProbeGuideConfigVals,
     aoCorrect:                 String,
     aoGains:                   Int,
-    defocusA:                  Double,
     defocusB:                  Double,
     m1GuideCmd:                TestEpicsCommand1.State[String],
     m2GuideCmd:                TestEpicsCommand1.State[String],
@@ -1048,19 +1021,7 @@ object TestTcsEpics {
     odgw1FollowCmd:            TestEpicsCommand1.State[String],
     odgw2FollowCmd:            TestEpicsCommand1.State[String],
     odgw3FollowCmd:            TestEpicsCommand1.State[String],
-    odgw4FollowCmd:            TestEpicsCommand1.State[String],
-    p2ara:                     Double,
-    p2adec:                    Double,
-    p2arv:                     Double,
-    p2awavel:                  Double,
-    p2aepoch:                  String,
-    p2aequin:                  String,
-    p2aframe:                  String,
-    p2aobject:                 String,
-    p2apmra:                   Double,
-    p2apmdec:                  Double,
-    p2aparal:                  Double,
-    p2observeB:                Double
+    odgw4FollowCmd:            TestEpicsCommand1.State[String]
   )
 
   @Lenses
@@ -1393,7 +1354,6 @@ object TestTcsEpics {
     g4GuideConfig = ProbeGuideConfigVals.default,
     aoCorrect = "Off",
     aoGains = 0,
-    defocusA = 0.0,
     defocusB = 0.0,
     m1GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
     m2GuideCmd = TestEpicsCommand1.State[String](mark = false, ""),
@@ -1444,19 +1404,7 @@ object TestTcsEpics {
     odgw1FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
     odgw2FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
     odgw3FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
-    odgw4FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off"),
-    p2ara = 0,
-    p2adec = 0,
-    p2arv = 0,
-    p2awavel = 0,
-    p2aepoch = "J2000",
-    p2aequin = "000",
-    p2aframe = "FK5",
-    p2aobject = "GAIA 123",
-    p2apmdec = 0,
-    p2apmra = 0,
-    p2aparal = 0,
-    p2observeB = 0
+    odgw4FollowCmd = TestEpicsCommand1.State[String](mark = false, "Off")
   )
 
   def build[F[_]: Async](baseState: TestTcsEpics.State): F[TestTcsEpics[F]] =
