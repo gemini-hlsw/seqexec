@@ -23,7 +23,8 @@ object Igrins2Header {
         val ks = GdsInstrument.bundleKeywords[F] {
           List(
             buildInt32(tcsKeywordsReader.igrins2InstPort, KeywordName.INPORT),
-            buildString(tcsKeywordsReader.dateUT, KeywordName.DATE_OBS)
+            buildString(tcsKeywordsReader.dateUT, KeywordName.DATE_OBS),
+            buildString(s"$id.fits".pure[F], KeywordName.ORIGNAME)
           )
         }
         ks.flatMap(gdsClient.setKeywords(id, _))
