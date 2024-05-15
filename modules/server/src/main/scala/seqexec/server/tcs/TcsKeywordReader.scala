@@ -4,6 +4,7 @@
 package seqexec.server.tcs
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import cats._
@@ -246,7 +247,10 @@ object DummyTcsKeywordsReader {
 
     // Combination of date and UT
     def dateUT: F[String] =
-      LocalDate.of(2019, 1, 1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME).pure[F]
+      LocalDateTime
+        .of(2019, 1, 1, 0, 0, 0)
+        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        .pure[F]
 
     override def m2Baffle: F[String] = "OUT".pure[F]
 
@@ -380,7 +384,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
 
     // date and time come on ISO 8601 formmatt but with just one decimal
     override def dateUT: F[String] = (sys.date, sys.ut).mapN { case (d, t) =>
-      s"${d}T${t}00"
+      s"${d}T${t}"
     }.safeValOrDefault
 
     override def m2Baffle: F[String] = sys.m2Baffle.safeValOrDefault

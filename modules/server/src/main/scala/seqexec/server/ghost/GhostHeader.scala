@@ -62,7 +62,8 @@ object GhostHeader {
                   .orDefault
               ),
               KeywordName.OBJECT
-            )
+            ),
+            buildString(s"$id.fits".pure[F], KeywordName.ORIGNAME)
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

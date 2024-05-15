@@ -2667,6 +2667,9 @@ object KeywordName {
   /** @group Constructors */
   case object DATEEND extends KeywordName("DATEEND", "DATE_END")
 
+  /** @group Constructors */
+  case object ORIGNAME extends KeywordName("ORIGNAME", "ORIGNAME")
+
   /** All members of KeywordName, in canonical order. */
   val all: List[KeywordName] =
     List(
@@ -3550,7 +3553,8 @@ object KeywordName {
       RESOLUT,
       TEXPTIME,
       TARGET1,
-      TARGET2
+      TARGET2,
+      ORIGNAME
     )
 
   /** Select the member of KeywordName with the given tag, if any. */
