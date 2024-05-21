@@ -460,7 +460,7 @@ object GhostConfig {
           )
           .some
 
-      case (NoTarget, _, Target(t), NoTarget, _, NoTarget)    =>
+      case (NoTarget, _, Target(t), NoTarget, _, NoTarget) =>
         srifu2Coords.map(
           StandardResolutionMode
             .SingleTarget(
@@ -481,6 +481,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
+
       case (Target(t1), _, Target(t2), NoTarget, _, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
@@ -504,6 +505,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
+
       case (Target(t), _, SkyPosition, NoTarget, _, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
@@ -549,6 +551,7 @@ object GhostConfig {
               svCameraOverride
             )
         )
+
       case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
