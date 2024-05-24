@@ -418,7 +418,9 @@ object GhostConfig {
     val hifu2 = determineType(hrifu2Name)
 
     val extracted = (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2) match {
-      case (Target(t), Some(TargetType.Sidereal), NoTarget, NoTarget, _, NoTarget) =>
+      // SR Single Sidereal
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (Target(t), Some(TargetType.Sidereal), NoTarget, NoTarget, None, NoTarget)    =>
         srifu1Coords.map(
           StandardResolutionMode
             .SingleTarget(
@@ -440,7 +442,9 @@ object GhostConfig {
             )
         )
 
-      case (Target(t), Some(TargetType.NonSidereal), NoTarget, NoTarget, _, NoTarget) =>
+      // SR Single Non-Sidereal
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (Target(t), Some(TargetType.NonSidereal), NoTarget, NoTarget, None, NoTarget) =>
         StandardResolutionMode
           .NonSiderealTarget(
             obsType,
@@ -460,29 +464,9 @@ object GhostConfig {
           )
           .some
 
-      case (NoTarget, _, Target(t), NoTarget, _, NoTarget) =>
-        srifu2Coords.map(
-          StandardResolutionMode
-            .SingleTarget(
-              obsType,
-              obsClass,
-              blueConfig,
-              redConfig,
-              baseCoords,
-              fiberAgitator1,
-              fiberAgitator2,
-              t,
-              _,
-              userTargets,
-              resolutionMode,
-              conditions,
-              scienceMagnitude,
-              guideCameraOverride,
-              svCameraOverride
-            )
-        )
-
-      case (Target(t1), _, Target(t2), NoTarget, _, NoTarget) =>
+      // SR Dual Target sidereal
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (Target(t1), Some(TargetType.Sidereal), Target(t2), NoTarget, None, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .DualTarget(
@@ -506,7 +490,9 @@ object GhostConfig {
             )
         )
 
-      case (Target(t), _, SkyPosition, NoTarget, _, NoTarget) =>
+      // SR Target + Sky
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (Target(t), _, SkyPosition, NoTarget, None, NoTarget)                         =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .TargetPlusSky(
@@ -529,7 +515,9 @@ object GhostConfig {
             )
         )
 
-      case (SkyPosition, _, Target(t), NoTarget, Some(TargetType.Sidereal), NoTarget) =>
+      // SR Sky + Target
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (SkyPosition, Some(TargetType.Sidereal), Target(t), NoTarget, None, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .SkyPlusTarget(
@@ -552,7 +540,9 @@ object GhostConfig {
             )
         )
 
-      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition) =>
+      // HR Sidereal
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition)    =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
             .TargetPlusSky(
@@ -575,7 +565,9 @@ object GhostConfig {
             )
         )
 
-      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _) =>
+      // HR Non-Sidereal
+      // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _)           =>
         HighResolutionMode
           .NonSidereal(
             obsType,
@@ -596,10 +588,16 @@ object GhostConfig {
           .some
 
       case _ =>
+        // This means we have an unsupported combination of targets coming from the OT.
+        // Either we missed a requiremnt or we have a creative user
         none
     }
 
-    extracted.toRight(ContentError("Response does not constitute a valid GHOST configuration"))
+    extracted.toRight(
+      ContentError(
+        s"Unsupported GHOST configuration $sifu1, $srifu1Type, $sifu2, $hifu1, $hrifu1Type, $hifu2"
+      )
+    )
   }
 
   implicit val eq: Eq[GhostConfig] = Eq.instance {
