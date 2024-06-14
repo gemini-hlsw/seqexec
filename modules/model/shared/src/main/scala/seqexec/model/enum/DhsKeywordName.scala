@@ -52,8 +52,8 @@ object DhsKeywordName {
   /** @group Typeclass Instances */
   implicit val DhsKeywordNameEnumerated: Enumerated[DhsKeywordName] =
     new Enumerated[DhsKeywordName] {
-      def all = DhsKeywordName.all
-      def tag(a: DhsKeywordName) = a.tag
+      def all                                               = DhsKeywordName.all
+      def tag(a: DhsKeywordName)                            = a.tag
       override def unsafeFromTag(s: String): DhsKeywordName =
         DhsKeywordName.unsafeFromTag(s)
     }

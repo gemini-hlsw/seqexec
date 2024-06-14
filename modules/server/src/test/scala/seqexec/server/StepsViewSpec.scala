@@ -312,16 +312,11 @@ class StepsViewSpec extends TestCommon with Matchers with NonImplicitAssertions 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q,
-                   s0,
-                   seqexecEngine.configSystem(q,
-                                              seqObsId1,
-                                              Observer(""),
-                                              UserDetails("", ""),
-                                              1,
-                                              TCS,
-                                              clientId
-                   )
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine
+            .configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId)
         )
     } yield inside(
       sf.flatMap(
@@ -351,16 +346,11 @@ class StepsViewSpec extends TestCommon with Matchers with NonImplicitAssertions 
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q,
-                   s0,
-                   seqexecEngine.configSystem(q,
-                                              seqObsId1,
-                                              Observer(""),
-                                              UserDetails("", ""),
-                                              1,
-                                              TCS,
-                                              clientId
-                   )
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine
+            .configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId)
         )
     } yield inside(
       sf.flatMap(

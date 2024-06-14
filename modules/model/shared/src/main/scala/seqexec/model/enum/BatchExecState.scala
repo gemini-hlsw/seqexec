@@ -14,7 +14,7 @@ sealed trait BatchExecState extends Product with Serializable {
 }
 
 object BatchExecState {
-  case object Idle extends BatchExecState // Queue is not running, and has unfinished sequences.
+  case object Idle      extends BatchExecState // Queue is not running, and has unfinished sequences.
   case object Running
       extends BatchExecState // Queue was commanded to run, and at least one sequence is running.
   case object Waiting

@@ -273,7 +273,7 @@ object Gnirs {
     }
 
   object specifics extends InstrumentSpecifics {
-    override val instrument: Instrument = Instrument.Gnirs
+    override val instrument: Instrument                     = Instrument.Gnirs
     override def sfName(config: CleanConfig): LightSinkName = LightSinkName.Gnirs
   }
 
