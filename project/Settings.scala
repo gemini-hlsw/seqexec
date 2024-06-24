@@ -61,8 +61,8 @@ object Settings {
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "5.2.0"
     val munitVersion           = "1.0.0-RC1"
-    val munitDisciplineVersion = "1.0.9"
-    val munitCatsEffectVersion = "2.0.0"
+    val munitDisciplineVersion = "2.0.0"
+    val munitCatsEffectVersion = "2.0.0-M5"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
