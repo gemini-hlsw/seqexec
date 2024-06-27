@@ -220,16 +220,11 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q,
-                   s0,
-                   seqexecEngine.configSystem(q,
-                                              seqObsId1,
-                                              Observer(""),
-                                              UserDetails("", ""),
-                                              1,
-                                              TCS,
-                                              clientId
-                   )
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine
+            .configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId)
         )
     } yield inside(
       sf.flatMap(
@@ -259,16 +254,11 @@ class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAsserti
     (for {
       q  <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <-
-        advanceOne(q,
-                   s0,
-                   seqexecEngine.configSystem(q,
-                                              seqObsId1,
-                                              Observer(""),
-                                              UserDetails("", ""),
-                                              1,
-                                              TCS,
-                                              clientId
-                   )
+        advanceOne(
+          q,
+          s0,
+          seqexecEngine
+            .configSystem(q, seqObsId1, Observer(""), UserDetails("", ""), 1, TCS, clientId)
         )
     } yield inside(
       sf.flatMap(

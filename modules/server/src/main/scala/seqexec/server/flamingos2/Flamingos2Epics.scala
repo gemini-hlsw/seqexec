@@ -27,18 +27,18 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
       epicsService.getCommandSender("flamingos2::dcconfig")
     )
 
-    private val biasMode = cs.map(_.getString("biasMode"))
+    private val biasMode                = cs.map(_.getString("biasMode"))
     def setBiasMode(v: String): F[Unit] = setParameter(biasMode, v)
 
-    private val numReads = cs.map(_.getInteger("numReads"))
+    private val numReads                 = cs.map(_.getInteger("numReads"))
     def setNumReads(v: Integer): F[Unit] = setParameter(numReads, v)
 
-    private val readoutMode = cs.map(_.getString("readoutMode"))
+    private val readoutMode                = cs.map(_.getString("readoutMode"))
     def setReadoutMode(v: String): F[Unit] = setParameter(readoutMode, v)
 
     private val exposureTime: Option[CaParameter[java.lang.Double]] =
       cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): F[Unit] = setParameter[F, java.lang.Double](exposureTime, v)
+    def setExposureTime(v: Double): F[Unit]                         = setParameter[F, java.lang.Double](exposureTime, v)
 
   }
 
@@ -59,7 +59,7 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
       epicsService.getCommandSender("flamingos2::observe")
     )
 
-    private val label = cs.map(_.getString("label"))
+    private val label                = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
@@ -74,7 +74,7 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
       epicsService.getCommandSender("flamingos2::config")
     )
 
-    private val useElectronicOffsetting = cs.map(
+    private val useElectronicOffsetting                 = cs.map(
       _.addInteger("useElectronicOffsetting",
                    s"${F2Top}wfs:followA.K",
                    "Enable electronic Offsets",
@@ -83,25 +83,25 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
     )
     def setUseElectronicOffsetting(v: Integer): F[Unit] = setParameter(useElectronicOffsetting, v)
 
-    private val filter = cs.map(_.getString("filter"))
+    private val filter                = cs.map(_.getString("filter"))
     def setFilter(v: String): F[Unit] = setParameter(filter, v)
 
-    private val mos = cs.map(_.getString("mos"))
+    private val mos                = cs.map(_.getString("mos"))
     def setMOS(v: String): F[Unit] = setParameter(mos, v)
 
-    private val grism = cs.map(_.getString("grism"))
+    private val grism                = cs.map(_.getString("grism"))
     def setGrism(v: String): F[Unit] = setParameter(grism, v)
 
-    private val mask = cs.map(_.getString("mask"))
+    private val mask                = cs.map(_.getString("mask"))
     def setMask(v: String): F[Unit] = setParameter(mask, v)
 
-    private val decker = cs.map(_.getString("decker"))
+    private val decker                = cs.map(_.getString("decker"))
     def setDecker(v: String): F[Unit] = setParameter(decker, v)
 
-    private val lyot = cs.map(_.getString("lyot"))
+    private val lyot                = cs.map(_.getString("lyot"))
     def setLyot(v: String): F[Unit] = setParameter(lyot, v)
 
-    private val windowCover = cs.map(_.getString("windowCover"))
+    private val windowCover                = cs.map(_.getString("windowCover"))
     def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
 
   }
