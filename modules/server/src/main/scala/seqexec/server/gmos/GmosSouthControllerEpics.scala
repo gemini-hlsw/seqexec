@@ -62,7 +62,7 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
 
   override val filter: EncodeEpicsValue[SouthTypes#Filter, (String, String)] = EncodeEpicsValue {
     case Filter.Z_G0343                 => ("Z_G0343", "open2-8")
-    case Filter.Y_G0344                 => ("Y_G0344", "open2-8")
+    case Filter.Y_G0344                 => ("open1-6", "Y_G0344")
     case Filter.HeII_G0340              => ("HeII_G0340", "open2-8")
     case Filter.HeIIC_G0341             => ("open1-6", "HeIIC_G0341")
     case Filter.SII_G0335               => ("SII_G0335", "open2-8")
