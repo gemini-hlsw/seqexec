@@ -456,19 +456,19 @@ object SeqexecEngine {
       val reqWV = extractWaterVapor(step.config)
 
       val ccCmp = reqCC.flatMap(x =>
-        (!checkCloudCover(actualObsConditions.cc, x))
+        !checkCloudCover(actualObsConditions.cc, x)
           .option(Discrepancy(actualObsConditions.cc.label, x.displayValue()))
       )
       val iqCmp = reqIQ.flatMap(x =>
-        (!checkImageQuality(actualObsConditions.iq, x))
+        !checkImageQuality(actualObsConditions.iq, x)
           .option(Discrepancy(actualObsConditions.iq.label, x.displayValue()))
       )
       val sbCmp = reqSB.flatMap(x =>
-        (!checkSkyBackground(actualObsConditions.sb, x))
+        !checkSkyBackground(actualObsConditions.sb, x)
           .option(Discrepancy(actualObsConditions.sb.label, x.displayValue()))
       )
       val wvCmp = reqWV.flatMap(x =>
-        (!checkWaterVapor(actualObsConditions.wv, x))
+        !checkWaterVapor(actualObsConditions.wv, x)
           .option(Discrepancy(actualObsConditions.wv.label, x.displayValue()))
       )
 
