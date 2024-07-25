@@ -242,7 +242,7 @@ object NifsControllerEpics extends NifsEncoders {
           // So if any of those conditions is not true; need to move the disperser to the new position.
           def checkInvalid(current: String): F[Option[F[Unit]]] =
             epicsSys.lastSelectedDisperser.map { lsd =>
-              (!(current === "INVALID" && lsd === disperser))
+              !(current === "INVALID" && lsd === disperser)
                 .option(setDisperserIO)
             }
 

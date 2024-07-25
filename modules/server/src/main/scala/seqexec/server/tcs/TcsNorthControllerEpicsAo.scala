@@ -344,12 +344,12 @@ object TcsNorthControllerEpicsAo {
         List(
           demand.tc.offsetA.flatMap { v =>
             val u = v.toFocalPlaneOffset(current.base.iaa)
-            (!offsetNear(u, current.base.offset))
+            !offsetNear(u, current.base.offset)
               .option(PauseCondition.OffsetMove(current.base.offset, u))
           },
-          (!demand.gds.oiwfs.isActive).option(PauseCondition.OiOff),
-          (!demand.gds.pwfs1.isActive).option(PauseCondition.P1Off),
-          (!demand.gds.aoguide.isActive).option(PauseCondition.GaosGuideOff)
+          !demand.gds.oiwfs.isActive.option(PauseCondition.OiOff),
+          !demand.gds.pwfs1.isActive.option(PauseCondition.P1Off),
+          !demand.gds.aoguide.isActive.option(PauseCondition.GaosGuideOff)
         ).flattenOption
       )
 

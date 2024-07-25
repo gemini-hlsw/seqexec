@@ -64,7 +64,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
           ) =>
         val steps     = seq.toSequence.steps
           .takeWhile(_.id =!= step)
-          .mapFilter(p => (!p.status.isFinished).option(p.id))
+          .mapFilter(p => !p.status.isFinished.option(p.id))
         val withSkips = steps.foldLeft[Sequence.State[F]](seq) { case (s, i) =>
           s.setSkipMark(i, v = true)
         }
