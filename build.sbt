@@ -21,8 +21,8 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-ThisBuild / scalaVersion       := "2.13.10"
-ThisBuild / crossScalaVersions := Seq("2.13.10")
+ThisBuild / scalaVersion       := "2.13.15"
+ThisBuild / crossScalaVersions := Seq("2.13.15")
 
 Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
