@@ -1,6 +1,6 @@
 addSbtPlugin("edu.gemini" % "sbt-lucuma-app" % "0.10.13")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.16.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.17.0")
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 
