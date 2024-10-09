@@ -10,6 +10,7 @@ import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.aspen.giapi.commands.HandlerResponse
 import giapi.client.GiapiClient
+import giapi.client.commands.CommandCallResult
 import giapi.client.commands.CommandResult
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
@@ -45,11 +46,12 @@ private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG
     case f                                                   => SeqexecException(f)
   }
 
-  private def configure(config: CFG): F[CommandResult] = {
+  private def configure(config: CFG): F[CommandCallResult] = {
     val cfg: F[Configuration] = configuration(config)
     val isEmpty               = cfg.map(_.config.isEmpty)
-    isEmpty.ifM(CommandResult(HandlerResponse.Response.ACCEPTED).pure[F],
-                cfg.flatMap(client.genericApply(_, configureTimeout.toMilliseconds.milliseconds))
+    isEmpty.ifM(
+      CommandResult(HandlerResponse.Response.ACCEPTED).pure[F].widen[CommandCallResult],
+      cfg.flatMap(client.genericApply(_, configureTimeout.toMilliseconds.milliseconds))
     )
   }.adaptError(adaptGiapiError)
 

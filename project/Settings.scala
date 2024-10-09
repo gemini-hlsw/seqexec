@@ -74,7 +74,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
-    val giapiScala          = "0.2.3"
+    val giapiScala          = "0.3-38643d9-SNAPSHOT"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
@@ -260,26 +260,9 @@ object Settings {
     )
 
     // GIAPI Libraries
-    val GiapiScala         = "edu.gemini"      %% "giapi"         % LibraryVersions.giapiScala
-    val EpicsService       = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
-    val GmpCommandsRecords =
-      "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
-    val GiapiJmsUtil     = "edu.gemini.aspen" % "giapi-jms-util" % LibraryVersions.giapiJmsUtil
-    val GiapiJmsProvider =
-      "edu.gemini.jms" % "jms-activemq-provider" % LibraryVersions.giapiJmsProvider
-    val Giapi               = "edu.gemini.aspen" % "giapi" % LibraryVersions.giapi
-    val GiapiCommandsClient =
-      "edu.gemini.aspen.gmp" % "gmp-commands-jms-client" % LibraryVersions.giapiCommandsClient
-    val GiapiStatusService =
-      "edu.gemini.aspen" % "giapi-status-service" % LibraryVersions.giapiStatusService
-    val GmpStatusGateway =
-      "edu.gemini.aspen.gmp" % "gmp-status-gateway" % LibraryVersions.gmpStatusGateway
-    val GmpStatusDatabase =
-      "edu.gemini.aspen.gmp" % "gmp-statusdb" % LibraryVersions.gmpStatusDatabase
-    val GmpCmdJmsBridge =
-      "edu.gemini.aspen.gmp" % "gmp-commands-jms-bridge" % LibraryVersions.gmpCmdClientBridge
-    val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
-    val ACM   = "edu.gemini"      %% "acm"   % LibraryVersions.acm
+    val GiapiScala = "edu.gemini"      %% "giapi" % LibraryVersions.giapiScala
+    val Guava      = "com.google.guava" % "guava" % LibraryVersions.guava
+    val ACM        = "edu.gemini"      %% "acm"   % LibraryVersions.acm
 
     // Lucuma Libraries
     val LucumaCore = Def.setting(
