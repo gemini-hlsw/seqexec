@@ -307,7 +307,10 @@ object Systems {
     ): Resource[F, GpiController[F]] = {
       def gpiClient: Resource[F, GpiClient[F]] =
         if (settings.systemControl.gpi.command)
-          GpiClient.gpiClient[F](settings.gpiUrl.renderString, GpiStatusApply.statusesToMonitor)
+          GpiClient.gpiClient[F]("gpi-seqexec",
+                                 settings.gpiUrl.renderString,
+                                 GpiStatusApply.statusesToMonitor
+          )
         else GpiClient.simulatedGpiClient[F]
 
       def gpiGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
@@ -326,7 +329,7 @@ object Systems {
     ): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
         if (settings.systemControl.ghost.command)
-          GhostClient.ghostClient[F](settings.ghostUrl.renderString)
+          GhostClient.ghostClient[F]("ghost-seqexec", settings.ghostUrl.renderString)
         else GhostClient.simulatedGhostClient
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
@@ -345,7 +348,7 @@ object Systems {
     ): Resource[F, Igrins2Controller[F]] = {
       def igrins2Client: Resource[F, Igrins2Client[F]] =
         if (settings.systemControl.igrins2.command)
-          Igrins2Client.igrins2Client[F](settings.igrins2Url.renderString)
+          Igrins2Client.igrins2Client[F]("igrins2-seqexec", settings.igrins2Url.renderString)
         else Igrins2Client.simulatedIgrins2Client
 
       def igrins2GDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
