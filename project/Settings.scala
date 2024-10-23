@@ -32,7 +32,7 @@ object Settings {
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.5.1"
 
-    val http4sVersion              = "0.23.27"
+    val http4sVersion              = "0.23.29"
     val http4sBlazeVersion         = "0.23.16"
     val http4sJdkHttpClientVersion = "0.9.1"
     val http4sBoopickleVersion     = "0.23.11"
