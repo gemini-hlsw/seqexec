@@ -1,0 +1,31 @@
+# Seqexec Docker Build Scripts
+
+These are Docker build configurations for the Seqexec server application in both production and test environments for Gemini North. GS can be added if requested.
+
+## Files
+
+- `build_prod.sh` - Builds the production Docker image and extracts the compiled application
+- `build_test.sh` - Builds the test environment Docker image and extracts the compiled application
+- `Dockerfile.gn` - Production Docker configuration
+- `Dockerfile.gn_test` - Test environment Docker configuration
+
+## Usage
+
+To build the production version:
+
+./build_prod.sh
+
+
+To build the test version:
+
+./build_test.sh
+
+Both scripts will:
+1. Build a CentOS 7-based Docker image with Java 17, Scala, and all required dependencies
+2. Compile the Seqexec application
+3. Extract the compiled application to the `./output` directory
+
+## Requirements
+
+- Docker
+- Sufficient disk space for Java/Scala builds
