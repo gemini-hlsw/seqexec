@@ -81,14 +81,13 @@ RUN echo "JAVA_HOME is set to: $JAVA_HOME" && \
 RUN sbt -DjavaHome=$JAVA_HOME "clean; app_seqexec_server_gn_test/universal:packageZipTarball"
 
 # Extract the tarball, include the JRE, and set the working directory
-RUN cd /seqexec/app/seqexec-server-gn/target/universal/ && \
+RUN cd /seqexec/app/seqexec-server-gn-test/target/universal/ && \
     tar -xvf *.tgz && \
-    TAR_DIR=$(ls -d app_seqexec_server_gn-*/ | head -n 1 | tr -d '/') && \
+    TAR_DIR=$(ls -d app_seqexec_server_gn_test-*/ | head -n 1 | tr -d '/') && \
     mkdir "$TAR_DIR/jre" && \
     cp -r $JAVA_HOME/* "$TAR_DIR/jre/" && \
     tar -cvzf "$TAR_DIR".tgz "$TAR_DIR" && \
-    echo "export SEQEXEC_DIR=/seqexec/app/seqexec-server-gn/target/universal/$TAR_DIR" >> /etc/environment
+    echo "export SEQEXEC_DIR=/seqexec/app/seqexec-server-gn-test/target/universal/$TAR_DIR" >> /etc/environment
 
 # Set the working directory for subsequent commands
-WORKDIR /seqexec/app/seqexec-server-gn/target/universal/$TAR_DIR
-
+WORKDIR /seqexec/app/seqexec-server-gn-test/target/universal/$TAR_DIR
