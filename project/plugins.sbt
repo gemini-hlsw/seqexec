@@ -15,7 +15,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.10.4")
 
 // Built the version out of git
 //addSbtPlugin("com.github.sbt" % "sbt-git"    % "2.0.0")
-addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.0.1")
+addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.1.0")
 
 // Use NPM modules rather than webjars
 addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.20.0")
