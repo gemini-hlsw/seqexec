@@ -16,7 +16,7 @@
         };
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ typelevel-nix.overlay scala-cli-overlay];
+          overlays = [ typelevel-nix.overlays.default scala-cli-overlay];
         };
         pkgs2 = import (fetchTarball {
           url = "https://github.com/NixOS/nixpkgs/archive/6babc092caf5ed6744d5eb49f7d233dbb3c4f1ef.tar.gz";
