@@ -23,7 +23,7 @@ object Settings {
     val scalaJSReactSortable    = "0.5.2"
 
     // Scala libraries
-    val catsEffectVersion   = "3.5.4"
+    val catsEffectVersion   = "3.5.7"
     val catsVersion         = "2.10.0"
     val mouseVersion        = "1.3.1"
     val fs2Version          = "3.10.2"
@@ -32,7 +32,7 @@ object Settings {
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.5.1"
 
-    val http4sVersion              = "0.23.27"
+    val http4sVersion              = "0.23.30"
     val http4sBlazeVersion         = "0.23.16"
     val http4sJdkHttpClientVersion = "0.9.1"
     val http4sBoopickleVersion     = "0.23.11"
@@ -50,7 +50,7 @@ object Settings {
     val janino         = "3.1.12"
     val logstash       = "7.0"
     val pureConfig     = "0.17.8"
-    val monocleVersion = "3.2.0"
+    val monocleVersion = "3.3.0"
     val circeVersion   = "0.14.8"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
@@ -60,7 +60,7 @@ object Settings {
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "5.2.0"
-    val munitVersion           = "1.0.2"
+    val munitVersion           = "1.0.3"
     val munitDisciplineVersion = "2.0.0"
     val munitCatsEffectVersion = "2.0.0-M5"
 
