@@ -70,10 +70,12 @@ final case class Systems[F[_]](
 object Systems {
 
   final case class Builder(
-    settings: SeqexecEngineConfiguration,
-    service:  CaService,
-    tops:     Map[String, String]
+    settings:     SeqexecEngineConfiguration,
+    service:      CaService,
+    tops:         Map[String, String],
+    instanceName: String
   )(implicit L: Logger[IO], T: Temporal[IO]) {
+
     def odbProxy[F[_]: Async: Logger]: OdbProxy[F] = OdbProxy[F](
       new Peer(settings.odb.renderString, 8443, null),
       if (settings.odbNotifications)
@@ -303,11 +305,12 @@ object Systems {
       else Flamingos2ControllerSim[IO]
 
     def gpi[F[_]: Async: Logger](
-      httpClient: Client[F]
+      httpClient:   Client[F],
+      instanceName: String
     ): Resource[F, GpiController[F]] = {
       def gpiClient: Resource[F, GpiClient[F]] =
         if (settings.systemControl.gpi.command)
-          GpiClient.gpiClient[F]("gpi-seqexec",
+          GpiClient.gpiClient[F](s"gpi-seqexec-$instanceName",
                                  settings.gpiUrl.renderString,
                                  GpiStatusApply.statusesToMonitor
           )
@@ -325,11 +328,12 @@ object Systems {
     }
 
     def ghost[F[_]: Async: Logger](
-      httpClient: Client[F]
+      httpClient:   Client[F],
+      instanceName: String
     ): Resource[F, GhostController[F]] = {
       def ghostClient: Resource[F, GhostClient[F]] =
         if (settings.systemControl.ghost.command)
-          GhostClient.ghostClient[F]("ghost-seqexec", settings.ghostUrl.renderString)
+          GhostClient.ghostClient[F](s"ghost-seqexec-$instanceName", settings.ghostUrl.renderString)
         else GhostClient.simulatedGhostClient
 
       def ghostGDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
@@ -344,11 +348,13 @@ object Systems {
     }
 
     def igrins2[F[_]: Async: Logger](
-      httpClient: Client[F]
+      httpClient:   Client[F],
+      instanceName: String
     ): Resource[F, Igrins2Controller[F]] = {
       def igrins2Client: Resource[F, Igrins2Client[F]] =
         if (settings.systemControl.igrins2.command)
-          Igrins2Client.igrins2Client[F]("igrins2-seqexec", settings.igrins2Url.renderString)
+          Igrins2Client
+            .igrins2Client[F](s"igrins2-seqexec-$instanceName", settings.igrins2Url.renderString)
         else Igrins2Client.simulatedIgrins2Client
 
       def igrins2GDS(httpClient: Client[F]): Resource[F, GdsClient[F]] =
@@ -379,9 +385,9 @@ object Systems {
         (niriCtr, niriKR)                          <- Resource.eval(niri)
         (nifsCtr, nifsKR)                          <- Resource.eval(nifs)
         (gmosSouthCtr, gmosNorthCtr, gmosKR)       <- Resource.eval(gmosObjects(site))
-        gpiController                              <- gpi[IO](httpClient)
-        ghostController                            <- ghost[IO](httpClient)
-        igrins2Controller                          <- igrins2[IO](httpClient)
+        gpiController                              <- gpi[IO](httpClient, instanceName)
+        ghostController                            <- ghost[IO](httpClient, instanceName)
+        igrins2Controller                          <- igrins2[IO](httpClient, instanceName)
         gwsKR                                      <- Resource.eval(gws)
       } yield Systems[IO](
         odbProxy,
@@ -424,10 +430,11 @@ object Systems {
       .toMap
 
   def build(
-    site:       Site,
-    httpClient: Client[IO],
-    settings:   SeqexecEngineConfiguration,
-    service:    CaService
+    site:         Site,
+    httpClient:   Client[IO],
+    settings:     SeqexecEngineConfiguration,
+    service:      CaService,
+    instanceName: String
   )(implicit T: Temporal[IO], L: Logger[IO]): Resource[IO, Systems[IO]] =
-    Builder(settings, service, decodeTops(settings.tops)).build(site, httpClient)
+    Builder(settings, service, decodeTops(settings.tops), instanceName).build(site, httpClient)
 }
