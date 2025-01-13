@@ -148,7 +148,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
    * Adds the current `Execution` to the completed `Queue`, makes the next pending `Execution` the
    * current one, and initiates the actual execution.
    *
-   * If there are no more pending `Execution`s, it emits the `Finished` event.
+   * If there are no more pending `Execution` s, it emits the `Finished` event.
    */
   private def next(id: Observation.Id): HandleType[Unit] =
     getS(id).flatMap(

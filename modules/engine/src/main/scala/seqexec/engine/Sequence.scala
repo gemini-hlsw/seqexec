@@ -13,7 +13,7 @@ import seqexec.model.SequenceState
 import seqexec.model.StepId
 
 /**
- * A list of `Step`s grouped by target and instrument.
+ * A list of `Step` s grouped by target and instrument.
  */
 final case class Sequence[F[_]](
   id:    Observation.Id,
@@ -39,10 +39,10 @@ object Sequence {
 
     /**
      * Runs the next execution. If the current `Step` is completed it adds the `StepZ` under focus
-     * to the list of completed `Step`s and makes the next pending `Step` the current one.
+     * to the list of completed `Step` s and makes the next pending `Step` the current one.
      *
-     * If there are still `Execution`s that have not finished in the current `Step` or if there are
-     * no more pending `Step`s it returns `None`.
+     * If there are still `Execution` s that have not finished in the current `Step` or if there are
+     * no more pending `Step` s it returns `None`.
      *
      * It skips steps, but honoring breakpoints.
      */
@@ -86,7 +86,7 @@ object Sequence {
       } else this.some
 
     /**
-     * Obtain the resulting `Sequence` only if all `Step`s have been completed. This is a special
+     * Obtain the resulting `Sequence` only if all `Step` s have been completed. This is a special
      * way of *unzipping* a `Zipper`.
      */
     val uncurrentify: Option[Sequence[F]] =
@@ -102,8 +102,8 @@ object Sequence {
       else None
 
     /**
-     * Unzip a `Zipper`. This creates a single `Sequence` with either completed `Step`s or pending
-     * `Step`s.
+     * Unzip a `Zipper`. This creates a single `Sequence` with either completed `Step` s or pending
+     * `Step` s.
      */
     val toSequence: Sequence[F] =
       Sequence(
@@ -116,8 +116,8 @@ object Sequence {
   object Zipper {
 
     /**
-     * Make a `Zipper` from a `Sequence` only if all the `Step`s in the `Sequence` are pending. This
-     * is a special way of *zipping* a `Sequence`.
+     * Make a `Zipper` from a `Sequence` only if all the `Step` s in the `Sequence` are pending.
+     * This is a special way of *zipping* a `Sequence`.
      */
     def currentify[F[_]](seq: Sequence[F]): Option[Zipper[F]] =
       seq.steps match {
@@ -168,8 +168,8 @@ object Sequence {
      * Returns a new `State` where the next pending `Step` is been made the current `Step` under
      * execution and the previous current `Step` is placed in the completed `Sequence`.
      *
-     * If the current `Step` has `Execution`s not completed or there are no more pending `Step`s it
-     * returns `None`.
+     * If the current `Step` has `Execution` s not completed or there are no more pending `Step` s
+     * it returns `None`.
      */
     val next: Option[State[F]]
 
@@ -216,8 +216,8 @@ object Sequence {
     def update(stepDefs: List[List[ParallelActions[F]]]): State[F]
 
     /**
-     * Unzip `State`. This creates a single `Sequence` with either completed `Step`s or pending
-     * `Step`s.
+     * Unzip `State`. This creates a single `Sequence` with either completed `Step` s or pending
+     * `Step` s.
      */
     val toSequence: Sequence[F]
 
@@ -267,7 +267,7 @@ object Sequence {
     }
 
     /**
-     * Initialize a `State` passing a `Sequence` of pending `Step`s.
+     * Initialize a `State` passing a `Sequence` of pending `Step` s.
      */
     // TODO: Make this function `apply`?
     def init[F[_]](q: Sequence[F]): State[F] =
@@ -426,8 +426,8 @@ object Sequence {
     }
 
     /**
-     * Final `State`. This doesn't have any `Step` under execution, there are only completed
-     * `Step`s.
+     * Final `State`. This doesn't have any `Step` under execution, there are only completed `Step`
+     * s.
      */
     final case class Final[F[_]](seq: Sequence[F], status: SequenceState) extends State[F] { self =>
 

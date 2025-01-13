@@ -21,8 +21,9 @@ package object engine {
     )
 
   /**
-   * `ParallelActions` is a group of `Action`s that need to be run in parallel without interruption.
-   * A *sequential* `Execution` can be represented with an `Execution` with a single `Action`.
+   * `ParallelActions` is a group of `Action` s that need to be run in parallel without
+   * interruption. A *sequential* `Execution` can be represented with an `Execution` with a single
+   * `Action`.
    */
   type ParallelActions[F[_]] = NonEmptyList[Action[F]]
 
