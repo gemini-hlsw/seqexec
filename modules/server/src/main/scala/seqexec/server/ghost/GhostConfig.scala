@@ -259,11 +259,10 @@ sealed trait GhostConfig extends GhostLUT {
           GhostConfig.fiberConfig1(fiberAgitator1) |+|
           GhostConfig.fiberConfig2(fiberAgitator2)
       } else
-        {
-          ifu1Config |+| ifu2Config |+|
-            GhostConfig.fiberConfig1(FiberAgitator.None) |+|
-            GhostConfig.fiberConfig2(FiberAgitator.None)
-        } |+|
+        ifu1Config |+| ifu2Config |+|
+          GhostConfig.fiberConfig1(FiberAgitator.None) |+|
+          GhostConfig.fiberConfig2(FiberAgitator.None)
+          |+|
           userTargetsConfig |+| channelConfig |+| adcConfiguration |+|
           // agOverride |+|
           svConfiguration(svCameraOverride, scienceMagnitude) |+| prvMode
@@ -420,7 +419,7 @@ object GhostConfig {
     val extracted = (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2) match {
       // SR Single Sidereal
       // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
-      case (Target(t), Some(TargetType.Sidereal), NoTarget, NoTarget, None, NoTarget)    =>
+      case (Target(t), Some(TargetType.Sidereal), NoTarget, NoTarget, None, NoTarget) =>
         srifu1Coords.map(
           StandardResolutionMode
             .SingleTarget(
@@ -492,7 +491,7 @@ object GhostConfig {
 
       // SR Target + Sky
       // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
-      case (Target(t), _, SkyPosition, NoTarget, None, NoTarget)                         =>
+      case (Target(t), _, SkyPosition, NoTarget, None, NoTarget) =>
         (srifu1Coords, srifu2Coords).mapN(
           StandardResolutionMode
             .TargetPlusSky(
@@ -542,7 +541,7 @@ object GhostConfig {
 
       // HR Sidereal
       // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
-      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition)    =>
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.Sidereal), SkyPosition) =>
         (hrifu1Coords, hrifu2Coords).mapN(
           HighResolutionMode
             .TargetPlusSky(
@@ -567,7 +566,7 @@ object GhostConfig {
 
       // HR Non-Sidereal
       // (sifu1, srifu1Type, sifu2, hifu1, hrifu1Type, hifu2)
-      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _)           =>
+      case (NoTarget, _, NoTarget, Target(t), Some(TargetType.NonSidereal), _) =>
         HighResolutionMode
           .NonSidereal(
             obsType,

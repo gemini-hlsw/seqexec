@@ -382,9 +382,8 @@ lazy val seqexecLinux = Seq(
   Universal / maintainer := "Software Group <software@gemini.edu>",
   // This lets us build RPMs from snapshot versions
   Linux / name           := "Seqexec Server",
-  Linux / version        := {
+  Linux / version        :=
     (ThisBuild / version).value.replace("-SNAPSHOT", "").replace("-", "_").replace(" ", "")
-  }
 )
 
 /**

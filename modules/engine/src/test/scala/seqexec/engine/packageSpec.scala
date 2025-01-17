@@ -178,9 +178,8 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
       .map(_._2)
   }
 
-  "sequence state" should "stay as running when action pauses itself" in {
+  "sequence state" should "stay as running when action pauses itself" in
     assert(actionPause.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
-  }
 
   "engine" should "change action state to Paused if output is Paused" in {
     val r = actionPause
