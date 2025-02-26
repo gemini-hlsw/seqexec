@@ -1,0 +1,93 @@
+
+# 1. Base Image: CentOS 7
+# -------------------------------------------------------------------
+FROM centos:7
+
+# -------------------------------------------------------------------
+# 2. Modify CentOS Repositories to Use Vault
+# -------------------------------------------------------------------
+RUN sed -i 's|mirrorlist=http://mirrorlist.centos.org|#mirrorlist=http://mirrorlist.centos.org|' /etc/yum.repos.d/CentOS-Base.repo && \
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-Base.repo
+
+# -------------------------------------------------------------------
+# 3. Set Initial Environment Variables
+# -------------------------------------------------------------------
+ENV SCALA_VERSION=2.13.8 \
+    SBT_VERSION=1.6.2 \
+    JAVA_VERSION=17 \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk/ \
+    JRE_PATH=/usr/lib/jvm/java-17-openjdk/ \
+    PATH=$JAVA_HOME/bin:$PATH \
+    SBT_OPTS="-Xmx4096m -Xms1024m -Xss2M -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"
+
+# -------------------------------------------------------------------
+# 4. Install System Packages, SBT, and Node.js
+# -------------------------------------------------------------------
+RUN yum update -y && yum install -y \
+    wget \
+    tree \
+    htop \
+    zip \
+    unzip \
+    redhat-lsb-core \
+    sudo \
+    curl \
+    vim \
+    npm \
+    yum-utils \
+    java-17-openjdk-devel && \
+    curl -sL https://www.scala-sbt.org/sbt-rpm.repo | tee /etc/yum.repos.d/sbt-rpm.repo && \
+    yum install -y sbt
+
+# -------------------------------------------------------------------
+# Copy the application directory
+# -------------------------------------------------------------------
+COPY . /seqexec
+
+# -------------------------------------------------------------------
+# Set working directory
+# -------------------------------------------------------------------
+WORKDIR /seqexec
+
+# -------------------------------------------------------------------
+# Install Node.js and npm
+# -------------------------------------------------------------------
+RUN curl -sL https://rpm.nodesource.com/setup_14.x | bash - && \
+    yum install -y nodejs
+
+# -------------------------------------------------------------------
+# Install Amazon Corretto (Java 17) and set up alternatives
+# -------------------------------------------------------------------
+RUN curl -L -o /etc/yum.repos.d/corretto.repo https://yum.corretto.aws/corretto.repo && \
+    yum install -y java-17-amazon-corretto-devel && \
+    JAVA_DIR=$(dirname $(readlink -f /usr/bin/java) | sed 's|/bin||') && \
+    alternatives --install /usr/bin/java java $JAVA_DIR/bin/java 1 && \
+    alternatives --install /usr/bin/javac javac $JAVA_DIR/bin/javac 1 && \
+    alternatives --set java $JAVA_DIR/bin/java && \
+    alternatives --set javac $JAVA_DIR/bin/javac
+
+# -------------------------------------------------------------------
+# Set JAVA_HOME and update PATH
+# -------------------------------------------------------------------
+ENV JAVA_HOME /usr/lib/jvm/java-17-amazon-corretto
+ENV PATH $JAVA_HOME/bin:$PATH
+
+# Verify Java 17 installation
+RUN echo "JAVA_HOME is set to: $JAVA_HOME" && \
+    java -version && \
+    javac -version
+
+# Compile, stage, and package the Scala application
+RUN sbt -DjavaHome=$JAVA_HOME "clean; app_seqexec_server_gn_test/universal:packageZipTarball"
+
+# Extract the tarball, include the JRE, and set the working directory
+RUN cd /seqexec/app/seqexec-server-gn-test/target/universal/ && \
+    tar -xvf *.tgz && \
+    TAR_DIR=$(ls -d app_seqexec_server_gn_test-*/ | head -n 1 | tr -d '/') && \
+    mkdir "$TAR_DIR/jre" && \
+    cp -r $JAVA_HOME/* "$TAR_DIR/jre/" && \
+    tar -cvzf "$TAR_DIR".tgz "$TAR_DIR" && \
+    echo "export SEQEXEC_DIR=/seqexec/app/seqexec-server-gn-test/target/universal/$TAR_DIR" >> /etc/environment
+
+# Set the working directory for subsequent commands
+WORKDIR /seqexec/app/seqexec-server-gn-test/target/universal/$TAR_DIR
