@@ -11,7 +11,7 @@ addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 
 // Support making distributions
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.10.4")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.1")
 
 // Built the version out of git
 //addSbtPlugin("com.github.sbt" % "sbt-git"    % "2.0.0")
