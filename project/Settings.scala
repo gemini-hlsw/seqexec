@@ -24,8 +24,8 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion   = "3.5.7"
-    val catsVersion         = "2.10.0"
-    val mouseVersion        = "1.3.1"
+    val catsVersion         = "2.13.0"
+    val mouseVersion        = "1.3.2"
     val fs2Version          = "3.10.2"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
@@ -59,7 +59,7 @@ object Settings {
     // test libraries
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
-    val scalaMock              = "5.2.0"
+    val scalaMock              = "6.2.0"
     val munitVersion           = "1.0.4"
     val munitDisciplineVersion = "2.0.0"
     val munitCatsEffectVersion = "2.0.0-M5"
