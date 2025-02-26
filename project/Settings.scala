@@ -34,7 +34,7 @@ object Settings {
 
     val http4sVersion              = "0.23.30"
     val http4sBlazeVersion         = "0.23.17"
-    val http4sJdkHttpClientVersion = "0.9.1"
+    val http4sJdkHttpClientVersion = "0.9.2"
     val http4sBoopickleVersion     = "0.23.11"
     val http4sScalaXmlVersion      = "0.23.14"
 
