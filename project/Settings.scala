@@ -27,13 +27,17 @@ object Settings {
     val catsVersion         = "2.10.0"
     val mouseVersion        = "1.3.1"
     val fs2Version          = "3.11.0"
+    val catsEffectVersion   = "3.5.7"
+    val catsVersion         = "2.13.0"
+    val mouseVersion        = "1.3.2"
+    val fs2Version          = "3.11.0"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
     val scalaXmlVersion     = "1.2.0"
     val catsTime            = "0.5.1"
 
-    val http4sVersion              = "0.23.27"
-    val http4sBlazeVersion         = "0.23.16"
+    val http4sVersion              = "0.23.30"
+    val http4sBlazeVersion         = "0.23.17"
     val http4sJdkHttpClientVersion = "0.9.1"
     val http4sBoopickleVersion     = "0.23.11"
     val http4sScalaXmlVersion      = "0.23.14"
@@ -41,7 +45,7 @@ object Settings {
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "10.0.1"
+    val jwt            = "10.0.4"
     val slf4j          = "2.0.13"
     val log4s          = "1.10.0"
     val log4cats       = "2.7.0"
@@ -49,9 +53,9 @@ object Settings {
     val logback        = "1.4.11"
     val janino         = "3.1.12"
     val logstash       = "7.0"
-    val pureConfig     = "0.17.7"
-    val monocleVersion = "3.2.0"
-    val circeVersion   = "0.14.8"
+    val pureConfig     = "0.17.8"
+    val monocleVersion = "3.3.0"
+    val circeVersion   = "0.14.10"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
     val scoptVersion   = "4.1.0"
@@ -59,8 +63,8 @@ object Settings {
     // test libraries
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
-    val scalaMock              = "5.2.0"
-    val munitVersion           = "1.0.0-RC1"
+    val scalaMock              = "6.2.0"
+    val munitVersion           = "1.0.3"
     val munitDisciplineVersion = "2.0.0"
     val munitCatsEffectVersion = "2.0.0-M5"
 
@@ -74,7 +78,7 @@ object Settings {
     val gmpCommandRecords   = "0.7.7"
     val acm                 = "0.1.1"
     val giapi               = "1.1.7"
-    val giapiScala          = "0.2.3"
+    val giapiScala          = "0.3-38643d9-SNAPSHOT"
     val giapiJmsUtil        = "0.5.7"
     val giapiJmsProvider    = "1.6.7"
     val giapiCommandsClient = "0.2.7"
@@ -260,26 +264,9 @@ object Settings {
     )
 
     // GIAPI Libraries
-    val GiapiScala         = "edu.gemini"      %% "giapi"         % LibraryVersions.giapiScala
-    val EpicsService       = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
-    val GmpCommandsRecords =
-      "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
-    val GiapiJmsUtil     = "edu.gemini.aspen" % "giapi-jms-util" % LibraryVersions.giapiJmsUtil
-    val GiapiJmsProvider =
-      "edu.gemini.jms" % "jms-activemq-provider" % LibraryVersions.giapiJmsProvider
-    val Giapi               = "edu.gemini.aspen" % "giapi" % LibraryVersions.giapi
-    val GiapiCommandsClient =
-      "edu.gemini.aspen.gmp" % "gmp-commands-jms-client" % LibraryVersions.giapiCommandsClient
-    val GiapiStatusService =
-      "edu.gemini.aspen" % "giapi-status-service" % LibraryVersions.giapiStatusService
-    val GmpStatusGateway =
-      "edu.gemini.aspen.gmp" % "gmp-status-gateway" % LibraryVersions.gmpStatusGateway
-    val GmpStatusDatabase =
-      "edu.gemini.aspen.gmp" % "gmp-statusdb" % LibraryVersions.gmpStatusDatabase
-    val GmpCmdJmsBridge =
-      "edu.gemini.aspen.gmp" % "gmp-commands-jms-bridge" % LibraryVersions.gmpCmdClientBridge
-    val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
-    val ACM   = "edu.gemini"      %% "acm"   % LibraryVersions.acm
+    val GiapiScala = "edu.gemini"      %% "giapi" % LibraryVersions.giapiScala
+    val Guava      = "com.google.guava" % "guava" % LibraryVersions.guava
+    val ACM        = "edu.gemini"      %% "acm"   % LibraryVersions.acm
 
     // Lucuma Libraries
     val LucumaCore = Def.setting(

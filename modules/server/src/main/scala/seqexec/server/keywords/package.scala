@@ -21,7 +21,7 @@ package keywords {
   /**
    * Clients that can send keywords to a server that could e.g. write them to a file
    */
-  trait KeywordsClient[F[_]]         {
+  trait KeywordsClient[F[_]] {
 
     def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit]
 
