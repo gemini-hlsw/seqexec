@@ -60,7 +60,7 @@ object Settings {
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
     val scalaMock              = "6.2.0"
-    val munitVersion           = "1.0.3"
+    val munitVersion           = "1.0.4"
     val munitDisciplineVersion = "2.0.0"
     val munitCatsEffectVersion = "2.0.0-M5"
 
