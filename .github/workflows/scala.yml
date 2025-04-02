@@ -11,17 +11,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 16
-      - name: Set up Scala
-        uses: olafurpg/setup-scala@v12
+
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
+        uses: actions/setup-java@v4
         with:
-          java-version: openjdk@1.17.0
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: Setup sbt launcher
+        uses: sbt/setup-sbt@v1
+
       - name: Cache Coursier
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
       - name: Cache SBT
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
