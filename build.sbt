@@ -21,8 +21,9 @@ ThisBuild / resolvers += "Gemini Repository".at(
   "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 )
 
-ThisBuild / scalaVersion       := "2.13.10"
-ThisBuild / crossScalaVersions := Seq("2.13.10")
+ThisBuild / githubWorkflowSbtCommand := "sbt -v -J-Xmx6g"
+ThisBuild / scalaVersion             := "2.13.10"
+ThisBuild / crossScalaVersions       := Seq("2.13.10")
 
 Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 
@@ -63,8 +64,6 @@ inThisBuild(
     )
   )
 )
-
-enablePlugins(GitBranchPrompt)
 
 // Custom commands to facilitate web development
 val startSeqexecAllCommands   = List(
