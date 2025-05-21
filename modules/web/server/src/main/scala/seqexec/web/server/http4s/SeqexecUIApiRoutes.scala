@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -143,10 +143,10 @@ class SeqexecUIApiRoutes[F[_]: Async: Dns: Compression](
           L.warn("warn") *>
           L.error("error")).replicateA(min(1000, max(0, count))) *> Ok("")
 
-      case auth @ POST -> Root / "seqexec" / "site" as user =>
+      case req @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Login start
-        auth.req.remoteHost.flatMap { x =>
+        req.req.remoteHost.flatMap { x =>
           L.info(s"$userName connected from ${x.getOrElse("Unknown")}")
         } *>
           Ok(s"$site")

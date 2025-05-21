@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.server.common
@@ -13,7 +13,7 @@ import org.http4s.implicits._
 class RedirectToHttpsRoutes[F[_]: Sync](toPort: Int, externalName: String) extends Http4sDsl[F] {
   val baseUri: Uri = Uri.fromString(s"https://$externalName:$toPort").getOrElse(uri"/")
 
-  val service: HttpRoutes[F] = HttpRoutes.of[F] { case request =>
-    MovedPermanently(Location(baseUri.withPath(request.uri.path)))
+  val service: HttpRoutes[F] = HttpRoutes.of[F] { case req =>
+    MovedPermanently(Location(baseUri.withPath(req.uri.path)))
   }
 }

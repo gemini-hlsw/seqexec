@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package web.client.table
@@ -77,9 +77,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val rcL = refO.replace(VariableColumnWidth(pʹʹ, m))
             val ncL = nextCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                nextO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(pʹʹʹ, mʹ), _, _)) =>
+                nextO.replace(VariableColumnWidth(pʹʹʹ - Δʹ, mʹ))
+              case _                                                                 => id
             }
             (rcL, ncL)
 
@@ -94,9 +94,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val ncL = nextO.replace(VariableColumnWidth(pʹʹ, m))
             val rcL = refCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                refO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(pʹʹʹ, mʹ), _, _)) =>
+                refO.replace(VariableColumnWidth(pʹʹʹ - Δʹ, mʹ))
+              case _                                                                 => id
             }
             (rcL, ncL)
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package ocs2.config
@@ -11,6 +11,7 @@ import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums._
 import lucuma.core.math.Offset
 import monocle._
+import scala.annotation.nowarn
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
@@ -211,6 +212,7 @@ object GmosConfig {
     def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.rows)
 
+    @nowarn
     private def overlapCheck(
       that: GmosCustomRoiEntry,
       f:    GmosCustomRoiEntry => (Int, Int)

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
@@ -12,7 +12,6 @@ import cats.data.NonEmptyList
 import cats.data.StateT
 import cats.effect.Async
 import cats.syntax.all._
-import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.CLOUD_COVER_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.IMAGE_QUALITY_PROP
@@ -57,6 +56,7 @@ import seqexec.server.EngineState.atSequence
 import seqexec.server.SeqEvent._
 import cats.effect.kernel.Sync
 import cats.effect.{ Ref, Temporal }
+import scala.annotation.nowarn
 
 trait SeqexecEngine[F[_]] {
 
@@ -850,13 +850,9 @@ object SeqexecEngine {
               .asRight
           )
         }
-        .handleErrorWith {
-          case e: SeqFailure =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-          case e             =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
+        .handleErrorWith { case e =>
+          e.printStackTrace()
+          Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }
 
@@ -1718,6 +1714,7 @@ object SeqexecEngine {
       case _                                => List.empty
     }
 
+    @nowarn
     def engineSteps(seq: Sequence[F]): List[Step] =
       obsSeq.seqGen.steps.zip(seq.steps).map { case (a, b) =>
         StepsView

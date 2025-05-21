@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.handlers
@@ -37,6 +37,7 @@ import seqexec.web.client.services.DisplayNamePersistence
 import web.client.Audio
 
 import scala.util.matching.Regex
+import scala.annotation.nowarn
 
 /**
  * Handles messages received over the WS channel
@@ -125,6 +126,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       )
   }
 
+  @nowarn
   val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(e @ StepExecuted(obsId, sv)) =>
       val curStep =

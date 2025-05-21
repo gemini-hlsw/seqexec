@@ -22,8 +22,8 @@ ThisBuild / resolvers += "Gemini Repository".at(
 )
 
 ThisBuild / githubWorkflowSbtCommand := "sbt -v -J-Xmx9g"
-ThisBuild / scalaVersion             := "2.13.10"
-ThisBuild / crossScalaVersions       := Seq("2.13.10")
+ThisBuild / scalaVersion             := "2.13.16"
+ThisBuild / crossScalaVersions       := Seq("2.13.16")
 
 Global / resolvers ++= Resolver.sonatypeOssRepos("public")
 

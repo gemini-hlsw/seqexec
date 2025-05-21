@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
@@ -66,7 +66,7 @@ object GemsController {
         x.isOdgw2Used.option("ODGW2"),
         x.isOdgw3Used.option("ODGW3"),
         x.isOdgw4Used.option("ODGW4")
-      ).collect { case Some(x) => x }
+      ).flattenOption
         .mkString("(", ", ", ")")
     }
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client
@@ -8,7 +8,6 @@ import scala.collection.immutable.SortedMap
 import diode.data.PotState
 import japgolly.scalajs.react.ReactCats._
 import japgolly.scalajs.react.Reusability
-import lucuma.core.util.Enumerated
 import react.common._
 import react.semanticui.SemanticColor
 import react.semanticui.SemanticSize
@@ -33,7 +32,7 @@ import shapeless.tag.@@
 import squants.Time
 
 package object reusability {
-  implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =
+  implicit def enumeratedReuse[A <: AnyRef]: Reusability[A]                         =
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A]                                  =
     Reusability.by(x => x: Int)

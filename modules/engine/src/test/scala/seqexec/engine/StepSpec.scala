@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -429,13 +429,13 @@ class StepSpec extends CatsEffectSuite {
       }
 
     qss.map { x =>
-      val actionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Completed[_], _) => x }
+      val actionsCompleted = x.map(_._1).collect { case SystemUpdate(_: Completed[_], _) => x }
       assertEquals(actionsCompleted.length, 4)
 
-      val executionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Executed, _) => x }
+      val executionsCompleted = x.map(_._1).collect { case SystemUpdate(_: Executed, _) => x }
       assertEquals(executionsCompleted.length, 3)
 
-      val sequencesCompleted = x.map(_._1).collect { case SystemUpdate(x: Finished, _) => x }
+      val sequencesCompleted = x.map(_._1).collect { case SystemUpdate(_: Finished, _) => x }
       assertEquals(sequencesCompleted.length, 1)
 
       inside(x.lastOption.flatMap(_._2.sequences.get(seqId))) {

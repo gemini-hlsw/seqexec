@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client.components.sequence.steps
@@ -46,8 +46,8 @@ trait ProgressLabel {
     else if (stopping) s"$fileId - Stopping - Reading out..."
     else
       stageStr match {
-        case Some(stage) => s"$fileId - $stage"
-        case _           =>
+        case Some(stageMsg) => s"$fileId - $stageMsg"
+        case _              =>
           remainingMillis.fold(fileId) { millis =>
             if (millis > 0) s"$fileId$durationStr" else s"$fileId - Reading out..."
           }

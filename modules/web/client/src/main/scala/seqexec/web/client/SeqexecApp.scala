@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client
@@ -67,7 +67,7 @@ object SeqexecApp extends IOApp {
       _           <- launcher.initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
-      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(logger.error(p.toString)))
+      _           <- IO(router().renderIntoDOM(node): Unit).handleErrorWith(p => IO(logger.error(p.toString)))
     } yield ExitCode.Success
   }
 

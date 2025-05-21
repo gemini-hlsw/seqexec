@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.client
@@ -96,7 +96,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     )
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(sʹ), _, _, _, _, _)) if sʹ.id === obsId =>
     }
   }
   test("Add preview with loaded") {
@@ -115,10 +115,10 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
 
     sod2.tabs.length should be(3)
     sod2.tabs.toList.lift(2) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(sʹ), _, _, _, _, _)) if sʹ.id === obsId =>
     }
     sod2.tabs.focus should matchPattern {
-      case PreviewSequenceTab(s, _, _, _) if s.id === obs2 =>
+      case PreviewSequenceTab(sʹ, _, _, _) if sʹ.id === obs2 =>
     }
   }
 }
