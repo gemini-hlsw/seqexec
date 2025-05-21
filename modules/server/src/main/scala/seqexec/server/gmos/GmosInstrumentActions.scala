@@ -3,6 +3,8 @@
 
 package seqexec.server.gmos
 
+import cats.effect.Ref
+import cats.effect.Temporal
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -26,7 +28,6 @@ import seqexec.server.tcs.TcsController.OffsetQ
 import shapeless.tag
 import squants.Time
 import squants.space.AngleConversions._
-import cats.effect.{ Ref, Temporal }
 
 /**
  * Gmos needs different actions for N&S

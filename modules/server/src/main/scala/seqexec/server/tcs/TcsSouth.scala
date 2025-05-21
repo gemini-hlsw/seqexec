@@ -11,9 +11,9 @@ import edu.gemini.spModel.gemini.gems.CanopusWfs
 import edu.gemini.spModel.gemini.gsaoi.GsaoiOdgw
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
 import seqexec.server.CleanConfig
@@ -22,7 +22,8 @@ import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentGuide
 import seqexec.server.gems.Gems
-import seqexec.server.gems.GemsController.{ GemsConfig, GemsOff }
+import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.gems.GemsController.GemsOff
 import seqexec.server.tcs.TcsController.AGConfig
 import seqexec.server.tcs.TcsController.AoGuidersConfig
 import seqexec.server.tcs.TcsController.AoTcsConfig

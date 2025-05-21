@@ -3,12 +3,12 @@
 
 package seqexec.web.server.security
 
-import scala.jdk.CollectionConverters._
-
 import com.unboundid.ldap.sdk.SearchRequest
 import com.unboundid.ldap.sdk.SearchScope
 import com.unboundid.ldap.sdk._
 import seqexec.model.UserDetails._
+
+import scala.jdk.CollectionConverters._
 
 object LdapConnectionOps {
   // Extension methods for ldap connection

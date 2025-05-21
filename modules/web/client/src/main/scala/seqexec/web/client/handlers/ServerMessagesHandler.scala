@@ -3,10 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.collection.immutable.SortedMap
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.implicits._
 import diode.ActionBatch
 import diode.ActionHandler
@@ -31,13 +27,16 @@ import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
+import seqexec.web.client.services.DisplayNamePersistence
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
-import seqexec.web.client.services.DisplayNamePersistence
 import web.client.Audio
 
-import scala.util.matching.Regex
 import scala.annotation.nowarn
+import scala.collection.immutable.SortedMap
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.util.matching.Regex
 
 /**
  * Handles messages received over the WS channel

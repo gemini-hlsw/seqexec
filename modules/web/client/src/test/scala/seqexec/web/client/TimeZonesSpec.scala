@@ -3,8 +3,9 @@
 
 package seqexec.web.client
 
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
 import java.time.ZoneId
 
 class TimeZonesSpec extends AnyFlatSpec with Matchers {

@@ -3,18 +3,19 @@
 
 package seqexec.server.ghost
 
-import scala.concurrent.duration._
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import seqexec.model.Conditions
-import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.CloudCover
+import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
-import squants.time.Seconds
-import squants.time.Milliseconds
-import squants.time.Time
-import java.time.{ Duration => JDuration }
 import shapeless.tag.@@
+import squants.time.Milliseconds
+import squants.time.Seconds
+import squants.time.Time
+
+import java.time.{ Duration => JDuration }
+import scala.concurrent.duration._
 
 // times in seconds
 final case class GuideCameraTimes(gMag: Double, poorWeather: Double, goodWeather: Double)

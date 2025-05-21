@@ -3,8 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -15,8 +13,10 @@ import lucuma.core.enums.Site
 import seqexec.model.Operator
 import seqexec.web.client.actions._
 import seqexec.web.client.model.GlobalLog
-import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.DisplayNamePersistence
+import seqexec.web.client.services.SeqexecWebClient
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
  * Handles updates to the operator

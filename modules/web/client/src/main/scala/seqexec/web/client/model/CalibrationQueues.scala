@@ -3,8 +3,6 @@
 
 package seqexec.web.client.model
 
-import scala.collection.immutable.SortedMap
-
 import cats._
 import cats.syntax.all._
 import monocle.Optional
@@ -19,6 +17,8 @@ import seqexec.model.QueueId
 import seqexec.model.QueueManipulationOp
 import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table.TableState
+
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueState(

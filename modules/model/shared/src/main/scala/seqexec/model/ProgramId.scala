@@ -3,21 +3,21 @@
 
 package seqexec.model
 
-import java.time._
-import java.time.format.DateTimeFormatter
-
 import cats.Order
 import cats.Show
 import cats.syntax.all._
-import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums.ProgramType
 import lucuma.core.enums.Site
 import lucuma.core.math.Index
 import lucuma.core.model.Semester
 import lucuma.core.syntax.parser._
 import monocle.Prism
+import org.typelevel.cats.time.instances.all._
 import seqexec.model.enum.DailyProgramType
 import seqexec.model.parser.ProgramIdParsers
+
+import java.time._
+import java.time.format.DateTimeFormatter
 
 /**
  * A science program id, which has three constructors: for standard programs for standard daily

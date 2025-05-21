@@ -3,15 +3,13 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.collection.immutable.SortedMap
-import scala.math._
-import scala.scalajs.js
-
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
+import japgolly.scalajs.react.CtorType
 import japgolly.scalajs.react.ReactMonocle._
-import japgolly.scalajs.react.{ CtorType, Reusability, _ }
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Component
 import japgolly.scalajs.react.component.builder.Lifecycle._
 import japgolly.scalajs.react.extra.router.RouterCtl
@@ -54,8 +52,12 @@ import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.reusability._
-import web.client.table._
 import web.client.JsNumberOps._
+import web.client.table._
+
+import scala.collection.immutable.SortedMap
+import scala.math._
+import scala.scalajs.js
 
 trait Columns {
   val ControlWidth: Double          = 40

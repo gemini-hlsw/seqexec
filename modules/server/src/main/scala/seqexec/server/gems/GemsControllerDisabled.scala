@@ -6,8 +6,8 @@ package seqexec.server.gems
 import cats.Applicative
 import cats.implicits._
 import org.typelevel.log4cats.Logger
-import seqexec.server.overrideLogMessage
 import seqexec.server.gems.Gems.GemsWfsState
+import seqexec.server.overrideLogMessage
 import seqexec.server.tcs.Gaos
 import seqexec.server.tcs.Gaos.PauseResume
 

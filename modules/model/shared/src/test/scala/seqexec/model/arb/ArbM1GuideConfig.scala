@@ -3,13 +3,13 @@
 
 package seqexec.model.arb
 
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import seqexec.model.enum.M1Source
 import seqexec.model.M1GuideConfig
-import lucuma.core.util.arb.ArbEnumerated._
+import seqexec.model.enum.M1Source
 
 trait ArbM1GuideConfig {
 

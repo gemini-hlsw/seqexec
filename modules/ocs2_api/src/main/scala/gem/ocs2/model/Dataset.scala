@@ -3,14 +3,14 @@
 
 package ocs2
 
-import java.time.Instant
-
 import cats.Order
 import cats.Show
-import org.typelevel.cats.time.instances.instant.instantInstances
 import lucuma.core.optics.Format
 import lucuma.core.syntax.string._
+import org.typelevel.cats.time.instances.instant.instantInstances
 import seqexec.model.Observation
+
+import java.time.Instant
 
 /**
  * A labeled, timestamped data file.

@@ -4,13 +4,14 @@
 package seqexec.web.client.arb
 
 import cats._
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
-import scala.collection.immutable.SortedMap
-import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.enum.Resource
-import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model._
+
+import scala.collection.immutable.SortedMap
 
 trait ArbTabOperations {
   implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] =

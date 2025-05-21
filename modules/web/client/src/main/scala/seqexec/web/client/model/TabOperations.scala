@@ -3,11 +3,9 @@
 
 package seqexec.web.client.model
 
-import scala.collection.immutable.SortedMap
-
 import cats.Eq
-import cats.syntax.all._
 import cats.Order._
+import cats.syntax.all._
 import lucuma.core.util.Enumerated
 import monocle.Lens
 import monocle.function.At.at
@@ -16,6 +14,8 @@ import monocle.macros.Lenses
 import seqexec.model.StepId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
+
+import scala.collection.immutable.SortedMap
 
 sealed trait RunOperation extends Product with Serializable
 object RunOperation {

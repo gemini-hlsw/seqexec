@@ -3,8 +3,6 @@
 
 package seqexec.web.client.model
 
-import scala.math.max
-
 import cats.Eq
 import cats.syntax.all._
 import lucuma.core.math.Angle
@@ -17,6 +15,8 @@ import seqexec.model.Step
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model.StepItems._
 import web.client.utils._
+
+import scala.math.max
 
 /**
  * Utility methods to format step items

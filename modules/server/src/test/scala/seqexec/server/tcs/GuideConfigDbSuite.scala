@@ -1,16 +1,18 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import io.circe.parser._
 import cats.effect.IO
-import seqexec.model.enum._
+import io.circe.parser._
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
-import seqexec.server.tcs.GuideConfigDb._
+import seqexec.model.enum._
 import seqexec.server.altair.AltairController.Lgs
+import seqexec.server.gems.GemsController.Cwfs1Usage
+import seqexec.server.gems.GemsController.Cwfs2Usage
+import seqexec.server.gems.GemsController.Cwfs3Usage
 import seqexec.server.gems.GemsController.GemsOn
 import seqexec.server.gems.GemsController.OIUsage
 import seqexec.server.gems.GemsController.Odgw1Usage
@@ -18,9 +20,7 @@ import seqexec.server.gems.GemsController.Odgw2Usage
 import seqexec.server.gems.GemsController.Odgw3Usage
 import seqexec.server.gems.GemsController.Odgw4Usage
 import seqexec.server.gems.GemsController.P1Usage
-import seqexec.server.gems.GemsController.Cwfs1Usage
-import seqexec.server.gems.GemsController.Cwfs2Usage
-import seqexec.server.gems.GemsController.Cwfs3Usage
+import seqexec.server.tcs.GuideConfigDb._
 import squants.space.Millimeters
 
 final class GuideConfigDbSuite extends munit.CatsEffectSuite {

@@ -8,12 +8,12 @@ import cats.syntax.all._
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import org.typelevel.log4cats.Logger
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.keywords.GdsClient
-import seqexec.model.enum.ObserveCommandResult
-import squants.time.Time
 import squants.time.Seconds
+import squants.time.Time
 
 trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def gdsClient: GdsClient[F]

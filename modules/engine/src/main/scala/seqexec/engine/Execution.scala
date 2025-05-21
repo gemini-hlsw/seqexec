@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
@@ -7,6 +7,7 @@ import cats.data.NonEmptyList
 import monocle.function.Index.listIndex
 import monocle.syntax.all._
 import mouse.boolean._
+
 import Action.ActionState
 
 /**

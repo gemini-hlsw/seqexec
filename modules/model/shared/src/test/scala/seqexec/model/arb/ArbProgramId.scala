@@ -3,19 +3,20 @@
 
 package seqexec.model.arb
 
-import lucuma.core.util.arb._
-import lucuma.core.model.arb._
 import lucuma.core.arb._
-import java.time.LocalDate
-import org.scalacheck._
-import org.scalacheck.Gen._
-import org.scalacheck.Arbitrary._
-import lucuma.core.model.Semester
 import lucuma.core.enums.ProgramType
-import lucuma.core.math.Index
 import lucuma.core.enums.Site
-import seqexec.model.enum.DailyProgramType
+import lucuma.core.math.Index
+import lucuma.core.model.Semester
+import lucuma.core.model.arb._
+import lucuma.core.util.arb._
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen._
+import org.scalacheck._
 import seqexec.model.ProgramId
+import seqexec.model.enum.DailyProgramType
+
+import java.time.LocalDate
 
 trait ArbProgramId {
   import ProgramId._

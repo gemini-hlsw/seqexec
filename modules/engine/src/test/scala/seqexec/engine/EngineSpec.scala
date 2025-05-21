@@ -5,14 +5,15 @@ package seqexec.engine
 
 import cats.Eq
 import cats.effect.IO
-import seqexec.model.Observation
-import seqexec.model.arb.ArbObservationId
 import monocle.law.discipline.OptionalTests
-import org.scalacheck.{ Arbitrary, Cogen }
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen
 import seqexec.engine.TestUtil.TestState
+import seqexec.model.Observation
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceState
+import seqexec.model.arb.ArbObservationId
 
 final class EngineSpec extends munit.DisciplineSuite {
   import ArbObservationId._

@@ -5,9 +5,9 @@ package seqexec.server.gsaoi
 
 import cats.effect.Sync
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enums.KeywordName
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 

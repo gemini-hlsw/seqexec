@@ -3,10 +3,11 @@
 
 package org.typelevel.cats.time.instances
 
-import java.time._
-
-import org.scalacheck.{ Arbitrary, Gen }
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
+
+import java.time._
 
 object TimeArbitraries {
 

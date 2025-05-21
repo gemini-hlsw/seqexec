@@ -3,11 +3,11 @@
 
 package seqexec.server.gnirs
 
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.{ Async, Sync }
+import cats.effect.Async
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.INSTRUMENT_NAME_PROP
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.WOLLASTON_PRISM_PROP
@@ -16,21 +16,30 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
 import lucuma.core.syntax.string._
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gnirs.GnirsController.{ CCConfig, DCConfig, Filter1, Other, ReadMode }
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
+import seqexec.server.gnirs.GnirsController.CCConfig
+import seqexec.server.gnirs.GnirsController.DCConfig
+import seqexec.server.gnirs.GnirsController.Filter1
+import seqexec.server.gnirs.GnirsController.Other
+import seqexec.server.gnirs.GnirsController.ReadMode
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-import cats.Applicative
+
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 final case class Gnirs[F[_]: Logger: Async](
   controller:        GnirsController[F],

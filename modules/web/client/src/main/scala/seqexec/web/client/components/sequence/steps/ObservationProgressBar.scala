@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.math.max
-
 import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -20,6 +18,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+
+import scala.math.max
 
 trait ProgressLabel {
   def label(

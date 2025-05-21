@@ -27,14 +27,15 @@ import seqexec.server.gems.GemsController.Odgw2Usage
 import seqexec.server.gems.GemsController.Odgw3Usage
 import seqexec.server.gems.GemsController.Odgw4Usage
 import seqexec.server.gems.GemsController.P1Usage
-import seqexec.server.tcs.{ Gaos, GuideConfig, GuideConfigDb, Tcs }
-import seqexec.server.tcs.Gaos.{
-  PauseCondition,
-  PauseConditionSet,
-  PauseResume,
-  ResumeCondition,
-  ResumeConditionSet
-}
+import seqexec.server.tcs.Gaos
+import seqexec.server.tcs.Gaos.PauseCondition
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.PauseResume
+import seqexec.server.tcs.Gaos.ResumeCondition
+import seqexec.server.tcs.Gaos.ResumeConditionSet
+import seqexec.server.tcs.GuideConfig
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.server.tcs.Tcs
 import squants.Time
 
 trait Gems[F[_]] extends Gaos[F] {

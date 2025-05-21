@@ -3,15 +3,15 @@
 
 package seqexec.model
 
-import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
 import lucuma.core.util.arb.ArbEnumerated._
-import seqexec.model.enum._
 import seqexec.model.GmosParameters._
-import seqexec.model.dhs._
 import seqexec.model.SeqexecModelArbitraries._
-import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.all._
+import seqexec.model.dhs._
+import seqexec.model.enum._
+import seqexec.model.events.SingleActionEvent
 import squants.time.Time
 import squants.time.TimeUnit
 

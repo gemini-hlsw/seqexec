@@ -3,11 +3,11 @@
 
 package seqexec.model.config
 
-import scala.concurrent.duration.FiniteDuration
-
 import cats.Eq
 import org.http4s.Uri
 import shapeless.tag.@@
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GpiSettings
 trait GhostSettings

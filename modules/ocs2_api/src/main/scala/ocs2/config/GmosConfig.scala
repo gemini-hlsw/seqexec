@@ -3,14 +3,14 @@
 
 package ocs2.config
 
-import java.time.Duration
-
 import cats.Eq
 import cats.Order
-import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums._
 import lucuma.core.math.Offset
 import monocle._
+import org.typelevel.cats.time.instances.all._
+
+import java.time.Duration
 import scala.annotation.nowarn
 
 /**

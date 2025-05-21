@@ -6,12 +6,12 @@ package seqexec.model.arb
 import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen
 import org.scalacheck.Cogen
-import seqexec.model.StepId
+import org.scalacheck.Gen
 import seqexec.model.Notification
 import seqexec.model.Notification._
 import seqexec.model.Observation
+import seqexec.model.StepId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 

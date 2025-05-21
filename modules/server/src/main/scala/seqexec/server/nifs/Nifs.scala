@@ -3,11 +3,11 @@
 
 package seqexec.server.nifs
 
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.{ Async, Sync }
+import cats.effect.Async
+import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
@@ -15,8 +15,8 @@ import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -33,7 +33,10 @@ import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import seqexec.server.nifs.NifsController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import shapeless.tag
@@ -41,7 +44,9 @@ import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
-import cats.Applicative
+
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 final case class Nifs[F[_]: Logger: Async](
   controller:        NifsController[F],

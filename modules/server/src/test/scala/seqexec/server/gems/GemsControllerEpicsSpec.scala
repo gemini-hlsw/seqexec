@@ -1,30 +1,31 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
 
-import cats.syntax.all._
 import cats.effect.IO
+import cats.syntax.all._
 import edu.gemini.seqexec.server.gems.LoopState
 import munit.CatsEffectSuite
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
-import seqexec.server.gems.GemsController.{
-  Cwfs1Usage,
-  Cwfs2Usage,
-  Cwfs3Usage,
-  OIUsage,
-  Odgw1Usage,
-  Odgw2Usage,
-  Odgw3Usage,
-  Odgw4Usage,
-  P1Usage
-}
+import seqexec.server.gems.GemsController.Cwfs1Usage
+import seqexec.server.gems.GemsController.Cwfs2Usage
+import seqexec.server.gems.GemsController.Cwfs3Usage
+import seqexec.server.gems.GemsController.OIUsage
+import seqexec.server.gems.GemsController.Odgw1Usage
+import seqexec.server.gems.GemsController.Odgw2Usage
+import seqexec.server.gems.GemsController.Odgw3Usage
+import seqexec.server.gems.GemsController.Odgw4Usage
+import seqexec.server.gems.GemsController.P1Usage
 import seqexec.server.gems.TestGemsEpics.LoopEvent
 import seqexec.server.gsaoi.GsaoiGuider
 import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.{ PauseCondition, ResumeCondition }
-import seqexec.server.tcs.TcsController.{ FocalPlaneOffset, OffsetX, OffsetY }
+import seqexec.server.tcs.Gaos.PauseCondition
+import seqexec.server.tcs.Gaos.ResumeCondition
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
+import seqexec.server.tcs.TcsController.OffsetX
+import seqexec.server.tcs.TcsController.OffsetY
 import shapeless.tag
 import squants.space.LengthConversions._
 

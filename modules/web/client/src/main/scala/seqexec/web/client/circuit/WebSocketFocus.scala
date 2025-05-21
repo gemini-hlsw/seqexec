@@ -3,10 +3,8 @@
 
 package seqexec.web.client.circuit
 
-import scala.collection.immutable.SortedMap
-
-import cats._
 import cats.Order._
+import cats._
 import lucuma.core.enums.Site
 import monocle.Lens
 import monocle.macros.Lenses
@@ -20,6 +18,8 @@ import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SequenceTab
 import seqexec.web.client.model.SequencesOnDisplay
 import seqexec.web.client.model.SoundSelection
+
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class WebSocketsFocus(

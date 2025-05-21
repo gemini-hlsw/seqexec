@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -6,8 +6,8 @@ package seqexec.web.server.security
 import cats.effect._
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import scopt.OParser
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import scopt.OParser
 
 case class Config(host: String, port: Int, username: String, password: Option[String])
 

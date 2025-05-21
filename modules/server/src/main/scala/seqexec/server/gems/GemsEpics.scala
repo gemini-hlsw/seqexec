@@ -3,7 +3,6 @@
 
 package seqexec.server.gems
 
-import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -13,9 +12,14 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.epics.acm.CaStatusAcceptor
 import edu.gemini.seqexec.server.gems.LoopState
 import edu.gemini.seqexec.server.gems.ReadyState
-import seqexec.server.{ EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil }
+import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil._
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GemsEpics[F[_]] {
   import seqexec.server.gems.GemsEpics.LoopControl

@@ -3,8 +3,6 @@
 
 package seqexec.model.boopickle
 
-import java.time._
-import boopickle.Pickler
 import boopickle.CompositePickler
 import boopickle.Default.UUIDPickler
 import boopickle.Default.booleanPickler
@@ -19,6 +17,7 @@ import boopickle.Default.stringPickler
 import boopickle.Default.transformPickler
 import boopickle.DefaultBasic.iterablePickler
 import boopickle.DefaultBasic.mapPickler
+import boopickle.Pickler
 import cats._
 import cats.syntax.all._
 import lucuma.core.math.Index
@@ -36,6 +35,8 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.time.Time
 import squants.time.TimeConversions._
+
+import java.time._
 
 /**
  * Contains boopickle implicit picklers of model objects Boopickle can auto derive encoders but it

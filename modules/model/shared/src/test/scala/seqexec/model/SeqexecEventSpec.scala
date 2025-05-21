@@ -3,8 +3,9 @@
 
 package seqexec.model
 
-import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
+
 import events._
 
 /**

@@ -3,20 +3,21 @@
 
 package seqexec.model.boopickle
 
-import lucuma.core.util.arb.ArbEnumerated._
-import seqexec.model.enum._
-import seqexec.model._
-import seqexec.model.events._
-import seqexec.model.SeqexecModelArbitraries._
-import seqexec.model.SequenceEventsArbitraries._
-import seqexec.model.arb.all._
-import squants.time.Time
-import java.time._
-import org.typelevel.cats.time.instances.all._
-import org.typelevel.cats.time.instances.TimeArbitraries._
 import lucuma.core.math.Index
 import lucuma.core.math.arb.ArbIndex._
+import lucuma.core.util.arb.ArbEnumerated._
+import org.typelevel.cats.time.instances.TimeArbitraries._
+import org.typelevel.cats.time.instances.all._
+import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.SequenceEventsArbitraries._
+import seqexec.model._
 import seqexec.model.arb._
+import seqexec.model.arb.all._
+import seqexec.model.enum._
+import seqexec.model.events._
+import squants.time.Time
+
+import java.time._
 
 /**
  * Tests Serialization/Deserialization using BooPickle

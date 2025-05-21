@@ -3,7 +3,8 @@
 
 package seqexec.model
 
-import cats.{ Eq, Show }
+import cats.Eq
+import cats.Show
 import monocle.macros.Lenses
 import seqexec.model.enum.MountGuideOption
 

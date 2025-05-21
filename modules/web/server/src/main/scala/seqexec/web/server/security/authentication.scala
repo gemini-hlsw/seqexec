@@ -7,11 +7,11 @@ import cats._
 import cats.effect._
 import cats.syntax.all._
 import com.unboundid.ldap.sdk.LDAPURL
-import org.typelevel.log4cats.Logger
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.jawn.decode
 import io.circe.syntax._
+import org.typelevel.log4cats.Logger
 import pdi.jwt.Jwt
 import pdi.jwt.JwtAlgorithm
 import pdi.jwt.JwtCirce

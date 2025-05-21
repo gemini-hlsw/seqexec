@@ -1,16 +1,17 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
-import cats.{ Applicative, Monad }
+import cats.Applicative
+import cats.Monad
+import cats.effect.Ref
 import cats.syntax.all._
 import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model.enum.ApplyCommandResult
 
 import scala.concurrent.duration.FiniteDuration
-import cats.effect.Ref
 
 object TestEpicsCommand {
 

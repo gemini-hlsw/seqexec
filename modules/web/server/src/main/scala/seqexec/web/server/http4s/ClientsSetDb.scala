@@ -3,14 +3,14 @@
 
 package seqexec.web.server.http4s
 
-import java.time.Instant
-
+import cats.effect.Ref
 import cats.effect.Sync
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import org.http4s.headers.`User-Agent`
+import org.typelevel.log4cats.Logger
 import seqexec.model.ClientId
-import cats.effect.Ref
+
+import java.time.Instant
 
 trait ClientsSetDb[F[_]] {
   def newClient(

@@ -3,8 +3,6 @@
 
 package seqexec.web.client
 
-import scala.collection.immutable.SortedMap
-
 import diode.data.PotState
 import japgolly.scalajs.react.ReactCats._
 import japgolly.scalajs.react.Reusability
@@ -30,6 +28,8 @@ import seqexec.web.client.model.UserPromptState
 import seqexec.web.client.model.WebSocketConnection
 import shapeless.tag.@@
 import squants.Time
+
+import scala.collection.immutable.SortedMap
 
 package object reusability {
   implicit def enumeratedReuse[A <: AnyRef]: Reusability[A]                         =

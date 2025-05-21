@@ -4,19 +4,20 @@
 package seqexec.web.client
 
 import cats.tests.CatsSuite
+import seqexec.model.Conditions
 import seqexec.model.Observation
-import scala.collection.immutable.SortedMap
-import seqexec.model.enum.Instrument
 import seqexec.model.SequenceMetadata
+import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
-import seqexec.model.Conditions
-import seqexec.model.SequenceState
 import seqexec.model.SystemOverrides
-import seqexec.web.client.model.PreviewSequenceTab
-import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.model.enum.Instrument
 import seqexec.web.client.model.CalibrationQueueTab
 import seqexec.web.client.model.InstrumentSequenceTab
+import seqexec.web.client.model.PreviewSequenceTab
+import seqexec.web.client.model.SequencesOnDisplay
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Tests Sequences on display class

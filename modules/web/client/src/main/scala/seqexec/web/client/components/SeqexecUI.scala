@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.scalajs.js.timers.SetTimeoutHandle
 import cats.effect.Sync
 import cats.syntax.all._
 import diode.ModelRO
@@ -21,6 +20,8 @@ import seqexec.web.client.actions.WSConnect
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model.Pages._
+
+import scala.scalajs.js.timers.SetTimeoutHandle
 
 /**
  * UI Router

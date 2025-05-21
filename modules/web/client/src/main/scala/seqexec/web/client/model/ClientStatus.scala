@@ -6,9 +6,9 @@ package seqexec.web.client.model
 import cats.Eq
 import monocle.Getter
 import monocle.Lens
-import seqexec.model.UserDetails
 import seqexec.model.ClientId
 import seqexec.model.Observer
+import seqexec.model.UserDetails
 
 /**
  * Utility class to let components more easily switch parts of the UI depending on the user and

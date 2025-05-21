@@ -1,16 +1,16 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
-import java.time.Duration
-import java.util.concurrent.{ ScheduledExecutorService, ScheduledThreadPoolExecutor }
-
 import cats.effect.IO
 import edu.gemini.epics.acm.CaWindowStabilizer
 import edu.gemini.epics.acm.test.DummyAttribute
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
+import java.time.Duration
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.concurrent.duration.FiniteDuration
 
 class EpicsUtilSpec extends munit.CatsEffectSuite {

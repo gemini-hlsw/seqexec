@@ -1,9 +1,8 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.engine
 
-import java.time.Instant
 import cats.effect.Sync
 import cats.syntax.all._
 import fs2.Stream
@@ -13,6 +12,8 @@ import seqexec.model.ClientId
 import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.UserDetails
+
+import java.time.Instant
 
 /**
  * Anything that can go through the Event Queue.

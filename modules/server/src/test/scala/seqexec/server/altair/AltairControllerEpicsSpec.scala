@@ -1,27 +1,26 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.altair
 
-import cats.syntax.all._
 import cats.effect.IO
+import cats.syntax.all._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
 import seqexec.model.`enum`.Instrument
-import seqexec.server.tcs.TcsController.{
-  FocalPlaneOffset,
-  InstrumentOffset,
-  OffsetP,
-  OffsetQ,
-  OffsetX,
-  OffsetY
-}
+import seqexec.server.tcs.Gaos
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.OffsetP
+import seqexec.server.tcs.TcsController.OffsetQ
+import seqexec.server.tcs.TcsController.OffsetX
+import seqexec.server.tcs.TcsController.OffsetY
+import seqexec.server.tcs.TestTcsEpics
 import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.AoCorrectCmd
-import seqexec.server.tcs.{ Gaos, TestTcsEpics }
 import shapeless.tag
-import squants.space.LengthConversions._
 import squants.space.AngleConversions._
+import squants.space.LengthConversions._
 
 class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
 

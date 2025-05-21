@@ -3,9 +3,9 @@
 
 package seqexec.model.arb
 
+import lucuma.core.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
-import lucuma.core.arb.ArbTime.arbSDuration
 import squants.time._
 
 trait ArbTime {

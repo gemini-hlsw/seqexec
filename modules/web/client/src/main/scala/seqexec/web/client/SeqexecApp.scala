@@ -3,21 +3,21 @@
 
 package seqexec.web.client
 
-import scala.concurrent.ExecutionContext
-import scala.scalajs.js.annotation.JSExport
-import scala.scalajs.js.annotation.JSExportTopLevel
-
 import cats.effect.Sync
 import cats.effect._
 import lucuma.core.enums.Site
-import org.scalajs.dom.document
 import org.scalajs.dom.Element
+import org.scalajs.dom.document
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.SeqexecWebClient
 import typings.loglevel.mod.{ ^ => logger }
+
+import scala.concurrent.ExecutionContext
+import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.JSExportTopLevel
 
 /**
  * Seqexec WebApp entry point

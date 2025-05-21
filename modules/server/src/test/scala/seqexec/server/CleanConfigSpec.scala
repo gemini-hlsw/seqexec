@@ -1,11 +1,14 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
-import edu.gemini.spModel.config2.{ DefaultConfig, ItemEntry, ItemKey }
-import org.scalatest.matchers.should.Matchers
+import edu.gemini.spModel.config2.DefaultConfig
+import edu.gemini.spModel.config2.ItemEntry
+import edu.gemini.spModel.config2.ItemKey
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
 import ConfigUtilOps._
 
 class CleanConfigSpec extends AnyFlatSpec with Matchers {

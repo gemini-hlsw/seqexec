@@ -3,10 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.concurrent.duration._
-import scala.math.max
-import scala.math.min
-
 import cats.syntax.all._
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
@@ -17,6 +13,10 @@ import japgolly.scalajs.react.component.Scala
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.common._
+
+import scala.concurrent.duration._
+import scala.math.max
+import scala.math.min
 
 abstract class SmoothProgressBarProps[A](
   override val component: Scala.Component[A, _, _, CtorType.Props]

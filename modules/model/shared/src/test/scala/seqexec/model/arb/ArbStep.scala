@@ -8,8 +8,8 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import seqexec.model._
-import seqexec.model.arb.ArbStandardStep._
 import seqexec.model.arb.ArbNodAndShuffleStep._
+import seqexec.model.arb.ArbStandardStep._
 
 trait ArbStep {
   implicit val steArb = Arbitrary[Step] {

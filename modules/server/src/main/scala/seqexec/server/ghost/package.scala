@@ -5,13 +5,14 @@ package seqexec.server.ghost
 
 import cats.Eq
 import cats.implicits._
-import lucuma.core.util.Enumerated
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.target.env.ResolutionMode
 import giapi.client.GiapiConfig
 import giapi.enums.GiapiStatusApply
 import giapi.enums.GiapiStatusApply._
-import edu.gemini.spModel.gemini.ghost.GhostBinning
+import lucuma.core.util.Enumerated
+
 import scala.concurrent.duration.FiniteDuration
-import edu.gemini.spModel.target.env.ResolutionMode
 
 sealed trait FiberAgitator extends Product with Serializable
 

@@ -3,11 +3,13 @@
 
 package seqexec.server
 
-import scala.concurrent.duration._
 import cats._
 import cats.data.EitherT
 import cats.data.NonEmptySet
-import cats.effect.{ Async, Ref, Sync, Temporal }
+import cats.effect.Async
+import cats.effect.Ref
+import cats.effect.Sync
+import cats.effect.Temporal
 import cats.syntax.all._
 import edu.gemini.seqexec.odb.ExecutedDataset
 import edu.gemini.seqexec.odb.SeqexecSequence
@@ -17,9 +19,9 @@ import edu.gemini.spModel.obscomp.InstConstants.DATA_LABEL_PROP
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.Site
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.engine.Action.ActionState
 import seqexec.engine._
 import seqexec.model.Observation
@@ -52,8 +54,6 @@ import seqexec.server.ghost.GhostController
 import seqexec.server.ghost.GhostControllerDisabled
 import seqexec.server.ghost.GhostHeader
 import seqexec.server.ghost.GhostKeywordsReader
-import seqexec.server.igrins2.Igrins2Controller
-import seqexec.server.igrins2.Igrins2ControllerDisabled
 import seqexec.server.gmos.GmosController
 import seqexec.server.gmos.GmosControllerDisabled
 import seqexec.server.gmos.GmosHeader
@@ -70,6 +70,10 @@ import seqexec.server.gpi.GpiControllerDisabled
 import seqexec.server.gpi.GpiHeader
 import seqexec.server.gsaoi._
 import seqexec.server.gws.GwsHeader
+import seqexec.server.igrins2.Igrins2
+import seqexec.server.igrins2.Igrins2Controller
+import seqexec.server.igrins2.Igrins2ControllerDisabled
+import seqexec.server.igrins2.Igrins2Header
 import seqexec.server.keywords._
 import seqexec.server.nifs._
 import seqexec.server.niri._
@@ -78,8 +82,8 @@ import seqexec.server.tcs.TcsController.LightSource
 import seqexec.server.tcs._
 import squants.Time
 import squants.time.TimeConversions._
-import seqexec.server.igrins2.Igrins2
-import seqexec.server.igrins2.Igrins2Header
+
+import scala.concurrent.duration._
 
 trait SeqTranslate[F[_]] extends ObserveActions {
 

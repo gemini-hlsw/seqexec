@@ -1,24 +1,25 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.ghost
 
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.target.env.ResolutionMode
+import lucuma.core.arb.ArbTime
 import lucuma.core.math.Coordinates
 import lucuma.core.math.arb.ArbCoordinates
 import lucuma.core.model.arb.ArbTarget
-import lucuma.core.arb.ArbTime
-import lucuma.core.util.arb.ArbEnumerated._
 import lucuma.core.model.{ Target => GemTarget }
-import org.scalacheck.Arbitrary._
-import edu.gemini.spModel.target.env.ResolutionMode
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import edu.gemini.spModel.gemini.ghost.GhostBinning
-import scala.concurrent.duration.FiniteDuration
 import seqexec.model.Conditions
 import seqexec.model.SeqexecModelArbitraries._
 import shapeless.tag
+
+import scala.concurrent.duration.FiniteDuration
 
 trait GhostArbitraries extends ArbTime {
 

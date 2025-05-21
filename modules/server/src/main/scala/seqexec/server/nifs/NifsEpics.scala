@@ -3,7 +3,6 @@
 
 package seqexec.server.nifs
 
-import java.lang.{ Double => JDouble }
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -12,11 +11,15 @@ import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import edu.gemini.seqexec.server.nifs.ReadMode
 import edu.gemini.seqexec.server.nifs.TimeMode
-import seqexec.server.{ EpicsCommandBase, EpicsSystem, ObserveCommandBase }
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommandBase
+
+import java.lang.{ Double => JDouble }
 
 class NifsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
   val sysName: String = "NIFS"

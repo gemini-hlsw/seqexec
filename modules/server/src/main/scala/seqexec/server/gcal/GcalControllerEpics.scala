@@ -3,10 +3,6 @@
 
 package seqexec.server.gcal
 
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.syntax.all._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
@@ -20,6 +16,9 @@ import seqexec.server.gcal.GcalController.Diffuser
 import seqexec.server.gcal.GcalController.Filter
 import seqexec.server.gcal.GcalController.Shutter
 import seqexec.server.gcal.GcalController._
+
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 object GcalControllerEpics {
   // Default value from Tcl Seqexec

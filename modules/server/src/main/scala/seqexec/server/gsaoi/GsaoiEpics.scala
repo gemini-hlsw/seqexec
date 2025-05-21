@@ -3,9 +3,6 @@
 
 package seqexec.server.gsaoi
 
-import java.lang.{ Double => JDouble }
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -19,11 +16,19 @@ import edu.gemini.epics.acm.CaStatusAcceptor
 import edu.gemini.epics.acm.CaWindowStabilizer
 import edu.gemini.epics.acm.CarState
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
-import seqexec.server.{ EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil, ObserveCommandBase }
+import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommandBase
+
+import java.lang.{ Double => JDouble }
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 

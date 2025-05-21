@@ -1,48 +1,56 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import cats.effect.{ Async, IO, Ref }
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Ref
 import cats.syntax.all._
-import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
 import lucuma.core.enums.LightSinkName
 import munit.CatsEffectSuite
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
-import seqexec.model.{ M1GuideConfig, M2GuideConfig, TelescopeGuideConfig }
-import seqexec.model.`enum`.{ ComaOption, Instrument, M1Source, MountGuideOption, TipTiltSource }
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.InstrumentGuide
 import seqexec.server.altair.AltairController
 import seqexec.server.gems.Gems
 import seqexec.server.gems.Gems._
 import seqexec.server.gems.GemsController._
-import seqexec.server.tcs.TcsController.{
-  AGConfig,
-  AoGuidersConfig,
-  AoTcsConfig,
-  GuiderConfig,
-  GuiderSensorOff,
-  GuiderSensorOn,
-  InstrumentOffset,
-  LightPath,
-  LightSource,
-  NodChopTrackingConfig,
-  OIConfig,
-  OffsetP,
-  OffsetQ,
-  P1Config,
-  ProbeTrackingConfig,
-  Subsystem,
-  TelescopeConfig
-}
+import seqexec.server.tcs.TcsController.AGConfig
+import seqexec.server.tcs.TcsController.AoGuidersConfig
+import seqexec.server.tcs.TcsController.AoTcsConfig
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.GuiderSensorOff
+import seqexec.server.tcs.TcsController.GuiderSensorOn
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.LightPath
+import seqexec.server.tcs.TcsController.LightSource
+import seqexec.server.tcs.TcsController.NodChopTrackingConfig
+import seqexec.server.tcs.TcsController.OIConfig
+import seqexec.server.tcs.TcsController.OffsetP
+import seqexec.server.tcs.TcsController.OffsetQ
+import seqexec.server.tcs.TcsController.P1Config
+import seqexec.server.tcs.TcsController.ProbeTrackingConfig
+import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsController.TelescopeConfig
 import seqexec.server.tcs.TcsSouthController._
-import seqexec.server.tcs.TestTcsEpics.{ ProbeGuideConfigVals, TestTcsEvent }
+import seqexec.server.tcs.TestTcsEpics.ProbeGuideConfigVals
+import seqexec.server.tcs.TestTcsEpics.TestTcsEvent
 import shapeless.tag
 import squants.Time
+import squants.space.AngleConversions.AngleConversions
 import squants.space.Length
 import squants.space.LengthConversions.LengthConversions
-import squants.space.AngleConversions.AngleConversions
 
 class TcsSouthControllerEpicsAoSpec extends CatsEffectSuite {
   import TcsSouthControllerEpicsAoSpec._

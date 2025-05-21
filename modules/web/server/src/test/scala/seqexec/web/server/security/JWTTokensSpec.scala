@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
@@ -7,8 +7,9 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.tests.CatsSuite
 import org.typelevel.log4cats.noop.NoOpLogger
-import seqexec.model.config._
 import seqexec.model.UserDetails
+import seqexec.model.config._
+
 import scala.concurrent.duration._
 
 class JWTTokensSpec extends CatsSuite {

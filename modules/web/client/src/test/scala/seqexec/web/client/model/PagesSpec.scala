@@ -5,7 +5,6 @@ package seqexec.web.client
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-// import monocle.law.discipline.PrismTests
 import seqexec.web.client.model.Pages._
 
 /**

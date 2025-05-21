@@ -9,15 +9,13 @@ import cats.implicits._
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController
-import seqexec.server.tcs.TcsController.{
-  AoGuide,
-  AoTcsConfig,
-  BasicTcsConfig,
-  GuiderConfig,
-  InstrumentOffset,
-  Subsystem,
-  TcsConfig
-}
+import seqexec.server.tcs.TcsController.AoGuide
+import seqexec.server.tcs.TcsController.AoTcsConfig
+import seqexec.server.tcs.TcsController.BasicTcsConfig
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsController.TcsConfig
 import shapeless.tag.@@
 
 trait TcsNorthController[F[_]] {

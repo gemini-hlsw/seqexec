@@ -11,7 +11,8 @@ import seqexec.model.enum.NodAndShuffleStage
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController.InstrumentOffset
 import seqexec.server.tcs.TcsController.Subsystem
-import seqexec.server.tcs.TcsSouthController.{ TcsSouthConfig, tcsSouthConfigShow }
+import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
+import seqexec.server.tcs.TcsSouthController.tcsSouthConfigShow
 
 class TcsSouthControllerSim[F[_]: Applicative: Logger] private extends TcsSouthController[F] {
   val sim = new TcsControllerSim[F]

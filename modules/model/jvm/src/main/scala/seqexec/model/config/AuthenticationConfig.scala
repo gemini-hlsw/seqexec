@@ -3,10 +3,10 @@
 
 package seqexec.model.config
 
-import scala.concurrent.duration.FiniteDuration
-
 import cats.Eq
 import org.http4s.Uri
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Configuration for the general authentication service

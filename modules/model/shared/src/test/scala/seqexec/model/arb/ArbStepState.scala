@@ -4,8 +4,8 @@
 package seqexec.model.arb
 
 import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
 import org.scalacheck.Cogen
+import org.scalacheck.Gen
 import seqexec.model.StepState
 
 trait ArbStepState {

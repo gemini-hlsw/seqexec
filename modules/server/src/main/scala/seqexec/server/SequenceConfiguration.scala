@@ -22,9 +22,9 @@ import seqexec.server.gmos.GmosSouth
 import seqexec.server.gnirs._
 import seqexec.server.gpi.Gpi
 import seqexec.server.gsaoi._
+import seqexec.server.igrins2._
 import seqexec.server.nifs._
 import seqexec.server.niri._
-import seqexec.server.igrins2._
 
 trait SequenceConfiguration {
   def extractInstrument(config: CleanConfig): Either[SeqexecFailure, Instrument] =

@@ -9,9 +9,9 @@ import giapi.client.GiapiStatusDb
 import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.overrideLogMessage
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
+import seqexec.server.overrideLogMessage
 import squants.time.Time
 
 class GpiControllerDisabled[F[_]: Logger: Applicative](override val statusDb: GiapiStatusDb[F])

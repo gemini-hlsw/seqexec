@@ -6,8 +6,8 @@ package seqexec.model.arb
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import shapeless.tag
 import seqexec.model.GmosParameters._
+import shapeless.tag
 
 trait ArbGmosParameters {
   implicit val gmosNsPairsArb: Arbitrary[NsPairs]   =

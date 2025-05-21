@@ -3,13 +3,13 @@
 
 package seqexec
 
-import java.util.UUID
-
 import cats._
 import cats.syntax.all._
 import seqexec.model.enum._
 import squants.time.Time
 import squants.time.TimeUnit
+
+import java.util.UUID
 
 package model {
   final case class QueueId(self: UUID)  extends AnyVal

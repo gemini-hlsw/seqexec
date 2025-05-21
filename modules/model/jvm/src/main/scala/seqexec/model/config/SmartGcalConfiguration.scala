@@ -3,10 +3,10 @@
 
 package seqexec.model.config
 
-import java.nio.file.Path
-
 import cats.Eq
 import org.http4s.Uri
+
+import java.nio.file.Path
 
 /**
  * Configuration for Smart Gcal

@@ -1,32 +1,30 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.Id
-import cats.effect.IO
-import cats.syntax.all._
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import fs2.Stream
+import monocle.function.Index.mapIndex
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers
-import seqexec.server.TestCommon._
 import seqexec.engine._
-import seqexec.model.{
-  Conditions,
-  Observation,
-  Observer,
-  Operator,
-  SequenceState,
-  StepState,
-  UserDetails
-}
-import seqexec.model.enum._
+import seqexec.model.Conditions
+import seqexec.model.Observation
+import seqexec.model.Observer
+import seqexec.model.Operator
+import seqexec.model.SequenceState
+import seqexec.model.StepState
+import seqexec.model.UserDetails
 import seqexec.model.enum.Resource.TCS
-import monocle.function.Index.mapIndex
+import seqexec.model.enum._
+import seqexec.server.TestCommon._
 
 class StepsViewSpec extends TestCommon with Matchers with NonImplicitAssertions {
 

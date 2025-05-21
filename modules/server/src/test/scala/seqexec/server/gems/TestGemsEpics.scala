@@ -1,22 +1,21 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.gems
 
 import cats.Applicative
-import cats.effect.{ Async, Ref }
+import cats.effect.Async
+import cats.effect.Ref
 import cats.syntax.all._
-import mouse.boolean._
 import edu.gemini.seqexec.server.gems.LoopState
 import monocle.macros.Lenses
+import mouse.boolean._
 import seqexec.server.TestEpicsCommand.TestEpicsCommand2
-import seqexec.server.gems.GemsControllerEpics.{
-  InstrumentCondition,
-  OffsetCondition,
-  PauseCmd,
-  ResumeCmd,
-  UnguidedCondition
-}
+import seqexec.server.gems.GemsControllerEpics.InstrumentCondition
+import seqexec.server.gems.GemsControllerEpics.OffsetCondition
+import seqexec.server.gems.GemsControllerEpics.PauseCmd
+import seqexec.server.gems.GemsControllerEpics.ResumeCmd
+import seqexec.server.gems.GemsControllerEpics.UnguidedCondition
 import seqexec.server.gems.GemsEpics.LoopControl
 
 import scala.concurrent.duration.FiniteDuration

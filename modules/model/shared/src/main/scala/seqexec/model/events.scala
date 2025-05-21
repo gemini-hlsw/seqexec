@@ -3,12 +3,12 @@
 
 package seqexec.model
 
-import java.time.Instant
-
 import cats._
 import cats.syntax.all._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum._
+
+import java.time.Instant
 
 object events {
   implicit val instantEq: Eq[Instant] = Eq.fromUniversalEquals

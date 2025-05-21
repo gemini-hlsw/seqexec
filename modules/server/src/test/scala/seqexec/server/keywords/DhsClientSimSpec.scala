@@ -1,13 +1,14 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import cats.effect.IO
-import seqexec.model.enums.KeywordName
 import org.typelevel.log4cats.noop.NoOpLogger
-import java.time.LocalDate
+import seqexec.model.enums.KeywordName
 import seqexec.server.keywords.DhsClient.Permanent
+
+import java.time.LocalDate
 
 class DhsClientSimSpec extends munit.CatsEffectSuite {
   private implicit def logger = NoOpLogger.impl[IO]

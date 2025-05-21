@@ -3,11 +3,6 @@
 
 package seqexec.server.flamingos2
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
 import cats.data.StateT
 import cats.effect.Async
 import cats.syntax.all._
@@ -28,6 +23,10 @@ import seqexec.server.RemainingTime
 import seqexec.server.flamingos2.Flamingos2Controller._
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {

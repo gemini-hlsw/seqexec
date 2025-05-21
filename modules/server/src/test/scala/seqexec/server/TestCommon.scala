@@ -1,61 +1,72 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
-import cats.{ Applicative, Monoid }
-import cats.effect.IO
-import cats.syntax.all._
+import cats.Applicative
+import cats.Monoid
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
-import fs2.Stream
-import org.typelevel.log4cats.noop.NoOpLogger
-import org.typelevel.log4cats.Logger
-
-import java.util.UUID
+import cats.syntax.all._
 import edu.gemini.spModel.core.Peer
-import seqexec.model.Observation
-import lucuma.core.enums.Site
+import fs2.Stream
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
+import giapi.client.igrins2.Igrins2Client
+import lucuma.core.enums.Site
 import org.http4s.Uri
 import org.http4s.implicits._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.noop.NoOpLogger
 import seqexec.engine
-import seqexec.engine.{ Action, Result }
-import seqexec.engine.Result.PauseContext
+import seqexec.engine.Action
+import seqexec.engine.Result
 import seqexec.engine.Result.PartialVal
-import seqexec.model.{ ActionType, ClientId }
-import seqexec.model.enum.{ Instrument, Resource }
-import seqexec.model.dhs._
+import seqexec.engine.Result.PauseContext
+import seqexec.model.ActionType
+import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.SystemOverrides
 import seqexec.model.config._
-import seqexec.server.altair.{ AltairControllerSim, AltairKeywordReaderDummy }
+import seqexec.model.dhs._
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
+import seqexec.server.altair.AltairControllerSim
+import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.flamingos2.Flamingos2ControllerSim
-import seqexec.server.gcal.{ DummyGcalKeywordsReader, GcalControllerSim }
-import seqexec.server.gems.{ GemsControllerSim, GemsKeywordReaderDummy }
+import seqexec.server.gcal.DummyGcalKeywordsReader
+import seqexec.server.gcal.GcalControllerSim
+import seqexec.server.gems.GemsControllerSim
+import seqexec.server.gems.GemsKeywordReaderDummy
 import seqexec.server.ghost.GhostController
-import seqexec.server.gmos.{ GmosControllerSim, GmosKeywordReaderDummy }
-import seqexec.server.gnirs.{ GnirsControllerSim, GnirsKeywordReaderDummy }
+import seqexec.server.gmos.GmosControllerSim
+import seqexec.server.gmos.GmosKeywordReaderDummy
+import seqexec.server.gnirs.GnirsControllerSim
+import seqexec.server.gnirs.GnirsKeywordReaderDummy
 import seqexec.server.gpi.GpiController
-import seqexec.server.gsaoi.{ GsaoiControllerSim, GsaoiKeywordReaderDummy }
+import seqexec.server.gsaoi.GsaoiControllerSim
+import seqexec.server.gsaoi.GsaoiKeywordReaderDummy
 import seqexec.server.gws.DummyGwsKeywordsReader
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsClientSim }
-import seqexec.server.nifs.{ NifsControllerSim, NifsKeywordReaderDummy }
-import seqexec.server.niri.{ NiriControllerSim, NiriKeywordReaderDummy }
-import seqexec.server.tcs.{
-  DummyTcsKeywordsReader,
-  GuideConfigDb,
-  TcsNorthControllerSim,
-  TcsSouthControllerSim
-}
-import org.scalatest.flatspec.AnyFlatSpec
-import shapeless.tag
-
-import scala.concurrent.duration._
 import seqexec.server.igrins2.Igrins2Controller
-import giapi.client.igrins2.Igrins2Client
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
+import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GdsHttpClient
 import seqexec.server.keywords.GdsXmlrpcClient
+import seqexec.server.nifs.NifsControllerSim
+import seqexec.server.nifs.NifsKeywordReaderDummy
+import seqexec.server.niri.NiriControllerSim
+import seqexec.server.niri.NiriKeywordReaderDummy
+import seqexec.server.tcs.DummyTcsKeywordsReader
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.server.tcs.TcsNorthControllerSim
+import seqexec.server.tcs.TcsSouthControllerSim
+import shapeless.tag
+
+import java.util.UUID
+import scala.concurrent.duration._
 
 class TestCommon(implicit ioRuntime: IORuntime) extends AnyFlatSpec {
   import TestCommon._

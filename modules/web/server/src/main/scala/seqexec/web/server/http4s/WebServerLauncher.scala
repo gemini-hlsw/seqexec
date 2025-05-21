@@ -3,33 +3,33 @@
 
 package seqexec.web.server.http4s
 
-import java.io.FileInputStream
-import java.nio.file.{ Path => FilePath }
-import java.security.KeyStore
-import java.security.Security
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManagerFactory
-import scala.concurrent.duration._
+import cats.effect.Ref
+import cats.effect.Resource
+import cats.effect.Temporal
 import cats.effect._
+import cats.effect.std.Dispatcher
+import cats.effect.std.Queue
 import cats.effect.syntax.all._
 import cats.syntax.all._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
+import com.comcast.ip4s.Dns
 import fs2.Stream
-import cats.effect.std.{ Dispatcher, Queue }
+import fs2.compression.Compression
 import fs2.concurrent.Topic
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.HttpRoutes
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.client.Client
 import org.http4s.client.middleware.RequestLogger
 import org.http4s.client.middleware.ResponseLogger
+import org.http4s.jdkhttpclient.JdkHttpClient
 import org.http4s.server.Router
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.Server
-import org.http4s.server.websocket.WebSocketBuilder2
 import org.http4s.server.middleware.{ Logger => Http4sLogger }
+import org.http4s.server.websocket.WebSocketBuilder2
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import pureconfig._
 import seqexec.model.config._
 import seqexec.model.events._
@@ -47,11 +47,15 @@ import seqexec.web.server.security.AuthenticationService
 import web.server.common.LogInitialization
 import web.server.common.RedirectToHttpsRoutes
 import web.server.common.StaticRoutes
-import cats.effect.{ Ref, Resource, Temporal }
-import org.http4s.jdkhttpclient.JdkHttpClient
-import org.http4s.blaze.server.BlazeServerBuilder
-import com.comcast.ip4s.Dns
-import fs2.compression.Compression
+
+import java.io.FileInputStream
+import java.nio.file.{ Path => FilePath }
+import java.security.KeyStore
+import java.security.Security
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+import scala.concurrent.duration._
 
 object WebServerLauncher extends IOApp with LogInitialization {
   private implicit def L: Logger[IO] = Slf4jLogger.getLoggerFromName[IO]("seqexec")

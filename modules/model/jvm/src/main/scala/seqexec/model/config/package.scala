@@ -3,9 +3,9 @@
 
 package seqexec.model
 
-import java.nio.file.Path
-
 import cats.Eq
+
+import java.nio.file.Path
 
 package object config {
   // Used to internally define Eq instances

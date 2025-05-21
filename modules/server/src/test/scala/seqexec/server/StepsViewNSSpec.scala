@@ -1,15 +1,15 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.Id
-import cats.effect.IO
 import cats.data.NonEmptyList
+import cats.effect.IO
 import org.scalatest.funsuite.AnyFunSuite
-import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.enum._
+import seqexec.server.TestCommon._
 
 class SeqexecEngineNSSpec extends AnyFunSuite {
 

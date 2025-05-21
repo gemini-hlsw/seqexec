@@ -4,16 +4,18 @@
 package seqexec.model.arb
 
 import cats.data.NonEmptyList
-import seqexec.model.{ Observation, StepId, UserPrompt }
-import org.scalacheck.{ Arbitrary, Cogen, Gen }
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import seqexec.model.UserPrompt.{
-  ChecksOverride,
-  Discrepancy,
-  ObsConditionsCheckOverride,
-  SeqCheck,
-  TargetCheckOverride
-}
+import org.scalacheck.Cogen
+import org.scalacheck.Gen
+import seqexec.model.Observation
+import seqexec.model.StepId
+import seqexec.model.UserPrompt
+import seqexec.model.UserPrompt.ChecksOverride
+import seqexec.model.UserPrompt.Discrepancy
+import seqexec.model.UserPrompt.ObsConditionsCheckOverride
+import seqexec.model.UserPrompt.SeqCheck
+import seqexec.model.UserPrompt.TargetCheckOverride
 
 trait ArbUserPrompt {
   import ArbObservationId._

@@ -3,27 +3,31 @@
 
 package seqexec.engine
 
-import cats.effect.IO
 import cats.data.NonEmptyList
-import cats.implicits._
-import munit.CatsEffectSuite
+import cats.effect.IO
+import cats.effect.Ref
 import cats.effect.std.Queue
+import cats.implicits._
 import fs2.Stream
-import seqexec.model.Observation
+import munit.CatsEffectSuite
+import org.scalatest.Inside._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
-import java.util.UUID
-import org.scalatest.Inside._
-import seqexec.engine.TestUtil.TestState
 import seqexec.engine.EventResult._
 import seqexec.engine.SystemEvent._
+import seqexec.engine.TestUtil.TestState
+import seqexec.model.ActionType
+import seqexec.model.ClientId
+import seqexec.model.Observation
+import seqexec.model.SequenceState
+import seqexec.model.StepState
+import seqexec.model.UserDetails
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ ClientId, SequenceState, StepState }
 import seqexec.model.enum.Resource
-import seqexec.model.{ ActionType, UserDetails }
+
+import java.util.UUID
 import scala.Function.const
 import scala.concurrent.duration._
-import cats.effect.Ref
 
 class StepSpec extends CatsEffectSuite {
 

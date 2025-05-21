@@ -3,8 +3,6 @@
 
 package seqexec.web.server.security
 
-import java.time.Instant
-
 import cats._
 import cats.data.Kleisli
 import cats.data.OptionT
@@ -14,6 +12,9 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.AuthMiddleware
 import seqexec.model.UserDetails
+
+import java.time.Instant
+
 import AuthenticationService.AuthResult
 
 /**

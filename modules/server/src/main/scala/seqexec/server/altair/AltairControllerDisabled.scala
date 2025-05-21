@@ -7,8 +7,8 @@ import cats.Applicative
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 import seqexec.model.`enum`.Instrument
-import seqexec.server.overrideLogMessage
 import seqexec.server.altair.AltairController.AltairPauseResume
+import seqexec.server.overrideLogMessage
 import seqexec.server.tcs.Gaos
 import seqexec.server.tcs.Gaos.GuideCapabilities
 import seqexec.server.tcs.TcsController.FocalPlaneOffset

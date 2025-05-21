@@ -3,32 +3,33 @@
 
 package seqexec.server.igrins2
 
-import cats.data.Kleisli
 import cats.MonadError
+import cats.data.EitherT
+import cats.data.Kleisli
+import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
-import fs2.Stream
 import edu.gemini.spModel.gemini.igrins2.{ Igrins2 => SPIgrins2 }
-import java.lang.{ Double => JDouble }
-import org.typelevel.log4cats.Logger
+import edu.gemini.spModel.obscomp.InstConstants
+import fs2.Stream
+import giapi.client.commands.Configuration
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
+import seqexec.model.ObserveStage
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import edu.gemini.spModel.obscomp.InstConstants
+import seqexec.server.tcs.Tcs._
 import squants.time.Seconds
 import squants.time.Time
-import cats.effect.Async
-import seqexec.model.dhs.ImageFileId
-import giapi.client.commands.Configuration
 import squants.time.TimeConversions._
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.tcs.Tcs._
-import cats.data.EitherT
-import seqexec.model.ObserveStage
+
+import java.lang.{ Double => JDouble }
 
 final case class Igrins2[F[_]: Logger: Async](
   controller: Igrins2Controller[F]

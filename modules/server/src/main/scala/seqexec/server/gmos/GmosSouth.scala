@@ -3,14 +3,17 @@
 
 package seqexec.server.gmos
 
+import cats.Applicative
+import cats.effect.Ref
+import cats.effect.Temporal
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosSouthType
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.FPU_PROP_NAME
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.STAGE_MODE_PROP
 import edu.gemini.spModel.gemini.gmos.InstGmosSouth._
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.Instrument
 import seqexec.server.CleanConfig
 import seqexec.server.CleanConfig.extractItem
@@ -22,12 +25,11 @@ import seqexec.server.StepType
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.SouthTypes
 import seqexec.server.gmos.GmosController.southConfigTypes
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider }
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
-import cats.effect.{ Ref, Temporal }
-import cats.Applicative
 
 final case class GmosSouth[F[_]: Temporal: Logger] private (
   c:                 GmosSouthController[F],

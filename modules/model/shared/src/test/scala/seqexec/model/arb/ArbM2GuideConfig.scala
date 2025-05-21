@@ -3,14 +3,14 @@
 
 package seqexec.model.arb
 
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import lucuma.core.util.arb.ArbEnumerated._
+import seqexec.model.M2GuideConfig
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.TipTiltSource
-import seqexec.model.M2GuideConfig
 
 trait ArbM2GuideConfig {
 

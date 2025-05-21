@@ -10,12 +10,12 @@ import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
 import seqexec.model.Conditions
 import seqexec.model.Observation
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enums.KeywordName
 import seqexec.server.OcsBuildInfo
 import seqexec.server.tcs.TargetKeywordsReader
 import seqexec.server.tcs.TcsController

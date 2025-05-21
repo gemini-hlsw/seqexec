@@ -11,8 +11,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.`enum`.ObserveCommandResult
 import seqexec.server.InstrumentSystem
 import seqexec.server.Progress
-import seqexec.server.overrideLogMessage
 import seqexec.server.gmos.GmosController.SiteDependentTypes
+import seqexec.server.overrideLogMessage
 import squants.Time
 
 class GmosControllerDisabled[F[_]: Logger: Applicative, T <: SiteDependentTypes](name: String)

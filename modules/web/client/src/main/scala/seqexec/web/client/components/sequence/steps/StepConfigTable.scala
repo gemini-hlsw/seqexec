@@ -3,9 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.math.max
-import scala.scalajs.js
-
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -25,6 +22,9 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.reusability._
 import web.client.table._
+
+import scala.math.max
+import scala.scalajs.js
 
 final case class StepConfigTable(
   step:       Step,

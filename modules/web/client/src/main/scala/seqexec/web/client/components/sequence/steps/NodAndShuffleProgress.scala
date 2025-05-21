@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.math.max
-
 import cats.syntax.all._
 import diode.react.ReactConnectProxy
 import japgolly.scalajs.react._
@@ -30,6 +28,8 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.model.StopOperation
 import seqexec.web.client.reusability._
+
+import scala.math.max
 
 final case class NodAndShuffleProgressMessage(
   obsId:    Observation.Id,

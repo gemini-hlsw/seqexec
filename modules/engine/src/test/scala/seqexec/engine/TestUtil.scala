@@ -4,10 +4,10 @@
 package seqexec.engine
 
 import cats.effect.IO
-import seqexec.model.Observation
 import monocle.Optional
-import monocle.macros.Lenses
 import monocle.function.Index._
+import monocle.macros.Lenses
+import seqexec.model.Observation
 
 object TestUtil {
   @Lenses

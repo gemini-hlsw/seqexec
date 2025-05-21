@@ -3,8 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.concurrent.duration.Duration
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -26,6 +24,8 @@ import seqexec.web.client.model._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import squants.time.Time
+
+import scala.concurrent.duration.Duration
 
 /**
  * Handles updates to obs progress

@@ -3,8 +3,6 @@
 
 package seqexec.server.gcal
 
-import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -17,6 +15,8 @@ import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
 import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
+
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Created by jluhrs on 3/14/17.

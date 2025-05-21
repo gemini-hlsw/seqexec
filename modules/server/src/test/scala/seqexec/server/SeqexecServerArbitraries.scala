@@ -1,18 +1,20 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.effect.IO
 import lucuma.core.util.arb.ArbEnumerated._
-import seqexec.model.Observation
-import seqexec.model.arb.ArbObservationId._
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{ Arbitrary, Cogen }
+import org.scalacheck.Cogen
 import seqexec.model.BatchCommandState
-import seqexec.model.enum.Instrument
-import seqexec.model.{ Conditions, Operator }
+import seqexec.model.Conditions
+import seqexec.model.Observation
+import seqexec.model.Operator
 import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.arb.ArbObservationId._
+import seqexec.model.enum.Instrument
 
 trait SeqexecServerArbitraries {
 

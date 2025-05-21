@@ -3,11 +3,6 @@
 
 package seqexec.server.gcal
 
-import java.util.{ Set => JSet }
-
-import scala.Function.const
-import scala.jdk.CollectionConverters._
-
 import cats._
 import cats.effect.Sync
 import cats.syntax.all._
@@ -23,6 +18,10 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqexecFailure
 import seqexec.server.System
 import seqexec.server.gcal.GcalController._
+
+import java.util.{ Set => JSet }
+import scala.Function.const
+import scala.jdk.CollectionConverters._
 
 /**
  * Created by jluhrs on 3/21/17.

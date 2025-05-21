@@ -3,7 +3,8 @@
 
 package seqexec.server.gems
 
-import cats.{ Eq, Show }
+import cats.Eq
+import cats.Show
 import cats.implicits._
 import mouse.boolean._
 import seqexec.server.gems.Gems.GemsWfsState

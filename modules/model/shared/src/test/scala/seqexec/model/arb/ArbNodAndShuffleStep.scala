@@ -3,19 +3,23 @@
 
 package seqexec.model.arb
 
-import org.scalacheck.{ Arbitrary, Cogen, Gen }
-import org.scalacheck.Arbitrary._
 import lucuma.core.util.arb.ArbEnumerated._
-import seqexec.model._
+import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen
+import org.scalacheck.Gen
 import seqexec.model.GmosParameters._
-import seqexec.model.NodAndShuffleStep.{ PauseGracefully, PendingObserveCmd, StopGracefully }
-import seqexec.model.enum._
-import seqexec.model.arb.ArbStepConfig._
-import seqexec.model.arb.ArbStepState._
+import seqexec.model.NodAndShuffleStep.PauseGracefully
+import seqexec.model.NodAndShuffleStep.PendingObserveCmd
+import seqexec.model.NodAndShuffleStep.StopGracefully
+import seqexec.model._
 import seqexec.model.arb.ArbDhsTypes._
-import seqexec.model.arb.ArbTime._
 import seqexec.model.arb.ArbGmosParameters._
 import seqexec.model.arb.ArbNSRunningState._
+import seqexec.model.arb.ArbStepConfig._
+import seqexec.model.arb.ArbStepState._
+import seqexec.model.arb.ArbTime._
+import seqexec.model.enum._
 import squants._
 
 trait ArbNodAndShuffleStep {

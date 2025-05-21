@@ -3,10 +3,6 @@
 
 package seqexec.server.nifs
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
-import scala.math.abs
 import cats._
 import cats.data.OptionT
 import cats.effect.Async
@@ -19,8 +15,8 @@ import edu.gemini.spModel.gemini.nifs.NIFSParams.{ EngReadMode => LegacyEngReadM
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
-import org.typelevel.log4cats.Logger
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
@@ -33,6 +29,11 @@ import seqexec.server.failUnlessM
 import shapeless.tag
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
+import scala.math.abs
 
 object NifsLookupTables {
 

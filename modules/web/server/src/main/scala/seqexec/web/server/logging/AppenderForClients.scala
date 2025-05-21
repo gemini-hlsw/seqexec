@@ -3,7 +3,6 @@
 
 package seqexec.web.server.logging
 
-import java.time.Instant
 import cats.effect.IO
 import cats.effect.std.Dispatcher
 import cats.syntax.all._
@@ -13,6 +12,8 @@ import ch.qos.logback.core.AppenderBase
 import fs2.concurrent.Topic
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
+
+import java.time.Instant
 
 /**
  * Custom appender that can take log events from logback and send them to clients via the common

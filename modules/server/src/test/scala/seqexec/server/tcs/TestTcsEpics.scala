@@ -1,28 +1,33 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import cats.{ Applicative, Eq }
+import cats.Applicative
+import cats.Eq
 import cats.effect.Async
+import cats.effect.Ref
+import cats.effect.Temporal
 import cats.syntax.all._
-import mouse.boolean._
-import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
-import monocle.{ Getter, Lens }
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import monocle.Getter
+import monocle.Lens
 import monocle.macros.Lenses
+import mouse.boolean._
 import seqexec.model.enum.ApplyCommandResult
-import seqexec.server.TestEpicsCommand._
 import seqexec.server.EpicsCommand
+import seqexec.server.TestEpicsCommand._
 import seqexec.server.tcs.TcsEpics._
-import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.{ AoCorrectCmd, AoPrepareMatrix }
+import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.AoCorrectCmd
+import seqexec.server.tcs.TestTcsEpics.TestTcsEvent.AoPrepareMatrix
 import squants.Angle
 import squants.space.AngleConversions._
-
-import java.util.concurrent.TimeUnit.SECONDS
-import java.time.Duration
-import scala.concurrent.duration.FiniteDuration
-import cats.effect.{ Ref, Temporal }
 import squants.space.Length
+
+import java.time.Duration
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 case class TestTcsEpics[F[_]: Async](
   state: Ref[F, TestTcsEpics.State],

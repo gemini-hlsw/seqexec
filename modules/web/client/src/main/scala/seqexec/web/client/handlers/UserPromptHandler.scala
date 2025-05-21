@@ -3,9 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -15,6 +12,9 @@ import seqexec.model.UserPrompt
 import seqexec.model.events.UserPromptNotification
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
+
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 class UserPromptHandler[M](modelRW: ModelRW[M, UserPromptState])
     extends ActionHandler(modelRW)

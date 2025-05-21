@@ -3,8 +3,6 @@
 
 package seqexec.web.client.model
 
-import scala.collection.immutable.SortedMap
-
 import cats._
 import cats.syntax.all._
 import lucuma.core.util.Enumerated
@@ -24,6 +22,8 @@ import seqexec.model.SystemOverrides
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag.@@
+
+import scala.collection.immutable.SortedMap
 
 final case class AvailableTab(
   id:                 Observation.Id,

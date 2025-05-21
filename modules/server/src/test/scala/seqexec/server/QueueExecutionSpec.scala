@@ -1,31 +1,29 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server
 
 import cats.effect.IO
-import cats.syntax.all._
 import cats.effect.std.Queue
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import fs2.Stream
-import seqexec.model.{
-  BatchCommandState,
-  CalibrationQueueId,
-  Observation,
-  Observer,
-  QueueId,
-  SequenceState,
-  UserDetails
-}
 import monocle.function.Index.mapIndex
+import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Inside.inside
 import seqexec.engine.Sequence
+import seqexec.model.BatchCommandState
+import seqexec.model.CalibrationQueueId
+import seqexec.model.Observation
+import seqexec.model.Observer
+import seqexec.model.QueueId
+import seqexec.model.SequenceState
+import seqexec.model.UserDetails
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource.TCS
-import seqexec.server.TestCommon._
 import seqexec.model.enum.RunOverride
+import seqexec.server.TestCommon._
 
 class QueueExecutionSpec extends TestCommon with Matchers with NonImplicitAssertions {
 

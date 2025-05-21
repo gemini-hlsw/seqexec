@@ -1,12 +1,12 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.security
 
-import seqexec.model.UserDetails
-import seqexec.model.UserDetails._
 import cats._
 import cats.tests.CatsSuite
+import seqexec.model.UserDetails
+import seqexec.model.UserDetails._
 
 class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
   import FreeLDAPAuthenticationService._

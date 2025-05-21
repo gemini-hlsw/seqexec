@@ -1,23 +1,27 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.keywords
 
 import cats.effect._
+import cats.effect.unsafe.implicits.global
 import cats.tests.CatsSuite
+import io.circe.syntax._
+import lucuma.core.enums.Half
+import lucuma.core.enums.ProgramType
+import lucuma.core.enums.Site
+import lucuma.core.math.Index
+import lucuma.core.model.Semester
 import org.http4s._
 import org.http4s.client.Client
 import org.http4s.syntax.all._
-import io.circe.syntax._
-import java.time.Year
-import lucuma.core.enums.{ Half, ProgramType, Site }
-import lucuma.core.math.Index
-import lucuma.core.model.Semester
+import seqexec.model.Observation
+import seqexec.model.ProgramId
 import seqexec.model.dhs._
-import cats.effect.unsafe.implicits.global
-import seqexec.model.{ Observation, ProgramId }
 import seqexec.model.enums.KeywordName
 import seqexec.server.SeqexecFailure
+
+import java.time.Year
 
 import GdsHttpClient._
 

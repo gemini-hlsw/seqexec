@@ -3,8 +3,8 @@
 
 package seqexec.model.config
 
-import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
 import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.config.arb.ArbSystemsControlConfiguration._
 

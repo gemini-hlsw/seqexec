@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.web.server.http4s
@@ -6,19 +6,21 @@ package seqexec.web.server.http4s
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.tests.CatsSuite
-import seqexec.model.{ ClientId, Observation }
 import lucuma.core.util.arb.ArbEnumerated._
-import java.net.URLEncoder
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.websocket.WebSocketBuilder2
 import org.scalamock.scalatest.MockFactory
-import scala.math.abs
-import seqexec.server._
-import seqexec.web.server.http4s.encoder._
-import seqexec.model.enum._
+import seqexec.model.ClientId
+import seqexec.model.Observation
 import seqexec.model.arb.ArbClientId._
 import seqexec.model.arb.ArbObservationId._
+import seqexec.model.enum._
+import seqexec.server._
+import seqexec.web.server.http4s.encoder._
+
+import java.net.URLEncoder
+import scala.math.abs
 
 class SeqexecCommandRoutesSpec
     extends CatsSuite

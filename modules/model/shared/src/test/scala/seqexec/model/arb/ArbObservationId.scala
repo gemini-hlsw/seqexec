@@ -3,17 +3,16 @@
 
 package seqexec.model.arb
 
-import org.scalacheck._
-import org.scalacheck.Gen._
+import lucuma.core.math.Index
+import lucuma.core.math.arb._
+import lucuma.core.optics.syntax.prism._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen._
-
-import seqexec.model.ProgramId
-import lucuma.core.math.arb._
+import org.scalacheck.Gen._
+import org.scalacheck._
 import seqexec.model.Observation
+import seqexec.model.ProgramId
 import seqexec.model.arb.ArbProgramId
-import lucuma.core.math.Index
-import lucuma.core.optics.syntax.prism._
 
 trait ArbObservationId {
 

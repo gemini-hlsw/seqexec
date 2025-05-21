@@ -3,8 +3,8 @@
 
 package web.client.table
 
-import cats.tests.CatsSuite
 import cats.kernel.laws.discipline.EqTests
+import cats.tests.CatsSuite
 import monocle.law.discipline.LensTests
 
 final class TableSpec extends CatsSuite with TableArbitraries {

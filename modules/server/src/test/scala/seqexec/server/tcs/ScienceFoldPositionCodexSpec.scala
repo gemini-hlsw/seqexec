@@ -1,14 +1,21 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.tcs
 
-import org.scalatest.matchers.should.Matchers._
-import ScienceFoldPositionCodex._
-import seqexec.server.EpicsCodex._
-import lucuma.core.enums.LightSinkName.{ F2, Gmos, Gsaoi, Nifs, Niri_f32 }
-import seqexec.server.tcs.TcsController.LightSource.{ AO, GCAL, Sky }
+import lucuma.core.enums.LightSinkName.F2
+import lucuma.core.enums.LightSinkName.Gmos
+import lucuma.core.enums.LightSinkName.Gsaoi
+import lucuma.core.enums.LightSinkName.Nifs
+import lucuma.core.enums.LightSinkName.Niri_f32
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers._
+import seqexec.server.EpicsCodex._
+import seqexec.server.tcs.TcsController.LightSource.AO
+import seqexec.server.tcs.TcsController.LightSource.GCAL
+import seqexec.server.tcs.TcsController.LightSource.Sky
+
+import ScienceFoldPositionCodex._
 
 class ScienceFoldPositionCodexSpec extends AnyFlatSpec {
 

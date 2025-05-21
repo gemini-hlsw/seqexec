@@ -4,6 +4,7 @@
 package seqexec.server
 
 import cats.data.NonEmptyList
+import cats.effect.Temporal
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import seqexec.engine.Action
@@ -12,7 +13,6 @@ import seqexec.engine.ParallelActions
 import seqexec.engine.Result
 import seqexec.model.ActionType
 import seqexec.model.dhs.ImageFileId
-import cats.effect.Temporal
 
 /**
  * Algebra to generate actions for an observation. Most instruments behave the same but in some

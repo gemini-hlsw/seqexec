@@ -14,7 +14,8 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.tcs.Gaos
-import seqexec.server.tcs.Gaos.{ PauseConditionSet, ResumeConditionSet }
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 

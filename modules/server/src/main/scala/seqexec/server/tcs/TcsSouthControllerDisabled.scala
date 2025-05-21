@@ -6,8 +6,8 @@ package seqexec.server.tcs
 import cats.data.NonEmptySet
 import org.typelevel.log4cats.Logger
 import seqexec.model.`enum`.NodAndShuffleStage
-import seqexec.server.overrideLogMessage
 import seqexec.server.gems.Gems
+import seqexec.server.overrideLogMessage
 import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 
 class TcsSouthControllerDisabled[F[_]: Logger] extends TcsSouthController[F] {
