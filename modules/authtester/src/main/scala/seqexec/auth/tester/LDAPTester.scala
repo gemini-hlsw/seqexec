@@ -6,8 +6,8 @@ package seqexec.web.server.security
 import cats.effect._
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import scopt.OParser
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import scopt.OParser
 
 case class Config(host: String, port: Int, username: String, password: Option[String])
 

@@ -3,24 +3,19 @@
 
 package seqexec.server.gpi
 
-import java.lang.{ Boolean => JBoolean }
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
-
-import scala.concurrent.duration._
-
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
+import cats.effect.Temporal
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ReadoutArea => _, _ }
 import edu.gemini.spModel.obsclass.ObsClass
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.GpiReadMode
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -33,7 +28,11 @@ import seqexec.server.keywords.KeywordsClient
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
-import cats.effect.Temporal
+
+import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
+import scala.concurrent.duration._
 
 final case class Gpi[F[_]: Temporal: Logger](controller: GpiController[F])
     extends GdsInstrument[F]

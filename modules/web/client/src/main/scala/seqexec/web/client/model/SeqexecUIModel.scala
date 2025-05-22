@@ -5,13 +5,13 @@ package seqexec.web.client.model
 
 import cats.Eq
 import lucuma.core.util.Enumerated
-import monocle.macros.Lenses
+import monocle.Getter
 import monocle.Lens
+import monocle.macros.Lenses
 import seqexec.common.FixedLengthBuffer
 import seqexec.model.UserDetails
-import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit.UserLoginFocus
-import monocle.Getter
+import seqexec.web.client.model.SectionVisibilityState._
 
 sealed trait SoundSelection extends Product with Serializable
 

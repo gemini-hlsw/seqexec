@@ -5,7 +5,6 @@ package seqexec.web.client.components
 
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
 import react.common.ReactProps
 import react.semanticui.elements.button.Button
 import react.semanticui.elements.icon.Icon

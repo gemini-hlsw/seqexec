@@ -6,8 +6,8 @@ package seqexec.server.tcs
 import cats.data.NonEmptySet
 import org.typelevel.log4cats.Logger
 import seqexec.model.`enum`.NodAndShuffleStage
-import seqexec.server.overrideLogMessage
 import seqexec.server.altair.Altair
+import seqexec.server.overrideLogMessage
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig
 
 class TcsNorthControllerDisabled[F[_]: Logger] extends TcsNorthController[F] {

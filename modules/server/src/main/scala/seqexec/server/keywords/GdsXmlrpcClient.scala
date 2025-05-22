@@ -3,10 +3,8 @@
 
 package seqexec.server.keywords
 
-import scala.xml.Elem
-
-import cats.effect.Concurrent
 import cats.effect.Async
+import cats.effect.Concurrent
 import cats.syntax.all._
 import org.http4s._
 import org.http4s.client.Client
@@ -16,6 +14,8 @@ import org.http4s.scalaxml._
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
+
+import scala.xml.Elem
 
 object GdsXmlrpcClient {
 

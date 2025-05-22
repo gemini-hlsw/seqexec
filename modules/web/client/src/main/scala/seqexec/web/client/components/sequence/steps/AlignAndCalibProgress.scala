@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.math.max
-
 import cats.Show
 import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
@@ -21,6 +19,8 @@ import seqexec.web.client.model.AlignAndCalibStep
 import seqexec.web.client.model.AlignAndCalibStep._
 import seqexec.web.client.model.StepItems.StepStateSummary
 import seqexec.web.client.reusability._
+
+import scala.math.max
 
 final case class ACProgressBar(
   step:  AlignAndCalibStep,

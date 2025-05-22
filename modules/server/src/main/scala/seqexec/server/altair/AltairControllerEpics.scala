@@ -3,10 +3,6 @@
 
 package seqexec.server.altair
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats._
 import cats.effect.Async
 import cats.effect.Sync
@@ -14,23 +10,33 @@ import cats.kernel.Eq
 import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
-import seqexec.model.`enum`.Instrument
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.ApplyCommandResult
+import seqexec.model.`enum`.Instrument
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
-import seqexec.server.tcs.Gaos.PauseCondition.{ GaosGuideOff, OiOff, P1Off }
-import seqexec.server.tcs.Gaos.ResumeCondition.{ GaosGuideOn, OiOn, P1On }
+import seqexec.server.tcs.Gaos.PauseCondition.GaosGuideOff
+import seqexec.server.tcs.Gaos.PauseCondition.OiOff
+import seqexec.server.tcs.Gaos.PauseCondition.P1Off
+import seqexec.server.tcs.Gaos.ResumeCondition.GaosGuideOn
+import seqexec.server.tcs.Gaos.ResumeCondition.OiOn
+import seqexec.server.tcs.Gaos.ResumeCondition.P1On
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import seqexec.server.tcs.TcsEpics
 import squants.Length
 import squants.Time
-import squants.space.{ Arcseconds, Millimeters }
+import squants.space.Arcseconds
+import squants.space.Millimeters
 import squants.time.TimeConversions._
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 object AltairControllerEpics {
   @Lenses

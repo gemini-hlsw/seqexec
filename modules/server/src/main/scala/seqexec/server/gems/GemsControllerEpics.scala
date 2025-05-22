@@ -3,15 +3,11 @@
 
 package seqexec.server.gems
 
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
 import cats.effect.Async
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.server.gems.Gems._
 import seqexec.server.gems.GemsController.GemsConfig
 import seqexec.server.gsaoi.GsaoiGuider
@@ -20,6 +16,9 @@ import seqexec.server.tcs.Gaos.PauseConditionSet
 import seqexec.server.tcs.Gaos.PauseResume
 import seqexec.server.tcs.Gaos.ResumeCondition
 import seqexec.server.tcs.Gaos.ResumeConditionSet
+
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 class GemsControllerEpics[F[_]: Async](
   epicsSys:    GemsEpics[F],

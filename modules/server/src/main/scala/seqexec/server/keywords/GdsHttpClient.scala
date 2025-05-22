@@ -6,7 +6,8 @@ package seqexec.server.keywords
 import cats.effect.Async
 import cats.effect.Temporal
 import cats.syntax.all._
-import io.circe.{ Encoder, Json }
+import io.circe.Encoder
+import io.circe.Json
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._

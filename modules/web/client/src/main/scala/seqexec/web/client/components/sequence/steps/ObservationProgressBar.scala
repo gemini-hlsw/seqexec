@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.math.max
-
 import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -20,6 +18,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+
+import scala.math.max
 
 trait ProgressLabel {
   def label(
@@ -46,8 +46,8 @@ trait ProgressLabel {
     else if (stopping) s"$fileId - Stopping - Reading out..."
     else
       stageStr match {
-        case Some(stage) => s"$fileId - $stage"
-        case _           =>
+        case Some(stageMsg) => s"$fileId - $stageMsg"
+        case _              =>
           remainingMillis.fold(fileId) { millis =>
             if (millis > 0) s"$fileId$durationStr" else s"$fileId - Reading out..."
           }

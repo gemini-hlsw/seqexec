@@ -3,12 +3,9 @@
 
 package seqexec.web.client
 
-import scala.collection.immutable.SortedMap
-
 import diode.data.PotState
 import japgolly.scalajs.react.ReactCats._
 import japgolly.scalajs.react.Reusability
-import lucuma.core.util.Enumerated
 import react.common._
 import react.semanticui.SemanticColor
 import react.semanticui.SemanticSize
@@ -32,8 +29,10 @@ import seqexec.web.client.model.WebSocketConnection
 import shapeless.tag.@@
 import squants.Time
 
+import scala.collection.immutable.SortedMap
+
 package object reusability {
-  implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A]             =
+  implicit def enumeratedReuse[A <: AnyRef]: Reusability[A]                         =
     Reusability.byRef
   implicit def taggedInt[A]: Reusability[Int @@ A]                                  =
     Reusability.by(x => x: Int)

@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.tests.CatsSuite
+
 import scala.xml.XML
 
 final class GdsXmlrpcClientSpec extends CatsSuite {

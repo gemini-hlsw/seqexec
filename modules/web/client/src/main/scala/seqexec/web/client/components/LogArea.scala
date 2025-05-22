@@ -3,18 +3,10 @@
 
 package seqexec.web.client.components
 
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import scala.collection.immutable.SortedMap
-import scala.math.max
-import scala.scalajs.js
-
+import cats.Order._
 import cats._
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import cats.Order._
 import japgolly.scalajs.react.ReactMonocle._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
@@ -49,6 +41,13 @@ import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.reusability._
 import web.client.table._
+
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import scala.collection.immutable.SortedMap
+import scala.math.max
+import scala.scalajs.js
 
 /**
  * Area to display a sequence's log
@@ -367,7 +366,7 @@ object LogArea {
           ).when(p.log.display === SectionOpen)
         ),
         <.div(SeqexecStyles.logSecondarySegment |+| SeqexecStyles.logTable)(
-          AutoSizer(AutoSizer.props(table(b), disableHeight = true, onResize = onResize(b)))
+          AutoSizer(AutoSizer.props(table(b)(_), disableHeight = true, onResize = onResize(b)))
         ).when(p.log.display === SectionOpen)
       )
     }

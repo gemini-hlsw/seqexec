@@ -7,9 +7,9 @@ import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enums.KeywordName
 import seqexec.server.keywords.Header
 import seqexec.server.keywords.KeywordBag
 import seqexec.server.keywords.KeywordsClient

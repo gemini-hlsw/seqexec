@@ -3,9 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -20,6 +17,9 @@ import seqexec.web.client.model.MoveSeqQueue
 import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation
+
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
  * Updates the state of the tabs when requests are executed

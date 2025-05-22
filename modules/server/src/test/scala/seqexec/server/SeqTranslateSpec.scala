@@ -4,26 +4,29 @@
 package seqexec.server
 
 import cats.Monoid
-import cats.syntax.all._
+import cats.data.NonEmptyList
 import cats.effect._
 import cats.effect.unsafe.implicits.global
-import cats.data.NonEmptyList
-import fs2.Stream
-import seqexec.model.Observation
-import lucuma.core.enums.Site
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.Resource
+import cats.syntax.all._
 import edu.gemini.seqexec.odb.SeqexecSequence
 import edu.gemini.spModel.config2.ConfigSequence
 import edu.gemini.spModel.config2.DefaultConfig
+import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
-import edu.gemini.spModel.config2.ItemKey
-import seqexec.engine.{ Action, Result, Sequence }
+import fs2.Stream
+import lucuma.core.enums.Site
+import seqexec.engine.Action
+import seqexec.engine.Result
+import seqexec.engine.Sequence
+import seqexec.model.ActionType
 import seqexec.model.Conditions
-import seqexec.model.enum.Instrument.GmosS
+import seqexec.model.Observation
+import seqexec.model.SequenceState
 import seqexec.model.dhs._
-import seqexec.model.{ ActionType, SequenceState }
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Instrument.GmosS
+import seqexec.model.enum.Resource
 import seqexec.server.Response.Observed
 import seqexec.server.SequenceGen._
 import seqexec.server.TestCommon._

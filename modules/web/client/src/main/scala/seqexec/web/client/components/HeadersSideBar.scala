@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.concurrent.duration._
-
 import cats.Eq
 import cats.syntax.all._
 import japgolly.scalajs.react.ReactCats._
@@ -30,6 +28,8 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.forms.FormLabel
 import seqexec.web.client.reusability._
+
+import scala.concurrent.duration._
 
 /**
  * Container for a table with the steps

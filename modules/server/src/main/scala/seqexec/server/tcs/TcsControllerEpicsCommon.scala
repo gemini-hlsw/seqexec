@@ -3,24 +3,22 @@
 
 package seqexec.server.tcs
 
-import java.time.Duration
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats._
 import cats.data._
 import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
-import monocle.{ Iso, Lens }
+import monocle.Iso
+import monocle.Lens
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
-import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.ComaOption
+import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.M1Source
 import seqexec.model.enum.MountGuideOption
 import seqexec.model.enum.TipTiltSource
@@ -31,8 +29,12 @@ import seqexec.server.tcs.TcsController._
 import squants.Length
 import squants.space.Area
 import squants.space.LengthConversions._
-import squants.time.TimeConversions._
 import squants.space.Millimeters
+import squants.time.TimeConversions._
+
+import java.time.Duration
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Base implementation of an Epics TcsController Type parameter BaseEpicsTcsConfig is the class used

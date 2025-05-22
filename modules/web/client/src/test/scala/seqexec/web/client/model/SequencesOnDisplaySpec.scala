@@ -4,19 +4,20 @@
 package seqexec.web.client
 
 import cats.tests.CatsSuite
+import seqexec.model.Conditions
 import seqexec.model.Observation
-import scala.collection.immutable.SortedMap
-import seqexec.model.enum.Instrument
 import seqexec.model.SequenceMetadata
+import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
-import seqexec.model.Conditions
-import seqexec.model.SequenceState
 import seqexec.model.SystemOverrides
-import seqexec.web.client.model.PreviewSequenceTab
-import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.model.enum.Instrument
 import seqexec.web.client.model.CalibrationQueueTab
 import seqexec.web.client.model.InstrumentSequenceTab
+import seqexec.web.client.model.PreviewSequenceTab
+import seqexec.web.client.model.SequencesOnDisplay
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Tests Sequences on display class
@@ -96,7 +97,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     )
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(sʹ), _, _, _, _, _)) if sʹ.id === obsId =>
     }
   }
   test("Add preview with loaded") {
@@ -115,10 +116,10 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
 
     sod2.tabs.length should be(3)
     sod2.tabs.toList.lift(2) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(sʹ), _, _, _, _, _)) if sʹ.id === obsId =>
     }
     sod2.tabs.focus should matchPattern {
-      case PreviewSequenceTab(s, _, _, _) if s.id === obs2 =>
+      case PreviewSequenceTab(sʹ, _, _, _) if sʹ.id === obs2 =>
     }
   }
 }

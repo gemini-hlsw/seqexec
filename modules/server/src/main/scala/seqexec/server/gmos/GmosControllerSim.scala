@@ -4,13 +4,15 @@
 package seqexec.server.gmos
 
 import cats.Show
-import cats.effect.{ Async, Ref, Temporal }
+import cats.effect.Async
+import cats.effect.Ref
+import cats.effect.Temporal
 import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std.option.some
+import org.typelevel.log4cats.Logger
 import seqexec.model.GmosParameters.NsCyclesI
 import seqexec.model.NSSubexposure
 import seqexec.model.ObserveStage

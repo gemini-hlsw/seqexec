@@ -5,12 +5,12 @@ package seqexec.server.igrins2
 
 import cats.MonadThrow
 import cats.syntax.all._
+import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords._
 import seqexec.model.enums.KeywordName
+import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import org.typelevel.log4cats.Logger
 
 object Igrins2Header {
 

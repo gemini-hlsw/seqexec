@@ -3,14 +3,14 @@
 
 package seqexec.model.arb
 
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import lucuma.core.util.arb.ArbEnumerated._
+import seqexec.model.GmosParameters._
 import seqexec.model._
 import seqexec.model.enum.NodAndShuffleStage._
 import seqexec.model.enum._
-import seqexec.model.GmosParameters._
 import shapeless.tag
 
 trait ArbNSSubexposure {

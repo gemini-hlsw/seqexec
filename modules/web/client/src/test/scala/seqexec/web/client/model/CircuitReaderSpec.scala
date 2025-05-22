@@ -5,11 +5,6 @@ package seqexec.web.client
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-// import seqexec.model.Observation
-// import monocle.law.discipline.LensTests
-// import seqexec.model.QueueId
-// import seqexec.model.SeqexecModelArbitraries.queueIdArb
-// import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 // import seqexec.web.client.circuit.SeqexecCircuit._
 

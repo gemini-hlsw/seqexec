@@ -5,7 +5,8 @@ package seqexec.server.tcs
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
 
 /**
  * Tests Tcs typeclasses

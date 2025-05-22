@@ -6,49 +6,51 @@ package seqexec.server.ghost
 import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
-import cats.effect.Sync
 import cats.effect.Async
 import cats.effect.Ref
+import cats.effect.Sync
 import cats.syntax.all._
+import edu.gemini.spModel.core.Target.TargetType
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
+import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
+import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
+import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.spModel.target.env.ResolutionMode
 import eu.timepit.refined._
 import eu.timepit.refined.collection.NonEmpty
-import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
-import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
-import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
-import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
-import edu.gemini.spModel.gemini.ghost.GhostBinning
-import edu.gemini.spModel.target.env.ResolutionMode
-import edu.gemini.spModel.core.Target.TargetType
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
 import lucuma.core.enums.StellarLibrarySpectrum
 import lucuma.core.math._
 import lucuma.core.model._
 import lucuma.core.optics.Format
+import org.typelevel.log4cats.Logger
+import seqexec.model.Conditions
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
-import seqexec.model.Conditions
-import seqexec.server._
-import seqexec.server.InstrumentSystem._
 import seqexec.server.CleanConfig.extractItem
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.InstrumentSystem._
+import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
 import shapeless.tag
-import squants.time.Time
-import squants.time.Seconds
 import squants.space.Length
+import squants.time.Seconds
+import squants.time.Time
 
-import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
-import scala.reflect.ClassTag
+import java.lang.{Boolean => JBoolean}
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Logger: Async](
   controller: GhostController[F],
@@ -57,7 +59,7 @@ final case class Ghost[F[_]: Logger: Async](
     with InstrumentSystem[F]
     with GhostLUT {
 
-  val readOutTimeExtra: Time = Seconds(420)
+  val readOutTimeExtra: Time = Seconds(30)
 
   override val gdsClient: GdsClient[F] = controller.gdsClient
 

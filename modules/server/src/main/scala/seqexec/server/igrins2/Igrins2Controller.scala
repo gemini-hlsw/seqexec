@@ -3,18 +3,18 @@
 
 package seqexec.server.igrins2
 
-import seqexec.server.GiapiInstrumentController
-import seqexec.server.keywords.GdsClient
-import giapi.client.igrins2.Igrins2Client
-import seqexec.server.AbstractGiapiInstrumentController
 import cats.effect.Sync
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
-import giapi.client.commands.Configuration
-import giapi.client.GiapiClient
-import squants.time.Seconds
 import fs2.Stream
+import giapi.client.GiapiClient
+import giapi.client.commands.Configuration
+import giapi.client.igrins2.Igrins2Client
 import lucuma.core.util.Enumerated
+import org.typelevel.log4cats.Logger
+import seqexec.server.AbstractGiapiInstrumentController
+import seqexec.server.GiapiInstrumentController
+import seqexec.server.keywords.GdsClient
+import squants.time.Seconds
 
 trait Igrins2Config {
   def configuration: Configuration

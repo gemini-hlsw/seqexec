@@ -7,6 +7,7 @@ import edu.gemini.spModel.gemini.flamingos2.{ Flamingos2 => LegacyF2 }
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
+
 import scala.collection.immutable.ArraySeq
 
 trait Flamingos2Arbitraries {

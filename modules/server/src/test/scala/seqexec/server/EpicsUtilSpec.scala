@@ -3,14 +3,14 @@
 
 package seqexec.server
 
-import java.time.Duration
-import java.util.concurrent.{ ScheduledExecutorService, ScheduledThreadPoolExecutor }
-
 import cats.effect.IO
 import edu.gemini.epics.acm.CaWindowStabilizer
 import edu.gemini.epics.acm.test.DummyAttribute
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
+import java.time.Duration
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import scala.concurrent.duration.FiniteDuration
 
 class EpicsUtilSpec extends munit.CatsEffectSuite {

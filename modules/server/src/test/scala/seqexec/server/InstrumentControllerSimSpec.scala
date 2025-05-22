@@ -3,14 +3,15 @@
 
 package seqexec.server
 
-import cats.effect.{ IO, Ref }
+import cats.effect.IO
+import cats.effect.Ref
+import munit.CatsEffectSuite
 import org.typelevel.log4cats.noop.NoOpLogger
+import seqexec.model.dhs._
+import seqexec.model.enum.ObserveCommandResult
+import squants.time.TimeConversions._
 
 import scala.concurrent.duration._
-import seqexec.model.enum.ObserveCommandResult
-import seqexec.model.dhs._
-import squants.time.TimeConversions._
-import munit.CatsEffectSuite
 
 class InstrumentControllerSimSpec extends CatsEffectSuite {
   private implicit def unsafeLogger = NoOpLogger.impl[IO]

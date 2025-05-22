@@ -11,12 +11,10 @@ import edu.gemini.epics.acm.CarStateGEM5
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import monocle.macros.Lenses
 import seqexec.server.TestEpicsCommand.TestEpicsCommand1
-import seqexec.server.altair.AltairEpics.{
-  BtoLoopControlCommand,
-  SfoControlCommand,
-  StrapControlCommand,
-  StrapGateControlCommand
-}
+import seqexec.server.altair.AltairEpics.BtoLoopControlCommand
+import seqexec.server.altair.AltairEpics.SfoControlCommand
+import seqexec.server.altair.AltairEpics.StrapControlCommand
+import seqexec.server.altair.AltairEpics.StrapGateControlCommand
 
 import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration

@@ -3,11 +3,6 @@
 
 package seqexec.web.server.http4s
 
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.math._
-
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.effect.Sync
@@ -20,7 +15,6 @@ import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.enums.GiapiStatus
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.Site
 import org.http4s._
 import org.http4s.dsl._
@@ -33,6 +27,7 @@ import org.http4s.websocket.WebSocketFrame.Binary
 import org.http4s.websocket.WebSocketFrame.Close
 import org.http4s.websocket.WebSocketFrame.Ping
 import org.http4s.websocket.WebSocketFrame.Pong
+import org.typelevel.log4cats.Logger
 import scodec.bits.ByteVector
 import seqexec.model.ClientId
 import seqexec.model._
@@ -47,6 +42,10 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
+
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.math._
 
 /**
  * Rest Endpoints under the /api route
@@ -143,10 +142,10 @@ class SeqexecUIApiRoutes[F[_]: Async: Dns: Compression](
           L.warn("warn") *>
           L.error("error")).replicateA(min(1000, max(0, count))) *> Ok("")
 
-      case auth @ POST -> Root / "seqexec" / "site" as user =>
+      case req @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Login start
-        auth.req.remoteHost.flatMap { x =>
+        req.req.remoteHost.flatMap { x =>
           L.info(s"$userName connected from ${x.getOrElse("Unknown")}")
         } *>
           Ok(s"$site")

@@ -3,11 +3,6 @@
 
 package seqexec.server
 
-import java.beans.PropertyDescriptor
-import java.lang.{ Integer => JInt }
-
-import scala.reflect.ClassTag
-
 import cats.ApplicativeError
 import cats.syntax.all._
 import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
@@ -20,6 +15,10 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import shapeless.tag
 import shapeless.tag.@@
+
+import java.beans.PropertyDescriptor
+import java.lang.{ Integer => JInt }
+import scala.reflect.ClassTag
 
 /**
  * Utility operations to work with Configs from the ODB

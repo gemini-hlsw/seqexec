@@ -3,7 +3,6 @@
 
 package seqexec.server.niri
 
-import java.lang.{ Double => JDouble }
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -16,11 +15,15 @@ import edu.gemini.seqexec.server.niri.{ DetectorState => JDetectorState }
 import edu.gemini.seqexec.server.niri.{ Disperser => JDisperser }
 import edu.gemini.seqexec.server.niri.{ Mask => JMask }
 import edu.gemini.seqexec.server.niri.{ ReadMode => JReadMode }
-import seqexec.server.{ EpicsCommandBase, EpicsSystem, ObserveCommandBase }
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommandBase
+
+import java.lang.{ Double => JDouble }
 
 class NiriEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
   val sysName: String = "NIRI"

@@ -3,10 +3,8 @@
 
 package seqexec.server
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration.SECONDS
-
 import cats.data.StateT
+import cats.effect.Temporal
 import cats.syntax.all._
 import fs2.Stream
 import seqexec.model.ObserveStage
@@ -14,7 +12,9 @@ import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 import squants.time.TimeConversions._
-import cats.effect.Temporal
+
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.SECONDS
 
 object ProgressUtil {
   private val PollPeriod = FiniteDuration(1, SECONDS)

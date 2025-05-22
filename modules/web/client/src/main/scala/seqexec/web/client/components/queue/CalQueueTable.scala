@@ -3,10 +3,6 @@
 
 package seqexec.web.client.components.queue
 
-import scala.concurrent.duration._
-import scala.math.max
-import scala.scalajs.js
-
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -46,6 +42,10 @@ import seqexec.web.client.model.QueueSeqOperations
 import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.reusability._
 import web.client.table._
+
+import scala.concurrent.duration._
+import scala.math.max
+import scala.scalajs.js
 
 // ScalaJS defined trait
 trait CalQueueRow extends js.Object {

@@ -3,13 +3,15 @@
 
 package seqexec.model
 
-import _root_.boopickle.Default.Pickler
 import _root_.boopickle.Default.Pickle
+import _root_.boopickle.Default.Pickler
 import _root_.boopickle.Default.Unpickle
+import cats.kernel.Eq
 import cats.laws._
 import cats.laws.discipline._
-import cats.kernel.Eq
-import org.scalacheck.{ Arbitrary, Prop, Shrink }
+import org.scalacheck.Arbitrary
+import org.scalacheck.Prop
+import org.scalacheck.Shrink
 import org.typelevel.discipline.Laws
 
 package boopickle {

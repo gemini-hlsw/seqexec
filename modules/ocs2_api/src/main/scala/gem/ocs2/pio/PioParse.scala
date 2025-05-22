@@ -3,13 +3,13 @@
 
 package gem.ocs2.pio
 
-import java.time.Duration
-import java.time.Instant
-
 import cats.Functor
 import cats.syntax.all._
 import lucuma.core.syntax.string._
 import lucuma.core.util.Enumerated
+
+import java.time.Duration
+import java.time.Instant
 
 final case class PioParse[A](run: String => Option[A]) {
   def apply(s: String): Option[A] = run(s)

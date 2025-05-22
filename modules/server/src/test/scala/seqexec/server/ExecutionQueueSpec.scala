@@ -4,9 +4,9 @@
 package seqexec.server
 
 import cats.tests.CatsSuite
-import seqexec.model.arb.ArbObservationId._
 import monocle.law.discipline.LensTests
 import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.arb.ArbObservationId._
 
 final class ExecutionQueueSpec extends CatsSuite with SeqexecServerArbitraries {
   checkAll("ExecutionQueue name lens", LensTests(ExecutionQueue.name))

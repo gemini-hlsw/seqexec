@@ -7,9 +7,9 @@ import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enums.KeywordName
 import seqexec.server.keywords._
 import seqexec.server.tcs.CRFollow
 import seqexec.server.tcs.TcsKeywordsReader

@@ -3,13 +3,12 @@
 
 package seqexec.server.gmos
 
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
-import scala.concurrent.duration._
 import cats._
 import cats.data.EitherT
 import cats.data.Kleisli
+import cats.effect.Ref
 import cats.effect.Sync
+import cats.effect.Temporal
 import cats.syntax.all._
 import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
@@ -19,10 +18,10 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.EXPOSURE_TIME_PROP
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-import org.typelevel.log4cats.Logger
 import lucuma.core.math.Angle
 import lucuma.core.math.Offset
 import lucuma.core.syntax.string._
+import org.typelevel.log4cats.Logger
 import seqexec.model.GmosParameters._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -39,13 +38,17 @@ import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
-import seqexec.server.keywords.{ DhsInstrument, KeywordsClient }
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import shapeless.tag
-import cats.effect.{ Ref, Temporal }
 import squants.Seconds
 import squants.Time
 import squants.space.Length
 import squants.space.LengthConversions._
+
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
+import scala.concurrent.duration._
 
 abstract class Gmos[F[_]: Temporal: Logger, T <: GmosController.SiteDependentTypes](
   val controller: GmosController[F, T],

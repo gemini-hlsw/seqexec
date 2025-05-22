@@ -3,7 +3,6 @@
 
 package seqexec.engine
 
-import java.time.Instant
 import cats.effect.Sync
 import cats.syntax.all._
 import fs2.Stream
@@ -13,6 +12,8 @@ import seqexec.model.ClientId
 import seqexec.model.Observation
 import seqexec.model.StepId
 import seqexec.model.UserDetails
+
+import java.time.Instant
 
 /**
  * Anything that can go through the Event Queue.

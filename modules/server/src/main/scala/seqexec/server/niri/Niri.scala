@@ -3,10 +3,10 @@
 
 package seqexec.server.niri
 
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
+import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.seqexec.server.niri.ReadMode
@@ -17,8 +17,8 @@ import edu.gemini.spModel.gemini.niri.Niri.{ ReadMode => OCSReadMode }
 import edu.gemini.spModel.obscomp.InstConstants.BIAS_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
@@ -36,15 +36,19 @@ import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.Progress
 import seqexec.server.SeqexecFailure
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import seqexec.server.niri.NiriController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.Time
 import squants.space.Arcseconds
 import squants.time.TimeConversions._
-import cats.effect.Async
-import cats.Applicative
+
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 
 final case class Niri[F[_]: Async: Logger](
   controller:        NiriController[F],

@@ -3,22 +3,25 @@
 
 package seqexec.server
 
-import scala.concurrent.duration._
 import cats._
+import cats.effect.Ref
 import cats.effect.Sync
+import cats.effect.Temporal
+import cats.effect.kernel.Async
 import cats.syntax.all._
 import fs2.Stream
 import gov.aps.jca.TimeoutException
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ObserveCommandResult
+import squants.time.Time
+
+import scala.concurrent.duration._
+
 import InstrumentSystem.ElapsedTime
 import SeqexecFailure.SeqexecException
-import cats.effect.kernel.Async
-import squants.time.Time
-import cats.effect.{ Ref, Temporal }
 
 sealed trait InstrumentControllerSim[F[_]] {
   def log(msg: => String): F[Unit]

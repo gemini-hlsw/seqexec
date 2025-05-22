@@ -3,8 +3,6 @@
 
 package seqexec.web.client.circuit
 
-import scala.scalajs.LinkingInfo
-
 import cats._
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -26,6 +24,8 @@ import seqexec.web.client.actions.show
 import seqexec.web.client.handlers._
 import seqexec.web.client.model._
 import typings.loglevel.mod.{ ^ => logger }
+
+import scala.scalajs.LinkingInfo
 
 /**
  * Diode processor to log some of the action to aid in debugging

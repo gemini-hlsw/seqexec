@@ -3,17 +3,17 @@
 
 package seqexec.server.tcs
 
-import java.time.Duration
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.LiftIO
 import cats.effect.Sync
+import cats.effect.Temporal
 import cats.syntax.all._
 import edu.gemini.epics.acm._
-import edu.gemini.seqexec.server.tcs.{ BinaryEnabledDisabled, BinaryOnOff, BinaryYesNo, ParkState }
+import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
+import edu.gemini.seqexec.server.tcs.ParkState
 import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommandBase
@@ -23,8 +23,12 @@ import seqexec.server.EpicsUtil._
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Angle
 import squants.space.Degrees
-import cats.effect.Temporal
 import squants.space.Length
+
+import java.time.Duration
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all

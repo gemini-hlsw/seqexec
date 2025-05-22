@@ -4,8 +4,6 @@
 package seqexec.server.altair
 
 import cats.Applicative
-
-import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
@@ -14,9 +12,14 @@ import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import mouse.boolean._
 import seqexec.model.`enum`.ApplyCommandResult
-import seqexec.server.{ EpicsCommand, EpicsCommandBase, EpicsSystem, EpicsUtil }
+import seqexec.server.EpicsCommand
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil._
+
+import scala.concurrent.duration.FiniteDuration
 
 trait AltairEpics[F[_]] {
   import AltairEpics._

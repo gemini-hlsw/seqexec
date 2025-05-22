@@ -3,8 +3,6 @@
 
 package seqexec.server.gpi
 
-import scala.concurrent.duration._
-
 import cats._
 import cats.effect.Sync
 import cats.syntax.all._
@@ -19,20 +17,22 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ Lyot => LegacyLyot }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ ObservingMode => LegacyObservingMode }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ PupilCamera => LegacyPupilCamera }
 import edu.gemini.spModel.gemini.gpi.Gpi.{ Shutter => LegacyShutter }
+import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
 import giapi.client.commands.CommandResultException
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
 import giapi.enums.GiapiStatusApply._
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.GpiReadMode
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.server.AbstractGiapiInstrumentController
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.SeqexecFailure
 import seqexec.server.keywords.GdsClient
 import squants.time.Seconds
-import giapi.client.GiapiClient
+
+import scala.concurrent.duration._
 
 final case class AOFlags(
   useAo:      Boolean,

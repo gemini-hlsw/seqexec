@@ -3,19 +3,21 @@
 
 package seqexec.model
 
-import events._
+import lucuma.core.arb.ArbTime._
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import org.scalacheck.Arbitrary._
-import lucuma.core.util.arb.ArbEnumerated._
-import lucuma.core.arb.ArbTime._
-import java.time.Instant
-import seqexec.model.enum._
-import seqexec.model.dhs._
 import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.all._
+import seqexec.model.dhs._
+import seqexec.model.enum._
+
+import java.time.Instant
+
+import events._
 
 trait SequenceEventsArbitraries {
 

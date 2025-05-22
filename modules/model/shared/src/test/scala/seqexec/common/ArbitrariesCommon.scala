@@ -3,8 +3,10 @@
 
 package seqexec.common
 
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{ Arbitrary, Cogen, Gen }
+import org.scalacheck.Cogen
+import org.scalacheck.Gen
 
 trait ArbitrariesCommon {
 

@@ -3,8 +3,6 @@
 
 package seqexec.web.client.circuit
 
-import scala.collection.immutable.SortedMap
-
 import cats.Eq
 import monocle.Lens
 import monocle.macros.Lenses
@@ -14,9 +12,11 @@ import seqexec.model.Observer
 import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SessionQueueFilter
-import seqexec.web.client.model.ClientStatus
+
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class QueueRequestsFocus(

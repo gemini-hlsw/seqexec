@@ -4,24 +4,25 @@
 package seqexec.web.server.http4s
 
 import cats.effect.IO
-import cats.tests.CatsSuite
+import cats.effect.Ref
 import cats.effect.std.Queue
+import cats.tests.CatsSuite
 import fs2.concurrent.Topic
 import giapi.client.GiapiStatusDb
 import lucuma.core.enums.Site
-import org.typelevel.log4cats.noop.NoOpLogger
 import org.http4s._
 import org.http4s.implicits._
+import org.http4s.server.websocket.WebSocketBuilder2
+import org.typelevel.log4cats.noop.NoOpLogger
+import seqexec.model.UserLoginRequest
+import seqexec.model.config._
+import seqexec.model.events._
 import seqexec.server._
 import seqexec.server.tcs.GuideConfigDb
-import seqexec.model.events._
-import seqexec.model.config._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
-import seqexec.model.UserLoginRequest
+
 import scala.concurrent.duration._
-import cats.effect.Ref
-import org.http4s.server.websocket.WebSocketBuilder2
 
 trait TestRoutes extends ClientBooEncoders with CatsSuite {
   private implicit def logger = NoOpLogger.impl[IO]

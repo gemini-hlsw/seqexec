@@ -5,54 +5,51 @@ package seqexec.server
 
 import cats.Monoid
 import cats.effect.IO
+import cats.effect.std.Queue
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import edu.gemini.spModel.config2.DefaultConfig
-import edu.gemini.spModel.obsclass.ObsClass
-import edu.gemini.spModel.obscomp.InstConstants.{
-  ARC_OBSERVE_TYPE,
-  DARK_OBSERVE_TYPE,
-  OBSERVE_TYPE_PROP,
-  OBS_CLASS_PROP,
-  SCIENCE_OBSERVE_TYPE
-}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{ OBSERVE_KEY, OCS_KEY, TELESCOPE_KEY }
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.CLOUD_COVER_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.IMAGE_QUALITY_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.SKY_BACKGROUND_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.WATER_VAPOR_PROP
-import cats.effect.std.Queue
+import edu.gemini.spModel.obsclass.ObsClass
+import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBS_CLASS_PROP
+import edu.gemini.spModel.obscomp.InstConstants.SCIENCE_OBSERVE_TYPE
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import fs2.Stream
 import lucuma.core.enums.Site
+import monocle.function.Index.mapIndex
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
 import org.scalatest.matchers.should.Matchers
-import seqexec.server.TestCommon._
+import seqexec.engine.EventResult.Outcome
+import seqexec.engine.EventResult.UserCommandResponse
 import seqexec.engine._
-import seqexec.model.{
-  Conditions,
-  Observation,
-  Observer,
-  Operator,
-  SequenceState,
-  StepId,
-  StepState,
-  SystemOverrides,
-  UserDetails,
-  UserPrompt
-}
-import seqexec.model.enum._
-import seqexec.model.enum.Resource.TCS
-import monocle.function.Index.mapIndex
-import seqexec.engine.EventResult.{ Outcome, UserCommandResponse }
+import seqexec.model.Conditions
+import seqexec.model.Observation
+import seqexec.model.Observer
+import seqexec.model.Operator
+import seqexec.model.SequenceState
+import seqexec.model.StepId
+import seqexec.model.StepState
+import seqexec.model.SystemOverrides
+import seqexec.model.UserDetails
+import seqexec.model.UserPrompt
 import seqexec.model.dhs.DataId
-import seqexec.server.tcs.{
-  DummyTargetKeywordsReader,
-  DummyTcsKeywordsReader,
-  TargetKeywordsReader
-}
+import seqexec.model.enum.Resource.TCS
+import seqexec.model.enum._
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqEvent.RequestConfirmation
+import seqexec.server.TestCommon._
+import seqexec.server.tcs.DummyTargetKeywordsReader
+import seqexec.server.tcs.DummyTcsKeywordsReader
+import seqexec.server.tcs.TargetKeywordsReader
 
 class SeqexecEngineSpec extends TestCommon with Matchers with NonImplicitAssertions {
 

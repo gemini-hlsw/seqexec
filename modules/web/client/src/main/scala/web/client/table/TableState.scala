@@ -3,10 +3,6 @@
 
 package web.client.table
 
-import scala.annotation.tailrec
-import scala.math.max
-import scala.math.min
-
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -19,6 +15,10 @@ import monocle.function.Index._
 import react.common._
 import react.virtualized._
 import web.client.JsNumberOps._
+
+import scala.annotation.tailrec
+import scala.math.max
+import scala.math.min
 
 /**
  * State of a table
@@ -77,9 +77,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val rcL = refO.replace(VariableColumnWidth(pʹʹ, m))
             val ncL = nextCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                nextO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(pʹʹʹ, mʹ), _, _)) =>
+                nextO.replace(VariableColumnWidth(pʹʹʹ - Δʹ, mʹ))
+              case _                                                                 => id
             }
             (rcL, ncL)
 
@@ -94,9 +94,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val ncL = nextO.replace(VariableColumnWidth(pʹʹ, m))
             val rcL = refCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                refO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(pʹʹʹ, mʹ), _, _)) =>
+                refO.replace(VariableColumnWidth(pʹʹʹ - Δʹ, mʹ))
+              case _                                                                 => id
             }
             (rcL, ncL)
 

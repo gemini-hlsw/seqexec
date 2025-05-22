@@ -3,15 +3,15 @@
 
 package seqexec.server.keywords
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 import cats.effect.Sync
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.dhs.toImageFileId
 import seqexec.server.overrideLogMessage
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class DhsClientDisabled[F[_]: Sync: Logger] extends DhsClient[F] {
 

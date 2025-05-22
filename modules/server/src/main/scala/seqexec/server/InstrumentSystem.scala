@@ -3,8 +3,6 @@
 
 package seqexec.server
 
-import scala.concurrent.duration._
-
 import cats.data.Kleisli
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
@@ -12,6 +10,8 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.KeywordsClient
 import squants.Time
+
+import scala.concurrent.duration._
 
 trait InstrumentSystem[F[_]] extends System[F] {
   override val resource: Instrument

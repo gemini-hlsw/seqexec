@@ -3,8 +3,6 @@
 
 package seqexec.web.client.model
 
-import scala.collection.immutable.SortedMap
-
 import cats.Eq
 import monocle.Lens
 import monocle.Optional
@@ -16,6 +14,8 @@ import monocle.std.option.some
 import seqexec.model.Observation
 import seqexec.model.Progress
 import seqexec.model.StepId
+
+import scala.collection.immutable.SortedMap
 
 /**
  * UI record of the remaining time for observations

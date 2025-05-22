@@ -3,12 +3,16 @@
 
 package seqexec.server
 
-import edu.gemini.spModel.config2.{ Config, DefaultConfig, ItemEntry, ItemKey }
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.DefaultConfig
+import edu.gemini.spModel.config2.ItemEntry
+import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.seqcomp.SeqConfigNames
-import org.scalacheck.{ Arbitrary, _ }
+import munit.DisciplineSuite
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Prop._
-import munit.DisciplineSuite
+import org.scalacheck._
 
 trait ConfigArbitraries {
 

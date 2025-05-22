@@ -3,16 +3,15 @@
 
 package seqexec.server
 
-import java.time.Instant
-import java.util.concurrent.TimeUnit
-import scala.collection.immutable.SortedMap
-import scala.concurrent.duration._
-import cats.{ Applicative, Endo }
+import cats.Applicative
+import cats.Endo
 import cats.data.NonEmptyList
 import cats.data.StateT
 import cats.effect.Async
+import cats.effect.Ref
+import cats.effect.Temporal
+import cats.effect.kernel.Sync
 import cats.syntax.all._
-import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.CLOUD_COVER_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.IMAGE_QUALITY_PROP
@@ -26,11 +25,11 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.Pipe
 import fs2.Pure
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.Site
-import monocle.function.Index.mapIndex
 import monocle.Optional
+import monocle.function.Index.mapIndex
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.engine.EventResult._
 import seqexec.engine.Handle
 import seqexec.engine.Result.Partial
@@ -55,8 +54,12 @@ import seqexec.model.events.{ SequenceStart => ClientSequenceStart, _ }
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.EngineState.atSequence
 import seqexec.server.SeqEvent._
-import cats.effect.kernel.Sync
-import cats.effect.{ Ref, Temporal }
+
+import java.time.Instant
+import java.util.concurrent.TimeUnit
+import scala.annotation.nowarn
+import scala.collection.immutable.SortedMap
+import scala.concurrent.duration._
 
 trait SeqexecEngine[F[_]] {
 
@@ -850,13 +853,9 @@ object SeqexecEngine {
               .asRight
           )
         }
-        .handleErrorWith {
-          case e: SeqFailure =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-          case e             =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
+        .handleErrorWith { case e =>
+          e.printStackTrace()
+          Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }
 
@@ -1718,6 +1717,7 @@ object SeqexecEngine {
       case _                                => List.empty
     }
 
+    @nowarn
     def engineSteps(seq: Sequence[F]): List[Step] =
       obsSeq.seqGen.steps.zip(seq.steps).map { case (a, b) =>
         StepsView

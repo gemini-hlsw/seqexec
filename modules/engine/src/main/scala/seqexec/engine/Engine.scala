@@ -8,9 +8,9 @@ import cats.data.StateT
 import cats.effect.Concurrent
 import cats.syntax.all._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import monocle.Optional
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.engine.Event._
 import seqexec.engine.EventResult.Outcome
 import seqexec.engine.EventResult.SystemUpdate

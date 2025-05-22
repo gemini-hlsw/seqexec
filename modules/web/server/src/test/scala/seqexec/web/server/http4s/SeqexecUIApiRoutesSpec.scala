@@ -3,14 +3,14 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.IO
 import cats.data.Nested
+import cats.effect.IO
+import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.implicits._
 import org.http4s.server.websocket.WebSocketBuilder2
 import seqexec.model.UserLoginRequest
 import seqexec.web.server.http4s.encoder._
-import munit.CatsEffectSuite
 
 class SeqexecUIApiRoutesSpec extends CatsEffectSuite with ClientBooEncoders with TestRoutes {
   test("SeqexecUIApiRoutes login: reject requests without body") {

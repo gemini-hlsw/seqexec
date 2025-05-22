@@ -3,12 +3,10 @@
 
 package seqexec.web.client.model
 
-import scala.collection.immutable.SortedMap
-
 import cats.Eq
+import cats.Order._
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import cats.Order._
 import lucuma.core.data.Zipper
 import monocle.Getter
 import monocle.Optional
@@ -26,6 +24,8 @@ import seqexec.model.SystemOverrides
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import shapeless.tag
+
+import scala.collection.immutable.SortedMap
 
 // Model for the tabbed area of sequences
 @Lenses

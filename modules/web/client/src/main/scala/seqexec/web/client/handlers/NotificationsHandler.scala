@@ -3,9 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -15,6 +12,9 @@ import seqexec.model.Notification._
 import seqexec.model.events.UserNotification
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
+
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState])
     extends ActionHandler(modelRW)

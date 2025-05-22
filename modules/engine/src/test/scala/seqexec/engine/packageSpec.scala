@@ -5,27 +5,29 @@ package seqexec.engine
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import cats.syntax.all._
+import cats.effect.std.Semaphore
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
 import fs2.Stream
-import seqexec.model.Observation
 import org.scalatest.Inside.inside
 import org.scalatest.NonImplicitAssertions
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.scalatest.flatspec.AnyFlatSpec
 import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import seqexec.engine.Sequence.State.Final
+import seqexec.engine.TestUtil.TestState
+import seqexec.model.ActionType
+import seqexec.model.ClientId
+import seqexec.model.Observation
+import seqexec.model.SequenceState
+import seqexec.model.StepState
+import seqexec.model.UserDetails
+import seqexec.model.enum.Instrument.GmosS
+import seqexec.model.enum.Resource.TCS
 
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
-import seqexec.engine.Sequence.State.Final
-import seqexec.model.{ ClientId, SequenceState, StepState }
-import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.enum.Resource.TCS
-import seqexec.model.{ ActionType, UserDetails }
-import seqexec.engine.TestUtil.TestState
-
 import scala.concurrent.duration._
-import org.scalatest.flatspec.AnyFlatSpec
-import cats.effect.std.Semaphore
 
 class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
 

@@ -4,11 +4,11 @@
 package web.client.table
 
 import cats.Eq
-import cats.syntax.all._
 import cats.data.NonEmptyList
+import cats.syntax.all._
 import japgolly.scalajs.react.facade.JsNumber
-import org.scalacheck._
 import org.scalacheck.Arbitrary._
+import org.scalacheck._
 import web.client.JsNumberOps._
 
 trait TableArbitraries {

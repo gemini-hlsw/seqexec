@@ -8,7 +8,9 @@ import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 import seqexec.model.`enum`.Instrument
 import seqexec.server.altair.AltairController.AltairPauseResume
-import seqexec.server.tcs.Gaos.{ GuideCapabilities, PauseConditionSet, ResumeConditionSet }
+import seqexec.server.tcs.Gaos.GuideCapabilities
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import seqexec.server.tcs.TcsController
 import squants.Time
 

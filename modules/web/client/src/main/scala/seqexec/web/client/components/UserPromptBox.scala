@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.scalajs.js.JSConverters._
-
 import cats.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -20,6 +18,8 @@ import seqexec.web.client.actions.CloseUserPromptBox
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model._
 import seqexec.web.client.reusability._
+
+import scala.scalajs.js.JSConverters._
 
 final case class UserPromptBox(prompt: UserPromptState)
     extends ReactProps[UserPromptBox](UserPromptBox.component)

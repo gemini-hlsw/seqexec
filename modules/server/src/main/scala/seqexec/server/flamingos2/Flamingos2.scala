@@ -3,36 +3,40 @@
 
 package seqexec.server.flamingos2
 
-import java.lang.{ Double => JDouble }
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration.SECONDS
-import scala.reflect.ClassTag
 import cats.Applicative
 import cats.data.EitherT
 import cats.data.Kleisli
+import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
-import cats.effect.Async
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Reads
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import lucuma.core.enums.LightSinkName
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.flamingos2.Flamingos2Controller._
-import seqexec.server.keywords.{ DhsClient, DhsClientProvider, DhsInstrument, KeywordsClient }
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClientProvider
+import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.KeywordsClient
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import squants.Length
 import squants.space.Arcseconds
 import squants.time.Seconds
 import squants.time.Time
+
+import java.lang.{ Double => JDouble }
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.SECONDS
+import scala.reflect.ClassTag
 
 final case class Flamingos2[F[_]: Async: Logger](
   f2Controller:      Flamingos2Controller[F],

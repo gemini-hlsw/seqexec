@@ -3,12 +3,6 @@
 
 package seqexec.server.keywords
 
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
 import cats.Eq
 import cats.data.EitherT
 import cats.data.Nested
@@ -34,6 +28,12 @@ import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.Tcs
+
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 sealed trait ObsKeywordsReader[F[_]] {
   def obsType: F[String]

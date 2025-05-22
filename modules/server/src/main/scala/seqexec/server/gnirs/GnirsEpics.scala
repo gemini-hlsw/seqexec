@@ -3,18 +3,21 @@
 
 package seqexec.server.gnirs
 
-import java.lang.{ Double => JDouble }
 import cats.effect.Async
 import cats.effect.IO
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{ DetectorState => JDetectorState }
-import seqexec.server.{ EpicsCommandBase, EpicsSystem, ObserveCommandBase }
+import seqexec.server.EpicsCommandBase
 import seqexec.server.EpicsCommandBase.setParameter
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsUtil.safeAttributeF
 import seqexec.server.EpicsUtil.safeAttributeSDoubleF
 import seqexec.server.EpicsUtil.safeAttributeSIntF
+import seqexec.server.ObserveCommandBase
+
+import java.lang.{ Double => JDouble }
 
 class GnirsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
   val sysName: String  = "GNIRS"

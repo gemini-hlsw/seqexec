@@ -3,51 +3,60 @@
 
 package seqexec.server.tcs
 
-import cats.effect.{ Async, IO }
-import cats.syntax.all._
+import cats.effect.Async
+import cats.effect.IO
+import cats.effect.Ref
 import cats.effect.unsafe.implicits.global
-import edu.gemini.seqexec.server.tcs.{ BinaryOnOff, BinaryYesNo }
+import cats.syntax.all._
+import edu.gemini.seqexec.server.tcs.BinaryOnOff
+import edu.gemini.seqexec.server.tcs.BinaryYesNo
 import edu.gemini.spModel.core.Wavelength
 import lucuma.core.enums.LightSinkName.Gmos
+import org.scalatest.PrivateMethodTester
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.noop.NoOpLogger
-import org.scalatest.PrivateMethodTester
-import org.scalatest.matchers.should.Matchers._
-import seqexec.model.{ M1GuideConfig, M2GuideConfig, TelescopeGuideConfig }
-import seqexec.model.enum.{ ComaOption, Instrument, M1Source, MountGuideOption, TipTiltSource }
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
 import seqexec.server.InstrumentGuide
-import seqexec.server.tcs.TcsController.LightSource.Sky
-import seqexec.server.tcs.TcsController.{
-  AGConfig,
-  BasicGuidersConfig,
-  BasicTcsConfig,
-  FocalPlaneOffset,
-  GuiderConfig,
-  GuiderSensorOff,
-  GuiderSensorOn,
-  HrwfsPickupPosition,
-  InstrumentOffset,
-  LightPath,
-  NodChopTrackingConfig,
-  OIConfig,
-  OffsetP,
-  OffsetQ,
-  OffsetX,
-  OffsetY,
-  P1Config,
-  P2Config,
-  ProbeTrackingConfig,
-  TelescopeConfig
-}
-import shapeless.tag
-import squants.space.{ Arcseconds, Length, Microns, Millimeters }
-import org.scalatest.flatspec.AnyFlatSpec
 import seqexec.server.keywords.USLocale
-import seqexec.server.tcs.TestTcsEpics.{ ProbeGuideConfigVals, TestTcsEvent }
+import seqexec.server.tcs.TcsController.AGConfig
+import seqexec.server.tcs.TcsController.BasicGuidersConfig
+import seqexec.server.tcs.TcsController.BasicTcsConfig
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
+import seqexec.server.tcs.TcsController.GuiderConfig
+import seqexec.server.tcs.TcsController.GuiderSensorOff
+import seqexec.server.tcs.TcsController.GuiderSensorOn
+import seqexec.server.tcs.TcsController.HrwfsPickupPosition
+import seqexec.server.tcs.TcsController.InstrumentOffset
+import seqexec.server.tcs.TcsController.LightPath
+import seqexec.server.tcs.TcsController.LightSource.Sky
+import seqexec.server.tcs.TcsController.NodChopTrackingConfig
+import seqexec.server.tcs.TcsController.OIConfig
+import seqexec.server.tcs.TcsController.OffsetP
+import seqexec.server.tcs.TcsController.OffsetQ
+import seqexec.server.tcs.TcsController.OffsetX
+import seqexec.server.tcs.TcsController.OffsetY
+import seqexec.server.tcs.TcsController.P1Config
+import seqexec.server.tcs.TcsController.P2Config
+import seqexec.server.tcs.TcsController.ProbeTrackingConfig
+import seqexec.server.tcs.TcsController.TelescopeConfig
+import seqexec.server.tcs.TestTcsEpics.ProbeGuideConfigVals
+import seqexec.server.tcs.TestTcsEpics.TestTcsEvent
+import shapeless.tag
 import squants.space.AngleConversions._
+import squants.space.Arcseconds
+import squants.space.Length
 import squants.space.LengthConversions._
-
-import cats.effect.Ref
+import squants.space.Microns
+import squants.space.Millimeters
 
 class TcsControllerEpicsCommonSpec extends AnyFlatSpec with PrivateMethodTester {
 

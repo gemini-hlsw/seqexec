@@ -3,8 +3,6 @@
 
 package seqexec.server.gmos
 
-import scala.concurrent.duration.Duration
-
 import cats.Show
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
@@ -25,6 +23,8 @@ import seqexec.server.gmos.GmosController.Config.NSConfig
 import shapeless.tag
 import squants.Length
 import squants.Time
+
+import scala.concurrent.duration.Duration
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
   import GmosController._

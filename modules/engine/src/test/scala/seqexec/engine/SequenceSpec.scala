@@ -3,21 +3,24 @@
 
 package seqexec.engine
 
-import cats.effect.IO
 import cats.data.NonEmptyList
+import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import fs2.Stream
-import seqexec.model.Observation
-import java.util.UUID
-import org.typelevel.log4cats.slf4j.Slf4jLogger
-import org.typelevel.log4cats.Logger
 import org.scalatest.Inside.inside
-import org.scalatest.matchers.should.Matchers._
-import seqexec.model.{ ActionType, ClientId, SequenceState, UserDetails }
-import seqexec.engine.TestUtil.TestState
-
-import scala.Function.const
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers._
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+import seqexec.engine.TestUtil.TestState
+import seqexec.model.ActionType
+import seqexec.model.ClientId
+import seqexec.model.Observation
+import seqexec.model.SequenceState
+import seqexec.model.UserDetails
+
+import java.util.UUID
+import scala.Function.const
 
 class SequenceSpec extends AnyFlatSpec {
 

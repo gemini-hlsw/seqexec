@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import cats.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -31,6 +29,8 @@ import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.model._
 import seqexec.web.client.reusability._
 import seqexec.web.client.services.SeqexecWebClient
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * UI for the login box

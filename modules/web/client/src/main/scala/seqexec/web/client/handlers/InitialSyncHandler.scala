@@ -3,9 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.Action
 import diode.ActionHandler
@@ -15,10 +12,13 @@ import diode.ModelRW
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.events.SeqexecModelUpdate
-import seqexec.web.client.services.DisplayNamePersistence
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.services.DisplayNamePersistence
+
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
  * This handler is called only once. It will be triggered when the first message with the full model

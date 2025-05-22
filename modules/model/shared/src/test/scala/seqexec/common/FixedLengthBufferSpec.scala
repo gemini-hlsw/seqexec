@@ -4,7 +4,9 @@
 package seqexec.common
 
 import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.{ FoldableTests, FunctorTests, TraverseTests }
+import cats.laws.discipline.FoldableTests
+import cats.laws.discipline.FunctorTests
+import cats.laws.discipline.TraverseTests
 import cats.tests.CatsSuite
 import seqexec.common.ArbitrariesCommon.arbFixedLengthBuffer
 import seqexec.common.ArbitrariesCommon.fixedLengthBufferCogen

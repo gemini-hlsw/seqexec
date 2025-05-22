@@ -3,16 +3,16 @@
 
 package seqexec.model.arb
 
-import seqexec.model.Observation
 import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import seqexec.model.arb.ArbTime._
-import seqexec.model.arb.ArbNSSubexposure._
-import seqexec.model._
+import seqexec.model.Observation
 import seqexec.model.ObserveStage.observeStageEnum
+import seqexec.model._
+import seqexec.model.arb.ArbNSSubexposure._
+import seqexec.model.arb.ArbTime._
 import squants.time._
 
 trait ArbObservationProgress {

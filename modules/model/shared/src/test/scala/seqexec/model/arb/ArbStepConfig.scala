@@ -3,15 +3,15 @@
 
 package seqexec.model.arb
 
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Cogen
-import org.scalacheck._
-import org.scalacheck.Cogen._
 import lucuma.core.arb._
-import lucuma.core.util.arb.ArbEnumerated._
 import lucuma.core.math.Angle
 import lucuma.core.math.Offset
 import lucuma.core.math.arb.ArbOffset._
+import lucuma.core.util.arb.ArbEnumerated._
+import org.scalacheck.Arbitrary._
+import org.scalacheck.Cogen
+import org.scalacheck.Cogen._
+import org.scalacheck._
 import seqexec.model._
 import seqexec.model.enum._
 

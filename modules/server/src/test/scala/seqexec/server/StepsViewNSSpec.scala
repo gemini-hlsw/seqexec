@@ -4,12 +4,12 @@
 package seqexec.server
 
 import cats.Id
-import cats.effect.IO
 import cats.data.NonEmptyList
+import cats.effect.IO
 import org.scalatest.funsuite.AnyFunSuite
-import seqexec.server.TestCommon._
 import seqexec.engine._
 import seqexec.model.enum._
+import seqexec.server.TestCommon._
 
 class SeqexecEngineNSSpec extends AnyFunSuite {
 

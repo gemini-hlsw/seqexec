@@ -8,11 +8,11 @@ import cats.implicits._
 import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.overrideLogMessage
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
+import seqexec.server.overrideLogMessage
 import squants.time.Time
-import seqexec.model.enum.ObserveCommandResult
 
 class GhostControllerDisabled[F[_]: Logger: Applicative] extends GhostController[F] {
   private val name = "GHOST"

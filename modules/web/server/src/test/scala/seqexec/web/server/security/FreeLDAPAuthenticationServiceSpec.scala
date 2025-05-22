@@ -3,10 +3,10 @@
 
 package seqexec.web.server.security
 
-import seqexec.model.UserDetails
-import seqexec.model.UserDetails._
 import cats._
 import cats.tests.CatsSuite
+import seqexec.model.UserDetails
+import seqexec.model.UserDetails._
 
 class FreeLDAPAuthenticationServiceSpec extends CatsSuite {
   import FreeLDAPAuthenticationService._

@@ -3,15 +3,15 @@
 
 package seqexec.model.arb
 
+import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
-import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model._
-import seqexec.model.enum._
+import seqexec.model.arb.ArbDhsTypes._
 import seqexec.model.arb.ArbStepConfig._
 import seqexec.model.arb.ArbStepState._
-import seqexec.model.arb.ArbDhsTypes._
+import seqexec.model.enum._
 
 trait ArbStandardStep {
   implicit val stsArb = Arbitrary[StandardStep] {

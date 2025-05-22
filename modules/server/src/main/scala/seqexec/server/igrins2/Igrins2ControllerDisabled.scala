@@ -5,14 +5,14 @@ package seqexec.server.igrins2
 
 import cats.Applicative
 import cats.implicits._
+import fs2.Stream
 import org.typelevel.log4cats.Logger
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.overrideLogMessage
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordBag
+import seqexec.server.overrideLogMessage
 import squants.time.Time
-import fs2.Stream
 
 class Igrins2ControllerDisabled[F[_]: Logger: Applicative] extends Igrins2Controller[F] {
   private val name = "IGRINS2"

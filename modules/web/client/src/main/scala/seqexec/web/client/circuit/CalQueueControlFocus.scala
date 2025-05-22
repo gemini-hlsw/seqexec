@@ -11,13 +11,11 @@ import monocle.Traversal
 import monocle.function.At.atSortedMap
 import monocle.macros.Lenses
 import monocle.std
-import seqexec.model.{
-  BatchCommandState,
-  ExecutionQueueView,
-  QueueId,
-  SequenceView,
-  SequencesQueue
-}
+import seqexec.model.BatchCommandState
+import seqexec.model.ExecutionQueueView
+import seqexec.model.QueueId
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
 

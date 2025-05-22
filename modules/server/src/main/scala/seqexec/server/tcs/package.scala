@@ -3,10 +3,6 @@
 
 package seqexec.server
 
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
 import cats.Eq
 import cats.syntax.all._
 import edu.gemini.seqexec.server.tcs.BinaryEnabledDisabled
@@ -21,6 +17,9 @@ import squants.Length
 import squants.Ratio
 import squants.space.Arcseconds
 import squants.space.Millimeters
+
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 package tcs {
 

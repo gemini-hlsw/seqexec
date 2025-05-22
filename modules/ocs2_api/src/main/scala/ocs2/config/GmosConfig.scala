@@ -3,14 +3,15 @@
 
 package ocs2.config
 
-import java.time.Duration
-
 import cats.Eq
 import cats.Order
-import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums._
 import lucuma.core.math.Offset
 import monocle._
+import org.typelevel.cats.time.instances.all._
+
+import java.time.Duration
+import scala.annotation.nowarn
 
 /**
  * Additional type hierarchy over the low-level GMOS enums.
@@ -211,6 +212,7 @@ object GmosConfig {
     def rowsOverlap(that: GmosCustomRoiEntry): Boolean =
       overlapCheck(that, _.rows)
 
+    @nowarn
     private def overlapCheck(
       that: GmosCustomRoiEntry,
       f:    GmosCustomRoiEntry => (Int, Int)

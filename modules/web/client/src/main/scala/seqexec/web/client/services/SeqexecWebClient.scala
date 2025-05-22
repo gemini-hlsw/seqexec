@@ -3,12 +3,6 @@
 
 package seqexec.web.client.services
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.scalajs.js.URIUtils._
-import scala.scalajs.js.typedarray.ArrayBuffer
-import scala.scalajs.js.typedarray.TypedArrayBuffer
-
 import boopickle.Default.Pickle
 import boopickle.Default.Pickler
 import boopickle.Default.Unpickle
@@ -33,7 +27,13 @@ import seqexec.model.enum.Resource
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
 import seqexec.web.client.actions.RunOptions
+
 import scala.annotation.nowarn
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.scalajs.js.URIUtils._
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.scalajs.js.typedarray.TypedArrayBuffer
 
 /**
  * Encapsulates remote calls to the Seqexec Web API

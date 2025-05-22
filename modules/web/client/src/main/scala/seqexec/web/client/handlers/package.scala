@@ -3,9 +3,6 @@
 
 package seqexec.web.client
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import cats.Monoid
 import cats.syntax.all._
 import diode.Action
@@ -13,6 +10,9 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.NoAction
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 package handlers {
   trait Handlers[M, T] { this: ActionHandler[M, T] =>

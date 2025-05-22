@@ -3,9 +3,6 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.collection.immutable.SortedMap
-import scala.scalajs.js
-
 import cats.implicits._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactMouseEvent
@@ -30,6 +27,9 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.icons._
 import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.reusability._
+
+import scala.collection.immutable.SortedMap
+import scala.scalajs.js
 
 /**
  * Contains the control buttons for each subsystem

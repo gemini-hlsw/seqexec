@@ -9,9 +9,9 @@ import cats.syntax.all._
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.model.enum.NodAndShuffleStage
 import seqexec.model.enum.Resource
 import seqexec.server.CleanConfig
@@ -20,7 +20,8 @@ import seqexec.server.ConfigResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.InstrumentGuide
 import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.{ AltairConfig, AltairOff }
+import seqexec.server.altair.AltairController.AltairConfig
+import seqexec.server.altair.AltairController.AltairOff
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import seqexec.server.tcs.TcsNorthController.TcsNorthConfig

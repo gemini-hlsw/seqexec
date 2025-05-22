@@ -3,7 +3,6 @@
 
 package seqexec.server.keywords
 
-import scala.concurrent.duration._
 import cats.effect.Temporal
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
@@ -11,6 +10,8 @@ import org.http4s.client.middleware.Retry
 import org.http4s.client.middleware.RetryPolicy
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
+
+import scala.concurrent.duration._
 
 /**
  * Gemini Data service client

@@ -3,14 +3,14 @@
 
 package seqexec.server.gnirs
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats.effect.Async
 import cats.effect.Sync
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ Camera, Decker, Disperser, ReadMode }
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Camera
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Decker
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.Disperser
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 import fs2.Stream
 import org.typelevel.log4cats.Logger
 import seqexec.model.ObserveStage
@@ -25,6 +25,10 @@ import squants.Time
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 trait GnirsEncoders {
   val readModeEncoder: EncodeEpicsValue[ReadMode, (Int, Int)] = EncodeEpicsValue {

@@ -3,14 +3,13 @@
 
 package seqexec.server.tcs
 
-import java.time.Duration
 import cats._
 import cats.data._
 import cats.effect.Async
 import cats.implicits._
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
@@ -22,16 +21,20 @@ import seqexec.server.EpicsCodex.encode
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
+import seqexec.server.altair.AltairController.AltairPauseResume
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsController._
+import seqexec.server.tcs.TcsControllerEpicsCommon.calcMoveDistanceSquared
+import seqexec.server.tcs.TcsControllerEpicsCommon.offsetNear
 import seqexec.server.tcs.TcsNorthController.TcsNorthAoConfig
 import shapeless.tag.@@
 import squants.Length
 import squants.space.Area
 import squants.time.TimeConversions._
+
+import java.time.Duration
+
 import TcsNorthController._
-import seqexec.server.altair.AltairController.AltairPauseResume
-import seqexec.server.tcs.TcsControllerEpicsCommon.{ calcMoveDistanceSquared, offsetNear }
 
 trait TcsNorthControllerEpicsAo[F[_]] {
   def applyAoConfig(

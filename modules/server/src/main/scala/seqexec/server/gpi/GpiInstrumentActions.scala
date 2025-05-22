@@ -3,6 +3,7 @@
 
 package seqexec.server.gpi
 
+import cats.effect.Temporal
 import cats.syntax.all._
 import fs2.Stream
 import org.typelevel.log4cats.Logger
@@ -12,7 +13,6 @@ import seqexec.server.InstrumentActions
 import seqexec.server.ObserveActions
 import seqexec.server.ObserveEnvironment
 import seqexec.server.StepType
-import cats.effect.Temporal
 
 /**
  * Gpi needs different actions for A&C

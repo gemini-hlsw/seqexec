@@ -4,17 +4,18 @@
 package seqexec.model
 
 import cats.syntax.all._
-import java.util.UUID
 import lucuma.core.util.arb.ArbEnumerated._
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import org.scalacheck.Arbitrary._
-import scala.collection.immutable.SortedMap
-import squants.time._
+import seqexec.model.arb.all._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
-import seqexec.model.arb.all._
+import squants.time._
+
+import java.util.UUID
+import scala.collection.immutable.SortedMap
 
 trait SeqexecModelArbitraries {
 

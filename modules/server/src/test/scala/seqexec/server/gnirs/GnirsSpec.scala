@@ -5,8 +5,8 @@ package seqexec.server.gnirs
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
+import seqexec.server._
 
 /**
  * Tests GNIRS typeclasses

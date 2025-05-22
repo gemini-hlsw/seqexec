@@ -3,6 +3,21 @@
 
 package seqexec.server
 
+import cats._
+import cats.data.Nested
+import cats.effect.Async
+import cats.effect.Sync
+import cats.effect.Temporal
+import cats.syntax.all._
+import edu.gemini.epics.acm._
+import fs2.Stream
+import mouse.boolean._
+import org.typelevel.log4cats.Logger
+import seqexec.model.ObserveStage
+import seqexec.model.enum.ApplyCommandResult
+import seqexec.model.enum.ObserveCommandResult
+import squants.Time
+
 import java.lang.{ Double => JDouble }
 import java.lang.{ Float => JFloat }
 import java.lang.{ Integer => JInt }
@@ -14,22 +29,9 @@ import java.util.{ Timer => JTimer }
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.math.abs
-import cats._
-import cats.data.Nested
-import cats.effect.Async
-import cats.effect.Sync
-import cats.syntax.all._
-import edu.gemini.epics.acm._
-import fs2.Stream
-import org.typelevel.log4cats.Logger
-import mouse.boolean._
-import seqexec.model.ObserveStage
-import seqexec.model.enum.ApplyCommandResult
-import seqexec.model.enum.ObserveCommandResult
+
 import SeqexecFailure.NullEpicsError
 import SeqexecFailure.SeqexecException
-import squants.Time
-import cats.effect.Temporal
 
 trait EpicsCommand[F[_]] {
   def post(timeout: FiniteDuration): F[ApplyCommandResult]

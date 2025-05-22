@@ -5,9 +5,9 @@ package seqexec.server.flamingos2
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server.flamingos2.Flamingos2Controller.FocalPlaneUnit
-import seqexec.server._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.FPUnit
+import seqexec.server._
+import seqexec.server.flamingos2.Flamingos2Controller.FocalPlaneUnit
 
 /**
  * Tests F2 typeclasses

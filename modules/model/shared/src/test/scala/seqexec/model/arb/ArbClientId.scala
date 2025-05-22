@@ -3,12 +3,13 @@
 
 package seqexec.model.arb
 
-import java.util.UUID
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Cogen._
 import seqexec.model.ClientId
+
+import java.util.UUID
 
 trait ArbClientId {
 

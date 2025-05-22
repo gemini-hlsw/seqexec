@@ -3,11 +3,6 @@
 
 package seqexec.server.gmos
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
 import cats.Applicative
 import cats.ApplicativeError
 import cats.effect.Async
@@ -15,8 +10,8 @@ import cats.syntax.all._
 import edu.gemini.epics.acm.CarStateGeneric
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import fs2.Stream
-import org.typelevel.log4cats.Logger
 import mouse.all._
+import org.typelevel.log4cats.Logger
 import seqexec.model.GmosParameters._
 import seqexec.model.NSSubexposure
 import seqexec.model.ObserveStage
@@ -39,6 +34,10 @@ import shapeless.tag
 import squants.Length
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 trait GmosEncoders {
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {

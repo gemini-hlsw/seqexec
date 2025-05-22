@@ -6,9 +6,9 @@ package seqexec.server
 import cats._
 import cats.syntax.all._
 import org.typelevel.log4cats.Logger
-import seqexec.model.enums.KeywordName
 import seqexec.model.Observation
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enums.KeywordName
 
 import java.util.Locale
 

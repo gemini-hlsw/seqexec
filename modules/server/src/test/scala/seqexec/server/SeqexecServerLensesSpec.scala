@@ -4,17 +4,20 @@
 package seqexec.server
 
 import cats.Eq
-import cats.tests.CatsSuite
-import edu.gemini.spModel.config2.{ Config, ItemKey }
-import seqexec.model.arb.ArbObservationId
-import seqexec.model.Observation
-import monocle.law.discipline.LensTests
-import seqexec.model.enum.Instrument
-import seqexec.model.SystemOverrides
-import seqexec.engine
-import seqexec.engine.{ Action, ParallelActions }
-import SequenceGen._
 import cats.effect.IO
+import cats.tests.CatsSuite
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.ItemKey
+import monocle.law.discipline.LensTests
+import seqexec.engine
+import seqexec.engine.Action
+import seqexec.engine.ParallelActions
+import seqexec.model.Observation
+import seqexec.model.SystemOverrides
+import seqexec.model.arb.ArbObservationId
+import seqexec.model.enum.Instrument
+
+import SequenceGen._
 
 /**
  * Tests SeqexecServer Lenses

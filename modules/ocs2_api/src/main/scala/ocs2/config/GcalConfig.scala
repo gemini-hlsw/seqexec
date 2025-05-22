@@ -4,14 +4,9 @@
 package ocs2
 package config
 
-import java.time.Duration
-
-import scala.collection.immutable.SortedSet
-
 import cats.Eq
 import cats.data.NonEmptySet
 import cats.syntax.all._
-import org.typelevel.cats.time.instances.all._
 import lucuma.core.enums.GcalArc
 import lucuma.core.enums.GcalContinuum
 import lucuma.core.enums.GcalDiffuser
@@ -21,6 +16,10 @@ import monocle._
 import monocle.std.either.stdLeft
 import monocle.std.either.stdRight
 import ocs2.CoAdds
+import org.typelevel.cats.time.instances.all._
+
+import java.time.Duration
+import scala.collection.immutable.SortedSet
 
 import GcalConfig.{ GcalArcs, GcalLamp }
 

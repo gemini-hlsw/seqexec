@@ -5,8 +5,9 @@ package seqexec.web.client.services
 
 import cats.syntax.all._
 import org.scalajs.dom.window
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 trait DisplayNamePersistence {
   def storedDisplayNames: Map[String, String] = {

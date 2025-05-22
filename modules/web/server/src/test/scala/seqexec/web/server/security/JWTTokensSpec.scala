@@ -7,8 +7,9 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.tests.CatsSuite
 import org.typelevel.log4cats.noop.NoOpLogger
-import seqexec.model.config._
 import seqexec.model.UserDetails
+import seqexec.model.config._
+
 import scala.concurrent.duration._
 
 class JWTTokensSpec extends CatsSuite {

@@ -4,22 +4,25 @@
 package seqexec.server.ghost
 
 import cats.Applicative
-import cats.effect.Sync
 import cats.effect.Ref
+import cats.effect.Sync
 import cats.syntax.all._
-import seqexec.server.CleanConfig
-import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
-import seqexec.server.ConfigUtilOps._
 import edu.gemini.spModel.gemini.ghost.GhostBinning
 import edu.gemini.spModel.gemini.ghost.GhostReadNoiseGain
-import java.lang.{ Boolean => JBoolean, Double => JDouble, Integer => JInt }
-import seqexec.server.keywords._
-import edu.gemini.spModel.target.env.ResolutionMode
-import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import edu.gemini.spModel.obscomp.InstConstants.COADDS_PROP
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.target.env.ResolutionMode
 import seqexec.model.Conditions
 import seqexec.model.GhostTargetName
+import seqexec.server.CleanConfig
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.keywords._
 import shapeless.tag
+
+import java.lang.{Boolean => JBoolean}
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
 import scala.concurrent.duration._
 
 sealed trait GhostKeywordsReader[F[_]] {

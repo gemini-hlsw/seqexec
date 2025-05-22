@@ -7,24 +7,26 @@ import cats.Eq
 import cats.syntax.all._
 import edu.gemini.spModel.core.Target.TargetType
 import edu.gemini.spModel.target.env.ResolutionMode
-import giapi.client.commands.Configuration
 import giapi.client.GiapiConfig
+import giapi.client.commands.Configuration
 import giapi.client.syntax.all._
 import giapi.enums.GiapiStatusApply
 import giapi.enums.GiapiStatusApply._
+import lucuma.core.math.Coordinates
+import lucuma.core.model.SiderealTracking
+import lucuma.core.model.{ Target => GemTarget }
 import seqexec.model.Conditions
 import seqexec.server.ConfigUtilOps.ContentError
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ghost.implicits._
-import lucuma.core.model.{ Target => GemTarget }
-import lucuma.core.model.SiderealTracking
-import lucuma.core.math.Coordinates
-import GhostConfig._
 import shapeless.tag
 import shapeless.tag.@@
 import squants.space.Length
 import squants.space.Microns
+
 import scala.concurrent.duration.FiniteDuration
+
+import GhostConfig._
 
 // GHOST has a number of different possible configuration modes: we add types for them here.
 sealed trait GhostConfig extends GhostLUT {

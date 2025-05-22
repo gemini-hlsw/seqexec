@@ -3,10 +3,6 @@
 
 package web.client
 
-import scala.math.max
-import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
-
 import cats.Foldable
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -23,6 +19,10 @@ import react.sortable.SortableElement
 import react.virtualized._
 import react.virtualized.raw
 import web.client.utils._
+
+import scala.math.max
+import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 
 package object table {
   val DragHandleWidth: Int = 12

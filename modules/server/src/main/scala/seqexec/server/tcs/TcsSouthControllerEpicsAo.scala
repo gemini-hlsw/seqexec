@@ -3,14 +3,13 @@
 
 package seqexec.server.tcs
 
-import java.time.Duration
 import cats._
 import cats.data.NonEmptySet
 import cats.effect.Async
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import monocle.macros.Lenses
 import mouse.boolean._
+import org.typelevel.log4cats.Logger
 import seqexec.model.M1GuideConfig
 import seqexec.model.M1GuideConfig.M1GuideOn
 import seqexec.model.M2GuideConfig
@@ -34,12 +33,15 @@ import seqexec.server.tcs.TcsController.GuiderSensorOff
 import seqexec.server.tcs.TcsController.GuiderSensorOption
 import seqexec.server.tcs.TcsController.ProbeTrackingConfig
 import seqexec.server.tcs.TcsController.Subsystem
+import seqexec.server.tcs.TcsControllerEpicsCommon.calcMoveDistanceSquared
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import seqexec.server.tcs.TcsSouthController.GemsGuiders
 import seqexec.server.tcs.TcsSouthController.TcsSouthAoConfig
 import squants.time.TimeConversions._
+
+import java.time.Duration
+
 import TcsSouthController._
-import seqexec.server.tcs.TcsControllerEpicsCommon.calcMoveDistanceSquared
 
 /**
  * Controller of Gemini's South AO system over epics

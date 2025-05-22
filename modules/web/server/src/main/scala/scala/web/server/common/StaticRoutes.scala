@@ -3,7 +3,6 @@
 
 package web.server.common
 
-import scala.concurrent.duration._
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.effect.Sync
@@ -17,6 +16,8 @@ import org.http4s.Response
 import org.http4s.StaticFile
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
+
+import scala.concurrent.duration._
 
 class StaticRoutes[F[_]: Sync: Compression](
   devMode:       Boolean,

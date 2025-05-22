@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.scalajs.js.JSConverters._
-
 import cats.syntax.all._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -13,6 +11,8 @@ import react.common.implicits._
 import react.semanticui.SemanticColor
 import react.semanticui.modules.progress.Progress
 import seqexec.web.client.reusability._
+
+import scala.scalajs.js.JSConverters._
 
 /**
  * Progress bar divided in steps

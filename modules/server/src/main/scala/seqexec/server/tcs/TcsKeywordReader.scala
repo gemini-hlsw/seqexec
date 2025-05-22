@@ -3,10 +3,6 @@
 
 package seqexec.server.tcs
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
 import cats._
 import cats.data.Nested
 import cats.data.OptionT
@@ -16,6 +12,10 @@ import lucuma.core.syntax.string._
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsEpics.VirtualGemsTelescope
 import squants.space._
+
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 sealed trait CRFollow extends Product with Serializable
 

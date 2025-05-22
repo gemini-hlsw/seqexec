@@ -14,7 +14,6 @@ import react.semanticui.collections.menu._
 import react.semanticui.modules.popup.Popup
 import react.semanticui.modules.popup.PopupPosition
 import react.semanticui.sizes._
-//import react.semanticui.toasts._
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit

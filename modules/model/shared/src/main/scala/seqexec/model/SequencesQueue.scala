@@ -3,8 +3,6 @@
 
 package seqexec.model
 
-import scala.collection.immutable.SortedMap
-
 import cats._
 import monocle.Getter
 import monocle.Traversal
@@ -12,6 +10,8 @@ import monocle.function.Each._
 import monocle.macros.Lenses
 import seqexec.model.Observation
 import seqexec.model.enum.Instrument
+
+import scala.collection.immutable.SortedMap
 
 /**
  * Represents a queue with different levels of details. E.g. it could be a list of Ids Or a list of

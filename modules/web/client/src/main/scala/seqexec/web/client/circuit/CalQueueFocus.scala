@@ -3,8 +3,6 @@
 
 package seqexec.web.client.circuit
 
-import scala.collection.immutable.SortedMap
-
 import cats._
 import cats.syntax.all._
 import monocle.Getter
@@ -21,6 +19,8 @@ import seqexec.model.QueueManipulationOp
 import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.web.client.model._
 import web.client.table.TableState
+
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueFocus(

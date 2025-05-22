@@ -5,14 +5,15 @@ package seqexec.web.server.config
 
 import cats.effect.IO
 import lucuma.core.enums.Site
-import java.nio.file.Paths
+import munit.CatsEffectSuite
 import org.http4s._
 import org.http4s.syntax.all._
 import pureconfig._
-import scala.concurrent.duration._
 import seqexec.model.config._
 import shapeless.tag
-import munit.CatsEffectSuite
+
+import java.nio.file.Paths
+import scala.concurrent.duration._
 
 class ConfigurationLoaderSpec extends CatsEffectSuite {
   val gcal   =

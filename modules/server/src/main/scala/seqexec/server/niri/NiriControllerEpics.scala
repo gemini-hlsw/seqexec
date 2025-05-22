@@ -3,9 +3,6 @@
 
 package seqexec.server.niri
 
-import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.SECONDS
-import scala.concurrent.duration.FiniteDuration
 import cats.Applicative
 import cats.effect.Async
 import cats.syntax.all._
@@ -33,6 +30,10 @@ import seqexec.server.SeqexecFailure
 import seqexec.server.niri.NiriController._
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
+import scala.concurrent.duration.FiniteDuration
 
 trait NiriEncoders {
 

@@ -7,6 +7,7 @@ import cats.data.NonEmptyList
 import monocle.function.Index.listIndex
 import monocle.syntax.all._
 import mouse.boolean._
+
 import Action.ActionState
 
 /**

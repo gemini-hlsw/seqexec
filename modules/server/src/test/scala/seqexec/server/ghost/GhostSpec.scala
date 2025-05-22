@@ -4,16 +4,17 @@
 package seqexec.server.ghost
 
 import cats.syntax.all._
+import edu.gemini.spModel.core.Target.TargetType
+import edu.gemini.spModel.gemini.ghost.GhostBinning
+import edu.gemini.spModel.target.env.ResolutionMode
 import giapi.enums.GiapiStatusApply._
 import lucuma.core.math.Coordinates
-import lucuma.core.math.RightAscension
 import lucuma.core.math.Declination
+import lucuma.core.math.RightAscension
 import seqexec.model.Conditions
-import edu.gemini.spModel.gemini.ghost.GhostBinning
-import edu.gemini.spModel.core.Target.TargetType
-import edu.gemini.spModel.target.env.ResolutionMode
-import scala.concurrent.duration._
 import shapeless.tag
+
+import scala.concurrent.duration._
 
 /**
  * Tests GHOST Config typeclasses

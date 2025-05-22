@@ -3,10 +3,13 @@
 
 package seqexec.server.altair
 
-import cats.{ Eq, Show }
+import cats.Eq
+import cats.Show
 import cats.syntax.all._
 import seqexec.model.`enum`.Instrument
-import seqexec.server.tcs.Gaos.{ GuideCapabilities, PauseConditionSet, ResumeConditionSet }
+import seqexec.server.tcs.Gaos.GuideCapabilities
+import seqexec.server.tcs.Gaos.PauseConditionSet
+import seqexec.server.tcs.Gaos.ResumeConditionSet
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 import squants.space.Length

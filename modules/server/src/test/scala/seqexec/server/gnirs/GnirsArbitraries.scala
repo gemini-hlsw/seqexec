@@ -7,6 +7,7 @@ import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
+
 import scala.collection.immutable.ArraySeq
 
 trait GnirsArbitraries {

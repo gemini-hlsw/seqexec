@@ -3,8 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import cats.syntax.all._
 import diode.ActionHandler
 import diode.ActionResult
@@ -13,9 +11,11 @@ import diode.ModelRW
 import diode.NoAction
 import seqexec.model.Observer
 import seqexec.web.client.actions._
+import seqexec.web.client.circuit.SequencesQueueFocus
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.services.SeqexecWebClient
-import seqexec.web.client.circuit.SequencesQueueFocus
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
  * Handles sequence execution actions

@@ -3,9 +3,6 @@
 
 package seqexec.web.client.components
 
-import scala.math.max
-import scala.scalajs.js
-
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.syntax.all._
@@ -41,8 +38,11 @@ import seqexec.web.client.model.ObsClass
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.reusability._
-import web.client.table._
 import web.client.JsNumberOps._
+import web.client.table._
+
+import scala.math.max
+import scala.scalajs.js
 
 trait Columns {
   import SessionQueueTable._
@@ -767,7 +767,7 @@ object SessionQueueTable extends Columns {
     .render(b =>
       AutoSizer(
         AutoSizer
-          .props(table(b), disableHeight = true, onResize = onResize(b))
+          .props(table(b)(_), disableHeight = true, onResize = onResize(b))
       )
     )
     .configure(Reusability.shouldComponentUpdate)

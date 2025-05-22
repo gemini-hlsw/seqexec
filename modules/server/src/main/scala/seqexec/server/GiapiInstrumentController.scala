@@ -3,8 +3,6 @@
 
 package seqexec.server
 
-import scala.concurrent.duration._
-
 import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
@@ -19,6 +17,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.time.Time
+
+import scala.concurrent.duration._
 
 trait GiapiInstrumentController[F[_], CFG] {
   def applyConfig(config: CFG): F[Unit]

@@ -3,9 +3,6 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import cats.syntax.all._
 import japgolly.scalajs.react.AsyncCallback
 import japgolly.scalajs.react.Callback
@@ -38,6 +35,9 @@ import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.services.SeqexecWebClient
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 final case class SequenceControl(p: SequenceControlFocus)
     extends ReactProps[SequenceControl](SequenceControl.component) {

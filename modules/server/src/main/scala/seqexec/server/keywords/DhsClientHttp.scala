@@ -3,20 +3,17 @@
 
 package seqexec.server.keywords
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import scala.concurrent.duration._
 import cats.FlatMap
 import cats.data.EitherT
+import cats.effect.Ref
 import cats.effect.Sync
+import cats.effect.Temporal
 import cats.syntax.all._
-import org.typelevel.log4cats.Logger
 import io.circe.Decoder
 import io.circe.DecodingFailure
 import io.circe.Encoder
 import io.circe.Json
 import io.circe.syntax._
-import seqexec.model.enums.{ DhsKeywordName, KeywordName }
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
@@ -24,11 +21,17 @@ import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.client.middleware.Retry
 import org.http4s.client.middleware.RetryPolicy
 import org.http4s.dsl.io._
+import org.typelevel.log4cats.Logger
 import seqexec.model.dhs._
+import seqexec.model.enums.DhsKeywordName
+import seqexec.model.enums.KeywordName
 import seqexec.server.SeqexecFailure
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import seqexec.server.keywords.DhsClient.ImageParameters
-import cats.effect.{ Ref, Temporal }
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import scala.concurrent.duration._
 
 /**
  * Implementation of DhsClient that interfaces with the real DHS over the http interface

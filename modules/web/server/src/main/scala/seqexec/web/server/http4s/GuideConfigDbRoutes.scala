@@ -6,12 +6,12 @@ package seqexec.web.server.http4s
 import cats.effect.Async
 import cats.syntax.all._
 import fs2.compression.Compression
-import org.typelevel.log4cats.Logger
 import org.http4s.EntityDecoder
 import org.http4s.HttpRoutes
 import org.http4s.circe.jsonOf
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.middleware.GZip
+import org.typelevel.log4cats.Logger
 import seqexec.server.tcs.GuideConfig
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.server.tcs.GuideConfigDb._
