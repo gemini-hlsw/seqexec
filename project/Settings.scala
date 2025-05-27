@@ -24,8 +24,8 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion   = "3.5.7"
-    val catsVersion         = "2.10.0"
-    val mouseVersion        = "1.3.1"
+    val catsVersion         = "2.13.0"
+    val mouseVersion        = "1.3.2"
     val fs2Version          = "3.10.2"
     val shapelessVersion    = "2.3.9"
     val scalaParsersVersion = "1.1.2"
@@ -33,15 +33,15 @@ object Settings {
     val catsTime            = "0.5.1"
 
     val http4sVersion              = "0.23.30"
-    val http4sBlazeVersion         = "0.23.16"
-    val http4sJdkHttpClientVersion = "0.9.1"
+    val http4sBlazeVersion         = "0.23.17"
+    val http4sJdkHttpClientVersion = "0.9.2"
     val http4sBoopickleVersion     = "0.23.11"
     val http4sScalaXmlVersion      = "0.23.14"
 
     val squants        = "1.8.3"
     val commonsHttp    = "2.0.2"
     val unboundId      = "3.2.1"
-    val jwt            = "10.0.1"
+    val jwt            = "10.0.4"
     val slf4j          = "2.0.13"
     val log4s          = "1.10.0"
     val log4cats       = "2.7.0"
@@ -59,14 +59,15 @@ object Settings {
     // test libraries
     val xmlUnit                = "1.6"
     val jUnitInterface         = "0.13.2"
-    val scalaMock              = "5.2.0"
-    val munitVersion           = "1.0.3"
+    val scalaMock              = "6.2.0"
+    val munitVersion           = "1.0.4"
     val munitDisciplineVersion = "2.0.0"
     val munitCatsEffectVersion = "2.0.0-M5"
 
     // Pure JS libraries
     val fomanticUI = "2.8.7"
-    val ocsVersion = "2025001.1.1"
+
+    val ocsVersion = "2025101.1.3"
 
     val apacheXMLRPC        = "3.1.3"
     val opencsv             = "2.3"
