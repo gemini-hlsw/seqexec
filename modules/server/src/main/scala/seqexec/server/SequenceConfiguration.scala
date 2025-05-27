@@ -119,9 +119,9 @@ trait SequenceConfiguration {
         case SCIENCE_OBSERVE_TYPE                                    => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE                   =>
           inst match {
-            case Instrument.GmosN | Instrument.GmosS | Instrument.Ghost =>
+            case Instrument.Ghost =>
               StepType.ExclusiveDarkOrBias(inst).asRight
-            case _                                                      =>
+            case _                =>
               StepType.DarkOrBias(inst).asRight
           }
         case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE =>
