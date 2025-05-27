@@ -97,6 +97,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
       case Disperser.B600_G5307  => "B600+_G5307"
       case Disperser.R600_G5304  => "R600+_G5304"
       case Disperser.R400_G5305  => "R400+_G5305"
+      case Disperser.R400_G5310  => "R400+_G5310"
       case Disperser.R150_G5308  => "R150+_G5308"
       case Disperser.B600_G5303  => "B600+_G5303"
       case Disperser.R150_G5306  => "R150+_G5306"
