@@ -12,7 +12,6 @@ import cats.data.NonEmptyList
 import cats.data.StateT
 import cats.effect.Async
 import cats.syntax.all._
-import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.CLOUD_COVER_PROP
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality.IMAGE_QUALITY_PROP
@@ -850,13 +849,9 @@ object SeqexecEngine {
               .asRight
           )
         }
-        .handleErrorWith {
-          case e: SeqFailure =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-          case e             =>
-            e.printStackTrace()
-            Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
+        .handleErrorWith { e =>
+          e.printStackTrace()
+          Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
         }
     }
 
@@ -1737,13 +1732,18 @@ object SeqexecEngine {
         // Find first Pending Step when no Step is Running and mark it as Running
         case steps
             if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
-          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Pending)
-          xs ++ (Step.status.replace(StepState.Running)(y) :: ys)
+          splitWhere(steps)(_.status === StepState.Pending) match {
+            case (xs, y :: ys) => xs ++ (Step.status.replace(StepState.Running)(y) :: ys)
+            case _             => steps
+          }
         case steps
             if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
-          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Running)
-          xs ++ (Step.status.replace(StepState.Paused)(y) :: ys)
-        case x   => x
+          splitWhere(steps)(_.status === StepState.Running) match {
+            case (xs, y :: ys) => xs ++ (Step.status.replace(StepState.Paused)(y) :: ys)
+            case _             => steps
+          }
+
+        case x => x
       }
 
     // TODO: Implement willStopIn

@@ -6,7 +6,6 @@ package seqexec.web.client.components
 import cats.syntax.all._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
 import react.common._
 import react.common.implicits._
 import react.semanticui.elements.header.Header

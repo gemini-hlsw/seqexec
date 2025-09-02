@@ -66,7 +66,7 @@ object GemsController {
         x.isOdgw2Used.option("ODGW2"),
         x.isOdgw3Used.option("ODGW3"),
         x.isOdgw4Used.option("ODGW4")
-      ).collect { case Some(x) => x }
+      ).flatten
         .mkString("(", ", ", ")")
     }
   }

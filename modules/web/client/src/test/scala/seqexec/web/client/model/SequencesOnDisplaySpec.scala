@@ -96,7 +96,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     )
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(ss), _, _, _, _, _)) if ss.id === obsId =>
     }
   }
   test("Add preview with loaded") {
@@ -115,10 +115,10 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
 
     sod2.tabs.length should be(3)
     sod2.tabs.toList.lift(2) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _, _)) if s.id === obsId =>
+      case Some(InstrumentSequenceTab(_, Right(ss), _, _, _, _, _)) if ss.id === obsId =>
     }
     sod2.tabs.focus should matchPattern {
-      case PreviewSequenceTab(s, _, _, _) if s.id === obs2 =>
+      case PreviewSequenceTab(ss, _, _, _) if ss.id === obs2 =>
     }
   }
 }

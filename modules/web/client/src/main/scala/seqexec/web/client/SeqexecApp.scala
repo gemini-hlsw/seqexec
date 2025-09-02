@@ -67,7 +67,7 @@ object SeqexecApp extends IOApp {
       _           <- launcher.initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router[IO](seqexecSite)
       node        <- launcher.renderingNode
-      _           <- IO(router().renderIntoDOM(node)).handleErrorWith(p => IO(logger.error(p.toString)))
+      _           <- IO(router().renderIntoDOM(node)).void.handleErrorWith(p => IO(logger.error(p.toString)))
     } yield ExitCode.Success
   }
 

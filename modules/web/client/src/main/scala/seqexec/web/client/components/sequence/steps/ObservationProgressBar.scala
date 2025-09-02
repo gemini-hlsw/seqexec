@@ -46,8 +46,8 @@ trait ProgressLabel {
     else if (stopping) s"$fileId - Stopping - Reading out..."
     else
       stageStr match {
-        case Some(stage) => s"$fileId - $stage"
-        case _           =>
+        case Some(s) => s"$fileId - $s"
+        case _       =>
           remainingMillis.fold(fileId) { millis =>
             if (millis > 0) s"$fileId$durationStr" else s"$fileId - Reading out..."
           }

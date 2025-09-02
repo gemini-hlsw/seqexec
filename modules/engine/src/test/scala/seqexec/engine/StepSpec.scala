@@ -429,13 +429,13 @@ class StepSpec extends CatsEffectSuite {
       }
 
     qss.map { x =>
-      val actionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Completed[_], _) => x }
+      val actionsCompleted = x.map(_._1).collect { case SystemUpdate(e: Completed[_], _) => e }
       assertEquals(actionsCompleted.length, 4)
 
-      val executionsCompleted = x.map(_._1).collect { case SystemUpdate(x: Executed, _) => x }
+      val executionsCompleted = x.map(_._1).collect { case SystemUpdate(e: Executed, _) => e }
       assertEquals(executionsCompleted.length, 3)
 
-      val sequencesCompleted = x.map(_._1).collect { case SystemUpdate(x: Finished, _) => x }
+      val sequencesCompleted = x.map(_._1).collect { case SystemUpdate(e: Finished, _) => e }
       assertEquals(sequencesCompleted.length, 1)
 
       inside(x.lastOption.flatMap(_._2.sequences.get(seqId))) {

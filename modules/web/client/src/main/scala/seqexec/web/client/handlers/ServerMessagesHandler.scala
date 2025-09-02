@@ -134,7 +134,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           curStep       <- sequenceStepT.find(_.id === curSIdx)(obs)
           observeStatus <- Step.observeStatus.getOption(curStep)
           configStatus  <- Step.configStatus.getOption(curStep)
-          d              = configStatus // workaround
+          _              = configStatus // workaround
           if observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
           if configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep

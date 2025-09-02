@@ -77,9 +77,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val rcL = refO.replace(VariableColumnWidth(pʹʹ, m))
             val ncL = nextCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                nextO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p2, m2), _, _)) =>
+                nextO.replace(VariableColumnWidth(p2 - Δʹ, m2))
+              case _                                                               => id
             }
             (rcL, ncL)
 
@@ -94,9 +94,9 @@ final case class TableState[A: Eq](
             val Δʹ  = pʹʹ - p        // new width with limit
             val ncL = nextO.replace(VariableColumnWidth(pʹʹ, m))
             val rcL = refCol match {
-              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p, m), _, _)) =>
-                refO.replace(VariableColumnWidth(p - Δʹ, m))
-              case _                                                             => id
+              case Some(ColumnMeta(_, _, _, _, VariableColumnWidth(p2, m2), _, _)) =>
+                refO.replace(VariableColumnWidth(p2 - Δʹ, m2))
+              case _                                                               => id
             }
             (rcL, ncL)
 

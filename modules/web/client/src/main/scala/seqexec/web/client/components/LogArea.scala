@@ -367,7 +367,7 @@ object LogArea {
           ).when(p.log.display === SectionOpen)
         ),
         <.div(SeqexecStyles.logSecondarySegment |+| SeqexecStyles.logTable)(
-          AutoSizer(AutoSizer.props(table(b), disableHeight = true, onResize = onResize(b)))
+          AutoSizer(AutoSizer.props(table(b)(_), disableHeight = true, onResize = onResize(b)))
         ).when(p.log.display === SectionOpen)
       )
     }
