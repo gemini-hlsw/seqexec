@@ -24,8 +24,6 @@ ThisBuild / resolvers += "Gemini Repository".at(
 ThisBuild / scalaVersion       := "2.13.16"
 ThisBuild / crossScalaVersions := Seq("2.13.16")
 
-Global / resolvers ++= Resolver.sonatypeOssRepos("public")
-
 // This key is used to find the JRE dir. It could/should be overridden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
 ThisBuild / ocsJreDir := Path.userHome / ".jres17"
@@ -86,7 +84,7 @@ addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""
 addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
 addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 
-ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("snapshots")
+ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
 
 ThisBuild / updateOptions := updateOptions.value.withLatestSnapshots(false)
 
