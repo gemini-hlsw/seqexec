@@ -1,10 +1,9 @@
-// Copyright (c) 2016-2023 Association of Universities for Research in Astronomy, Inc. (AURA)
+// Copyright (c) 2016-2025 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.model.arb
 
 import cats.data.NonEmptyList
-import lucuma.core.util.arb.ArbEnumerated._
 import seqexec.model.{ Observation, StepId, UserPrompt }
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
 import org.scalacheck.Arbitrary._
