@@ -284,7 +284,7 @@ object Settings {
 
   object PluginVersions {
     // Compiler plugins
-    val kpVersion        = "0.13.2"
+    val kpVersion        = "0.13.3"
     val betterMonadicFor = "0.3.1"
   }
 
