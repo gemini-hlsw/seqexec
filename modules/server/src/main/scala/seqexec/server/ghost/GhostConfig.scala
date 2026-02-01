@@ -247,15 +247,17 @@ sealed trait GhostConfig extends GhostLUT {
       giapiConfig(GhostThXeLamp, 0)
     }
 
-  private val internalFocusConfiguration: Configuration =
+  // Move both IFUs to focus position. not desirable if guidi
+  def moveIFUToFocus: Configuration =
     giapiConfig(GhostBFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION") |+|
       giapiConfig(GhostRFocusType, "FOCUS_DEMAND_MOVETO_FOCUS_POSITION")
 
   def configuration: Configuration =
-    baseConfiguration |+| slitMaskConfiguration |+| internalFocusConfiguration |+| (
+    baseConfiguration |+| slitMaskConfiguration |+| (
       if (!isScience(obsType)) {
-        ifuCalibration |+| channelConfig |+|
-          svCalib |+|
+        // as per REL-4855 we move ifus to focus for calibrations
+        ifuCalibration |+| channelConfig |+| moveIFUToFocus
+        svCalib |+|
           GhostConfig.fiberConfig1(fiberAgitator1) |+|
           GhostConfig.fiberConfig2(fiberAgitator2)
       } else

@@ -29,9 +29,11 @@ trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
   def stopPaused: F[ObserveCommandResult]
 
   def abortPaused: F[ObserveCommandResult]
+
 }
 
 object GhostController {
+
   def apply[F[_]: Sync: Logger](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
     new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client, Seconds(90))
       with GhostController[F] {
@@ -40,8 +42,20 @@ object GhostController {
 
       override val name = "GHOST"
 
+      private def isAGIdle: F[Boolean] =
+        // 2 is idle, and 1 is guiding. We have more intermediate states but we'll
+        // assume we don't want to move focus
+        client.guidingState.map(_.exists(_ === 2))
+
       override def configuration(config: GhostConfig): F[Configuration] =
-        Logger[F].debug(pprint.apply(config.configuration).toString) *> config.configuration.pure[F]
+        for {
+          baseConfig <- config.configuration.pure[F]
+          value      <- client.guidingState
+          idle       <- isAGIdle
+          finalConfig = baseConfig |+| config.moveIFUToFocus.when(_ => idle)
+          _          <- Logger[F].debug(s"Guiding check with value: $value isGuiding off: $idle")
+          _          <- Logger[F].debug(pprint.apply(finalConfig).toString)
+        } yield finalConfig
 
       override def stopObserve: F[Unit] =
         client.stop.void
