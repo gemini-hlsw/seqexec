@@ -151,7 +151,7 @@ class SequenceSpec extends AnyFlatSpec {
     pending: List[ParallelActions[IO]],
     focus:   Execution[IO],
     done:    List[NonEmptyList[Result[IO]]]
-  ): Step.Zipper[IO] = {
+  ): Step.Zipper[IO]                      = {
     val rollback: (Execution[IO], List[ParallelActions[IO]]) = {
       val doneParallelActions: List[ParallelActions[IO]]  = done.map(_.map(const(action)))
       val focusParallelActions: List[ParallelActions[IO]] = focus.toParallelActionsList

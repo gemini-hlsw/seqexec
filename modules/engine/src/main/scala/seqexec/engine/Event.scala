@@ -34,13 +34,13 @@ object Event {
     user: UserDetails,
     step: StepId,
     v:    Boolean
-  ): Event[F, S, U] = EventUser[F, S, U](Breakpoint(id, user.some, step, v))
+  ): Event[F, S, U]                                                                                = EventUser[F, S, U](Breakpoint(id, user.some, step, v))
   def skip[F[_], S, U](
     id:   Observation.Id,
     user: UserDetails,
     step: StepId,
     v:    Boolean
-  ): Event[F, S, U] = EventUser[F, S, U](SkipMark(id, user.some, step, v))
+  ): Event[F, S, U]                                                                                = EventUser[F, S, U](SkipMark(id, user.some, step, v))
   def poll[F[_]](clientId: ClientId): Event[F, Nothing, Nothing]                                   =
     EventUser[F, Nothing, Nothing](Poll(clientId))
   def getState[F[_], S, U](f: S => Option[Stream[F, Event[F, S, U]]]): Event[F, S, U]              =
@@ -50,12 +50,12 @@ object Event {
   def actionStop[F[_], S, U](
     id: Observation.Id,
     f:  S => Option[Stream[F, Event[F, S, U]]]
-  ): Event[F, S, U] = EventUser[F, S, U](ActionStop(id, f))
+  ): Event[F, S, U]                                                                                = EventUser[F, S, U](ActionStop(id, f))
   def actionResume[F[_], S, U](
     id: Observation.Id,
     i:  Int,
     c:  Stream[F, Result[F]]
-  ): Event[F, S, U] =
+  ): Event[F, S, U]                                                                                =
     EventUser[F, S, U](ActionResume(id, i, c))
   def logDebugMsg[F[_], S, U](msg: String, ts: Instant): Event[F, S, U]                            =
     EventUser[F, S, U](LogDebug(msg, ts))
@@ -77,25 +77,25 @@ object Event {
     stepId: StepId,
     i:      Int,
     r:      Result.OK[R]
-  ): Event[F, Nothing, Nothing] = EventSystem[F](Completed(id, stepId, i, r))
+  ): Event[F, Nothing, Nothing]                                                                 = EventSystem[F](Completed(id, stepId, i, r))
   def stopCompleted[F[_], R <: Result.RetVal](
     id:     Observation.Id,
     stepId: StepId,
     i:      Int,
     r:      Result.OKStopped[R]
-  ): Event[F, Nothing, Nothing] = EventSystem[F](StopCompleted(id, stepId, i, r))
+  ): Event[F, Nothing, Nothing]                                                                 = EventSystem[F](StopCompleted(id, stepId, i, r))
   def aborted[F[_], R <: Result.RetVal](
     id:     Observation.Id,
     stepId: StepId,
     i:      Int,
     r:      Result.OKAborted[R]
-  ): Event[F, Nothing, Nothing] = EventSystem[F](Aborted(id, stepId, i, r))
+  ): Event[F, Nothing, Nothing]                                                                 = EventSystem[F](Aborted(id, stepId, i, r))
   def partial[F[_], R <: Result.PartialVal](
     id:     Observation.Id,
     stepId: StepId,
     i:      Int,
     r:      Result.Partial[R]
-  ): Event[F, Nothing, Nothing] =
+  ): Event[F, Nothing, Nothing]                                                                 =
     EventSystem[F](PartialResult(id, stepId, i, r))
   def paused[F[_]](id: Observation.Id, i: Int, c: Result.Paused[F]): Event[F, Nothing, Nothing] =
     EventSystem[F](Paused[F](id, i, c))
@@ -111,7 +111,7 @@ object Event {
   def singleRunCompleted[F[_], R <: Result.RetVal](
     c: ActionCoords,
     r: Result.OK[R]
-  ): Event[F, Nothing, Nothing] =
+  ): Event[F, Nothing, Nothing]                                                                 =
     EventSystem[F](SingleRunCompleted(c, r))
   def singleRunFailed[F[_]](c: ActionCoords, e: Result.Error): Event[F, Nothing, Nothing]       =
     EventSystem[F](SingleRunFailed(c, e))
