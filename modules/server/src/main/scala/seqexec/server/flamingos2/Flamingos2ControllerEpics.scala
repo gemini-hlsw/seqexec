@@ -5,11 +5,9 @@ package seqexec.server.flamingos2
 
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
-
-import scala.concurrent.duration.FiniteDuration
-
+import scala.concurrent.duration.{ Duration, FiniteDuration }
 import cats.data.StateT
-import cats.effect.Async
+import cats.effect.{ Async, Temporal }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -28,6 +26,8 @@ import seqexec.server.RemainingTime
 import seqexec.server.flamingos2.Flamingos2Controller._
 import squants.Time
 import squants.time.TimeConversions._
+
+import java.util.concurrent.TimeUnit
 
 trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
@@ -156,10 +156,14 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- L.debug("Completed Flamingos2 configuration")
     } yield ()
 
+    private val paddingDelay: Duration                                                = Duration(10.0, TimeUnit.SECONDS)
     override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = for {
       _ <- L.debug(s"Send observe to Flamingos2, file id $fileId")
       _ <- sys.observeCmd.setLabel(fileId)
       _ <- sys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
+      _ <-
+        L.debug(s"Flamingos2 reports observe completion. Start delay of $paddingDelay for REL-4792")
+      _ <- Temporal[F].sleep(paddingDelay)
       _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 
