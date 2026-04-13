@@ -484,10 +484,8 @@ object AltairControllerEpics {
                                 canGuideM1 = !pauseReasons.fixed.contains(P1Off) && currCfg.aoLoop
               ),
               pauseTargetFilter = false,
-              (resumeReasons.contains(P1On) && resumeReasons.contains(
-                GaosGuideOn
-              ) && (!currCfg.aoLoop || pauseReasons
-                .contains(P1Off))).option(setCorrectionsOn.void),
+              (resumeReasons.contains(P1On) && (!currCfg.aoLoop || pauseReasons.contains(P1Off)))
+                .option(setCorrectionsOn.void),
               GuideCapabilities(resumeReasons.fixed.contains(P1On),
                                 canGuideM1 = resumeReasons.fixed.contains(P1On)
               ),
@@ -501,10 +499,8 @@ object AltairControllerEpics {
                                 canGuideM1 = !pauseReasons.fixed.contains(OiOff) && currCfg.aoLoop
               ),
               pauseTargetFilter = false,
-              (resumeReasons.contains(OiOn) && resumeReasons.contains(
-                GaosGuideOn
-              ) && (!currCfg.aoLoop || pauseReasons
-                .contains(OiOff))).option(setCorrectionsOn.void),
+              (resumeReasons.contains(OiOn) && (!currCfg.aoLoop || pauseReasons.contains(OiOff)))
+                .option(setCorrectionsOn.void),
               GuideCapabilities(resumeReasons.fixed.contains(OiOn),
                                 canGuideM1 = resumeReasons.fixed.contains(OiOn)
               ),
