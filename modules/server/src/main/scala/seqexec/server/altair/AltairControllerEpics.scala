@@ -39,7 +39,7 @@ object AltairControllerEpics {
     preparedMatrixCoords: (Length, Length),
     strapRTStatus:        Boolean,
     strapTempStatus:      Boolean,
-    stapHVoltStatus:      Boolean,
+    strapHVoltStatus:     Boolean,
     strapLoop:            Boolean,
     sfoLoop:              LgsSfoControl,
     strapGate:            Int,
@@ -255,7 +255,7 @@ object AltairControllerEpics {
           ),
           ()
         ) *>
-        currCfg.stapHVoltStatus.either(
+        currCfg.strapHVoltStatus.either(
           SeqexecFailure.Unexpected("Cannot start Altair STRAP loop, HVolt status is bad."),
           ()
         )
@@ -480,8 +480,8 @@ object AltairControllerEpics {
           case LgsWithP1          =>
             AltairPauseResume(
               guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(P1Off)),
-              GuideCapabilities(!pauseReasons.fixed.contains(P1Off),
-                                canGuideM1 = !pauseReasons.fixed.contains(P1Off)
+              GuideCapabilities(!pauseReasons.fixed.contains(P1Off) && currCfg.aoLoop,
+                                canGuideM1 = !pauseReasons.fixed.contains(P1Off) && currCfg.aoLoop
               ),
               pauseTargetFilter = false,
               (resumeReasons.contains(P1On) && resumeReasons.contains(
@@ -497,8 +497,8 @@ object AltairControllerEpics {
           case LgsWithOi          =>
             AltairPauseResume(
               guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(OiOff)),
-              GuideCapabilities(!pauseReasons.fixed.contains(OiOff),
-                                canGuideM1 = !pauseReasons.fixed.contains(OiOff)
+              GuideCapabilities(!pauseReasons.fixed.contains(OiOff) && currCfg.aoLoop,
+                                canGuideM1 = !pauseReasons.fixed.contains(OiOff) && currCfg.aoLoop
               ),
               pauseTargetFilter = false,
               (resumeReasons.contains(OiOn) && resumeReasons.contains(

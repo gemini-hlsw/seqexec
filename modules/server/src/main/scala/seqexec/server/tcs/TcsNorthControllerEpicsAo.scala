@@ -233,6 +233,15 @@ object TcsNorthControllerEpicsAo {
       )
     ).flattenOption
 
+    private def canGuideWhileOffseting(
+      distanceSquared: Option[Area],
+      threshold:       Option[Length]
+    ): Boolean = (distanceSquared, threshold) match {
+      case (None, _)           => true
+      case (Some(_), None)     => false
+      case (Some(d2), Some(t)) => d2 < t * t
+    }
+
     private def calcGuideOffCapabilities(m2Name: TipTiltSource, m1Name: M1Source)(
       tcsGuideCurrent: TelescopeGuideConfig,
       guiderCurrent:   GuiderConfig,
@@ -241,18 +250,17 @@ object TcsNorthControllerEpicsAo {
       distanceSquared: Option[Area],
       threshold:       Option[Length]
     ): GuideCapabilities = {
-      val canGuideWhileOffseting = (distanceSquared, threshold) match {
-        case (None, _)           => true
-        case (Some(_), None)     => false
-        case (Some(d2), Some(t)) => d2 < t * t
-      }
-      val guiderActive           = guiderCurrent.isActive && guiderDemand.isActive
+      val guiderActive: Boolean = guiderCurrent.isActive && guiderDemand.isActive
 
       GuideCapabilities(
-        canGuideWhileOffseting && guiderActive && tcsGuideCurrent.m2Guide.uses(
+        canGuideWhileOffseting(distanceSquared,
+                               threshold
+        ) && guiderActive && tcsGuideCurrent.m2Guide.uses(
           m2Name
         ) && tcsGuideDemand.m2Guide.uses(m2Name),
-        canGuideWhileOffseting && guiderActive && tcsGuideCurrent.m1Guide.uses(
+        canGuideWhileOffseting(distanceSquared,
+                               threshold
+        ) && guiderActive && tcsGuideCurrent.m1Guide.uses(
           m1Name
         ) && tcsGuideDemand.m1Guide.uses(m1Name)
       )
@@ -347,8 +355,14 @@ object TcsNorthControllerEpicsAo {
             (!offsetNear(u, current.base.offset))
               .option(PauseCondition.OffsetMove(current.base.offset, u))
           },
-          (!demand.gds.oiwfs.isActive).option(PauseCondition.OiOff),
-          (!demand.gds.pwfs1.isActive).option(PauseCondition.P1Off),
+          (!demand.gds.oiwfs.isActive || !canGuideWhileOffseting(
+            calcMoveDistanceSquared(current.base, demand.tc),
+            demand.inst.oiOffsetGuideThreshold
+          )).option(PauseCondition.OiOff),
+          (!demand.gds.pwfs1.isActive || !canGuideWhileOffseting(
+            calcMoveDistanceSquared(current.base, demand.tc),
+            pwfs1OffsetThreshold.some
+          )).option(PauseCondition.P1Off),
           (!demand.gds.aoguide.isActive).option(PauseCondition.GaosGuideOff)
         ).flattenOption
       )
