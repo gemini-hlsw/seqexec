@@ -88,7 +88,7 @@ object Formatting {
             )
         }
         .foldLeft((0.0, 0.0, 0.0)) { case ((ow1, aw1, nw1), (ow2, aw2, nw2)) =>
-          ((ow1.max(ow2), aw1.max(aw2), nw1.max(nw2)))
+          (ow1.max(ow2), aw1.max(aw2), nw1.max(nw2))
         }
   }
 
