@@ -3,6 +3,7 @@
 
 package seqexec.server.ghost
 
+import cats.Applicative
 import cats.effect.Sync
 import cats.syntax.all._
 import giapi.client.commands.Configuration
@@ -53,7 +54,12 @@ object GhostController {
           value      <- client.guidingState
           idle       <- isAGIdle
           finalConfig = baseConfig |+| config.moveIFUToFocus.when(_ => idle)
-          _          <- Logger[F].debug(s"Guiding check with value: $value isGuiding off: $idle")
+          _          <- Logger[F].info(
+                          s"GHOST Guiding state value: ${value.getOrElse("None")}, isGuiding idle: $idle"
+                        )
+          _          <- if (idle)
+                          Logger[F].info("Seqexec will send a MOVE_TO to GHOST IFU bFocus and rFocus")
+                        else Applicative[F].unit
           _          <- Logger[F].debug(pprint.apply(finalConfig).toString)
         } yield finalConfig
 
