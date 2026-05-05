@@ -256,7 +256,7 @@ sealed trait GhostConfig extends GhostLUT {
     baseConfiguration |+| slitMaskConfiguration |+| (
       if (!isScience(obsType)) {
         // as per REL-4855 we move ifus to focus for calibrations
-        ifuCalibration |+| channelConfig |+| svCalib |+|
+        ifuCalibration |+| channelConfig |+| moveIFUToFocus |+| svCalib |+|
           GhostConfig.fiberConfig1(fiberAgitator1) |+|
           GhostConfig.fiberConfig2(fiberAgitator2)
       } else
