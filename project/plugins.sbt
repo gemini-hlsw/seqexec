@@ -23,7 +23,7 @@ addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.20.0")
 // Used to find dependencies
 addDependencyTreePlugin
 
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.4")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.7.0")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.4")
 
