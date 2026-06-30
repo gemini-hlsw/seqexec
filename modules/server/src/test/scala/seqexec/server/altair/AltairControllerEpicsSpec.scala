@@ -22,6 +22,8 @@ import seqexec.server.tcs.{ Gaos, TestTcsEpics }
 import shapeless.tag
 import squants.space.LengthConversions._
 import squants.space.AngleConversions._
+import seqexec.server.tcs.Gaos.PauseCondition
+import seqexec.server.tcs.Gaos.ResumeCondition
 
 class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
 
@@ -706,6 +708,96 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
       assert(!r.pauseTargetFilter)
       assert(r.guideWhilePaused.canGuideM2)
       assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test("AltairControllerEpics should pause and resume LGS+P1 AO guiding when P1 is paused") {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
+        aoFollow = true,
+        aoSettled = true
+      )
+    )
+
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
+
+    val altairCfg = AltairController.LgsWithP1
+
+    for {
+      ao   <- altairEpics
+      tcs  <- tcsEpics
+      c     = AltairControllerEpics(ao, tcs)
+      r    <- c.pauseResume(
+                Gaos.PauseConditionSet.empty + PauseCondition.P1Off,
+                Gaos.ResumeConditionSet.empty + ResumeCondition.GaosGuideOn + ResumeCondition.P1On,
+                baseOffset,
+                Instrument.Gnirs
+              )(altairCfg)
+      _    <- r.pause.orEmpty
+      ao1  <- ao.outputF
+      tcs1 <- tcs.outputF
+      _    <- ao.out.set(List.empty) *> tcs.out.set(List.empty)
+      _    <- r.resume.orEmpty
+      ao2  <- ao.outputF
+      tcs2 <- tcs.outputF
+    } yield {
+      assert(ao1.isEmpty)
+      assert(tcs1.contains(AoCorrectCmd("OFF", 0)))
+      assert(ao2.isEmpty)
+      assert(tcs2.contains(AoCorrectCmd("ON", 1)))
+      assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(!r.guideWhilePaused.canGuideM1)
+      assert(r.restoreOnResume.canGuideM2)
+      assert(r.restoreOnResume.canGuideM1)
+    }
+  }
+
+  test("AltairControllerEpics should resume LGS+P1 AO guiding after a sky") {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = false,
+        aoFollow = false,
+        aoSettled = false
+      )
+    )
+
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
+
+    val altairCfg = AltairController.LgsWithP1
+
+    val offset = FocalPlaneOffset(tag[OffsetX](-30.0.millimeters), tag[OffsetY](-30.0.millimeters))
+
+    for {
+      ao   <- altairEpics
+      tcs  <- tcsEpics
+      c     = AltairControllerEpics(ao, tcs)
+      r    <- c.pauseResume(
+                Gaos.PauseConditionSet.empty + Gaos.PauseCondition.P1Off + Gaos.PauseCondition
+                  .OffsetMove(baseOffset, offset),
+                Gaos.ResumeConditionSet.empty + ResumeCondition.GaosGuideOn + ResumeCondition.P1On + ResumeCondition
+                  .OffsetReached(offset),
+                baseOffset,
+                Instrument.Gnirs
+              )(altairCfg)
+      _    <- r.pause.orEmpty
+      ao1  <- ao.outputF
+      tcs1 <- tcs.outputF
+      _    <- ao.out.set(List.empty) *> tcs.out.set(List.empty)
+      _    <- r.resume.orEmpty
+      ao2  <- ao.outputF
+      tcs2 <- tcs.outputF
+    } yield {
+      assert(ao1.isEmpty)
+      assert(tcs1.isEmpty)
+      assert(ao2.isEmpty)
+      assert(tcs2.contains(AoCorrectCmd("ON", 1)))
+      assert(!r.forceFreeze)
+      assert(!r.guideWhilePaused.canGuideM2)
+      assert(!r.guideWhilePaused.canGuideM1)
+      assert(r.restoreOnResume.canGuideM2)
+      assert(r.restoreOnResume.canGuideM1)
     }
   }
 
