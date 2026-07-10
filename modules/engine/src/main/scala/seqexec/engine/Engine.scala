@@ -252,7 +252,7 @@ class Engine[F[_]: MonadError[*[_], Throwable]: Logger, S, U](stateL: Engine.Sta
   ): HandleType[Unit] =
     getS(id).flatMap(_.map { s =>
       (Handle(
-        StateT[F, S, (Unit, Option[Stream[F, EventType]])](st => ((st, ((), f(st)))).pure[F])
+        StateT[F, S, (Unit, Option[Stream[F, EventType]])](st => (st, ((), f(st))).pure[F])
       ) *>
         modifyS(id)(Sequence.State.internalStopSet(true))).whenA(Sequence.State.isRunning(s))
     }.getOrElse(unit))

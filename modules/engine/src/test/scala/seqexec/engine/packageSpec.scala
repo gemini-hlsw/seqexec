@@ -353,13 +353,14 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
          Sequence.State.init(
            Sequence(
              id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
-             steps = List(
-               Step.init(id = 1, executions = executions),
-               Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true)),
-               Step.init(id = 3, executions = executions).copy(skipMark = Step.SkipMark(true)),
-               Step.init(id = 4, executions = executions).copy(skipMark = Step.SkipMark(true)),
-               Step.init(id = 5, executions = executions)
-             )
+             steps =
+               List(
+                 Step.init(id = 1, executions = executions),
+                 Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true)),
+                 Step.init(id = 3, executions = executions).copy(skipMark = Step.SkipMark(true)),
+                 Step.init(id = 4, executions = executions).copy(skipMark = Step.SkipMark(true)),
+                 Step.init(id = 5, executions = executions)
+               )
            )
          )
         )
@@ -464,15 +465,16 @@ class packageSpec extends AnyFlatSpec with NonImplicitAssertions {
          Sequence.State.init(
            Sequence(
              Observation.Id.unsafeFromString("GS-2019A-Q-3"),
-             steps = List(
-               Step.init(id = 1, executions = executions).copy(skipped = Step.Skipped(true)),
-               Step
-                 .init(id = 2, executions = executions)
-                 .copy(skipMark = Step.SkipMark(true), breakpoint = Step.BreakpointMark(true)),
-               Step
-                 .init(id = 2, executions = executions)
-                 .copy(skipMark = Step.SkipMark(true), breakpoint = Step.BreakpointMark(true))
-             )
+             steps =
+               List(
+                 Step.init(id = 1, executions = executions).copy(skipped = Step.Skipped(true)),
+                 Step
+                   .init(id = 2, executions = executions)
+                   .copy(skipMark = Step.SkipMark(true), breakpoint = Step.BreakpointMark(true)),
+                 Step
+                   .init(id = 2, executions = executions)
+                   .copy(skipMark = Step.SkipMark(true), breakpoint = Step.BreakpointMark(true))
+               )
            )
          )
         )
