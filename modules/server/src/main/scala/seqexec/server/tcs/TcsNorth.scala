@@ -75,7 +75,7 @@ class TcsNorth[F[_]: Sync: Logger] private (
   val defaultGuiderConf: GuiderConfig = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(
     guideWith: Option[StandardGuideOptions.Value]
-  ): GuiderConfig =
+  ): GuiderConfig                     =
     guideWith
       .map(v => GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))
       .getOrElse(defaultGuiderConf)

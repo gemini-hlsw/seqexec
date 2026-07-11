@@ -18,7 +18,7 @@ package handlers {
   trait Handlers[M, T] { this: ActionHandler[M, T] =>
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] =
       new Monoid[PartialFunction[A, B]] {
-        override def empty = PartialFunction.empty[A, B]
+        override def empty       = PartialFunction.empty[A, B]
         override def combine(
           x: PartialFunction[A, B],
           y: PartialFunction[A, B]

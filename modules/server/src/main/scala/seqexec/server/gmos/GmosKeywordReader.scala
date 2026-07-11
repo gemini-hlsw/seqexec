@@ -202,7 +202,7 @@ object GmosKeywordReaderEpics {
     override def gratingAdjustedWavelength: F[Double] = sys.disperserWavel
     override def gratingOrder: F[Int]                 = sys.disperserOrder
     override def gratingTilt: F[Double]               = sys.gratingTilt
-    override def gratingStep: F[Double] =
+    override def gratingStep: F[Double]               =
       // Set the value to the epics channel if inBeam is    1
       sys.disperserInBeam.map(_ === 1).ifM(sys.reqGratingMotorSteps, doubleDefault[F])
     override def dtaX: F[Double]                      = sys.dtaX
