@@ -63,12 +63,12 @@ object OdbProxy {
       obsId:  Observation.Id,
       dataId: DataId,
       fileId: ImageFileId
-    ): F[Boolean] = true.pure[F]
+    ): F[Boolean]                                                                 = true.pure[F]
     override def datasetComplete(
       obsId:  Observation.Id,
       dataId: DataId,
       fileId: ImageFileId
-    ): F[Boolean] = true.pure[F]
+    ): F[Boolean]                                                                 = true.pure[F]
     override def obsAbort(obsId:      Observation.Id, reason: String): F[Boolean] = false.pure[F]
     override def sequenceEnd(obsId:   Observation.Id): F[Boolean]                 = false.pure[F]
     override def sequenceStart(obsId: Observation.Id, dataId: DataId): F[Boolean] = false.pure[F]

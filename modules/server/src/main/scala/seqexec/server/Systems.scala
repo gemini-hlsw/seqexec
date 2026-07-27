@@ -367,7 +367,7 @@ object Systems {
 
       (igrins2Client, igrins2GDS(httpClient)).mapN(Igrins2Controller(_, _))
     }
-    def gws: IO[GwsKeywordReader[IO]]            =
+    def gws: IO[GwsKeywordReader[IO]]    =
       if (settings.systemControl.gws.realKeywords)
         GwsEpics.instance[IO](service, tops).map(GwsKeywordsReaderEpics[IO])
       else DummyGwsKeywordsReader[IO].pure[IO]
