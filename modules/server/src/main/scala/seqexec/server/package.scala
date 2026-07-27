@@ -47,7 +47,7 @@ package server {
     sequences:  Map[Observation.Id, SequenceData[F]]
   )
 
-  object EngineState     {
+  object EngineState {
     def default[F[_]]: EngineState[F] =
       EngineState[F](
         Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
