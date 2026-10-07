@@ -300,7 +300,9 @@ object Systems {
 
     def flamingos2: IO[Flamingos2Controller[IO]] =
       if (settings.systemControl.f2.command)
-        Flamingos2Epics.instance[IO](service, tops).map(Flamingos2ControllerEpics(_))
+        Flamingos2Epics
+          .instance[IO](service, tops)
+          .map(Flamingos2ControllerEpics(_, settings.f2PaddingDelay))
       else if (settings.instForceError) Flamingos2ControllerSimBad[IO](settings.failAt)
       else Flamingos2ControllerSim[IO]
 

@@ -172,7 +172,8 @@ object TestCommon {
     0,
     3.seconds,
     10.seconds,
-    32
+    32,
+    0.seconds
   )
 
   def configure[F[_]: Applicative](resource: Resource): F[Result[F]] =
