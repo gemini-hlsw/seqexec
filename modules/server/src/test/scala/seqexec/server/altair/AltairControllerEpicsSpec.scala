@@ -81,6 +81,51 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     }
   }
 
+  // GNFR-75631: guide star >5" from the control matrix position (0,0), no offset in the step.
+  private def ngsOffAxisStep(fieldLensIn: Boolean) = {
+    val altairEpics = TestAltairEpics.build[IO](
+      TestAltairEpics.defaultState.copy(
+        aoLoop = true,
+        aoFollow = true,
+        aoSettled = true
+      )
+    )
+
+    val tcsEpics = TestTcsEpics.build[IO](aoGuidedTcs)
+
+    val altairCfg = AltairController.Ngs(blend = false, (-7.718.millimeters, -5.036.millimeters))
+
+    for {
+      ao   <- altairEpics
+      tcs  <- tcsEpics
+      c     = AltairControllerEpics(ao, tcs)
+      r    <- c.pauseResume(
+                Gaos.PauseConditionSet.empty,
+                Gaos.ResumeConditionSet.empty + Gaos.ResumeCondition.GaosGuideOn,
+                baseOffset,
+                Instrument.Gnirs,
+                fieldLensIn
+              )(altairCfg)
+      _    <- r.pause.orEmpty
+      tcs1 <- tcs.outputF
+    } yield (r, tcs1)
+  }
+
+  test("AltairControllerEpics should not pause NGS AO guiding off axis with the field lens IN") {
+    ngsOffAxisStep(fieldLensIn = true).map { case (r, tcs1) =>
+      assert(tcs1.isEmpty)
+      assert(r.guideWhilePaused.canGuideM2)
+      assert(r.guideWhilePaused.canGuideM1)
+    }
+  }
+
+  test("AltairControllerEpics should pause NGS AO guiding off axis with the field lens OUT") {
+    ngsOffAxisStep(fieldLensIn = false).map { case (r, tcs1) =>
+      assert(tcs1.contains(AoCorrectCmd("OFF", 0)))
+      assert(!r.guideWhilePaused.canGuideM2)
+    }
+  }
+
   test("AltairControllerEpics should pause and resume NGS AO guiding for big enough offsets") {
     val altairEpics = TestAltairEpics.build[IO](
       TestAltairEpics.defaultState.copy(

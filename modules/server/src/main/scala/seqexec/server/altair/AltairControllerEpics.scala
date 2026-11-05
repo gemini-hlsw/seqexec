@@ -95,18 +95,23 @@ object AltairControllerEpics {
         epicsTcs.aoPrepareControlMatrix.setY(newPos._2.toMillimeters)
 
     private def pauseNgsMode(
-      position:   (Length, Length),
-      currCfg:    EpicsAltairConfig,
-      instrument: Instrument
+      position:    (Length, Length),
+      currCfg:     EpicsAltairConfig,
+      instrument:  Instrument,
+      fieldLensIn: Boolean
     )(pauseReasons: PauseConditionSet): PauseReturn[F] = {
       // There are two reasons to stop NGS:
       // 1. This is an unguided step
       // 2. The current control matrix will not be valid for the end position after applying an offset (i.e. the offset
       // is too big).
 
+      // With the field lens IN the control matrix is not position dependent, so neither check
+      // applies (ao:conMatX/Y stay at 0,0). tcl/tk seqexec only checks it when the lens is not IN
+      // (RealTcs.itcl). Checking it here paused NGS on every step after a >5" acquisition offset
+      // (GNFR-75631).
       val guidedStep    = !pauseReasons.contains(PauseCondition.GaosGuideOff)
-      val currMatrixOk  = validateCurrentControlMatrix(currCfg, position)
-      val prepMatrixOk  = validatePreparedControlMatrix(currCfg, position)
+      val currMatrixOk  = fieldLensIn || validateCurrentControlMatrix(currCfg, position)
+      val prepMatrixOk  = fieldLensIn || validatePreparedControlMatrix(currCfg, position)
       val isSmallOffset = pauseReasons.offsetO.forall(canGuideWhileOffseting(_, instrument))
 
       val needsToStop = !guidedStep || !currMatrixOk || !isSmallOffset
@@ -157,10 +162,11 @@ object AltairControllerEpics {
         epicsTcs.aoCorrect.post(DefaultTimeout)
 
     private def pauseResumeNgsMode(
-      startPos:   (Length, Length),
-      currCfg:    EpicsAltairConfig,
-      currOffset: FocalPlaneOffset,
-      instrument: Instrument
+      startPos:    (Length, Length),
+      currCfg:     EpicsAltairConfig,
+      currOffset:  FocalPlaneOffset,
+      instrument:  Instrument,
+      fieldLensIn: Boolean
     )(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet): AltairPauseResume[F] = {
       val newPos                = pauseReasons.offsetO
         .map(x => newPosition(startPos)(x.to))
@@ -171,7 +177,7 @@ object AltairControllerEpics {
       val adjustedResumeReasons =
         forceFreeze.fold(resumeReasons - ResumeCondition.GaosGuideOn, resumeReasons)
 
-      val pauseResult = pauseNgsMode(newPos, currCfg, instrument)(adjustedPauseReasons)
+      val pauseResult = pauseNgsMode(newPos, currCfg, instrument, fieldLensIn)(adjustedPauseReasons)
       val resume      = resumeNgsMode(
         currCfg.aoLoop,
         currCfg.aoLoop && pauseResult.wasPaused,
@@ -454,7 +460,8 @@ object AltairControllerEpics {
       pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet,
       currentOffset: FocalPlaneOffset,
-      instrument:    Instrument
+      instrument:    Instrument,
+      fieldLensIn:   Boolean
     )(cfg: AltairConfig): F[AltairPauseResume[F]] = {
       val unguidedStep                                = pauseReasons.contains(GaosGuideOff)
       def guideOff(turnOff: Boolean): Option[F[Unit]] =
@@ -470,8 +477,9 @@ object AltairControllerEpics {
       retrieveConfig.flatMap { currCfg =>
         val result = cfg match {
           case Ngs(_, starPos)    =>
-            pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument)(pauseReasons,
-                                                                            resumeReasons
+            pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument, fieldLensIn)(
+              pauseReasons,
+              resumeReasons
             )
           case Lgs(str, sfo, pos) =>
             pauseResumeLgsMode(str, sfo, pos, currCfg, currentOffset, instrument)(pauseReasons,

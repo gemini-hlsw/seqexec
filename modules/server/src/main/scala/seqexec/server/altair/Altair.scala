@@ -5,7 +5,9 @@ package seqexec.server.altair
 
 import cats.ApplicativeError
 import cats.effect.Sync
+import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
 import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
+import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import seqexec.model.`enum`.Instrument
 import seqexec.model.enum.Resource
@@ -54,7 +56,8 @@ trait Altair[F[_]] extends Gaos[F] {
 
 object Altair {
 
-  private class AltairImpl[F[_]: Sync](controller: AltairController[F]) extends Altair[F] {
+  private class AltairImpl[F[_]: Sync](controller: AltairController[F], fieldLensIn: Boolean)
+      extends Altair[F] {
     override def pauseResume(
       config:        AltairConfig,
       currOffset:    FocalPlaneOffset,
@@ -62,7 +65,9 @@ object Altair {
       pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet
     ): F[AltairPauseResume[F]] =
-      controller.pauseResume(pauseReasons, resumeReasons, currOffset, instrument)(config)
+      controller.pauseResume(pauseReasons, resumeReasons, currOffset, instrument, fieldLensIn)(
+        config
+      )
 
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
       config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
@@ -116,7 +121,14 @@ object Altair {
 
   }
 
-  def apply[F[_]: Sync](controller: AltairController[F]): Altair[F] = new AltairImpl[F](controller)
+  def apply[F[_]: Sync](controller: AltairController[F], fieldLensIn: Boolean): Altair[F] =
+    new AltairImpl[F](controller, fieldLensIn)
+
+  // Field lens state from the step's Altair component; a missing value is treated as OUT.
+  def fieldLensIn(config: CleanConfig): Boolean =
+    config
+      .extractAOAs[FieldLens](FIELD_LENSE_PROP)
+      .exists(_ == FieldLens.IN)
 
   def guideStarType[F[_]: ApplicativeError[*[_], Throwable]](
     config: CleanConfig

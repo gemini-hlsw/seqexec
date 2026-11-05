@@ -513,11 +513,12 @@ object SeqTranslate {
 
           case Site.GN =>
             if (useGaos) { (ov: SystemOverrides) =>
-              TcsNorth.fromConfig[F](overriddenSystems.tcsNorth(ov),
-                                     subs,
-                                     Altair(overriddenSystems.altair(ov)).some,
-                                     inst,
-                                     systemss.guideDb
+              TcsNorth.fromConfig[F](
+                overriddenSystems.tcsNorth(ov),
+                subs,
+                Altair(overriddenSystems.altair(ov), Altair.fieldLensIn(config)).some,
+                inst,
+                systemss.guideDb
               )(
                 config,
                 LightPath(lsource, inst.sfName(config)),

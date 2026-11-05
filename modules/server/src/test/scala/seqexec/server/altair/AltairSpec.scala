@@ -18,7 +18,7 @@ class AltairSpec extends munit.FunSuite {
 
   private implicit def unsafeLogger: Logger[IO] = NoOpLogger.impl[IO]
 
-  private val altair = Altair[IO](new AltairControllerDisabled[IO])
+  private val altair = Altair[IO](new AltairControllerDisabled[IO], fieldLensIn = false)
 
   private val allTracking: List[ProbeTrackingConfig] = List(
     ProbeTrackingConfig.Parked,

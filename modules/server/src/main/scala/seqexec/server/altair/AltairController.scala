@@ -18,7 +18,8 @@ trait AltairController[F[_]] {
     pauseReasons:  PauseConditionSet,
     resumeReasons: ResumeConditionSet,
     currentOffset: FocalPlaneOffset,
-    instrument:    Instrument
+    instrument:    Instrument,
+    fieldLensIn:   Boolean = false
   )(cfg: AltairConfig): F[AltairPauseResume[F]]
 
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
