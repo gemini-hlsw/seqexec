@@ -32,7 +32,9 @@ class AltairSpec extends munit.FunSuite {
       allTracking.foreach { t =>
         val d = altair.aoProbeTracking(mode, t)
         assert(d.follow === FollowOption.FollowOff, s"$mode with step tracking $t demanded $d")
-        assert(d.getNodChop === NodChopTrackingConfig.AllOff, s"$mode with step tracking $t demanded $d")
+        assert(d.getNodChop === NodChopTrackingConfig.AllOff,
+               s"$mode with step tracking $t demanded $d"
+        )
       }
     }
   }

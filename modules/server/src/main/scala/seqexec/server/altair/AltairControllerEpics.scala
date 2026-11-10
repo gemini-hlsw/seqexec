@@ -476,12 +476,12 @@ object AltairControllerEpics {
 
       retrieveConfig.flatMap { currCfg =>
         val result = cfg match {
-          case Ngs(_, starPos)    =>
+          case Ngs(_, starPos)       =>
             pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument, fieldLensIn)(
               pauseReasons,
               resumeReasons
             )
-          case Lgs(str, sfo, pos) =>
+          case Lgs(str, sfo, pos)    =>
             pauseResumeLgsMode(str, sfo, pos, currCfg, currentOffset, instrument)(pauseReasons,
                                                                                   resumeReasons
             )
@@ -514,7 +514,7 @@ object AltairControllerEpics {
               none,
               forceFreeze = false
             )
-          case AltairOff          => turnOff(currCfg)
+          case AltairOff             => turnOff(currCfg)
         }
         L.debug(
           s"REL-4159 pauseResume: cfg=$cfg, currCfg=$currCfg, " +

@@ -754,7 +754,6 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
     }
   }
 
-
   // REL-4159: LGS relay modes must behave as tcl/tk seqexec did. The Altair loop
   // stays closed through offsets and when P1 / OI goes off; it is opened only
   // when the step's AOWFS guide is park/freeze, and closed again on a step
@@ -772,7 +771,9 @@ class AltairControllerEpicsSpec extends munit.CatsEffectSuite {
   }
 
   relayModes.foreach { altairCfg =>
-    test(s"$altairCfg: Altair loop stays closed through a large offset with the tip-tilt guider off") {
+    test(
+      s"$altairCfg: Altair loop stays closed through a large offset with the tip-tilt guider off"
+    ) {
       val offset = FocalPlaneOffset(tag[OffsetX](20.0.millimeters), tag[OffsetY](20.0.millimeters))
       for {
         ao   <- TestAltairEpics.build[IO](TestAltairEpics.defaultState.copy(aoLoop = true))
