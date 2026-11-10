@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop on a failed docker build, so a stale tarball is not copied and reported as built
+set -e
+
 # Set variables
 IMAGE_NAME="registry.gitlab.com/nsf-noirlab/gemini/rtsw/user-tools/seqexec-tester/seqexec-prod"
 OUTPUT_DIR="$(pwd)/output"

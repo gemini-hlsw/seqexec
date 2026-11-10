@@ -33,6 +33,9 @@ COPY . /seqexec
 # Set working directory
 WORKDIR /seqexec
 
+# Same header and format check as the upstream PR CI (.github/workflows/scala.yml)
+RUN sbt headerCheck test:headerCheck scalafmtCheckAll
+
 # Compile, stage, and package the Scala application
 RUN sbt clean 
 RUN sbt app_seqexec_server_gn/compile 
