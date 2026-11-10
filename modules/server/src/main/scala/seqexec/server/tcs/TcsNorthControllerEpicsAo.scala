@@ -316,7 +316,7 @@ object TcsNorthControllerEpicsAo {
       def calc(c: GuiderSensorOption, d: GuiderSensorOption) =
         (d === GuiderSensorOff).fold(GuiderSensorOff, c)
 
-      val p1WhatCanGuide = calcGuideOffCapabilities(TipTiltSource.PWFS1, M1Source.PWFS1)(
+      val p1WhatCanGuide      = calcGuideOffCapabilities(TipTiltSource.PWFS1, M1Source.PWFS1)(
         current.base.telescopeGuideConfig,
         current.base.pwfs1,
         demand.gc,
@@ -324,7 +324,7 @@ object TcsNorthControllerEpicsAo {
         distanceSquared,
         pwfs1OffsetThreshold.some
       )
-      val oiWhatCanGuide = calcGuideOffCapabilities(TipTiltSource.OIWFS, M1Source.OIWFS)(
+      val oiWhatCanGuide      = calcGuideOffCapabilities(TipTiltSource.OIWFS, M1Source.OIWFS)(
         current.base.telescopeGuideConfig,
         current.base.oiwfs,
         demand.gc,
@@ -396,7 +396,9 @@ object TcsNorthControllerEpicsAo {
               .andThen(GuiderConfig.detector)
               .replace(
                 (stopTtGuider && demand.gaos === LgsWithOi)
-                  .fold(GuiderSensorOff, calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector))
+                  .fold(GuiderSensorOff,
+                        calc(current.base.oiwfs.detector, demand.gds.oiwfs.detector)
+                  )
               )
         ) >>> m1Enabled.fold(
         identity[AoTcsConfig[GuiderConfig @@ AoGuide, AltairConfig]](_),
