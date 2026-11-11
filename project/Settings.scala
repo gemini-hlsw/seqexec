@@ -54,7 +54,7 @@ object Settings {
     val circeVersion   = "0.14.10"
     val doobieVersion  = "0.6.0"
     val flywayVersion  = "6.0.4"
-    val scoptVersion   = "4.1.0"
+    val scoptVersion   = "4.2.0"
 
     // test libraries
     val xmlUnit                = "1.6"
