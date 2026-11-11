@@ -63,7 +63,8 @@ class ConfigurationLoaderSpec extends CatsEffectSuite {
     0,
     5.seconds,
     10.seconds,
-    32
+    32,
+    10.seconds
   )
   val ref    = SeqexecConfiguration(Site.GS, Mode.Development, server, ws, gcal, auth)
 
@@ -155,6 +156,8 @@ seqexec-engine {
     epicsCaAddrList = 127.0.0.1
     readRetries = 0
     ioTimeout = 5 seconds
+    # Delay after Flamingos2 reports observe completion. Use 0 seconds to skip it
+    f2PaddingDelay = 10 seconds
     dhsTimeout = 10 seconds
     dhsMaxSize = 32
     gpiUrl = "vm://gpi?marshal=false&broker.persistent=false"

@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.duration.FiniteDuration
 
 import cats.data.StateT
-import cats.effect.Async
+import cats.effect.{ Async, Temporal }
 import cats.syntax.all._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
@@ -112,7 +112,8 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
   val ConfigTimeout: FiniteDuration  = FiniteDuration(400, SECONDS)
 
   def apply[F[_]: Async](
-    sys: => Flamingos2Epics[F]
+    sys:          => Flamingos2Epics[F],
+    paddingDelay: FiniteDuration
   )(implicit L: Logger[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
 
     private def setDCConfig(dc: DCConfig): F[Unit] = for {
@@ -160,6 +161,11 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- L.debug(s"Send observe to Flamingos2, file id $fileId")
       _ <- sys.observeCmd.setLabel(fileId)
       _ <- sys.observeCmd.post(FiniteDuration(expTime.toMillis, MILLISECONDS) + ReadoutTimeout)
+      _ <-
+        if (paddingDelay.length > 0)
+          L.debug(s"Flamingos2 reports observe completion. Start delay of $paddingDelay") *>
+            Temporal[F].sleep(paddingDelay)
+        else L.debug("Flamingos2 reports observe completion. Delay skipped.")
       _ <- L.debug("Completed Flamingos2 observe")
     } yield ObserveCommandResult.Success
 

@@ -49,6 +49,8 @@ trait Igrins2Settings
  *   Timeout for DHS operations
  * @param dhsMaxSize
  *   Limit of keywords to send in one DHS message
+ * @param f2PaddingDelay
+ *   Delay after Flamingos2 reports observe completion, zero to skip it
  */
 final case class SeqexecEngineConfiguration(
   odb:                     Uri,
@@ -69,7 +71,8 @@ final case class SeqexecEngineConfiguration(
   readRetries:             Int,
   ioTimeout:               FiniteDuration,
   dhsTimeout:              FiniteDuration,
-  dhsMaxSize:              Int
+  dhsMaxSize:              Int,
+  f2PaddingDelay:          FiniteDuration
 )
 
 object SeqexecEngineConfiguration {
@@ -95,7 +98,8 @@ object SeqexecEngineConfiguration {
        x.readRetries,
        x.ioTimeout,
        x.dhsTimeout,
-       x.dhsMaxSize
+       x.dhsMaxSize,
+       x.f2PaddingDelay
       )
     )
 
