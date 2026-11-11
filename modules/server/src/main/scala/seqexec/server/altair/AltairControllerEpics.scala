@@ -22,8 +22,8 @@ import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.SeqexecFailure
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
-import seqexec.server.tcs.Gaos.PauseCondition.{ GaosGuideOff, OiOff, P1Off }
-import seqexec.server.tcs.Gaos.ResumeCondition.{ GaosGuideOn, OiOn, P1On }
+import seqexec.server.tcs.Gaos.PauseCondition.GaosGuideOff
+import seqexec.server.tcs.Gaos.ResumeCondition.GaosGuideOn
 import seqexec.server.tcs.Gaos._
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import seqexec.server.tcs.TcsEpics
@@ -95,18 +95,23 @@ object AltairControllerEpics {
         epicsTcs.aoPrepareControlMatrix.setY(newPos._2.toMillimeters)
 
     private def pauseNgsMode(
-      position:   (Length, Length),
-      currCfg:    EpicsAltairConfig,
-      instrument: Instrument
+      position:    (Length, Length),
+      currCfg:     EpicsAltairConfig,
+      instrument:  Instrument,
+      fieldLensIn: Boolean
     )(pauseReasons: PauseConditionSet): PauseReturn[F] = {
       // There are two reasons to stop NGS:
       // 1. This is an unguided step
       // 2. The current control matrix will not be valid for the end position after applying an offset (i.e. the offset
       // is too big).
 
+      // With the field lens IN the control matrix is not position dependent, so neither check
+      // applies (ao:conMatX/Y stay at 0,0). tcl/tk seqexec only checks it when the lens is not IN
+      // (RealTcs.itcl). Checking it here paused NGS on every step after a >5" acquisition offset
+      // (GNFR-75631).
       val guidedStep    = !pauseReasons.contains(PauseCondition.GaosGuideOff)
-      val currMatrixOk  = validateCurrentControlMatrix(currCfg, position)
-      val prepMatrixOk  = validatePreparedControlMatrix(currCfg, position)
+      val currMatrixOk  = fieldLensIn || validateCurrentControlMatrix(currCfg, position)
+      val prepMatrixOk  = fieldLensIn || validatePreparedControlMatrix(currCfg, position)
       val isSmallOffset = pauseReasons.offsetO.forall(canGuideWhileOffseting(_, instrument))
 
       val needsToStop = !guidedStep || !currMatrixOk || !isSmallOffset
@@ -157,10 +162,11 @@ object AltairControllerEpics {
         epicsTcs.aoCorrect.post(DefaultTimeout)
 
     private def pauseResumeNgsMode(
-      startPos:   (Length, Length),
-      currCfg:    EpicsAltairConfig,
-      currOffset: FocalPlaneOffset,
-      instrument: Instrument
+      startPos:    (Length, Length),
+      currCfg:     EpicsAltairConfig,
+      currOffset:  FocalPlaneOffset,
+      instrument:  Instrument,
+      fieldLensIn: Boolean
     )(pauseReasons: PauseConditionSet, resumeReasons: ResumeConditionSet): AltairPauseResume[F] = {
       val newPos                = pauseReasons.offsetO
         .map(x => newPosition(startPos)(x.to))
@@ -171,7 +177,7 @@ object AltairControllerEpics {
       val adjustedResumeReasons =
         forceFreeze.fold(resumeReasons - ResumeCondition.GaosGuideOn, resumeReasons)
 
-      val pauseResult = pauseNgsMode(newPos, currCfg, instrument)(adjustedPauseReasons)
+      val pauseResult = pauseNgsMode(newPos, currCfg, instrument, fieldLensIn)(adjustedPauseReasons)
       val resume      = resumeNgsMode(
         currCfg.aoLoop,
         currCfg.aoLoop && pauseResult.wasPaused,
@@ -309,9 +315,9 @@ object AltairControllerEpics {
     ).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
     private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): F[Unit] =
-      checkStrapLoopState(currCfg).fold(ApplicativeError[F, Throwable].raiseError,
-                                        Sync[F].delay(_)
-      ) *>
+      checkStrapLoopState(currCfg)
+        .fold(ApplicativeError[F, Throwable].raiseError, Sync[F].delay(_))
+        .whenA(strap) *>
         (startStrapGate(currCfg) *> startStrapLoop(currCfg)).whenA(strap) *>
         startSfoLoop(currCfg).whenA(sfo)
 
@@ -411,7 +417,7 @@ object AltairControllerEpics {
       val alreadyThere =
         (currentCfg.sfoLoop === LgsSfoControl.Enable && sfo) && (currentCfg.strapLoop && strap)
 
-      val action = if (!alreadyThere && guidedStep)
+      val action = if (!alreadyThere && guidedStep && (strap || sfo))
         L.debug(
           s"Resuming Altair LGS(strap = $strap, sfo = $sfo) guiding because guidedStep=$guidedStep"
         ) *>
@@ -454,7 +460,8 @@ object AltairControllerEpics {
       pauseReasons:  PauseConditionSet,
       resumeReasons: ResumeConditionSet,
       currentOffset: FocalPlaneOffset,
-      instrument:    Instrument
+      instrument:    Instrument,
+      fieldLensIn:   Boolean
     )(cfg: AltairConfig): F[AltairPauseResume[F]] = {
       val unguidedStep                                = pauseReasons.contains(GaosGuideOff)
       def guideOff(turnOff: Boolean): Option[F[Unit]] =
@@ -467,52 +474,56 @@ object AltairControllerEpics {
             (L.debug("Flatting Altair DM") *> dmFlattenAction).whenA(unguidedStep).void
         )
 
-      retrieveConfig.map { currCfg =>
-        cfg match {
-          case Ngs(_, starPos)    =>
-            pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument)(pauseReasons,
-                                                                            resumeReasons
+      retrieveConfig.flatMap { currCfg =>
+        val result = cfg match {
+          case Ngs(_, starPos)       =>
+            pauseResumeNgsMode(starPos, currCfg, currentOffset, instrument, fieldLensIn)(
+              pauseReasons,
+              resumeReasons
             )
-          case Lgs(str, sfo, pos) =>
+          case Lgs(str, sfo, pos)    =>
             pauseResumeLgsMode(str, sfo, pos, currCfg, currentOffset, instrument)(pauseReasons,
                                                                                   resumeReasons
             )
-          case LgsWithP1          =>
+          // LGS relay modes: replicate tcl/tk seqexec (RealTcs.itcl), which ran
+          // these modes correctly.
+          // - The Altair loop is never opened for offsets or because the
+          //   tip-tilt guider (P1 / OI) goes off: aoduringmove is set
+          //   unconditionally ("the laser moves with the telescope"). It is
+          //   opened only when the step's AOWFS guide is park/freeze
+          //   (GaosGuideOff, RealTcs.itcl:1351/1355).
+          // - It is closed again on a step that guides with the AOWFS if it is
+          //   currently open.
+          // - While moving, M1 is left alone; M2 is gated by the tip-tilt
+          //   guider in TcsNorthControllerEpicsAo.calcGuideOff.
+          // - After the move, M1 and the GAOS M2 source follow the AOWFS guide
+          //   state, as tcl/tk telconfig does (m1/m2 guide on if the AOWFS is
+          //   on). The P1 / OI M2 source is restored by guideOn from the step's
+          //   own P1 / OI demand.
+          // See REL-4159.
+          case LgsWithP1 | LgsWithOi =>
+            val aoGuided = resumeReasons.contains(GaosGuideOn)
             AltairPauseResume(
-              guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(P1Off)),
-              GuideCapabilities(!pauseReasons.fixed.contains(P1Off),
-                                canGuideM1 = !pauseReasons.fixed.contains(P1Off)
-              ),
+              guideOff(false),
+              GuideCapabilities(canGuideM2 = !unguidedStep, canGuideM1 = true),
               pauseTargetFilter = false,
-              (resumeReasons.contains(P1On) && resumeReasons.contains(
-                GaosGuideOn
-              ) && (!currCfg.aoLoop || pauseReasons
-                .contains(P1Off))).option(setCorrectionsOn.void),
-              GuideCapabilities(resumeReasons.fixed.contains(P1On),
-                                canGuideM1 = resumeReasons.fixed.contains(P1On)
+              (aoGuided && !currCfg.aoLoop).option(
+                L.debug("Closing Altair loop for LGS relay mode") *> setCorrectionsOn.void
               ),
+              GuideCapabilities(canGuideM2 = aoGuided, canGuideM1 = aoGuided),
               none,
               forceFreeze = false
             )
-          case LgsWithOi          =>
-            AltairPauseResume(
-              guideOff(currCfg.aoLoop && pauseReasons.fixed.contains(OiOff)),
-              GuideCapabilities(!pauseReasons.fixed.contains(OiOff),
-                                canGuideM1 = !pauseReasons.fixed.contains(OiOff)
-              ),
-              pauseTargetFilter = false,
-              (resumeReasons.contains(OiOn) && resumeReasons.contains(
-                GaosGuideOn
-              ) && (!currCfg.aoLoop || pauseReasons
-                .contains(OiOff))).option(setCorrectionsOn.void),
-              GuideCapabilities(resumeReasons.fixed.contains(OiOn),
-                                canGuideM1 = resumeReasons.fixed.contains(OiOn)
-              ),
-              none,
-              forceFreeze = false
-            )
-          case AltairOff          => turnOff(currCfg)
+          case AltairOff             => turnOff(currCfg)
         }
+        L.debug(
+          s"REL-4159 pauseResume: cfg=$cfg, currCfg=$currCfg, " +
+            s"pauseReasons=$pauseReasons, resumeReasons=$resumeReasons, " +
+            s"forceFreeze=${result.forceFreeze}, " +
+            s"pauseTargetFilter=${result.pauseTargetFilter}, " +
+            s"guideWhilePaused=${result.guideWhilePaused}, " +
+            s"restoreOnResume=${result.restoreOnResume}"
+        ).as(result)
       }
     }
 
